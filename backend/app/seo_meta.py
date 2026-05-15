@@ -382,6 +382,65 @@ def _by_popularity(items):
 
 
 # ---------------------------------------------------------------------------
+# TL;DR generator — produces a single-sentence, voice-friendly answer for
+# the "what does this tool do?" question. AEO/voice-search gold: this is
+# the line ChatGPT, Perplexity, Google AI Overviews, and Alexa will read
+# back when a user asks "how do I {action} a PDF online?".
+# ---------------------------------------------------------------------------
+_TLDR_OVERRIDES: dict[str, str] = {
+    # Hand-written TL;DRs for the highest-volume tools where the
+    # auto-generated one is too generic.
+    "merge-pdf":        "Drop two or more PDFs, drag to reorder, click Merge — you get one combined PDF in seconds, no sign-up, no watermarks.",
+    "split-pdf":        "Upload a PDF, type the page range you want (e.g. 1-3, 5, 7-end), and download the extracted pages as a new PDF.",
+    "compress-pdf":     "Upload a PDF, pick a compression level (Light / Recommended / Extreme), and download the smaller version — typically 50-75% smaller.",
+    "unlock-pdf":       "Upload a password-protected PDF, type the password, and download the unlocked version that opens without prompting.",
+    "protect-pdf":      "Upload a PDF, set a password (with optional permissions for print/copy/edit), and download the encrypted file.",
+    "pdf-to-word":      "Upload a PDF and download an editable .docx with the layout and most formatting preserved — no Acrobat required.",
+    "pdf-to-jpg":       "Upload a PDF and download each page as a JPEG image in a ZIP, at the resolution you choose.",
+    "word-to-pdf":      "Upload a .docx and download it as a PDF that looks the same on every device.",
+    "jpg-to-pdf":       "Upload one or more JPG/JPEG images and download a single PDF, choosing A4, Letter, or fit-to-image page size.",
+    "image-to-pdf":     "Upload images (JPG/PNG/HEIC/WebP/TIFF/BMP/GIF/SVG) and combine them into a single PDF with one click.",
+    "ocr-pdf":          "Upload a scanned PDF and download a searchable, copy-pasteable PDF — or extract the text directly as .txt/JSON.",
+    "rotate-pdf":       "Upload a PDF, choose 90/180/270° (per page or all), and download the rotated copy.",
+    "watermark":        "Upload a PDF, type your watermark text (or upload an image), choose position and opacity, and download the watermarked file.",
+    "redact-pdf":       "Upload a PDF, draw black-out rectangles over sensitive areas, and download the redacted file with content burnt in.",
+    "edit-pdf":         "Upload a PDF and click anywhere on the page to add text, highlights, white-out boxes, or rectangles — then download the edited version.",
+    "sign-pdf":         "Upload a PDF, draw or type your signature, place it on any page, and download the signed PDF.",
+    "html-to-pdf":      "Paste a URL or HTML snippet and download a paginated PDF rendering of the page.",
+    "image-compressor": "Upload JPG/PNG/WebP/BMP, pick a quality from 1-100, and download a smaller version — typically 40-70% lighter.",
+    "image-converter":  "Upload an image and choose a target format (JPG/PNG/WebP/AVIF/TIFF/BMP/GIF) to convert it in your browser.",
+    "remove-background":"Upload an image and download a version with the background removed as a transparent PNG — uses U²-Net AI, runs server-side.",
+    "compress-video":   "Upload a video and pick a CRF quality level — output is smaller MP4 (H.264) that plays everywhere.",
+    "mp4-to-mp3":       "Upload an MP4 video and download just the audio track as an MP3 file.",
+    "video-to-gif":     "Upload a short MP4/MOV/WebM and download an animated GIF, choosing FPS and width.",
+    "heic-to-jpg":      "Upload an iPhone HEIC photo and download a universally-compatible JPEG — no Apple software required.",
+    "qr-code":          "Type any URL or text and download a QR code as PNG or PDF — no upload needed.",
+    "yaml-to-json":     "Paste YAML and copy the equivalent JSON instantly — runs entirely in your browser, your config never uploads.",
+    "json-to-yaml":     "Paste JSON and copy the equivalent YAML instantly — pure browser, perfect for Kubernetes / Compose / GitHub Actions.",
+    "case-converter":   "Paste any text and copy the result in 12 different cases (camelCase, snake_case, kebab-case, CONSTANT_CASE, etc.) — 100% in your browser.",
+    "password-generator":"Pick a length and character classes, click Generate, and copy a cryptographically-secure password — never leaves your browser.",
+    "base64":           "Encode text or files to Base64, or decode Base64 back to the original — runs locally, no upload.",
+    "jwt-decoder":      "Paste a JWT and see its header, payload, and signature decoded as readable JSON — claims (exp, iat, sub) highlighted. Stays in your browser.",
+    "regex-tester":     "Paste a regex and a test string and see every match highlighted live, with captured groups. Supports all standard JS flags. Browser-only.",
+    "url-encoder":      "Encode or decode URLs (percent-encoding) instantly in your browser — perfect for query parameters and form data.",
+    "color-converter":  "Pick or type a color and copy it instantly in HEX, RGB, RGBA, HSL, or HSLA. Includes a visual preview.",
+}
+
+
+def _tldr_for(slug: str, name: str) -> str:
+    """Return a voice-friendly 1-sentence answer for this tool."""
+    if slug in _TLDR_OVERRIDES:
+        return _TLDR_OVERRIDES[slug]
+    # Fall back to a generic-but-helpful template.
+    nice = name.replace(" Online Free", "").replace(" — PrivaTools", "")
+    return (
+        f"Upload your file, click {nice.split()[0] if nice else 'Run'}, "
+        f"and download the result — free, browser-based, no sign-up, no watermarks. "
+        f"Files are processed and discarded immediately."
+    )
+
+
+# ---------------------------------------------------------------------------
 # PDF tool meta  (slug → (name, long_description))
 # ---------------------------------------------------------------------------
 _PDF_TOOLS: dict[str, tuple[str, str]] = {
@@ -977,9 +1036,12 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         if slug in _PDF_TOOLS:
             name, desc = _PDF_TOOLS[slug]
             parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
+            # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
+            tldr = _tldr_for(slug, name)
+            parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f"<p>{desc}</p>")
             parts.append(
-                f"<p>{name} is one of 105 free file tools on PrivaTools. All processing happens "
+                f"<p>{name} is one of {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ free file tools on PrivaTools. All processing happens "
                 "on our servers with zero-knowledge architecture — your files are never stored, "
                 "never read, and never shared with third parties. No account required.</p>"
             )
@@ -991,9 +1053,18 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 parts.append("</ol>")
             # FAQ section
             if slug in TOOL_FAQ:
-                parts.append(f"<h2>Frequently Asked Questions</h2>")
+                parts.append(f'<h2 class="tool-faq">Frequently Asked Questions</h2>')
                 for faq in TOOL_FAQ[slug]:
                     parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
+            # Trust signals: last-updated date + author + open-source link.
+            from datetime import date as _date
+            today = _date.today().isoformat()
+            parts.append(
+                f'<p class="meta-trust"><em>Last reviewed {today} by the PrivaTools maintainers. '
+                f'Source code on '
+                f'<a href="https://github.com/taiyeba-dg/privatools" rel="author">GitHub</a> '
+                f'(MIT-licensed, self-hostable).</em></p>'
+            )
             # Related tools for internal linking — most-popular first
             category_tools = [(s, n) for s, (n, _) in _by_popularity(_PDF_TOOLS.items()) if s != slug][:8]
             if category_tools:
@@ -1008,9 +1079,12 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         if slug in _NONPDF_TOOLS:
             name, desc = _NONPDF_TOOLS[slug]
             parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
+            # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
+            tldr = _tldr_for(slug, name)
+            parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f"<p>{desc}</p>")
             parts.append(
-                f"<p>{name} is one of 105 free file tools on PrivaTools. All processing happens "
+                f"<p>{name} is one of {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ free file tools on PrivaTools. All processing happens "
                 "on our servers with zero-knowledge architecture — your files are never stored, "
                 "never read, and never shared with third parties. No account required.</p>"
             )
@@ -1022,9 +1096,18 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 parts.append("</ol>")
             # FAQ section
             if slug in TOOL_FAQ:
-                parts.append(f"<h2>Frequently Asked Questions</h2>")
+                parts.append(f'<h2 class="tool-faq">Frequently Asked Questions</h2>')
                 for faq in TOOL_FAQ[slug]:
                     parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
+            # Trust signals
+            from datetime import date as _date
+            today = _date.today().isoformat()
+            parts.append(
+                f'<p class="meta-trust"><em>Last reviewed {today} by the PrivaTools maintainers. '
+                f'Source code on '
+                f'<a href="https://github.com/taiyeba-dg/privatools" rel="author">GitHub</a> '
+                f'(MIT-licensed, self-hostable).</em></p>'
+            )
             related = [(s, n) for s, (n, _) in _by_popularity(_NONPDF_TOOLS.items()) if s != slug][:8]
             if related:
                 parts.append("<h2>Related Tools</h2><ul>")
