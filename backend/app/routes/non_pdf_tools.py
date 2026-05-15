@@ -347,12 +347,16 @@ async def remove_exif(files: list[UploadFile] = File(...)):
             return FileResponse(output_paths[0], media_type=mime_map.get(ext, "image/png"),
                                 filename=f"clean_{original_names[0]}", background=cleanup)
 
-        # Multiple files: return ZIP
+        # Multiple files: return ZIP. Disambiguate duplicate uploaded names so
+        # the resulting archive contains every input even when several came in
+        # with the same filename.
         zip_path = _new_temp_file(".zip")
         import zipfile as zf_mod
         with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
+            used_arcnames: set[str] = set()
             for i, out in enumerate(output_paths):
-                zf.write(out, f"clean_{original_names[i]}")
+                arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
+                zf.write(out, arcname)
         cleanup = BackgroundTask(_cleanup_paths, *output_paths, zip_path)
         return FileResponse(zip_path, media_type="application/zip",
                             filename="clean_images.zip", background=cleanup)
