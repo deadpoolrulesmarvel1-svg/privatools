@@ -285,11 +285,42 @@ export default function NonPdfToolPage() {
                 <div className="flex-1 rule-thin" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {[
-                  { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed on your self-hosted server." },
-                  { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly on your server." },
-                  { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
-                ].map(s => (
+                {(() => {
+                  // Pure-input tools (no file upload, no download — output is text shown inline).
+                  // These browser-only utilities don't fit the upload→configure→download narrative.
+                  const PURE_INPUT_TOOLS = new Set([
+                    "jwt-decoder", "regex-tester", "timestamp-converter",
+                    "password-generator", "uuid-generator", "lorem-ipsum",
+                    "color-converter", "word-counter", "hash-generator",
+                    "base64", "url-encoder", "csv-json", "markdown-html",
+                    "json-xml-formatter", "text-diff",
+                  ]);
+                  // Generator tools (no input, just generate)
+                  const GENERATOR_TOOLS = new Set([
+                    "password-generator", "uuid-generator", "lorem-ipsum",
+                    "generate-barcode",
+                  ]);
+
+                  if (slug && PURE_INPUT_TOOLS.has(slug)) {
+                    if (GENERATOR_TOOLS.has(slug)) {
+                      return [
+                        { step: "I.", title: "Set your options", desc: "Choose length, format, character classes, or whatever the tool offers." },
+                        { step: "II.", title: "Generate", desc: "Click the generate button. Runs entirely in your browser using the Web Crypto API." },
+                        { step: "III.", title: "Copy the result", desc: "One-click copy. Nothing is sent to any server — verify with DevTools → Network." },
+                      ];
+                    }
+                    return [
+                      { step: "I.", title: "Paste your input", desc: "Drop text or input directly. Auto-detects format where applicable." },
+                      { step: "II.", title: "See the result live", desc: "Output updates instantly as you type. Everything runs in JavaScript inside your browser." },
+                      { step: "III.", title: "Copy or download", desc: "Click copy on any field. Or download as a text file if you prefer. Zero server roundtrips." },
+                    ];
+                  }
+                  return [
+                    { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed on the self-hosted server and deleted immediately after the response." },
+                    { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly." },
+                    { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email, no account." },
+                  ];
+                })().map(s => (
                   <div key={s.step} className="editorial-insert p-5">
                     <div className="font-heading text-2xl font-bold text-primary/70 mb-2">{s.step}</div>
                     <p className="font-heading text-sm font-bold text-foreground mb-1.5">{s.title}</p>

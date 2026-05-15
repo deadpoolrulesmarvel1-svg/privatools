@@ -396,10 +396,10 @@ export const tools: Tool[] = [
     category: "advanced", accepts: ".pdf", outputLabel: "overlaid.pdf",
   },
   {
-    slug: "qr-code", icon: QrCode, name: "QR Code PDF",
-    description: "Generate QR codes and add them to PDF pages",
-    longDescription: "Add QR code to PDF online for free — generate a QR code from any URL or text and stamp it onto your PDF pages at a chosen position and size. Perfect for adding links, contact info, or payment details.",
-    category: "advanced", accepts: ".pdf", outputLabel: "qrcode.pdf",
+    slug: "qr-code", icon: QrCode, name: "QR Code Generator",
+    description: "Generate QR codes — download as PNG or stamp into a PDF",
+    longDescription: "Generate QR codes online for free — encode any URL, contact card, WiFi credentials, or plain text into a QR code. Download as PNG, or optionally stamp the QR onto a PDF page at a chosen position and size. Standard QR with built-in error correction; reads with any phone camera.",
+    category: "advanced", accepts: ".pdf", outputLabel: "QR code",
   },
   {
     slug: "pdf-to-pdfa", icon: Archive, name: "PDF to PDF/A",

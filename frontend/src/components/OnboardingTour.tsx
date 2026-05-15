@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { X, ArrowRight, Shield, Layers, Search, Sparkles, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
@@ -45,16 +45,23 @@ const steps: Step[] = [
 export function OnboardingTour() {
     const [show, setShow] = useState(false);
     const [step, setStep] = useState(0);
+    const location = useLocation();
 
     useEffect(() => {
+        // Only show the homepage onboarding tour when the visitor is actually
+        // on the homepage. Visitors landing on a deep tool URL (e.g. from
+        // Google) already have an obvious task in front of them — opening a
+        // modal would force them to dismiss it before they can engage.
+        if (location.pathname !== "/") return;
         try {
             if (!localStorage.getItem(STORAGE_KEY)) {
-                // Show after a short delay so the page loads first
-                const t = setTimeout(() => setShow(true), 1200);
+                // Show after a longer delay so the page renders + the user
+                // has a moment to orient before a modal pops up.
+                const t = setTimeout(() => setShow(true), 4000);
                 return () => clearTimeout(t);
             }
         } catch { }
-    }, []);
+    }, [location.pathname]);
 
     const dismiss = () => {
         setShow(false);
