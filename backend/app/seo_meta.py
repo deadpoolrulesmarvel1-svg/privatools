@@ -473,6 +473,32 @@ def _tool_desc(desc: str) -> str:
     return desc[:160] if len(desc) > 160 else desc
 
 
+def path_is_known(path: str) -> bool:
+    """
+    Return True iff the path resolves to a real, content-bearing route.
+
+    Used by the SPA middleware to decide whether to return HTTP 200 with
+    SEO-injected content, or HTTP 404 — so Google doesn't flag /tool/foo
+    (where foo doesn't exist) as a Soft 404.
+    """
+    p = path.rstrip("/") or "/"
+    if p in _STATIC_META:
+        return True
+    if p.startswith("/tool/"):
+        return p[len("/tool/"):] in _PDF_TOOLS
+    if p.startswith("/tools/"):
+        return p[len("/tools/"):] in _NONPDF_TOOLS
+    if p.startswith("/blog/"):
+        return p[len("/blog/"):] in _BLOG_POSTS
+    if p.startswith("/compare/"):
+        # Static-meta covers /compare/ilovepdf etc. /compare itself is in _STATIC_META.
+        return p in _STATIC_META
+    # Top-level SPA routes the frontend handles
+    if p in ("/", "/about", "/privacy", "/terms", "/blog", "/compare", "/pipeline", "/batch"):
+        return True
+    return False
+
+
 def get_meta_for_path(path: str) -> tuple[str, str]:
     """Return (title, description) for the given URL path."""
     path = path.rstrip("/") or "/"
