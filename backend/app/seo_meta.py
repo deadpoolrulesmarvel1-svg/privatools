@@ -8,6 +8,7 @@ executing JavaScript.
 from __future__ import annotations
 import json
 import re
+from datetime import date
 from urllib.parse import quote
 from .tool_content import TOOL_HOWTO, TOOL_FAQ
 
@@ -996,11 +997,33 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 },
                 "provider": {"@id": f"{BASE_URL}/#organization"},
                 "datePublished": "2026-03-15",
-                "dateModified": "2026-05-15",
+                "dateModified": date.today().isoformat(),
                 "inLanguage": "en",
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
+        # HowTo schema — AI engines (Google AI Overviews, ChatGPT,
+        # Perplexity, Gemini) extract this to generate "step-by-step" answers.
+        # Pair it with the existing speakable hint so voice assistants can
+        # read the steps aloud.
+        if slug in TOOL_HOWTO:
+            graph.append({
+                "@type": "HowTo",
+                "name": f"How to {name} with PrivaTools",
+                "description": description,
+                "totalTime": "PT1M",
+                "tool": [{"@type": "HowToTool", "name": "Web browser"}],
+                "step": [
+                    {
+                        "@type": "HowToStep",
+                        "position": i + 1,
+                        "name": step["name"],
+                        "text": step["text"],
+                        "url": f"{canonical_url}#step-{i + 1}",
+                    }
+                    for i, step in enumerate(TOOL_HOWTO[slug])
+                ],
+            })
         # FAQPage schema. We attach `speakable` so voice assistants (Google
         # Assistant, Alexa) can read the Q&A aloud.
         if slug in TOOL_FAQ:
