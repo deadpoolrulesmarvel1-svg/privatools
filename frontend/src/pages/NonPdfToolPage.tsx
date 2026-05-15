@@ -394,7 +394,7 @@ export default function NonPdfToolPage() {
           <div className="space-y-5">
             {relatedTools.length > 0 && (
               <div className="editorial-insert p-5">
-                <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h3>
+                <h2 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h2>
                 <div className="space-y-0.5">
                   {relatedTools.map(t => {
                     const TIcon = t.icon;
@@ -414,7 +414,7 @@ export default function NonPdfToolPage() {
               if (posts.length === 0) return null;
               return (
                 <div className="editorial-insert p-5">
-                  <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h3>
+                  <h2 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h2>
                   <div className="space-y-0.5">
                     {posts.map(p => (
                       <Link key={p.slug} to={`/blog/${p.slug}`} className="block px-2 py-2 hover:bg-card/60 transition-colors group">
