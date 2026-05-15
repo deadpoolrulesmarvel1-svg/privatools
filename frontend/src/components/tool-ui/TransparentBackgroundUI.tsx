@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 export function TransparentBackgroundUI() {
@@ -16,7 +16,7 @@ export function TransparentBackgroundUI() {
     setStatus("processing");
     setError(null);
     try {
-      await processAndDownload("/transparent-background", file, "transparent.pdf", {
+      await processAndDownload("/transparent-background", file, buildOutputFilename(file.name, "transparent", "pdf"), {
         threshold,
         dpi,
       });

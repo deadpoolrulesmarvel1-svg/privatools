@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 export function DeletePagesUI() {
@@ -15,7 +15,7 @@ export function DeletePagesUI() {
     setStatus("processing");
     setError(null);
     try {
-      await processAndDownload("/delete-pages", file, "deleted_pages.pdf", { pages });
+      await processAndDownload("/delete-pages", file, buildOutputFilename(file.name, "trimmed", "pdf"), { pages });
       setStatus("done");
     } catch (e: any) {
       setError(e.message || "Delete pages failed");

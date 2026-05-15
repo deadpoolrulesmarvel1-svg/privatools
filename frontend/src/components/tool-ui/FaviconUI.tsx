@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Download, Loader2, AlertCircle, Image, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const SIZES = [
     { value: 16, label: "16×16", desc: "Classic favicon" },
@@ -46,7 +46,7 @@ export function FaviconUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
-            downloadBlob(blob, "favicon.ico");
+            downloadBlob(blob, buildOutputFilename(file?.name, "favicon", "ico"));
         } catch (e: any) { setError(e.message || "Generation failed"); setStatus("idle"); }
     };
 
@@ -56,7 +56,7 @@ export function FaviconUI() {
             <h2 className="text-lg font-bold text-foreground mb-1">Favicon Generated!</h2>
             <p className="text-sm text-muted-foreground mb-2">{selectedSizes.length} size(s): {selectedSizes.map(s => `${s}×${s}`).join(", ")}</p>
             <div className="flex justify-center gap-3 flex-wrap mt-4">
-                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "favicon.ico")}><Download size={15} /> Download</Button>
+                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, buildOutputFilename(file?.name, "favicon", "ico"))}><Download size={15} /> Download</Button>
                 <Button variant="outline" onClick={() => { setFile(null); setPreviewSrc(null); setStatus("idle"); setResultBlob(null); }}>Generate another</Button>
             </div>
         </div>

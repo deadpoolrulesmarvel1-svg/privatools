@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 import { cn } from "@/lib/utils";
 
@@ -123,7 +123,7 @@ export function FormCreatorUI() {
     setError(null);
     try {
       const payload = buildPayload();
-      await processAndDownload("/form-creator", file, "form.pdf", {
+      await processAndDownload("/form-creator", file, buildOutputFilename(file.name, "form", "pdf"), {
         form_fields: JSON.stringify(payload),
       });
       setStatus("done");

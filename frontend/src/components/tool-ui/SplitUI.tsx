@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 type Mode = "pages" | "individual" | "every_n";
 
@@ -34,8 +34,8 @@ export function SplitUI() {
       if (mode === "every_n") params.n = n;
       const res = await uploadFile("/split", file.raw, params);
       const blob = await res.blob();
-      const fname = blob.type.includes("zip") ? "split_pages.zip" : "split.pdf";
-      downloadBlob(blob, fname);
+      const ext = blob.type.includes("zip") ? "zip" : "pdf";
+      downloadBlob(blob, buildOutputFilename(file.name, "split", ext));
       setState("done");
     } catch (e: any) {
       setError(e.message || "Split failed");
