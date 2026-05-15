@@ -36,6 +36,7 @@ export function CollageUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
+            downloadBlob(blob, "collage.jpg");
         } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
     };
 
