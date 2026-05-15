@@ -178,8 +178,13 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         # path that doesn't correspond to a file on disk.
         if _INDEX_HTML.exists():
             try:
+                from .seo_meta import path_is_known
                 html = _get_seo_html(path, _index_mtime_ns())
-                return HTMLResponse(content=html, status_code=200)
+                # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404,
+                # /tool/, /blog/) return HTTP 404 — prevents Google's Soft 404
+                # detection from flagging the SEO-injected shell as an error.
+                status = 200 if path_is_known(path) else 404
+                return HTMLResponse(content=html, status_code=status)
             except Exception as exc:
                 logger.error("SPA SEO injection failed for %s: %s", path, exc)
         else:
