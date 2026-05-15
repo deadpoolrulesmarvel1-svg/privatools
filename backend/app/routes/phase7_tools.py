@@ -1,0 +1,276 @@
+"""Phase 7 tools — quick, high-volume FFmpeg/Pillow ops competitors offer
+that PrivaTools didn't: mute video, reverse video, change video speed,
+extract dominant color palette from images, pixelate/blur image regions.
+"""
+from __future__ import annotations
+
+import io
+import logging
+import shutil
+import subprocess
+import uuid
+from pathlib import Path
+from collections import Counter
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.background import BackgroundTask
+
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
+from ..utils.route_helpers import read_upload
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+MAX_VIDEO_BYTES = 200 * 1024 * 1024  # 200 MB
+MAX_IMAGE_BYTES = 50 * 1024 * 1024   # 50 MB
+ALLOWED_VIDEO = {".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"}
+ALLOWED_IMAGE = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff"}
+
+
+def _suffix(name: str | None) -> str:
+    if not name or "." not in name:
+        return ".mp4"
+    return "." + name.rsplit(".", 1)[-1].lower()
+
+
+def _run_ffmpeg(args: list[str], label: str) -> None:
+    try:
+        proc = subprocess.run(args, capture_output=True, timeout=180)
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=504, detail=f"{label} timed out") from exc
+    if proc.returncode != 0:
+        err = (proc.stderr.decode("utf-8", "ignore") or proc.stdout.decode("utf-8", "ignore"))[-400:]
+        raise HTTPException(status_code=500, detail=f"{label} failed: {err.strip() or 'ffmpeg error'}")
+
+
+# ─── Mute video (strip audio) ────────────────────────────────────────────
+@router.post("/mute-video")
+async def mute_video_endpoint(file: UploadFile = File(...)):
+    """Strip the audio track from a video. Stream-copies video so it's instant."""
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_VIDEO:
+        raise HTTPException(status_code=400, detail="Please upload a video file (MP4, MOV, WebM, MKV, AVI, M4V).")
+    ensure_temp_dir()
+    in_path = get_temp_path(f"mute_in_{uuid.uuid4().hex}{suffix}")
+    out_path = get_temp_path(f"mute_out_{uuid.uuid4().hex}{suffix}")
+    in_path.write_bytes(data)
+    try:
+        _run_ffmpeg([
+            "ffmpeg", "-y", "-i", str(in_path),
+            "-c:v", "copy", "-an", str(out_path),
+        ], "Mute video")
+        cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
+        return FileResponse(
+            str(out_path), media_type="video/mp4",
+            filename=f"muted{suffix}", background=cleanup,
+        )
+    except HTTPException:
+        remove_files(str(in_path), str(out_path) if out_path.exists() else None)
+        raise
+
+
+# ─── Reverse video (play backwards, audio reversed too) ──────────────────
+@router.post("/reverse-video")
+async def reverse_video_endpoint(file: UploadFile = File(...)):
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_VIDEO:
+        raise HTTPException(status_code=400, detail="Please upload a video file.")
+    ensure_temp_dir()
+    in_path = get_temp_path(f"rev_in_{uuid.uuid4().hex}{suffix}")
+    # Output as .mp4 regardless of input for max compatibility.
+    out_path = get_temp_path(f"rev_out_{uuid.uuid4().hex}.mp4")
+    in_path.write_bytes(data)
+    try:
+        _run_ffmpeg([
+            "ffmpeg", "-y", "-i", str(in_path),
+            "-vf", "reverse", "-af", "areverse",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+            "-c:a", "aac", "-b:a", "128k",
+            str(out_path),
+        ], "Reverse video")
+        cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
+        return FileResponse(
+            str(out_path), media_type="video/mp4",
+            filename="reversed.mp4", background=cleanup,
+        )
+    except HTTPException:
+        remove_files(str(in_path), str(out_path) if out_path.exists() else None)
+        raise
+
+
+# ─── Change video playback speed (0.25× – 4×) ────────────────────────────
+@router.post("/video-speed")
+async def video_speed_endpoint(
+    file: UploadFile = File(...),
+    speed: float = Form(1.5, ge=0.25, le=4.0),
+):
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_VIDEO:
+        raise HTTPException(status_code=400, detail="Please upload a video file.")
+    ensure_temp_dir()
+    in_path = get_temp_path(f"speed_in_{uuid.uuid4().hex}{suffix}")
+    out_path = get_temp_path(f"speed_out_{uuid.uuid4().hex}.mp4")
+    in_path.write_bytes(data)
+    # Build atempo chain — ffmpeg's atempo only handles 0.5-2.0 per call.
+    atempo_chain: list[str] = []
+    s = float(speed)
+    if s <= 0.25 or s >= 4:
+        raise HTTPException(status_code=400, detail="Speed must be between 0.25 and 4.")
+    # Decompose into 0.5/2.0 factors
+    while s > 2.0:
+        atempo_chain.append("atempo=2.0")
+        s /= 2.0
+    while s < 0.5:
+        atempo_chain.append("atempo=0.5")
+        s /= 0.5
+    atempo_chain.append(f"atempo={s:.4f}")
+    a_filter = ",".join(atempo_chain)
+    v_filter = f"setpts={1.0 / float(speed):.4f}*PTS"
+    try:
+        _run_ffmpeg([
+            "ffmpeg", "-y", "-i", str(in_path),
+            "-filter_complex", f"[0:v]{v_filter}[v];[0:a]{a_filter}[a]",
+            "-map", "[v]", "-map", "[a]",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+            "-c:a", "aac", "-b:a", "128k",
+            str(out_path),
+        ], "Video speed change")
+        cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
+        return FileResponse(
+            str(out_path), media_type="video/mp4",
+            filename=f"speed{speed:g}x.mp4", background=cleanup,
+        )
+    except HTTPException:
+        remove_files(str(in_path), str(out_path) if out_path.exists() else None)
+        raise
+
+
+# ─── Audio trim (standalone — distinct from video trim-media) ────────────
+ALLOWED_AUDIO = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a", ".wma"}
+
+
+@router.post("/audio-trim")
+async def audio_trim_endpoint(
+    file: UploadFile = File(...),
+    start: str = Form("00:00:00"),
+    end: str = Form("00:00:30"),
+):
+    data = await read_upload(file, label="Audio", max_bytes=MAX_VIDEO_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_AUDIO:
+        raise HTTPException(status_code=400, detail="Please upload an audio file (MP3, WAV, AAC, FLAC, OGG, M4A).")
+    # Validate timestamps: H:MM:SS or seconds
+    import re as _re
+    if not _re.match(r"^(\d+:\d{1,2}:\d{1,2}(?:\.\d+)?|\d+(\.\d+)?)$", start.strip()):
+        raise HTTPException(status_code=400, detail="Start must be HH:MM:SS or seconds")
+    if not _re.match(r"^(\d+:\d{1,2}:\d{1,2}(?:\.\d+)?|\d+(\.\d+)?)$", end.strip()):
+        raise HTTPException(status_code=400, detail="End must be HH:MM:SS or seconds")
+    ensure_temp_dir()
+    in_path = get_temp_path(f"atrim_in_{uuid.uuid4().hex}{suffix}")
+    out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
+    in_path.write_bytes(data)
+    try:
+        _run_ffmpeg([
+            "ffmpeg", "-y", "-ss", start.strip(), "-to", end.strip(),
+            "-i", str(in_path), "-c", "copy", str(out_path),
+        ], "Audio trim")
+        cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
+        return FileResponse(
+            str(out_path), media_type=f"audio/{suffix.lstrip('.')}",
+            filename=f"trimmed{suffix}", background=cleanup,
+        )
+    except HTTPException:
+        remove_files(str(in_path), str(out_path) if out_path.exists() else None)
+        raise
+
+
+# ─── Image color palette extractor ───────────────────────────────────────
+@router.post("/image-palette")
+async def image_palette_endpoint(
+    file: UploadFile = File(...),
+    colors: int = Form(6, ge=2, le=24),
+):
+    """Extract the N most-dominant colors from an image as a JSON palette."""
+    from PIL import Image
+
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
+    img = Image.open(io.BytesIO(data)).convert("RGB")
+    # Resize for speed — palette extraction doesn't need full resolution.
+    img.thumbnail((400, 400))
+    # Use Pillow's quantize for a fast palette pass.
+    paletted = img.quantize(colors=colors, method=Image.Quantize.FASTOCTREE)
+    palette = paletted.getpalette() or []
+    # Count pixel occurrences per palette index
+    pixels = paletted.getdata()
+    counts = Counter(pixels)
+    total = sum(counts.values()) or 1
+    result = []
+    for idx, count in counts.most_common(colors):
+        r, g, b = palette[idx * 3 : idx * 3 + 3]
+        hex_code = f"#{r:02X}{g:02X}{b:02X}"
+        result.append({
+            "hex": hex_code,
+            "rgb": [r, g, b],
+            "percentage": round(100 * count / total, 1),
+        })
+    return JSONResponse({"palette": result, "count": len(result)})
+
+
+# ─── Pixelate / blur image (privacy tool) ────────────────────────────────
+@router.post("/pixelate-image")
+async def pixelate_image_endpoint(
+    file: UploadFile = File(...),
+    mode: str = Form("pixelate"),
+    strength: int = Form(20, ge=1, le=100),
+):
+    """Apply pixelation or Gaussian blur to the entire image.
+
+    mode: "pixelate" (mosaic) or "blur" (gaussian).
+    strength: 1-100. Higher = blockier/blurrier.
+    """
+    from PIL import Image, ImageFilter
+
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_IMAGE:
+        raise HTTPException(status_code=400, detail="Please upload an image file.")
+    img = Image.open(io.BytesIO(data))
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGB")
+    mode_clean = (mode or "").lower().strip()
+    if mode_clean not in ("pixelate", "blur"):
+        raise HTTPException(status_code=400, detail="Mode must be 'pixelate' or 'blur'.")
+    if mode_clean == "pixelate":
+        # Downsample then upsample with nearest-neighbour → mosaic blocks.
+        # Strength 1-100 → block-size 4-80 px (capped so the output isn't unreadable)
+        block = max(2, min(120, int(strength * 0.8) + 4))
+        w, h = img.size
+        # Aim for "block" pixels per side
+        small_w = max(1, w // block)
+        small_h = max(1, h // block)
+        img = img.resize((small_w, small_h), Image.Resampling.BILINEAR)
+        img = img.resize((w, h), Image.Resampling.NEAREST)
+    else:  # blur
+        radius = max(1, int(strength * 0.4) + 1)
+        img = img.filter(ImageFilter.GaussianBlur(radius=radius))
+    out_ext = ".jpg" if suffix in (".jpg", ".jpeg") else ".png"
+    out_path = get_temp_path(f"pix_out_{uuid.uuid4().hex}{out_ext}")
+    save_kwargs: dict = {}
+    if out_ext == ".jpg":
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        save_kwargs["quality"] = 90
+        img.save(out_path, "JPEG", **save_kwargs)
+        media = "image/jpeg"
+    else:
+        img.save(out_path, "PNG")
+        media = "image/png"
+    cleanup = BackgroundTask(remove_files, str(out_path))
+    return FileResponse(
+        str(out_path), media_type=media,
+        filename=f"{mode_clean}d{out_ext}", background=cleanup,
+    )

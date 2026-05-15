@@ -408,6 +408,35 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Paste your text", "text": "Drop any string — a variable name, sentence, or paragraph — into the input box."},
         {"name": "Copy any case format", "text": "All 12 case variants (camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, dot.case, path/case, and more) appear instantly. Click Copy on the one you want."},
     ],
+    # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
+    "mute-video": [
+        {"name": "Upload your video", "text": "Drag-and-drop MP4, MOV, WebM, MKV, AVI, or M4V — up to 200 MB."},
+        {"name": "Click Mute Video", "text": "PrivaTools stream-copies the video and strips the audio track. The operation is lossless and takes about a second per minute of video."},
+    ],
+    "reverse-video": [
+        {"name": "Upload a video", "text": "Drop an MP4/MOV/WebM/MKV/AVI file. Best with short clips — long files take exponentially longer."},
+        {"name": "Click Reverse", "text": "Both video and audio are reversed in sync. Output is universal MP4 (H.264 + AAC) playable on every device."},
+    ],
+    "video-speed": [
+        {"name": "Upload a video", "text": "Drop any MP4/MOV/WebM/MKV/AVI file."},
+        {"name": "Pick a speed", "text": "Drag the slider from 0.25× (slow-mo) to 4× (hyperlapse). 1× is original speed."},
+        {"name": "Click Change speed", "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."},
+    ],
+    "audio-trim": [
+        {"name": "Upload an audio file", "text": "Drop MP3, WAV, AAC, FLAC, OGG, or M4A — up to 200 MB."},
+        {"name": "Set start and end", "text": "Type the start and end timestamps in HH:MM:SS format (e.g. 00:01:30 to 00:02:45)."},
+        {"name": "Click Trim audio", "text": "Stream-copy preserves the original quality — no re-encoding."},
+    ],
+    "image-palette": [
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WebP, BMP, TIFF, or GIF — up to 50 MB."},
+        {"name": "Set the color count", "text": "Drag the slider from 2 to 24 colors. 6 is a good default for most brand/UI work."},
+        {"name": "Copy any color", "text": "The dominant colors appear as swatches with HEX, rgb(), and coverage percentage. Click Copy on the one you want."},
+    ],
+    "pixelate-image": [
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WebP, or BMP file with sensitive content you want to obscure."},
+        {"name": "Choose effect + strength", "text": "Pick Pixelate (mosaic, still readable as 'something censored') or Blur (Gaussian, smoother). Strength slider 1-100."},
+        {"name": "Download the result", "text": "The processed image downloads immediately. The original is deleted from the server seconds later."},
+    ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
@@ -1288,6 +1317,37 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Which case formats are supported?", "a": "12: lowercase, UPPERCASE, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, dot.case, path/case, and iNVERSE."},
         {"q": "Will it handle existing camelCase or snake_case input correctly?", "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."},
         {"q": "Does it run in my browser?", "a": "Yes — 100%. Your text never leaves the page. Useful for renaming variables, generating CSS class names, or normalizing identifiers without exposing them to a server."},
+    ],
+    # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
+    "mute-video": [
+        {"q": "Is the video quality preserved?", "a": "100% — we stream-copy the video track without re-encoding. The output is bit-identical to the input minus the audio stream."},
+        {"q": "Will the file get smaller?", "a": "Yes, by the size of the audio track. For typical MP4s that's 5-15% smaller. The video portion is unchanged."},
+        {"q": "Can I just mute the audio instead of removing it?", "a": "This tool removes the audio track entirely. To replace with silence, use Video Converter and pick MP4 — that will re-encode and let you control audio."},
+    ],
+    "reverse-video": [
+        {"q": "Why is reversing slow?", "a": "Reversing requires re-encoding the whole video — FFmpeg has to read every frame, store them, then write them out in reverse order. RAM usage grows with video length."},
+        {"q": "Will the audio sound weird?", "a": "Yes — speech becomes gibberish but music can sound interesting. The audio is reversed with the video so they stay in sync."},
+        {"q": "What's a good use case?", "a": "Reverse-loop animations, training analysis (replay a fall or trick backwards), creative edits, debugging frame-by-frame issues."},
+    ],
+    "video-speed": [
+        {"q": "Will fast-forward make voices sound chipmunky?", "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."},
+        {"q": "What's the maximum slowdown / speedup?", "a": "0.25× (4× slower) to 4× (4× faster). Beyond that the audio quality degrades noticeably and most viewers can't follow."},
+        {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
+    ],
+    "audio-trim": [
+        {"q": "How precise are the start/end times?", "a": "To 1-second precision via stream-copy. For frame-accurate trimming, use the Trim Media tool which re-encodes."},
+        {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."},
+        {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC. No re-encoding."},
+    ],
+    "image-palette": [
+        {"q": "How are the colors picked?", "a": "We downsize the image to 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
+        {"q": "Will it find the brand color from a logo?", "a": "Usually yes — logos have a few dominant colors that octree picks up well. For logos on white backgrounds, asking for 6 colors typically gives 1 white + the actual brand colors."},
+        {"q": "Can I get more than 24 colors?", "a": "Not in this tool — beyond 24 the palette becomes too noisy to be useful. For full palette analysis, export the image to a design tool."},
+    ],
+    "pixelate-image": [
+        {"q": "Pixelate vs blur — which should I use?", "a": "Pixelate is reversible (depixelization attacks can sometimes recover content) but reads clearly as 'censored'. Blur is harder to reverse but can look like a normal photo defect. For true privacy on serious content, use both: blur first then pixelate."},
+        {"q": "Can I select a specific region?", "a": "This tool applies the effect to the whole image. For region-selective censoring, upload to an image editor first (e.g. our Edit PDF for documents) and white-out or rectangle over the area."},
+        {"q": "Does the original get stored?", "a": "No — your image is processed in an isolated Docker container and deleted the moment the response is returned."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────

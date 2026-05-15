@@ -373,6 +373,10 @@ _POPULARITY: dict[str, int] = {
     "url-to-pdf": 299,
     # ── non-PDF: archive ───────────────────────────────────────────────
     "extract-archive": 310, "create-zip": 311,
+    # ── Phase 7 (competitor-gap, v1.5.0) — image + video/audio gaps ────
+    "image-palette": 39, "pixelate-image": 40,
+    "mute-video": 53, "video-speed": 55, "audio-trim": 56,
+    "reverse-video": 65,
 }
 
 
@@ -633,6 +637,13 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "yaml-to-json":       ("YAML to JSON",       "Convert YAML to JSON online for free — paste any YAML and instantly see the equivalent JSON, validated and pretty-printed. Runs 100% in your browser, never uploads."),
     "json-to-yaml":       ("JSON to YAML",       "Convert JSON to YAML online for free — paste any JSON and see clean YAML with proper indentation, ready to drop into a Kubernetes, GitHub Actions, or Docker Compose file. Pure-browser."),
     "case-converter":     ("Case Converter",     "Convert text case online for free — instantly transform any string between camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, and more. Browser-only, never uploads."),
+    # v1.5.0 / phase 7 — competitor-gap tools
+    "mute-video":         ("Mute Video",         "Mute a video online for free — strip the audio track from MP4, MOV, WebM, MKV, AVI files. Stream-copies the video so it's lossless and instant. No re-encoding, no quality loss."),
+    "reverse-video":      ("Reverse Video",      "Reverse a video online for free — play any MP4, MOV, WebM, MKV, or AVI backwards (audio reversed in sync too). Output is universal MP4 with H.264 video and AAC audio."),
+    "video-speed":        ("Video Speed Changer","Speed up or slow down videos online for free — 0.25× to 4×, audio pitch-corrected so it doesn't sound chipmunk-y. Powered by FFmpeg's setpts and atempo filters."),
+    "audio-trim":         ("Audio Trimmer",      "Trim or cut audio files online for free — MP3, WAV, AAC, FLAC, OGG, M4A. Specify start and end timestamps (HH:MM:SS) and download just the chosen segment. Lossless stream-copy."),
+    "image-palette":      ("Image Color Palette","Extract dominant color palette from images online for free — upload any image and get HEX codes, rgb() values, and percentage coverage for the top colors. Perfect for designers extracting brand colors or building UI themes."),
+    "pixelate-image":     ("Pixelate / Blur Image","Pixelate or blur images online for free — obscure sensitive content (faces, license plates, addresses) before sharing. Choose mosaic-style pixelation or smooth Gaussian blur with adjustable strength."),
 }
 
 

@@ -539,6 +539,49 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     popularity: 89,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "converted text",
   },
+  // ── Phase 7 — competitor-gap tools (v1.5.0) ────────────────────────────
+  {
+    slug: "mute-video", icon: Video, name: "Mute Video",
+    description: "Strip the audio track from any video",
+    longDescription: "Remove audio from MP4, MOV, WebM, MKV, AVI videos online for free — stream-copies the video so the operation is instant and lossless. No re-encoding, no quality loss.",
+    popularity: 53,
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi,.m4v", outputLabel: "muted.mp4",
+  },
+  {
+    slug: "reverse-video", icon: Video, name: "Reverse Video",
+    description: "Play your video backwards (audio reversed too)",
+    longDescription: "Reverse an MP4/MOV/WebM video so it plays backwards — useful for fun edits, training-clip annotations, and reverse-motion effects. Audio track is reversed in sync.",
+    popularity: 65,
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "reversed.mp4",
+  },
+  {
+    slug: "video-speed", icon: Video, name: "Video Speed Changer",
+    description: "Speed up or slow down a video, 0.25× to 4×",
+    longDescription: "Change the playback speed of any video from 0.25× (slow-mo) to 4× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.",
+    popularity: 55,
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "video.mp4",
+  },
+  {
+    slug: "audio-trim", icon: Scissors, name: "Audio Trimmer",
+    description: "Cut a clip out of any audio file",
+    longDescription: "Trim or cut MP3, WAV, AAC, FLAC, OGG, or M4A files — specify start and end timestamps (HH:MM:SS) and download just the chosen segment. Stream-copy keeps the original quality.",
+    popularity: 56,
+    category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "trimmed.mp3",
+  },
+  {
+    slug: "image-palette", icon: ImageIcon, name: "Image Color Palette",
+    description: "Extract dominant colors from any image",
+    longDescription: "Upload an image and instantly get its dominant color palette as HEX codes with rgb() values and percentage coverage. Perfect for designers extracting brand colors from a logo, photographers analyzing a mood, or building UI themes from reference images.",
+    popularity: 39,
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "color palette",
+  },
+  {
+    slug: "pixelate-image", icon: ImageIcon, name: "Pixelate / Blur Image",
+    description: "Censor part of an image with mosaic or Gaussian blur",
+    longDescription: "Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side, image is deleted immediately after processing.",
+    popularity: 40,
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "image.png",
+  },
 ];
 
 // Sort by popularity rank (lower = more searched / used). Stable sort

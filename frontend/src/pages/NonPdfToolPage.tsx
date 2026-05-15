@@ -73,6 +73,12 @@ const LazyYamlToJsonUI       = lazyNamed(() => import("@/components/tool-ui/Util
 const LazyJsonToYamlUI       = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "JsonToYamlConverterUI");
 const LazyCaseConverterUI    = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "CaseConverterUI");
 
+// v1.5.0 / phase 7 — competitor-gap tools
+const LazyVideoSpeedUI       = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "VideoSpeedUI");
+const LazyAudioTrimUI        = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "AudioTrimUI");
+const LazyImagePaletteUI     = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "ImagePaletteUI");
+const LazyPixelateImageUI    = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "PixelateImageUI");
+
 // Round-U dedicated UIs (formerly fell through to GenericUI)
 const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
 const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
@@ -243,6 +249,15 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "yaml-to-json":     return <LazyYamlToJsonUI />;
     case "json-to-yaml":     return <LazyJsonToYamlUI />;
     case "case-converter":   return <LazyCaseConverterUI />;
+    // ── v1.5.0 / phase 7 competitor-gap tools ──────────────────────────
+    case "mute-video":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4,.mov,.webm,.mkv,.avi,.m4v" slug={slug} apiEndpoint="/mute-video" />;
+    case "reverse-video":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4,.mov,.webm,.mkv,.avi" slug={slug} apiEndpoint="/reverse-video" />;
+    case "video-speed":      return <LazyVideoSpeedUI />;
+    case "audio-trim":       return <LazyAudioTrimUI />;
+    case "image-palette":    return <LazyImagePaletteUI />;
+    case "pixelate-image":   return <LazyPixelateImageUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }

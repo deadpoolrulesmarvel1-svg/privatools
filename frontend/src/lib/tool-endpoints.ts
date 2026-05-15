@@ -80,6 +80,13 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "avi-to-mp4":       "/video-converter",
   "webm-to-mp4":      "/video-converter",
   "mp4-to-webm":      "/video-converter",
+  // v1.5.0 / phase 7 — competitor-gap tools
+  "mute-video":       "/mute-video",
+  "reverse-video":    "/reverse-video",
+  "video-speed":      "/video-speed",
+  "audio-trim":       "/audio-trim",
+  "image-palette":    "/image-palette",
+  "pixelate-image":   "/pixelate-image",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

@@ -83,6 +83,9 @@ NON_PDF_TOOLS = [
     "webm-to-mp4", "mp4-to-webm",
     # v1.4.0 additions — browser-only dev converters
     "yaml-to-json", "json-to-yaml", "case-converter",
+    # v1.5.0 / phase 7 — competitor-gap tools
+    "mute-video", "reverse-video", "video-speed", "audio-trim",
+    "image-palette", "pixelate-image",
 ]
 
 # v1.2.0 PDF additions (sitemap was missing these)
