@@ -18,7 +18,11 @@ async def office_to_pdf(input_path: str) -> str:
     # to create its first-run profile under $HOME — but the container's
     # appuser has no home dir, so that fails with "User installation could
     # not be completed" and the whole conversion bails out.
-    profile_dir = get_temp_path(f"lo_profile_{uuid.uuid4().hex}")
+    #
+    # The profile path MUST be absolute. Passing a relative path produces
+    # `file://temp/...` which LibreOffice interprets as a URL with hostname
+    # "temp" and silently hangs trying to resolve it.
+    profile_dir = get_temp_path(f"lo_profile_{uuid.uuid4().hex}").resolve()
     profile_dir.mkdir(parents=True, exist_ok=True)
 
     proc = await asyncio.create_subprocess_exec(
