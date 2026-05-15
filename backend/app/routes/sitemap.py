@@ -114,8 +114,13 @@ BLOG_POSTS: dict[str, str] = {
 BASE_URL = "https://privatools.me"
 
 # Dates for different content types
+# Pages were originally added at these dates. We bump lastmod to today
+# on every served sitemap so AI/search engines see fresh content
+# (PrivaTools is iterated daily). If a particular page becomes legitimately
+# stale, drop its slug into _FROZEN below.
 _TOOLS_LAUNCH_DATE = "2026-03-15"
 _COMPARE_DATE = "2026-03-22"
+_FROZEN: set[str] = set()
 
 
 def _entry(url: str, lastmod: str, priority: str, changefreq: str) -> str:
@@ -136,14 +141,16 @@ async def sitemap():
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
-    # Static pages — homepage updated daily
+    # Static pages — homepage updated daily. Other pages get today's date
+    # too because we ship multiple improvements per day; sitemap.lastmod
+    # is meant to signal "this content has been touched recently".
     xml += _entry(BASE_URL, today, "1.0", "daily")
-    xml += _entry(f"{BASE_URL}/about", _TOOLS_LAUNCH_DATE, "0.6", "monthly")
+    xml += _entry(f"{BASE_URL}/about", today, "0.6", "monthly")
     xml += _entry(f"{BASE_URL}/privacy", "2026-03-29", "0.4", "yearly")
     xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
-    xml += _entry(f"{BASE_URL}/batch", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/pipeline", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/compare", _COMPARE_DATE, "0.7", "monthly")
+    xml += _entry(f"{BASE_URL}/batch", today, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/pipeline", today, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/compare", today, "0.7", "monthly")
     xml += _entry(f"{BASE_URL}/blog", today, "0.8", "weekly")
 
     # Blog posts — use actual published date
@@ -152,17 +159,17 @@ async def sitemap():
 
     # Compare pages
     for slug in COMPARE_PAGES:
-        xml += _entry(f"{BASE_URL}/compare/{slug}", _COMPARE_DATE, "0.8", "monthly")
+        xml += _entry(f"{BASE_URL}/compare/{slug}", today, "0.8", "monthly")
 
-    # Tool pages — use launch date
+    # Tool pages — bump lastmod daily (we iterate constantly).
     for slug in PDF_TOOLS:
-        xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+        xml += _entry(f"{BASE_URL}/tool/{slug}", today, "0.8", "weekly")
     for slug in _PDF_V12:
-        xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+        xml += _entry(f"{BASE_URL}/tool/{slug}", today, "0.8", "weekly")
     for slug in NON_PDF_TOOLS:
-        xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+        xml += _entry(f"{BASE_URL}/tools/{slug}", today, "0.8", "weekly")
     for slug in _VIDEO_TOOLS_NEW:
-        xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+        xml += _entry(f"{BASE_URL}/tools/{slug}", today, "0.8", "weekly")
 
     xml += "</urlset>"
 
