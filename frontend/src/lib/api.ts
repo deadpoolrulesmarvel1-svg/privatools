@@ -28,7 +28,10 @@ function validateFileSize(file: File) {
 /** Progress callback: phase ("upload" | "download"), percent 0-100 */
 export type ProgressCallback = (phase: "upload" | "download", percent: number) => void;
 
-/** Upload a single file with optional form-data parameters. Returns the response. */
+/** Upload a single file with optional form-data parameters. Returns the response.
+ *  Attaches both `file` (singular) and `files` (plural) so the request works
+ *  against endpoints that expect either convention — without forcing every UI
+ *  to know which name the backend chose. */
 export async function uploadFile(
     endpoint: string,
     file: File,
@@ -37,6 +40,7 @@ export async function uploadFile(
     validateFileSize(file);
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("files", file);
     if (params) {
         for (const [k, v] of Object.entries(params)) {
             fd.append(k, String(v));
@@ -63,6 +67,7 @@ export function uploadFileWithProgress(
     validateFileSize(file);
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("files", file);
     if (params) {
         for (const [k, v] of Object.entries(params)) {
             fd.append(k, String(v));
