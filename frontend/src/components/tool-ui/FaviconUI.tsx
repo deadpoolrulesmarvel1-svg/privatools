@@ -46,6 +46,7 @@ export function FaviconUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
+            downloadBlob(blob, "favicon.ico");
         } catch (e: any) { setError(e.message || "Generation failed"); setStatus("idle"); }
     };
 

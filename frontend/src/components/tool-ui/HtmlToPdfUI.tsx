@@ -29,6 +29,7 @@ export function HtmlToPdfUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setState("done");
+            downloadBlob(blob, "converted.pdf");
         } catch (e: any) { setError(e.message || "Conversion failed"); setState("idle"); }
     };
 

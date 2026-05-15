@@ -38,6 +38,7 @@ export function RotateUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setState("done");
+            downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_rotated.pdf`);
         } catch (e: any) {
             setError(e.message || "Rotation failed");
             setState("idle");

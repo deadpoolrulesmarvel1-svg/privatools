@@ -27,6 +27,7 @@ export function HeicToJpgUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
+            downloadBlob(blob, file.name.replace(/\.heic$/i, ".jpg") || "converted.jpg");
         } catch (e: any) { setError(e.message || "Conversion failed"); setStatus("idle"); }
     };
 
