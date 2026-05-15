@@ -100,6 +100,7 @@ export function PasswordGeneratorUI() {
                     <input
                         readOnly
                         value={pwd}
+                        aria-label="Generated password"
                         className="flex-1 h-10 px-3 rounded-lg border border-border bg-background font-mono text-[14px] text-foreground"
                     />
                     <Button type="button" size="sm" variant="outline" className="border-border rounded-full h-10 w-10 p-0" onClick={generate} aria-label="Generate again">
@@ -961,8 +962,10 @@ function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
             <ClientToolBanner label="Parsing happens entirely in your browser — no upload, no server." />
             <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{fromLabel}</label>
+                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground" htmlFor="yamljson-input">{fromLabel}</label>
                     <textarea
+                        id="yamljson-input"
+                        aria-label={fromLabel}
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         spellCheck={false}

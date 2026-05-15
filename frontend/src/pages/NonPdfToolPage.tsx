@@ -311,7 +311,7 @@ export default function NonPdfToolPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   <span className="section-flag">{meta.label}</span>
-                  {tool.clientOnly && <span className="section-flag !text-emerald-600 dark:!text-emerald-400 !border-emerald-500/30">CLIENT-SIDE</span>}
+                  {tool.clientOnly && <span className="section-flag !text-emerald-700 dark:!text-emerald-400 !border-emerald-500/30">CLIENT-SIDE</span>}
                 </div>
                 <h1 className="text-3xl sm:text-5xl font-bold text-foreground tracking-tight">{tool.name}</h1>
                 <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mt-4">{tool.longDescription || tool.description}</p>

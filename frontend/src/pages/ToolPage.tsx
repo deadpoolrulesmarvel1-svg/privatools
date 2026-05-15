@@ -418,7 +418,7 @@ export default function ToolPage() {
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span className="section-flag">{meta.label}</span>
                 {tool.clientOnly && (
-                  <span className="section-flag !text-emerald-600 dark:!text-emerald-400 !border-emerald-500/30">
+                  <span className="section-flag !text-emerald-700 dark:!text-emerald-400 !border-emerald-500/30">
                     100% Browser
                   </span>
                 )}

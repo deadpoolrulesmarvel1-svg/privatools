@@ -315,13 +315,13 @@ const privatoolsFeatures: Record<string, boolean | string> = {
 
 function FeatureCell({ value }: { value: boolean | string }) {
   if (value === true || value === "Yes") {
-    return <span className="inline-flex items-center gap-1 text-green-600 font-semibold text-sm"><Check className="w-4 h-4" /> Yes</span>;
+    return <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400 font-semibold text-sm"><Check className="w-4 h-4" /> Yes</span>;
   }
   if (value === false || value === "No") {
-    return <span className="inline-flex items-center gap-1 text-red-500 text-sm"><X className="w-4 h-4" /> No</span>;
+    return <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-400 text-sm"><X className="w-4 h-4" /> No</span>;
   }
   const isPositive = typeof value === "string" && (value.startsWith("Yes") || value === "500MB per file" || value.startsWith("PWA"));
-  return <span className={`text-sm ${isPositive ? "text-green-600 font-semibold" : "text-muted-foreground"}`}>{value as string}</span>;
+  return <span className={`text-sm ${isPositive ? "text-green-700 dark:text-green-400 font-semibold" : "text-muted-foreground"}`}>{value as string}</span>;
 }
 
 export default function ComparePage() {
