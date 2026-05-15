@@ -158,7 +158,7 @@ export default function LandingPage() {
               to="/"
               className="font-sans-ui text-sm font-semibold text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
             >
-              View all 152+ tools <ArrowRight size={14} />
+              View all 175+ tools <ArrowRight size={14} />
             </Link>
           </div>
         </section>

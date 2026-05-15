@@ -19,7 +19,7 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "152+ free, open-source file tools — PDF, image, video, audio, and developer utilities. "
+        "175+ free, open-source file tools — PDF, image, video, audio, and developer utilities. "
         "Self-hostable so your files stay on your own infrastructure. "
         "File content never leaves the processing container; no behavioural tracking; no accounts.",
     ),
@@ -59,12 +59,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/smallpdf": (
         "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
         "PrivaTools vs Smallpdf: no 2-tasks/day limit, no premium upsells, no watermarks. "
-        "152+ tools vs 30 tools. See the full comparison.",
+        "175+ tools vs 30 tools. See the full comparison.",
     ),
     "/compare/adobe-acrobat": (
         "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
         "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. "
-        "No Adobe ID required, no subscription, 152+ tools. Compare features side by side.",
+        "No Adobe ID required, no subscription, 175+ tools. Compare features side by side.",
     ),
     "/compare/sejda": (
         "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -94,12 +94,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/dochub": (
         "PrivaTools vs DocHub — Free PDF & Document Tools Compared (2026)",
         "PrivaTools vs DocHub: free, open-source file tools vs DocHub's document workflow platform. "
-        "No sign-up, no subscription. Compare 152+ tools vs DocHub's feature set.",
+        "No sign-up, no subscription. Compare 175+ tools vs DocHub's feature set.",
     ),
     "/compare/pdfescape": (
         "PrivaTools vs PDFescape — Free PDF Editor Compared (2026)",
         "PrivaTools vs PDFescape: both free online PDF editors, compared side by side. "
-        "PrivaTools is open source with 152+ tools. See which handles your files more privately.",
+        "PrivaTools is open source with 175+ tools. See which handles your files more privately.",
     ),
     "/compare/nitro-pdf": (
         "PrivaTools vs Nitro PDF — Free vs Paid PDF Tools (2026)",
@@ -951,7 +951,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 {
                     "@type": "ItemList",
                     "name": "Featured tools",
-                    "description": "A curated subset of the 152+ free PDF, image, video, audio, and developer tools on PrivaTools.",
+                    "description": "A curated subset of the 175+ free PDF, image, video, audio, and developer tools on PrivaTools.",
                     "numberOfItems": len(featured),
                     "itemListElement": featured,
                 },
@@ -1112,7 +1112,7 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Self-hostable": "Yes (Docker)",
     "Files processed privately": "Yes (server-side, deleted within minutes)",
     "No watermarks on free tier": "Yes",
-    "152+ tools (PDF, image, video, audio, dev)": "Yes (152+ tools)",
+    "175+ tools (PDF, image, video, audio, dev)": "Yes (175+ tools)",
     "Works offline / client-side tools": "Some tools (client-side)",
     "Desktop app included": "No (web-based)",
     "API available": "Self-hosted API",
@@ -1121,17 +1121,17 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
 }
 
 _COMPARE_DATA: dict[str, dict] = {
-    "ilovepdf": {"name": "iLovePDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "smallpdf": {"name": "Smallpdf", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "152+ tools (PDF, image, video, audio, dev)": "No (21 tools, PDF only)"}},
-    "adobe-acrobat": {"name": "Adobe Acrobat Online", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "sejda": {"name": "Sejda PDF", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "pdf24": {"name": "PDF24", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "foxit": {"name": "Foxit PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "lightpdf": {"name": "LightPDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "152+ tools (PDF, image, video, audio, dev)": "No (PDF + basic image)"}},
-    "stirling-pdf": {"name": "Stirling PDF", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "dochub": {"name": "DocHub", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "152+ tools (PDF, image, video, audio, dev)": "No (document editing only)"}},
-    "pdfescape": {"name": "PDFescape", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "152+ tools (PDF, image, video, audio, dev)": "No (basic PDF editing only)"}},
-    "nitro-pdf": {"name": "Nitro PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "152+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "ilovepdf": {"name": "iLovePDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "smallpdf": {"name": "Smallpdf", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (21 tools, PDF only)"}},
+    "adobe-acrobat": {"name": "Adobe Acrobat Online", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "sejda": {"name": "Sejda PDF", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "pdf24": {"name": "PDF24", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "foxit": {"name": "Foxit PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "lightpdf": {"name": "LightPDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF + basic image)"}},
+    "stirling-pdf": {"name": "Stirling PDF", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "dochub": {"name": "DocHub", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (document editing only)"}},
+    "pdfescape": {"name": "PDFescape", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "175+ tools (PDF, image, video, audio, dev)": "No (basic PDF editing only)"}},
+    "nitro-pdf": {"name": "Nitro PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
 }
 
 
@@ -1147,7 +1147,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     if path == "/":
         parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
         parts.append(
-            "<p>PrivaTools provides 152 free online file tools — 101 PDF tools and 51 image, video, audio, "
+            f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools — {len(_PDF_TOOLS)} PDF tools and {len(_NONPDF_TOOLS)} image, video, audio, "
             "and developer utilities. The entire stack is open source under the MIT license and "
             "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "

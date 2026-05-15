@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-03-22",
     readTime: "8 min read",
     tldr:
-      "In 2026: PrivaTools (100% free, open source, 152+ tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+      "In 2026: PrivaTools (100% free, open source, 175+ tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
     relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
@@ -751,7 +751,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "PrivaTools Team",
     tldr:
-      "Top iLovePDF alternatives in 2026: PrivaTools (152+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+      "Top iLovePDF alternatives in 2026: PrivaTools (175+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
     relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `

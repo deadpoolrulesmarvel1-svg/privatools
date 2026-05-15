@@ -210,7 +210,7 @@ export default function AboutPage() {
             <Code className="w-6 h-6 text-accent" />
             <h2 className="mt-4 font-heading text-2xl font-bold text-foreground leading-tight">Self-host in one command.</h2>
             <p className="mt-3 font-serif-body text-[14px] text-muted-foreground leading-relaxed">
-              If you don't want to trust <em>our</em> deployment either, run your own. Clone the repo, <code className="font-mono-meta text-[12px] bg-secondary px-1.5 py-0.5 rounded">docker compose up --build</code>, you're done. 152 tools running on your own infrastructure.
+              If you don't want to trust <em>our</em> deployment either, run your own. Clone the repo, <code className="font-mono-meta text-[12px] bg-secondary px-1.5 py-0.5 rounded">docker compose up --build</code>, you're done. 175+ tools running on your own infrastructure.
             </p>
             <a
               href="https://github.com/taiyeba-dg/privatools#-quick-start"
