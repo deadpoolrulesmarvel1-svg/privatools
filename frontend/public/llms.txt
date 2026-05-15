@@ -1,153 +1,192 @@
 # PrivaTools
 
-> 107 free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your server. Zero uploads to third parties, zero tracking, zero sign-ups.
+> 141+ free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged or shared with third parties; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts.
 
-PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. Every file is processed locally and deleted immediately — never stored, never read, never shared.
+PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/taiyeba-dg/privatools.
 
 ## Key Facts
 
-- 107 tools: 78 PDF tools + 29 non-PDF tools
-- 100% free, no premium tiers, 500 MB upload limit per file
-- Open source under MIT license
-- Self-hostable via Docker
+- 141 tools: 97 PDF tools + 44 non-PDF tools (image, video/audio, developer, archive, utilities)
+- 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
+- Open source under the MIT license
+- Self-hostable via Docker (`docker compose up`) — entire stack runs on your hardware
 - No account or sign-up required
-- Files processed and deleted within minutes
+- Public demo: files processed in an isolated container, deleted immediately after the response
+- Browser-only tools (no upload at all): JSON/XML formatter, hash, base64, text diff, markdown↔HTML, password generator, UUID generator, lorem ipsum, word counter, color converter, URL/JWT encoder, subtitle converter, summarize PDF, smart redact (PII)
+- Local AI tools: Summarize PDF (distilbart) and Smart Redact (BERT-NER) run entirely in your browser via WebAssembly — no third-party API calls
+- Pipeline (industry first): chain merge → compress → watermark → sign in one click — no competitor offers this
 - Contact: hello@privatools.me
 - Privacy Policy: https://privatools.me/privacy
 - Terms of Service: https://privatools.me/terms
 
 ## PDF Tools
 
-### Merge & Split
-- [Merge PDF](https://privatools.me/tool/merge-pdf): Combine multiple PDFs into one file
-- [Split PDF](https://privatools.me/tool/split-pdf): Divide a PDF into separate files by page range
-- [Split by Bookmarks](https://privatools.me/tool/split-by-bookmarks): Split PDF by chapters or bookmarks automatically
-- [Split by Size](https://privatools.me/tool/split-by-size): Split large PDFs into smaller files by maximum file size
-- [Alternate Mix](https://privatools.me/tool/alternate-mix): Interleave pages from two PDFs for duplex scanning
+### Merge & Split / Organize Pages
+- [Merge PDF](https://privatools.me/tool/merge-pdf): Combine multiple PDFs into one
+- [Split PDF](https://privatools.me/tool/split-pdf): Split by selecting specific page ranges
+- [Split by Bookmarks](https://privatools.me/tool/split-by-bookmarks): Split at pages where bookmarks point to
+- [Split by Size](https://privatools.me/tool/split-by-size): Split into parts based on a max file size
+- [Split in Half](https://privatools.me/tool/split-in-half): Split each page in half — for two-up scans &amp; booklets
+- [Organize Pages](https://privatools.me/tool/organize-pages): Reorder, delete, or rotate pages visually
+- [Delete Pages](https://privatools.me/tool/delete-pages): Remove specific pages from a PDF
+- [Extract Pages](https://privatools.me/tool/extract-pages): Extract specified pages to a new document
+- [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Scan and delete entirely blank or near-blank pages
+- [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
+- [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
 
 ### Edit & Annotate
-- [Edit PDF](https://privatools.me/tool/edit-pdf): Modify text and images directly inside your PDF
-- [Sign PDF](https://privatools.me/tool/sign-pdf): Draw, type, or upload your signature onto any PDF
-- [E-Sign PDF](https://privatools.me/tool/esign-pdf): Electronically sign documents without printing
-- [Annotate PDF](https://privatools.me/tool/annotate-pdf): Add highlights, underlines, strikethrough, and sticky notes
-- [Add Shapes](https://privatools.me/tool/add-shapes): Draw rectangles, circles, lines, and arrows
-- [Watermark PDF](https://privatools.me/tool/watermark): Apply text or image watermarks to every page
-- [Stamp PDF](https://privatools.me/tool/stamp-pdf): Add CONFIDENTIAL, DRAFT, APPROVED, or custom stamps
-- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Add clickable hyperlinks to PDF
-- [Add Attachment](https://privatools.me/tool/add-attachment): Embed files inside a PDF
-- [Fill Form](https://privatools.me/tool/fill-form): Fill interactive PDF forms online
-- [Form Creator](https://privatools.me/tool/form-creator): Create fillable PDF forms with text fields, checkboxes, dropdowns
-- [White-Out](https://privatools.me/tool/whiteout-pdf): Place white rectangles over content to hide it
-
-### Page Management
-- [Organize Pages](https://privatools.me/tool/organize-pages): Drag and drop to reorder, delete, rotate, or duplicate pages
-- [Delete Pages](https://privatools.me/tool/delete-pages): Remove specific pages from a PDF
-- [Extract Pages](https://privatools.me/tool/extract-pages): Save specific pages as a new PDF
-- [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Automatically remove blank or near-blank pages
-- [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse page order of a PDF
-- [Rotate PDF](https://privatools.me/tool/rotate-pdf): Rotate pages by 90, 180, or 270 degrees
-- [N-Up PDF](https://privatools.me/tool/nup): Print multiple pages per sheet
-- [Booklet PDF](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
-
-### Headers, Footers & Numbers
-- [Page Numbers](https://privatools.me/tool/page-numbers): Add page numbers with custom format and position
-- [Header & Footer](https://privatools.me/tool/header-footer): Add headers and footers with text, dates, page numbers
-- [Bates Numbering](https://privatools.me/tool/bates-numbering): Add sequential Bates stamps for legal document indexing
-- [Bookmarks](https://privatools.me/tool/bookmarks): Create, rename, reorder, and nest bookmarks
-- [QR Code](https://privatools.me/tool/qr-code): Add QR codes to PDF pages
+- [Edit PDF](https://privatools.me/tool/edit-pdf): Edit text and images directly inside the PDF
+- [Sign PDF](https://privatools.me/tool/sign-pdf): Add a visual signature image to a PDF
+- [Watermark](https://privatools.me/tool/watermark): Add text or image watermark over PDF pages
+- [Header & Footer](https://privatools.me/tool/header-footer): Add headers and footers to specified pages
+- [Page Numbers](https://privatools.me/tool/page-numbers): Insert custom page numbers in your chosen format
+- [Bates Numbering](https://privatools.me/tool/bates-numbering): Add Bates Numbers for legal document indexing
+- [Bookmarks](https://privatools.me/tool/bookmarks): Add or edit bookmarks to navigate large files
+- [PDF Stamp](https://privatools.me/tool/stamp-pdf): Add CONFIDENTIAL, DRAFT, or custom stamps
+- [E-Sign PDF](https://privatools.me/tool/esign-pdf): Quick draw-and-place signature on any PDF
+- [White-Out / Eraser](https://privatools.me/tool/whiteout-pdf): Cover content on PDF with white boxes
+- [Annotate PDF](https://privatools.me/tool/annotate-pdf): Add highlights, underlines, and sticky notes
+- [Highlight PDF](https://privatools.me/tool/highlight-pdf): Highlight every match of a word or phrase
+- [Add Shapes to PDF](https://privatools.me/tool/add-shapes): Draw rectangles, circles, lines, and arrows
+- [Add Attachment](https://privatools.me/tool/add-attachment): Embed any file inside a PDF document
+- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Draw clickable hyperlink areas over text or images
+- [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
 
 ### Optimize & Transform
-- [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce file size by up to 90% without losing quality
-- [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress up to 50 PDFs in parallel, download as ZIP
-- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Merge form fields and annotations into static content
-- [Deskew PDF](https://privatools.me/tool/deskew-pdf): Correct tilt angle of scanned documents
-- [Repair PDF](https://privatools.me/tool/repair-pdf): Fix corrupted or broken PDF files
-- [Resize PDF](https://privatools.me/tool/resize-pdf): Change page dimensions to A4, Letter, Legal, or custom sizes
-- [Crop PDF](https://privatools.me/tool/crop-pdf): Trim margins or change visible area of pages
-- [Remove Margins](https://privatools.me/tool/auto-crop): Auto-detect and trim white space
-- [Grayscale PDF](https://privatools.me/tool/grayscale-pdf): Convert color PDFs to black and white
-- [Invert Colors](https://privatools.me/tool/invert-colors): Invert colors for dark mode reading
-- [Transparent Background](https://privatools.me/tool/transparent-background): Convert white backgrounds to transparency
-- [Overlay PDF](https://privatools.me/tool/overlay): Layer one PDF on top of another
-- [Compare PDF](https://privatools.me/tool/compare-pdf): Visual diff of two PDF versions
-- [PDF Page Counter](https://privatools.me/tool/pdf-page-counter): Count pages in up to 100 PDFs at once
+- [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce the file size of your PDF
+- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Flatten forms and annotations into PDF content
+- [Deskew PDF](https://privatools.me/tool/deskew-pdf): Straighten scanned pages that are slightly tilted
+- [Repair PDF](https://privatools.me/tool/repair-pdf): Attempt to fix corrupted PDF files
+- [Resize PDF](https://privatools.me/tool/resize-pdf): Change the physical dimensions of the pages
+- [Rotate PDF](https://privatools.me/tool/rotate-pdf): Rotate all or specific pages in the PDF
+- [Grayscale PDF](https://privatools.me/tool/grayscale-pdf): Convert a colorful PDF to black and white
+- [Crop PDF](https://privatools.me/tool/crop-pdf): Trim the margins or change the visible area
+- [Remove Margins](https://privatools.me/tool/auto-crop): Auto-trim white space/margins around text on all pages
+- [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
+- [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel
 
 ### Security & Privacy
-- [Protect PDF](https://privatools.me/tool/protect-pdf): Encrypt with AES-256 and set passwords
-- [Unlock PDF](https://privatools.me/tool/unlock-pdf): Remove password from PDFs you own
-- [Redact PDF](https://privatools.me/tool/redact-pdf): Permanently black out sensitive information
-- [Strip Metadata](https://privatools.me/tool/strip-metadata): Remove author, dates, GPS, and all hidden metadata
-- [Sanitize PDF](https://privatools.me/tool/sanitize-pdf): Remove hidden data, JavaScript, and embedded files
-- [Set Permissions](https://privatools.me/tool/set-permissions): Control who can print, copy, edit, or annotate
-- [Delete Annotations](https://privatools.me/tool/delete-annotations): Remove all highlights, comments, and markup
-- [Metadata Editor](https://privatools.me/tool/metadata): View and edit PDF metadata fields
-- [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Check PDF/A archival compliance
-- [Verify Signature](https://privatools.me/tool/verify-signature): Inspect digital signature fields
-- [OCR PDF](https://privatools.me/tool/ocr-pdf): Convert scanned documents to searchable text (100+ languages)
+- [Protect PDF](https://privatools.me/tool/protect-pdf): Encrypt a PDF with a password or set permissions
+- [Unlock PDF](https://privatools.me/tool/unlock-pdf): Remove password protection from a PDF
+- [Redact PDF](https://privatools.me/tool/redact-pdf): Permanently black out sensitive content
+- [Strip Metadata](https://privatools.me/tool/strip-metadata): Remove embedded metadata for privacy
+- [Delete Annotations](https://privatools.me/tool/delete-annotations): Remove all comments, highlights, and annotations
+- [Metadata](https://privatools.me/tool/metadata): View and edit document metadata
+- [Smart Redact (AI)](https://privatools.me/tool/smart-redact): Local AI auto-detects PII — names, emails, phones, SSNs
+- [PDF Permissions](https://privatools.me/tool/set-permissions): Control print, copy, and edit permissions
+- [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
+- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Inspect signature fields in a PDF
+- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Aggressively clean hidden data, JS, and layers
 
 ### Convert to PDF
-- [HTML to PDF](https://privatools.me/tool/html-to-pdf): Convert web pages or HTML files to PDF
-- [Image to PDF](https://privatools.me/tool/image-to-pdf): Combine JPG, PNG, TIFF, WebP into a PDF
-- [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx to PDF
+- [HTML to PDF](https://privatools.me/tool/html-to-pdf): Convert web pages or HTML code into a PDF
+- [Image to PDF](https://privatools.me/tool/image-to-pdf): Convert JPG, PNG, or other images into a PDF
+- [JPG to PDF](https://privatools.me/tool/jpg-to-pdf): Convert JPG / JPEG photos into a single PDF
+- [PNG to PDF](https://privatools.me/tool/png-to-pdf): Convert PNG images into a single PDF document
+- [HEIC to PDF](https://privatools.me/tool/heic-to-pdf): Convert iPhone HEIC photos into a single PDF
+- [WebP to PDF](https://privatools.me/tool/webp-to-pdf): Convert modern WebP images into a PDF
+- [TIFF to PDF](https://privatools.me/tool/tiff-to-pdf): Convert TIFF / TIF scans into a single PDF
+- [BMP to PDF](https://privatools.me/tool/bmp-to-pdf): Convert Windows BMP bitmaps into a PDF
+- [GIF to PDF](https://privatools.me/tool/gif-to-pdf): Convert GIF images into a single PDF
+- [SVG to PDF](https://privatools.me/tool/svg-to-pdf): Convert SVG vector graphics into PDF
+- [ODT to PDF](https://privatools.me/tool/odt-to-pdf): Convert OpenDocument (ODT) into PDF
+- [Office to PDF](https://privatools.me/tool/office-to-pdf): Convert Word, Excel, or PowerPoint to PDF
+- [Markdown / Config to PDF](https://privatools.me/tool/markdown-to-pdf): Convert .md, .json, .yaml, or .toml files to PDF
+- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Generate table-style or invoice PDFs from CSV data
+- [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx Word documents to PDF
 - [Excel to PDF](https://privatools.me/tool/excel-to-pdf): Convert .xlsx spreadsheets to PDF
 - [PowerPoint to PDF](https://privatools.me/tool/pptx-to-pdf-convert): Convert .pptx presentations to PDF
-- [Office to PDF](https://privatools.me/tool/office-to-pdf): Convert any Office document to PDF
-- [Markdown to PDF](https://privatools.me/tool/markdown-to-pdf): Convert .md files to formatted PDF
-- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Convert CSV spreadsheets to PDF
-- [Text to PDF](https://privatools.me/tool/txt-to-pdf): Convert .txt files to PDF
-- [JSON to PDF](https://privatools.me/tool/json-to-pdf): Convert JSON data to formatted PDF
-- [XML to PDF](https://privatools.me/tool/xml-to-pdf): Convert XML data to formatted PDF
-- [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books to PDF
-- [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format to PDF
-- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to archival standard
+- [Text to PDF](https://privatools.me/tool/txt-to-pdf): Convert plain text .txt files to PDF
+- [JSON to PDF](https://privatools.me/tool/json-to-pdf): Format JSON data as a styled PDF document
+- [XML to PDF](https://privatools.me/tool/xml-to-pdf): Convert XML data to a formatted PDF document
+- [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
+- [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
 
 ### Convert from PDF
-- [PDF to Word](https://privatools.me/tool/pdf-to-word): Extract text into editable .docx
-- [PDF to Excel](https://privatools.me/tool/pdf-to-excel): Extract tables into .xlsx spreadsheets
-- [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Create a PPTX where each page is a slide
-- [PDF to Image](https://privatools.me/tool/pdf-to-image): Render pages as JPG or PNG
-- [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all readable text
-- [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert to e-book format
-- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Convert to Markdown with heading detection
-- [Extract Tables](https://privatools.me/tool/extract-tables): Extract tabular data to CSV
-- [Extract Images](https://privatools.me/tool/extract-images): Download all embedded images
+- [PDF to Excel](https://privatools.me/tool/pdf-to-excel): Best-effort table/text extraction into a spreadsheet
+- [PDF to Image](https://privatools.me/tool/pdf-to-image): Convert each PDF page into an image file
+- [PDF to TIFF](https://privatools.me/tool/pdf-to-tiff): Convert PDF into a multi-page TIFF image
+- [PDF to BMP](https://privatools.me/tool/pdf-to-bmp): Render PDF pages as Windows BMP bitmaps
+- [PDF to GIF](https://privatools.me/tool/pdf-to-gif): Render PDF pages as GIF images
+- [PDF to SVG](https://privatools.me/tool/pdf-to-svg): Convert PDF pages into editable SVG vectors
+- [PDF to JPG](https://privatools.me/tool/pdf-to-jpg): Render PDF pages as JPG photos
+- [PDF to PNG](https://privatools.me/tool/pdf-to-png): Render PDF pages as PNG images (transparency-friendly)
+- [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Convert each PDF page into a PowerPoint slide image
+- [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all text from a PDF file
+- [PDF to Word](https://privatools.me/tool/pdf-to-word): Convert PDF content to an editable Word draft
+- [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
+- [PDF Table Extractor](https://privatools.me/tool/extract-tables): Extract tables from PDF pages to CSV
+- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Extract PDF content as clean Markdown format
 
-## Image Tools
-- [Image Compressor](https://privatools.me/tools/image-compressor): Reduce JPEG, PNG, WebP sizes by up to 80%
-- [Image Converter](https://privatools.me/tools/image-converter): Convert between WebP, PNG, JPG, TIFF, BMP, HEIC
-- [HEIC to JPG](https://privatools.me/tools/heic-to-jpg): Convert iPhone HEIC photos to JPG
-- [Remove EXIF](https://privatools.me/tools/remove-exif): Strip GPS, camera info, and metadata from photos
-- [Resize & Crop](https://privatools.me/tools/resize-crop-image): Set exact dimensions or aspect ratios
-- [Remove Background](https://privatools.me/tools/remove-background): Automatically remove image backgrounds
-- [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector graphics to raster images
-- [Image Watermark](https://privatools.me/tools/image-watermark): Add text or image watermarks to photos
-- [Favicon Generator](https://privatools.me/tools/generate-favicon): Generate ICO, PNG, SVG favicons
-- [Photo Collage](https://privatools.me/tools/make-collage): Arrange images into grid layouts
-- [Merge Images](https://privatools.me/tools/merge-images): Combine images side by side or stacked
-- [Image OCR](https://privatools.me/tools/image-ocr): Extract text from images (40+ languages)
-- [Image Upscaler](https://privatools.me/tool/image-upscaler): Enlarge images 2x or 4x with Lanczos resampling
+### Advanced
+- [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two or more PDFs alternately
+- [Compare PDF](https://privatools.me/tool/compare-pdf): Visually compare two PDF documents
+- [Extract Images](https://privatools.me/tool/extract-images): Extract all embedded images from the PDF
+- [Fill Form](https://privatools.me/tool/fill-form): Fill out interactive PDF forms and save them
+- [N-Up PDF](https://privatools.me/tool/nup): Print multiple pages per sheet
+- [OCR PDF](https://privatools.me/tool/ocr-pdf): Extract text or create a searchable PDF using OCR
+- [Overlay PDF](https://privatools.me/tool/overlay): Overlay one PDF onto another (e.g., letterhead)
+- [QR Code PDF](https://privatools.me/tool/qr-code): Generate QR codes and add them to PDF pages
+- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to PDF/A format for long-term archiving
+- [Summarize PDF (AI)](https://privatools.me/tool/summarize-pdf): Local AI summary — your PDF never leaves your browser
+- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
+- [PDF Page Counter](https://privatools.me/tool/pdf-page-counter): Count pages in multiple PDFs instantly
 
-## Video & Audio Tools
-- [Video to GIF](https://privatools.me/tools/video-to-gif): Convert video clips to animated GIFs
-- [Extract Audio](https://privatools.me/tools/extract-audio): Pull audio from video as MP3, WAV, or OGG
-- [Trim Video/Audio](https://privatools.me/tools/trim-media): Cut clips with visual timeline
-- [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for sharing
-- [Audio Converter](https://privatools.me/tool/audio-converter): Convert between MP3, WAV, OGG, FLAC, AAC
+## Non-PDF Tools
 
-## Developer Tools
-- [JSON/XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify, validate, and highlight syntax
-- [Text Diff](https://privatools.me/tools/text-diff): Line-by-line comparison of two texts
-- [Base64 Encoder/Decoder](https://privatools.me/tools/base64): Convert to and from Base64
-- [Hash Generator](https://privatools.me/tools/hash-generator): MD5, SHA-1, SHA-256, SHA-512 from text or files
-- [CSV to JSON](https://privatools.me/tools/csv-json): Convert between CSV and JSON formats
-- [Markdown to HTML](https://privatools.me/tools/markdown-html): Convert between Markdown and HTML
-- [Barcode Generator](https://privatools.me/tools/generate-barcode): Create Code 128, QR, EAN-13, UPC barcodes
-- [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes from images
-- [URL to PDF](https://privatools.me/tools/url-to-pdf): Convert any web page to PDF
+### Image Tools
+- [Image Compressor](https://privatools.me/tools/image-compressor): Reduce JPEG/PNG/WebP size without losing quality
+- [Image Format Converter](https://privatools.me/tools/image-converter): Convert between WebP, PNG, JPG, TIFF, and HEIC
+- [Remove EXIF Data](https://privatools.me/tools/remove-exif): Strip GPS, camera, and timestamp metadata from photos
+- [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Bulk resize or crop images to any dimension
+- [Video / Audio to GIF](https://privatools.me/tools/video-to-gif): Convert short video clips into animated GIFs
+- [Image OCR](https://privatools.me/tools/image-ocr): Extract text from images using optical character recognition
+- [HEIC to JPG](https://privatools.me/tools/heic-to-jpg): Convert iPhone HEIC/HEIF photos to JPEG
+- [Background Remover](https://privatools.me/tools/remove-background): Remove backgrounds from images using local AI
+- [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
+- [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
+- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from any image
+- [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid
+- [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes and barcodes from images
+- [Merge Images](https://privatools.me/tools/merge-images): Combine images side-by-side or top-to-bottom
+- [Image Upscaler](https://privatools.me/tools/image-upscaler): Upscale images 2x or 4x with Lanczos resampling
 
-## Archive Tools
-- [Extract Archive](https://privatools.me/tools/extract-archive): Extract ZIP, RAR, 7Z, TAR files
-- [Create ZIP](https://privatools.me/tools/create-zip): Compress files into ZIP archives
+### Video & Audio Tools
+- [Extract Audio from Video](https://privatools.me/tools/extract-audio): Strip the MP3/WAV audio track from a video file
+- [Cut / Trim Video & Audio](https://privatools.me/tools/trim-media): Trim the start and end of video or audio files
+- [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for email or messaging
+- [Video to PDF](https://privatools.me/tools/video-to-pdf): Extract frames from a video into a PDF document
+- [Video Converter](https://privatools.me/tools/video-converter): Convert between MP4, MOV, WebM, MKV, and AVI
+- [Video Resizer](https://privatools.me/tools/video-resizer): Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
+- [Video Thumbnail](https://privatools.me/tools/video-thumbnail): Extract a single frame from a video as a JPG image
+- [GIF to MP4](https://privatools.me/tools/gif-to-mp4): Convert animated GIF to MP4 for smaller file size
+- [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt or .vtt subtitles permanently into a video
+- [Merge Videos](https://privatools.me/tools/video-merge): Concatenate multiple videos into one
+- [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
+- [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert between SRT, VTT, and ASS subtitle formats
+- [Audio Converter](https://privatools.me/tools/audio-converter): Convert between MP3, WAV, OGG, FLAC, AAC
+
+### Developer Tools
+- [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
+- [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
+- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
+- [Hash Generator](https://privatools.me/tools/hash-generator): Generate MD5, SHA-1, SHA-256 hashes of text or files
+- [Barcode Generator](https://privatools.me/tools/generate-barcode): Generate Code128, EAN-13, QR codes from any text
+- [URL to PDF](https://privatools.me/tools/url-to-pdf): Save any webpage as a PDF document
+- [Password Generator](https://privatools.me/tools/password-generator): Cryptographically-strong passwords, 100% in your browser
+- [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
+- [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
+- [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
+- [Color Converter](https://privatools.me/tools/color-converter): Convert between HEX, RGB, HSL, RGBA
+- [URL & JWT Decoder](https://privatools.me/tools/url-encoder): URL encode/decode plus JWT inspector
+
+### Archive Tools
+- [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives locally
+- [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
+
+### Document & Office Tools
+- [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
+- [Markdown to HTML](https://privatools.me/tools/markdown-html): Convert Markdown writing into web-ready HTML
 
 ## Comparisons
 - [vs iLovePDF](https://privatools.me/compare/ilovepdf)

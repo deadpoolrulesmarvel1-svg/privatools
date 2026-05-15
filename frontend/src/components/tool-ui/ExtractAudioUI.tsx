@@ -21,7 +21,7 @@ export function ExtractAudioUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video here"}</p>
         <p className="text-xs text-muted-foreground">MP4, WebM, AVI, MOV, MKV</p>
@@ -33,7 +33,7 @@ export function ExtractAudioUI() {
           {formats.map(f => (
             <button key={f} onClick={() => setFormat(f)}
               className={cn("rounded-lg border px-4 py-2 text-xs font-medium transition-all uppercase",
-                format === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{f}</button>
+                format === f ? "border-accent bg-accent/10 text-primary" : "border-border text-muted-foreground")}>{f}</button>
           ))}
         </div>
       </div>

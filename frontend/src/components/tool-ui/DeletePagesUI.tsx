@@ -50,7 +50,7 @@ export function DeletePagesUI() {
           value={pages}
           onChange={e => setPages(e.target.value)}
           placeholder="e.g. 1,3-5,9"
-          className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+          className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50"
         />
       </div>
       {error && (

@@ -36,7 +36,7 @@ export function ResizeCropImageUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop image here"}</p>
         <input type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
@@ -45,7 +45,7 @@ export function ResizeCropImageUI() {
         <div className="flex gap-2">
           {(["resize", "crop"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-all capitalize",
-              mode === m ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{m}</button>
+              mode === m ? "border-accent bg-accent/10 text-primary" : "border-border text-muted-foreground")}>{m}</button>
           ))}
         </div>
 
@@ -55,7 +55,7 @@ export function ResizeCropImageUI() {
             {presets.map(p => (
               <button key={p.label} onClick={() => applyPreset(p.w, p.h)}
                 className={cn("px-2.5 py-1 rounded-lg text-xs border transition-all",
-                  width === p.w && height === p.h ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-primary/40")}>
+                  width === p.w && height === p.h ? "border-accent bg-accent/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-accent/40")}>
                 {p.label}
               </button>
             ))}

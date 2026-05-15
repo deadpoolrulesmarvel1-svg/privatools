@@ -77,7 +77,7 @@ export function PermissionsUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}
             >
                 <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
@@ -92,8 +92,8 @@ export function PermissionsUI() {
                         <label className="text-sm font-semibold text-foreground">Owner Password</label>
                         <input type="password" value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)}
                             placeholder="Set owner password (required to change permissions later)"
-                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none" />
-                        <p className="text-[10px] text-muted-foreground/60">Leave blank for a default owner password</p>
+                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
+                        <p className="text-[10px] text-muted-foreground/80">Leave blank for a default owner password</p>
                     </div>
 
                     {/* Permission toggles */}
@@ -109,7 +109,7 @@ export function PermissionsUI() {
                                     <div className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all",
                                         permissions[p.key as keyof typeof permissions]
                                             ? "border-emerald-500 bg-emerald-500"
-                                            : "border-muted-foreground/30")}>
+                                            : "border-muted-foreground/85")}>
                                         {permissions[p.key as keyof typeof permissions] && (
                                             <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                         )}

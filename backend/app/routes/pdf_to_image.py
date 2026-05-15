@@ -11,6 +11,18 @@ logger = logging.getLogger(__name__)
 
 
 
+_FORMAT_CONFIG = {
+    "jpeg": ("jpg", "image/jpeg"),
+    "jpg":  ("jpg", "image/jpeg"),
+    "png":  ("png", "image/png"),
+    "bmp":  ("bmp", "image/bmp"),
+    "gif":  ("gif", "image/gif"),
+    "tiff": ("tif", "image/tiff"),
+    "tif":  ("tif", "image/tiff"),
+    "webp": ("webp", "image/webp"),
+}
+
+
 @router.post("/pdf-to-image")
 async def pdf_to_image(
     file: UploadFile = File(...),
@@ -21,8 +33,10 @@ async def pdf_to_image(
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     fmt = format.lower()
-    if fmt not in ("jpeg", "jpg", "png"):
-        raise HTTPException(status_code=400, detail="Format must be jpeg or png")
+    if fmt not in _FORMAT_CONFIG:
+        allowed = ", ".join(sorted(set(v[0] for v in _FORMAT_CONFIG.values())))
+        raise HTTPException(status_code=400, detail=f"Format must be one of: {allowed}")
+    ext, media_type = _FORMAT_CONFIG[fmt]
 
     ensure_temp_dir()
     temp_path = None
@@ -46,11 +60,10 @@ async def pdf_to_image(
                 media_type="application/zip",
                 background=cleanup,
             )
-        ext = "jpg" if fmt in ("jpeg", "jpg") else "png"
-        media_type = "image/jpeg" if fmt in ("jpeg", "jpg") else "image/png"
+        # Single-file output (single-page render OR multi-page bundle like TIFF).
         return FileResponse(
             path=output_path,
-            filename=f"page_1.{ext}",
+            filename=f"pages.{ext}" if fmt in ("tiff", "tif") else f"page_1.{ext}",
             media_type=media_type,
             background=cleanup,
         )

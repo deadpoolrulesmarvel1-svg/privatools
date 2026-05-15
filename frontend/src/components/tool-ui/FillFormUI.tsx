@@ -116,7 +116,7 @@ export function FillFormUI() {
                         <div key={field.name} className="space-y-1">
                             <label className="block text-xs font-medium text-muted-foreground">
                                 {field.name}
-                                <span className="ml-1.5 text-[10px] font-normal text-muted-foreground/60">({field.type})</span>
+                                <span className="ml-1.5 text-[10px] font-normal text-muted-foreground/80">({field.type})</span>
                             </label>
                             {field.type === "checkbox" ? (
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -132,7 +132,7 @@ export function FillFormUI() {
                                 <select
                                     value={values[field.name] || ""}
                                     onChange={e => updateValue(field.name, e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option value="">Select…</option>
                                     {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -141,7 +141,7 @@ export function FillFormUI() {
                                 <select
                                     value={values[field.name] || ""}
                                     onChange={e => updateValue(field.name, e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option value="">Select…</option>
                                     {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -156,7 +156,7 @@ export function FillFormUI() {
                                     value={values[field.name] || ""}
                                     onChange={e => updateValue(field.name, e.target.value)}
                                     placeholder={`Enter ${field.name}`}
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-accent"
                                 />
                             )}
                         </div>
@@ -192,9 +192,9 @@ export function FillFormUI() {
           tabIndex={0}
           aria-label="Upload file"
                     className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
                     <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
                         <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
                     </div>
                     <p className="text-sm font-semibold text-foreground">Select a fillable PDF form</p>

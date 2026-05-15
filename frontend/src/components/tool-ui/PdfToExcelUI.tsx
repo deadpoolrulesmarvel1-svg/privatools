@@ -37,12 +37,12 @@ export function PdfToExcelUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
                 <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop PDF here"}</p>
                 {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
-                <p className="text-[11px] text-muted-foreground/60">Extracts tables into .xlsx spreadsheet format</p>
+                <p className="text-[11px] text-muted-foreground/80">Extracts tables into .xlsx spreadsheet format</p>
             </div>
             {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
             {file && (

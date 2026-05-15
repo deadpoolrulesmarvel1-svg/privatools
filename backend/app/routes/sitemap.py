@@ -33,6 +33,31 @@ PDF_TOOLS = [
     "set-permissions", "add-attachment",
     "reverse-pdf", "booklet-pdf",
     "batch-compress-pdf", "pdf-page-counter",
+    # Newly added — keep in sync with frontend/src/data/tools.ts
+    "jpg-to-pdf", "png-to-pdf", "heic-to-pdf",
+    "webp-to-pdf", "tiff-to-pdf", "bmp-to-pdf", "gif-to-pdf", "svg-to-pdf",
+    "odt-to-pdf",
+    "pdf-to-tiff", "pdf-to-bmp", "pdf-to-gif", "pdf-to-svg",
+    "split-in-half", "highlight-pdf", "summarize-pdf",
+    "smart-redact",
+    # Round-O additions
+    "pdf-to-jpg", "pdf-to-png",
+]
+
+# Newly-added video tools (also non-PDF — listed here so the route map stays
+# in one place; sitemap iteration uses both lists).
+VIDEO_TOOLS = [
+    "video-to-pdf", "video-converter", "video-resizer", "video-thumbnail",
+    "gif-to-mp4", "add-subtitles",
+]
+
+_VIDEO_TOOLS_NEW = [
+    "video-to-pdf", "video-converter", "video-resizer", "video-thumbnail",
+    "gif-to-mp4", "add-subtitles",
+    # Round-O additions
+    "video-merge", "audio-merge", "subtitle-converter",
+    "password-generator", "uuid-generator", "lorem-ipsum",
+    "word-counter", "color-converter", "url-encoder",
 ]
 
 NON_PDF_TOOLS = [
@@ -113,6 +138,8 @@ async def sitemap():
     for slug in PDF_TOOLS:
         xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
     for slug in NON_PDF_TOOLS:
+        xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+    for slug in _VIDEO_TOOLS_NEW:
         xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
 
     xml += "</urlset>"

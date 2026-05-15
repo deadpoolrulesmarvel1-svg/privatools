@@ -1,8 +1,9 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, X, Play, Download, Loader2, CheckCircle, AlertCircle, FileText, Layers } from "lucide-react";
+import { Plus, X, Play, Download, Loader2, CheckCircle, AlertCircle, FileText, Layers, GitBranch, ArrowRight, Sparkles } from "lucide-react";
 import { EditorialMasthead } from "@/components/EditorialMasthead";
 import { EditorialFooter } from "@/components/EditorialFooter";
+import { AnimatedPipeline } from "@/components/AnimatedPipeline";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
@@ -36,6 +37,29 @@ const pipelineTools = tools
   .filter((t) => PIPELINE_TOOL_SLUGS.has(t.slug))
   .map((t) => ({ slug: t.slug, endpoint: getToolEndpoint(t.slug), name: t.name, icon: t.icon }));
 
+const RECIPES: { name: string; description: string; slugs: string[] }[] = [
+  {
+    name: "Email-ready",
+    description: "Shrink and strip identifying metadata before sending.",
+    slugs: ["compress-pdf", "strip-metadata"],
+  },
+  {
+    name: "Scan cleanup",
+    description: "Straighten, crop borders, and remove blank pages from a scan.",
+    slugs: ["deskew-pdf", "auto-crop", "remove-blank-pages"],
+  },
+  {
+    name: "Brand & ship",
+    description: "Stamp your logo and number every page before sending out.",
+    slugs: ["stamp-pdf", "page-numbers", "compress-pdf"],
+  },
+  {
+    name: "Archival",
+    description: "Convert to PDF/A and sanitize for long-term storage.",
+    slugs: ["sanitize-pdf", "pdf-to-pdfa"],
+  },
+];
+
 interface PipelineStep {
   tool: (typeof pipelineTools)[0];
 }
@@ -67,6 +91,16 @@ export default function PipelinePage() {
 
   const addStep = (tool: (typeof pipelineTools)[0]) => {
     setSteps((prev) => [...prev, { tool }]);
+    setAddingStep(false);
+    setStepSearch("");
+  };
+
+  const loadRecipe = (slugs: string[]) => {
+    const stepObjs: PipelineStep[] = slugs
+      .map(s => pipelineTools.find(t => t.slug === s))
+      .filter(Boolean)
+      .map(t => ({ tool: t! }));
+    setSteps(stepObjs);
     setAddingStep(false);
     setStepSearch("");
   };
@@ -132,17 +166,71 @@ export default function PipelinePage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-        <div className="mb-8">
-          <span className="section-flag">PDF PIPELINE</span>
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground mt-4 tracking-tight">PDF Pipeline</h1>
-          <div className="rule-accent mt-3 mb-3 w-12" />
-          <p className="font-serif-body text-base text-foreground/75 max-w-lg">Chain multiple PDF tools together. Supported pipeline steps are tools that work with file-only defaults.</p>
+      <main>
+      {/* ─── HERO — explain the moat ─────────────────────────────── */}
+      <section aria-label="Pipeline overview" className="relative overflow-hidden border-b border-border">
+        <div className="hero-backdrop" aria-hidden="true" />
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-16 pb-12 sm:pt-20 sm:pb-16">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full border border-accent/30 bg-accent/[0.06] text-[11px] font-semibold uppercase tracking-widest text-accent mb-5">
+              <Sparkles size={11} /> Industry first
+            </span>
+            <h1 className="text-[40px] sm:text-[56px] font-bold tracking-[-0.04em] leading-[1.05] text-foreground">
+              Chain tools.
+              <br />
+              <span className="text-muted-foreground">Skip the busywork.</span>
+            </h1>
+            <p className="mt-5 text-[15px] sm:text-base text-muted-foreground leading-relaxed">
+              Run multiple PDF operations in a single pass — drop a file, build a pipeline,
+              get one finished output. No competitor offers this.
+            </p>
+
+            {/* Animated pipeline diagram */}
+            <AnimatedPipeline />
+            <p className="mt-3 text-[11px] text-muted-foreground/80">Each stage runs locally — your file never leaves the browser session.</p>
+          </div>
         </div>
+      </section>
+
+      {/* ─── Recipe presets ──────────────────────────────────────── */}
+      <section aria-label="Quick recipes" className="mx-auto max-w-5xl px-4 sm:px-6 pt-10">
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-base font-semibold tracking-tight text-foreground">Quick recipes</h2>
+          <span className="text-[11px] text-muted-foreground">Click to load · still editable below</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
+          {RECIPES.map(r => (
+            <button
+              key={r.name}
+              type="button"
+              onClick={() => loadRecipe(r.slugs)}
+              className="text-left rounded-xl border border-border bg-card hover:border-accent/40 hover:bg-card-tint p-4 transition-all group"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <GitBranch size={13} className="text-accent" />
+                <p className="text-[13px] font-semibold text-foreground tracking-tight">{r.name}</p>
+              </div>
+              <p className="text-[12px] text-muted-foreground leading-snug mb-3">{r.description}</p>
+              <div className="flex items-center gap-1 flex-wrap">
+                {r.slugs.map(s => {
+                  const t = pipelineTools.find(p => p.slug === s);
+                  return t ? (
+                    <span key={s} className="text-[10px] font-mono text-muted-foreground/80 bg-secondary/60 px-1.5 py-0.5 rounded">
+                      {t.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section aria-label="Pipeline builder" className="mx-auto max-w-5xl px-4 sm:px-6 pb-12">
 
         {/* Input PDF */}
         <div className="mb-8">
-          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2 block font-heading">Input PDF</label>
+          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/80 mb-2 block font-heading">Input PDF</label>
           {!file ? (
             <div
               className="border-2 border-dashed border-border/50 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all group"
@@ -168,7 +256,7 @@ export default function PipelinePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-foreground truncate">{file.name}</p>
-                <p className="text-[11px] text-muted-foreground/50">{(file.size / 1024).toFixed(0)} KB</p>
+                <p className="text-[11px] text-muted-foreground/80">{(file.size / 1024).toFixed(0)} KB</p>
               </div>
               <button
                 onClick={() => {
@@ -178,7 +266,7 @@ export default function PipelinePage() {
                     setResultUrl(null);
                   }
                 }}
-                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="text-muted-foreground/80 hover:text-muted-foreground transition-colors"
               >
                 <X size={14} />
               </button>
@@ -188,12 +276,12 @@ export default function PipelinePage() {
 
         {/* Pipeline Steps */}
         <div className="mb-8">
-          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3 block font-heading">Pipeline Steps</label>
+          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/80 mb-3 block font-heading">Pipeline Steps</label>
 
           {steps.length === 0 && !addingStep && (
             <div className="text-center py-8 border border-dashed border-border/40 rounded-2xl mb-3">
-              <Layers size={24} className="mx-auto text-muted-foreground/20 mb-2" />
-              <p className="text-[13px] text-muted-foreground/50">No steps yet -- add tools to build your pipeline</p>
+              <Layers size={24} className="mx-auto text-muted-foreground/85 mb-2" />
+              <p className="text-[13px] text-muted-foreground/80">No steps yet -- add tools to build your pipeline</p>
             </div>
           )}
 
@@ -235,7 +323,7 @@ export default function PipelinePage() {
                           ? "bg-primary/20 text-primary shadow-md shadow-primary/25"
                           : isDone
                             ? "bg-green-500/15 text-green-400"
-                            : "bg-card/80 border border-border/40 text-muted-foreground/50",
+                            : "bg-card/80 border border-border/40 text-muted-foreground/80",
                       )}
                     >
                       {i + 1}
@@ -250,16 +338,16 @@ export default function PipelinePage() {
                     {!processing && (
                       <div className="flex items-center gap-1">
                         {i > 0 && (
-                          <button onClick={() => moveStep(i, -1)} className="text-muted-foreground/30 hover:text-muted-foreground p-1 rounded-lg hover:bg-card/80 transition-colors" title="Move up">
+                          <button onClick={() => moveStep(i, -1)} className="text-muted-foreground/85 hover:text-muted-foreground p-1 rounded-lg hover:bg-card/80 transition-colors" title="Move up">
                             ↑
                           </button>
                         )}
                         {i < steps.length - 1 && (
-                          <button onClick={() => moveStep(i, 1)} className="text-muted-foreground/30 hover:text-muted-foreground p-1 rounded-lg hover:bg-card/80 transition-colors" title="Move down">
+                          <button onClick={() => moveStep(i, 1)} className="text-muted-foreground/85 hover:text-muted-foreground p-1 rounded-lg hover:bg-card/80 transition-colors" title="Move down">
                             ↓
                           </button>
                         )}
-                        <button onClick={() => removeStep(i)} className="text-muted-foreground/30 hover:text-red-400 p-1 rounded-lg hover:bg-red-500/10 transition-colors ml-0.5">
+                        <button onClick={() => removeStep(i)} className="text-muted-foreground/85 hover:text-red-400 p-1 rounded-lg hover:bg-red-500/10 transition-colors ml-0.5">
                           <X size={12} />
                         </button>
                       </div>
@@ -276,7 +364,7 @@ export default function PipelinePage() {
                 <div className="mt-3 border border-border/60 bg-card/80 rounded-xl p-4 backdrop-blur-sm">
                   <input
                     autoFocus
-                    className="w-full h-9 rounded-xl bg-card/60 border border-border/60 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all mb-3"
+                    className="w-full h-9 rounded-xl bg-card/60 border border-border/60 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/80 outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all mb-3"
                     placeholder="Search tools..."
                     value={stepSearch}
                     onChange={(e) => setStepSearch(e.target.value)}
@@ -354,6 +442,7 @@ export default function PipelinePage() {
             {processing ? `Running step ${currentStep + 1} of ${steps.length}...` : `Run ${steps.length}-Step Pipeline`}
           </button>
         )}
+      </section>
       </main>
       <EditorialFooter />
     </div>

@@ -66,12 +66,17 @@ def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> 
     doc2 = fitz.open(path2)
 
     max_pages = max(len(doc1), len(doc2))
+    # Hard cap to prevent OOM on very long PDFs — visual compare past ~50 pages
+    # is rarely useful anyway and ties up the worker for minutes.
+    HARD_CAP = 50
+    if max_pages > HARD_CAP:
+        max_pages = HARD_CAP
     result_images = []
 
     for i in range(max_pages):
         if i < len(doc1) and i < len(doc2):
             # Render both pages at 150 DPI
-            mat = fitz.Matrix(150 / 72, 150 / 72)
+            mat = fitz.Matrix(100 / 72, 100 / 72)  # 100 DPI — readable for visual diff, ~50% less RAM than 150
             pix1 = doc1[i].get_pixmap(matrix=mat)
             pix2 = doc2[i].get_pixmap(matrix=mat)
 
@@ -92,11 +97,11 @@ def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> 
             highlighted.paste(red_layer, mask=red_mask)
             result_images.append(highlighted)
         elif i < len(doc1):
-            mat = fitz.Matrix(150 / 72, 150 / 72)
+            mat = fitz.Matrix(100 / 72, 100 / 72)  # 100 DPI — readable for visual diff, ~50% less RAM than 150
             pix = doc1[i].get_pixmap(matrix=mat)
             result_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
         else:
-            mat = fitz.Matrix(150 / 72, 150 / 72)
+            mat = fitz.Matrix(100 / 72, 100 / 72)  # 100 DPI — readable for visual diff, ~50% less RAM than 150
             pix = doc2[i].get_pixmap(matrix=mat)
             result_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 
-type Level = "light" | "recommended" | "extreme";
+type Level = "light" | "recommended" | "extreme" | "custom";
 type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
 let fileId = 0;
 
@@ -12,11 +12,14 @@ const levels: { id: Level; label: string; desc: string; saving: string; intensit
   { id: "light", label: "Light", desc: "Minimal quality loss", saving: "~20% smaller", intensity: 25 },
   { id: "recommended", label: "Recommended", desc: "Balanced quality & size", saving: "~50% smaller", intensity: 55 },
   { id: "extreme", label: "Extreme", desc: "Maximum compression", saving: "~75% smaller", intensity: 85 },
+  { id: "custom", label: "Custom", desc: "Set JPEG quality + max image dimension yourself", saving: "Tunable", intensity: 65 },
 ];
 
 export function CompressUI() {
   const [files, setFiles] = useState<CompressFile[]>([]);
   const [level, setLevel] = useState<Level>("recommended");
+  const [customQuality, setCustomQuality] = useState<number>(75);
+  const [customMaxDim, setCustomMaxDim] = useState<number>(1800);
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +47,13 @@ export function CompressUI() {
     setState("processing");
     setError(null);
     try {
+      const params: Record<string, string | number> = { level };
+      if (level === "custom") {
+        params.jpeg_quality = customQuality;
+        params.max_image_dim = customMaxDim;
+      }
       if (files.length === 1) {
-        const res = await uploadFile("/compress", files[0].raw, { level });
+        const res = await uploadFile("/compress", files[0].raw, params);
         const blob = await res.blob();
         const cSize = parseInt(res.headers.get("X-Compressed-Size") || "0") || blob.size;
         setCompressedSize(cSize);
@@ -54,16 +62,17 @@ export function CompressUI() {
         const base = files[0].name.replace(/\.pdf$/i, "");
         downloadBlob(blob, `${base}_compressed.pdf`);
       } else {
-        await processFilesAndDownload("/compress", files.map(f => f.raw), "compressed_pdfs.zip", { level });
+        await processFilesAndDownload("/compress", files.map(f => f.raw), "compressed_pdfs.zip", params);
         setCompressedSize(0);
         setResultBlob(null);
         setState("done");
       }
-    } catch (e: any) {
-      setError(e.message || "Compression failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Compression failed";
+      setError(msg);
       setState("idle");
     }
-  }, [files, level]);
+  }, [files, level, customQuality, customMaxDim]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -79,11 +88,11 @@ export function CompressUI() {
     const compressedBarWidth = compressedSize > 0 ? Math.max(5, Math.round((compressedSize / totalBytes) * 100)) : 0;
 
     return (
-      <div className="animate-confetti rounded-2xl border border-primary/20 bg-primary/5 p-10 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(158_64%_48%/0.08),transparent_70%)]" />
+      <div className="animate-confetti rounded-2xl border border-accent/20 bg-accent/5 p-10 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.10),transparent_70%)]" />
         <div className="relative">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-4 ring-primary/5">
-            <CheckCircle2 size={32} className="text-primary" strokeWidth={1.5} />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 ring-4 ring-accent/5">
+            <CheckCircle2 size={32} className="text-accent" strokeWidth={1.5} />
           </div>
           <h2 className="font-heading text-xl font-bold text-foreground mb-2">Compressed & Downloaded!</h2>
 
@@ -97,23 +106,23 @@ export function CompressUI() {
                     <span className="text-muted-foreground font-medium">{files[0].size}</span>
                   </div>
                   <div className="h-3 rounded-full bg-muted-foreground/15 overflow-hidden">
-                    <div className="h-full rounded-full bg-muted-foreground/30" style={{ width: `${originalBarWidth}%` }} />
+                    <div className="h-full rounded-full bg-muted-foreground/85" style={{ width: `${originalBarWidth}%` }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-primary font-medium">Compressed</span>
-                    <span className="text-primary font-bold">{formatFileSize(compressedSize)}</span>
+                    <span className="text-accent font-medium">Compressed</span>
+                    <span className="text-accent font-bold">{formatFileSize(compressedSize)}</span>
                   </div>
                   <div className="h-3 rounded-full bg-muted-foreground/15 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-primary shadow-[0_0_10px_hsl(158_64%_48%/0.3)] transition-all duration-1000"
+                      className="h-full rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent)/0.35)] transition-all duration-1000"
                       style={{ width: `${compressedBarWidth}%` }}
                     />
                   </div>
                 </div>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-bold">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-bold">
                 -{savings}% smaller
               </div>
             </div>
@@ -147,8 +156,8 @@ export function CompressUI() {
         className={cn(
           "relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-16 px-8 text-center overflow-hidden",
           drag
-            ? "border-primary bg-primary/5 shadow-[0_0_30px_-5px_hsl(158_64%_48%/0.15)]"
-            : "border-border hover:border-primary/40 hover:bg-secondary/30 bg-secondary/10"
+            ? "border-accent bg-accent/5 shadow-[0_0_30px_-5px_hsl(var(--accent)/0.18)]"
+            : "border-border hover:border-accent/40 hover:bg-secondary/30 bg-secondary/10"
         )}>
         {/* Subtle grid background */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -157,9 +166,9 @@ export function CompressUI() {
         <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
         <div className={cn(
           "flex h-14 w-14 items-center justify-center rounded-2xl transition-all",
-          drag ? "bg-primary/20 scale-110" : "bg-secondary/80"
+          drag ? "bg-accent/20 scale-110" : "bg-secondary/80"
         )}>
-          <Upload size={24} className={cn("transition-colors", drag ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} />
+          <Upload size={24} className={cn("transition-colors", drag ? "text-accent" : "text-muted-foreground")} strokeWidth={1.5} />
         </div>
         <div className="relative">
           <p className="font-heading text-base font-semibold text-foreground">
@@ -177,8 +186,8 @@ export function CompressUI() {
           <div className="space-y-2">
             {files.map(f => (
               <div key={f.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm px-4 py-3.5 shadow-sm">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <FileText size={16} className="text-primary" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10">
+                  <FileText size={16} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
@@ -186,7 +195,7 @@ export function CompressUI() {
                 </div>
                 <button
                   onClick={() => removeFile(f.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-destructive/10 transition-all"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-destructive/10 transition-all"
                 >
                   <X size={14} />
                 </button>
@@ -204,7 +213,7 @@ export function CompressUI() {
                 className="h-full rounded-full transition-all duration-500 ease-out"
                 style={{
                   width: `${levels.find(l => l.id === level)?.intensity || 50}%`,
-                  background: "linear-gradient(90deg, hsl(158 64% 48% / 0.4), hsl(158 64% 48%))",
+                  background: "linear-gradient(90deg, hsl(var(--accent)/0.45), hsl(var(--accent)))",
                 }}
               />
             </div>
@@ -215,14 +224,14 @@ export function CompressUI() {
                   className={cn(
                     "w-full flex items-center gap-4 rounded-xl border p-4 text-left transition-all",
                     level === l.id
-                      ? "border-primary/40 bg-primary/5 shadow-[0_0_15px_-3px_hsl(158_64%_48%/0.1)]"
+                      ? "border-accent/40 bg-accent/5 shadow-[0_0_15px_-3px_hsl(var(--accent)/0.18)]"
                       : "border-border/40 hover:border-border/70 hover:bg-secondary/30"
                   )}>
                   {/* Visual intensity bar */}
                   <div className="flex flex-col items-center gap-1 shrink-0">
                     <div className="w-1.5 h-8 rounded-full bg-secondary/60 overflow-hidden flex flex-col justify-end">
                       <div
-                        className={cn("w-full rounded-full transition-all duration-300", level === l.id ? "bg-primary" : "bg-muted-foreground/30")}
+                        className={cn("w-full rounded-full transition-all duration-300", level === l.id ? "bg-accent" : "bg-muted-foreground/85")}
                         style={{ height: `${l.intensity}%` }}
                       />
                     </div>
@@ -230,13 +239,59 @@ export function CompressUI() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className={cn("text-sm font-medium", level === l.id ? "text-foreground" : "text-foreground/80")}>{l.label}</p>
-                      <span className={cn("text-xs font-semibold", level === l.id ? "text-primary" : "text-muted-foreground")}>{l.saving}</span>
+                      <span className={cn("text-xs font-semibold", level === l.id ? "text-accent" : "text-muted-foreground")}>{l.saving}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{l.desc}</p>
                   </div>
                 </button>
               ))}
             </div>
+
+            {/* Custom-level sliders */}
+            {level === "custom" && (
+              <div className="rounded-xl border border-border/60 bg-secondary/30 p-4 space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="jpeg-q" className="text-[13px] font-medium text-foreground">JPEG quality</label>
+                    <span className="text-xs font-mono text-accent">{customQuality}</span>
+                  </div>
+                  <input
+                    id="jpeg-q"
+                    type="range" min={15} max={95} step={1}
+                    value={customQuality}
+                    onChange={e => setCustomQuality(parseInt(e.target.value, 10))}
+                    className="w-full accent-foreground"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>15 — tiny, lossy</span>
+                    <span>95 — pristine</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="max-dim" className="text-[13px] font-medium text-foreground">Max image dimension (px)</label>
+                    <span className="text-xs font-mono text-accent">{customMaxDim}</span>
+                  </div>
+                  <input
+                    id="max-dim"
+                    type="range" min={300} max={4000} step={100}
+                    value={customMaxDim}
+                    onChange={e => setCustomMaxDim(parseInt(e.target.value, 10))}
+                    className="w-full accent-foreground"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>300 — heavily downsampled</span>
+                    <span>4000 — preserve detail</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground/80">
+                  Tip: typical photos look fine at quality 75 + dim 1800.
+                  Drop below 50 only for low-importance scans.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Error state */}
@@ -257,7 +312,7 @@ export function CompressUI() {
             <Button onClick={process} disabled={!canProcess} className="glow-primary">
               {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Compressing…</> : `Compress ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
             </Button>
-            {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/40 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+            {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
           </div>
         </>
       )}

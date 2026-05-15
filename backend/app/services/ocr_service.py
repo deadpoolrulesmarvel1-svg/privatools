@@ -11,6 +11,17 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir
 
 _MAX_WORKERS = min(os.cpu_count() or 2, 4)
 
+# Tesseract language packs available in the slim image. Add packs to the
+# Dockerfile (e.g. tesseract-ocr-fra) to extend this list.
+SUPPORTED_LANGS: set[str] = {
+    "eng",  # English
+    # Multi-language combos like "eng+fra" must be allowed if individual packs
+    # are present — we validate against this set on the route layer.
+}
+
+VALID_DPI_MIN = 100
+VALID_DPI_MAX = 400
+
 
 def _render_page_to_image(page: fitz.Page, dpi: int = 200) -> Image.Image:
     mat = fitz.Matrix(dpi / 72, dpi / 72)
@@ -61,12 +72,21 @@ def _extract_single_page_pdf(src_path: str, page_idx: int) -> bytes:
     return buf
 
 
-def extract_text(input_path: str, lang: str = "eng") -> str:
+def _clamp_dpi(dpi: int) -> int:
+    if dpi < VALID_DPI_MIN:
+        return VALID_DPI_MIN
+    if dpi > VALID_DPI_MAX:
+        return VALID_DPI_MAX
+    return dpi
+
+
+def extract_text(input_path: str, lang: str = "eng", dpi: int = 200) -> str:
     """Extract text from a PDF using OCR (Tesseract).
 
     Uses parallel processing for multi-page PDFs.
     """
     ensure_temp_dir()
+    dpi = _clamp_dpi(dpi)
 
     doc = fitz.open(input_path)
     page_count = len(doc)
@@ -75,14 +95,14 @@ def extract_text(input_path: str, lang: str = "eng") -> str:
     if page_count == 1:
         # Single page — no overhead from parallelism
         doc = fitz.open(input_path)
-        img = _render_page_to_image(doc[0], dpi=200)
+        img = _render_page_to_image(doc[0], dpi=dpi)
         doc.close()
         text = pytesseract.image_to_string(img, lang=lang)
         return f"--- Page 1 ---\n{text}"
 
     # Multi-page — parallel OCR
     page_pdfs = [_extract_single_page_pdf(input_path, i) for i in range(page_count)]
-    tasks = [(i, pb, page_count, lang, 200) for i, pb in enumerate(page_pdfs)]
+    tasks = [(i, pb, page_count, lang, dpi) for i, pb in enumerate(page_pdfs)]
 
     results = [None] * page_count
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
@@ -92,17 +112,20 @@ def extract_text(input_path: str, lang: str = "eng") -> str:
     return "\n\n".join(results)
 
 
-def extract_text_to_file(input_path: str, lang: str = "eng") -> str:
+def extract_text_to_file(input_path: str, lang: str = "eng", dpi: int = 200) -> str:
     """Extract text from a PDF and write to a .txt temp file."""
-    text = extract_text(input_path, lang=lang)
+    text = extract_text(input_path, lang=lang, dpi=dpi)
     out_path = get_temp_path(f"ocr_{uuid.uuid4().hex}.txt")
     out_path.write_text(text, encoding="utf-8")
     return str(out_path)
 
 
-def extract_searchable_pdf_to_file(input_path: str, lang: str = "eng") -> str:
+def extract_searchable_pdf_to_file(
+    input_path: str, lang: str = "eng", dpi: int = 200
+) -> str:
     """Generate a searchable PDF by OCR'ing each page in parallel."""
     ensure_temp_dir()
+    dpi = _clamp_dpi(dpi)
     out_path = get_temp_path(f"ocr_searchable_{uuid.uuid4().hex}.pdf")
 
     doc = fitz.open(input_path)
@@ -115,7 +138,7 @@ def extract_searchable_pdf_to_file(input_path: str, lang: str = "eng") -> str:
     if page_count == 1:
         # Single page — direct processing
         doc = fitz.open(input_path)
-        img = _render_page_to_image(doc[0], dpi=200)
+        img = _render_page_to_image(doc[0], dpi=dpi)
         doc.close()
         ocr_pdf_bytes = pytesseract.image_to_pdf_or_hocr(img, extension="pdf", lang=lang)
         with pikepdf.open(io.BytesIO(ocr_pdf_bytes)) as page_pdf:
@@ -124,7 +147,7 @@ def extract_searchable_pdf_to_file(input_path: str, lang: str = "eng") -> str:
 
     # Multi-page — parallel OCR
     page_pdfs = [_extract_single_page_pdf(input_path, i) for i in range(page_count)]
-    tasks = [(i, pb, lang, 200) for i, pb in enumerate(page_pdfs)]
+    tasks = [(i, pb, lang, dpi) for i, pb in enumerate(page_pdfs)]
 
     ocr_results = [None] * page_count
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:

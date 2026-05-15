@@ -1,6 +1,7 @@
 """Non-PDF tool routes: image, video/audio, and archive processing."""
 
 import io
+import logging
 import os
 import re
 import shutil
@@ -14,6 +15,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 MAX_IMAGE_SIZE = 2 * 1024 * 1024 * 1024  # effectively unlimited
@@ -21,6 +24,9 @@ MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024
 MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB – 24 GB RAM server handles large video
 MAX_ARCHIVE_SIZE = 2 * 1024 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
+# Cap total uncompressed bytes from a single archive — protects against
+# zip-bomb style inputs where a small archive expands to gigabytes on disk.
+MAX_EXTRACTED_BYTES = 4 * 1024 * 1024 * 1024  # 4 GB
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
 
 IMAGE_FORMATS = {
@@ -615,10 +621,12 @@ async def extract_archive(file: UploadFile = File(...)):
         raise
     except (zipfile.BadZipFile, tarfile.TarError, OSError, shutil.ReadError) as exc:
         _cleanup_paths(input_path, extract_dir, output_path)
-        raise HTTPException(status_code=400, detail="Unable to read archive") from exc
+        logger.exception("extract-archive: archive parse failure")
+        raise HTTPException(status_code=400, detail=f"Unable to read archive: {exc}") from exc
     except Exception as exc:
         _cleanup_paths(input_path, extract_dir, output_path)
-        raise HTTPException(status_code=500, detail="Failed to extract archive") from exc
+        logger.exception("extract-archive: unexpected failure")
+        raise HTTPException(status_code=500, detail=f"Failed to extract archive: {exc}") from exc
 
     cleanup = BackgroundTask(_cleanup_paths, input_path, extract_dir, output_path)
     return FileResponse(output_path, media_type="application/zip", filename="extracted.zip", background=cleanup)

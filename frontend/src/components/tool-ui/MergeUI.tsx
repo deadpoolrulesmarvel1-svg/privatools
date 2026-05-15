@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize } from "@/lib/api";
 
-interface MergeFile { id: string; name: string; size: string; file: File; }
+interface MergeFile { id: string; name: string; size: string; file: File; pages: string; }
 
 export function MergeUI() {
   const [files, setFiles] = useState<MergeFile[]>([]);
@@ -16,19 +16,37 @@ export function MergeUI() {
   const ref = useRef<HTMLInputElement>(null);
 
   const add = useCallback((fl: FileList) => {
-    setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), file: f }))]);
+    setFiles(p => [
+      ...p,
+      ...Array.from(fl).map(f => ({
+        id: Math.random().toString(36).slice(2),
+        name: f.name,
+        size: formatFileSize(f.size),
+        file: f,
+        pages: "",  // empty = all
+      })),
+    ]);
     setState("idle");
     setError(null);
   }, []);
+
+  const updatePages = (id: string, pages: string) =>
+    setFiles(prev => prev.map(f => (f.id === id ? { ...f, pages } : f)));
 
   const process = async () => {
     setState("processing");
     setError(null);
     try {
-      await processFilesAndDownload("/merge", files.map(f => f.file), "merged.pdf");
+      // Only send page_ranges if at least one file restricts pages.
+      const anyRange = files.some(f => f.pages.trim() !== "" && f.pages.trim().toLowerCase() !== "all");
+      const params: Record<string, string> | undefined = anyRange
+        ? { page_ranges: JSON.stringify(files.map(f => (f.pages.trim() || "all"))) }
+        : undefined;
+      await processFilesAndDownload("/merge", files.map(f => f.file), "merged.pdf", params);
       setState("done");
-    } catch (e: any) {
-      setError(e.message || "Merge failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Merge failed";
+      setError(msg);
       setState("idle");
     }
   };
@@ -67,11 +85,11 @@ export function MergeUI() {
         aria-label="Upload file"
         className={cn(
           "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-          drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20"
+          drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
         )}
       >
         <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => e.target.files && add(e.target.files)} />
-        <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+        <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
           <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
         </div>
         <div>
@@ -90,8 +108,10 @@ export function MergeUI() {
       {files.length > 0 && (
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
-            <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · drag to reorder</span>
-            <button type="button" onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <span className="text-xs font-medium text-muted-foreground">
+              {files.length} file{files.length !== 1 ? "s" : ""} · drag to reorder · leave Pages blank to include all
+            </span>
+            <button type="button" onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-accent hover:underline">
               <Plus size={12} /> Add more
             </button>
           </div>
@@ -109,7 +129,7 @@ export function MergeUI() {
               className={cn("flex items-center gap-3 px-4 py-3 transition-all",
                 dragIdx === i ? "opacity-40 scale-95" : "hover:bg-secondary/30",
                 dragOverIdx === i && dragIdx !== i ? "border-t-2 border-primary" : "")}>
-              <GripVertical size={15} className="text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
+              <GripVertical size={15} className="text-muted-foreground/80 shrink-0 cursor-grab active:cursor-grabbing" />
               <span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <FileText size={13} className="text-muted-foreground" />
@@ -117,6 +137,18 @@ export function MergeUI() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{f.size}</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <label htmlFor={`pages-${f.id}`} className="text-[11px] text-muted-foreground">Pages</label>
+                <input
+                  id={`pages-${f.id}`}
+                  type="text"
+                  value={f.pages}
+                  onChange={e => updatePages(f.id, e.target.value)}
+                  placeholder="all"
+                  title='Page range: "all", "1-3,5", "2-end"'
+                  className="w-24 h-7 px-2 rounded-md border border-border bg-background text-[12px] text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-accent transition-colors"
+                />
               </div>
               <div className="flex items-center gap-1">
                 <button

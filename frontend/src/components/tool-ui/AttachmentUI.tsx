@@ -72,13 +72,13 @@ export function AttachmentUI() {
                     onDrop={e => { e.preventDefault(); setDragPdf(false); const f = e.dataTransfer.files[0]; if (f?.name.toLowerCase().endsWith(".pdf")) setPdfFile(f); }}
                     onClick={() => pdfRef.current?.click()}
                     className={cn("flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-8 px-4 text-center",
-                        dragPdf ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-secondary/20")}
+                        dragPdf ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}
                 >
                     <input ref={pdfRef} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setPdfFile(e.target.files[0])} />
                     <FileText size={20} className={cn(pdfFile ? "text-primary" : "text-muted-foreground")} />
                     <p className="text-xs font-semibold text-foreground">{pdfFile ? pdfFile.name : "Main PDF file"}</p>
                     {pdfFile && <p className="text-[10px] text-muted-foreground">{formatFileSize(pdfFile.size)}</p>}
-                    <p className="text-[10px] text-muted-foreground/60">PDF document</p>
+                    <p className="text-[10px] text-muted-foreground/80">PDF document</p>
                 </div>
 
                 {/* Attachment file drop */}
@@ -94,7 +94,7 @@ export function AttachmentUI() {
                     <Paperclip size={20} className={cn(attachFile ? "text-violet-400" : "text-muted-foreground")} />
                     <p className="text-xs font-semibold text-foreground">{attachFile ? attachFile.name : "File to attach"}</p>
                     {attachFile && <p className="text-[10px] text-muted-foreground">{formatFileSize(attachFile.size)}</p>}
-                    <p className="text-[10px] text-muted-foreground/60">Any file type</p>
+                    <p className="text-[10px] text-muted-foreground/80">Any file type</p>
                 </div>
             </div>
 

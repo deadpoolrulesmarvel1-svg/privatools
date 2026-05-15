@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const STORAGE_KEY = "privatools_favorites";
 
@@ -22,8 +23,14 @@ export function useFavorites() {
 
     const toggle = useCallback((slug: string) => {
         setFavorites(prev => {
-            const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug];
+            const wasFav = prev.includes(slug);
+            const next = wasFav ? prev.filter(s => s !== slug) : [...prev, slug];
             localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            // Quiet feedback so users know the click registered
+            try {
+                if (wasFav) toast(`Removed from favorites`, { duration: 1500 });
+                else        toast(`Added to favorites`,    { duration: 1500 });
+            } catch { /* sonner may not be mounted in tests */ }
             return next;
         });
     }, []);

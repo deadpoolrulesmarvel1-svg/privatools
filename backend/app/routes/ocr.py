@@ -25,12 +25,16 @@ async def ocr_pdf(
     file: UploadFile = File(...),
     lang: str = Form("eng"),
     output: str = Form("json"),
+    dpi: int = Form(200, ge=ocr_service.VALID_DPI_MIN, le=ocr_service.VALID_DPI_MAX),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
-    if lang not in VALID_LANGS:
+    # Allow multi-language combos like "eng+fra" if every component is whitelisted.
+    lang_components = [c.strip() for c in lang.split("+") if c.strip()]
+    if not lang_components or any(c not in VALID_LANGS for c in lang_components):
         raise HTTPException(status_code=400, detail=f"Invalid language code: {lang}")
+
     if output not in VALID_OUTPUTS:
         raise HTTPException(status_code=400, detail=f"output must be one of: {', '.join(sorted(VALID_OUTPUTS))}")
 
@@ -47,7 +51,7 @@ async def ocr_pdf(
         temp_path.write_bytes(content)
 
         if output == "txt":
-            out_path = ocr_service.extract_text_to_file(str(temp_path), lang=lang)
+            out_path = ocr_service.extract_text_to_file(str(temp_path), lang=lang, dpi=dpi)
             cleanup = BackgroundTask(remove_files, str(temp_path), out_path)
             return FileResponse(
                 path=out_path,
@@ -56,7 +60,7 @@ async def ocr_pdf(
                 background=cleanup,
             )
         if output == "searchable_pdf":
-            out_path = ocr_service.extract_searchable_pdf_to_file(str(temp_path), lang=lang)
+            out_path = ocr_service.extract_searchable_pdf_to_file(str(temp_path), lang=lang, dpi=dpi)
             cleanup = BackgroundTask(remove_files, str(temp_path), out_path)
             return FileResponse(
                 path=out_path,
@@ -65,7 +69,7 @@ async def ocr_pdf(
                 background=cleanup,
             )
         else:
-            text = ocr_service.extract_text(str(temp_path), lang=lang)
+            text = ocr_service.extract_text(str(temp_path), lang=lang, dpi=dpi)
             remove_files(str(temp_path))
             return JSONResponse({"text": text})
     except HTTPException:

@@ -52,7 +52,7 @@ export function SplitBySizeUI() {
           max={1024}
           value={maxSizeMb}
           onChange={e => setMaxSizeMb(Math.max(1, parseInt(e.target.value || "1", 10)))}
-          className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+          className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50"
         />
       </div>
       {error && (

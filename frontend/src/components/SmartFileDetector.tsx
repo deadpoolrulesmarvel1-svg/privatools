@@ -94,7 +94,7 @@ export function SmartFileDetector() {
                 <div className="relative">
                     <Upload size={28} className="mx-auto text-muted-foreground/25 group-hover:text-primary/50 mb-3 transition-all group-hover:-translate-y-0.5 duration-300" />
                     <p className="text-sm font-heading font-semibold text-foreground/80">Drop any file to find compatible tools</p>
-                    <p className="text-xs text-muted-foreground/40 mt-1">PDF, images, video, archives, documents…</p>
+                    <p className="text-xs text-muted-foreground/80 mt-1">PDF, images, video, archives, documents…</p>
                 </div>
             </div>
         );
@@ -114,9 +114,9 @@ export function SmartFileDetector() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-heading font-semibold text-foreground truncate">{fileName}</p>
-                        <p className="text-[11px] text-muted-foreground/50">{detectedTools.length} compatible tool{detectedTools.length !== 1 ? "s" : ""} found</p>
+                        <p className="text-[11px] text-muted-foreground/80">{detectedTools.length} compatible tool{detectedTools.length !== 1 ? "s" : ""} found</p>
                     </div>
-                    <button onClick={() => { setShow(false); setDetectedTools([]); }} className="text-muted-foreground/30 hover:text-muted-foreground transition-colors">
+                    <button onClick={() => { setShow(false); setDetectedTools([]); }} className="text-muted-foreground/85 hover:text-muted-foreground transition-colors">
                         <X size={15} />
                     </button>
                 </div>
@@ -136,7 +136,7 @@ export function SmartFileDetector() {
                     </div>
                 ) : (
                     <div className="p-8 text-center">
-                        <p className="text-[13px] text-muted-foreground/50">No compatible tools found for this file type</p>
+                        <p className="text-[13px] text-muted-foreground/80">No compatible tools found for this file type</p>
                     </div>
                 )}
             </div>

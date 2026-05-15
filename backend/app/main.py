@@ -36,6 +36,7 @@ from .routes import (
     booklet,
     sitemap,
     og_image,
+    new_tools,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -50,13 +51,9 @@ async def _cleanup_task():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
-    # Pre-warm ML models so first requests are fast
-    try:
-        from rembg import new_session
-        new_session("u2netp")
-        logger.info("rembg model pre-warmed")
-    except Exception:
-        logger.warning("rembg pre-warm skipped (not critical)")
+    # Skip rembg pre-warm — it can hang on the numba import path under the
+    # slim image. The first remove-background request will warm the model
+    # lazily; subsequent ones are fast.
     try:
         import fitz  # PyMuPDF
         logger.info("PyMuPDF loaded: %s", fitz.version)
@@ -101,11 +98,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data: blob:; "
-            "connect-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://www.googletagmanager.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; "
+            "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; "
+            "img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com; "
+            # connect-src allows HF transformers to fetch the local-AI models
+            # (Summarize PDF, Smart Redact). Models are downloaded once and cached
+            # in the browser; the request never carries user file content.
+            # Also allows GA4 collect endpoint (page-view telemetry only).
+            "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net https://www.google-analytics.com https://*.analytics.google.com https://www.google.com; "
+            "worker-src 'self' blob:; "
             "frame-ancestors 'none';"
         )
         return response
@@ -127,10 +129,19 @@ _INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index
 from functools import lru_cache
 
 @lru_cache(maxsize=256)
-def _get_seo_html(path: str) -> str:
-    """Cache SEO-injected HTML — same path always produces same output."""
+def _get_seo_html(path: str, _mtime_ns: int) -> str:
+    """Cache SEO-injected HTML — keyed by path + index.html mtime so that
+    re-deploys (which rewrite index.html) automatically invalidate the cache
+    without needing a worker restart."""
     html = _INDEX_HTML.read_text("utf-8")
     return inject_seo(html, path)
+
+
+def _index_mtime_ns() -> int:
+    try:
+        return _INDEX_HTML.stat().st_mtime_ns
+    except OSError:
+        return 0
 
 
 class SPASEOMiddleware(BaseHTTPMiddleware):
@@ -159,7 +170,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         # path that doesn't correspond to a file on disk.
         if _INDEX_HTML.exists():
             try:
-                html = _get_seo_html(path)
+                html = _get_seo_html(path, _index_mtime_ns())
                 return HTMLResponse(content=html, status_code=200)
             except Exception as exc:
                 logger.error("SPA SEO injection failed for %s: %s", path, exc)
@@ -321,6 +332,7 @@ app.include_router(phase5_tools.router, prefix="/api")
 app.include_router(phase6_tools.router, prefix="/api")
 app.include_router(reverse_pdf.router, prefix="/api")
 app.include_router(booklet.router, prefix="/api")
+app.include_router(new_tools.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)

@@ -28,16 +28,23 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="font-mono-meta text-xs text-muted-foreground">
-              Last updated: March 29, 2026
+              Last updated: May 4, 2026
             </p>
           </header>
 
           <h2>The Short Version</h2>
           <p>
-            PrivaTools does not collect, store, or sell your personal data. We do not use cookies,
-            analytics trackers, or advertising scripts. Your files are processed in temporary memory
-            and deleted immediately after processing completes. We have no data to sell because we
-            collect no data.
+            <strong>Your files are private.</strong> They are processed in temporary memory and
+            deleted immediately after the response is delivered. We never read, inspect, store,
+            or share their contents.
+          </p>
+          <p>
+            <strong>We do collect anonymous pageview telemetry</strong> via Google Analytics 4
+            (with IP anonymization enabled) so we can see which tools are popular and prioritize
+            improvements. No personal data, no behavioural profiling, no advertising — just
+            aggregate counts. You can disable it with any standard tracking blocker (uBlock Origin,
+            Privacy Badger, browser DNT) and the site works identically. If you want zero
+            telemetry, self-host the open-source build via Docker.
           </p>
 
           <h2>1. Files You Upload</h2>
@@ -63,12 +70,16 @@ export default function PrivacyPage() {
           <p>We do not collect:</p>
           <ul>
             <li>Names, email addresses, or account credentials (no accounts exist)</li>
-            <li>IP addresses or geolocation data</li>
-            <li>Browser fingerprints or device identifiers</li>
-            <li>Usage analytics or behavioral data</li>
-            <li>Cookies of any kind (first-party or third-party)</li>
+            <li>Personally identifiable information (your IP address is anonymized before it reaches Google)</li>
+            <li>Browser fingerprints or canvas-based device identifiers</li>
+            <li>Behavioural profiles, session recordings, or remarketing audiences</li>
+            <li>Advertising cookies or tracking pixels from ad networks</li>
             <li>File metadata, filenames, or content from uploaded files</li>
           </ul>
+          <p>
+            We <em>do</em> collect aggregate pageview counts via Google Analytics 4 — see Section 5 for
+            details and how to opt out.
+          </p>
 
           <h2>4. Server Infrastructure</h2>
           <p>

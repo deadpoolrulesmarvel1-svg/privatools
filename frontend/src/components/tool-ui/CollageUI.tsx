@@ -61,11 +61,11 @@ export function CollageUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-secondary/20")}>
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}>
                 <input ref={ref} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && addFiles(e.target.files)} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{files.length > 0 ? `${files.length} image(s) selected` : "Drop images here"}</p>
-                <p className="text-[11px] text-muted-foreground/60">Select at least 2 images · JPG, PNG, WEBP</p>
+                <p className="text-[11px] text-muted-foreground/80">Select at least 2 images · JPG, PNG, WEBP</p>
             </div>
 
             {files.length > 0 && (

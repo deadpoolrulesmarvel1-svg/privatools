@@ -17,7 +17,7 @@ export function AutoCropUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop PDF here"}</p>
         <p className="text-xs text-muted-foreground">{file ? `${(file.size / 1024).toFixed(0)} KB` : "Auto-detect and remove whitespace margins"}</p>

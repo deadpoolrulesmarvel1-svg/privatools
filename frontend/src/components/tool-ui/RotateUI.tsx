@@ -72,9 +72,9 @@ export function RotateUI() {
           tabIndex={0}
           aria-label="Upload file"
                     className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
                     <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
                         <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
                     </div>
                     <p className="text-sm font-semibold text-foreground">Select a PDF to rotate</p>
@@ -98,7 +98,7 @@ export function RotateUI() {
                                 return (
                                     <button key={a.value} onClick={() => setAngle(a.value)}
                                         className={cn("flex flex-col items-center gap-1 rounded-xl border p-3 transition-all",
-                                            angle === a.value ? "border-primary bg-primary/5" : "border-border hover:border-border/70 hover:bg-secondary/40")}>
+                                            angle === a.value ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40")}>
                                         <Icon size={20} className={angle === a.value ? "text-primary" : "text-muted-foreground"} />
                                         <p className={cn("text-sm font-medium", angle === a.value ? "text-primary" : "text-foreground")}>{a.label}</p>
                                         <p className="text-[11px] text-muted-foreground">{a.desc}</p>
@@ -114,12 +114,12 @@ export function RotateUI() {
                         <div className="flex gap-2">
                             <button onClick={() => setPages("all")}
                                 className={cn("flex-1 rounded-xl border py-2.5 text-center text-sm transition-all",
-                                    pages === "all" ? "border-primary bg-primary/5 text-primary font-semibold" : "border-border text-muted-foreground hover:bg-secondary/40")}>
+                                    pages === "all" ? "border-accent bg-accent/5 text-primary font-semibold" : "border-border text-muted-foreground hover:bg-secondary/40")}>
                                 All Pages
                             </button>
                             <button onClick={() => { if (pages === "all") setPages(""); }}
                                 className={cn("flex-1 rounded-xl border py-2.5 text-center text-sm transition-all",
-                                    pages !== "all" ? "border-primary bg-primary/5 text-primary font-semibold" : "border-border text-muted-foreground hover:bg-secondary/40")}>
+                                    pages !== "all" ? "border-accent bg-accent/5 text-primary font-semibold" : "border-border text-muted-foreground hover:bg-secondary/40")}>
                                 Specific Pages
                             </button>
                         </div>
@@ -130,7 +130,7 @@ export function RotateUI() {
                                     value={pages}
                                     onChange={e => setPages(e.target.value)}
                                     placeholder="e.g. 1,3,5-8"
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-accent"
                                 />
                                 <p className="text-[11px] text-muted-foreground">Enter page numbers separated by commas, or ranges like 1-5</p>
                             </div>

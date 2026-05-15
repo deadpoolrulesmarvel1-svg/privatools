@@ -9,6 +9,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 import { EditorialMasthead } from "@/components/EditorialMasthead";
 import { EditorialFooter } from "@/components/EditorialFooter";
+import { ToolIllustration } from "@/components/ToolIllustration";
 
 type AnyModule = Record<string, unknown>;
 
@@ -55,6 +56,24 @@ const LazySanitizeUI = lazyNamed(() => import("@/components/tool-ui/SanitizeUI")
 const LazyUnlockUI = lazyNamed(() => import("@/components/tool-ui/UnlockUI"), "UnlockUI");
 const LazyPdfToImageUI = lazyNamed(() => import("@/components/tool-ui/PdfToImageUI"), "PdfToImageUI");
 const LazyImageToPdfUI = lazyNamed(() => import("@/components/tool-ui/ImageToPdfUI"), "ImageToPdfUI");
+const LazyJpgToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "JpgToPdfUI");
+const LazyPngToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "PngToPdfUI");
+const LazyHeicToPdfUI = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "HeicToPdfUI");
+const LazyWebpToPdfUI = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "WebpToPdfUI");
+const LazyTiffToPdfUI = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "TiffToPdfUI");
+const LazyBmpToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "BmpToPdfUI");
+const LazyGifToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "GifToPdfUI");
+const LazySvgToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "SvgToPdfUI");
+const LazyPdfToTiffUI = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToTiffUI");
+const LazyPdfToBmpUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToBmpUI");
+const LazyPdfToGifUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToGifUI");
+const LazyPdfToSvgUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToSvgUI");
+const LazyPdfToJpgUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToJpgUI");
+const LazyPdfToPngUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToPngUI");
+const LazySplitInHalfUI = lazyNamed(() => import("@/components/tool-ui/SplitInHalfUI"), "SplitInHalfUI");
+const LazyHighlightUI = lazyNamed(() => import("@/components/tool-ui/HighlightUI"), "HighlightUI");
+const LazySummarizePdfUI = lazyNamed(() => import("@/components/tool-ui/SummarizePdfUI"), "SummarizePdfUI");
+const LazySmartRedactUI = lazyNamed(() => import("@/components/tool-ui/SmartRedactUI"), "SmartRedactUI");
 const LazyHtmlToPdfUI = lazyNamed(() => import("@/components/tool-ui/HtmlToPdfUI"), "HtmlToPdfUI");
 const LazyCropUI = lazyNamed(() => import("@/components/tool-ui/CropUI"), "CropUI");
 const LazyPdfToTextUI = lazyNamed(() => import("@/components/tool-ui/PdfToTextUI"), "PdfToTextUI");
@@ -96,6 +115,8 @@ const LazyDeleteAnnotationsUI = lazyNamed(loadSimpleConvertUI, "DeleteAnnotation
 const LazyOfficeToPdfUI = lazyNamed(loadSimpleConvertUI, "OfficeToPdfUI");
 const LazyReversePdfUI = lazyNamed(loadSimpleConvertUI, "ReversePdfUI");
 const LazyBookletUI = lazyNamed(loadSimpleConvertUI, "BookletUI");
+const LazyMultiFileUI = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
+const LazyPdfPageCounterUI = lazyNamed(() => import("@/components/tool-ui/PdfPageCounterUI"), "PdfPageCounterUI");
 
 // Map tool slugs to related blog posts for internal linking
 const TOOL_BLOG_LINKS: Record<string, { slug: string; title: string }[]> = {
@@ -179,17 +200,22 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
     if (el) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [currentSlug]);
   return (
-    <div className="mb-6">
-      <p className="font-mono-meta text-[10px] text-muted-foreground/50 mb-2">{meta.label} — {categoryTools.length} tools</p>
-      <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
+    <div className="border-t border-border pt-5">
+      <div className="flex items-baseline gap-2 mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
+        <span className="text-[11px] font-mono text-muted-foreground/80">{categoryTools.length}</span>
+      </div>
+      <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {categoryTools.map(t => {
           const TIcon = t.icon;
           const isActive = t.slug === currentSlug;
           return (
             <Link key={t.slug} to={`/tool/${t.slug}`} data-active={isActive}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-[12px] font-sans-ui font-medium transition-all shrink-0 border-b-2",
-                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground/60 hover:text-foreground hover:border-foreground/20"
+                "inline-flex items-center gap-1.5 whitespace-nowrap h-8 px-3 text-[12.5px] font-medium rounded-full transition-all shrink-0 border",
+                isActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}>
               <TIcon size={12} strokeWidth={1.75} />
               {t.name}
@@ -197,16 +223,27 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
           );
         })}
       </div>
-      <div className="rule-thin" />
     </div>
   );
 }
 
 function ToolLoadingCard() {
   return (
-    <div className="space-y-4">
-      <div className="h-40 animate-pulse border border-border/40 bg-card/50" />
-      <div className="h-14 animate-pulse border border-border/40 bg-card/40" />
+    <div className="space-y-4" role="status" aria-label="Loading tool">
+      {/* Dropzone skeleton */}
+      <div className="rounded-2xl border-2 border-dashed border-border/60 bg-card/40 p-10 sm:p-14">
+        <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-secondary/70 animate-pulse" />
+          <div className="h-4 w-44 rounded-md bg-secondary/70 animate-pulse" />
+          <div className="h-3 w-28 rounded-md bg-secondary/50 animate-pulse" />
+        </div>
+      </div>
+      {/* Action row skeleton */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="h-9 w-28 rounded-xl bg-secondary/60 animate-pulse" />
+        <div className="h-10 w-36 rounded-xl bg-primary/30 animate-pulse" />
+      </div>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }
@@ -252,6 +289,24 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "pdf-to-image": return <LazyPdfToImageUI />;
     case "pdf-to-text": return <LazyPdfToTextUI />;
     case "image-to-pdf": return <LazyImageToPdfUI />;
+    case "jpg-to-pdf": return <LazyJpgToPdfUI />;
+    case "png-to-pdf": return <LazyPngToPdfUI />;
+    case "heic-to-pdf": return <LazyHeicToPdfUI />;
+    case "webp-to-pdf": return <LazyWebpToPdfUI />;
+    case "tiff-to-pdf": return <LazyTiffToPdfUI />;
+    case "bmp-to-pdf":  return <LazyBmpToPdfUI />;
+    case "gif-to-pdf":  return <LazyGifToPdfUI />;
+    case "svg-to-pdf":  return <LazySvgToPdfUI />;
+    case "pdf-to-tiff": return <LazyPdfToTiffUI />;
+    case "pdf-to-bmp":  return <LazyPdfToBmpUI />;
+    case "pdf-to-gif":  return <LazyPdfToGifUI />;
+    case "pdf-to-svg":  return <LazyPdfToSvgUI />;
+    case "pdf-to-jpg":  return <LazyPdfToJpgUI />;
+    case "pdf-to-png":  return <LazyPdfToPngUI />;
+    case "split-in-half": return <LazySplitInHalfUI />;
+    case "highlight-pdf": return <LazyHighlightUI />;
+    case "summarize-pdf": return <LazySummarizePdfUI />;
+    case "smart-redact": return <LazySmartRedactUI />;
     case "html-to-pdf": return <LazyHtmlToPdfUI />;
     case "markdown-to-pdf": return <LazyMarkdownToPdfUI />;
     case "csv-to-pdf": return <LazyCsvToPdfUI />;
@@ -289,6 +344,15 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "delete-annotations": return <LazyDeleteAnnotationsUI />;
     case "reverse-pdf": return <LazyReversePdfUI />;
     case "booklet-pdf": return <LazyBookletUI />;
+    case "batch-compress-pdf":
+      return <LazyMultiFileUI
+        endpoint="/api/batch-compress-pdf"
+        accepts=".pdf,application/pdf"
+        outputFilename="compressed-pdfs.zip"
+        fileLabel="PDFs"
+        ordered={false}
+      />;
+    case "pdf-page-counter": return <LazyPdfPageCounterUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -320,110 +384,134 @@ export default function ToolPage() {
 
   const meta = categoryMeta[tool.category];
 
+  const cc = `cat-${tool.category}`;
+
   return (
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
-        <nav className="font-mono-meta text-[11px] text-muted-foreground mb-6 flex items-center gap-1.5">
-          <Link to="/" className="hover:text-foreground transition-colors">ALL TOOLS</Link>
-          <span className="text-muted-foreground/30">›</span>
-          <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors">{meta.label.toUpperCase()}</Link>
-          <span className="text-muted-foreground/30">›</span>
-          <span className="text-foreground">{tool.name.toUpperCase()}</span>
-        </nav>
 
-        <CategoryToolNav currentSlug={slug!} category={tool.category} />
+      <main>
+      {/* ─── Hero header (with subtle category-tinted backdrop) ────────── */}
+      <section aria-label="Tool description" className={cn("relative border-b border-border", cc)}>
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute inset-0 opacity-[0.04]" style={{ background: "radial-gradient(50% 70% at 50% 0%, hsl(var(--tile)), transparent 70%)" }} />
+        </div>
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-10 pb-12 sm:pt-14 sm:pb-16">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="text-[12px] text-muted-foreground mb-6 flex items-center gap-1.5">
+            <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
+            <span className="text-muted-foreground/80">/</span>
+            <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors capitalize">{meta.label.toLowerCase()}</Link>
+            <span className="text-muted-foreground/80">/</span>
+            <span className="text-foreground font-medium">{tool.name}</span>
+          </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
-          <div>
-            <div className="mb-8">
-              <span className="section-flag">{meta.label}</span>
-              {tool.clientOnly && <span className="section-flag ml-2 !bg-green-700 dark:!bg-green-800">CLIENT-SIDE</span>}
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold text-foreground mt-4 tracking-tight">{tool.name}</h1>
-              <div className="rule-accent mt-4 mb-4 w-16" />
-              <p className="font-serif-body text-base sm:text-lg text-foreground/75 leading-relaxed max-w-xl">{tool.longDescription || tool.description}</p>
+          <div className="flex items-start gap-4 sm:gap-6 max-w-3xl">
+            <div className="shrink-0 hidden sm:inline-flex">
+              <ToolIllustration slug={slug!} fallback={tool.icon} catClass={cc} size="lg" />
             </div>
-
-            <div className="editorial-insert p-4 sm:p-6 mb-4">
-              <Suspense fallback={<ToolLoadingCard />}>
-                <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
-              </Suspense>
-            </div>
-
-            <div className="flex items-center gap-2 mb-8 px-1">
-              <GitBranch size={12} className="text-primary shrink-0" />
-              <p className="font-mono-meta text-[10px] text-muted-foreground">
-                Need multiple operations?{" "}
-                <Link to="/pipeline" className="text-primary hover:underline font-semibold">Try Pipeline</Link>
-                {" "}— chain tools together in one go.
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="section-flag">{meta.label}</span>
+                {tool.clientOnly && (
+                  <span className="section-flag !text-emerald-600 dark:!text-emerald-400 !border-emerald-500/30">
+                    100% Browser
+                  </span>
+                )}
+              </div>
+              <h1 className="text-[36px] sm:text-[52px] font-bold text-foreground tracking-[-0.04em] leading-[1.05]">
+                {tool.name}
+              </h1>
+              <p className="mt-4 text-[15px] sm:text-[17px] text-muted-foreground leading-relaxed">
+                {tool.longDescription || tool.description}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="mt-10 mb-4">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="section-flag">HOW IT WORKS</div>
-                <div className="flex-1 rule-thin" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {[
-                  { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed on your self-hosted server." },
-                  { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly on your server." },
-                  { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
-                ].map(s => (
-                  <div key={s.step} className="editorial-insert p-5">
-                    <div className="font-heading text-2xl font-bold text-primary/40 mb-2">{s.step}</div>
-                    <p className="font-heading text-sm font-bold text-foreground mb-1.5">{s.title}</p>
-                    <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
-                  </div>
-                ))}
-              </div>
+      {/* ─── THE TOOL — full bleed, no chrome ────────────────────────── */}
+      <section aria-label="Tool" className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
+        <div className="mb-8">
+          <Suspense fallback={<ToolLoadingCard />}>
+            <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+          </Suspense>
+        </div>
+
+        {/* Trust strip + pipeline cross-sell */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-12">
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-border bg-card flex-1">
+            <Lock size={14} className="text-accent shrink-0" />
+            <p className="text-[13px] text-muted-foreground leading-snug">
+              <span className="text-foreground font-medium">Your files stay private.</span>{" "}
+              {tool.clientOnly ? "Processed entirely in your browser." : "Processed on your own infrastructure — never on third-party clouds."}
+            </p>
+          </div>
+          <Link to="/pipeline" className="group inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-accent/20 bg-accent/[0.04] hover:border-accent/40 hover:bg-accent/[0.08] transition-all shrink-0">
+            <GitBranch size={14} className="text-accent" />
+            <span className="text-[13px] font-medium text-foreground">Try Pipeline</span>
+            <ArrowRight size={12} className="text-accent group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {/* Related tools — horizontal scroll category nav */}
+        <CategoryToolNav currentSlug={slug!} category={tool.category} />
+
+        {/* How it works + sidebar — secondary content below the fold */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8 lg:gap-10 mt-10">
+          <div>
+            <h2 className="text-base font-semibold text-foreground tracking-tight mb-4">How it works</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { step: 1, title: "Upload",  desc: tool.clientOnly ? "Drag & drop or click. Processing happens in your browser." : "Drag & drop or click. Files go to your self-hosted server, not third-party clouds." },
+                { step: 2, title: "Configure", desc: tool.clientOnly ? "Adjust settings; nothing is uploaded." : "Adjust any settings, then process instantly." },
+                { step: 3, title: "Download", desc: "Result ready immediately — no waiting, no email." },
+              ].map(s => (
+                <div key={s.step} className="rounded-lg border border-border bg-card p-4">
+                  <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-accent/15 text-accent text-[11px] font-semibold mb-2">{s.step}</div>
+                  <p className="text-[13px] font-semibold text-foreground mb-1">{s.title}</p>
+                  <p className="text-[12px] text-muted-foreground leading-snug">{s.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-5">
-            <div className="editorial-insert p-5 border-l-4 !border-l-primary">
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">
-                <Lock size={12} className="inline-block mr-1 text-primary" />
-                <span className="text-foreground font-semibold">Your files stay private.</span>{" "}
-                All processing happens locally on your self-hosted server — files are never sent to third parties.
-              </p>
-            </div>
-
-            <div className="editorial-insert p-5">
-              <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h3>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related</h3>
               <div className="space-y-0.5">
                 {relatedTools.map(t => {
                   const TIcon = t.icon;
                   return (
-                    <Link key={t.slug} to={`/tool/${t.slug}`} className="flex items-center gap-3 px-2 py-2 hover:bg-card/60 transition-colors group">
-                      <TIcon size={14} strokeWidth={1.75} className="text-primary shrink-0" />
-                      <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
-                      <ArrowRight size={10} className="text-muted-foreground/0 group-hover:text-primary transition-all shrink-0" />
+                    <Link key={t.slug} to={`/tool/${t.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
+                      <TIcon size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+                      <span className="text-[13px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
                     </Link>
                   );
                 })}
               </div>
             </div>
 
-            <div className="editorial-insert p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Github size={14} className="text-foreground" />
-                <span className="font-sans-ui text-sm font-bold text-foreground">Open Source</span>
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
+              className="block rounded-lg border border-border bg-card p-4 hover:border-accent/40 transition-colors group">
+              <div className="flex items-center gap-2 mb-1">
+                <Github size={13} className="text-foreground" />
+                <span className="text-[13px] font-semibold text-foreground">Open source</span>
               </div>
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
-              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="font-sans-ui inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
-                View on GitHub <ArrowUpRight size={11} />
-              </a>
-            </div>
+              <p className="text-[12px] text-muted-foreground leading-snug mb-2">Free forever, MIT licensed. Audit, fork, or self-host.</p>
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-accent">
+                View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </span>
+            </a>
 
             {slug && TOOL_BLOG_LINKS[slug] && TOOL_BLOG_LINKS[slug].length > 0 && (
-              <div className="editorial-insert p-5">
-                <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h3>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related articles</h3>
                 <div className="space-y-0.5">
                   {TOOL_BLOG_LINKS[slug].map(post => (
-                    <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-3 px-2 py-2 hover:bg-card/60 transition-colors group">
-                      <BookOpen size={14} strokeWidth={1.75} className="text-primary shrink-0" />
-                      <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1">{post.title}</span>
+                    <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
+                      <BookOpen size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+                      <span className="text-[12px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 leading-snug">{post.title}</span>
                     </Link>
                   ))}
                 </div>
@@ -431,6 +519,7 @@ export default function ToolPage() {
             )}
           </div>
         </div>
+      </section>
       </main>
       <EditorialFooter />
     </div>

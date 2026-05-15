@@ -8,7 +8,7 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
     return (
-        <nav className="flex items-center gap-1 text-[12px] text-muted-foreground/50 mb-4 flex-wrap border-l-2 border-primary/20 pl-3">
+        <nav className="flex items-center gap-1 text-[12px] text-muted-foreground/80 mb-4 flex-wrap border-l-2 border-primary/20 pl-3">
             <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors">
                 <Home size={11} />
                 <span>Home</span>
@@ -17,7 +17,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 const isLast = i === items.length - 1;
                 return (
                     <span key={i} className="flex items-center gap-1">
-                        <span className="text-muted-foreground/30">/</span>
+                        <span className="text-muted-foreground/85">/</span>
                         {item.href ? (
                             <Link to={item.href} className="text-muted-foreground hover:text-primary transition-colors">{item.label}</Link>
                         ) : (

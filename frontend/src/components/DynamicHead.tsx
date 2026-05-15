@@ -18,10 +18,12 @@ const toolMap: Record<string, ToolMeta> = {};
 tools.forEach(t => { toolMap[`/tool/${t.slug}`] = { ...t }; });
 nonPdfTools.forEach(t => { toolMap[`/tools/${t.slug}`] = { ...t }; });
 
+const TOTAL_TOOL_COUNT = tools.length + nonPdfTools.length;
+
 const pageMeta: Record<string, { title: string; description: string }> = {
     "/": {
         title: "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        description: "107 free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
+        description: `${TOTAL_TOOL_COUNT} free, open-source file tools — PDF, image, video, and developer utilities. Self-hostable so your files stay on your own infrastructure. Files never leave the processing container, no behavioural tracking, no accounts.`,
     },
     "/about": {
         title: "About PrivaTools — How We Handle Your Files | Privacy-First",
@@ -37,7 +39,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/privacy": {
         title: "Privacy Policy — PrivaTools",
-        description: "PrivaTools privacy policy: no data collection, no cookies, no tracking. Files are processed in temporary memory and immediately deleted. Full transparency.",
+        description: "PrivaTools privacy policy: file content is never stored, read, or shared. Anonymous pageview telemetry only — full transparency about what we do and don't collect.",
     },
     "/terms": {
         title: "Terms of Service — PrivaTools",
@@ -119,8 +121,10 @@ const organizationSchema = {
         width: 192,
         height: 192,
     },
-    description: "Free, open-source suite of 107 file tools for PDF, image, video, and developer workflows. Zero-knowledge architecture — no tracking, no accounts.",
+    alternateName: "PrivaTools.me",
+    description: `Free, open-source suite of ${TOTAL_TOOL_COUNT} file tools for PDF, image, video, and developer workflows. MIT-licensed and self-hostable via Docker — files stay on your own infrastructure.`,
     foundingDate: "2026",
+    license: "https://opensource.org/licenses/MIT",
     sameAs: [
         "https://github.com/taiyeba-dg/privatools",
     ],
@@ -141,7 +145,7 @@ function getToolFAQ(toolName: string) {
         },
         {
             question: `Is it safe to use ${toolName} online?`,
-            answer: `Yes. PrivaTools processes files on our secure server and immediately deletes them after processing. We never store, share, or analyze your files. Many tools also work entirely in your browser.`,
+            answer: `Yes. PrivaTools is open-source and self-hostable, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned — never stored, shared, or analyzed. Many tools run entirely in your browser.`,
         },
         {
             question: `Do I need to create an account?`,
@@ -154,12 +158,26 @@ function getToolFAQ(toolName: string) {
     ];
 }
 
-/** Person schema for the default author. */
+/** Person schema for the default blog author — gives BlogPosting an E-E-A-T
+ * signal that AI / Google can crawl. The Organization remains the publisher.
+ */
 const authorSchema = {
-    "@type": "Organization",
-    name: "PrivaTools",
-    url: BASE_URL,
-    "@id": `${BASE_URL}/#organization`,
+    "@type": "Person",
+    "@id": `${BASE_URL}/about#author-privatools-team`,
+    name: "PrivaTools Team",
+    url: `${BASE_URL}/about`,
+    jobTitle: "Open-source maintainers",
+    worksFor: { "@id": `${BASE_URL}/#organization` },
+    knowsAbout: [
+        "PDF processing",
+        "File privacy",
+        "Open-source software",
+        "Self-hosted document tools",
+        "Local AI / on-device inference",
+    ],
+    sameAs: [
+        "https://github.com/taiyeba-dg/privatools",
+    ],
 };
 
 /**
@@ -260,6 +278,9 @@ export function DynamicHead() {
                 setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
                 setCanonical(url);
 
+                // Word count gives Google + AI extraction a signal of depth.
+                const wordCount = (post.body || "").split(/\s+/).filter(Boolean).length;
+
                 setJsonLd({
                     "@context": "https://schema.org",
                     "@graph": [
@@ -280,11 +301,15 @@ export function DynamicHead() {
                                 height: 630,
                             },
                             articleSection: post.tags[0] || "PDF Tools",
+                            keywords: post.tags?.join(", "),
+                            wordCount: wordCount > 0 ? wordCount : undefined,
+                            inLanguage: "en-US",
                             speakable: {
                                 "@type": "SpeakableSpecification",
                                 cssSelector: ["h1", ".blog-prose h2", ".blog-prose p:first-of-type"],
                             },
                         },
+                        authorSchema,
                         {
                             "@type": "BreadcrumbList",
                             itemListElement: [
@@ -384,7 +409,7 @@ export function DynamicHead() {
                         "@type": "SoftwareApplication",
                         name: "PrivaTools",
                         url: BASE_URL,
-                        description: "Free, open-source suite of 107 file tools for PDF, image, video, and developer workflows. Zero-knowledge architecture with no tracking.",
+                        description: `Free, open-source suite of ${TOTAL_TOOL_COUNT} file tools for PDF, image, video, audio, and developer workflows. Files are processed in an isolated container and deleted after the response — no file content is logged or shared.`,
                         applicationCategory: "UtilitiesApplication",
                         operatingSystem: "Any (browser-based)",
                         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -420,6 +445,18 @@ export function DynamicHead() {
             setCanonical(url);
 
             if (pathname === "/") {
+                const pdfItems = tools.map((t, i) => ({
+                    "@type": "ListItem",
+                    position: i + 1,
+                    url: `${BASE_URL}/tool/${t.slug}`,
+                    name: t.name,
+                }));
+                const nonPdfItems = nonPdfTools.map((t, i) => ({
+                    "@type": "ListItem",
+                    position: tools.length + i + 1,
+                    url: `${BASE_URL}/tools/${t.slug}`,
+                    name: t.name,
+                }));
                 setJsonLd({
                     "@context": "https://schema.org",
                     "@graph": [
@@ -437,6 +474,15 @@ export function DynamicHead() {
                             },
                         },
                         organizationSchema,
+                        {
+                            "@type": "ItemList",
+                            "@id": `${BASE_URL}/#tool-catalog`,
+                            name: "PrivaTools — All File Tools",
+                            description: `Complete catalog of ${TOTAL_TOOL_COUNT} free, open-source file tools.`,
+                            numberOfItems: TOTAL_TOOL_COUNT,
+                            itemListOrder: "https://schema.org/ItemListOrderAscending",
+                            itemListElement: [...pdfItems, ...nonPdfItems],
+                        },
                     ],
                 });
             } else {

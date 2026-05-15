@@ -24,16 +24,38 @@ def _render_and_save(args: tuple) -> str:
     return str(img_path)
 
 
+_MULTIPAGE_FORMATS = {"tiff", "tif"}  # formats that bundle all pages in one file
+
+
 def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     """Convert PDF pages to images using PyMuPDF with parallel rendering.
 
     Same DPI and quality as before, faster for multi-page PDFs.
+    For multi-page formats (TIFF), all pages are bundled into a single file.
     """
     ensure_temp_dir()
     doc = fitz.open(input_path)
 
-    pil_format = "JPEG" if fmt.lower() in ("jpeg", "jpg") else fmt.upper()
-    ext = "jpg" if fmt.lower() in ("jpeg", "jpg") else fmt.lower()
+    fmt_lower = fmt.lower()
+    pil_format = "JPEG" if fmt_lower in ("jpeg", "jpg") else fmt_lower.upper()
+    ext = "jpg" if fmt_lower in ("jpeg", "jpg") else ("tif" if fmt_lower in _MULTIPAGE_FORMATS else fmt_lower)
+
+    # ── Multi-page TIFF: render every page, save all into one TIFF ────────
+    if fmt_lower in _MULTIPAGE_FORMATS:
+        pages_pil: list[Image.Image] = []
+        for page in doc:
+            mat = fitz.Matrix(dpi / 72, dpi / 72)
+            pix = page.get_pixmap(matrix=mat)
+            pages_pil.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+        doc.close()
+        out_path = get_temp_path(f"pdf_to_tiff_{uuid.uuid4().hex}.tif")
+        first, *rest = pages_pil
+        first.save(
+            str(out_path), format="TIFF",
+            save_all=True, append_images=rest,
+            compression="tiff_deflate",
+        )
+        return str(out_path)
 
     if len(doc) == 1:
         # Single page — direct (no parallel overhead)

@@ -43,9 +43,9 @@ export function RedactUI() {
           tabIndex={0}
           aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-            drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+            drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
           <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}><Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} /></div>
+          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}><Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} /></div>
           <p className="text-sm font-semibold text-foreground">Select a PDF to redact</p><p className="text-xs text-muted-foreground">Drag & drop or click to browse</p>
         </div>
       ) : (
@@ -60,7 +60,7 @@ export function RedactUI() {
               <label className="text-sm font-semibold text-foreground">Redaction areas (JSON)</label>
               <p className="text-xs text-muted-foreground mt-1 mb-2">Array of {`{page, x, y, width, height}`} objects</p>
               <textarea value={redactions} onChange={e => setRedactions(e.target.value)} rows={4}
-                className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground font-mono outline-none focus:border-primary/50"
+                className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground font-mono outline-none focus:border-accent/50"
                 placeholder='[{"page": 1, "x": 100, "y": 700, "width": 200, "height": 20}]' />
             </div>
             <div>

@@ -24,7 +24,7 @@ export function RemoveBlankPagesUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 hover:bg-secondary/50 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 hover:bg-secondary/50 transition-all">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Upload size={22} className="text-muted-foreground" /></div>
         <div className="text-center"><p className="text-sm font-medium text-foreground">Drop your PDF here</p><p className="text-xs text-muted-foreground mt-1">or click to browse</p></div>
         <input type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -39,13 +39,13 @@ export function RemoveBlankPagesUI() {
       )}
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Detection Settings</h3>
+        <h2 className="text-sm font-semibold text-foreground">Detection Settings</h2>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-sm text-foreground">Blank page sensitivity</Label>
             <span className="text-sm font-mono text-primary">{sensitivity[0]}%</span>
           </div>
-          <Slider min={50} max={100} step={5} value={sensitivity} onValueChange={setSensitivity} />
+          <Slider min={50} max={100} step={5} value={sensitivity} onValueChange={setSensitivity} aria-label="Blank-page detection sensitivity, 50 to 100 percent" />
           <p className="text-xs text-muted-foreground">Higher sensitivity removes pages with slight scan noise.</p>
         </div>
       </div>

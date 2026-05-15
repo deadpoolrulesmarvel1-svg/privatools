@@ -44,10 +44,10 @@ export function OverlayUI() {
     }) => (
         <div>
             <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
-            <p className="text-[10px] text-muted-foreground/60 mb-2">{description}</p>
+            <p className="text-[10px] text-muted-foreground/80 mb-2">{description}</p>
             {!file ? (
                 <div onClick={() => inputRef.current?.click()}
-                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border hover:border-primary/40 cursor-pointer py-8 transition-all bg-secondary/20 hover:bg-secondary/40">
+                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border hover:border-accent/40 cursor-pointer py-8 transition-all bg-secondary/20 hover:bg-secondary/40">
                     <input ref={inputRef as any} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } }} />
                     <Upload size={18} className="text-muted-foreground" /><span className="text-sm text-muted-foreground">Select PDF</span>
                 </div>
@@ -88,7 +88,7 @@ export function OverlayUI() {
                             {MODES.map(m => (
                                 <button key={m.value} onClick={() => setMode(m.value as "overlay" | "stamp")}
                                     className={cn("rounded-xl border px-3 py-2.5 text-center transition-all",
-                                        mode === m.value ? "border-primary bg-primary/10 ring-1 ring-primary/20" : "border-border hover:border-primary/30")}>
+                                        mode === m.value ? "border-accent bg-accent/10 ring-1 ring-accent/20" : "border-border hover:border-accent/30")}>
                                     <div className={cn("text-xs font-bold", mode === m.value ? "text-primary" : "text-foreground")}>{m.label}</div>
                                     <div className="text-[9px] text-muted-foreground">{m.desc}</div>
                                 </button>

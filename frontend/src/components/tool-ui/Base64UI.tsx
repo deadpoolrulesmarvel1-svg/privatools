@@ -45,7 +45,7 @@ export function Base64UI() {
         {(["encode", "decode"] as Mode[]).map(m => (
           <button key={m} onClick={() => { setMode(m); setOutput(""); setError(null); }}
             className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize",
-              mode === m ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
+              mode === m ? "border-accent bg-accent/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
             {m}
           </button>
         ))}

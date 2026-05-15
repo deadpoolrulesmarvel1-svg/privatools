@@ -20,7 +20,7 @@ export function CompressVideoUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video here"}</p>
         <p className="text-xs text-muted-foreground">{file ? `${(file.size / 1048576).toFixed(1)} MB` : "MP4, WebM, AVI, MOV"}</p>
@@ -31,7 +31,7 @@ export function CompressVideoUI() {
           <Label className="text-sm text-foreground">Quality (CRF)</Label>
           <span className="text-sm font-mono text-primary">{quality[0]}</span>
         </div>
-        <Slider min={18} max={40} step={1} value={quality} onValueChange={setQuality} />
+        <Slider min={18} max={40} step={1} value={quality} onValueChange={setQuality} aria-label="Video quality (CRF), 18 to 40" />
         <div className="flex justify-between text-xs text-muted-foreground"><span>Higher quality</span><span>Smaller file</span></div>
       </div>
       {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}

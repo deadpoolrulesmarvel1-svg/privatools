@@ -82,7 +82,7 @@ export function UrlToPdfUI() {
                 <p className="text-sm text-muted-foreground mb-1">
                     Webpage captured successfully
                 </p>
-                <p className="text-xs text-muted-foreground/60 mb-6 flex items-center justify-center gap-1">
+                <p className="text-xs text-muted-foreground/80 mb-6 flex items-center justify-center gap-1">
                     <ExternalLink size={10} /> {url.trim()}
                 </p>
                 <div className="flex justify-center gap-3 flex-wrap">
@@ -103,14 +103,14 @@ export function UrlToPdfUI() {
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">Webpage URL</label>
                 <div className="relative">
-                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/80" />
                     <input
                         type="text"
                         value={url}
                         onChange={e => { setUrl(e.target.value); setError(null); }}
                         onKeyDown={e => { if (e.key === "Enter" && url.trim()) convert(); }}
                         placeholder="https://example.com"
-                        className="w-full rounded-xl border border-border bg-secondary/30 pl-10 pr-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors"
+                        className="w-full rounded-xl border border-border bg-secondary/30 pl-10 pr-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
                     />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -147,7 +147,7 @@ export function UrlToPdfUI() {
                 )}
             </Button>
 
-            <p className="text-[11px] text-center text-muted-foreground/60">
+            <p className="text-[11px] text-center text-muted-foreground/80">
                 Free · No sign-up · Rendered on your self-hosted server
             </p>
         </div>

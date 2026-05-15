@@ -221,9 +221,9 @@ export default function BatchPage() {
 
         {/* Tool Selector */}
         <div className="mb-6">
-          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2 block font-heading">Select Tool</label>
+          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/80 mb-2 block font-heading">Select Tool</label>
           <input
-            className="w-full h-10 rounded-xl border border-border/60 bg-card/60 px-4 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all mb-3"
+            className="w-full h-10 rounded-xl border border-border/60 bg-card/60 px-4 text-[14px] text-foreground placeholder:text-muted-foreground/80 outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all mb-3"
             placeholder="Search tools..."
             value={toolSearch}
             onChange={(e) => setToolSearch(e.target.value)}
@@ -271,7 +271,7 @@ export default function BatchPage() {
             <Upload size={22} className="text-primary/60 group-hover:text-primary/80 transition-colors" />
           </div>
           <p className="text-[14px] font-semibold text-foreground mb-1">Drop files here or click to browse</p>
-          <p className="text-[12px] text-muted-foreground/60">Accepts: {selectedTool.accepts || "any"}</p>
+          <p className="text-[12px] text-muted-foreground/80">Accepts: {selectedTool.accepts || "any"}</p>
           <input
             ref={inputRef}
             type="file"
@@ -312,14 +312,14 @@ export default function BatchPage() {
                   )}
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/80 border border-border/40 shrink-0">
-                    <FileText size={14} className="text-muted-foreground/50" />
+                    <FileText size={14} className="text-muted-foreground/80" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-foreground truncate">{f.file.name}</p>
-                    <p className="text-[11px] text-muted-foreground/50">{(f.file.size / 1024).toFixed(0)} KB</p>
+                    <p className="text-[11px] text-muted-foreground/80">{(f.file.size / 1024).toFixed(0)} KB</p>
                   </div>
                   {f.status === "pending" && (
-                    <span className="text-[11px] text-muted-foreground/40 px-2 py-0.5 rounded-lg bg-card/40">Pending</span>
+                    <span className="text-[11px] text-muted-foreground/80 px-2 py-0.5 rounded-lg bg-card/40">Pending</span>
                   )}
                   {f.status === "processing" && <Loader2 size={14} className="shrink-0 text-primary animate-spin" />}
                   {f.status === "done" && (
@@ -339,7 +339,7 @@ export default function BatchPage() {
                     </div>
                   )}
                   {!processing && (
-                    <button onClick={() => removeFile(i)} className="shrink-0 text-muted-foreground/30 hover:text-muted-foreground transition-colors">
+                    <button onClick={() => removeFile(i)} className="shrink-0 text-muted-foreground/85 hover:text-muted-foreground transition-colors">
                       <X size={12} />
                     </button>
                   )}

@@ -63,9 +63,9 @@ export function SplitUI() {
           tabIndex={0}
           aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-            drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+            drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
           <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
             <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
           </div>
           <p className="text-sm font-semibold text-foreground">Select a PDF to split</p>
@@ -85,7 +85,7 @@ export function SplitUI() {
               {modes.map(m => (
                 <button key={m.id} onClick={() => setMode(m.id)}
                   className={cn("w-full flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all",
-                    mode === m.id ? "border-primary bg-primary/5" : "border-border hover:border-border/70 hover:bg-secondary/40")}>
+                    mode === m.id ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40")}>
                   <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center", mode === m.id ? "border-primary" : "border-border")}>
                     {mode === m.id && <div className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
@@ -97,7 +97,7 @@ export function SplitUI() {
               <div className="pt-2">
                 <label className="text-xs font-medium text-muted-foreground">Page ranges</label>
                 <input value={pages} onChange={e => setPages(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50"
                   placeholder="e.g. 1-3, 5, 7-end, -4, 9-" />
               </div>
             )}
@@ -105,7 +105,7 @@ export function SplitUI() {
               <div className="pt-2">
                 <label className="text-xs font-medium text-muted-foreground">Pages per chunk</label>
                 <input type="number" value={n} onChange={e => setN(Math.max(1, parseInt(e.target.value) || 1))} min={1}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50" />
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" />
               </div>
             )}
           </div>

@@ -80,12 +80,12 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
             aria-label={label || "Upload file"}
             className={cn(
                 "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20",
+                drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20",
                 className,
             )}
         >
             <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-            <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl transition-colors", drag ? "bg-primary/20" : "bg-secondary")}>
+            <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl transition-colors", drag ? "bg-accent/20" : "bg-secondary")}>
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
             </div>
             <p className="text-sm font-semibold text-foreground">{label || "Drop file here"}</p>

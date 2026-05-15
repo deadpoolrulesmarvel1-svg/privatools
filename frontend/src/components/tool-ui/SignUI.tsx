@@ -92,9 +92,9 @@ export function SignUI() {
           tabIndex={0}
           aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-            drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+            drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
           <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
             <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
           </div>
           <p className="text-sm font-semibold text-foreground">Select a PDF to sign</p>
@@ -116,7 +116,7 @@ export function SignUI() {
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearCanvas}>Clear</Button>
-              <span className="text-xs text-muted-foreground/50 self-center">or</span>
+              <span className="text-xs text-muted-foreground/80 self-center">or</span>
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => sigRef.current?.click()}>Upload image</Button>
               <input ref={sigRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={e => { if (e.target.files?.[0]) { setSigFile(e.target.files[0]); setSigData("uploaded"); } }} />
             </div>
@@ -125,16 +125,16 @@ export function SignUI() {
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div><label className="text-xs font-medium text-muted-foreground">Page</label>
                 <input type="number" value={page} onChange={e => setPage(Math.max(1, parseInt(e.target.value) || 1))} min={1}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50" /></div>
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">Width</label>
                 <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 200)} min={10}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50" /></div>
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">X position</label>
                 <input type="number" value={x} onChange={e => setX(parseInt(e.target.value) || 0)} min={0}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50" /></div>
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">Y position</label>
                 <input type="number" value={y} onChange={e => setY(parseInt(e.target.value) || 0)} min={0}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50" /></div>
+                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
             </div>
           </div>
 

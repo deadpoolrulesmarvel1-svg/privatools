@@ -35,7 +35,7 @@ export function ImageCompressorUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 hover:bg-secondary/50 transition-all"
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 hover:bg-secondary/50 transition-all"
         onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); e.dataTransfer.files && handleFiles(e.dataTransfer.files); }}>
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Upload size={22} className="text-muted-foreground" /></div>
         <div className="text-center"><p className="text-sm font-medium text-foreground">Drop images here</p><p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — multiple files supported</p></div>
@@ -60,13 +60,13 @@ export function ImageCompressorUI() {
       )}
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Compression Settings</h3>
+        <h2 className="text-sm font-semibold text-foreground">Compression Settings</h2>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-sm text-foreground">Quality</Label>
             <span className="text-sm font-mono text-primary">{quality[0]}%</span>
           </div>
-          <Slider min={20} max={100} step={1} value={quality} onValueChange={setQuality} />
+          <Slider min={20} max={100} step={1} value={quality} onValueChange={setQuality} aria-label="JPEG quality, 20 to 100 percent" />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Smaller file</span><span>Higher quality</span>
           </div>

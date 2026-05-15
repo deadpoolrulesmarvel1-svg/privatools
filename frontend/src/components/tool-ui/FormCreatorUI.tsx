@@ -199,7 +199,7 @@ export function FormCreatorUI() {
                   <input
                     value={field.name}
                     onChange={(e) => updateField(field.id, { name: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50"
+                    className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-accent/50"
                   />
                 </div>
                 <div>
@@ -207,7 +207,7 @@ export function FormCreatorUI() {
                   <select
                     value={field.type}
                     onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
-                    className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50"
+                    className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-accent/50"
                   >
                     {FIELD_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -229,7 +229,7 @@ export function FormCreatorUI() {
                     <input
                       value={field[item.key as keyof DraftField] as string}
                       onChange={(e) => updateField(field.id, { [item.key]: e.target.value } as Partial<DraftField>)}
-                      className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50"
+                      className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-accent/50"
                     />
                   </div>
                 ))}
@@ -241,7 +241,7 @@ export function FormCreatorUI() {
                     type="checkbox"
                     checked={field.required}
                     onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                    className="accent-primary"
+                    className="accent-foreground"
                   />
                   Required
                 </label>
@@ -251,7 +251,7 @@ export function FormCreatorUI() {
                       type="checkbox"
                       checked={field.multiline}
                       onChange={(e) => updateField(field.id, { multiline: e.target.checked })}
-                      className="accent-primary"
+                      className="accent-foreground"
                     />
                     Multiline
                   </label>
@@ -262,7 +262,7 @@ export function FormCreatorUI() {
                       type="checkbox"
                       checked={field.checked}
                       onChange={(e) => updateField(field.id, { checked: e.target.checked })}
-                      className="accent-primary"
+                      className="accent-foreground"
                     />
                     Checked by default
                   </label>
@@ -278,7 +278,7 @@ export function FormCreatorUI() {
                     <input
                       value={field.value}
                       onChange={(e) => updateField(field.id, { value: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50"
+                      className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-accent/50"
                     />
                   </div>
                   {(field.type === "radio" || field.type === "combobox" || field.type === "listbox") && (
@@ -289,7 +289,7 @@ export function FormCreatorUI() {
                       <input
                         value={field.options}
                         onChange={(e) => updateField(field.id, { options: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50"
+                        className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-foreground outline-none focus:border-accent/50"
                       />
                     </div>
                   )}

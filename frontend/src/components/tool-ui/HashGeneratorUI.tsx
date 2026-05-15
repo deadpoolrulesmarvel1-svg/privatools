@@ -52,7 +52,7 @@ export function HashGeneratorUI() {
         {(["text", "file"] as Mode[]).map(m => (
           <button key={m} onClick={() => { setMode(m); setResults([]); }}
             className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize",
-              mode === m ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
+              mode === m ? "border-accent bg-accent/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
             {m === "text" ? "Hash Text" : "Hash File"}
           </button>
         ))}
@@ -65,7 +65,7 @@ export function HashGeneratorUI() {
             className="font-mono text-xs h-32 resize-none bg-secondary/40" />
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-10 cursor-pointer hover:border-primary/40 transition-all">
+        <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-10 cursor-pointer hover:border-accent/40 transition-all">
           <Upload size={20} className="text-muted-foreground" />
           <div className="text-center">
             <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop any file here"}</p>

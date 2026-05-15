@@ -71,12 +71,12 @@ export function FaviconUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-secondary/20")}>
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}>
                 <input ref={ref} type="file" accept=".png,.jpg,.jpeg,.svg,.webp" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop image here"}</p>
                 {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
-                <p className="text-[11px] text-muted-foreground/60">PNG, JPG, SVG or WebP · Square images work best</p>
+                <p className="text-[11px] text-muted-foreground/80">PNG, JPG, SVG or WebP · Square images work best</p>
             </div>
 
             {previewSrc && (
@@ -101,7 +101,7 @@ export function FaviconUI() {
                             return (
                                 <button key={s.value} onClick={() => toggleSize(s.value)}
                                     className={cn("relative rounded-xl border px-3 py-2.5 text-center transition-all",
-                                        active ? "border-primary bg-primary/10 ring-1 ring-primary/20" : "border-border bg-card hover:border-primary/30")}>
+                                        active ? "border-accent bg-accent/10 ring-1 ring-accent/20" : "border-border bg-card hover:border-accent/30")}>
                                     {active && <Check size={10} className="absolute top-1.5 right-1.5 text-primary" />}
                                     <div className={cn("text-sm font-bold", active ? "text-primary" : "text-foreground")}>{s.label}</div>
                                     <div className="text-[9px] text-muted-foreground">{s.desc}</div>

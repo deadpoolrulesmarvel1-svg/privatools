@@ -5,7 +5,7 @@ import {
   Archive, Lock,
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
-  QrCode, Merge, Maximize2,
+  QrCode, Merge, Maximize2, Type,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -85,6 +85,60 @@ export const nonPdfTools: NonPdfTool[] = [
     description: "Reduce video file size for email or messaging",
     longDescription: "Compress video online for free — reduce video file size for email, messaging, and uploads. Choose quality presets from 'High Quality' to 'WhatsApp-ready'. Supports MP4, MOV, WebM, and AVI.",
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi", outputLabel: "compressed.mp4",
+  },
+  {
+    slug: "video-to-pdf", icon: Film, name: "Video to PDF",
+    description: "Extract frames from a video into a PDF document",
+    longDescription: "Convert video to PDF online for free — extract evenly-spaced frames from MP4, MOV, WebM, or AVI files and lay them out one per page. Perfect for storyboards, video previews, lecture summaries, or sharing a clip with someone who only opens PDFs.",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "frames.pdf",
+  },
+  {
+    slug: "video-converter", icon: RefreshCw, name: "Video Converter",
+    description: "Convert between MP4, MOV, WebM, MKV, and AVI",
+    longDescription: "Convert video between formats online for free — change MP4 → WebM, MOV → MP4, AVI → MP4, and more. Re-encodes with sensible per-format codecs (H.264 for MP4/MOV/MKV, VP9 for WebM, MPEG-4 for AVI).",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv,.m4v", outputLabel: "converted.mp4",
+  },
+  {
+    slug: "video-resizer", icon: Maximize2, name: "Video Resizer",
+    description: "Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p",
+    longDescription: "Resize video resolution online for free — downscale to 240p, 360p, 480p, 720p, 1080p, or 1440p while preserving aspect ratio. Re-encodes with H.264 + AAC and the +faststart flag for streaming-friendly output.",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "video.mp4",
+  },
+  {
+    slug: "video-thumbnail", icon: ImageIcon, name: "Video Thumbnail",
+    description: "Extract a single frame from a video as a JPG image",
+    longDescription: "Extract video thumbnail online for free — pick a timestamp and grab a high-quality JPG of that frame. Perfect for YouTube thumbnails, podcast art, social previews, or quick screenshots.",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "thumbnail.jpg",
+  },
+  {
+    slug: "gif-to-mp4", icon: Film, name: "GIF to MP4",
+    description: "Convert animated GIF to MP4 for smaller file size",
+    longDescription: "Convert GIF to MP4 online for free — turn animated GIFs into H.264 MP4 video. MP4 is typically 5-10× smaller than the equivalent GIF and plays smoothly on every platform. Ideal for sharing memes on Twitter/X, Discord, and forums that prefer video.",
+    category: "video-audio", accepts: ".gif", outputLabel: "animation.mp4",
+  },
+  {
+    slug: "add-subtitles", icon: Type, name: "Add Subtitles to Video",
+    description: "Burn .srt or .vtt subtitles permanently into a video",
+    longDescription: "Add subtitles to video online for free — burn .srt or .vtt subtitle files permanently into a video so they show up everywhere, no matter the player. Perfect for social media uploads where soft subtitles aren't supported.",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "subtitled.mp4",
+  },
+  {
+    slug: "video-merge", icon: Merge, name: "Merge Videos",
+    description: "Concatenate multiple videos into one",
+    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file with seamless transitions. Re-encodes once for perfect playback compatibility.",
+    category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "merged.mp4",
+  },
+  {
+    slug: "audio-merge", icon: Merge, name: "Merge Audio",
+    description: "Concatenate multiple audio tracks into one file",
+    longDescription: "Merge audio online for free — combine multiple MP3, WAV, AAC, FLAC, or OGG files into a single track. Perfect for combining podcast segments, music samples, or recorded clips.",
+    category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "merged.mp3",
+  },
+  {
+    slug: "subtitle-converter", icon: ArrowLeftRight, name: "Subtitle Converter",
+    description: "Convert between SRT, VTT, and ASS subtitle formats",
+    longDescription: "Convert subtitles online for free — swap between SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) formats. Useful when your player supports one format but your subtitles are in another.",
+    category: "video-audio", clientOnly: true, accepts: ".srt,.vtt,.ass", outputLabel: "subtitles.vtt",
   },
 
   // ── Developer & Text ────────────────────────────────────────────────────────
@@ -187,6 +241,43 @@ export const nonPdfTools: NonPdfTool[] = [
     description: "Save any webpage as a PDF document",
     longDescription: "Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on your server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.",
     category: "developer", accepts: "", outputLabel: "webpage.pdf",
+  },
+  // ── Client-only utility tools (Round O) ────────────────────────────────────
+  {
+    slug: "password-generator", icon: KeyRound, name: "Password Generator",
+    description: "Cryptographically-strong passwords, 100% in your browser",
+    longDescription: "Generate strong passwords online for free — uses crypto.getRandomValues so the password never leaves your browser. Choose length, character sets, and exclude ambiguous characters (l/1/I/0/O). With live strength meter.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "password",
+  },
+  {
+    slug: "uuid-generator", icon: Hash, name: "UUID Generator",
+    description: "Bulk-generate UUID v4 or v7 in your browser",
+    longDescription: "Generate UUIDs online for free — bulk-generate up to 500 UUIDs (v4 random or v7-style timestamp-prefixed) using crypto.randomUUID(). Output is one per line, ready to copy. Runs entirely in your browser.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "uuids",
+  },
+  {
+    slug: "lorem-ipsum", icon: Type, name: "Lorem Ipsum Generator",
+    description: "Placeholder text — words, sentences, or paragraphs",
+    longDescription: "Generate Lorem Ipsum placeholder text online for free. Pick paragraphs, sentences, or words; control count; toggle whether to start with the classic 'Lorem ipsum…' opener. Pure browser, no API.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "lorem text",
+  },
+  {
+    slug: "word-counter", icon: Type, name: "Word & Character Counter",
+    description: "Live counts of words, characters, sentences, lines",
+    longDescription: "Count words, characters, sentences, paragraphs, and lines online for free. Includes reading-time estimate at 220 wpm. Runs entirely in your browser — paste sensitive text without worry.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "stats",
+  },
+  {
+    slug: "color-converter", icon: ImageIcon, name: "Color Converter",
+    description: "Convert between HEX, RGB, HSL, RGBA",
+    longDescription: "Convert colors between HEX, RGB, HSL, and RGBA online for free. Includes a color picker, live preview swatch, and copy-ready Tailwind / CSS-variable snippets. All math runs in your browser.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "color value",
+  },
+  {
+    slug: "url-encoder", icon: Code2, name: "URL & JWT Decoder",
+    description: "URL encode/decode plus JWT inspector",
+    longDescription: "URL encode, URL decode, or decode a JWT online for free — paste a token to see its header, payload, and signature decoded as JSON. All processing happens in your browser; tokens never leave.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "encoded/decoded",
   },
   {
     slug: "qr-reader", icon: QrCode, name: "QR Code Reader",

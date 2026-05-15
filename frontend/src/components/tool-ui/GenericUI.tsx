@@ -105,10 +105,10 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
                 <div className={cn(
                   "h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-500",
                   isDone
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                    ? "bg-accent text-accent-foreground shadow-md shadow-accent/20"
                     : isCurrent
-                      ? "bg-primary/15 text-primary ring-2 ring-primary/30"
-                      : "bg-secondary/60 text-muted-foreground/40"
+                      ? "bg-accent/15 text-accent ring-2 ring-accent/30"
+                      : "bg-secondary/60 text-muted-foreground/80"
                 )}>
                   {isDone ? (
                     <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -120,7 +120,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
                 </div>
                 <span className={cn(
                   "text-[10px] font-semibold tracking-wide transition-colors",
-                  isDone ? "text-primary/70" : isCurrent ? "text-primary" : "text-muted-foreground/35"
+                  isDone ? "text-accent/70" : isCurrent ? "text-accent" : "text-muted-foreground/35"
                 )}>
                   {step.label}
                 </span>
@@ -129,7 +129,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
                 <div className="w-10 sm:w-16 h-[2px] mx-1.5 sm:mx-2.5 mb-5 rounded-full bg-secondary/60 overflow-hidden">
                   <div className={cn(
                     "h-full rounded-full transition-all duration-700 ease-out",
-                    (completed || i < stepIndex) ? "w-full bg-primary/50" : "w-0"
+                    (completed || i < stepIndex) ? "w-full bg-accent/50" : "w-0"
                   )} />
                 </div>
               )}
@@ -141,26 +141,25 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
   };
 
   // ── Success state ──────────────────────────────────────────────────
+  // ── Success state — tightened (was a 10-rem-tall celebration card) ──
   if (state === "done") return (
-    <div className="animate-confetti rounded-2xl border border-primary/20 overflow-hidden">
-      <div className="relative p-8 sm:p-10 text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,hsl(158_64%_48%/0.1),transparent_60%)] pointer-events-none" />
-        <div className="relative">
-          <StepTimeline completed />
-
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/12 ring-4 ring-primary/6">
-            <CheckCircle2 size={28} className="text-primary" strokeWidth={1.75} />
+    <div className="rounded-2xl border border-accent/25 bg-accent/[0.04] overflow-hidden">
+      <div className="relative p-6 sm:p-8 text-center">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,hsl(var(--accent)/0.10),transparent_60%)] pointer-events-none" />
+        <div className="relative flex flex-col items-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 ring-4 ring-accent/6">
+            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
           </div>
-          <h2 className="font-heading text-xl font-bold text-foreground mb-1.5">Done!</h2>
-          <p className="text-sm text-muted-foreground mb-8">
-            <span className="text-foreground/80 font-medium">{getOutputFilename()}</span> has been downloaded
+          <h2 className="text-base font-bold text-foreground mb-1">Done</h2>
+          <p className="text-[13px] text-muted-foreground mb-5">
+            <span className="text-foreground/80 font-medium">{getOutputFilename()}</span> downloaded
           </p>
-          <div className="flex justify-center gap-3 flex-wrap">
-            <Button className="glow-primary rounded-xl h-10 px-5" onClick={handleDownload}>
-              <Download size={15} className="mr-1.5" />Download again
+          <div className="flex justify-center gap-2 flex-wrap">
+            <Button size="sm" className="glow-primary rounded-full h-9 px-4 bg-foreground text-background hover:bg-foreground/90" onClick={handleDownload}>
+              <Download size={13} className="mr-1.5" />Download again
             </Button>
-            <Button variant="outline" className="rounded-xl h-10 px-5 border-border/60 text-muted-foreground hover:text-foreground" onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}>
-              <RotateCcw size={13} className="mr-1.5" />Process another
+            <Button variant="outline" size="sm" className="rounded-full h-9 px-4 border-border text-muted-foreground hover:text-foreground" onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}>
+              <RotateCcw size={12} className="mr-1.5" />Process another
             </Button>
           </div>
         </div>
@@ -189,8 +188,8 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
         className={cn(
           "upload-zone-enhanced group relative flex flex-col items-center justify-center gap-4 rounded-2xl cursor-pointer transition-all duration-300 py-14 sm:py-16 px-8 text-center overflow-hidden",
           drag
-            ? "border-2 border-primary bg-primary/5 shadow-[0_0_50px_-10px_hsl(158_64%_48%/0.2)] scale-[1.008]"
-            : "border-2 border-border/50 hover:border-primary/25 bg-card/20 hover:bg-card/40"
+            ? "border-2 border-accent bg-accent/5 shadow-[0_0_50px_-10px_hsl(var(--accent)/0.25)] scale-[1.008]"
+            : "border-2 border-border/50 hover:border-accent/25 bg-card/20 hover:bg-card/40"
         )}
       >
         {/* Grid pattern */}
@@ -203,29 +202,29 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
           "absolute top-3 left-3 transition-all duration-300",
           drag ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-60 scale-95 group-hover:scale-100"
         )}>
-          <div className="w-5 h-[2px] bg-primary/60 rounded-full" />
-          <div className="w-[2px] h-5 bg-primary/60 rounded-full" />
+          <div className="w-5 h-[2px] bg-accent/60 rounded-full" />
+          <div className="w-[2px] h-5 bg-accent/60 rounded-full" />
         </div>
         <div className={cn(
           "absolute top-3 right-3 transition-all duration-300",
           drag ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-60 scale-95 group-hover:scale-100"
         )}>
-          <div className="w-5 h-[2px] bg-primary/60 rounded-full ml-auto" />
-          <div className="w-[2px] h-5 bg-primary/60 rounded-full ml-auto" />
+          <div className="w-5 h-[2px] bg-accent/60 rounded-full ml-auto" />
+          <div className="w-[2px] h-5 bg-accent/60 rounded-full ml-auto" />
         </div>
         <div className={cn(
           "absolute bottom-3 left-3 transition-all duration-300",
           drag ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-60 scale-95 group-hover:scale-100"
         )}>
-          <div className="w-[2px] h-5 bg-primary/60 rounded-full" />
-          <div className="w-5 h-[2px] bg-primary/60 rounded-full" />
+          <div className="w-[2px] h-5 bg-accent/60 rounded-full" />
+          <div className="w-5 h-[2px] bg-accent/60 rounded-full" />
         </div>
         <div className={cn(
           "absolute bottom-3 right-3 transition-all duration-300",
           drag ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-60 scale-95 group-hover:scale-100"
         )}>
-          <div className="w-[2px] h-5 bg-primary/60 rounded-full ml-auto" />
-          <div className="w-5 h-[2px] bg-primary/60 rounded-full ml-auto" />
+          <div className="w-[2px] h-5 bg-accent/60 rounded-full ml-auto" />
+          <div className="w-5 h-[2px] bg-accent/60 rounded-full ml-auto" />
         </div>
 
         <input ref={ref} type="file" accept={accepts} className="hidden" onChange={e => e.target.files && add(e.target.files)} />
@@ -233,12 +232,12 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
         <div className={cn(
           "flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300",
           drag
-            ? "bg-primary/20 scale-110 shadow-lg shadow-primary/15"
-            : "bg-secondary/50 group-hover:bg-primary/10 group-hover:scale-105"
+            ? "bg-accent/20 scale-110 shadow-lg shadow-accent/15"
+            : "bg-secondary/50 group-hover:bg-accent/10 group-hover:scale-105"
         )}>
           <Upload size={22} className={cn(
             "transition-all duration-300",
-            drag ? "text-primary -translate-y-0.5" : "text-muted-foreground group-hover:text-primary"
+            drag ? "text-accent -translate-y-0.5" : "text-muted-foreground group-hover:text-accent"
           )} strokeWidth={1.75} />
         </div>
 
@@ -252,20 +251,37 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
         </div>
 
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
-          <div className="h-1 w-1 rounded-full bg-primary/30" />
+          <div className="h-1 w-1 rounded-full bg-accent/30" />
           Free · No sign-up · Processed locally on your server
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-5 py-4 text-sm text-destructive backdrop-blur-sm animate-fade-in">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-5 py-4 text-sm text-destructive backdrop-blur-sm animate-fade-in">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 mt-0.5">
             <AlertCircle size={16} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-medium">Something went wrong</p>
-            <p className="text-xs opacity-80 mt-0.5">{error}</p>
+            <p className="text-xs opacity-80 mt-0.5 break-words">{error}</p>
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={process}
+                disabled={!canProcess}
+                className="text-xs font-semibold text-destructive hover:underline disabled:opacity-50"
+              >
+                Try again
+              </button>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(error || "").catch(() => {})}
+                className="text-xs text-destructive/80 hover:underline"
+              >
+                Copy error
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -288,14 +304,14 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
             <div key={f.id} className={cn(
               "flex items-center gap-3.5 rounded-xl border px-4 py-3.5 transition-all duration-300",
               state === "processing"
-                ? "border-primary/20 bg-primary/[0.03] shadow-sm shadow-primary/5"
+                ? "border-accent/20 bg-accent/[0.03] shadow-sm shadow-accent/5"
                 : "border-border/50 bg-card/40 shadow-sm"
             )}>
               <div className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all",
-                state === "processing" ? "bg-primary/12" : "bg-primary/8"
+                state === "processing" ? "bg-accent/12" : "bg-accent/8"
               )}>
-                <FileText size={18} className="text-primary" />
+                <FileText size={18} className="text-accent" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
@@ -304,7 +320,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
               {state !== "processing" && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setFiles(p => p.filter(x => x.id !== f.id)); }}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/30 hover:text-foreground hover:bg-destructive/10 transition-all"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-destructive/10 transition-all"
                 >
                   <X size={14} />
                 </button>
@@ -314,7 +330,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
 
           {/* Processing progress */}
           {state === "processing" && (
-            <div className="rounded-xl border border-primary/15 bg-primary/[0.03] px-5 py-4">
+            <div className="rounded-xl border border-accent/15 bg-accent/[0.03] px-5 py-4">
               <ProcessingBar label={`Processing ${files[0].name}`} />
             </div>
           )}

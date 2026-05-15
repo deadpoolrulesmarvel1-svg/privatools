@@ -59,7 +59,7 @@ export function TransparentBackgroundUI() {
             max={255}
             value={threshold}
             onChange={(e) => setThreshold(parseInt(e.target.value, 10))}
-            className="mt-1 w-full accent-primary"
+            className="mt-1 w-full accent-foreground"
           />
           <p className="text-[11px] text-muted-foreground mt-1">
             Higher values remove only very bright whites. Lower values remove more light backgrounds.
@@ -73,7 +73,7 @@ export function TransparentBackgroundUI() {
             max={300}
             value={dpi}
             onChange={(e) => setDpi(parseInt(e.target.value, 10))}
-            className="mt-1 w-full accent-primary"
+            className="mt-1 w-full accent-foreground"
           />
           <p className="text-[11px] text-muted-foreground mt-1">
             This operation rasterizes pages. Higher DPI improves detail but increases file size.

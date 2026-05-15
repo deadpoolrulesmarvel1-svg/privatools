@@ -22,7 +22,7 @@ export function TrimMediaUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video/audio here"}</p>
         <p className="text-xs text-muted-foreground">MP4, MP3, WebM, AVI, WAV</p>

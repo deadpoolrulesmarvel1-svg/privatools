@@ -81,10 +81,10 @@ export function ProtectUI() {
         onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
         role="button" tabIndex={0} aria-label="Upload files"
         className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-          drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+          drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
         <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
-        <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
-          <LockKeyhole size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
+        <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
+          <LockKeyhole size={22} className={drag ? "text-accent" : "text-muted-foreground"} strokeWidth={1.5} />
         </div>
         <p className="text-sm font-semibold text-foreground">{files.length ? "Add more PDFs" : "Select PDFs to protect"}</p>
         <p className="text-xs text-muted-foreground">Drag & drop or click · Multiple files supported · Max {MAX_FILE_SIZE_LABEL} each</p>
@@ -108,7 +108,7 @@ export function ProtectUI() {
               {files.length > 1 && <p className="text-xs text-muted-foreground">The same password will be applied to all PDFs.</p>}
               <div className="relative mt-1">
                 <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter a strong password"
-                  className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 pr-10 text-sm text-foreground outline-none focus:border-primary/50" />
+                  className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 pr-10 text-sm text-foreground outline-none focus:border-accent/50" />
                 <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -134,7 +134,7 @@ export function ProtectUI() {
                   { id: "modify", label: "Allow modification", checked: allowModify, set: setAllowModify },
                 ] as const).map(perm => (
                   <label key={perm.id} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input type="checkbox" checked={perm.checked} onChange={e => perm.set(e.target.checked)} className="h-4 w-4 rounded border-border text-primary accent-primary" />
+                    <input type="checkbox" checked={perm.checked} onChange={e => perm.set(e.target.checked)} className="h-4 w-4 rounded border-border text-accent accent-foreground" />
                     <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{perm.label}</span>
                   </label>
                 ))}
@@ -148,7 +148,7 @@ export function ProtectUI() {
             <Button onClick={process} disabled={!canProcess} className="glow-primary">
               {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Protecting…</> : `Protect ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
             </Button>
-            {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/40 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+            {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
           </div>
         </>
       )}

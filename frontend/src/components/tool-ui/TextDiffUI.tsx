@@ -83,14 +83,14 @@ export function TextDiffUI() {
               {diff.map((line, i) => (
                 <div key={i} className={cn("flex items-start font-mono text-xs",
                   line.type === "added" ? "bg-emerald-500/10" : line.type === "removed" ? "bg-rose-500/10" : "")}>
-                  <div className="w-8 shrink-0 px-2 py-1.5 text-muted-foreground/40 text-right select-none border-r border-border">
+                  <div className="w-8 shrink-0 px-2 py-1.5 text-muted-foreground/80 text-right select-none border-r border-border">
                     {line.lineA ?? ""}
                   </div>
-                  <div className="w-8 shrink-0 px-2 py-1.5 text-muted-foreground/40 text-right select-none border-r border-border">
+                  <div className="w-8 shrink-0 px-2 py-1.5 text-muted-foreground/80 text-right select-none border-r border-border">
                     {line.lineB ?? ""}
                   </div>
                   <div className={cn("w-4 shrink-0 px-1 py-1.5 select-none text-center font-bold",
-                    line.type === "added" ? "text-emerald-400" : line.type === "removed" ? "text-rose-400" : "text-muted-foreground/20")}>
+                    line.type === "added" ? "text-emerald-400" : line.type === "removed" ? "text-rose-400" : "text-muted-foreground/85")}>
                     {line.type === "added" ? "+" : line.type === "removed" ? "−" : " "}
                   </div>
                   <div className={cn("flex-1 px-3 py-1.5 whitespace-pre-wrap break-all",

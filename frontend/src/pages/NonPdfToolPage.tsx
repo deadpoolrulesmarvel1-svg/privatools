@@ -7,6 +7,7 @@ import { useHistory } from "@/hooks/useHistory";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 import { EditorialMasthead } from "@/components/EditorialMasthead";
 import { EditorialFooter } from "@/components/EditorialFooter";
+import { ToolIllustration } from "@/components/ToolIllustration";
 
 type AnyModule = Record<string, unknown>;
 
@@ -44,6 +45,28 @@ const LazyFaviconUI = lazyNamed(() => import("@/components/tool-ui/FaviconUI"), 
 const LazyQrReaderUI = lazyNamed(() => import("@/components/tool-ui/QrReaderUI"), "QrReaderUI");
 const LazyMergeImagesUI = lazyNamed(() => import("@/components/tool-ui/MergeImagesUI"), "MergeImagesUI");
 
+// Round-N video tools (added 2026-05-04)
+const LazyVideoToPdfUI    = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "VideoToPdfUI");
+const LazyVideoConverterUI = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "VideoConverterUI");
+const LazyVideoResizerUI  = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "VideoResizerUI");
+const LazyVideoThumbnailUI = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "VideoThumbnailUI");
+const LazyGifToMp4UI      = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "GifToMp4UI");
+const LazyAddSubtitlesUI  = lazyNamed(() => import("@/components/tool-ui/VideoToolVariants"), "AddSubtitlesUI");
+
+// Round-O client-only utilities (all in /components/tool-ui/UtilityTools.tsx)
+const LazySubtitleConverterUI = lazyNamed(() => import("@/components/tool-ui/SubtitleConverterUI"), "SubtitleConverterUI");
+const LazyPasswordGenUI   = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "PasswordGeneratorUI");
+const LazyUuidGenUI       = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "UuidGeneratorUI");
+const LazyLoremUI         = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "LoremIpsumUI");
+const LazyWordCounterUI   = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "WordCounterUI");
+const LazyColorConverterUI = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "ColorConverterUI");
+const LazyUrlEncoderUI    = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "UrlEncoderUI");
+
+// Round-U dedicated UIs (formerly fell through to GenericUI)
+const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
+const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
+const LazyImageUpscalerUI   = lazyNamed(() => import("@/components/tool-ui/ImageUpscalerUI"), "ImageUpscalerUI");
+
 function CategoryToolNav({ currentSlug, category }: { currentSlug: string; category: NonPdfCategory }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const categoryTools = nonPdfTools.filter(t => t.category === category);
@@ -54,7 +77,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
   }, [currentSlug]);
   return (
     <div className="mb-6">
-      <p className="font-mono-meta text-[10px] text-muted-foreground/50 mb-2">{meta.label} — {categoryTools.length} tools</p>
+      <p className="font-mono-meta text-[10px] text-muted-foreground/80 mb-2">{meta.label} — {categoryTools.length} tools</p>
       <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
         {categoryTools.map(t => {
           const TIcon = t.icon;
@@ -63,7 +86,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
             <Link key={t.slug} to={`/tools/${t.slug}`} data-active={isActive}
               className={cn(
                 "flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-[12px] font-sans-ui font-medium transition-all shrink-0 border-b-2",
-                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground/60 hover:text-foreground hover:border-foreground/20"
+                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground/80 hover:text-foreground hover:border-foreground/20"
               )}>
               <TIcon size={12} strokeWidth={1.75} />
               {t.name}
@@ -78,9 +101,19 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
 
 function ToolLoadingCard() {
   return (
-    <div className="space-y-4">
-      <div className="h-40 animate-pulse border border-border/40 bg-card/50" />
-      <div className="h-14 animate-pulse border border-border/40 bg-card/40" />
+    <div className="space-y-4" role="status" aria-label="Loading tool">
+      <div className="rounded-2xl border-2 border-dashed border-border/60 bg-card/40 p-10 sm:p-14">
+        <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-secondary/70 animate-pulse" />
+          <div className="h-4 w-44 rounded-md bg-secondary/70 animate-pulse" />
+          <div className="h-3 w-28 rounded-md bg-secondary/50 animate-pulse" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="h-9 w-28 rounded-xl bg-secondary/60 animate-pulse" />
+        <div className="h-10 w-36 rounded-xl bg-primary/30 animate-pulse" />
+      </div>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }
@@ -114,6 +147,40 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "generate-favicon": return <LazyFaviconUI />;
     case "qr-reader": return <LazyQrReaderUI />;
     case "merge-images": return <LazyMergeImagesUI />;
+    // Round-N video tools
+    case "video-to-pdf":   return <LazyVideoToPdfUI />;
+    case "video-converter": return <LazyVideoConverterUI />;
+    case "video-resizer":  return <LazyVideoResizerUI />;
+    case "video-thumbnail": return <LazyVideoThumbnailUI />;
+    case "gif-to-mp4":     return <LazyGifToMp4UI />;
+    case "add-subtitles":  return <LazyAddSubtitlesUI />;
+    // Round-O utilities
+    case "password-generator": return <LazyPasswordGenUI />;
+    case "uuid-generator":     return <LazyUuidGenUI />;
+    case "lorem-ipsum":        return <LazyLoremUI />;
+    case "word-counter":       return <LazyWordCounterUI />;
+    case "color-converter":    return <LazyColorConverterUI />;
+    case "url-encoder":        return <LazyUrlEncoderUI />;
+    case "subtitle-converter": return <LazySubtitleConverterUI />;
+    // Round-U
+    case "audio-converter":    return <LazyAudioConverterUI />;
+    case "image-upscaler":     return <LazyImageUpscalerUI />;
+    case "audio-merge":
+      return <LazyMultiFileUI
+        endpoint="/api/audio-merge"
+        accepts="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a"
+        outputFilename="merged.mp3"
+        fileLabel="audio files"
+        ordered={true}
+      />;
+    case "video-merge":
+      return <LazyMultiFileUI
+        endpoint="/api/video-merge"
+        accepts="video/*,.mp4,.mov,.avi,.mkv,.webm"
+        outputFilename="merged.mp4"
+        fileLabel="videos"
+        ordered={true}
+      />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -165,9 +232,9 @@ export default function NonPdfToolPage() {
       <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
         <nav className="font-mono-meta text-[11px] text-muted-foreground mb-6 flex items-center gap-1.5">
           <Link to="/" className="hover:text-foreground transition-colors">ALL TOOLS</Link>
-          <span className="text-muted-foreground/30">›</span>
+          <span className="text-muted-foreground/85">›</span>
           <span className="hover:text-foreground transition-colors">{meta.label.toUpperCase()}</span>
-          <span className="text-muted-foreground/30">›</span>
+          <span className="text-muted-foreground/85">›</span>
           <span className="text-foreground">{tool.name.toUpperCase()}</span>
         </nav>
 
@@ -175,12 +242,18 @@ export default function NonPdfToolPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
           <div>
-            <div className="mb-8">
-              <span className="section-flag">{meta.label}</span>
-              {tool.clientOnly && <span className="section-flag ml-2 !bg-green-700 dark:!bg-green-800">CLIENT-SIDE</span>}
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold text-foreground mt-4 tracking-tight">{tool.name}</h1>
-              <div className="rule-accent mt-4 mb-4 w-16" />
-              <p className="font-serif-body text-base sm:text-lg text-foreground/75 leading-relaxed max-w-xl">{tool.longDescription || tool.description}</p>
+            <div className="mb-8 flex items-start gap-4 sm:gap-6">
+              <div className={cn("shrink-0 hidden sm:inline-flex", `cat-${tool.category}`)}>
+                <ToolIllustration slug={slug!} fallback={tool.icon} catClass={`cat-${tool.category}`} size="lg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  <span className="section-flag">{meta.label}</span>
+                  {tool.clientOnly && <span className="section-flag !text-emerald-600 dark:!text-emerald-400 !border-emerald-500/30">CLIENT-SIDE</span>}
+                </div>
+                <h1 className="text-3xl sm:text-5xl font-bold text-foreground tracking-tight">{tool.name}</h1>
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mt-4">{tool.longDescription || tool.description}</p>
+              </div>
             </div>
 
             <div className="editorial-insert p-4 sm:p-6 mb-8">
@@ -201,7 +274,7 @@ export default function NonPdfToolPage() {
                   { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
                 ].map(s => (
                   <div key={s.step} className="editorial-insert p-5">
-                    <div className="font-heading text-2xl font-bold text-primary/40 mb-2">{s.step}</div>
+                    <div className="font-heading text-2xl font-bold text-primary/70 mb-2">{s.step}</div>
                     <p className="font-heading text-sm font-bold text-foreground mb-1.5">{s.title}</p>
                     <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
@@ -233,7 +306,7 @@ export default function NonPdfToolPage() {
                 <Github size={14} className="text-foreground" />
                 <span className="font-sans-ui text-sm font-bold text-foreground">Open Source</span>
               </div>
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
+              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no behavioural tracking. Forever.</p>
               <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="font-sans-ui inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
                 View on GitHub <ArrowUpRight size={11} />
               </a>

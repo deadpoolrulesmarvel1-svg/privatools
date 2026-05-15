@@ -14,7 +14,7 @@ const STAMP_PRESETS = [
     { value: "void", label: "VOID", color: "bg-red-500/20 text-red-400 border-red-500/30" },
     { value: "sample", label: "SAMPLE", color: "bg-teal-500/20 text-teal-400 border-teal-500/30" },
     { value: "not_approved", label: "NOT APPROVED", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-    { value: "custom", label: "Custom…", color: "bg-primary/10 text-primary border-primary/30" },
+    { value: "custom", label: "Custom…", color: "bg-accent/10 text-primary border-accent/30" },
 ];
 
 const POSITIONS = [
@@ -100,7 +100,7 @@ export function StampUI() {
                             {STAMP_PRESETS.map(s => (
                                 <button key={s.value} onClick={() => setStampType(s.value)}
                                     className={cn("rounded-lg border px-2 py-2 text-xs font-bold tracking-wide transition-all",
-                                        stampType === s.value ? cn(s.color, "ring-1 ring-primary/30") : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                                        stampType === s.value ? cn(s.color, "ring-1 ring-accent/30") : "border-border bg-card text-muted-foreground hover:border-accent/30"
                                     )}>
                                     {s.label}
                                 </button>
@@ -114,7 +114,7 @@ export function StampUI() {
                             <label className="text-xs font-medium text-muted-foreground">Custom Text</label>
                             <input type="text" value={customText} onChange={e => setCustomText(e.target.value)}
                                 placeholder="Enter stamp text…" maxLength={30}
-                                className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none" />
+                                className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
                         </div>
                     )}
 
@@ -125,7 +125,7 @@ export function StampUI() {
                             <span className="text-xs text-muted-foreground">{opacity}%</span>
                         </div>
                         <input type="range" min={5} max={100} value={opacity} onChange={e => setOpacity(+e.target.value)}
-                            className="w-full accent-primary" />
+                            className="w-full accent-foreground" />
                     </div>
 
                     {/* Position */}
@@ -135,7 +135,7 @@ export function StampUI() {
                             {POSITIONS.map(p => (
                                 <button key={p.value} onClick={() => setPosition(p.value)}
                                     className={cn("rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                                        position === p.value ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/30")}>
+                                        position === p.value ? "border-accent bg-accent/10 text-primary" : "border-border text-muted-foreground hover:border-accent/30")}>
                                     {p.label}
                                 </button>
                             ))}
@@ -147,8 +147,8 @@ export function StampUI() {
                         <label className="text-xs font-medium text-muted-foreground">Apply to Pages</label>
                         <input type="text" value={pages} onChange={e => setPages(e.target.value)}
                             placeholder="all or 1,3,5"
-                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none" />
-                        <p className="text-[10px] text-muted-foreground/60">Type "all" for every page, or comma-separated numbers like 1,3,5</p>
+                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
+                        <p className="text-[10px] text-muted-foreground/80">Type "all" for every page, or comma-separated numbers like 1,3,5</p>
                     </div>
                 </>
             )}

@@ -74,7 +74,7 @@ export function ImageOcrUI() {
             {/* Upload area */}
             {!imgFile ? (
                 <label
-                    className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-14 cursor-pointer hover:border-primary/40 hover:bg-secondary/50 transition-all"
+                    className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-14 cursor-pointer hover:border-accent/40 hover:bg-secondary/50 transition-all"
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => { e.preventDefault(); e.dataTransfer.files && handleFiles(e.dataTransfer.files); }}
                 >
@@ -112,7 +112,7 @@ export function ImageOcrUI() {
                     <select
                         value={lang}
                         onChange={e => setLang(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30"
                     >
                         {LANGUAGES.map(l => (
                             <option key={l.code} value={l.code}>{l.label}</option>

@@ -40,12 +40,25 @@ def _recompress_image(
         return None
 
 
-def compress_pdf(input_path: str, level: str = "recommended") -> str:
+def compress_pdf(
+    input_path: str,
+    level: str = "recommended",
+    jpeg_quality_override: int | None = None,
+    max_image_dim_override: int | None = None,
+) -> str:
+    """Compress a PDF.
+
+    `level` picks one of the named presets (light / recommended / extreme).
+    `jpeg_quality_override` and `max_image_dim_override` let the caller
+    override the preset values for one specific job (e.g. user sliders).
+    """
     ensure_temp_dir()
     output_path = get_temp_path(f"compressed_{uuid.uuid4().hex}.pdf")
     preset = _PRESETS.get(level, _PRESETS["recommended"])
-    max_image_dim = int(preset["max_image_dim"])
-    jpeg_quality = int(preset["jpeg_quality"])
+    max_image_dim = int(max_image_dim_override) if max_image_dim_override is not None else int(preset["max_image_dim"])
+    jpeg_quality = int(jpeg_quality_override) if jpeg_quality_override is not None else int(preset["jpeg_quality"])
+    jpeg_quality = max(15, min(95, jpeg_quality))
+    max_image_dim = max(300, min(4000, max_image_dim))
 
     with safe_open_pdf(input_path) as pdf:
         for page in pdf.pages:

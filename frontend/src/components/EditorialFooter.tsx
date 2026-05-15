@@ -1,85 +1,109 @@
 import { Link } from "react-router-dom";
-import { Github } from "lucide-react";
+import { Github, Lock, Shield } from "lucide-react";
+import { tools } from "@/data/tools";
+import { nonPdfTools } from "@/data/non-pdf-tools";
+
+const TOOL_TOTAL = tools.length + nonPdfTools.length;
+
+const productLinks = [
+    { label: "All tools",       href: "/" },
+    { label: "Pipeline",        href: "/pipeline", badge: "NEW" },
+    { label: "Batch process",   href: "/batch" },
+    { label: "Compare",         href: "/compare" },
+];
+
+const resourceLinks = [
+    { label: "Blog",       href: "/blog" },
+    { label: "About",      href: "/about" },
+    { label: "Contribute", href: "https://github.com/taiyeba-dg/privatools#contributing", external: true },
+    { label: "Issues",     href: "https://github.com/taiyeba-dg/privatools/issues",     external: true },
+];
+
+const legalLinks = [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms",   href: "/terms" },
+    { label: "Contact", href: "mailto:hello@privatools.me" },
+];
 
 export function EditorialFooter() {
-  return (
-    <footer className="mt-16">
-      <div className="rule-thick mx-4 sm:mx-6" />
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {/* Brand */}
-          <div>
-            <p className="font-heading text-xl font-bold text-foreground tracking-wide uppercase">
-              PrivaTools
-            </p>
-            <p className="font-serif-body text-sm text-muted-foreground mt-2 leading-relaxed">
-              Free, open source tools for a more private internet. Every tool runs locally — your files never leave your infrastructure.
-            </p>
-            <a
-              href="https://github.com/taiyeba-dg/privatools"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-3 font-mono-meta text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Github size={12} /> GITHUB
-            </a>
-          </div>
+    return (
+        <footer className="border-t border-border mt-20 pb-20 sm:pb-0">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+                <div className="grid grid-cols-2 sm:grid-cols-12 gap-8">
+                    {/* Brand */}
+                    <div className="col-span-2 sm:col-span-4">
+                        <Link to="/" className="inline-flex items-center gap-2 mb-3">
+                            <div className="h-7 w-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                <Shield size={14} className="text-primary" strokeWidth={2.25} />
+                            </div>
+                            <span className="font-bold text-[15px] tracking-tight text-foreground">PrivaTools</span>
+                        </Link>
+                        <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                            {TOOL_TOTAL} free, open-source tools for a more private internet. Self-hostable so files stay on your own infrastructure.
+                        </p>
+                        <a
+                            href="https://github.com/taiyeba-dg/privatools"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-4 h-8 px-3 rounded-full border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+                        >
+                            <Github size={12} /> Star on GitHub
+                        </a>
+                    </div>
 
-          {/* Quick links */}
-          <div>
-            <h4 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-              Quick Links
-            </h4>
+                    {/* Columns */}
+                    <FooterCol title="Product" links={productLinks} />
+                    <FooterCol title="Resources" links={resourceLinks} />
+                    <FooterCol title="Legal" links={legalLinks} />
+                </div>
+
+                <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground/80">
+                        © {new Date().getFullYear()} PrivaTools · MIT licensed
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground/80">
+                        <span className="inline-flex items-center gap-1.5"><Lock size={11} className="text-primary" /> No third-party uploads</span>
+                        <span className="text-muted-foreground/80">·</span>
+                        <span>No tracking</span>
+                        <span className="text-muted-foreground/80">·</span>
+                        <span>No accounts</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+}
+
+interface LinkItem { label: string; href: string; badge?: string; external?: boolean }
+
+function FooterCol({ title, links }: { title: string; links: LinkItem[] }) {
+    return (
+        <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                {title}
+            </h3>
             <ul className="space-y-2">
-              {["All Tools", "Batch Process", "Pipeline"].map(link => (
-                <li key={link}>
-                  <Link
-                    to={link === "All Tools" ? "/" : `/${link.toLowerCase().replace(" ", "")}`}
-                    className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link}
-                  </Link>
-                </li>
-              ))}
+                {links.map(link => (
+                    <li key={link.label}>
+                        {link.external ? (
+                            <a href={link.href} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                {link.label}
+                            </a>
+                        ) : (
+                            <Link to={link.href}
+                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                {link.label}
+                                {link.badge && (
+                                    <span className="px-1 py-px text-[8px] font-bold tracking-wider bg-primary text-primary-foreground rounded leading-none">
+                                        {link.badge}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
+                    </li>
+                ))}
             </ul>
-          </div>
-
-          {/* Legal & Contact */}
-          <div>
-            <h4 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-              Legal & Contact
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/privacy" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:hello@privatools.me" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  hello@privatools.me
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
-
-        <div className="rule-thin mt-8 mb-6" />
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="font-mono-meta text-xs text-muted-foreground/60">
-            © {new Date().getFullYear()} PRIVATOOLS · MIT LICENSE · FREE FOREVER
-          </p>
-          <p className="font-mono-meta text-xs text-muted-foreground/60">
-            NO FILE STORAGE · NO ADS · NO ACCOUNTS
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
+    );
 }

@@ -13,7 +13,7 @@ from ..services import compress_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-VALID_LEVELS = {"light", "recommended", "extreme"}
+VALID_LEVELS = {"light", "recommended", "extreme", "custom"}
 MAX_FILES = 100
 
 
@@ -21,11 +21,18 @@ MAX_FILES = 100
 async def compress_pdf(
     files: List[UploadFile] = File(...),
     level: str = Form("recommended"),
+    jpeg_quality: int | None = Form(None, ge=15, le=95),
+    max_image_dim: int | None = Form(None, ge=300, le=4000),
 ):
     if len(files) > MAX_FILES:
         raise HTTPException(status_code=400, detail=f"Please upload at most {MAX_FILES} PDF files")
     if level not in VALID_LEVELS:
         raise HTTPException(status_code=400, detail=f"level must be one of: {', '.join(sorted(VALID_LEVELS))}")
+    if level == "custom" and jpeg_quality is None and max_image_dim is None:
+        raise HTTPException(
+            status_code=400,
+            detail="level=custom requires at least one of jpeg_quality or max_image_dim",
+        )
 
     ensure_temp_dir()
     input_paths: list[str] = []
@@ -45,7 +52,12 @@ async def compress_pdf(
         total_compressed = 0
         for inp in input_paths:
             total_original += os.path.getsize(inp)
-            out = compress_service.compress_pdf(inp, level=level)
+            out = compress_service.compress_pdf(
+                inp,
+                level=level,
+                jpeg_quality_override=jpeg_quality,
+                max_image_dim_override=max_image_dim,
+            )
             total_compressed += os.path.getsize(out)
             output_paths.append(out)
 

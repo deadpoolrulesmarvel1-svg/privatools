@@ -19,7 +19,7 @@ services:
         reservations:
           memory: 4G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health\").read()"]
       interval: 30s
       timeout: 10s
       retries: 3

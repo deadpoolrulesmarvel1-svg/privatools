@@ -42,7 +42,7 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <p className="mt-16 font-mono-meta text-[10px] text-muted-foreground/30 uppercase tracking-widest">
+        <p className="mt-16 font-mono-meta text-[10px] text-muted-foreground/85 uppercase tracking-widest">
           PrivaTools · 107 Privacy-First File Tools
         </p>
       </main>

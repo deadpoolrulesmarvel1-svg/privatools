@@ -7,7 +7,7 @@ from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
 from ..services import image_to_pdf_service
 
-ALLOWED_IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"}
+ALLOWED_IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".webp", ".heic", ".heif", ".svg"}
 MAX_FILES = 50
 MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 

@@ -19,8 +19,9 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "90+ free, open-source file tools — PDF, image, video, and developer utilities. "
-        "All processing happens on your device. Zero uploads, zero tracking.",
+        "141+ free, open-source file tools — PDF, image, video, audio, and developer utilities. "
+        "Self-hostable so your files stay on your own infrastructure. "
+        "File content never leaves the processing container; no behavioural tracking; no accounts.",
     ),
     "/about": (
         "About PrivaTools — How We Handle Your Files | Privacy-First",
@@ -50,12 +51,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/smallpdf": (
         "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
         "PrivaTools vs Smallpdf: no 2-tasks/day limit, no premium upsells, no watermarks. "
-        "90+ tools vs 21 tools. See the full comparison.",
+        "105+ tools vs 21 tools. See the full comparison.",
     ),
     "/compare/adobe-acrobat": (
         "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
         "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. "
-        "No Adobe ID required, no subscription, 90+ tools. Compare features side by side.",
+        "No Adobe ID required, no subscription, 105+ tools. Compare features side by side.",
     ),
     "/compare/sejda": (
         "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -70,7 +71,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/foxit": (
         "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
         "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. "
-        "90+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        "105+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
     ),
     "/compare/lightpdf": (
         "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
@@ -85,12 +86,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/dochub": (
         "PrivaTools vs DocHub — Free PDF & Document Tools Compared (2026)",
         "PrivaTools vs DocHub: free, open-source file tools vs DocHub's document workflow platform. "
-        "No sign-up, no subscription. Compare 90+ tools vs DocHub's feature set.",
+        "No sign-up, no subscription. Compare 105+ tools vs DocHub's feature set.",
     ),
     "/compare/pdfescape": (
         "PrivaTools vs PDFescape — Free PDF Editor Compared (2026)",
         "PrivaTools vs PDFescape: both free online PDF editors, compared side by side. "
-        "PrivaTools is open source with 90+ tools. See which handles your files more privately.",
+        "PrivaTools is open source with 105+ tools. See which handles your files more privately.",
     ),
     "/compare/nitro-pdf": (
         "PrivaTools vs Nitro PDF — Free vs Paid PDF Tools (2026)",
@@ -302,6 +303,28 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "pdf-to-pdfa": ("PDF to PDF/A", "Convert PDF to PDF/A online for free — create ISO-standardized archival documents for long-term digital preservation. Essential for legal compliance and government records."),
     "form-creator": ("PDF Form Creator", "Create PDF forms online — add text fields, checkboxes, radio buttons, and dropdown menus to any PDF. Build fillable forms without Adobe Acrobat."),
     "whiteout-pdf": ("PDF White-Out / Eraser", "White-out content in PDF online — place white rectangles over text, images, or any content to permanently hide it. Free digital erasure tool."),
+    # ── Image → PDF variants ──────────────────────────────────────────────
+    "jpg-to-pdf":  ("JPG to PDF",  "Convert JPG to PDF online for free — combine one or more JPG/JPEG photos into a single PDF document with custom page size and orientation. No sign-up, no watermarks."),
+    "png-to-pdf":  ("PNG to PDF",  "Convert PNG to PDF online for free — turn PNG screenshots and graphics into a single PDF with full transparency support. Drag, drop, reorder. No watermarks."),
+    "heic-to-pdf": ("HEIC to PDF", "Convert HEIC to PDF online for free — turn iPhone HEIC/HEIF photos into a single PDF document, no Apple device required. Bulk-convert multiple HEIC images."),
+    "webp-to-pdf": ("WebP to PDF", "Convert WebP to PDF online for free — turn modern WebP images into a portable PDF document. Preserves transparency and quality. No sign-up."),
+    "tiff-to-pdf": ("TIFF to PDF", "Convert TIFF to PDF online for free — combine multi-page TIFF/TIF scans into a single searchable PDF. Perfect for archived scanned documents."),
+    "bmp-to-pdf":  ("BMP to PDF",  "Convert BMP to PDF online for free — turn legacy Windows BMP bitmap images into a portable PDF document with custom page sizing. No sign-up."),
+    "gif-to-pdf":  ("GIF to PDF",  "Convert GIF to PDF online for free — combine GIF images into a single PDF (uses the first frame of animated GIFs). Drag, drop, and merge in one step."),
+    "svg-to-pdf":  ("SVG to PDF",  "Convert SVG to PDF online for free — render scalable vector graphics into a print-ready PDF preserving sharp lines at any scale. No watermarks."),
+    "odt-to-pdf":  ("ODT to PDF",  "Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice, OpenOffice) into universally-compatible PDFs. Preserves headings and styles."),
+    # ── PDF → image variants ──────────────────────────────────────────────
+    "pdf-to-jpg":  ("PDF to JPG",  "Convert PDF to JPG online for free — render every page of a PDF as a high-quality JPG image. Choose DPI from 72 to 300. No sign-up, no watermarks."),
+    "pdf-to-png":  ("PDF to PNG",  "Convert PDF to PNG online for free — render every page of a PDF as a lossless PNG image with optional transparency. Choose DPI up to 300."),
+    "pdf-to-tiff": ("PDF to TIFF", "Convert PDF to TIFF online for free — render PDF pages into multi-page TIFF format ideal for archival, fax, and document management systems."),
+    "pdf-to-bmp":  ("PDF to BMP",  "Convert PDF to BMP online for free — render PDF pages into legacy BMP bitmap files. Useful for tools that only accept Windows bitmap input."),
+    "pdf-to-gif":  ("PDF to GIF",  "Convert PDF to GIF online for free — render PDF pages as GIF images for inline previews, social posts, or thumbnails."),
+    "pdf-to-svg":  ("PDF to SVG",  "Convert PDF to SVG online for free — render PDF pages as scalable SVG vectors that stay sharp at any zoom level. Perfect for web embedding."),
+    # ── Advanced & AI tools ───────────────────────────────────────────────
+    "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
+    "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
+    "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly. Get an extractive summary without uploading the document anywhere."),
+    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER model detects names, emails, phone numbers, addresses, and SSNs in your browser. Nothing is uploaded."),
 }
 
 # ---------------------------------------------------------------------------
@@ -335,6 +358,23 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "url-to-pdf": ("URL to PDF Converter", "Convert any web page URL to PDF online for free — enter a URL and get a rendered, print-ready PDF of the full page with styles and images preserved."),
     "qr-reader": ("QR Code Reader", "Read and decode QR codes online for free — upload an image containing a QR code and extract the encoded text, URL, or data instantly. No app or camera required."),
     "merge-images": ("Merge Images", "Merge multiple images online for free — combine JPG, PNG, and WebP files side by side or stacked vertically into a single image. Set spacing, alignment, and background color."),
+    # ── Round-N video/audio additions ─────────────────────────────────────
+    "video-to-pdf":     ("Video to PDF",         "Convert video to PDF online for free — extract frames from MP4/MOV/WebM at chosen intervals and save them as PDF pages. Perfect for slide capture and reference docs."),
+    "video-converter":  ("Video Converter",      "Convert video formats online for free — change between MP4, WebM, MOV, AVI, and MKV with adjustable quality. Powered by FFmpeg, no sign-up required."),
+    "video-resizer":    ("Video Resizer",        "Resize video resolution online for free — change video dimensions to 720p, 1080p, square, vertical, or custom sizes while preserving quality. Free FFmpeg-powered tool."),
+    "video-thumbnail":  ("Video Thumbnail",      "Generate video thumbnails online for free — extract poster frames from MP4/MOV/WebM at any timestamp. Save as JPG or PNG. Perfect for video previews."),
+    "video-merge":      ("Video Merge",          "Merge video files online for free — concatenate multiple MP4/MOV/WebM clips into a single video without re-encoding when possible. Free, no sign-up, no watermarks."),
+    "gif-to-mp4":       ("GIF to MP4",           "Convert GIF to MP4 online for free — turn animated GIFs into smaller, higher-quality MP4 video files. Reduce file size by up to 90% while preserving smoothness."),
+    "add-subtitles":    ("Burn Subtitles into Video", "Add subtitles to video online for free — burn .srt or .vtt subtitle files directly into MP4/MOV videos. Permanent overlays viewable on any player."),
+    "audio-merge":      ("Audio Merge",          "Merge audio files online for free — concatenate MP3, WAV, OGG, FLAC, or AAC tracks into a single seamless audio file. Free FFmpeg-powered tool."),
+    # ── Round-O utilities (mostly browser-only) ───────────────────────────
+    "subtitle-converter": ("Subtitle Converter", "Convert subtitle files online for free — translate between SRT, VTT, and ASS formats entirely in your browser. Fix timecodes and re-encoding instantly."),
+    "password-generator": ("Password Generator", "Generate strong passwords online for free — cryptographically-secure random passwords with custom length, symbols, digits, and exclusion rules. Runs 100% in your browser."),
+    "uuid-generator":     ("UUID Generator",     "Generate UUIDs online for free — create v4 (random) UUIDs in bulk with copy-to-clipboard. Browser-only, nothing leaves your device. Perfect for API keys and IDs."),
+    "lorem-ipsum":        ("Lorem Ipsum Generator", "Generate Lorem Ipsum placeholder text online for free — by paragraphs, sentences, or words with adjustable length. Browser-only, no sign-up."),
+    "word-counter":       ("Word Counter",       "Count words, characters, sentences, paragraphs, and reading time online for free — live updates as you type. Browser-only, perfect for essays and articles."),
+    "color-converter":    ("Color Converter",    "Convert colors online for free — translate between HEX, RGB, RGBA, HSL, and HSLA formats with a live picker and preview. 100% in your browser."),
+    "url-encoder":        ("URL & JWT Encoder",  "Encode and decode URLs online for free — percent-encode strings, URL-decode, and inspect/decode JWT tokens entirely in your browser. No data sent anywhere."),
 }
 
 
@@ -552,7 +592,7 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Self-hostable": "Yes (Docker)",
     "Files processed privately": "Yes (server-side, deleted within minutes)",
     "No watermarks on free tier": "Yes",
-    "90+ tools (PDF, Image, Video, Dev)": "Yes (105 tools)",
+    "105+ tools (PDF, Image, Video, Dev)": "Yes (105 tools)",
     "Works offline / client-side tools": "Some tools (client-side)",
     "Desktop app included": "No (web-based)",
     "API available": "Self-hosted API",
@@ -561,17 +601,17 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
 }
 
 _COMPARE_DATA: dict[str, dict] = {
-    "ilovepdf": {"name": "iLovePDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "smallpdf": {"name": "Smallpdf", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (21 tools, PDF only)"}},
-    "adobe-acrobat": {"name": "Adobe Acrobat Online", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "sejda": {"name": "Sejda PDF", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "pdf24": {"name": "PDF24", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "foxit": {"name": "Foxit PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "lightpdf": {"name": "LightPDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF + basic image)"}},
-    "stirling-pdf": {"name": "Stirling PDF", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
-    "dochub": {"name": "DocHub", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (document editing only)"}},
-    "pdfescape": {"name": "PDFescape", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "90+ tools (PDF, Image, Video, Dev)": "No (basic PDF editing only)"}},
-    "nitro-pdf": {"name": "Nitro PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "ilovepdf": {"name": "iLovePDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "smallpdf": {"name": "Smallpdf", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "105+ tools (PDF, Image, Video, Dev)": "No (21 tools, PDF only)"}},
+    "adobe-acrobat": {"name": "Adobe Acrobat Online", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "sejda": {"name": "Sejda PDF", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "pdf24": {"name": "PDF24", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "foxit": {"name": "Foxit PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "lightpdf": {"name": "LightPDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "105+ tools (PDF, Image, Video, Dev)": "No (PDF + basic image)"}},
+    "stirling-pdf": {"name": "Stirling PDF", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "dochub": {"name": "DocHub", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "105+ tools (PDF, Image, Video, Dev)": "No (document editing only)"}},
+    "pdfescape": {"name": "PDFescape", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "105+ tools (PDF, Image, Video, Dev)": "No (basic PDF editing only)"}},
+    "nitro-pdf": {"name": "Nitro PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "105+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
 }
 
 
@@ -587,11 +627,12 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     if path == "/":
         parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
         parts.append(
-            "<p>PrivaTools provides 105 free online file tools — 77 PDF tools and 28 image, video, "
-            "and developer utilities. All processing happens on our servers with zero-knowledge "
-            "architecture: files are processed and immediately deleted within minutes. No uploads "
-            "to third parties, no tracking, no sign-ups required. PrivaTools is 100% open source "
-            "under the MIT license and can be self-hosted via Docker.</p>"
+            "<p>PrivaTools provides 141 free online file tools — 97 PDF tools and 44 image, video, audio, "
+            "and developer utilities. The entire stack is open source under the MIT license and "
+            "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
+            "files are processed in an isolated container and deleted immediately after the response "
+            "is returned — never stored, never shared with third parties. The public site uses anonymous "
+            "Google Analytics 4 pageview telemetry only (IP-anonymized; blockable). No accounts, no behavioural profiling.</p>"
         )
         parts.append("<h2>PDF Tools</h2><ul>")
         for slug, (name, desc) in _PDF_TOOLS.items():
@@ -670,8 +711,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(f"<h1>{title}</h1>")
         parts.append(f"<p>{description}</p>")
         parts.append(
-            "<p>PrivaTools is a free, open-source alternative with 105 file tools, "
-            "no file limits, no sign-ups, and zero tracking. Compare features, pricing, "
+            "<p>PrivaTools is a free, open-source alternative with 141 file tools, "
+            "no file limits, no sign-ups, and no behavioural tracking. Compare features, pricing, "
             "and privacy practices side by side.</p>"
         )
         slug = path[len("/compare/"):] if path.startswith("/compare/") else ""
@@ -688,9 +729,10 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
                 f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
                 "no file size limits (up to 500 MB per file), no account required, and no ads. "
-                "Your files are processed on the server and deleted within minutes — "
-                "never stored, never shared with third parties. PrivaTools is open source "
-                "under the MIT license and can be self-hosted via Docker for complete control.</p>"
+                "Files are processed in an isolated container and deleted immediately after the "
+                "response is returned — never stored, never shared with third parties. PrivaTools "
+                "is open source under the MIT license and self-hostable via Docker, so you can "
+                "run the entire stack on your own infrastructure for complete control.</p>"
             )
         if not slug:
             parts.append("<h2>All Comparisons</h2><ul>")

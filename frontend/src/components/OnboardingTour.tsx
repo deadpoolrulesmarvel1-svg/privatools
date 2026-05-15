@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { X, ArrowRight, Shield, Layers, Search, Moon } from "lucide-react";
+import { X, ArrowRight, Shield, Layers, Search, Sparkles, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tools } from "@/data/tools";
+import { nonPdfTools } from "@/data/non-pdf-tools";
 
 const STORAGE_KEY = "privatools_onboarding_done";
+const TOOL_TOTAL = tools.length + nonPdfTools.length;
 
 interface Step {
     icon: typeof Shield;
@@ -14,23 +17,28 @@ interface Step {
 const steps: Step[] = [
     {
         icon: Shield,
-        title: "100% Private",
-        description: "All files are processed on your server. Nothing is uploaded to third parties — ever.",
+        title: "Self-hosted by default",
+        description: "Open-source under MIT — run it on your own infrastructure with one Docker command. Files stay on hardware you control.",
     },
     {
         icon: Layers,
-        title: "107 Tools",
-        description: "PDF, image, video, and developer utilities — all free, open source, and ready to use.",
+        title: `${TOOL_TOTAL}+ tools, one place`,
+        description: "PDF, image, video, audio, and developer utilities. All free. No accounts, no upsells, no watermarks.",
+    },
+    {
+        icon: Sparkles,
+        title: "Local AI, no third-party",
+        description: "Summarize PDFs and detect PII without sending anything to OpenAI. The model runs in your browser via WebAssembly.",
+    },
+    {
+        icon: GitBranch,
+        title: "Pipeline — industry first",
+        description: "Chain merge → compress → watermark in one click. No competitor offers this.",
     },
     {
         icon: Search,
-        title: "⌘K Quick Search",
-        description: "Press ⌘K (or Ctrl+K) anytime to instantly search and jump to any tool.",
-    },
-    {
-        icon: Moon,
-        title: "Dark & Light Mode",
-        description: "Toggle between dark and light themes using the sun/moon icon in the nav bar.",
+        title: "⌘K to search anything",
+        description: "Press ⌘K (or Ctrl+K) anytime to jump straight to a tool, or press ? to see all keyboard shortcuts.",
     },
 ];
 
@@ -69,23 +77,28 @@ export function OnboardingTour() {
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200" onClick={dismiss} />
+            <button
+                type="button"
+                aria-label="Close tutorial"
+                className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200 cursor-default"
+                onClick={dismiss}
+            />
 
             {/* Modal */}
-            <div className="fixed inset-x-0 top-[20vh] z-[201] mx-auto w-full max-w-sm px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
-                <div className="rounded-2xl border border-border/60 bg-card/95 backdrop-blur-2xl shadow-2xl shadow-black/50 overflow-hidden">
+            <div role="dialog" aria-modal="true" aria-labelledby="onboarding-title" className="fixed inset-x-0 top-[20vh] z-[201] mx-auto w-full max-w-sm px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+                <div className="rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/50 overflow-hidden">
                     {/* Header */}
                     <div className="relative px-6 pt-8 pb-4 text-center">
-                        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground/30 hover:text-muted-foreground">
-                            <X size={16} />
+                        <button onClick={dismiss} aria-label="Close tutorial" className="absolute top-3 right-3 text-muted-foreground/85 hover:text-muted-foreground">
+                            <X size={16} aria-hidden="true" />
                         </button>
 
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mx-auto mb-4">
                             <Icon size={24} className="text-primary" />
                         </div>
 
-                        <h3 className="text-lg font-bold text-foreground mb-1">{current.title}</h3>
-                        <p className="text-[13px] text-muted-foreground/70 leading-relaxed">{current.description}</p>
+                        <h3 id="onboarding-title" className="text-lg font-bold text-foreground mb-1">{current.title}</h3>
+                        <p className="text-[13px] text-muted-foreground leading-relaxed">{current.description}</p>
                     </div>
 
                     {/* Dots + action */}

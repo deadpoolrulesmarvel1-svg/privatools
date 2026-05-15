@@ -59,7 +59,7 @@ export function AlternateMixUI() {
       {!file ? (
         <div
           onClick={() => inputRef.current?.click()}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary/20 py-8 transition-all hover:border-primary/40 hover:bg-secondary/40"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary/20 py-8 transition-all hover:border-accent/40 hover:bg-secondary/40"
         >
           <input
             ref={inputRef as any}
@@ -127,7 +127,7 @@ export function AlternateMixUI() {
               onClick={() => setMode(m.value)}
               className={cn(
                 "rounded-xl border px-3 py-2.5 text-left transition-all",
-                mode === m.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/30",
+                mode === m.value ? "border-accent bg-accent/10" : "border-border hover:border-accent/30",
               )}
             >
               <div className={cn("text-xs font-bold", mode === m.value ? "text-primary" : "text-foreground")}>{m.label}</div>

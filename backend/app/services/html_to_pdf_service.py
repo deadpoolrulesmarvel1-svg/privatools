@@ -66,53 +66,75 @@ def _validate_url(url: str) -> None:
         raise HTTPException(status_code=400, detail="Could not resolve hostname")
 
 
+_DEFAULT_STYLE = """
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       padding: 20px; line-height: 1.6; color: #1a1a1a; }
+h1 { color: #111; margin-top: 0; } h2 { color: #333; } h3 { color: #555; }
+a { color: #1a73e8; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px;
+       font-family: "SF Mono", Menlo, monospace; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 12px; border-radius: 4px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+td, th { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+th { background: #f4f4f4; }
+img { max-width: 100%; height: auto; }
+blockquote { border-left: 4px solid #ddd; margin: 1em 0; padding: 0.2em 1em; color: #555; }
+"""
+
+
+def _wrap_html(html_content: str) -> str:
+    """If the input isn't a full HTML document, wrap it with sensible defaults."""
+    if "<html" in html_content.lower():
+        return html_content
+    return (
+        f"<!doctype html><html><head><meta charset='utf-8'>"
+        f"<style>{_DEFAULT_STYLE}</style></head><body>{html_content}</body></html>"
+    )
+
+
+def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
+    """Render with WeasyPrint — proper CSS/font/layout support. Preferred."""
+    from weasyprint import HTML
+    HTML(string=_wrap_html(html_content)).write_pdf(output_path)
+
+
 def _fitz_html_to_pdf(html_content: str, output_path: str) -> None:
-    """Use PyMuPDF to render HTML to PDF."""
+    """PyMuPDF fallback — used only when WeasyPrint isn't available."""
     import fitz
-    doc = fitz.open()
-
-    # Wrap with basic styling if not already a full HTML document
-    if "<html" not in html_content.lower():
-        html_content = f"""<html><head><style>
-        body {{ font-family: sans-serif; padding: 20px; line-height: 1.6; }}
-        h1 {{ color: #333; }} h2 {{ color: #555; }} h3 {{ color: #777; }}
-        code {{ background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }}
-        table {{ border-collapse: collapse; }} td, th {{ border: 1px solid #ccc; padding: 4px 8px; }}
-        </style></head><body>{html_content}</body></html>"""
-
-    # Use story for multi-page HTML rendering
-    try:
-        writer = fitz.DocumentWriter(output_path)
-        story = fitz.Story(html=html_content)
-        body = story.body
-        mediabox = fitz.paper_rect("a4")
-        where = mediabox + fitz.Rect(40, 40, -40, -40)
-
-        more = True
-        while more:
-            dev = writer.begin_page(mediabox)
-            more, _ = story.place(where)
-            story.draw(dev)
-            writer.end_page()
-        writer.close()
-    except Exception:
-        # Fallback for older PyMuPDF
-        page = doc.new_page()
-        rect = page.rect + fitz.Rect(40, 40, -40, -40)
-        try:
-            page.insert_htmlbox(rect, html_content)
-        except Exception:
-            plain = re.sub(r"<[^>]+>", "", html_content)
-            page.insert_text((40, 60), plain, fontsize=11)
-        doc.save(output_path)
-        doc.close()
+    html_content = _wrap_html(html_content)
+    writer = fitz.DocumentWriter(output_path)
+    story = fitz.Story(html=html_content)
+    mediabox = fitz.paper_rect("a4")
+    where = mediabox + fitz.Rect(40, 40, -40, -40)
+    more = True
+    while more:
+        dev = writer.begin_page(mediabox)
+        more, _ = story.place(where)
+        story.draw(dev)
+        writer.end_page()
+    writer.close()
 
 
 def html_to_pdf(html_content: str) -> str:
-    """Convert an HTML string to a PDF file."""
+    """Convert an HTML string to a PDF file. Prefers WeasyPrint (best CSS/font
+    fidelity) and falls back to PyMuPDF Story only if WeasyPrint is missing.
+    Errors are surfaced to the caller — never silently degraded to plain text.
+    """
     ensure_temp_dir()
     output_path = str(get_temp_path(f"html2pdf_{uuid.uuid4().hex}.pdf"))
-    _fitz_html_to_pdf(html_content, output_path)
+    try:
+        _weasyprint_html_to_pdf(html_content, output_path)
+    except ImportError:
+        # WeasyPrint not installed — try fitz Story as a fallback
+        try:
+            _fitz_html_to_pdf(html_content, output_path)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"HTML rendering failed (PyMuPDF fallback): {exc}",
+            ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"HTML rendering failed: {exc}") from exc
     return output_path
 
 

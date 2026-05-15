@@ -147,7 +147,7 @@ export function ESignUI() {
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }}
                 onClick={() => fileRef.current?.click()}
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}
             >
                 <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
@@ -183,7 +183,7 @@ export function ESignUI() {
                                     className="w-full rounded-xl border border-border bg-card cursor-crosshair touch-none"
                                     style={{ height: 120 }} />
                                 <div className="flex justify-between">
-                                    <p className="text-[10px] text-muted-foreground/60">Draw your signature above</p>
+                                    <p className="text-[10px] text-muted-foreground/80">Draw your signature above</p>
                                     <button onClick={clearCanvas} className="text-[10px] text-primary hover:underline">Clear</button>
                                 </div>
                             </div>
@@ -194,7 +194,7 @@ export function ESignUI() {
                             <div className="space-y-2">
                                 <input type="text" value={typedName} onChange={e => setTypedName(e.target.value)}
                                     placeholder="Type your name…"
-                                    className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
                                 {typedName && (
                                     <div className="rounded-xl border border-border bg-card p-4 text-center">
                                         <p className="text-2xl italic text-muted-foreground" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{typedName}</p>
@@ -206,7 +206,7 @@ export function ESignUI() {
                         {/* Upload mode */}
                         {mode === "upload" && (
                             <div>
-                                <label className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-secondary/20 px-4 py-6 cursor-pointer hover:border-primary/40 transition-all">
+                                <label className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-secondary/20 px-4 py-6 cursor-pointer hover:border-accent/40 transition-all">
                                     <Image size={18} className="text-muted-foreground" />
                                     <span className="text-xs text-muted-foreground">{sigImage ? "Signature loaded ✓" : "Upload signature image (PNG/JPG)"}</span>
                                     <input type="file" accept=".png,.jpg,.jpeg,.webp" className="hidden" onChange={handleSigUpload} />
@@ -223,30 +223,30 @@ export function ESignUI() {
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Page</label>
                                 <input type="number" min={1} value={pageNumber} onChange={e => setPageNumber(+e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">X Position</label>
                                 <input type="number" min={0} max={600} value={posX} onChange={e => setPosX(+e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Y Position</label>
                                 <input type="number" min={0} max={850} value={posY} onChange={e => setPosY(+e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Width</label>
                                 <input type="number" min={50} max={400} value={sigWidth} onChange={e => setSigWidth(+e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Height</label>
                                 <input type="number" min={20} max={200} value={sigHeight} onChange={e => setSigHeight(+e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:outline-none" />
+                                    className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground/60">Position is in PDF points from top-left corner (1 point ≈ 0.35 mm)</p>
+                        <p className="text-[10px] text-muted-foreground/80">Position is in PDF points from top-left corner (1 point ≈ 0.35 mm)</p>
                     </div>
                 </>
             )}

@@ -62,7 +62,7 @@ export function ImageWatermarkUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
                 <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop image here"}</p>
@@ -74,17 +74,17 @@ export function ImageWatermarkUI() {
                     <div className="space-y-1">
                         <label className="text-sm font-semibold text-foreground">Watermark Text</label>
                         <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="Enter watermark text"
-                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none" />
+                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <div className="flex justify-between"><label className="text-xs font-medium text-muted-foreground">Opacity</label><span className="text-xs text-muted-foreground">{opacity}</span></div>
-                            <input type="range" min={10} max={255} value={opacity} onChange={e => setOpacity(+e.target.value)} className="w-full accent-primary" />
+                            <input type="range" min={10} max={255} value={opacity} onChange={e => setOpacity(+e.target.value)} className="w-full accent-foreground" />
                         </div>
                         <div className="space-y-1">
                             <div className="flex justify-between"><label className="text-xs font-medium text-muted-foreground">Font Size</label><span className="text-xs text-muted-foreground">{fontSize}px</span></div>
-                            <input type="range" min={12} max={120} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-primary" />
+                            <input type="range" min={12} max={120} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-foreground" />
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@ export function ImageWatermarkUI() {
                             {POSITIONS.map(p => (
                                 <button key={p.value} onClick={() => setPosition(p.value)}
                                     className={cn("rounded-lg border px-2.5 py-1 text-xs transition-all",
-                                        position === p.value ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-primary/30")}>
+                                        position === p.value ? "border-accent bg-accent/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-accent/30")}>
                                     {p.label}
                                 </button>
                             ))}

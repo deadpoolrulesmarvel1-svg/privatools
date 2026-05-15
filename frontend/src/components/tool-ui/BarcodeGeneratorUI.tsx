@@ -104,7 +104,7 @@ export function BarcodeGeneratorUI() {
           value={data}
           onChange={e => setData(e.target.value)}
           placeholder={barcodeType === "qr" ? "Enter URL or text…" : "Enter barcode number/text…"}
-          className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors"
+          className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
         />
         <p className="text-xs text-muted-foreground">
           {barcodeType === "ean13" ? "Must be exactly 12 digits (check digit auto-calculated)" :
@@ -127,8 +127,8 @@ export function BarcodeGeneratorUI() {
               className={cn(
                 "flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-all",
                 barcodeType === type.value
-                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                  : "border-border bg-card hover:border-primary/30 hover:bg-secondary/40"
+                  ? "border-accent bg-accent/5 ring-1 ring-accent/20"
+                  : "border-border bg-card hover:border-accent/30 hover:bg-secondary/40"
               )}
             >
               <div className="flex items-center gap-1.5">
@@ -162,7 +162,7 @@ export function BarcodeGeneratorUI() {
         )}
       </Button>
 
-      <p className="text-[11px] text-center text-muted-foreground/60">
+      <p className="text-[11px] text-center text-muted-foreground/80">
         Free · No sign-up · Generated on your self-hosted server
       </p>
     </div>

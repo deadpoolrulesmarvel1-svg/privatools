@@ -48,7 +48,7 @@ export function MarkdownHtmlUI() {
         {(["split", "html", "preview"] as View[]).map(v => (
           <button key={v} onClick={() => setView(v)}
             className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize",
-              view === v ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
+              view === v ? "border-accent bg-accent/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
             {v}
           </button>
         ))}

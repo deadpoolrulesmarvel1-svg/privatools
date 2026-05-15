@@ -52,12 +52,12 @@ export function HtmlToPdfUI() {
             <div className="flex gap-2">
                 <button onClick={() => setMode("url")}
                     className={cn("flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm transition-all",
-                        mode === "url" ? "border-primary bg-primary/5 text-primary font-semibold" : "border-border text-muted-foreground hover:border-border/70 hover:bg-secondary/40")}>
+                        mode === "url" ? "border-accent bg-accent/5 text-primary font-semibold" : "border-border text-muted-foreground hover:border-border/70 hover:bg-secondary/40")}>
                     <Globe size={15} /> From URL
                 </button>
                 <button onClick={() => setMode("html")}
                     className={cn("flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm transition-all",
-                        mode === "html" ? "border-primary bg-primary/5 text-primary font-semibold" : "border-border text-muted-foreground hover:border-border/70 hover:bg-secondary/40")}>
+                        mode === "html" ? "border-accent bg-accent/5 text-primary font-semibold" : "border-border text-muted-foreground hover:border-border/70 hover:bg-secondary/40")}>
                     <Code2 size={15} /> From HTML
                 </button>
             </div>
@@ -68,14 +68,14 @@ export function HtmlToPdfUI() {
                     <>
                         <label className="text-sm font-semibold text-foreground">Web Page URL</label>
                         <input type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com"
-                            className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary/50" />
+                            className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 text-sm text-foreground outline-none focus:border-accent/50" />
                         <p className="text-xs text-muted-foreground">Enter a public URL to convert to PDF.</p>
                     </>
                 ) : (
                     <>
                         <label className="text-sm font-semibold text-foreground">HTML Content</label>
                         <textarea value={html} onChange={e => setHtml(e.target.value)} placeholder="<html><body><h1>Hello</h1></body></html>" rows={8}
-                            className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 text-sm text-foreground font-mono outline-none focus:border-primary/50 resize-y" />
+                            className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 text-sm text-foreground font-mono outline-none focus:border-accent/50 resize-y" />
                         <p className="text-xs text-muted-foreground">Paste raw HTML code to convert to PDF.</p>
                     </>
                 )}

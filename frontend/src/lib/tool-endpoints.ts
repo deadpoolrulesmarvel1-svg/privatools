@@ -17,6 +17,41 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "sanitize-pdf": "/sanitize",
   "booklet-pdf": "/booklet",
   "qr-reader": "/read-qr",
+  // Named SEO entries that share the underlying image-to-pdf endpoint:
+  "jpg-to-pdf": "/image-to-pdf",
+  "png-to-pdf": "/image-to-pdf",
+  "heic-to-pdf": "/image-to-pdf",
+  "webp-to-pdf": "/image-to-pdf",
+  "tiff-to-pdf": "/image-to-pdf",
+  "bmp-to-pdf": "/image-to-pdf",
+  "gif-to-pdf": "/image-to-pdf",
+  "svg-to-pdf": "/image-to-pdf",
+  // ODT routes to the office-to-pdf converter (LibreOffice handles ODT).
+  "odt-to-pdf": "/office-to-pdf",
+  // Split-in-half is a preset of the split endpoint:
+  "split-in-half": "/split-in-half",
+  // Highlight is a focused preset on top of annotate logic:
+  "highlight-pdf": "/highlight",
+  // PDF→raster variants share the pdf-to-image endpoint with a `format` param:
+  "pdf-to-tiff": "/pdf-to-image",
+  "pdf-to-bmp":  "/pdf-to-image",
+  "pdf-to-gif":  "/pdf-to-image",
+  // PDF→SVG (vector) is its own endpoint:
+  "pdf-to-svg":  "/pdf-to-svg",
+  // Smart Redact uses the dedicated text-search redact backend:
+  "smart-redact": "/smart-redact",
+  // Video tools — already 1:1 with route name, but listed for clarity:
+  "video-to-pdf":   "/video-to-pdf",
+  "video-converter": "/video-converter",
+  "video-resizer":  "/video-resizer",
+  "video-thumbnail": "/video-thumbnail",
+  "gif-to-mp4":     "/gif-to-mp4",
+  "add-subtitles":  "/add-subtitles",
+  // Round-O additions
+  "video-merge":    "/video-merge",
+  "audio-merge":    "/audio-merge",
+  "pdf-to-jpg":     "/pdf-to-image",
+  "pdf-to-png":     "/pdf-to-image",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

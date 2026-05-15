@@ -52,7 +52,7 @@ export function SvgToPngUI() {
           tabIndex={0}
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-secondary/20")}>
+                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}>
                 <input ref={ref} type="file" accept=".svg" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop SVG file here"}</p>
@@ -66,7 +66,7 @@ export function SvgToPngUI() {
                         {SCALES.map(s => (
                             <button key={s.value} onClick={() => setScale(s.value)}
                                 className={cn("rounded-xl border px-3 py-2.5 text-center transition-all",
-                                    scale === s.value ? "border-primary bg-primary/10 ring-1 ring-primary/20" : "border-border bg-card hover:border-primary/30")}>
+                                    scale === s.value ? "border-accent bg-accent/10 ring-1 ring-accent/20" : "border-border bg-card hover:border-accent/30")}>
                                 <div className={cn("text-sm font-bold", scale === s.value ? "text-primary" : "text-foreground")}>{s.label}</div>
                                 <div className="text-[9px] text-muted-foreground">{s.desc}</div>
                             </button>

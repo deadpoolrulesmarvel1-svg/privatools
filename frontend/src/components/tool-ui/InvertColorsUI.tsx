@@ -22,7 +22,7 @@ export function InvertColorsUI() {
 
   return (
     <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop PDF here"}</p>
         <p className="text-xs text-muted-foreground">Invert all colors for dark mode reading</p>
@@ -39,7 +39,7 @@ export function InvertColorsUI() {
           ]).map(m => (
             <button key={m.id} onClick={() => setMode(m.id)}
               className={cn("flex-1 flex items-center gap-2 rounded-lg border py-3 px-3 text-left transition-all",
-                mode === m.id ? "border-primary bg-primary/10" : "border-border hover:bg-secondary/40")}>
+                mode === m.id ? "border-accent bg-accent/10" : "border-border hover:bg-secondary/40")}>
               <m.icon size={16} className={mode === m.id ? "text-primary" : "text-muted-foreground"} />
               <div>
                 <p className={cn("text-sm font-medium", mode === m.id ? "text-primary" : "text-foreground")}>{m.label}</p>
@@ -56,7 +56,7 @@ export function InvertColorsUI() {
             {[72, 150, 200].map(d => (
               <button key={d} onClick={() => setDpi(d)}
                 className={cn("flex-1 rounded-lg border py-2 text-xs font-medium transition-all",
-                  dpi === d ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary/40")}>
+                  dpi === d ? "border-accent bg-accent/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary/40")}>
                 {d} DPI{d === 150 ? " (default)" : d === 200 ? " (high)" : " (fast)"}
               </button>
             ))}
