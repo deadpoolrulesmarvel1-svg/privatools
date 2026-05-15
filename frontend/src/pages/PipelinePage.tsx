@@ -134,7 +134,11 @@ export default function PipelinePage() {
       setCurrentStep(i);
       try {
         const formData = new FormData();
+        // Append under both field names — endpoints differ on whether they
+        // expect `file` (singular) or `files` (plural list), and we don't
+        // want the pipeline to fail because of a per-tool field convention.
         formData.append("file", currentBlob, file.name);
+        formData.append("files", currentBlob, file.name);
 
         const resp = await fetch(`${API}/api${steps[i].tool.endpoint}`, {
           method: "POST",

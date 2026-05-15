@@ -165,7 +165,10 @@ export default function BatchPage() {
 
       try {
         const formData = new FormData();
+        // Append under both field names so the endpoint works whether the
+        // FastAPI handler expects `file` (singular) or `files` (plural list).
         formData.append("file", updated[i].file);
+        formData.append("files", updated[i].file);
 
         const resp = await fetch(`${API}/api${selectedTool.endpoint}`, {
           method: "POST",
