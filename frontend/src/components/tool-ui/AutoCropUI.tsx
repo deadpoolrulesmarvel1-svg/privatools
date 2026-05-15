@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 
 export function AutoCropUI() {
   const [file, setFile] = useState<File | null>(null);
@@ -11,7 +11,7 @@ export function AutoCropUI() {
   const process = async () => {
     if (!file) return;
     setStatus("processing"); setError(null);
-    try { await processAndDownload("/auto-crop", file, "cropped.pdf"); setStatus("done"); }
+    try { await processAndDownload("/auto-crop", file, buildOutputFilename(file.name, "cropped", "pdf")); setStatus("done"); }
     catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };
 

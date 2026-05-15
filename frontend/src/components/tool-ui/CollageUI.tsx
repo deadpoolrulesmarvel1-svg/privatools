@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Download, Loader2, AlertCircle, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const API_BASE = "/api";
 
@@ -36,7 +36,7 @@ export function CollageUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
-            downloadBlob(blob, "collage.jpg");
+            downloadBlob(blob, buildOutputFilename(files[0]?.name, "collage", "jpg"));
         } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
     };
 
@@ -46,7 +46,7 @@ export function CollageUI() {
             <h2 className="text-lg font-bold text-foreground mb-1">Collage Created!</h2>
             <p className="text-sm text-muted-foreground mb-6">{files.length} images arranged in {columns} columns</p>
             <div className="flex justify-center gap-3 flex-wrap">
-                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "collage.jpg")}><Download size={15} /> Download</Button>
+                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, buildOutputFilename(files[0]?.name, "collage", "jpg"))}><Download size={15} /> Download</Button>
                 <Button variant="outline" onClick={() => { setFiles([]); setStatus("idle"); setResultBlob(null); }}>Create another</Button>
             </div>
         </div>

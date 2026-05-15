@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 export function RedactUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -19,7 +19,7 @@ export function RedactUI() {
     if (!file) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/redact", file.raw, "redacted.pdf", { redactions, color });
+      await processAndDownload("/redact", file.raw, buildOutputFilename(file.name, "redacted", "pdf"), { redactions, color });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

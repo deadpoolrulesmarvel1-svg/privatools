@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Clock, ArrowRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { ProcessingBar } from "./FileUploadZone";
@@ -52,13 +52,19 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
 
   const getOutputFilename = () => {
     if (!files.length) return outputLabel;
-    const original = files[0].name;
-    const lastDot = original.lastIndexOf(".");
-    const baseName = lastDot > 0 ? original.substring(0, lastDot) : original;
+    // Parse outputLabel into (suffix, ext). Generic labels like "image.png",
+    // "audio.mp3", "video.mp4", "document.docx" mean "the output is a
+    // {type} in {ext}" — for those we drop the type and just change the
+    // extension, so users get "MyPhoto.png" not "MyPhoto_image.png".
     const outDot = outputLabel.lastIndexOf(".");
-    const ext = outDot > 0 ? outputLabel.substring(outDot) : ".pdf";
-    const suffix = outDot > 0 ? "_" + outputLabel.substring(0, outDot) : "";
-    return `${baseName}${suffix}${ext}`;
+    const labelStem = outDot > 0 ? outputLabel.substring(0, outDot) : "";
+    const ext = outDot > 0 ? outputLabel.substring(outDot + 1) : "pdf";
+    const GENERIC_TYPES = new Set([
+      "image", "audio", "video", "document", "converted",
+      "output", "result", "file",
+    ]);
+    const suffix = labelStem && !GENERIC_TYPES.has(labelStem.toLowerCase()) ? labelStem : null;
+    return buildOutputFilename(files[0].name, suffix, ext);
   };
 
   const process = useCallback(async () => {

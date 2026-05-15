@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const posOptions = [
   { id: "bottom-right", label: "Bottom Right" }, { id: "bottom-left", label: "Bottom Left" }, { id: "bottom-center", label: "Bottom Center" },
@@ -26,7 +26,7 @@ export function BatesUI() {
     if (!file) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/bates-numbering", file.raw, "bates_numbered.pdf", { prefix, start_number: startNumber, digits, position });
+      await processAndDownload("/bates-numbering", file.raw, buildOutputFilename(file.name, "bates", "pdf"), { prefix, start_number: startNumber, digits, position });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

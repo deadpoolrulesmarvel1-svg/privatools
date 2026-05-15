@@ -3,7 +3,7 @@ import { Upload, FileText, Trash2, Download, Loader2, AlertCircle } from "lucide
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 
 export function RemoveBlankPagesUI() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,7 +17,7 @@ export function RemoveBlankPagesUI() {
     if (!file) return;
     setStatus("processing"); setError(null);
     try {
-      await processAndDownload("/remove-blank-pages", file, "cleaned.pdf", { sensitivity: sensitivity[0] });
+      await processAndDownload("/remove-blank-pages", file, buildOutputFilename(file.name, "cleaned", "pdf"), { sensitivity: sensitivity[0] });
       setStatus("done");
     } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };

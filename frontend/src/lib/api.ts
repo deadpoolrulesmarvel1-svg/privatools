@@ -295,6 +295,32 @@ export async function processFilesAndDownload(
     downloadBlob(blob, filename);
 }
 
+/** Build an output filename that preserves the user's original filename stem.
+ *
+ *   buildOutputFilename("report.pdf",       "compressed", "pdf") → "report_compressed.pdf"
+ *   buildOutputFilename("vacation.jpg",     null,         "png") → "vacation.png"
+ *   buildOutputFilename("clip.mp4",         "audio",      "mp3") → "clip_audio.mp3"
+ *   buildOutputFilename(undefined,          "merged",     "pdf") → "merged.pdf"
+ *
+ * Pass `suffix=null` for pure format conversions (e.g. jpg→png) so the
+ * downloaded file just changes extension. Pass a verb suffix for any
+ * operation that modifies content (compress, rotate, watermark, etc.).
+ */
+export function buildOutputFilename(
+    sourceName: string | null | undefined,
+    suffix: string | null,
+    ext: string,
+): string {
+    const cleanExt = ext.startsWith(".") ? ext.slice(1) : ext;
+    if (!sourceName) {
+        return `${suffix || "output"}.${cleanExt}`;
+    }
+    const lastDot = sourceName.lastIndexOf(".");
+    const stem = lastDot > 0 ? sourceName.substring(0, lastDot) : sourceName;
+    if (suffix) return `${stem}_${suffix}.${cleanExt}`;
+    return `${stem}.${cleanExt}`;
+}
+
 /** Format bytes to human-readable string. */
 export function formatFileSize(bytes: number): string {
     if (bytes < 1024) return bytes + " B";

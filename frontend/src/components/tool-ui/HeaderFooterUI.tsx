@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 export function HeaderFooterUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -20,7 +20,7 @@ export function HeaderFooterUI() {
     if (!file || (!headerText.trim() && !footerText.trim())) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/header-footer", file.raw, "header_footer.pdf", { header_text: headerText, footer_text: footerText, font_size: fontSize });
+      await processAndDownload("/header-footer", file.raw, buildOutputFilename(file.name, "header_footer", "pdf"), { header_text: headerText, footer_text: footerText, font_size: fontSize });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

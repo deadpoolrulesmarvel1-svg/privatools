@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 export function ExtractArchiveUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -11,7 +11,7 @@ export function ExtractArchiveUI() {
   const process = async () => {
     if (!file) return;
     setStatus("processing"); setError(null);
-    try { await processAndDownload("/extract-archive", file.raw, "extracted.zip"); setStatus("done"); }
+    try { await processAndDownload("/extract-archive", file.raw, buildOutputFilename(file.name, "extracted", "zip")); setStatus("done"); }
     catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };
 

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Download, Loader2, AlertCircle, FileText, X, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const API_BASE = "/api";
 
@@ -33,7 +33,7 @@ export function OverlayUI() {
             if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
             const blob = await res.blob();
             setResultBlob(blob);
-            downloadBlob(blob, "overlay_result.pdf");
+            downloadBlob(blob, buildOutputFilename(file1?.name, "overlay", "pdf"));
             setState("done");
         } catch (e: any) { setError(e.message || "Overlay failed"); setState("idle"); }
     };
@@ -67,7 +67,7 @@ export function OverlayUI() {
             <h2 className="text-lg font-bold text-foreground mb-1">Overlay Complete!</h2>
             <p className="text-sm text-muted-foreground mb-6">Your combined PDF has been downloaded</p>
             <div className="flex justify-center gap-3 flex-wrap">
-                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "overlay.pdf")}><Download size={15} /> Download Again</Button>
+                <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, buildOutputFilename(file1?.name, "overlay", "pdf"))}><Download size={15} /> Download Again</Button>
                 <Button variant="outline" onClick={() => { setFile1(null); setFile2(null); setState("idle"); setResultBlob(null); }}>Overlay more</Button>
             </div>
         </div>

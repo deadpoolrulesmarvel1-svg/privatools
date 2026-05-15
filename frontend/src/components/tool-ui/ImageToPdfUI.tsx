@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 type PageSize = "auto" | "a4" | "letter";
 const sizes: { id: PageSize; label: string; desc: string }[] = [
@@ -41,7 +41,11 @@ export function ImageToPdfUI({
         if (!files.length) return;
         setState("processing"); setError(null);
         try {
-            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), "images.pdf", { page_size: pageSize });
+            // Use the first image's stem so the output is recognizable.
+            // Multi-image case still names after the first image — the user
+            // recognizes their batch by it, and avoids invented suffixes.
+            const outName = buildOutputFilename(files[0]?.name, null, "pdf");
+            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
             setState("done");
         } catch (e: any) { setError(e.message || "Conversion failed"); setState("idle"); }
     };

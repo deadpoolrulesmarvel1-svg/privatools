@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Loader2, AlertCircle, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 type ExifFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -30,7 +30,7 @@ export function RemoveExifUI() {
       if (files.length === 1) {
         await processAndDownload("/remove-exif", files[0].raw, `clean_${files[0].name}`);
       } else {
-        await processFilesAndDownload("/remove-exif", files.map(f => f.raw), "clean_images.zip");
+        await processFilesAndDownload("/remove-exif", files.map(f => f.raw), buildOutputFilename(files[0]?.raw.name, "clean", "zip"));
       }
       setStatus("done");
     } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }

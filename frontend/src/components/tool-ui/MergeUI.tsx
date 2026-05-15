@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical, Plus, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 interface MergeFile { id: string; name: string; size: string; file: File; pages: string; }
 
@@ -42,7 +42,8 @@ export function MergeUI() {
       const params: Record<string, string> | undefined = anyRange
         ? { page_ranges: JSON.stringify(files.map(f => (f.pages.trim() || "all"))) }
         : undefined;
-      await processFilesAndDownload("/merge", files.map(f => f.file), "merged.pdf", params);
+      const outName = buildOutputFilename(files[0]?.file.name, "merged", "pdf");
+      await processFilesAndDownload("/merge", files.map(f => f.file), outName, params);
       setState("done");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Merge failed";

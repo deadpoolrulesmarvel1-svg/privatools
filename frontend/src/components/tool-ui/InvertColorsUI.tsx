@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Upload, Loader2, AlertCircle, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 
 export function InvertColorsUI() {
   const [file, setFile] = useState<File | null>(null);
@@ -15,7 +15,7 @@ export function InvertColorsUI() {
     if (!file) return;
     setStatus("processing"); setError(null);
     try {
-      await processAndDownload("/invert-colors", file, "inverted.pdf", { dpi, mode });
+      await processAndDownload("/invert-colors", file, buildOutputFilename(file.name, "inverted", "pdf"), { dpi, mode });
       setStatus("done");
     } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };

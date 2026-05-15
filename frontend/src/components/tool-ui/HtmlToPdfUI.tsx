@@ -29,11 +29,24 @@ export function HtmlToPdfUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setState("done");
-            downloadBlob(blob, "converted.pdf");
+            downloadBlob(blob, getOutputName());
         } catch (e: any) { setError(e.message || "Conversion failed"); setState("idle"); }
     };
 
-    const handleDownload = () => { if (resultBlob) downloadBlob(resultBlob, "converted.pdf"); };
+    // Build a meaningful filename. URL mode → use the hostname (example.com.pdf).
+    // HTML-paste mode → "html.pdf".
+    const getOutputName = () => {
+        if (mode === "html") return "html.pdf";
+        try {
+            const u = new URL(url.trim());
+            const host = u.hostname.replace(/^www\./, "");
+            return `${host}.pdf`;
+        } catch {
+            return "webpage.pdf";
+        }
+    };
+
+    const handleDownload = () => { if (resultBlob) downloadBlob(resultBlob, getOutputName()); };
 
     if (state === "done") return (
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">

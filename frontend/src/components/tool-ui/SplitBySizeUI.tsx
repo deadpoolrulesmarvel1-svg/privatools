@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, AlertCircle, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 export function SplitBySizeUI() {
@@ -15,7 +15,7 @@ export function SplitBySizeUI() {
     setStatus("processing");
     setError(null);
     try {
-      await processAndDownload("/split-by-size", file, "split_by_size.zip", { max_size_mb: maxSizeMb });
+      await processAndDownload("/split-by-size", file, buildOutputFilename(file.name, "split", "zip"), { max_size_mb: maxSizeMb });
       setStatus("done");
     } catch (e: any) {
       setError(e.message || "Split by size failed");

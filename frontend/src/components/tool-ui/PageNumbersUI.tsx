@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const posOptions = [
   { id: "bottom-center", label: "Bottom Center" }, { id: "bottom-left", label: "Bottom Left" }, { id: "bottom-right", label: "Bottom Right" },
@@ -25,7 +25,7 @@ export function PageNumbersUI() {
     if (!file) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/page-numbers", file.raw, "numbered.pdf", { position, start_number: startNumber, font_size: fontSize });
+      await processAndDownload("/page-numbers", file.raw, buildOutputFilename(file.name, "numbered", "pdf"), { position, start_number: startNumber, font_size: fontSize });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

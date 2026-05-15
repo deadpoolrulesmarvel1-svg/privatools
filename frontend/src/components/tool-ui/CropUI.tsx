@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 export function CropUI() {
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -21,7 +21,7 @@ export function CropUI() {
         if (!file) return;
         setState("processing"); setError(null);
         try {
-            await processAndDownload("/crop", file.raw, "cropped.pdf", { top, bottom, left, right });
+            await processAndDownload("/crop", file.raw, buildOutputFilename(file.name, "cropped", "pdf"), { top, bottom, left, right });
             setState("done");
         } catch (e: any) { setError(e.message || "Cropping failed"); setState("idle"); }
     };

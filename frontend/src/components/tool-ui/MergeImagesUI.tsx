@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Loader2, CheckCircle2, X, ImageIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 type MergeFile = { id: string; name: string; size: string; raw: File; preview: string };
 let fileId = 0;
@@ -34,7 +34,8 @@ export function MergeImagesUI() {
         if (files.length < 2) return;
         setState("processing"); setError(null);
         try {
-            await processFilesAndDownload("/merge-images", files.map(f => f.raw), "merged.png", { direction });
+            const outName = buildOutputFilename(files[0]?.raw.name, "merged", "png");
+            await processFilesAndDownload("/merge-images", files.map(f => f.raw), outName, { direction });
             setState("done");
         } catch (e: any) { setError(e.message || "Merge failed"); setState("idle"); }
     };

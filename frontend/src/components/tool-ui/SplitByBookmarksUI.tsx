@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, AlertCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 export function SplitByBookmarksUI() {
@@ -14,7 +14,7 @@ export function SplitByBookmarksUI() {
     setStatus("processing");
     setError(null);
     try {
-      await processAndDownload("/split-by-bookmarks", file, "split_bookmarks.zip");
+      await processAndDownload("/split-by-bookmarks", file, buildOutputFilename(file.name, "split_bookmarks", "zip"));
       setStatus("done");
     } catch (e: any) {
       setError(e.message || "Split by bookmarks failed");

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const sizes = [
   { id: "a4", label: "A4" }, { id: "letter", label: "Letter" }, { id: "a3", label: "A3" }, { id: "legal", label: "Legal" }, { id: "custom", label: "Custom" },
@@ -26,7 +26,7 @@ export function ResizeUI() {
     try {
       const params: Record<string, string | number> = { page_size: pageSize };
       if (pageSize === "custom") { params.width = width; params.height = height; }
-      await processAndDownload("/resize", file.raw, "resized.pdf", params);
+      await processAndDownload("/resize", file.raw, buildOutputFilename(file.name, "resized", "pdf"), params);
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

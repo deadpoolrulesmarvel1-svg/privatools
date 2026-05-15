@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 
@@ -26,7 +26,14 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         if (!file) return;
         setStatus("processing"); setError(null); setProgress(undefined);
         try {
-            const outName = outputFilename || file.name.replace(/\.[^.]+$/, `.${outputExt}`);
+            // Derive a filename that keeps the user's original stem so they
+            // can identify the result. `outputFilename` is a per-tool template
+            // like "compressed.pdf" — we treat its stem as the action suffix
+            // unless it's a generic placeholder ("converted", "document", …).
+            const GENERIC = new Set(["converted", "document", "output", "result", "file", "archive"]);
+            const labelStem = outputFilename.replace(/\.[^.]+$/, "");
+            const suffix = labelStem && !GENERIC.has(labelStem.toLowerCase()) ? labelStem : null;
+            const outName = buildOutputFilename(file.name, suffix, outputExt);
             await processAndDownload(getToolEndpoint(slug), file, outName, undefined, (phase, pct) => {
                 if (phase === "upload") {
                     setProgressLabel("Uploading…");

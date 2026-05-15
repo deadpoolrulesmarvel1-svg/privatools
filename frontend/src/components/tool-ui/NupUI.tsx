@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const opts = [
   { id: 2, label: "2-up" }, { id: 4, label: "4-up" }, { id: 6, label: "6-up" }, { id: 9, label: "9-up" }, { id: 16, label: "16-up" },
@@ -22,7 +22,7 @@ export function NupUI() {
     if (!file) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/nup", file.raw, "nup.pdf", { pages_per_sheet: pps });
+      await processAndDownload("/nup", file.raw, buildOutputFilename(file.name, "nup", "pdf"), { pages_per_sheet: pps });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

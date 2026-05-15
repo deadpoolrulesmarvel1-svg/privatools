@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Upload, Shuffle, Loader2, AlertCircle, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 type MixMode = "alternate" | "reverse-alternate";
 
@@ -35,7 +35,7 @@ export function AlternateMixUI() {
         throw new Error(b.detail || "Alternate mix failed");
       }
       const blob = await res.blob();
-      downloadBlob(blob, "alternate_mix.pdf");
+      downloadBlob(blob, buildOutputFilename(file1?.name, "alternate_mix", "pdf"));
       setState("done");
     } catch (e: any) {
       setError(e.message || "Alternate mix failed");

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Upload, ScanText, Trash2, Copy, Download, Loader2, AlertCircle, Check, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { uploadFileGetJson, uploadFile, downloadBlob } from "@/lib/api";
+import { uploadFileGetJson, uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
 
 interface OcrResult { text: string; language: string; characters: number; }
 interface ImgFile { file: File; preview: string; }
@@ -63,7 +63,7 @@ export function ImageOcrUI() {
         try {
             const res = await uploadFile("/image-ocr", imgFile.file, { lang, output: "txt" });
             const blob = await res.blob();
-            downloadBlob(blob, "extracted_text.txt");
+            downloadBlob(blob, buildOutputFilename(file?.name, "extracted_text", "txt"));
         } catch (e: any) {
             setError(e.message || "Download failed");
         }

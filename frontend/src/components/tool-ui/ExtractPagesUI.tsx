@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, AlertCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 export function ExtractPagesUI() {
@@ -15,7 +15,7 @@ export function ExtractPagesUI() {
     setStatus("processing");
     setError(null);
     try {
-      await processAndDownload("/extract-pages", file, "extracted.pdf", { pages });
+      await processAndDownload("/extract-pages", file, buildOutputFilename(file.name, "extracted", "pdf"), { pages });
       setStatus("done");
     } catch (e: any) {
       setError(e.message || "Extract pages failed");

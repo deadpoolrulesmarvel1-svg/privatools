@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, X, FileText, AlertCircle, Download, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const COMPARE_MODES = [
   { value: "visual", label: "Visual Diff", desc: "Side-by-side with highlights" },
@@ -42,7 +42,7 @@ export function CompareUI() {
         const blob = await res.blob();
         setResultBlob(blob);
         setTextResult(null);
-        downloadBlob(blob, "comparison.pdf");
+        downloadBlob(blob, buildOutputFilename(file1?.name, "comparison", "pdf"));
       } else {
         const json = await res.json() as TextCompareResult;
         setTextResult(json);
@@ -96,7 +96,7 @@ export function CompareUI() {
       )}
       <div className="flex justify-center gap-3 flex-wrap">
         {mode === "visual" && (
-          <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "comparison.pdf")}><Download size={15} /> Download Again</Button>
+          <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, buildOutputFilename(file1?.name, "comparison", "pdf"))}><Download size={15} /> Download Again</Button>
         )}
         <Button variant="outline" onClick={() => { setFile1(null); setFile2(null); setState("idle"); setResultBlob(null); setTextResult(null); }}>Compare more</Button>
       </div>

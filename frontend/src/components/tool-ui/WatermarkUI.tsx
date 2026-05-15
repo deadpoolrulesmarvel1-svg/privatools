@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 const positions = [
   { id: "center", label: "Center" },
@@ -73,7 +73,7 @@ export function WatermarkUI() {
         throw new Error(body.detail || `Request failed (${res.status})`);
       }
       const blob = await res.blob();
-      downloadBlob(blob, "watermarked.pdf");
+      downloadBlob(blob, buildOutputFilename(file?.name, "watermarked", "pdf"));
       setState("done");
     } catch (e: any) {
       setError(e.message || "Failed");

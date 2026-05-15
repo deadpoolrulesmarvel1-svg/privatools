@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 export function BookmarksUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -18,7 +18,7 @@ export function BookmarksUI() {
     if (!file) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/bookmarks", file.raw, "bookmarked.pdf", { bookmarks });
+      await processAndDownload("/bookmarks", file.raw, buildOutputFilename(file.name, "bookmarked", "pdf"), { bookmarks });
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

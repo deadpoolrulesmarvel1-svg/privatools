@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename } from "@/lib/api";
 
 type Level = "light" | "recommended" | "extreme" | "custom";
 type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
@@ -62,7 +62,7 @@ export function CompressUI() {
         const base = files[0].name.replace(/\.pdf$/i, "");
         downloadBlob(blob, `${base}_compressed.pdf`);
       } else {
-        await processFilesAndDownload("/compress", files.map(f => f.raw), "compressed_pdfs.zip", params);
+        await processFilesAndDownload("/compress", files.map(f => f.raw), buildOutputFilename(files[0]?.name, "compressed", "zip"), params);
         setCompressedSize(0);
         setResultBlob(null);
         setState("done");
