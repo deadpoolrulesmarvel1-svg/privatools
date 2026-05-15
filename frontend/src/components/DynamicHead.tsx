@@ -55,11 +55,11 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/smallpdf": {
         title: "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
-        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 107 tools vs 21 tools. See the full comparison.",
+        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 152+ tools vs 30 tools. See the full comparison.",
     },
     "/compare/adobe-acrobat": {
         title: "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
-        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 107 tools. Compare features side by side.",
+        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 152+ tools. Compare features side by side.",
     },
     "/compare/sejda": {
         title: "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -71,7 +71,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/foxit": {
         title: "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
-        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 107 privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 152+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
     },
     "/compare/lightpdf": {
         title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
