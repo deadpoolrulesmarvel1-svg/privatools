@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, Shield, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 
 type ProtectFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -48,7 +48,8 @@ export function ProtectUI() {
     if (!files.length || !password) return;
     setState("processing"); setError(null);
     try {
-      const outName = files.length === 1 ? "protected.pdf" : "protected_pdfs.zip";
+      const outExt = files.length === 1 ? "pdf" : "zip";
+      const outName = buildOutputFilename(files[0]?.raw.name, "protected", outExt);
       await processFilesAndDownload("/protect", files.map(f => f.raw), outName, {
         password, allow_print: allowPrint, allow_extract: allowExtract, allow_modify: allowModify,
       });

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 
 const formats = ["mp3", "wav", "aac", "flac", "ogg"];
 
@@ -15,7 +15,7 @@ export function ExtractAudioUI() {
   const process = async () => {
     if (!file) return;
     setStatus("processing"); setError(null);
-    try { await processAndDownload("/extract-audio", file, `audio.${format}`, { format }); setStatus("done"); }
+    try { await processAndDownload("/extract-audio", file, buildOutputFilename(file.name, null, format), { format }); setStatus("done"); }
     catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };
 

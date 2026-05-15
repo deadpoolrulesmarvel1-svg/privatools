@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { processAndDownload } from "@/lib/api";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
 
 export function TrimMediaUI() {
   const [file, setFile] = useState<File | null>(null);
@@ -15,7 +15,7 @@ export function TrimMediaUI() {
     setStatus("processing"); setError(null);
     try {
       const ext = file.name.split(".").pop() || "mp4";
-      await processAndDownload("/trim-media", file, `trimmed.${ext}`, { start, end });
+      await processAndDownload("/trim-media", file, buildOutputFilename(file.name, "trimmed", ext), { start, end });
       setStatus("done");
     } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };

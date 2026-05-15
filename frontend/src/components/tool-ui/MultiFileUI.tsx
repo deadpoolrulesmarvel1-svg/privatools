@@ -6,7 +6,7 @@ import { useState, useRef, useCallback } from "react";
 import { FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical, Plus, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 interface Item { id: string; name: string; size: string; file: File }
 
@@ -70,7 +70,23 @@ export function MultiFileUI({
         setState("processing");
         setError(null);
         try {
-            await processFilesAndDownload(endpoint, files.map(f => f.file), outputFilename, params);
+            // Preserve the first input's stem so the user can identify the
+            // result. Prefer actionVerb when callers passed one (e.g.
+            // "Compress" → "MyReport_compressed.pdf"); otherwise extract the
+            // stem from outputFilename (e.g. "merged.mp4" → "MyClip_merged.mp4").
+            const labelStem = outputFilename.replace(/\.[^.]+$/, "");
+            const ext = (outputFilename.match(/\.([^.]+)$/) || [, "zip"])[1];
+            const GENERIC = /^(archive|output|result|file|compressed-pdfs?|merged-files?|combined-files?)$/i;
+            let suffix: string;
+            if (actionVerb && actionVerb.toLowerCase() !== "process") {
+                suffix = actionVerb.toLowerCase() + (actionVerb.toLowerCase().endsWith("e") ? "d" : "ed");
+            } else if (labelStem && !GENERIC.test(labelStem)) {
+                suffix = labelStem;
+            } else {
+                suffix = "combined";
+            }
+            const outName = buildOutputFilename(files[0]?.file.name, suffix, ext);
+            await processFilesAndDownload(endpoint, files.map(f => f.file), outName, params);
             setState("done");
         } catch (e) {
             setError(e instanceof Error ? e.message : "Processing failed");

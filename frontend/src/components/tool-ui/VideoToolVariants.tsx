@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, CheckCircle2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { GenericUI } from "./GenericUI";
 
 // ─── 1. Video → PDF ─ frame count slider ─────────────────────────────
@@ -195,7 +195,7 @@ export function AddSubtitlesUI() {
                 throw new Error(body.detail || `Request failed (${res.status})`);
             }
             const blob = await res.blob();
-            downloadBlob(blob, "subtitled.mp4");
+            downloadBlob(blob, buildOutputFilename(video?.name, "subtitled", "mp4"));
             setState("done");
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Failed");

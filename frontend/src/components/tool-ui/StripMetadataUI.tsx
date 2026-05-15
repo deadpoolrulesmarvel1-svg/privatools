@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, DatabaseZap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 
 type StripFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -28,7 +28,8 @@ export function StripMetadataUI() {
         if (!files.length) return;
         setState("processing"); setError(null);
         try {
-            const outName = files.length === 1 ? "stripped.pdf" : "stripped_pdfs.zip";
+            const outExt = files.length === 1 ? "pdf" : "zip";
+            const outName = buildOutputFilename(files[0]?.raw.name, "stripped", outExt);
             await processFilesAndDownload("/strip-metadata", files.map(f => f.raw), outName);
             setState("done");
         } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
