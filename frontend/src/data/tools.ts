@@ -416,9 +416,9 @@ export const tools: Tool[] = [
     category: "organize", accepts: ".pdf", outputLabel: "cleaned.pdf",
   },
   {
-    slug: "auto-crop", icon: ScissorsSquare, name: "Remove Margins",
-    description: "Auto-trim white space/margins around text on all pages",
-    longDescription: "Remove PDF margins online — auto-detect and trim white space around text on all pages. Ideal for reading PDFs on e-readers, tablets, or phones where screen space is limited. Free auto-crop tool.",
+    slug: "auto-crop", icon: ScissorsSquare, name: "Auto-Crop PDF (Remove Margins)",
+    description: "Auto-detect content and trim margins from every page",
+    longDescription: "Auto-crop PDF online for free — automatically detect the content bounding box on every page and trim the surrounding whitespace. Ideal for reading PDFs on e-readers, tablets, or phones where screen space is limited. Also called Remove Margins. Free tool, no sign-up.",
     category: "optimize", accepts: ".pdf", outputLabel: "cropped.pdf",
   },
 

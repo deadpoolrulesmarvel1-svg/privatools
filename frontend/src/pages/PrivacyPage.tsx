@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="font-mono-meta text-xs text-muted-foreground">
-              Last updated: May 4, 2026
+              Last updated: May 15, 2026
             </p>
           </header>
 
@@ -61,9 +61,32 @@ export default function PrivacyPage() {
 
           <h2>2. Client-Side Tools</h2>
           <p>
-            Several tools (JSON Formatter, Text Diff, Base64 Encoder, Hash Generator, CSV-JSON Converter,
-            Markdown-HTML Converter) run entirely in your browser using JavaScript. Your data never leaves
-            your device — not even temporarily. Zero network requests are made.
+            A growing number of tools run <strong>entirely in your browser</strong> using JavaScript
+            and (in some cases) WebAssembly. Your data never leaves your device — not even
+            temporarily. You can verify by opening browser DevTools → Network and watching for
+            requests during processing.
+          </p>
+          <ul>
+            <li><strong>Developer utilities</strong>: JSON / XML Formatter, Text Diff, Base64
+              Encoder, Hash Generator, CSV ↔ JSON Converter, Markdown ↔ HTML Converter,
+              JWT Decoder, Regex Tester, Timestamp Converter, URL Encoder, Word Counter,
+              Color Converter, UUID Generator, Lorem Ipsum Generator, Password Generator.</li>
+            <li><strong>Browser-side AI</strong>: Summarize PDF (distilbart-cnn-12-6) and Smart
+              Redact (BERT-base-NER) run AI models <em>in your browser</em> via the
+              @huggingface/transformers WebAssembly runtime. The models (~250 MB) are downloaded
+              once from the Hugging Face CDN and cached in your browser's IndexedDB storage.
+              After the model is cached, summarization and PII detection happen offline — your
+              PDF content never touches our server.</li>
+            <li><strong>Subtitle Converter</strong>: SRT ↔ VTT ↔ ASS conversion happens entirely
+              in your browser.</li>
+          </ul>
+          <p>
+            On first visit to a browser-side AI tool, your browser fetches the model from
+            <code> huggingface.co</code> and <code>cdn.jsdelivr.net</code> over HTTPS. Hugging Face
+            sees that <em>someone</em> requested the model file (the request includes your IP and
+            user agent, as with any web request); they do not see the content you intend to
+            summarise or redact. Subsequent uses of the tool, including processing your file, run
+            entirely offline from the cached model.
           </p>
 
           <h2>3. Information We Do Not Collect</h2>

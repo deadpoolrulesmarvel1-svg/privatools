@@ -274,9 +274,9 @@ export const nonPdfTools: NonPdfTool[] = [
     category: "developer", clientOnly: true, accepts: "", outputLabel: "color value",
   },
   {
-    slug: "url-encoder", icon: Code2, name: "URL & JWT Decoder",
-    description: "URL encode/decode plus JWT inspector",
-    longDescription: "URL encode, URL decode, or decode a JWT online for free — paste a token to see its header, payload, and signature decoded as JSON. All processing happens in your browser; tokens never leave.",
+    slug: "url-encoder", icon: Code2, name: "URL Encoder / Decoder",
+    description: "Percent-encode or decode URLs in your browser",
+    longDescription: "Encode or decode URLs online for free — percent-encode strings for use in query parameters, or decode %20/%26/etc back to readable text. Runs entirely in your browser; nothing is sent to any server. For JWT decoding specifically, use the dedicated JWT Decoder tool.",
     category: "developer", clientOnly: true, accepts: "", outputLabel: "encoded/decoded",
   },
   {
