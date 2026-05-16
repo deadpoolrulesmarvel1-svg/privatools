@@ -86,6 +86,8 @@ NON_PDF_TOOLS = [
     # v1.5.0 / phase 7 — competitor-gap tools
     "mute-video", "reverse-video", "video-speed", "audio-trim",
     "image-palette", "pixelate-image",
+    # v1.5.1 — image rotate/flip
+    "rotate-image", "flip-image",
 ]
 
 # v1.2.0 PDF additions (sitemap was missing these)

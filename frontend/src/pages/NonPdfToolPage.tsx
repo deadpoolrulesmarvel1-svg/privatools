@@ -78,6 +78,8 @@ const LazyVideoSpeedUI       = lazyNamed(() => import("@/components/tool-ui/Phas
 const LazyAudioTrimUI        = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "AudioTrimUI");
 const LazyImagePaletteUI     = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "ImagePaletteUI");
 const LazyPixelateImageUI    = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "PixelateImageUI");
+const LazyRotateImageUI      = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "RotateImageUI");
+const LazyFlipImageUI        = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "FlipImageUI");
 
 // Round-U dedicated UIs (formerly fell through to GenericUI)
 const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
@@ -258,6 +260,8 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "audio-trim":       return <LazyAudioTrimUI />;
     case "image-palette":    return <LazyImagePaletteUI />;
     case "pixelate-image":   return <LazyPixelateImageUI />;
+    case "rotate-image":     return <LazyRotateImageUI />;
+    case "flip-image":       return <LazyFlipImageUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }

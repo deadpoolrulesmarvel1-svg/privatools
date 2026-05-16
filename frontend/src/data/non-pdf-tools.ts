@@ -582,6 +582,20 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     popularity: 40,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "image.png",
   },
+  {
+    slug: "rotate-image", icon: ImageIcon, name: "Rotate Image",
+    description: "Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle",
+    longDescription: "Rotate any image left, right, or upside down — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). Output is downscaled losslessly when possible; transparency is preserved for PNG and WEBP.",
+    popularity: 41,
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "rotated.png",
+  },
+  {
+    slug: "flip-image", icon: ImageIcon, name: "Flip Image",
+    description: "Mirror an image horizontally or vertically",
+    longDescription: "Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.",
+    popularity: 42,
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "flipped.png",
+  },
 ];
 
 // Sort by popularity rank (lower = more searched / used). Stable sort

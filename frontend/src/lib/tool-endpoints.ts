@@ -87,6 +87,9 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "audio-trim":       "/audio-trim",
   "image-palette":    "/image-palette",
   "pixelate-image":   "/pixelate-image",
+  // v1.5.1 — image rotate/flip
+  "rotate-image":     "/rotate-image",
+  "flip-image":       "/flip-image",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

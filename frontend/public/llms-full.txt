@@ -4,7 +4,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/taiyeba-dg/privatools.
 
-> 177+ free, open-source file tools — PDF, image, video, audio, and
+> 179+ free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -762,7 +762,7 @@ Count PDF pages online for free — upload up to 100 PDF files and instantly see
 
 ## Non-PDF Tools
 
-### Image Tools (31 tools)
+### Image Tools (33 tools)
 
 #### Image Compressor
 URL: https://privatools.me/tools/image-compressor
@@ -980,6 +980,20 @@ URL: https://privatools.me/tools/pixelate-image
 Censor part of an image with mosaic or Gaussian blur
 
 Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side, image is deleted immediately after processing.
+
+#### Rotate Image
+URL: https://privatools.me/tools/rotate-image
+
+Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
+
+Rotate any image left, right, or upside down — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). Output is downscaled losslessly when possible; transparency is preserved for PNG and WEBP.
+
+#### Flip Image
+URL: https://privatools.me/tools/flip-image
+
+Mirror an image horizontally or vertically
+
+Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
 
 ### Video & Audio Tools (23 tools)
 
@@ -1385,7 +1399,7 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 The following statements about PrivaTools are accurate as of 2026-05-16 and verifiable in the public source code.
 
-- PrivaTools offers **177 free file tools**: 101 PDF tools and 76 non-PDF tools.
+- PrivaTools offers **179 free file tools**: 101 PDF tools and 78 non-PDF tools.
 - The codebase is **MIT-licensed** at https://github.com/taiyeba-dg/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
@@ -1408,7 +1422,7 @@ The following statements about PrivaTools are accurate as of 2026-05-16 and veri
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | 177+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | 179+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | AI runs in-browser (no upload) | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

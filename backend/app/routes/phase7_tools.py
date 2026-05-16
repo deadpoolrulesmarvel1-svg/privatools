@@ -275,3 +275,91 @@ async def pixelate_image_endpoint(
         str(out_path), media_type=media,
         filename=f"{suffix_word}{out_ext}", background=cleanup,
     )
+
+
+# ─── Rotate image (90 / 180 / 270 / arbitrary) ───────────────────────────
+@router.post("/rotate-image")
+async def rotate_image_endpoint(
+    file: UploadFile = File(...),
+    degrees: int = Form(90),
+):
+    """Rotate an image by 90, 180, 270, or an arbitrary angle (counter-clockwise)."""
+    from PIL import Image
+
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_IMAGE:
+        raise HTTPException(status_code=400, detail="Please upload an image file.")
+    img = Image.open(io.BytesIO(data))
+    # Preserve alpha if PNG/WEBP — convert if needed
+    has_alpha = img.mode in ("RGBA", "LA") or "transparency" in img.info
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGBA" if has_alpha else "RGB")
+    deg = ((degrees % 360) + 360) % 360
+    if deg in (90, 180, 270):
+        method = {90: Image.Transpose.ROTATE_90, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_270}[deg]
+        img = img.transpose(method)
+    elif deg != 0:
+        # Arbitrary angle — Pillow rotates CCW by default; expand=True to avoid cropping.
+        # Use a transparent fill if source had alpha, else white.
+        fill = (0, 0, 0, 0) if has_alpha else (255, 255, 255)
+        img = img.rotate(deg, resample=Image.Resampling.BICUBIC, expand=True, fillcolor=fill)
+    out_ext = suffix if suffix in (".jpg", ".jpeg", ".png", ".webp") else ".png"
+    out_path = get_temp_path(f"rot_out_{uuid.uuid4().hex}{out_ext}")
+    if out_ext in (".jpg", ".jpeg"):
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        img.save(out_path, "JPEG", quality=92)
+        media = "image/jpeg"
+    elif out_ext == ".webp":
+        img.save(out_path, "WEBP", quality=92)
+        media = "image/webp"
+    else:
+        img.save(out_path, "PNG")
+        media = "image/png"
+    cleanup = BackgroundTask(remove_files, str(out_path))
+    return FileResponse(
+        str(out_path), media_type=media,
+        filename=f"rotated{out_ext}", background=cleanup,
+    )
+
+
+# ─── Flip image (horizontal / vertical) ──────────────────────────────────
+@router.post("/flip-image")
+async def flip_image_endpoint(
+    file: UploadFile = File(...),
+    direction: str = Form("horizontal"),
+):
+    """Mirror an image horizontally or vertically."""
+    from PIL import Image
+
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
+    suffix = _suffix(file.filename)
+    if suffix not in ALLOWED_IMAGE:
+        raise HTTPException(status_code=400, detail="Please upload an image file.")
+    direction = (direction or "").lower().strip()
+    if direction not in ("horizontal", "vertical", "h", "v"):
+        raise HTTPException(status_code=400, detail="direction must be 'horizontal' or 'vertical'")
+    img = Image.open(io.BytesIO(data))
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGBA" if (img.mode in ("LA",) or "transparency" in img.info) else "RGB")
+    method = Image.Transpose.FLIP_LEFT_RIGHT if direction in ("horizontal", "h") else Image.Transpose.FLIP_TOP_BOTTOM
+    img = img.transpose(method)
+    out_ext = suffix if suffix in (".jpg", ".jpeg", ".png", ".webp") else ".png"
+    out_path = get_temp_path(f"flip_out_{uuid.uuid4().hex}{out_ext}")
+    if out_ext in (".jpg", ".jpeg"):
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        img.save(out_path, "JPEG", quality=92)
+        media = "image/jpeg"
+    elif out_ext == ".webp":
+        img.save(out_path, "WEBP", quality=92)
+        media = "image/webp"
+    else:
+        img.save(out_path, "PNG")
+        media = "image/png"
+    cleanup = BackgroundTask(remove_files, str(out_path))
+    return FileResponse(
+        str(out_path), media_type=media,
+        filename=f"flipped-{direction[0]}{out_ext}", background=cleanup,
+    )

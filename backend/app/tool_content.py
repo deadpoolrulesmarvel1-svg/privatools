@@ -437,6 +437,16 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Choose effect + strength", "text": "Pick Pixelate (mosaic, still readable as 'something censored') or Blur (Gaussian, smoother). Strength slider 1-100."},
         {"name": "Download the result", "text": "The processed image downloads immediately. The original is deleted from the server seconds later."},
     ],
+    "rotate-image": [
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF — up to 50 MB."},
+        {"name": "Pick a rotation angle", "text": "Click 90° (left/right), 180°, 270°, or enter any custom angle (e.g. 13° to straighten a tilted scan). The canvas auto-expands so nothing is cropped off."},
+        {"name": "Click Rotate", "text": "Output downloads as the same format you uploaded; transparency is preserved for PNG and WEBP."},
+    ],
+    "flip-image": [
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF up to 50 MB."},
+        {"name": "Pick horizontal or vertical", "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom (upside down)."},
+        {"name": "Click Flip", "text": "The mirrored copy downloads instantly. Original quality and transparency are preserved."},
+    ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
@@ -1348,6 +1358,16 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Pixelate vs blur — which should I use?", "a": "Pixelate is reversible (depixelization attacks can sometimes recover content) but reads clearly as 'censored'. Blur is harder to reverse but can look like a normal photo defect. For true privacy on serious content, use both: blur first then pixelate."},
         {"q": "Can I select a specific region?", "a": "This tool applies the effect to the whole image. For region-selective censoring, upload to an image editor first (e.g. our Edit PDF for documents) and white-out or rectangle over the area."},
         {"q": "Does the original get stored?", "a": "No — your image is processed in an isolated Docker container and deleted the moment the response is returned."},
+    ],
+    "rotate-image": [
+        {"q": "Will rotation lose quality?", "a": "For 90°/180°/270° rotations no — they're lossless transpositions of pixels. Arbitrary angles re-sample using bicubic interpolation which is visually near-lossless but technically introduces sub-pixel smoothing."},
+        {"q": "Why is my output bigger than the input?", "a": "For non-90° angles, the rotated rectangle no longer fits in the original bounding box. The canvas auto-expands so the whole rotated image is visible (corners get transparent/white padding)."},
+        {"q": "Does PNG/WEBP transparency carry over?", "a": "Yes — the alpha channel is preserved, and rotated corners are transparent (not white) for PNG and WEBP. For JPG the corners get white since JPG has no alpha."},
+    ],
+    "flip-image": [
+        {"q": "Horizontal vs vertical — when do I use which?", "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip turns the image upside down — used for design layouts or correcting scans that were placed face-down."},
+        {"q": "Does flipping change the file size?", "a": "Effectively no — flipping is a pure pixel rearrangement, so the encoded output is similar in size to the input (sometimes 1-3% larger because compression heuristics work slightly differently on the new orientation)."},
+        {"q": "Is metadata preserved?", "a": "We strip EXIF orientation hints on save, so the saved image bytes match what you see. If you need the original metadata kept, use Remove EXIF + this tool together."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────

@@ -376,6 +376,7 @@ _POPULARITY: dict[str, int] = {
     "extract-archive": 310, "create-zip": 311,
     # ── Phase 7 (competitor-gap, v1.5.0) — image + video/audio gaps ────
     "image-palette": 39, "pixelate-image": 40,
+    "rotate-image": 41, "flip-image": 42,
     "mute-video": 53, "video-speed": 55, "audio-trim": 56,
     "reverse-video": 65,
 }
@@ -552,6 +553,8 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "audio-trim":       "Upload an audio file, type start and end timestamps (HH:MM:SS), and download just that segment — lossless stream-copy.",
     "image-palette":    "Upload an image and copy the dominant color HEX/rgb values with coverage percentages — useful for extracting brand colors from a logo.",
     "pixelate-image":   "Upload an image, pick mosaic pixelation or Gaussian blur, set strength, and download a censored copy for privacy-safe sharing.",
+    "rotate-image":     "Upload an image, pick 90°, 180°, 270°, or type a custom angle, and download the rotated version — transparency preserved for PNG and WEBP.",
+    "flip-image":       "Upload an image and download a horizontally or vertically mirrored copy — fixes selfie-mirroring and lets you build perfect reflections.",
 }
 
 
@@ -768,6 +771,8 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "audio-trim":         ("Audio Trimmer",      "Trim or cut audio files online for free — MP3, WAV, AAC, FLAC, OGG, M4A. Specify start and end timestamps (HH:MM:SS) and download just the chosen segment. Lossless stream-copy."),
     "image-palette":      ("Image Color Palette","Extract dominant color palette from images online for free — upload any image and get HEX codes, rgb() values, and percentage coverage for the top colors. Perfect for designers extracting brand colors or building UI themes."),
     "pixelate-image":     ("Pixelate / Blur Image","Pixelate or blur images online for free — obscure sensitive content (faces, license plates, addresses) before sharing. Choose mosaic-style pixelation or smooth Gaussian blur with adjustable strength."),
+    "rotate-image":       ("Rotate Image",        "Rotate images online for free — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or any custom angle. Canvas auto-expands so nothing is cropped. Transparency preserved for PNG and WEBP."),
+    "flip-image":         ("Flip Image",          "Flip or mirror images online for free — horizontally or vertically. Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Fix selfie mirroring or prep design assets in seconds."),
 }
 
 

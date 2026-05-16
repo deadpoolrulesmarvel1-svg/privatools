@@ -4,10 +4,12 @@
  *   AudioTrimUI        — standalone audio cutter (separate from video trim)
  *   ImagePaletteUI     — extract dominant color palette from any image
  *   PixelateImageUI    — pixelate or Gaussian-blur an entire image (privacy)
+ *   RotateImageUI      — rotate by 90/180/270 or arbitrary angle
+ *   FlipImageUI        — horizontal or vertical mirror
  * Plus simple wrappers for mute-video and reverse-video via GenericUI.
  */
 import { useState, useRef } from "react";
-import { Upload, Loader2, AlertCircle, X, FileText, CheckCircle2, Copy } from "lucide-react";
+import { Upload, Loader2, AlertCircle, X, FileText, CheckCircle2, Copy, RotateCw, FlipHorizontal, FlipVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, uploadFileGetJson, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
@@ -289,6 +291,180 @@ export function PixelateImageUI() {
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
                     <CheckCircle2 size={28} className="mx-auto mb-2 text-emerald-400" />
                     <p className="text-sm font-semibold text-emerald-400 mb-3">Image {mode === "pixelate" ? "pixelated" : "blurred"} and downloaded</p>
+                    <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Try another</Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Rotate Image ───────────────────────────────────────────────────────
+export function RotateImageUI() {
+    const [file, setFile] = useState<File | null>(null);
+    const [degrees, setDegrees] = useState<number>(90);
+    const [customMode, setCustomMode] = useState(false);
+    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
+    const [error, setError] = useState<string | null>(null);
+    const ref = useRef<HTMLInputElement>(null);
+
+    const process = async () => {
+        if (!file) return;
+        setStatus("processing"); setError(null);
+        try {
+            const res = await uploadFile("/rotate-image", file, { degrees });
+            const blob = await res.blob();
+            const ext = file.name.split(".").pop() || "png";
+            downloadBlob(blob, buildOutputFilename(file.name, "rotated", ext));
+            setStatus("done");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed");
+            setStatus("idle");
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <div onClick={() => ref.current?.click()}
+                className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
+                <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
+                    onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
+                <Upload size={22} className="text-muted-foreground" />
+                <p className="text-sm font-semibold">{file ? file.name : "Drop an image"}</p>
+                {file && <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+            </div>
+
+            <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
+                <div>
+                    <p className="text-sm font-semibold mb-2">Rotation</p>
+                    <div className="grid grid-cols-4 gap-2">
+                        {[90, 180, 270, "custom"].map(opt => {
+                            const isCustom = opt === "custom";
+                            const isActive = isCustom ? customMode : (!customMode && degrees === opt);
+                            return (
+                                <button
+                                    key={String(opt)}
+                                    type="button"
+                                    onClick={() => {
+                                        if (isCustom) { setCustomMode(true); }
+                                        else { setCustomMode(false); setDegrees(opt as number); }
+                                    }}
+                                    aria-pressed={isActive}
+                                    className={cn(
+                                        "rounded-lg border p-3 text-center transition-all",
+                                        isActive ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40"
+                                    )}
+                                >
+                                    <p className="text-[13px] font-semibold text-foreground">{isCustom ? "Custom" : `${opt}°`}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        {opt === 90 ? "Right" : opt === 180 ? "Upside-down" : opt === 270 ? "Left" : "Any angle"}
+                                    </p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+                {customMode && (
+                    <div>
+                        <label htmlFor="rot-deg" className="text-sm font-semibold flex justify-between mb-2">
+                            <span>Custom angle</span><span className="text-xs font-mono text-accent">{degrees}°</span>
+                        </label>
+                        <input id="rot-deg" type="range" min={-180} max={180} step={1} value={degrees}
+                            onChange={e => setDegrees(parseInt(e.target.value, 10))} className="w-full" />
+                        <p className="text-[11px] text-muted-foreground mt-1">Counter-clockwise. Canvas auto-expands so no cropping.</p>
+                    </div>
+                )}
+            </div>
+
+            {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
+            {file && status !== "processing" && (
+                <Button onClick={process} className="glow-primary"><RotateCw size={14} className="mr-1.5" />Rotate image</Button>
+            )}
+            {status === "processing" && <Button disabled><Loader2 size={14} className="animate-spin mr-1.5" />Rotating…</Button>}
+            {status === "done" && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
+                    <CheckCircle2 size={28} className="mx-auto mb-2 text-emerald-400" />
+                    <p className="text-sm font-semibold text-emerald-400 mb-3">Image rotated and downloaded</p>
+                    <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Try another</Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Flip Image ─────────────────────────────────────────────────────────
+export function FlipImageUI() {
+    const [file, setFile] = useState<File | null>(null);
+    const [direction, setDirection] = useState<"horizontal" | "vertical">("horizontal");
+    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
+    const [error, setError] = useState<string | null>(null);
+    const ref = useRef<HTMLInputElement>(null);
+
+    const process = async () => {
+        if (!file) return;
+        setStatus("processing"); setError(null);
+        try {
+            const res = await uploadFile("/flip-image", file, { direction });
+            const blob = await res.blob();
+            const ext = file.name.split(".").pop() || "png";
+            downloadBlob(blob, buildOutputFilename(file.name, `flipped-${direction[0]}`, ext));
+            setStatus("done");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed");
+            setStatus("idle");
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <div onClick={() => ref.current?.click()}
+                className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
+                <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
+                    onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
+                <Upload size={22} className="text-muted-foreground" />
+                <p className="text-sm font-semibold">{file ? file.name : "Drop an image"}</p>
+                {file && <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+            </div>
+
+            <div className="rounded-xl border border-border bg-card/40 p-5">
+                <p className="text-sm font-semibold mb-2">Direction</p>
+                <div className="grid grid-cols-2 gap-2">
+                    {([
+                        { value: "horizontal", label: "Horizontal", hint: "Mirror left ↔ right", icon: FlipHorizontal },
+                        { value: "vertical",   label: "Vertical",   hint: "Mirror top ↔ bottom", icon: FlipVertical },
+                    ] as const).map(opt => {
+                        const Icon = opt.icon;
+                        const active = direction === opt.value;
+                        return (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => setDirection(opt.value)}
+                                aria-pressed={active}
+                                className={cn(
+                                    "flex items-start gap-3 rounded-lg border p-3 text-left transition-all",
+                                    active ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40"
+                                )}
+                            >
+                                <Icon size={18} className="text-muted-foreground shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[13px] font-semibold text-foreground">{opt.label}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">{opt.hint}</p>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
+            {file && status !== "processing" && (
+                <Button onClick={process} className="glow-primary">{direction === "horizontal" ? <FlipHorizontal size={14} className="mr-1.5" /> : <FlipVertical size={14} className="mr-1.5" />}Flip image</Button>
+            )}
+            {status === "processing" && <Button disabled><Loader2 size={14} className="animate-spin mr-1.5" />Flipping…</Button>}
+            {status === "done" && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
+                    <CheckCircle2 size={28} className="mx-auto mb-2 text-emerald-400" />
+                    <p className="text-sm font-semibold text-emerald-400 mb-3">Image flipped and downloaded</p>
                     <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Try another</Button>
                 </div>
             )}
