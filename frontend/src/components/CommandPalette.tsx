@@ -148,6 +148,8 @@ const SYNONYMS: Record<string, string> = {
     "audio-trim":       "cut clip slice shorten audio",
     "image-palette":    "color palette dominant colors extract designer",
     "pixelate-image":   "censor blur mosaic obscure privacy face",
+    "rotate-image":     "turn spin angle 90 180 270 sideways tilt upright",
+    "flip-image":       "mirror reverse horizontal vertical selfie unmirror reflect",
     // v1.4.0 aliases
     "jpg-to-png":       "convert format lossless transparency",
     "png-to-jpg":       "convert format smaller photo",
