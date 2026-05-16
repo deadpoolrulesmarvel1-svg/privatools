@@ -394,7 +394,7 @@ export default function ToolPage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main>
+      <main id="main-content">
       {/* ─── Hero header (with subtle category-tinted backdrop) ────────── */}
       <section aria-label="Tool description" className={cn("relative border-b border-border", cc)}>
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">

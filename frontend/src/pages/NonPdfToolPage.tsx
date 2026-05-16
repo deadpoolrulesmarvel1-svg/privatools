@@ -306,7 +306,7 @@ export default function NonPdfToolPage() {
   return (
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
         <nav className="font-mono-meta text-[11px] text-muted-foreground mb-6 flex items-center gap-1.5">
           <Link to="/" className="hover:text-foreground transition-colors">ALL TOOLS</Link>
           <span className="text-muted-foreground/85">›</span>

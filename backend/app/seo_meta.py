@@ -1220,6 +1220,51 @@ def get_jsonld_for_path(path: str) -> dict | None:
             ],
         }
 
+    if path in ("/privacy", "/terms"):
+        page_name = "Privacy Policy" if path == "/privacy" else "Terms of Service"
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": page_name, "item": canonical_url})
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebPage",
+                    "@id": f"{canonical_url}#webpage",
+                    "name": title,
+                    "description": description,
+                    "url": canonical_url,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                    "datePublished": "2026-03-15",
+                    "dateModified": "2026-03-29" if path == "/privacy" else "2026-03-29",
+                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path in ("/pipeline", "/batch"):
+        page_name = "Pipeline" if path == "/pipeline" else "Batch"
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": page_name, "item": canonical_url})
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": ["WebPage", "WebApplication"],
+                    "@id": f"{canonical_url}#webapp",
+                    "name": title,
+                    "description": description,
+                    "url": canonical_url,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                    "applicationCategory": "BusinessApplication",
+                    "operatingSystem": "Any (browser-based)",
+                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
     if path == "/compare":
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": canonical_url})
         compare_items = []

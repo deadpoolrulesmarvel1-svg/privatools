@@ -190,3 +190,7 @@ Crawl-delay: 1
 # Discovery
 # ──────────────────────────────────────────────────────────────────
 Sitemap: https://privatools.me/sitemap.xml
+
+# AI / LLM discovery (llms.txt convention)
+# Short index:  https://privatools.me/llms.txt
+# Full corpus:  https://privatools.me/llms-full.txt

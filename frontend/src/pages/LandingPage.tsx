@@ -23,7 +23,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main>
+      <main id="main-content">
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-12 sm:pt-20 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 items-start">

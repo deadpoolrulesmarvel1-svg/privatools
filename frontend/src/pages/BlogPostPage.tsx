@@ -36,7 +36,7 @@ export default function BlogPostPage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-12">
+      <main id="main-content" className="mx-auto max-w-3xl px-4 sm:px-6 py-12">
         <nav className="mb-8">
           <Link
             to="/blog"

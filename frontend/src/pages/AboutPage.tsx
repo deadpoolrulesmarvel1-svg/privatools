@@ -21,7 +21,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-background text-foreground">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
         {/* Hero */}
         <header className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 mb-16 items-center">
           <div>

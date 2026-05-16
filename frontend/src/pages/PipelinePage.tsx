@@ -175,7 +175,7 @@ export default function PipelinePage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main>
+      <main id="main-content">
       {/* ─── HERO — explain the moat ─────────────────────────────── */}
       <section aria-label="Pipeline overview" className="relative overflow-hidden border-b border-border">
         <div className="hero-backdrop" aria-hidden="true" />

@@ -64,7 +64,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
         {/* Hero */}
         <header className="mb-10">
           <div className="flex items-center gap-3 mb-4">

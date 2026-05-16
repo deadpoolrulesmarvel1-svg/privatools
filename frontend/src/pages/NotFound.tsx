@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-32 text-center">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-32 text-center">
         {/* Newspaper "EXTRA!" header */}
         <div className="mb-8">
           <span className="section-flag text-lg tracking-[0.2em] px-4 py-2">EXTRA! EXTRA!</span>

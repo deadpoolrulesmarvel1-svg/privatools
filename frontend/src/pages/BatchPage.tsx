@@ -214,7 +214,7 @@ export default function BatchPage() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
         <div className="mb-8">
           <span className="section-flag">BATCH PROCESS</span>
           <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground mt-4 tracking-tight">Batch Process</h1>

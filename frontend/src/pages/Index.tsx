@@ -251,7 +251,7 @@ export default function Index() {
             )}
 
             {!droppedFile && <>
-                <main>
+                <main id="main-content">
                 {/* ─── HERO — asymmetric: text left, animated art right ──── */}
                 <section aria-label="Hero" className="relative overflow-hidden border-b border-border">
                     <div className="hero-backdrop" aria-hidden="true" />
