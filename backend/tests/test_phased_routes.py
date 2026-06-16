@@ -181,6 +181,14 @@ class TestPhase3:
         )
         assert resp.status_code == 400
 
+    def test_generate_barcode_rejects_bad_code39(self, client):
+        resp = client.post(
+            "/api/generate-barcode",
+            data={"data": "lowercase", "barcode_type": "code39"},
+        )
+        assert resp.status_code == 400
+        assert "code39 allows uppercase" in resp.json()["detail"]
+
     def test_generate_barcode_rejects_unknown_type(self, client):
         resp = client.post(
             "/api/generate-barcode",
