@@ -1779,7 +1779,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will my data be uploaded?", "a": "No — pure-browser conversion. No data leaves your machine."},
     ],
     "extract-archive": [
-        {"q": "What about password-protected archives?", "a": "Password input is supported — paste the password and the encrypted archive is decrypted before extraction."},
+        {"q": "What about password-protected archives?", "a": "Password-protected archives are not supported yet. Extract Archive currently handles unencrypted ZIP and TAR-family archives; encrypted archive support is on the roadmap."},
         {"q": "Does it support RAR / 7z?", "a": "No. Extract Archive currently supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z support is on the roadmap."},
         {"q": "What if the archive contains many small files?", "a": "Up to 1000 files per archive. For larger, split before zipping."},
     ],
