@@ -11,12 +11,25 @@ from __future__ import annotations
 import json
 
 from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
+from backend.app.tool_content import TOOL_FAQ, TOOL_HOWTO
 
 
 STALE_PRIVACY_CLAIMS = (
     "All processing happens on your device",
     "All processing happens locally",
     "Zero uploads",
+    "No accounts, no tracking",
+    "no tracking, no ads",
+)
+
+STALE_STORAGE_CLAIMS = (
+    "temp memory",
+    "temporary memory",
+    "temporary server memory",
+    "memory only",
+    "never written to disk",
+    "never persisted to disk",
+    "No copy is kept on any disk",
 )
 
 
@@ -184,6 +197,24 @@ def test_meta_descriptions_do_not_repeat_stale_privacy_overclaims():
         combined = f"{title}\n{description}"
         for stale in STALE_PRIVACY_CLAIMS:
             assert stale not in combined, f"{path} contains stale claim: {stale!r}"
+
+
+def test_server_side_storage_claims_match_temp_file_architecture():
+    surfaces = [
+        json.dumps(get_jsonld_for_path("/"), sort_keys=True),
+        json.dumps(get_jsonld_for_path("/tool/merge-pdf"), sort_keys=True),
+        json.dumps(get_jsonld_for_path("/tools/image-compressor"), sort_keys=True),
+        inject_seo("<html><head></head><body><div id='root'></div></body></html>", "/privacy"),
+        inject_seo("<html><head></head><body><div id='root'></div></body></html>", "/terms"),
+        json.dumps(TOOL_FAQ, sort_keys=True),
+        json.dumps(TOOL_HOWTO, sort_keys=True),
+    ]
+    combined = "\n".join(surfaces)
+
+    for stale in STALE_STORAGE_CLAIMS:
+        assert stale not in combined, f"stale storage claim leaked: {stale!r}"
+    assert "temporary per-request storage" in combined
+    assert "isolated temporary storage" in combined
 
 
 def test_injected_html_has_single_route_aware_jsonld_script():

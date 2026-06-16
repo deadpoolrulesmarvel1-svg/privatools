@@ -146,7 +146,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 
 Three architectural commitments that are auditable in the source:
 
-1. **Container-isolated processing.** Uploaded files enter an isolated Docker container, are processed in temp memory only, and are unlinked the moment the HTTP response is sent. Implementation: see \`backend/app/utils/cleanup.py\`.
+1. **Container-isolated processing.** Uploaded files enter an isolated Docker container, use temporary per-request storage, and are unlinked the moment the HTTP response is sent. Implementation: see \`backend/app/utils/cleanup.py\`.
 2. **Browser-side AI.** Heavy/sensitive tools (Summarize PDF, Smart Redact) run entirely in the user's browser via @huggingface/transformers and WebAssembly. No network roundtrip carries file content. Confirm with DevTools → Network.
 3. **Zero accounts, zero watermarks, zero feature gates.** No \`if (free_tier && limit_exceeded)\` exists anywhere in the codebase. Every tool works for every visitor on every visit.
 
@@ -194,7 +194,7 @@ md += `\n## Comparisons (Side-by-Side)\n\nFull feature matrices at /compare for 
 Yes. There is no premium tier, no per-day limit, no watermark on output, and no account. The 500 MB upload limit per file applies equally to everyone.
 
 ### Do you upload my files anywhere?
-For server-processed tools, files enter an isolated Docker container, are processed in temp memory, and are unlinked from disk immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
+For server-processed tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked from that temp storage immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
 
 For browser-only tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), files never leave the browser. Verify by watching DevTools → Network.
 

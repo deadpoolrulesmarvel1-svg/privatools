@@ -26,8 +26,8 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
-        "PrivaTools privacy policy: files processed in temp memory and deleted on "
-        "response. No accounts, no tracking, no ads. Updated May 15, 2026.",
+        "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
+        "response. No accounts, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
     ),
     "/terms": (
         "Terms of Service — PrivaTools",
@@ -1042,8 +1042,8 @@ del _slug, _name, _desc
 # wording so each URL has a unique paragraph.
 _TRUST_VARIANTS: tuple[str, ...] = (
     "{name} runs on the same privacy-first stack as every PrivaTools utility: "
-    "files enter an isolated Docker container, are processed in temporary "
-    "memory, and are unlinked the moment your download begins. No account, no "
+    "files enter an isolated Docker container, use temporary per-request "
+    "storage, and are unlinked the moment your download begins. No account, no "
     "watermark, no daily quota.",
 
     "Like the rest of the {total}-tool PrivaTools suite, {name} is MIT-licensed "
@@ -1057,8 +1057,9 @@ _TRUST_VARIANTS: tuple[str, ...] = (
     "at all and run entirely in your browser.",
 
     "Using {name} doesn't require an account, an email address, or a paid plan. "
-    "Your file is held in temp memory only for the duration of processing, then "
-    "permanently unlinked. No watermarks, no upsells, no behavioural tracking.",
+    "Your file is held in isolated temporary storage only for the duration of "
+    "processing, then permanently unlinked. No watermarks, no upsells, no "
+    "behavioural tracking.",
 
     "{name} is one of {total}+ free file utilities on PrivaTools. The entire "
     "stack is open source under the MIT license, so the privacy guarantees can "
@@ -1400,7 +1401,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Do you upload my files anywhere?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."},
+                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."},
                         },
                         {
                             "@type": "Question",
@@ -1785,7 +1786,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             },
             {
                 "q": "What happens to files I upload?",
-                "a": "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
+                "a": "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
             },
             {
                 "q": "Is PrivaTools really free?",
@@ -2012,7 +2013,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append('<h2 class="tool-faq">Frequently Asked Questions</h2>')
         for q, a in [
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
-            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."),
+            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."),
             ("Can I self-host PrivaTools?", "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all 179 tools on your own server."),
             ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
             ("Does PrivaTools use AI?", "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."),
@@ -2249,7 +2250,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>Frequently Asked Questions</h2>")
         for q, a in [
             ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at deadpoolrulesmarvel1-svg/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
-            ("What happens to files I upload?", "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
+            ("What happens to files I upload?", "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier."),
             ("Can I self-host PrivaTools?", "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server."),
         ]:
@@ -2261,14 +2262,14 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h1>Privacy Policy</h1>")
         parts.append("<p><strong>Last updated:</strong> May 15, 2026</p>")
         parts.append(
-            "<p>Your files are private. They are processed in temporary server memory and deleted "
-            "immediately after the response is delivered — never written to disk, never inspected, "
+            "<p>Your files are private. Server-side tools use isolated temporary storage and delete files "
+            "immediately after the response is delivered — never kept in permanent storage, never inspected, "
             "never retained. We collect only anonymous Google Analytics 4 pageview telemetry "
             "(IP-anonymized; blockable by any standard tracking blocker).</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
-            "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in temp memory only "
+            "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in isolated temporary storage "
             "for the duration of processing. The moment the response is delivered, the file is "
             "unlinked from the temp directory; a cleanup task purges any stragglers every 5 minutes. "
             "No backups, thumbnails, or metadata are retained.</p>"
@@ -2308,7 +2309,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>2. Description of Service</h2>")
         parts.append(
             "<p>PrivaTools provides browser-based file processing for PDF, image, video, audio, "
-            "and developer workflows. Server-side tools hold files in temp memory only and delete "
+            "and developer workflows. Server-side tools use isolated temporary storage and delete "
             "them immediately after the response. Many tools run entirely in your browser with no "
             "server interaction. Free, no limits, no registration.</p>"
         )

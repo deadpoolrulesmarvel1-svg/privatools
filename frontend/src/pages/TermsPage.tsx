@@ -237,8 +237,8 @@ export default function TermsPage() {
               <h2 id="description">2. Description of Service</h2>
               <p>
                 PrivaTools provides browser-based file processing tools for PDF, image, video, and
-                developer workflows. Files are processed on our server in temporary memory and
-                immediately deleted after processing. Some tools run entirely in your browser with
+                developer workflows. Server-side tools use isolated temporary per-request storage and
+                immediately delete files after processing. Some tools run entirely in your browser with
                 no server interaction. The service is free, has no usage limits, and requires no
                 registration.
               </p>
@@ -270,8 +270,8 @@ export default function TermsPage() {
             <div className="blog-prose prose-headings:scroll-mt-20">
               <h2 id="file-processing">4. File Processing</h2>
               <p>
-                Files you upload are processed in temporary server memory and deleted immediately
-                after your result is delivered. We do not retain, inspect, or back up your files.
+                Files you upload are processed in isolated temporary per-request storage and deleted
+                immediately after your result is delivered. We do not retain, inspect, or back up your files.
                 See our <Link to="/privacy">Privacy Policy</Link> for full details on file handling.
               </p>
             </div>

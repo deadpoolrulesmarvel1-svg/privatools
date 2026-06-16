@@ -246,8 +246,8 @@ export default function PrivacyPage() {
                     <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">§ The short version</span>
                   </div>
                   <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
-                    <strong className="font-semibold">Your files are private.</strong> They are processed in temporary memory and
-                    deleted immediately after the response is delivered. We never read, inspect, store, or share
+                    <strong className="font-semibold">Your files are private.</strong> Server-side tools use isolated temporary
+                    storage and delete files immediately after the response is delivered. We never read, inspect, store, or share
                     their contents.
                   </p>
                   <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
@@ -268,8 +268,8 @@ export default function PrivacyPage() {
                 to our processing server over an encrypted HTTPS connection. Here is exactly what happens:
               </p>
               <ul>
-                <li><strong>Processing:</strong> Your file is held in temporary server memory (RAM) only for the duration of processing. It is never written to disk or permanent storage.</li>
-                <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are purged from memory. This typically takes less than one second after download.</li>
+                <li><strong>Processing:</strong> Your file is held in isolated temporary per-request storage only for the duration of processing. It is never written to permanent storage.</li>
+                <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are unlinked from temporary storage. This typically takes less than one second after download.</li>
                 <li><strong>No inspection:</strong> Our servers process raw bytes. We never read, analyze, index, or inspect the contents of your files. We have no knowledge of what you upload.</li>
                 <li><strong>No retention:</strong> We do not retain copies, backups, thumbnails, or metadata from your files. Once deleted, they are unrecoverable.</li>
               </ul>

@@ -219,7 +219,7 @@ export default function AboutPage() {
           </h2>
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { step: "01", icon: Server, title: "Process in isolation", desc: "Files are received and processed in an isolated container. Memory only — never written to permanent storage, never logged, never indexed.", code: "tempfile.NamedTemporaryFile(delete=True)", src: GUARANTEE_SOURCE.process },
+              { step: "01", icon: Server, title: "Process in isolation", desc: "Files are received and processed in an isolated container. Temporary per-request storage only — never permanent storage, never logged, never indexed.", code: "tempfile.NamedTemporaryFile(delete=True)", src: GUARANTEE_SOURCE.process },
               { step: "02", icon: Trash2, title: "Delete immediately",   desc: "The moment the response is sent, the file is unlinked from the temp directory. Cleanup runs as a background task within seconds.",                 code: "os.unlink(path)  # post-response",          src: GUARANTEE_SOURCE.delete },
               { step: "03", icon: Eye,    title: "Zero knowledge",        desc: "We never inspect, analyze, or read your file contents. Servers process bytes — no telemetry on contents, no AI training on your data.",     code: "# no log_file_content() exists",            src: GUARANTEE_SOURCE.zeroKnow },
             ].map(step => {
@@ -669,10 +669,10 @@ function FileLifecycleDiagram() {
     {
       id: 1, Icon: Upload,      title: "Upload",   detail: "Encrypted in transit (TLS 1.3)",       seconds: "0.0s",
       hoverHead: "Multipart POST",
-      hoverBody: "Streamed straight to /tmp/<uuid> — never buffered to a queue, never written to disk twice.",
+      hoverBody: "Streamed straight to /tmp/<uuid> — never buffered to a queue, never copied into permanent storage.",
     },
     {
-      id: 2, Icon: ShieldCheck, title: "Process",  detail: "Isolated container · memory only",     seconds: "0.4s",
+      id: 2, Icon: ShieldCheck, title: "Process",  detail: "Isolated container · temp storage",    seconds: "0.4s",
       hoverHead: "Stateless worker",
       hoverBody: "pikepdf / Pillow / ffmpeg runs against the temp path. No DB write. No telemetry on the bytes themselves.",
     },
