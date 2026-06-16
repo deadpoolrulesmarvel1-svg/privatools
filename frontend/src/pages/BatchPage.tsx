@@ -24,8 +24,7 @@ import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromContentType } from "@/lib/tool-endpoints";
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
-
-const API = import.meta.env.VITE_API_URL || "";
+import { formatErrorForClipboard, postFormData } from "@/lib/api";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -99,6 +98,7 @@ interface BatchFile {
     resultSize?: number;
     downloadName?: string;
     error?: string;
+    errorReport?: string;
     durationMs?: number;
 }
 
@@ -240,6 +240,7 @@ export default function BatchPage() {
      */
     const processOne = useCallback(async (
         targetIdx: number,
+        originalFile: File,
         signal: AbortSignal,
         updater: (mutate: (prev: BatchFile[]) => BatchFile[]) => void,
     ): Promise<void> => {
@@ -250,29 +251,20 @@ export default function BatchPage() {
         updater(prev => {
             if (prev[targetIdx]?.status === "done") return prev;
             const next = [...prev];
-            next[targetIdx] = { ...next[targetIdx], status: "processing", error: undefined };
+            next[targetIdx] = { ...next[targetIdx], status: "processing", error: undefined, errorReport: undefined };
             return next;
         });
 
-        // Read the file from current state — guard against stale.
-        let originalFile: File | undefined;
-        updater(prev => {
-            originalFile = prev[targetIdx]?.file;
-            return prev;
-        });
-        if (!originalFile) return;
-
         try {
-            const formData = new FormData();
-            formData.append("file", originalFile);
-            formData.append("files", originalFile);
-            const resp = await fetch(`${API}/api${selectedTool.endpoint}`, {
-                method: "POST", body: formData, signal,
+            const resp = await postFormData(selectedTool.endpoint, () => {
+                const formData = new FormData();
+                formData.append("file", originalFile);
+                formData.append("files", originalFile);
+                return formData;
+            }, {
+                signal,
+                timeoutMs: 300_000,
             });
-            if (!resp.ok) {
-                const err = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }));
-                throw new Error(err.detail || `HTTP ${resp.status}`);
-            }
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);
             const serverFilename = getFilenameFromContentDisposition(resp.headers.get("content-disposition"));
@@ -290,6 +282,7 @@ export default function BatchPage() {
                     downloadName,
                     durationMs,
                     error: undefined,
+                    errorReport: undefined,
                 };
                 return next;
             });
@@ -305,13 +298,17 @@ export default function BatchPage() {
                 return;
             }
             const msg = e instanceof Error ? e.message : "Failed";
+            const report = formatErrorForClipboard(
+                e,
+                `Batch ${selectedTool.name} (${selectedTool.slug}) — ${originalFile.name}`,
+            );
             updater(prev => {
                 const next = [...prev];
-                next[targetIdx] = { ...next[targetIdx], status: "error", error: msg };
+                next[targetIdx] = { ...next[targetIdx], status: "error", error: msg, errorReport: report };
                 return next;
             });
         }
-    }, [selectedTool.endpoint, buildFallbackFilename]);
+    }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename]);
 
     /**
      * Run the queue. Picks up only files in {pending, error} state — done
@@ -349,7 +346,7 @@ export default function BatchPage() {
                     while (queue.length > 0 && !controller.signal.aborted) {
                         const item = queue.shift();
                         if (!item) break;
-                        await processOne(item.i, controller.signal, updater);
+                        await processOne(item.i, item.f.file, controller.signal, updater);
                     }
                 })());
             }
@@ -357,7 +354,7 @@ export default function BatchPage() {
         } else {
             for (const { i } of targets) {
                 if (controller.signal.aborted) break;
-                await processOne(i, controller.signal, updater);
+                await processOne(i, files[i].file, controller.signal, updater);
             }
         }
 
@@ -399,7 +396,7 @@ export default function BatchPage() {
         setFiles(prev => {
             if (prev[idx]?.status !== "error") return prev;
             const next = [...prev];
-            next[idx] = { ...next[idx], status: "pending", error: undefined };
+            next[idx] = { ...next[idx], status: "pending", error: undefined, errorReport: undefined };
             return next;
         });
     };
@@ -408,7 +405,7 @@ export default function BatchPage() {
         const failedCount = files.filter(f => f.status === "error").length;
         if (failedCount === 0 || processing) return;
         // Flip errors back to pending, then re-run.
-        setFiles(prev => prev.map(f => f.status === "error" ? { ...f, status: "pending", error: undefined } : f));
+        setFiles(prev => prev.map(f => f.status === "error" ? { ...f, status: "pending", error: undefined, errorReport: undefined } : f));
         // Defer the run by a tick so React commits the state change first.
         setTimeout(() => { void processAll(); }, 0);
     };
@@ -1011,6 +1008,15 @@ function FileRow({
                                 title="Retry this file"
                             >
                                 <RotateCw size={10} /> Retry
+                            </button>
+                        )}
+                        {f.errorReport && !processing && (
+                            <button
+                                onClick={() => navigator.clipboard.writeText(f.errorReport || "").catch(() => {})}
+                                className="hidden sm:inline-flex items-center gap-1 font-mono text-[10.5px] tracking-wider uppercase text-muted-foreground hover:text-destructive hover:underline"
+                                title="Copy request report"
+                            >
+                                Copy report
                             </button>
                         )}
                     </>

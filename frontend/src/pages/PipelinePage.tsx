@@ -30,10 +30,8 @@ import {
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, formatErrorForClipboard, postFormData } from "@/lib/api";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-
-const API = import.meta.env.VITE_API_URL || "";
 
 /**
  * Pipeline-safe tools — those that take a PDF and return a PDF without
@@ -146,6 +144,7 @@ export default function PipelinePage() {
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [resultUrl, setResultUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [errorReport, setErrorReport] = useState<string | null>(null);
     const [paletteSearch, setPaletteSearch] = useState("");
     const [paletteOpen, setPaletteOpen] = useState(false);  // mobile only
     const [savedPipelines, setSavedPipelines] = useState<SavedPipeline[]>(loadSavedPipelines);
@@ -162,6 +161,7 @@ export default function PipelinePage() {
     } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const intermediateBlobsRef = useRef<Record<number, Blob>>({});
 
     const filteredPalette = useMemo(
         () =>
@@ -195,17 +195,23 @@ export default function PipelinePage() {
     const resetRunState = useCallback(() => {
         setStepStatuses({});
         setStepErrors({});
+        intermediateBlobsRef.current = {};
         setResultBlob(null);
         if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
         setError(null);
+        setErrorReport(null);
         setCurrentStep(-1);
     }, [resultUrl]);
 
+    const setInputFile = useCallback((nextFile: File | null) => {
+        setFile(nextFile);
+        resetRunState();
+    }, [resetRunState]);
+
     const addStep = (tool: (typeof pipelineTools)[0]) => {
         setSteps((prev) => [...prev, { tool }]);
-        // If user adds a step after a successful run, reset stale state so
-        // it's clear the new step is unrun.
-        if (resultUrl) resetRunState();
+        // Structural edits invalidate cached step output and final results.
+        resetRunState();
         // Auto-close palette on mobile after adding a step.
         if (window.innerWidth < 1024) setPaletteOpen(false);
     };
@@ -221,9 +227,7 @@ export default function PipelinePage() {
 
     const removeStep = (idx: number) => {
         setSteps(p => p.filter((_, i) => i !== idx));
-        // Shifting indices invalidates per-step status — clear it.
-        setStepStatuses({});
-        setStepErrors({});
+        resetRunState();
     };
 
     const moveStep = (idx: number, dir: -1 | 1) => {
@@ -234,8 +238,7 @@ export default function PipelinePage() {
             [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
             return arr;
         });
-        setStepStatuses({});
-        setStepErrors({});
+        resetRunState();
     };
 
     const reorderStep = (from: number, to: number) => {
@@ -248,8 +251,7 @@ export default function PipelinePage() {
             arr.splice(dest, 0, item);
             return arr;
         });
-        setStepStatuses({});
-        setStepErrors({});
+        resetRunState();
     };
 
     const clearAll = () => {
@@ -306,11 +308,13 @@ export default function PipelinePage() {
         abortRef.current = controller;
         setProcessing(true);
         setError(null);
+        setErrorReport(null);
 
         if (startFromStep === 0) {
             // Fresh run — clear all status.
             setStepStatuses({});
             setStepErrors({});
+            intermediateBlobsRef.current = {};
             if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
             setResultBlob(null);
         } else {
@@ -325,26 +329,41 @@ export default function PipelinePage() {
                 for (let i = startFromStep; i < steps.length; i++) delete next[i];
                 return next;
             });
+            for (const key of Object.keys(intermediateBlobsRef.current)) {
+                if (Number(key) >= startFromStep) delete intermediateBlobsRef.current[Number(key)];
+            }
         }
 
-        let currentBlob: Blob = startingBlob ?? file;
+        const resumeBlob = startingBlob ?? (startFromStep > 0 ? intermediateBlobsRef.current[startFromStep - 1] : file);
+        if (!resumeBlob) {
+            const msg = `Step ${startFromStep + 1} cannot resume because the previous step output is no longer available. Run the pipeline from the beginning.`;
+            setError(msg);
+            setStepStatuses(prev => ({ ...prev, [startFromStep]: "error" }));
+            setStepErrors(prev => ({ ...prev, [startFromStep]: "Missing previous output" }));
+            setProcessing(false);
+            setCurrentStep(-1);
+            abortRef.current = null;
+            return;
+        }
+
+        let currentBlob: Blob = resumeBlob;
 
         for (let i = startFromStep; i < steps.length; i++) {
             if (controller.signal.aborted) break;
             setCurrentStep(i);
             setStepStatuses(prev => ({ ...prev, [i]: "running" }));
             try {
-                const formData = new FormData();
-                formData.append("file", currentBlob, file.name);
-                formData.append("files", currentBlob, file.name);
-                const resp = await fetch(`${API}/api${steps[i].tool.endpoint}`, {
-                    method: "POST", body: formData, signal: controller.signal,
+                const resp = await postFormData(steps[i].tool.endpoint, () => {
+                    const formData = new FormData();
+                    formData.append("file", currentBlob, file.name);
+                    formData.append("files", currentBlob, file.name);
+                    return formData;
+                }, {
+                    signal: controller.signal,
+                    timeoutMs: 300_000,
                 });
-                if (!resp.ok) {
-                    const payload = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }));
-                    throw new Error(payload.detail || `HTTP ${resp.status}`);
-                }
                 currentBlob = await resp.blob();
+                intermediateBlobsRef.current[i] = currentBlob;
                 setStepStatuses(prev => ({ ...prev, [i]: "done" }));
             } catch (e: unknown) {
                 if (controller.signal.aborted) {
@@ -354,6 +373,7 @@ export default function PipelinePage() {
                 }
                 const msg = e instanceof Error ? e.message : "Pipeline failed";
                 setError(`Step ${i + 1} (${steps[i].tool.name}) failed: ${msg}`);
+                setErrorReport(formatErrorForClipboard(e, `Pipeline step ${i + 1}: ${steps[i].tool.name} (${steps[i].tool.slug})`));
                 setStepStatuses(prev => ({ ...prev, [i]: "error" }));
                 setStepErrors(prev => ({ ...prev, [i]: msg }));
                 setProcessing(false);
@@ -494,8 +514,16 @@ export default function PipelinePage() {
                                         <RotateCw size={11} /> Retry from {failedIdx + 1}
                                     </button>
                                 )}
+                                {errorReport && (
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}
+                                        className="hidden sm:inline-flex shrink-0 items-center h-8 px-3 rounded-md border border-border bg-card text-[12px] font-semibold text-muted-foreground hover:text-destructive hover:bg-secondary/60 transition-colors"
+                                    >
+                                        Copy report
+                                    </button>
+                                )}
                                 <button
-                                    onClick={() => setError(null)}
+                                    onClick={() => { setError(null); setErrorReport(null); }}
                                     className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                                     aria-label="Dismiss"
                                 >
@@ -536,11 +564,11 @@ export default function PipelinePage() {
                                 title={file ? file.name : "Drop a PDF"}
                                 subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · input` : "Click or drop a file here"}
                                 onClick={() => inputRef.current?.click()}
-                                onDrop={(f) => setFile(f)}
-                                onClear={file ? () => setFile(null) : undefined}
+                                onDrop={setInputFile}
+                                onClear={file ? () => setInputFile(null) : undefined}
                                 state={file ? "ready" : "empty"}
                             />
-                            <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                            <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => setInputFile(e.target.files?.[0] || null)} />
 
                             {steps.length > 0 && <Connector active={processing && currentStep === 0} done={stepStatuses[0] === "done"} />}
 

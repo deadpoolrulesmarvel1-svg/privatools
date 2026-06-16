@@ -4,7 +4,8 @@
  */
 import { toast } from "sonner";
 
-const API_BASE = "/api";
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE = `${API_ORIGIN}/api`;
 
 /** Strip an accidental leading "/api" so callers can pass either "/foo" or
  *  "/api/foo" without producing "/api/api/foo". A few tool files have done
@@ -115,6 +116,12 @@ function validateFileCount(files: File[]) {
     }
     if (files.length > MAX_FILES_PER_REQUEST) {
         throw new Error(`Too many files (${files.length}). Max ${MAX_FILES_PER_REQUEST} per request — split into batches.`);
+    }
+}
+
+function validateFormDataFiles(fd: FormData) {
+    for (const value of fd.values()) {
+        if (value instanceof File) validateFileSize(value);
     }
 }
 
@@ -510,6 +517,40 @@ export interface RequestOptions {
     retry?: RetryPolicy;
     onRetry?: RetryCallback;
     timeoutMs?: number;
+}
+
+/** Post arbitrary FormData and return the raw response.
+ *
+ * This covers custom workflows (Batch, Pipeline, multi-input editors) that
+ * need to build their own payload but still deserve the shared timeout,
+ * retry, abort, request-ID, and friendly-error handling used by uploadFile().
+ * Pass a builder when retries are enabled so each attempt gets a fresh body.
+ */
+export async function postFormData(
+    endpoint: string,
+    formData: FormData | (() => FormData),
+    options?: RequestOptions,
+): Promise<Response> {
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const buildBody = typeof formData === "function" ? formData : () => formData;
+    return withRetry(async () => {
+        const body = buildBody();
+        validateFormDataFiles(body);
+        const { signal: combined, cancel } = timeoutSignal(timeoutMs, options?.signal);
+        try {
+            const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {
+                method: "POST",
+                body,
+                signal: combined,
+            });
+            if (!res.ok) throw await describeError(res);
+            return res;
+        } catch (err) {
+            throw decorateTimeoutError(err);
+        } finally {
+            cancel();
+        }
+    }, options?.retry, options?.onRetry, options?.signal);
 }
 
 /** Post form data (no file) and get JSON back. */
