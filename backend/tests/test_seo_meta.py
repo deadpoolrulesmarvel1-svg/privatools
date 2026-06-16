@@ -82,6 +82,14 @@ def test_non_pdf_tool_jsonld_uses_tools_route_and_utility_category():
     assert app["applicationCategory"] == "UtilitiesApplication"
 
 
+def test_barcode_meta_does_not_advertise_unsupported_svg_output():
+    title, description = get_meta_for_path("/tools/generate-barcode")
+    combined = f"{title}\n{description}"
+
+    assert "SVG" not in combined
+    assert "PNG" in description
+
+
 def test_unknown_tool_does_not_emit_soft_404_schema():
     assert get_jsonld_for_path("/tool/not-a-real-tool") is None
     assert get_jsonld_for_path("/tools/not-a-real-tool") is None

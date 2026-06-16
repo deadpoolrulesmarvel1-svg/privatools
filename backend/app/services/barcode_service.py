@@ -20,7 +20,6 @@ BARCODE_TYPES = {
 def generate_barcode(
     data: str,
     barcode_type: str = "code128",
-    output_format: str = "png",
 ) -> str:
     """Generate a barcode image from data.
 
