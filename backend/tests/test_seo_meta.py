@@ -81,6 +81,25 @@ def test_non_pdf_tool_jsonld_uses_tools_route_and_utility_category():
 
     assert app["url"] == "https://privatools.me/tools/image-compressor"
     assert app["applicationCategory"] == "UtilitiesApplication"
+    assert app["applicationSubCategory"] == "Image tools"
+
+
+def test_tool_jsonld_application_subcategories_are_specific():
+    examples = {
+        "/tool/merge-pdf": "PDF organization tools",
+        "/tool/pdf-to-word": "Convert from PDF tools",
+        "/tool/word-to-pdf": "Convert to PDF tools",
+        "/tools/video-converter": "Video and audio tools",
+        "/tools/generate-barcode": "Developer tools",
+        "/tools/extract-archive": "Archive tools",
+        "/tools/csv-json": "Document and data tools",
+    }
+
+    for path, expected in examples.items():
+        graph = _graph_for(path)
+        app = next(node for node in graph if node.get("@type") == "SoftwareApplication")
+
+        assert app["applicationSubCategory"] == expected, path
 
 
 def test_barcode_meta_does_not_advertise_unsupported_svg_output():

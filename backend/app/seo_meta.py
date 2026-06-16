@@ -423,6 +423,45 @@ def _by_popularity(items):
     return sorted(items, key=lambda kv: _POPULARITY.get(kv[0], 999))
 
 
+_NONPDF_DOCUMENT_DATA_TOOLS = {"csv-json", "markdown-html"}
+_NONPDF_PHASE7_IMAGE_TOOLS = {"image-palette", "pixelate-image", "rotate-image", "flip-image"}
+_NONPDF_PHASE7_VIDEO_AUDIO_TOOLS = {"mute-video", "reverse-video", "video-speed", "audio-trim"}
+
+
+def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
+    """Return a precise SoftwareApplication subcategory for SEO/answer engines."""
+    rank = _POPULARITY.get(slug, 999)
+
+    if is_pdf_tool:
+        if 10 <= rank <= 21:
+            return "PDF organization tools"
+        if 30 <= rank <= 45:
+            return "PDF editing tools"
+        if 50 <= rank <= 61:
+            return "PDF optimization tools"
+        if 70 <= rank <= 80:
+            return "PDF security tools"
+        if 100 <= rank <= 121:
+            return "Convert to PDF tools"
+        if 130 <= rank <= 145:
+            return "Convert from PDF tools"
+        if 160 <= rank <= 171:
+            return "Advanced PDF tools"
+        return "PDF tools"
+
+    if slug in _NONPDF_DOCUMENT_DATA_TOOLS:
+        return "Document and data tools"
+    if 310 <= rank <= 311:
+        return "Archive tools"
+    if 210 <= rank <= 238 or slug in _NONPDF_PHASE7_IMAGE_TOOLS:
+        return "Image tools"
+    if 250 <= rank <= 268 or slug in _NONPDF_PHASE7_VIDEO_AUDIO_TOOLS:
+        return "Video and audio tools"
+    if 280 <= rank <= 299:
+        return "Developer tools"
+    return "File tools"
+
+
 # ---------------------------------------------------------------------------
 # TL;DR generator — produces a single-sentence, voice-friendly answer for
 # the "what does this tool do?" question. AEO/voice-search gold: this is
@@ -1399,6 +1438,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
         if prefix == "/tool/":
             if slug not in _PDF_TOOLS:
                 return None
+            is_pdf_tool = True
             tool_entry = _PDF_TOOLS[slug]
             name = tool_entry[0]
             long_description = tool_entry[1]
@@ -1406,6 +1446,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
         else:
             if slug not in _NONPDF_TOOLS:
                 return None
+            is_pdf_tool = False
             tool_entry = _NONPDF_TOOLS[slug]
             name = tool_entry[0]
             long_description = tool_entry[1]
@@ -1476,7 +1517,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 "description": long_description or description,
                 "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
                 "applicationCategory": category,
-                "applicationSubCategory": "PDF & file tools",
+                "applicationSubCategory": _application_subcategory_for(slug, is_pdf_tool),
                 "featureList": feature_list,
                 "keywords": ", ".join(keywords),
                 "operatingSystem": "Web Browser (any)",
