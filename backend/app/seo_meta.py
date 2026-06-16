@@ -942,6 +942,12 @@ def _tool_title(name: str) -> str:
     return f"{name[:budget]}…{brand}"
 
 
+def _howto_name_for(name: str) -> str:
+    """Build a readable HowTo title for action-style and noun-style tools."""
+    normalized = re.sub(r"\s+", " ", name).strip()
+    return f"How to use the {normalized} tool on PrivaTools"
+
+
 # `<meta name="description">` is shown in SERP snippets — Google truncates at
 # ~155–160 chars. JSON-LD descriptions can be longer and are read more carefully
 # by AI engines, so we keep the truncation only at the meta-tag level.
@@ -1517,7 +1523,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             per_step = 90 if slug in slow_tools else 30
             graph.append({
                 "@type": "HowTo",
-                "name": f"How to {name} with PrivaTools",
+                "name": _howto_name_for(name),
                 "description": long_description or description,
                 "totalTime": f"PT{steps_count * per_step}S",
                 "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
@@ -1992,7 +1998,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             )
             # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>How to {name} with PrivaTools</h2><ol>")
+                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
                 for step in TOOL_HOWTO[slug]:
                     parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
                 parts.append("</ol>")
@@ -2053,7 +2059,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             )
             # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>How to Use {name}</h2><ol>")
+                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
                 for step in TOOL_HOWTO[slug]:
                     parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
                 parts.append("</ol>")

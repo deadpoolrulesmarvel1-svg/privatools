@@ -67,6 +67,7 @@ def test_tool_jsonld_has_application_howto_faq_and_breadcrumbs():
     assert app["creator"]["sameAs"] == ["https://github.com/deadpoolrulesmarvel1-svg/privatools"]
 
     howto = next(node for node in graph if node.get("@type") == "HowTo")
+    assert howto["name"] == "How to use the Merge PDF tool on PrivaTools"
     assert len(howto["step"]) >= 3
     assert all(step["@type"] == "HowToStep" for step in howto["step"])
 
@@ -88,6 +89,21 @@ def test_barcode_meta_does_not_advertise_unsupported_svg_output():
 
     assert "SVG" not in combined
     assert "PNG" in description
+
+
+def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():
+    graph = _graph_for("/tools/generate-barcode")
+    howto = next(node for node in graph if node.get("@type") == "HowTo")
+    expected = "How to use the Barcode Generator tool on PrivaTools"
+
+    assert howto["name"] == expected
+    assert "How to Barcode Generator" not in howto["name"]
+
+    html = "<html><head><title>Old</title></head><body><div id='root'></div></body></html>"
+    injected = inject_seo(html, "/tools/generate-barcode")
+
+    assert f"<h2>{expected}</h2>" in injected
+    assert "How to Barcode Generator" not in injected
 
 
 def test_unknown_tool_does_not_emit_soft_404_schema():
