@@ -56,6 +56,13 @@ uvicorn backend.app.main:app --reload --port 8000
 cd frontend && npm install && npm run dev
 ```
 
+To run the backend test suite locally, install the dev requirements:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest backend/tests -q
+```
+
 ### System dependencies (for full feature set)
 
 ```bash
@@ -280,7 +287,7 @@ Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + displa
 ### Guidelines
 
 - **Privacy first** — never add external API calls that send file content off-server
-- **Test before PR** — `pytest` for backend, `npm run build && npm test` for frontend
+- **Test before PR** — `python -m pytest backend/tests -q` for backend, `npm run build && npm test` for frontend
 - **Match the style** — follow existing patterns in similar tools
 - **Update docs** — add a CHANGELOG entry and a TLDR in `seo_meta.py`
 
