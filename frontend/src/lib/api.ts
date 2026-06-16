@@ -369,16 +369,15 @@ export function uploadFileWithProgress(
                 });
                 resolve(new Response(blob, { status: xhr.status, headers }));
             } else {
-                // Try to parse error from blob response
                 const blob = xhr.response as Blob;
-                blob.text().then(text => {
-                    try {
-                        const data = JSON.parse(text);
-                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
-                    } catch {
-                        reject(new Error(`Request failed (${xhr.status})`));
-                    }
-                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                describeError(new Response(blob, { status: xhr.status, headers }))
+                    .then(reject)
+                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
             }
         };
 
@@ -474,14 +473,14 @@ export function uploadFilesWithProgress(
                 resolve(new Response(blob, { status: xhr.status, headers }));
             } else {
                 const blob = xhr.response as Blob;
-                blob.text().then(text => {
-                    try {
-                        const data = JSON.parse(text);
-                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
-                    } catch {
-                        reject(new Error(`Request failed (${xhr.status})`));
-                    }
-                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                describeError(new Response(blob, { status: xhr.status, headers }))
+                    .then(reject)
+                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
             }
         };
 

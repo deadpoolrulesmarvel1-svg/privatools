@@ -183,7 +183,6 @@ Disallow: /
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /assets/
 Crawl-delay: 1
 
 # ──────────────────────────────────────────────────────────────────

@@ -131,7 +131,7 @@ export function getFilenameFromContentDisposition(contentDisposition: string | n
     }
   }
 
-  const asciiMatch = contentDisposition.match(/filename=(\"?)([^\";]+)\1/i);
+  const asciiMatch = contentDisposition.match(/filename=("?)([^";]+)\1/i);
   if (asciiMatch?.[2]) {
     return asciiMatch[2].trim();
   }
