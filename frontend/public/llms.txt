@@ -261,7 +261,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (175+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (179 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*

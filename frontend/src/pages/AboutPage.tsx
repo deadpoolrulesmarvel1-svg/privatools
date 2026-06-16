@@ -61,7 +61,7 @@ const FAQ = [
   {
     slug: "self-host",
     q: "Can I self-host?",
-    a: "Yes. The whole stack is on GitHub under the MIT license. Clone the repo, run docker compose up --build, and you have 175+ tools on your own infrastructure with the same UI you see here.",
+    a: `Yes. The whole stack is on GitHub under the MIT license. Clone the repo, run docker compose up --build, and you have ${TOTAL} tools on your own infrastructure with the same UI you see here.`,
   },
   {
     slug: "why-free",
@@ -369,7 +369,7 @@ export default function AboutPage() {
               Icon: Code,
               kicker: "Self-host",
               title: "Self-host in one command.",
-              desc: "If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. 175+ tools on your infrastructure.",
+              desc: `If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. ${TOTAL} tools on your infrastructure.`,
               cta: { label: "Self-host with Docker", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#-quick-start", primary: false, icon: Code },
             },
           ].map((card, i) => {

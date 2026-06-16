@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
 
 const root = process.cwd();
 
@@ -79,5 +80,18 @@ describe("static SEO files", () => {
 
         expect(llmsFull).not.toContain("Fast local compression with no file upload to external servers");
         expect(llmsFull).toContain("Fast compression in an isolated container, no third-party uploads");
+    });
+
+    it("keeps generated AI and search files aligned with the current tool count", () => {
+        const generated = [
+            readFileSync(join(root, "public/llms.txt"), "utf8"),
+            readFileSync(join(root, "public/llms-full.txt"), "utf8"),
+            readFileSync(join(root, "public/blog-content.json"), "utf8"),
+            readFileSync(join(root, "public/opensearch.xml"), "utf8"),
+        ].join("\n");
+
+        expect(generated).toContain(`${TOTAL_TOOL_COUNT} tools`);
+        expect(generated).toContain(`Search ${TOTAL_TOOL_COUNT} free`);
+        expect(generated).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
     });
 });

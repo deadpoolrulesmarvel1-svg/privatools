@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 
+from backend.app import seo_meta
 from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
 from backend.app.tool_content import TOOL_FAQ, TOOL_HOWTO
 
@@ -215,6 +216,26 @@ def test_server_side_storage_claims_match_temp_file_architecture():
         assert stale not in combined, f"stale storage claim leaked: {stale!r}"
     assert "temporary per-request storage" in combined
     assert "isolated temporary storage" in combined
+
+
+def test_compare_tool_count_claims_match_catalog_size():
+    total = len(seo_meta._PDF_TOOLS) + len(seo_meta._NONPDF_TOOLS)
+    breadth_feature = f"{total} tools (PDF, image, video, audio, dev)"
+    comparison_copy = json.dumps(
+        [seo_meta._PRIVATOOLS_FEATURES, seo_meta._COMPARE_DATA],
+        sort_keys=True,
+    )
+    non_pdf_html = inject_seo(
+        '<html><head></head><body><div id="root"></div></body></html>',
+        "/tools/image-compressor",
+    )
+
+    assert seo_meta._TOTAL_TOOL_COUNT == total
+    assert breadth_feature in comparison_copy
+    assert f"Yes ({total} tools)" in comparison_copy
+    assert f"all {total} tools" in non_pdf_html
+    assert "175+" not in comparison_copy
+    assert "all 175+ tools" not in non_pdf_html
 
 
 def test_injected_html_has_single_route_aware_jsonld_script():

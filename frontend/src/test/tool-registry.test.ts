@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { blogPosts } from "@/data/blog";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
+import { TOTAL_TOOL_COUNT, TOOL_BREADTH_LABEL } from "@/data/site-stats";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 
 const allTools = [...tools, ...nonPdfTools];
+const root = process.cwd();
 
 describe("tool registry quality", () => {
     it("does not ship duplicate tool slugs", () => {
@@ -52,6 +57,24 @@ describe("tool registry quality", () => {
         expect(createZip).toBeDefined();
         expect(copy).not.toMatch(/password|encrypt|AES/i);
         expect(copy).toContain("isolated container");
+    });
+
+    it("keeps public tool-count claims aligned with the registry", () => {
+        expect(TOTAL_TOOL_COUNT).toBe(allTools.length);
+        expect(TOOL_BREADTH_LABEL).toBe(`${allTools.length} tools (PDF, image, video, audio, dev)`);
+
+        const blogCopy = JSON.stringify(blogPosts);
+        const comparePage = readFileSync(join(root, "src/pages/ComparePage.tsx"), "utf8");
+        const dynamicHead = readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8");
+        const aboutPage = readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8");
+        const opensearch = readFileSync(join(root, "public/opensearch.xml"), "utf8");
+        const currentSurfaces = [blogCopy, comparePage, dynamicHead, aboutPage, opensearch].join("\n");
+
+        expect(blogCopy).toContain(`${TOTAL_TOOL_COUNT} tools`);
+        expect(blogCopy).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
+        expect(currentSurfaces).not.toMatch(/175\+/);
+        expect(comparePage).toContain("TOOL_BREADTH_LABEL");
+        expect(opensearch).toContain(`Search ${TOTAL_TOOL_COUNT} free`);
     });
 
     it("maps every server-backed tool to an API endpoint path", () => {

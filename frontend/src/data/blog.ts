@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-03-22",
     readTime: "8 min read",
     tldr:
-      "In 2026: PrivaTools (100% free, open source, 175+ tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+      "In 2026: PrivaTools (100% free, open source, 179 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
     relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
@@ -172,7 +172,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Best Overall for Privacy + Tool Count</h2>
-<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 107 (PDF, Image, Video, Developer)</p>
+<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 179 (PDF, image, video, audio, developer)</p>
 <p>PrivaTools is open source (MIT license), self-hostable, and covers the most tool categories of any free suite tested. It handles PDF operations, image processing, video tools, and developer utilities — all in one place. Files are processed on the server and immediately deleted.</p>
 <p><strong>Strengths:</strong> No task limits, no ads, no watermarks, open-source and auditable. Covers tools that most PDF suites don't touch (video compression, developer utilities, archive tools).</p>
 <p><strong>Weaknesses:</strong> Server-side processing (not fully client-side). Newer service with a smaller community than established alternatives.</p>
@@ -751,7 +751,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "PrivaTools Team",
     tldr:
-      "Top iLovePDF alternatives in 2026: PrivaTools (175+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+      "Top iLovePDF alternatives in 2026: PrivaTools (179 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
     relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `
@@ -769,7 +769,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Most Tools, Truly Free, Open Source</h2>
-<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 152</p>
+<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 179</p>
 <p>PrivaTools is the comprehensive open-source alternative. It includes everything iLovePDF does (merge, split, compress, convert, OCR, sign, redact) and a lot it doesn't (video tools, audio tools, AI summarization in your browser, smart redaction with NER, JWT decoder, regex tester). The entire stack is MIT-licensed; you can audit the code or self-host it on Docker.</p>
 <p>Files are processed in an isolated container and deleted immediately on response — no retention period, no upload caps beyond 500 MB per file, no watermarks, no ads, no account ever.</p>
 <p><strong>Best for:</strong> Privacy-conscious users, professionals handling confidential documents, organizations wanting on-premises file tooling.</p>
@@ -821,7 +821,7 @@ export const blogPosts: BlogPost[] = [
     <tr><th>Tool</th><th>Free?</th><th>Account?</th><th>Privacy</th><th>Tools</th></tr>
   </thead>
   <tbody>
-    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>152</td></tr>
+    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>179</td></tr>
     <tr><td>Stirling-PDF</td><td>Yes (self-host)</td><td>No</td><td>You host</td><td>~50</td></tr>
     <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Uploaded</td><td>95+</td></tr>
     <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>2hr retention</td><td>~35</td></tr>
