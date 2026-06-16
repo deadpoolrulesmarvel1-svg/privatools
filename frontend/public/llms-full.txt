@@ -1300,7 +1300,7 @@ URL: https://privatools.me/tools/create-zip
 
 Bundle multiple files into a ZIP archive
 
-Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast local compression with no file upload to external servers. No sign-up, instant download.
+Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.
 
 ### Document & Office Tools (2 tools)
 

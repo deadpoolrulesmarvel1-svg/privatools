@@ -776,8 +776,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Copy the value you need", "text": "Click any value to copy. Runs entirely in your browser — no network roundtrip."},
     ],
     "create-zip": [
-        {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB total."},
-        {"name": "Optional password protection", "text": "Add a password to encrypt the archive (AES-256). Recipients need the password to extract."},
+        {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB per file."},
+        {"name": "Choose compression level", "text": "Use Store for speed, Balanced for everyday ZIPs, or Maximum for the smallest output."},
         {"name": "Download the ZIP", "text": "All files are bundled into a single .zip with their original filenames and extensions."},
     ],
     "csv-json": [
@@ -1769,9 +1769,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the calculation done locally?", "a": "Yes — pure browser JavaScript. No network requests."},
     ],
     "create-zip": [
-        {"q": "Is the password protection strong?", "a": "Yes — AES-256 is the modern standard. The legacy ZipCrypto algorithm is NOT used."},
+        {"q": "Can I password-protect the ZIP?", "a": "Not yet. Create ZIP currently produces standard unencrypted ZIP archives; password-protected ZIP creation is on the roadmap."},
         {"q": "Will it preserve folder structure?", "a": "Uploaded files are placed at the root of the archive. To preserve a folder structure, upload them folder-by-folder using the multi-folder option."},
-        {"q": "What if I forget the password?", "a": "There is no recovery — AES-256 has no backdoor. Lost password = lost archive content."},
+        {"q": "What compression level should I choose?", "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Maximum can shrink text-heavy files more but takes longer."},
     ],
     "csv-json": [
         {"q": "How does CSV escaping work?", "a": "Standard RFC 4180: commas in values must be quoted; quotes inside values are doubled (\"\"). PrivaTools handles both."},

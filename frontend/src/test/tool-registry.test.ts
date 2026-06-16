@@ -45,6 +45,15 @@ describe("tool registry quality", () => {
         expect(overclaims).toEqual([]);
     });
 
+    it("does not advertise unsupported Create ZIP password encryption", () => {
+        const createZip = nonPdfTools.find(tool => tool.slug === "create-zip");
+        const copy = `${createZip?.description}\n${createZip?.longDescription}`;
+
+        expect(createZip).toBeDefined();
+        expect(copy).not.toMatch(/password|encrypt|AES/i);
+        expect(copy).toContain("isolated container");
+    });
+
     it("maps every server-backed tool to an API endpoint path", () => {
         const missing = allTools
             .filter(tool => !tool.clientOnly)

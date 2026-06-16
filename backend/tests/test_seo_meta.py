@@ -139,6 +139,16 @@ def test_extract_archive_faq_does_not_claim_password_support():
     assert "not supported yet" in faq_text
 
 
+def test_create_zip_faq_does_not_claim_password_encryption_support():
+    graph = _graph_for("/tools/create-zip")
+    faq = next(node for node in graph if node.get("@type") == "FAQPage")
+    faq_text = json.dumps(faq)
+
+    assert "AES-256" not in faq_text
+    assert "password-protect" in faq_text
+    assert "Not yet" in faq_text
+
+
 def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():
     graph = _graph_for("/tools/generate-barcode")
     howto = next(node for node in graph if node.get("@type") == "HowTo")

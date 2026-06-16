@@ -27,4 +27,11 @@ describe("static SEO files", () => {
 
         expect(indexHtml).not.toMatch(/<script[^>]+type=["']application\/ld\+json["']/i);
     });
+
+    it("keeps Create ZIP claims in llms-full aligned with server processing", () => {
+        const llmsFull = readFileSync(join(root, "public/llms-full.txt"), "utf8");
+
+        expect(llmsFull).not.toContain("Fast local compression with no file upload to external servers");
+        expect(llmsFull).toContain("Fast compression in an isolated container, no third-party uploads");
+    });
 });

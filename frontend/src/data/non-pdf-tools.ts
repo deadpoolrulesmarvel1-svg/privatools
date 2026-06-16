@@ -232,7 +232,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "create-zip", icon: Lock, name: "Create ZIP Archive",
     description: "Bundle multiple files into a ZIP archive",
-    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast local compression with no file upload to external servers. No sign-up, instant download.",
+    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.",
     synonyms: "zip archive compress files into one",
     popularity: 111,
     category: "archive", accepts: "*", outputLabel: "archive.zip",
