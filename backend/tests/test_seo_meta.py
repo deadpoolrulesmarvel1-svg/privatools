@@ -120,6 +120,16 @@ def test_tool_meta_does_not_overclaim_unlimited_file_sizes():
     assert offenders == []
 
 
+def test_extract_archive_meta_does_not_advertise_unsupported_formats():
+    title, description = get_meta_for_path("/tools/extract-archive")
+    combined = f"{title}\n{description}"
+
+    assert "RAR" not in combined
+    assert "7Z" not in combined
+    assert "ZIP" in combined
+    assert "TAR" in combined
+
+
 def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():
     graph = _graph_for("/tools/generate-barcode")
     howto = next(node for node in graph if node.get("@type") == "HowTo")

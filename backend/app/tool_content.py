@@ -786,7 +786,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Copy or download the result", "text": "Runs entirely in your browser. Your data never leaves your device."},
     ],
     "extract-archive": [
-        {"name": "Upload a ZIP file", "text": "Drop a .zip archive up to 500 MB."},
+        {"name": "Upload an archive", "text": "Drop a .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz archive up to 500 MB."},
         {"name": "PrivaTools extracts and returns each file", "text": "All files inside are extracted and bundled into a folder-style download."},
         {"name": "Download the extracted folder as a ZIP", "text": "Or download individual files from the result preview."},
     ],
@@ -1780,7 +1780,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "extract-archive": [
         {"q": "What about password-protected archives?", "a": "Password input is supported — paste the password and the encrypted archive is decrypted before extraction."},
-        {"q": "Does it support RAR / 7z?", "a": "Currently only ZIP. RAR / 7z support is on the roadmap."},
+        {"q": "Does it support RAR / 7z?", "a": "No. Extract Archive currently supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z support is on the roadmap."},
         {"q": "What if the archive contains many small files?", "a": "Up to 1000 files per archive. For larger, split before zipping."},
     ],
     "extract-audio": [

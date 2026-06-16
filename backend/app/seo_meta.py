@@ -609,7 +609,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "add-subtitles":    "Upload a video plus an .srt subtitle file and download a copy with subtitles burned into the picture.",
     "subtitle-converter":"Paste or upload an SRT/VTT/ASS subtitle file and convert it to any of the other formats — pure-browser.",
     "remove-background":"Upload an image of a person, product, or object and download a transparent-background PNG — U²-Net AI runs server-side.",
-    "extract-archive":  "Upload a ZIP, TAR, or other archive and download a folder/ZIP of the extracted files.",
+    "extract-archive":  "Upload a ZIP or TAR-family archive and download a ZIP of the extracted files.",
     "create-zip":       "Drop any files (any format) and download them packed into a single ZIP archive.",
     "url-to-pdf":       "Type any URL and download a paginated PDF rendering of the page — server-side headless Chrome.",
     # ── Browser-only utilities ─────────────────────────────────────────
@@ -778,7 +778,7 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "text-diff": ("Text Diff / Comparator", "Compare text online for free — paste two versions of text or code and get a line-by-line diff with additions in green and deletions in red. Perfect for code review."),
     "base64": ("Base64 Encoder / Decoder", "Encode and decode Base64 online for free — convert text, files, or binary data to and from Base64 format instantly. Works entirely in your browser, no data sent anywhere."),
     "hash-generator": ("Hash Generator", "Generate cryptographic hashes online for free — compute MD5, SHA-1, SHA-256, SHA-512, and more from text or files. Verify file integrity instantly. 100% private."),
-    "extract-archive": ("Extract Archive", "Extract ZIP, RAR, 7Z, and TAR archives online for free — upload compressed files and extract all contents in an isolated container. Up to 500 MB per file, no sign-up."),
+    "extract-archive": ("Extract Archive", "Extract ZIP and TAR archives online for free — upload .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz files and extract all contents in an isolated container. Up to 500 MB per file, no sign-up."),
     "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and up to 500 MB per file."),
     "csv-json": ("CSV to JSON Converter", "Convert CSV to JSON online for free — upload a CSV spreadsheet and get a properly formatted JSON array. Also supports JSON to CSV. Perfect for data transformation."),
     "markdown-html": ("Markdown to HTML Converter", "Convert Markdown to HTML online for free — paste Markdown text and get clean, rendered HTML. Preview the output instantly. Also supports HTML to Markdown."),
