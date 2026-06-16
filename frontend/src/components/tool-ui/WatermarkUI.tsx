@@ -16,7 +16,7 @@ import {
 import { cn, friendlyError } from "@/lib/utils";
 import {
     formatFileSize, MAX_FILE_SIZE_LABEL, uploadFile, downloadBlob, buildOutputFilename,
-    formatErrorForClipboard,
+    formatErrorForClipboard, postFormData,
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useFormPersist } from "@/hooks/useFormPersist";
@@ -118,22 +118,20 @@ export function WatermarkUI() {
             });
             return res.blob();
         }
-        // Image mode: backend takes a second file field — we drop down to fetch
-        // because uploadFile() doesn't accept named extra files.
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("files", file);
-        fd.append("opacity", String(opacity));
-        fd.append("position", position);
-        if (watermarkImage) {
-            fd.append("watermark_image", watermarkImage.raw);
-            fd.append("image_scale", String(imageScale));
-        }
-        const res = await fetch("/api/watermark", { method: "POST", body: fd });
-        if (!res.ok) {
-            const body = await res.json().catch(() => ({ detail: "Failed to add watermark" }));
-            throw new Error(body.detail || `Request failed (${res.status})`);
-        }
+        // Image mode: backend takes a second file field, so use the shared
+        // FormData helper instead of uploadFile's single-file wrapper.
+        const res = await postFormData("/watermark", () => {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("files", file);
+            fd.append("opacity", String(opacity));
+            fd.append("position", position);
+            if (watermarkImage) {
+                fd.append("watermark_image", watermarkImage.raw);
+                fd.append("image_scale", String(imageScale));
+            }
+            return fd;
+        }, { timeoutMs: 300_000 });
         return res.blob();
     }, [mode, text, opacity, position, fontSize, watermarkImage, imageScale]);
 

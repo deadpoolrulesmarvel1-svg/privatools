@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Globe, Code2, Download, Loader2, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
 
 type Mode = "url" | "html";
 
@@ -32,12 +32,12 @@ export function HtmlToPdfUI() {
         if (!canProcess) return;
         setState("processing"); setError(null);
         try {
-            const params = mode === "url" ? { url: url.trim() } : { html_content: html };
-            const res = await fetch(`/api/html-to-pdf`, { method: "POST", body: new URLSearchParams(params as Record<string, string>) });
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({ detail: "Conversion failed" }));
-                throw new Error(body.detail || `Request failed (${res.status})`);
-            }
+            const res = await postFormData("/html-to-pdf", () => {
+                const fd = new FormData();
+                if (mode === "url") fd.append("url", url.trim());
+                else fd.append("html_content", html);
+                return fd;
+            }, { timeoutMs: 120_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             setState("done");

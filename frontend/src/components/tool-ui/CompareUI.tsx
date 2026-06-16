@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Loader2, X, FileText, AlertCircle, Download, GitCompare, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
 
 const MODES = [
     { value: "visual", label: "Visual", desc: "Side-by-side with diff highlights" },
@@ -36,13 +36,14 @@ export function CompareUI() {
         if (!file1 || !file2) return;
         setState("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file1", file1.raw);
-            fd.append("file2", file2.raw);
-            fd.append("mode", mode);
-            fd.append("highlight_color", highlight);
-            const res = await fetch("/api/compare", { method: "POST", body: fd });
-            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
+            const res = await postFormData("/compare", () => {
+                const fd = new FormData();
+                fd.append("file1", file1.raw);
+                fd.append("file2", file2.raw);
+                fd.append("mode", mode);
+                fd.append("highlight_color", highlight);
+                return fd;
+            }, { timeoutMs: 300_000 });
             if (mode === "visual") {
                 const blob = await res.blob();
                 setResultBlob(blob); setTextResult(null);

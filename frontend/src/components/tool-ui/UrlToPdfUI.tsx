@@ -5,9 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Globe, Download, Loader2, AlertCircle, ExternalLink, RotateCcw } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
-
-const API_BASE = "/api";
+import { downloadBlob, postFormData } from "@/lib/api";
 
 export function UrlToPdfUI() {
     const [url, setUrl] = useState("");
@@ -28,13 +26,11 @@ export function UrlToPdfUI() {
 
         setStatus("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("url", finalUrl);
-            const res = await fetch(`${API_BASE}/url-to-pdf`, { method: "POST", body: fd });
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({ detail: "Conversion failed" }));
-                throw new Error(body.detail || `Request failed (${res.status})`);
-            }
+            const res = await postFormData("/url-to-pdf", () => {
+                const fd = new FormData();
+                fd.append("url", finalUrl);
+                return fd;
+            }, { timeoutMs: 120_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");

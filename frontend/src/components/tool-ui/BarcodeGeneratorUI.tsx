@@ -5,8 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download, Loader2, AlertCircle, Hash, QrCode, RotateCcw, Sparkles } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-
-const API_BASE = "/api";
+import { postFormData } from "@/lib/api";
 
 const BARCODE_TYPES = [
     { value: "code128", label: "Code 128", desc: "General purpose" },
@@ -58,14 +57,12 @@ export function BarcodeGeneratorUI() {
         if (v) { setError(v); return; }
         setStatus("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("data", data.trim());
-            fd.append("barcode_type", barcodeType);
-            const res = await fetch(`${API_BASE}/generate-barcode`, { method: "POST", body: fd });
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({ detail: "Generation failed" }));
-                throw new Error(body.detail || `Request failed (${res.status})`);
-            }
+            const res = await postFormData("/generate-barcode", () => {
+                const fd = new FormData();
+                fd.append("data", data.trim());
+                fd.append("barcode_type", barcodeType);
+                return fd;
+            });
             const blob = await res.blob();
             if (previewUrl) URL.revokeObjectURL(previewUrl);
             setPreviewUrl(URL.createObjectURL(blob));

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, CheckCircle2, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
 import { GenericUI } from "./GenericUI";
 
 // ─── 1. Video → PDF ─ frame count slider ─────────────────────────────
@@ -186,14 +186,12 @@ export function AddSubtitlesUI() {
         setState("processing");
         setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file", video);
-            fd.append("srt", srt);
-            const res = await fetch("/api/add-subtitles", { method: "POST", body: fd });
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({ detail: "Failed" }));
-                throw new Error(body.detail || `Request failed (${res.status})`);
-            }
+            const res = await postFormData("/add-subtitles", () => {
+                const fd = new FormData();
+                fd.append("file", video);
+                fd.append("srt", srt);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             downloadBlob(blob, buildOutputFilename(video?.name, "subtitled", "mp4"));
             setState("done");

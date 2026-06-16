@@ -5,9 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, AlertCircle, LayoutGrid, CheckCircle2, RotateCcw, Download, X, Wand2 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, buildOutputFilename } from "@/lib/api";
-
-const API_BASE = "/api";
+import { downloadBlob, buildOutputFilename, postFormData } from "@/lib/api";
 
 // Heuristic for a balanced default — square root rounded up keeps proportions
 // close to 1:1 for any file count.
@@ -45,13 +43,14 @@ export function CollageUI() {
         if (files.length < 2) return;
         setStatus("processing"); setError(null);
         try {
-            const fd = new FormData();
-            for (const f of files) fd.append("files", f);
-            fd.append("columns", String(columns));
-            fd.append("spacing", String(spacing));
-            fd.append("bg_color", bgColor);
-            const res = await fetch(`${API_BASE}/make-collage`, { method: "POST", body: fd });
-            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
+            const res = await postFormData("/make-collage", () => {
+                const fd = new FormData();
+                for (const f of files) fd.append("files", f);
+                fd.append("columns", String(columns));
+                fd.append("spacing", String(spacing));
+                fd.append("bg_color", bgColor);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");

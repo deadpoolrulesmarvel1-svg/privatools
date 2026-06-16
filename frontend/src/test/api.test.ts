@@ -55,4 +55,23 @@ describe("api form-data helpers", () => {
         expect(getErrorStatus(caught)).toBe(415);
         expect(getRequestId(caught)).toBe("req-test-123");
     });
+
+    it("rebuilds FormData bodies for retry attempts", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(new Response("temporary", { status: 503 }))
+            .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+        const buildBody = vi.fn(() => {
+            const fd = new FormData();
+            fd.append("file", new File(["hello"], "sample.pdf", { type: "application/pdf" }));
+            return fd;
+        });
+
+        const res = await postFormData("/compress", buildBody, {
+            retry: { attempts: 1, backoffMs: 1 },
+        });
+
+        expect(await res.text()).toBe("ok");
+        expect(buildBody).toHaveBeenCalledTimes(2);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
 });

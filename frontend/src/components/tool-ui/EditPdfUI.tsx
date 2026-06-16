@@ -28,7 +28,7 @@ import {
     ZoomOut, X, ChevronLeft, MousePointer2, Image as ImageIcon, Layers,
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { createPortal } from "react-dom";
 import { useEditHistory } from "@/hooks/useEditHistory";
@@ -51,8 +51,6 @@ const loadPdfjs = (): Promise<PdfjsLibType> => {
     }
     return pdfjsLibPromise;
 };
-
-const API_BASE = "/api";
 
 const FONTS = [
     { value: "Helvetica", label: "Helvetica" },
@@ -381,14 +379,12 @@ export function EditPdfUI() {
         if (!file || edits.length === 0) return;
         setState("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
-            const res = await fetch(`${API_BASE}/edit-pdf`, { method: "POST", body: fd });
-            if (!res.ok) {
-                const b = await res.json().catch(() => ({ detail: "Could not apply edits" }));
-                throw new Error(b.detail);
-            }
+            const res = await postFormData("/edit-pdf", () => {
+                const fd = new FormData();
+                fd.append("file", file);
+                fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
+                return fd;
+            }, { timeoutMs: 300_000 });
             setResultBlob(await res.blob());
             setState("done");
         } catch (e: unknown) {
