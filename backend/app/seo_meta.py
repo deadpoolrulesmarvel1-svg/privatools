@@ -2310,7 +2310,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>PrivaTools provides browser-based file processing for PDF, image, video, audio, "
             "and developer workflows. Server-side tools use isolated temporary storage and delete "
-            "them immediately after the response. Many tools run entirely in your browser with no "
+            "files immediately after the response. Many tools run entirely in your browser with no "
             "server interaction. Free, no limits, no registration.</p>"
         )
         parts.append("<h2>3. Acceptable Use</h2>")
