@@ -14,12 +14,25 @@ describe("static SEO files", () => {
 
     it("does not overclaim that every tool is browser-only", () => {
         const indexHtml = readFileSync(join(root, "index.html"), "utf8");
+        const manifest = JSON.parse(readFileSync(join(root, "public/manifest.json"), "utf8")) as { description: string };
+        const statusBar = readFileSync(join(root, "src/components/StatusBar.tsx"), "utf8");
+        const staticSurfaces = [
+            indexHtml,
+            manifest.description,
+            statusBar,
+        ].join("\n");
 
-        expect(indexHtml).not.toContain("All processing happens on your device");
-        expect(indexHtml).not.toContain("All processing happens locally");
-        expect(indexHtml).not.toContain("Zero uploads");
+        expect(staticSurfaces).not.toContain("All processing happens on your device");
+        expect(staticSurfaces).not.toContain("All processing happens locally");
+        expect(staticSurfaces).not.toContain("Zero uploads");
+        expect(staticSurfaces).not.toContain("Zero analytics scripts");
+        expect(staticSurfaces).not.toContain("Your files never touch our disk");
         expect(indexHtml).toContain("Browser-only when possible");
         expect(indexHtml).toContain("isolated");
+        expect(manifest.description).toContain("Browser-only when possible");
+        expect(manifest.description).toContain("isolated");
+        expect(statusBar).toContain("Browser-only where possible");
+        expect(statusBar).toContain("isolated backend");
     });
 
     it("leaves JSON-LD to the route-aware SEO layer", () => {
