@@ -156,6 +156,9 @@ export const DEFAULT_RETRY: RetryPolicy = {
  *  typically finishes in <15s, so 60s catches everything except the truly
  *  pathological. Long-running tools (large compress, OCR) override per-call. */
 export const DEFAULT_TIMEOUT_MS = 60_000;
+/** XHR progress uploads preserve the historical 5 minute ceiling by default.
+ *  They still honor per-call timeoutMs, including 0 to disable timeouts. */
+const DEFAULT_PROGRESS_TIMEOUT_MS = 300_000;
 
 /** Decide whether an error from a single attempt should be retried.
  *
@@ -335,8 +338,10 @@ export function uploadFileWithProgress(
     params?: Record<string, string | number | boolean>,
     onProgress?: ProgressCallback,
     signal?: AbortSignal,
+    options?: { timeoutMs?: number },
 ): Promise<Response> {
     validateFileSize(file);
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     fd.append("file", file);
     fd.append("files", file);
@@ -392,7 +397,7 @@ export function uploadFileWithProgress(
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
         xhr.ontimeout = () => reject(new Error("Request timed out"));
-        xhr.timeout = 300_000; // 5 min
+        xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
 }
@@ -440,9 +445,11 @@ export function uploadFilesWithProgress(
     params?: Record<string, string | number | boolean>,
     onProgress?: ProgressCallback,
     signal?: AbortSignal,
+    options?: { timeoutMs?: number },
 ): Promise<Response> {
     validateFileCount(files);
     for (const f of files) validateFileSize(f);
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     for (const f of files) fd.append("files", f);
     if (params) {
@@ -495,7 +502,7 @@ export function uploadFilesWithProgress(
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
         xhr.ontimeout = () => reject(new Error("Request timed out"));
-        xhr.timeout = 300_000;
+        xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
 }
@@ -640,7 +647,7 @@ export async function processAndDownload(
     options?: { retry?: RetryPolicy; onRetry?: RetryCallback; timeoutMs?: number },
 ): Promise<Record<string, string>> {
     const res = onProgress
-        ? await uploadFileWithProgress(endpoint, file, params, onProgress, signal)
+        ? await uploadFileWithProgress(endpoint, file, params, onProgress, signal, { timeoutMs: options?.timeoutMs })
         : await uploadFile(endpoint, file, params, {
             signal,
             retry: options?.retry,
@@ -672,7 +679,7 @@ export async function processFilesAndDownload(
     options?: { retry?: RetryPolicy; onRetry?: RetryCallback; timeoutMs?: number },
 ): Promise<void> {
     const res = onProgress
-        ? await uploadFilesWithProgress(endpoint, files, params, onProgress, signal)
+        ? await uploadFilesWithProgress(endpoint, files, params, onProgress, signal, { timeoutMs: options?.timeoutMs })
         : await uploadFiles(endpoint, files, params, {
             signal,
             retry: options?.retry,
