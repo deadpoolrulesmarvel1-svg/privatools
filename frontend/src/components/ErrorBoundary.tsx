@@ -84,7 +84,6 @@ export class ErrorBoundary extends Component<Props, State> {
     // The global handler in useGlobalErrorHandler.ts won't catch these
     // (React swallows render errors before they reach window.onerror),
     // so this log is the only signal in prod.
-    // eslint-disable-next-line no-console
     console.error("[ErrorBoundary]", error, info.componentStack);
     this.setState({ info });
   }

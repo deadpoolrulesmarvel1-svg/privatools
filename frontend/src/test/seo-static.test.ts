@@ -21,4 +21,10 @@ describe("static SEO files", () => {
         expect(indexHtml).toContain("Browser-only when possible");
         expect(indexHtml).toContain("isolated");
     });
+
+    it("leaves JSON-LD to the route-aware SEO layer", () => {
+        const indexHtml = readFileSync(join(root, "index.html"), "utf8");
+
+        expect(indexHtml).not.toMatch(/<script[^>]+type=["']application\/ld\+json["']/i);
+    });
 });

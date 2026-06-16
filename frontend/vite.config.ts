@@ -116,7 +116,6 @@ function sitemapPlugin(): Plugin {
         `\n</urlset>\n`;
 
       fs.writeFileSync(path.resolve(__dirname, "dist/sitemap.xml"), xml, "utf8");
-      // eslint-disable-next-line no-console
       console.log(`[sitemap] wrote ${urls.length} URLs`);
     },
   };
@@ -167,8 +166,10 @@ export default defineConfig({
     },
     // Target modern browsers for smaller output
     target: "es2020",
-    // Increase chunk warning threshold (our vendor chunks are expected to be large)
-    chunkSizeWarningLimit: 600,
+    // The only expected >600 kB JS chunk is the lazy-loaded
+    // @huggingface/transformers runtime for AI PDF tools. Keep the warning
+    // below 1 MB so accidental eager bundles still fail loudly.
+    chunkSizeWarningLimit: 900,
   },
   esbuild: {
     // Drop dev-only console calls + debugger statements from the production

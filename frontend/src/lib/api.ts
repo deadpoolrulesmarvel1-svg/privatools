@@ -2,6 +2,7 @@
  * Central API client for PrivaTools.
  * All tool UIs use these helpers to communicate with the FastAPI backend.
  */
+import { toast } from "sonner";
 
 const API_BASE = "/api";
 
@@ -581,10 +582,7 @@ export function downloadBlob(blob: Blob, filename: string) {
         URL.revokeObjectURL(url);
     }, 100);
 
-    // Show toast notification
-    import("sonner").then(({ toast }) => {
-        toast.success("Downloaded!", { description: filename, duration: 3000 });
-    }).catch(() => { });
+    toast.success("Downloaded!", { description: filename, duration: 3000 });
 }
 
 /** Helper: upload file → get blob → download. With progress tracking & abort.

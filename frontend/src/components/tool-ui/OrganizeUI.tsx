@@ -78,14 +78,14 @@ export function OrganizeUI() {
         });
     };
 
-    const undo = () => {
+    const undo = useCallback(() => {
         setHistory(h => {
             if (h.length === 0) return h;
             const last = h[h.length - 1];
             setPageOrder(last);
             return h.slice(0, -1);
         });
-    };
+    }, []);
 
     const canProcess = !!file && pageOrder.length > 0 && state !== "processing";
 
@@ -120,8 +120,7 @@ export function OrganizeUI() {
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canProcess, process, history, state]);
+    }, [canProcess, process, history, state, undo]);
 
     if (state === "done") return (
         <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">

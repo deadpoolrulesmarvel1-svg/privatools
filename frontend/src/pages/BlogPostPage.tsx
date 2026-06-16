@@ -577,7 +577,7 @@ export default function BlogPostPage() {
                       auto height without the JS-measure / max-height hack. */}
                   <div
                     className={cn(
-                      "grid transition-[grid-template-rows] duration-[320ms] ease-[cubic-bezier(0.16,0.84,0.44,1)] motion-reduce:transition-none",
+                      "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
                       tldrExpanded ? "grid-rows-[1fr]" : "grid-rows-[2.95em]"
                     )}
                   >

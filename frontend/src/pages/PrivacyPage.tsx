@@ -11,7 +11,7 @@
  * Last-updated timestamp links to the git history for diff transparency.
  */
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
     };
   }, []);
 
-  const scrollToHeading = (id: string) => {
+  const scrollToHeading = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
     const scrollEl = getScrollEl(articleRef.current);
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     history.replaceState(null, "", `#${id}`);
-  };
+  }, []);
 
   const scrollToTop = () => {
     const scrollEl = getScrollEl(articleRef.current);
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
       const t = setTimeout(() => scrollToHeading(hash), 60);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [scrollToHeading]);
 
   return (
     <div className="relative">

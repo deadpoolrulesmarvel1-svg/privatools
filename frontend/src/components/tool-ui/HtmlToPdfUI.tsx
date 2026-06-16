@@ -19,14 +19,14 @@ export function HtmlToPdfUI() {
 
     const canProcess = mode === "url" ? url.trim().length > 0 : html.trim().length > 0;
 
-    const getOutputName = () => {
+    const getOutputName = useCallback(() => {
         if (mode === "html") return "html.pdf";
         try {
             const u = new URL(url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`);
             const host = u.hostname.replace(/^www\./, "");
             return `${host}.pdf`;
         } catch { return "webpage.pdf"; }
-    };
+    }, [mode, url]);
 
     const process = useCallback(async () => {
         if (!canProcess) return;
@@ -47,7 +47,7 @@ export function HtmlToPdfUI() {
             setError(friendlyError(msg, "Couldn't render that HTML to PDF."));
             setState("idle");
         }
-    }, [canProcess, mode, url, html]);
+    }, [canProcess, mode, url, html, getOutputName]);
 
     // Cmd+Enter to submit
     useEffect(() => {
