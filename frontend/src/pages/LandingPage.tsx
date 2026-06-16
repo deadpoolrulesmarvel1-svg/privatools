@@ -37,9 +37,9 @@ const features = [
 
 // Trust signals — surface above the fold next to the hero.
 const TRUST_SIGNALS = [
-  { icon: FileCheck,  label: "MIT licensed",       sub: "Audit the code"    , href: "https://github.com/taiyeba-dg/privatools/blob/main/LICENSE" },
+  { icon: FileCheck,  label: "MIT licensed",       sub: "Audit the code"    , href: "https://github.com/deadpoolrulesmarvel1-svg/privatools/blob/main/LICENSE" },
   { icon: ServerOff,  label: "No account required",sub: "Zero sign-up flow" , href: undefined },
-  { icon: Package,    label: "Self-hostable",      sub: "Docker, one command", href: "https://github.com/taiyeba-dg/privatools#self-host" },
+  { icon: Package,    label: "Self-hostable",      sub: "Docker, one command", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#self-host" },
 ];
 
 export default function LandingPage() {
@@ -72,7 +72,7 @@ export default function LandingPage() {
                   Explore all tools <ArrowRight size={14} />
                 </Link>
                 <a
-                  href="https://github.com/taiyeba-dg/privatools"
+                  href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 h-11 px-5 font-sans-ui text-sm font-semibold text-foreground border border-border rounded-lg hover:border-foreground/30 hover:bg-secondary/40 transition-all"
@@ -262,7 +262,7 @@ export default function LandingPage() {
             PrivaTools is built in the open. Star us on GitHub, report issues, suggest features, or submit a pull request.
           </p>
           <a
-            href="https://github.com/taiyeba-dg/privatools"
+            href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-editorial inline-flex items-center gap-2"

@@ -144,7 +144,7 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
                     179 file tools that don't see your files.
                 </p>
                 <p className="mt-3 max-w-[58ch] text-[14px] sm:text-[14.5px] text-muted-foreground leading-relaxed">
-                    PDFs, images, video, code and archives — all processed in your browser or on a server <span className="text-foreground/85 font-medium">you control</span>. No accounts, no third-party uploads, no watermarks. Open the DevTools Network tab and verify it yourself.
+                    PDFs, images, video, code and archives — processed in your browser where possible, or on a server <span className="text-foreground/85 font-medium">you control</span> when a backend is required. No accounts, no third-party file processors, no watermarks.
                 </p>
 
                 {/* CTAs */}

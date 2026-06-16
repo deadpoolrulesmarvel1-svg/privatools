@@ -21,7 +21,7 @@ import { nonPdfTools } from "@/data/non-pdf-tools";
 import { blogPosts } from "@/data/blog";
 import { cn } from "@/lib/utils";
 
-const REPO_URL = "https://github.com/taiyeba-dg/privatools";
+const REPO_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools";
 
 const TOTAL = tools.length + nonPdfTools.length;
 const PDF_COUNT = tools.length;
@@ -164,7 +164,7 @@ export default function AboutPage() {
                 Browse all {TOTAL} tools <ArrowRight size={13} />
               </Link>
               <a
-                href="https://github.com/taiyeba-dg/privatools"
+                href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                 target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
               >
@@ -363,14 +363,14 @@ export default function AboutPage() {
               kicker: "Audit",
               title: "Audit every line.",
               desc: "PrivaTools is fully open source under the MIT license. Don't believe a privacy claim — verify it. Read the route handlers, the cleanup task, the CSP headers. It's all there.",
-              cta: { label: "Read the source", href: "https://github.com/taiyeba-dg/privatools", primary: true, icon: Github },
+              cta: { label: "Read the source", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools", primary: true, icon: Github },
             },
             {
               Icon: Code,
               kicker: "Self-host",
               title: "Self-host in one command.",
               desc: "If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. 175+ tools on your infrastructure.",
-              cta: { label: "Self-host with Docker", href: "https://github.com/taiyeba-dg/privatools#-quick-start", primary: false, icon: Code },
+              cta: { label: "Self-host with Docker", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#-quick-start", primary: false, icon: Code },
             },
           ].map((card, i) => {
             const Icon = card.Icon;
@@ -509,14 +509,14 @@ export default function AboutPage() {
                   aria-label="Maintainer profile on GitHub"
                 >
                   <img
-                    src="https://github.com/taiyeba-dg.png?size=120"
+                    src="https://github.com/deadpoolrulesmarvel1-svg.png?size=120"
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       // If the image 404s (e.g. CSP block), fall back to identicon.
                       const t = e.currentTarget;
-                      t.src = "https://github.com/identicons/taiyeba-dg.png";
+                      t.src = "https://github.com/identicons/deadpoolrulesmarvel1-svg.png";
                     }}
                   />
                 </a>
@@ -537,7 +537,7 @@ export default function AboutPage() {
                 </p>
                 <p className="flex items-center gap-1.5">
                   <GitCommit size={10} className="text-accent shrink-0" />
-                  Author: <a href={`${REPO_URL}/commits?author=taiyeba-dg`} target="_blank" rel="noreferrer" className="text-accent hover:underline">taiyeba-dg</a>
+                  Author: <a href={`${REPO_URL}/commits?author=deadpoolrulesmarvel1-svg`} target="_blank" rel="noreferrer" className="text-accent hover:underline">deadpoolrulesmarvel1-svg</a>
                 </p>
                 <p>
                   <span className="text-accent/80">license:</span> MIT · <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer" className="text-accent hover:underline">LICENSE</a>
@@ -562,14 +562,14 @@ export default function AboutPage() {
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>
-              <a href="https://github.com/taiyeba-dg/privatools/issues" target="_blank" rel="noreferrer"
+              <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools/issues" target="_blank" rel="noreferrer"
                 className="flex items-center gap-3 rounded-xl border border-border bg-paper-2/30 px-4 py-3 hover:border-accent/45 hover:bg-accent/[0.04] transition-colors group">
                 <div className="h-9 w-9 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                   <Github size={14} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">GitHub issues</p>
-                  <p className="text-[14px] font-medium text-foreground">taiyeba-dg/privatools</p>
+                  <p className="text-[14px] font-medium text-foreground">deadpoolrulesmarvel1-svg/privatools</p>
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>
@@ -593,7 +593,7 @@ export default function AboutPage() {
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             Ready to <span className="italic text-accent">try</span>?
           </h2>
-          <p className="mt-3 text-[15px] text-muted-foreground">No upload to anyone but us. No watermarks. Just pick a tool.</p>
+          <p className="mt-3 text-[15px] text-muted-foreground">Browser-only where possible, self-hostable when a server is needed. No accounts, no watermarks.</p>
           <Link to="/" className="mt-7 btn-accent inline-flex">
             Browse all {TOTAL} tools <ArrowRight size={13} />
           </Link>

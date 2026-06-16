@@ -293,7 +293,7 @@ export default function Index() {
                             <span className="section-mark reveal-underline">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
                             <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
                                 <ShieldCheck size={11} className="text-accent" />
-                                Files stay on this device
+                                Private by default
                             </span>
                         </div>
                         <h1 className="font-display font-bold text-foreground text-[40px] sm:text-[52px] tracking-[-0.035em] leading-[1.05]" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
@@ -301,7 +301,7 @@ export default function Index() {
                             <span className="text-muted-foreground italic font-medium">What are we doing today?</span>
                         </h1>
                         <p className="mt-4 max-w-[58ch] text-[14.5px] sm:text-[15px] text-muted-foreground leading-relaxed">
-                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — all running in your browser. No uploads, no accounts, no watermarks.
+                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — browser-only where possible, self-hosted when processing needs a server. No accounts, no watermarks.
                         </p>
 
                         {/* Big workshop CTA — primary action on the dashboard */}

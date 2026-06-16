@@ -112,7 +112,7 @@ const REPORT_URL = (path: string) => {
     `**What I expected:** _(which tool or page were you trying to reach?)_\n\n` +
     `**Browser / device:** _(optional)_`
   );
-  return `https://github.com/taiyeba-dg/privatools/issues/new?title=${title}&body=${body}&labels=broken-link`;
+  return `https://github.com/deadpoolrulesmarvel1-svg/privatools/issues/new?title=${title}&body=${body}&labels=broken-link`;
 };
 
 export default function NotFound() {

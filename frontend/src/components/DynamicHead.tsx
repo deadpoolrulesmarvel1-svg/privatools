@@ -126,13 +126,13 @@ const organizationSchema = {
     foundingDate: "2026",
     license: "https://opensource.org/licenses/MIT",
     sameAs: [
-        "https://github.com/taiyeba-dg/privatools",
+        "https://github.com/deadpoolrulesmarvel1-svg/privatools",
     ],
     contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
         email: "hello@privatools.me",
-        url: "https://github.com/taiyeba-dg/privatools/issues",
+        url: "https://github.com/deadpoolrulesmarvel1-svg/privatools/issues",
     },
 };
 
@@ -176,7 +176,7 @@ const authorSchema = {
         "Local AI / on-device inference",
     ],
     sameAs: [
-        "https://github.com/taiyeba-dg/privatools",
+        "https://github.com/deadpoolrulesmarvel1-svg/privatools",
     ],
 };
 
@@ -415,7 +415,7 @@ export function DynamicHead() {
                         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
                         provider: { "@id": `${BASE_URL}/#organization` },
                         license: "https://opensource.org/licenses/MIT",
-                        codeRepository: "https://github.com/taiyeba-dg/privatools",
+                        codeRepository: "https://github.com/deadpoolrulesmarvel1-svg/privatools",
                         isAccessibleForFree: true,
                         featureList: "PDF merge, PDF split, PDF compress, image conversion, video compression, OCR, format conversion, metadata removal",
                     },

@@ -9,7 +9,7 @@ Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/taiyeba-dg/privatools?style=for-the-badge&logo=github)](https://github.com/taiyeba-dg/privatools/stargazers)
+[![Stars](https://img.shields.io/github/stars/deadpoolrulesmarvel1-svg/privatools?style=for-the-badge&logo=github)](https://github.com/deadpoolrulesmarvel1-svg/privatools/stargazers)
 
 </div>
 
@@ -35,7 +35,7 @@ Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 ### Option 1: Docker (recommended)
 
 ```bash
-git clone https://github.com/taiyeba-dg/privatools.git
+git clone https://github.com/deadpoolrulesmarvel1-svg/privatools.git
 cd privatools
 docker compose up --build
 ```
@@ -45,7 +45,7 @@ Open **http://localhost:8080** — that's it!
 ### Option 2: Manual setup
 
 ```bash
-git clone https://github.com/taiyeba-dg/privatools.git
+git clone https://github.com/deadpoolrulesmarvel1-svg/privatools.git
 cd privatools
 
 # Backend
@@ -309,6 +309,6 @@ MIT — free to use, modify, and distribute. See [LICENSE](LICENSE) for details.
 
 **Built with care for privacy**
 
-[Live Demo](https://privatools.me) · [Report Bug](https://github.com/taiyeba-dg/privatools/issues) · [Request Feature](https://github.com/taiyeba-dg/privatools/issues) · [llms.txt](https://privatools.me/llms.txt)
+[Live Demo](https://privatools.me) · [Report Bug](https://github.com/deadpoolrulesmarvel1-svg/privatools/issues) · [Request Feature](https://github.com/deadpoolrulesmarvel1-svg/privatools/issues) · [llms.txt](https://privatools.me/llms.txt)
 
 </div>

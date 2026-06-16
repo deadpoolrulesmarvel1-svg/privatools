@@ -11,7 +11,7 @@
  *   │          │                                      ││
  *   │          │                                      ││
  *   ├──────────┴──────────────────────────────────────┤│
- *   │ StatusBar (28px) — § · MIT · NO UPLOAD · ⌘K     │
+ *   │ StatusBar (28px) — § · MIT · PRIVATE · ⌘K       │
  *   └──────────────────────────────────────────────────┘
  *
  * The sidebar is the navigation — top bar is brand and quick actions
@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <a
-            href="https://github.com/taiyeba-dg/privatools"
+            href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
