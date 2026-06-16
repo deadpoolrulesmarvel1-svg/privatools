@@ -1,0 +1,20 @@
+[Unit]
+Description=PrivaTools auto-deploy from origin/main
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=docker
+WorkingDirectory=/home/ubuntu/privatools
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=REPO_DIR=/home/ubuntu/privatools
+Environment=REMOTE=origin
+Environment=BRANCH=main
+Environment=HEALTH_URL=http://127.0.0.1:8000/api/health
+ExecStart=/usr/local/bin/privatools-auto-deploy
+TimeoutStartSec=45min
+

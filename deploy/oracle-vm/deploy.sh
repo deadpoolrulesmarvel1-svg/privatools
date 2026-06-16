@@ -1,5 +1,5 @@
 #!/bin/bash
-# PrivaTools — Oracle VM auto-deploy script.
+# PrivaTools — Oracle VM manual deploy script.
 #
 # Replaces ~/deploy.sh on the VM. Adds three reliability guarantees over the
 # 5-line original:
@@ -13,7 +13,10 @@
 #      entry instead of nothing, so the operator can spot bad deploys from
 #      `tail ~/deploy.log` without spelunking journalctl.
 #
-# Apply with:
+# The VM now has a systemd polling deploy path too:
+#   sudo bash deploy/oracle-vm/install-auto-deploy.sh
+#
+# Apply this manual script with:
 #   scp deploy/oracle-vm/deploy.sh ubuntu@140.245.15.140:/home/ubuntu/deploy.sh.new
 #   ssh ubuntu@140.245.15.140 'cp ~/deploy.sh ~/deploy.sh.bak && \
 #       mv ~/deploy.sh.new ~/deploy.sh && chmod +x ~/deploy.sh'

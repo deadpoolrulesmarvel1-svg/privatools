@@ -1,8 +1,33 @@
 # PrivaTools Production Deploy
 
-Target: Oracle VM, `140.245.15.140`, domain `privatools.com`.
+Target: Oracle VM, `140.245.15.140`, domain `privatools.me`.
 
 This directory contains the production-side artifacts. Everything here is checked into git so the VM is fully reproducible from `origin/main`.
+
+## Current Docker VM Auto-Deploy
+
+The live Oracle VM checkout is `/home/ubuntu/privatools` and runs with Docker Compose. Install the GitHub polling deploy timer once from that checkout:
+
+```bash
+cd /home/ubuntu/privatools
+sudo bash deploy/oracle-vm/install-auto-deploy.sh
+```
+
+That installs:
+
+- `/usr/local/bin/privatools-auto-deploy`
+- `privatools-auto-deploy.service`
+- `privatools-auto-deploy.timer`
+
+The timer checks `origin/main` every minute. If a new commit exists, it resets the checkout to that commit, runs `docker compose up -d --build`, prunes dangling images, and waits for `http://127.0.0.1:8000/api/health`.
+
+Useful commands:
+
+```bash
+systemctl list-timers --all | grep privatools-auto-deploy
+sudo systemctl status privatools-auto-deploy.service
+sudo journalctl -u privatools-auto-deploy.service -n 120 --no-pager
+```
 
 ## Layout on the VM
 
