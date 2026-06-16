@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 
-from backend.app.seo_meta import get_jsonld_for_path, get_meta_for_path, inject_seo
+from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
 
 
 STALE_PRIVACY_CLAIMS = (
@@ -108,6 +108,16 @@ def test_barcode_meta_does_not_advertise_unsupported_svg_output():
 
     assert "SVG" not in combined
     assert "PNG" in description
+
+
+def test_tool_meta_does_not_overclaim_unlimited_file_sizes():
+    offenders = [
+        slug
+        for slug, meta in TOOL_META.items()
+        if "no file size limits" in f"{meta['description']} {meta['long_description']}".lower()
+    ]
+
+    assert offenders == []
 
 
 def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():

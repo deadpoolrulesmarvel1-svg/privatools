@@ -282,7 +282,7 @@ async def my_tool_endpoint(file: UploadFile = File(...)):
 }
 ```
 
-Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + display title in `backend/app/seo_meta.py` (`_TLDR_OVERRIDES`, `_TOOL_TITLES`), HowTo steps + FAQs in `backend/app/tool_content.py`, and the slug to `backend/app/routes/sitemap.py`. The `GenericUI` component handles single-file upload/download automatically; for richer interactions add a dedicated component under `frontend/src/components/tool-ui/`.
+Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO entry in `backend/app/seo_meta.py` (`_TLDR_OVERRIDES`, `_PDF_TOOLS` or `_NONPDF_TOOLS`), HowTo steps + FAQs in `backend/app/tool_content.py`, and the slug to `backend/app/routes/sitemap.py`. The `GenericUI` component handles single-file upload/download automatically; for richer interactions add a dedicated component under `frontend/src/components/tool-ui/`.
 
 ### Guidelines
 

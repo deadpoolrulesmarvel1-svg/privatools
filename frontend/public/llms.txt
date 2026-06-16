@@ -242,7 +242,7 @@ Three architectural commitments that are auditable in the source:
 - [Case Converter](https://privatools.me/tools/case-converter): Convert text between UPPER, lower, Title, camelCase, snake_case, kebab-case
 
 ### Archive Tools
-- [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives locally
+- [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
 - [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
 
 ### Document & Office Tools

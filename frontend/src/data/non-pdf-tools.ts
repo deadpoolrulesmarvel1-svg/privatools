@@ -223,8 +223,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   // ── Archive & File Management ───────────────────────────────────────────────
   {
     slug: "extract-archive", icon: Archive, name: "Extract ZIP / TAR",
-    description: "Extract ZIP and TAR archives locally",
-    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents locally. Download extracted files individually or as a new ZIP. No file size limits, no sign-up.",
+    description: "Extract ZIP and TAR archives privately",
+    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download extracted files individually or as a new ZIP. Up to 500 MB per file, no sign-up.",
     synonyms: "unzip extract zip tar gz files",
     popularity: 110,
     category: "archive", accepts: ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz", outputLabel: "extracted files",

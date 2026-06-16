@@ -650,7 +650,7 @@ def _tldr_for(slug: str, name: str) -> str:
 # PDF tool meta  (slug → (name, long_description))
 # ---------------------------------------------------------------------------
 _PDF_TOOLS: dict[str, tuple[str, str]] = {
-    "merge-pdf": ("Merge PDF", "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. No file size limits, no sign-up, no watermarks. Your files are processed securely and never stored."),
+    "merge-pdf": ("Merge PDF", "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Your files are processed securely and never stored."),
     "split-pdf": ("Split PDF", "Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Privacy-first: files are never stored on our servers."),
     "split-by-bookmarks": ("Split by Bookmarks", "Split PDF by bookmarks or chapters automatically. Detect table of contents entries and create separate PDFs for each section. Ideal for splitting textbooks, manuals, and reports. Free, private, no sign-up."),
     "split-by-size": ("Split by Size", "Split large PDFs into smaller files by maximum file size. Perfect for email attachments with size limits. Set your target size (e.g., 10 MB) and automatically split into compliant chunks. Free online tool, no registration."),
@@ -778,8 +778,8 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "text-diff": ("Text Diff / Comparator", "Compare text online for free — paste two versions of text or code and get a line-by-line diff with additions in green and deletions in red. Perfect for code review."),
     "base64": ("Base64 Encoder / Decoder", "Encode and decode Base64 online for free — convert text, files, or binary data to and from Base64 format instantly. Works entirely in your browser, no data sent anywhere."),
     "hash-generator": ("Hash Generator", "Generate cryptographic hashes online for free — compute MD5, SHA-1, SHA-256, SHA-512, and more from text or files. Verify file integrity instantly. 100% private."),
-    "extract-archive": ("Extract Archive", "Extract ZIP, RAR, 7Z, and TAR archives online for free — upload compressed files and extract all contents privately in your browser. No server uploads needed."),
-    "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and no file size limits."),
+    "extract-archive": ("Extract Archive", "Extract ZIP, RAR, 7Z, and TAR archives online for free — upload compressed files and extract all contents in an isolated container. Up to 500 MB per file, no sign-up."),
+    "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and up to 500 MB per file."),
     "csv-json": ("CSV to JSON Converter", "Convert CSV to JSON online for free — upload a CSV spreadsheet and get a properly formatted JSON array. Also supports JSON to CSV. Perfect for data transformation."),
     "markdown-html": ("Markdown to HTML Converter", "Convert Markdown to HTML online for free — paste Markdown text and get clean, rendered HTML. Preview the output instantly. Also supports HTML to Markdown."),
     "heic-to-jpg": ("HEIC to JPG Converter", "Convert HEIC to JPG online for free — transform iPhone HEIC/HEIF photos into universally compatible JPG format. Bulk convert multiple photos at once. No upload required."),
@@ -2163,7 +2163,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
                 f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
-                "no file size limits (up to 500 MB per file), no account required, and no ads. "
+                "a generous 500 MB per-file limit, no account required, and no ads. "
                 "Files are processed in an isolated container and deleted immediately after the "
                 "response is returned — never stored, never shared with third parties. PrivaTools "
                 "is open source under the MIT license and self-hostable via Docker, so you can "

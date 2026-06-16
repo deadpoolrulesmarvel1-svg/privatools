@@ -37,6 +37,14 @@ describe("tool registry quality", () => {
         expect(incomplete).toEqual([]);
     });
 
+    it("does not overclaim unlimited file sizes in tool metadata", () => {
+        const overclaims = allTools
+            .filter(tool => /no file size limits/i.test(`${tool.description}\n${tool.longDescription}`))
+            .map(tool => tool.slug);
+
+        expect(overclaims).toEqual([]);
+    });
+
     it("maps every server-backed tool to an API endpoint path", () => {
         const missing = allTools
             .filter(tool => !tool.clientOnly)
