@@ -176,4 +176,13 @@ describe("static SEO files", () => {
         expect(config).toContain('add_header Cache-Control "public, max-age=2592000, immutable" always;');
         expect(config).not.toContain("expires 30d;");
     });
+
+    it("keeps privatools.me as the only content-serving hostname", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+
+        expect(config).toContain("server_name www.privatools.me;");
+        expect(config).toContain("server_name privatools.me;");
+        expect(config).toContain("return 301 https://privatools.me$request_uri;");
+        expect(config).not.toContain("return 301 https://$host$request_uri;");
+    });
 });
