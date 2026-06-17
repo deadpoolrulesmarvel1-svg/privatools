@@ -311,29 +311,52 @@ _BLOG_POSTS: dict[str, dict] = {
 # ---------------------------------------------------------------------------
 from pathlib import Path as _Path
 
-_BLOG_BODIES: dict[str, dict] = {}
-try:
-    _blog_json = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
-    if _blog_json.exists():
-        with _blog_json.open("r", encoding="utf-8") as _f:
-            _BLOG_BODIES = {p["slug"]: p for p in json.load(_f)}
-except Exception:
-    # Missing or malformed blog-content.json must not crash the app — fall back
-    # to the lighter title-only SSR rendering.
-    _BLOG_BODIES = {}
+_BLOG_JSON = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
+
+
+def blog_content_mtime_ns() -> int:
+    """Return a cache-buster for generated blog body content."""
+    try:
+        return _BLOG_JSON.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=8)
+def _load_blog_bodies(_mtime_ns: int) -> dict[str, dict]:
+    try:
+        if _BLOG_JSON.exists():
+            with _BLOG_JSON.open("r", encoding="utf-8") as _f:
+                return {p["slug"]: p for p in json.load(_f)}
+    except Exception:
+        # Missing or malformed blog-content.json must not crash the app — fall
+        # back to the lighter title-only SSR rendering.
+        return {}
+    return {}
+
+
+def _blog_bodies() -> dict[str, dict]:
+    return _load_blog_bodies(blog_content_mtime_ns())
 
 
 # Reverse map: tool_slug -> list of blog post dicts that reference it via the
 # blog's `relatedTools` array. Used to inject "Mentioned in our guides" links
 # on each tool page — gives the long-tail tools inbound internal links from
 # authoritative blog content, which helps Google allocate crawl budget.
-_TOOL_TO_BLOGS: dict[str, list[dict]] = {}
-for _slug, _post in _BLOG_BODIES.items():
-    for _tool_slug in _post.get("relatedTools") or []:
-        _TOOL_TO_BLOGS.setdefault(_tool_slug, []).append({
-            "slug": _slug,
-            "title": _post.get("title", _slug),
-        })
+@lru_cache(maxsize=8)
+def _tool_to_blogs_for_mtime(_mtime_ns: int) -> dict[str, list[dict]]:
+    tool_to_blogs: dict[str, list[dict]] = {}
+    for slug, post in _load_blog_bodies(_mtime_ns).items():
+        for tool_slug in post.get("relatedTools") or []:
+            tool_to_blogs.setdefault(tool_slug, []).append({
+                "slug": slug,
+                "title": post.get("title", slug),
+            })
+    return tool_to_blogs
+
+
+def _tool_to_blogs() -> dict[str, list[dict]]:
+    return _tool_to_blogs_for_mtime(blog_content_mtime_ns())
 
 
 # ---------------------------------------------------------------------------
@@ -1249,8 +1272,13 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
     return _NOT_FOUND_META
 
 
-@lru_cache(maxsize=512)
 def get_jsonld_for_path(path: str) -> dict | None:
+    """Return a JSON-LD dict for the given URL path, or None."""
+    return _get_jsonld_for_path(path, blog_content_mtime_ns())
+
+
+@lru_cache(maxsize=512)
+def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
     """Return a JSON-LD dict for the given URL path, or None.
 
     The returned dict is shared across all callers (via ``lru_cache``) —
@@ -1677,7 +1705,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             # Compute wordCount from the full body if available — the static
             # frontmatter often omits it, and Google explicitly reads
             # wordCount when ranking guides.
-            body_data = _BLOG_BODIES.get(slug, {})
+            body_data = _blog_bodies().get(slug, {})
             body_text = body_data.get("body", "") or ""
             word_count = post.get("wordCount") or len(re.findall(r"\w+", body_text)) or None
             blog_post_node = {
@@ -2071,7 +2099,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             # Mentioned in our guides — backlinks from this tool to blog posts
             # that reference it. Builds bidirectional internal-link graph that
             # helps Google route crawl budget to long-tail tool pages.
-            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            mentioning_posts = _tool_to_blogs().get(slug, [])
             if mentioning_posts:
                 parts.append("<h2>Mentioned in our guides</h2><ul>")
                 for post in mentioning_posts:
@@ -2128,7 +2156,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                     parts.append(f'<li><a href="/tools/{s}">{n}</a></li>')
                 parts.append("</ul>")
             # Mentioned in our guides — same reverse-map backlink as /tool/ branch.
-            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            mentioning_posts = _tool_to_blogs().get(slug, [])
             if mentioning_posts:
                 parts.append("<h2>Mentioned in our guides</h2><ul>")
                 for post in mentioning_posts:
@@ -2185,7 +2213,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/blog/"):]
         post = _BLOG_POSTS.get(slug)
         if post:
-            body_data = _BLOG_BODIES.get(slug, {})
+            body_data = _blog_bodies().get(slug, {})
             tldr = body_data.get("tldr")
 
             parts.append(f"<h1>{post['title']}</h1>")
@@ -2409,7 +2437,12 @@ def inject_seo(html: str, path: str) -> str:
     # React will hydrate over this once JavaScript loads for real users.
     ssr_content = _build_ssr_content(path, title, description)
     if ssr_content:
-        html = html.replace('<div id="root"></div>', f'<div id="root">{ssr_content}</div>', 1)
+        html = re.sub(
+            r'<div\s+id=(["\'])root\1\s*></div>',
+            lambda _match: f'<div id="root">{ssr_content}</div>',
+            html,
+            count=1,
+        )
 
     return html
 

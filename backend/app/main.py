@@ -12,7 +12,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .rate_limit import limiter
-from .seo_meta import inject_seo
+from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
     RequestIDMiddleware,
@@ -200,10 +200,8 @@ _INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index
 from functools import lru_cache
 
 @lru_cache(maxsize=256)
-def _get_seo_html(path: str, _mtime_ns: int) -> str:
-    """Cache SEO-injected HTML — keyed by path + index.html mtime so that
-    re-deploys (which rewrite index.html) automatically invalidate the cache
-    without needing a worker restart."""
+def _get_seo_html(path: str, _index_mtime_ns: int, _blog_mtime_ns: int) -> str:
+    """Cache SEO HTML keyed by path plus generated frontend content mtimes."""
     html = _INDEX_HTML.read_text("utf-8")
     return inject_seo(html, path)
 
@@ -253,7 +251,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         if _INDEX_HTML.exists():
             try:
                 from .seo_meta import path_is_known
-                html = _get_seo_html(path, _index_mtime_ns())
+                html = _get_seo_html(path, _index_mtime_ns(), blog_content_mtime_ns())
                 # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
                 # return HTTP 404 with a proper "Page not found" SSR body
                 # rendered by inject_seo — without this, the 404 page inherits

@@ -9,6 +9,7 @@ stale privacy overclaims, and malformed tool FAQ/HowTo nodes.
 from __future__ import annotations
 
 import json
+import os
 
 from backend.app import seo_meta
 from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
@@ -220,6 +221,47 @@ def test_server_side_storage_claims_match_temp_file_architecture():
         assert stale not in combined, f"stale storage claim leaked: {stale!r}"
     assert "temporary per-request storage" in combined
     assert "isolated temporary storage" in combined
+
+
+def test_generated_blog_content_refreshes_by_mtime(tmp_path, monkeypatch):
+    blog_json = tmp_path / "blog-content.json"
+    html = "<html><head></head><body><div id='root'></div></body></html>"
+
+    def write_blog(body: str, title: str, mtime_ns: int) -> None:
+        blog_json.write_text(
+            json.dumps([
+                {
+                    "slug": "heic-conversion-guide-2026",
+                    "title": title,
+                    "tldr": "Short generated summary.",
+                    "body": body,
+                    "relatedTools": ["split-in-half"],
+                }
+            ]),
+            encoding="utf-8",
+        )
+        os.utime(blog_json, ns=(mtime_ns, mtime_ns))
+
+    monkeypatch.setattr(seo_meta, "_BLOG_JSON", blog_json)
+    seo_meta._load_blog_bodies.cache_clear()
+    seo_meta._tool_to_blogs_for_mtime.cache_clear()
+    seo_meta._get_jsonld_for_path.cache_clear()
+
+    write_blog("<p>first generated body</p>", "First generated guide", 1_000_000_000)
+    first_blog = inject_seo(html, "/blog/heic-conversion-guide-2026")
+    first_tool = inject_seo(html, "/tool/split-in-half")
+
+    assert "first generated body" in first_blog
+    assert "First generated guide" in first_tool
+
+    write_blog("<p>second generated body</p>", "Second generated guide", 2_000_000_000)
+    second_blog = inject_seo(html, "/blog/heic-conversion-guide-2026")
+    second_tool = inject_seo(html, "/tool/split-in-half")
+
+    assert "second generated body" in second_blog
+    assert "first generated body" not in second_blog
+    assert "Second generated guide" in second_tool
+    assert "First generated guide" not in second_tool
 
 
 def test_compare_tool_count_claims_match_catalog_size():
