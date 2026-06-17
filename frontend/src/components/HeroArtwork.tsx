@@ -71,7 +71,7 @@ export function HeroArtwork() {
             <figcaption className="mt-4 text-center font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
                 <span className="text-accent">Fig. 01</span>
                 <span className="mx-2 opacity-50">—</span>
-                One file, four tools, never uploaded
+                One file, four tools, isolated processing
             </figcaption>
 
             <style>{`

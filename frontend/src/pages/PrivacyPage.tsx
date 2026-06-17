@@ -277,9 +277,9 @@ export default function PrivacyPage() {
               <h2 id="client-side-tools">2. Client-Side Tools</h2>
               <p>
                 A growing number of tools run <strong>entirely in your browser</strong> using JavaScript
-                and (in some cases) WebAssembly. Your data never leaves your device — not even
-                temporarily. You can verify by opening browser DevTools → Network and watching for
-                requests during processing.
+                and (in some cases) WebAssembly. For those browser-only processing steps, your data
+                never leaves your device — not even temporarily. You can verify by opening browser
+                DevTools → Network and watching for requests during processing.
               </p>
               <ul>
                 <li><strong>Developer utilities</strong>: JSON / XML Formatter, Text Diff, Base64

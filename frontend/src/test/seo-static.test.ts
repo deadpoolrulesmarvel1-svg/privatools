@@ -31,6 +31,14 @@ const staleStorageClaims = [
     "The model never sees the cloud.",
     "confirm zero requests leave your machine",
     "Files never reach our servers for tools like <a href=\"/tool/summarize-pdf\">Summarize</a>, <a href=\"/tool/smart-redact\">Smart Redact</a>",
+    "One file, four tools, never uploaded",
+    "179 file tools that don't see your files.",
+    "Nothing leaves the container",
+    "Your file never leaves the container",
+    "processed in your browser where possible, or on a server <span className=\"text-foreground/85 font-medium\">you control</span>",
+    "Summarize and redact with models that run entirely in your browser",
+    "Summarize and redact entirely in your browser",
+    "\"uploads\": false",
 ] as const;
 
 describe("static SEO files", () => {
@@ -75,6 +83,7 @@ describe("static SEO files", () => {
             readFileSync(join(root, "public/llms.txt"), "utf8"),
             readFileSync(join(root, "public/llms-full.txt"), "utf8"),
             readFileSync(join(root, "public/blog-content.json"), "utf8"),
+            readFileSync(join(root, "public/samples/sample.json"), "utf8"),
             readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/BlogPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
@@ -83,6 +92,9 @@ describe("static SEO files", () => {
             readFileSync(join(root, "src/data/blog.ts"), "utf8"),
             readFileSync(join(root, "src/data/tools.ts"), "utf8"),
             readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/FirstRunWelcome.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/HeroArtwork.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/OnboardingTour.tsx"), "utf8"),
             readFileSync(join(root, "scripts/gen-llms.mjs"), "utf8"),
         ].join("\n");
 

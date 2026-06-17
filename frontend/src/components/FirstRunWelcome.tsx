@@ -2,8 +2,9 @@
  * FirstRunWelcome — the hero card a brand-new visitor sees in place of the
  * "Good evening, what are we doing today?" greeting on the Dashboard.
  *
- * The card sells the proposition (179 tools, files never leave the
- * container) and offers three obvious next actions:
+ * The card sells the proposition (179 tools, browser-side where possible and
+ * isolated temporary processing when a backend is needed) and offers three
+ * obvious next actions:
  *
  *   1. Try sample PDF   → loads `/samples/sample.pdf` and jumps to compress
  *   2. Pick a tool      → opens the command palette (⌘K)
@@ -141,10 +142,10 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
                     className="mt-2 font-display text-[17px] sm:text-[19px] text-muted-foreground leading-[1.4] max-w-[44ch]"
                     style={{ fontVariationSettings: '"opsz" 32' }}
                 >
-                    179 file tools that don't see your files.
+                    179 file tools with privacy built in.
                 </p>
                 <p className="mt-3 max-w-[58ch] text-[14px] sm:text-[14.5px] text-muted-foreground leading-relaxed">
-                    PDFs, images, video, code and archives — processed in your browser where possible, or on a server <span className="text-foreground/85 font-medium">you control</span> when a backend is required. No accounts, no third-party file processors, no watermarks.
+                    PDFs, images, video, code and archives — processed in your browser where possible, or in isolated temporary storage when a backend is required. No accounts, no third-party file processors, no watermarks.
                 </p>
 
                 {/* CTAs */}
@@ -180,7 +181,7 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
 
                 {/* Privacy line — small reassurance + dismiss hint */}
                 <div className="mt-5 pt-4 border-t border-border/70 flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
-                    <ShieldCheck size={11} className="text-accent" /> Nothing leaves the container · Self-host with one Docker command
+                    <ShieldCheck size={11} className="text-accent" /> Temporary isolated processing · Self-host with one Docker command
                 </div>
             </div>
         </section>

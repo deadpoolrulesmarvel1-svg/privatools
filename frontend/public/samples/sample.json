@@ -1,17 +1,17 @@
 {
   "name": "PrivaTools",
   "version": "1.4.0",
-  "description": "179 file tools that don't see your files",
+  "description": "179 file tools with privacy built in",
   "philosophy": {
-    "privacy": "local-first",
-    "uploads": false,
-    "tracking": false
+    "privacy": "browser-side where possible, isolated temporary processing when needed",
+    "third_party_file_processors": false,
+    "file_retention": false
   },
   "categories": ["pdf", "image", "video", "audio", "developer", "archive"],
   "highlights": [
     {
       "feature": "Local AI",
-      "detail": "Summarize and redact entirely in your browser"
+      "detail": "Summarize in-browser; Smart Redact detects entities in-browser before backend apply"
     },
     {
       "feature": "Pipelines",
