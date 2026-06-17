@@ -380,7 +380,7 @@ const SidebarToolLink = memo(function SidebarToolLink({
 });
 
 // Memoise the sidebar so route changes that only flip `location.pathname`
-// (e.g. /tool/foo → /tool/bar) don't re-run the 179-tool tree render when
+// (e.g. /tool/merge-pdf → /tool/compress-pdf) don't re-run the 179-tool tree render when
 // the AppShell re-renders. Internally we still consume `useLocation` for
 // active-row highlighting so navigation stays correct.
 export const Sidebar = memo(SidebarInner);

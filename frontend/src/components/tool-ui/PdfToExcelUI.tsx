@@ -135,7 +135,7 @@ export function PdfToExcelUI() {
                     />
 
                     <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Works best when tables have clear borders. Scanned PDFs need <a href="/tools/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
+                        <span className="text-accent">§</span> Works best when tables have clear borders. Scanned PDFs need <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
                     </p>
                     <div className="flex items-center gap-3">
                         <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">

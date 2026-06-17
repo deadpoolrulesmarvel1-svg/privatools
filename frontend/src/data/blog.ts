@@ -1093,7 +1093,7 @@ export const blogPosts: BlogPost[] = [
 
 <h3>HEIC → JPG</h3>
 <ol>
-  <li>Open <a href="/tool/heic-to-jpg">HEIC to JPG</a>.</li>
+  <li>Open <a href="/tools/heic-to-jpg">HEIC to JPG</a>.</li>
   <li>Drag your HEIC.</li>
   <li>Choose JPEG quality (default 85 is fine for most use).</li>
   <li>Click Convert and download.</li>
@@ -1145,7 +1145,7 @@ done</code></pre>
 <h2>Privacy Note</h2>
 <p>HEIC files contain extensive EXIF metadata: GPS location, camera model, capture time, even depth maps. Before sharing converted files publicly, strip the metadata:</p>
 <ul>
-  <li>Use <a href="/tool/remove-exif">Remove EXIF</a> after converting.</li>
+  <li>Use <a href="/tools/remove-exif">Remove EXIF</a> after converting.</li>
   <li>Or view what's in there first with <a href="/tools/view-exif">View EXIF Data</a>.</li>
 </ul>
 <p>For sensitive photos, the online converters worth using are the ones that auto-delete files after conversion (e.g., PrivaTools) rather than retaining them on their servers.</p>

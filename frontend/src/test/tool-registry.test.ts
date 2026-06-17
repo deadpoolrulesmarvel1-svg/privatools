@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { blogPosts } from "@/data/blog";
@@ -9,6 +9,19 @@ import { getToolEndpoint } from "@/lib/tool-endpoints";
 
 const allTools = [...tools, ...nonPdfTools];
 const root = process.cwd();
+
+function sourceFiles(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === "test") continue;
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            sourceFiles(path, out);
+        } else if (/\.(ts|tsx)$/.test(entry.name)) {
+            out.push(path);
+        }
+    }
+    return out;
+}
 
 describe("tool registry quality", () => {
     it("does not ship duplicate tool slugs", () => {
@@ -84,5 +97,26 @@ describe("tool registry quality", () => {
             .map(tool => tool.slug);
 
         expect(missing).toEqual([]);
+    });
+
+    it("keeps literal internal tool links on the matching route family", () => {
+        const pdfSlugs = new Set(tools.map(tool => tool.slug));
+        const nonPdfSlugs = new Set(nonPdfTools.map(tool => tool.slug));
+        const mismatches: string[] = [];
+
+        for (const file of sourceFiles(join(root, "src"))) {
+            const text = readFileSync(file, "utf8");
+            for (const match of text.matchAll(/\/tools?\/([a-z0-9-]+)/g)) {
+                const [href, slug] = match;
+                if (href.startsWith("/tool/") && !pdfSlugs.has(slug)) {
+                    mismatches.push(`${file}: ${href} should use /tools/ or does not exist`);
+                }
+                if (href.startsWith("/tools/") && !nonPdfSlugs.has(slug)) {
+                    mismatches.push(`${file}: ${href} should use /tool/ or does not exist`);
+                }
+            }
+        }
+
+        expect(mismatches).toEqual([]);
     });
 });
