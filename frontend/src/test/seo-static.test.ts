@@ -131,4 +131,18 @@ describe("static SEO files", () => {
             expect(config).toContain("https://fonts.bunny.net");
         }
     });
+
+    it("keeps deploy security headers aligned with the backend policy", () => {
+        const deployConfigs = [
+            readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8"),
+            readFileSync(join(root, "..", "deploy/nginx.conf"), "utf8"),
+        ];
+
+        for (const config of deployConfigs) {
+            expect(config).toContain('add_header X-Frame-Options "DENY" always;');
+            expect(config).not.toContain('X-Frame-Options "SAMEORIGIN"');
+            expect(config).toContain('Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"');
+            expect(config).not.toContain('Strict-Transport-Security "max-age=31536000');
+        }
+    });
 });
