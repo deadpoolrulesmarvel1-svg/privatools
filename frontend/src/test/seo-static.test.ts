@@ -145,4 +145,21 @@ describe("static SEO files", () => {
             expect(config).not.toContain('Strict-Transport-Security "max-age=31536000');
         }
     });
+
+    it("keeps oracle nginx as the single public security-header source", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+        const hiddenHeaders = [
+            "X-Frame-Options",
+            "X-Content-Type-Options",
+            "X-XSS-Protection",
+            "Referrer-Policy",
+            "Strict-Transport-Security",
+            "Permissions-Policy",
+            "Content-Security-Policy",
+        ];
+
+        for (const header of hiddenHeaders) {
+            expect(config).toContain(`proxy_hide_header ${header};`);
+        }
+    });
 });
