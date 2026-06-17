@@ -11,9 +11,14 @@ HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/api/health}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_INTERVAL="${HEALTH_INTERVAL:-6}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
+STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
 
 log() {
     printf '[privatools-auto-deploy] %s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"
+}
+
+health_ok() {
+    curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null
 }
 
 trap 'rc=$?; log "failed at line $LINENO with exit $rc"; exit "$rc"' ERR
@@ -31,10 +36,24 @@ git fetch --prune "$REMOTE" "+refs/heads/${BRANCH}:refs/remotes/${REMOTE}/${BRAN
 
 current_sha="$(git rev-parse HEAD)"
 target_sha="$(git rev-parse "refs/remotes/${REMOTE}/${BRANCH}")"
+deployed_sha=""
+if [[ -f "$STATE_FILE" ]]; then
+    deployed_sha="$(tr -d '[:space:]' < "$STATE_FILE")"
+fi
 
-if [[ "$current_sha" == "$target_sha" ]] && git diff --quiet && git diff --cached --quiet; then
-    log "already at ${target_sha:0:12}; no deploy needed"
+if [[ "$current_sha" == "$target_sha" ]] \
+    && [[ "$deployed_sha" == "$target_sha" ]] \
+    && git diff --quiet \
+    && git diff --cached --quiet \
+    && health_ok; then
+    log "already deployed ${target_sha:0:12}; health OK; no deploy needed"
     exit 0
+fi
+
+if [[ "$current_sha" == "$target_sha" ]] && [[ "$deployed_sha" != "$target_sha" ]]; then
+    log "repo is at ${target_sha:0:12} but last successful deploy marker is ${deployed_sha:-missing}; rebuilding"
+elif [[ "$current_sha" == "$target_sha" ]] && ! health_ok; then
+    log "repo is at ${target_sha:0:12} but health check failed; rebuilding"
 fi
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -48,7 +67,8 @@ docker compose up -d --build
 docker image prune -f >/dev/null || true
 
 for i in $(seq 1 "$HEALTH_RETRIES"); do
-    if curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null; then
+    if health_ok; then
+        printf '%s\n' "$target_sha" > "$STATE_FILE"
         log "deploy complete; health OK after ${i}/${HEALTH_RETRIES} checks"
         exit 0
     fi
