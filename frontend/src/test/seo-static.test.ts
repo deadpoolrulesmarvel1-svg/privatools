@@ -162,4 +162,18 @@ describe("static SEO files", () => {
             expect(config).toContain(`proxy_hide_header ${header};`);
         }
     });
+
+    it("keeps oracle nginx cache policy edge-owned for static/PWA files", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+
+        expect((config.match(/proxy_hide_header Cache-Control;/g) || []).length).toBeGreaterThanOrEqual(4);
+        expect(config).toContain("location = /sw.js");
+        expect(config).toContain('add_header Cache-Control "no-store, max-age=0" always;');
+        expect(config).toContain("location ^~ /assets/");
+        expect(config).toContain('add_header Cache-Control "public, max-age=31536000, immutable" always;');
+        expect(config).toContain("manifest\\.json|robots\\.txt|llms\\.txt|llms-full\\.txt|opensearch\\.xml");
+        expect(config).toContain('add_header Cache-Control "public, max-age=3600" always;');
+        expect(config).toContain('add_header Cache-Control "public, max-age=2592000, immutable" always;');
+        expect(config).not.toContain("expires 30d;");
+    });
 });
