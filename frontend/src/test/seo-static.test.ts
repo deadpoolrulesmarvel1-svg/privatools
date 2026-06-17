@@ -22,6 +22,15 @@ const staleStorageClaims = [
     "Smart Redact PDF online with AI — without uploading",
     "The redacted PDF is then constructed in your browser",
     "the original is never uploaded",
+    "summarize PDF (AI), smart redact (AI/PII)",
+    "Local AI tools: Summarize PDF (distilbart-cnn-12-6) and Smart Redact (BERT-base-NER) run entirely in your browser",
+    "Heavy/sensitive tools (Summarize PDF, Smart Redact) run entirely in the user's browser",
+    "**AI tools (Summarize PDF, Smart Redact) run entirely in the browser**",
+    "AI in browser (no upload)",
+    "AI runs in-browser (no upload)",
+    "The model never sees the cloud.",
+    "confirm zero requests leave your machine",
+    "Files never reach our servers for tools like <a href=\"/tool/summarize-pdf\">Summarize</a>, <a href=\"/tool/smart-redact\">Smart Redact</a>",
 ] as const;
 
 describe("static SEO files", () => {
@@ -64,11 +73,14 @@ describe("static SEO files", () => {
     it("keeps static privacy storage claims aligned with temp-file processing", () => {
         const surfaces = [
             readFileSync(join(root, "public/llms.txt"), "utf8"),
+            readFileSync(join(root, "public/llms-full.txt"), "utf8"),
+            readFileSync(join(root, "public/blog-content.json"), "utf8"),
             readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/BlogPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/PrivacyPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/data/blog.ts"), "utf8"),
             readFileSync(join(root, "src/data/tools.ts"), "utf8"),
             readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
             readFileSync(join(root, "scripts/gen-llms.mjs"), "utf8"),

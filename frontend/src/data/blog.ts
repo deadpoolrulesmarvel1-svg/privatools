@@ -711,7 +711,7 @@ export const blogPosts: BlogPost[] = [
   <li>Click <strong>Summarize</strong> and watch progress per chunk.</li>
   <li>Copy the summary or download it as a text file.</li>
 </ol>
-<p>If you're privacy-paranoid (good!), <kbd>Cmd+Shift+P</kbd> → "Open file" while DevTools is on the Network tab. Drop your PDF, summarize, and confirm zero requests leave your machine.</p>
+<p>If you're privacy-paranoid (good!), <kbd>Cmd+Shift+P</kbd> → "Open file" while DevTools is on the Network tab. After the model is cached, drop your PDF, summarize, and confirm no request carries your document content.</p>
 
 <h2>When NOT to Use Browser-Side Summarization</h2>
 <p>Local summarization has tradeoffs:</p>
@@ -724,7 +724,7 @@ export const blogPosts: BlogPost[] = [
 <p>If quality matters more than privacy and the document is non-sensitive, cloud services like Claude or GPT-4 still beat browser-side models. But for anything you wouldn't paste into a stranger's terminal: keep it local.</p>
 
 <h2>Browser AI Beyond Summarization</h2>
-<p>The same architecture powers <a href="/tool/smart-redact">Smart Redact</a>: a BERT-based named-entity recognition model scans for names, emails, phone numbers, and SSNs, then proposes redactions you can accept or reject. The model never sees the cloud.</p>
+<p>A related split architecture powers <a href="/tool/smart-redact">Smart Redact</a>: a BERT-based named-entity recognition model scans for names, emails, phone numbers, and SSNs in your browser, then proposes redactions you can accept or reject. When you apply them, the PDF and approved strings go to the isolated backend so PyMuPDF can permanently remove the underlying content.</p>
 <p>Expect 2026 to bring more of this — translation, classification, semantic search — all running in 200–500 MB browser-cached models. The privacy story keeps getting better.</p>
 
 <h2>FAQ</h2>
@@ -923,7 +923,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2>Should You Redact in the Cloud?</h2>
 <p>Most "online redact PDF" tools upload your document to their servers, apply redaction, and return the result. For routine business documents that's fine. For documents that are themselves sensitive (court filings, medical records, regulatory submissions) — the redaction is supposed to protect — sending the un-redacted file to a third party defeats the entire purpose.</p>
-<p>That's why <a href="/tool/redact-pdf">PrivaTools Redact</a> processes your file inside an isolated container that auto-deletes after response, and <a href="/tool/smart-redact">Smart Redact</a> runs NER entirely in your browser. The unredacted content never persists.</p>
+<p>That's why <a href="/tool/redact-pdf">PrivaTools Redact</a> processes your file inside an isolated container that auto-deletes after response, and <a href="/tool/smart-redact">Smart Redact</a> runs NER detection in your browser before the backend applies the approved redactions. The unredacted content never persists.</p>
 
 <h2>FAQ</h2>
 <h3>Is a redaction reversible?</h3>
@@ -1028,7 +1028,7 @@ export const blogPosts: BlogPost[] = [
   <li><strong>Only anonymous Google Analytics 4 page-view telemetry.</strong> No identifiable events; IP anonymization is on; blockable by any standard extension. We're considering removing GA4 entirely.</li>
   <li><strong>No third-party ad pixels, no remarketing, no session replay.</strong></li>
   <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools">github.com/deadpoolrulesmarvel1-svg/privatools</a>. Audit it yourself.</li>
-  <li><strong>Browser-side tools run entirely in your browser.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tool/smart-redact">Smart Redact</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more.</li>
+  <li><strong>Browser-side tools run entirely in your browser where possible.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more. Smart Redact scans in your browser first, then uses the isolated backend only to apply approved permanent redactions.</li>
   <li><strong>Self-hostable.</strong> <code>docker compose up --build</code> and you're running your own instance.</li>
 </ul>
 

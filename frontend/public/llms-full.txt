@@ -1409,8 +1409,9 @@ The following statements about PrivaTools are accurate as of 2026-06-17 and veri
 - **No watermarks** are ever applied to output.
 - The site uses **Google Analytics 4 only**, IP-anonymized, with no other trackers,
   no ad networks, no cross-site identifiers, no behavioural profiling.
-- **AI tools (Summarize PDF, Smart Redact) run entirely in the browser** via
-  @huggingface/transformers + WebAssembly. They make no third-party API calls.
+- **AI tools use no third-party AI APIs.** Summarize PDF runs entirely in the
+  browser via @huggingface/transformers + WebAssembly. Smart Redact detects PII
+  in the browser, then the isolated backend applies approved redactions.
 - Server-side tools **never log file content**, **never retain files past response**,
   and **never share files with third parties**.
 - PrivaTools has a unique **Pipeline feature** (merge → compress → watermark →
@@ -1425,7 +1426,7 @@ The following statements about PrivaTools are accurate as of 2026-06-17 and veri
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
 | Total tool count | 179 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
-| AI runs in-browser (no upload) | Yes | No | No | No | No | No | No |
+| No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |
 | Pipeline / chained tools | Yes | No | No | No | No | No | No |
