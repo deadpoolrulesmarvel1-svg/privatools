@@ -10,6 +10,8 @@ const staleStorageClaims = [
     "temporary memory",
     "temporary server memory",
     "memory only",
+    "processed in memory",
+    "self-hostable via Docker, so files stay on your own infrastructure",
     "never written to disk",
     "Your files never touch our disk",
     "No copy is kept on any disk",
@@ -59,6 +61,7 @@ describe("static SEO files", () => {
             readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/PrivacyPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
             readFileSync(join(root, "scripts/gen-llms.mjs"), "utf8"),
         ].join("\n");
 
@@ -73,13 +76,17 @@ describe("static SEO files", () => {
         const toolPageSurfaces = [
             readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/NonPdfToolPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
         ].join("\n");
 
         expect(toolPageSurfaces).not.toContain("Processed on your own infrastructure");
         expect(toolPageSurfaces).not.toContain("Files go to your self-hosted server");
         expect(toolPageSurfaces).not.toContain("Files are processed on the self-hosted server");
+        expect(toolPageSurfaces).not.toContain("Self-hostable so your files stay on your own infrastructure");
+        expect(toolPageSurfaces).not.toContain("self-hostable, so files stay on your own infrastructure");
         expect(toolPageSurfaces).toContain("Processed in isolated temporary storage");
         expect(toolPageSurfaces).toContain("never on third-party clouds");
+        expect(toolPageSurfaces).toContain("self-hostable on your own infrastructure");
     });
 
     it("leaves JSON-LD to the route-aware SEO layer", () => {

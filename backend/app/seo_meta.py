@@ -1988,7 +1988,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools — {len(_PDF_TOOLS)} PDF tools and {len(_NONPDF_TOOLS)} image, video, audio, "
             "and developer utilities. The entire stack is open source under the MIT license and "
-            "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
+            "self-hostable via Docker for teams that want their own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
             "is returned — never stored, never shared with third parties. The public site uses anonymous "
             "Google Analytics 4 pageview telemetry only (IP-anonymized; blockable). No accounts, no behavioural profiling.</p>"
@@ -2238,7 +2238,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "PrivaTools is a free, open-source, privacy-first suite of "
             f"{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools. "
             "MIT-licensed, self-hostable, no accounts, no ads, no data resale. "
-            "Files uploaded to the public demo are processed in memory and deleted on response — "
+            "Files uploaded to the public demo use isolated temporary storage and are deleted on response — "
             "many tools never upload at all.</p>"
         )
         parts.append(f"<p>{description}</p>")

@@ -1,6 +1,6 @@
 # PrivaTools
 
-> 179 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
+> 179 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
