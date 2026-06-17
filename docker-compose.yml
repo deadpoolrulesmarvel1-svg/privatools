@@ -3,13 +3,12 @@ version: '3.8'
 services:
   privatools:
     build: .
-    environment:
-      PRIVATOOLS_BUILD_SHA: ${GIT_SHA:-unknown}
     ports:
       - "8000:8000"
     volumes:
       - app-temp:/app/temp
     environment:
+      - PRIVATOOLS_BUILD_SHA=${GIT_SHA:-unknown}
       - PORT=8000
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300
