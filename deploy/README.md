@@ -19,7 +19,7 @@ That installs:
 - `privatools-auto-deploy.service`
 - `privatools-auto-deploy.timer`
 
-The timer checks `origin/main` every minute. It redeploys when a new commit exists, when the last-successful deploy marker does not match the checked-out commit, or when the local health endpoint does not report the checked-out commit. A deploy resets the checkout to `origin/main`, runs `GIT_SHA=<target> docker compose up -d --build`, prunes dangling images, writes `.privatools-auto-deploy.sha` only after `/api/health` reports the target SHA, and waits for `http://127.0.0.1:8000/api/health`.
+The timer checks `origin/main` every minute. It redeploys when a new commit exists, when the last-successful deploy marker does not match the checked-out commit, or when the local health endpoint does not report the checked-out commit. A deploy resets the checkout to `origin/main`, runs `GIT_SHA=<target> docker compose up -d --build`, injects that SHA as the container's `PRIVATOOLS_BUILD_SHA`, prunes dangling images, writes `.privatools-auto-deploy.sha` only after `/api/health` reports the target SHA, and waits for `http://127.0.0.1:8000/api/health`.
 
 Useful commands:
 
