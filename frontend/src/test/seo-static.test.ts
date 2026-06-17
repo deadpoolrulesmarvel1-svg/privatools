@@ -116,4 +116,19 @@ describe("static SEO files", () => {
         expect(generated).not.toMatch(/AES encryption/i);
         expect(generated).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
     });
+
+    it("keeps production CSP compatible with browser-side AI tools", () => {
+        const deployConfigs = [
+            readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8"),
+            readFileSync(join(root, "..", "deploy/nginx.conf"), "utf8"),
+        ];
+
+        for (const config of deployConfigs) {
+            expect(config).toContain("'unsafe-eval'");
+            expect(config).toContain("https://huggingface.co");
+            expect(config).toContain("https://cdn.jsdelivr.net");
+            expect(config).toContain("worker-src 'self' blob:");
+            expect(config).toContain("https://fonts.bunny.net");
+        }
+    });
 });
