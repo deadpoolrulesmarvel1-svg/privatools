@@ -21,8 +21,8 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "179 free, open-source file tools — PDF, image, video, audio, and developer "
-        "utilities. Self-hostable; files never leave the processing container.",
+        "179 free, open-source file tools for PDF, image, video, audio, and developer "
+        "work. Browser-only when possible; isolated temporary processing when needed.",
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",

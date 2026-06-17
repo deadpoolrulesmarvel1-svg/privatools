@@ -34,6 +34,9 @@ STALE_STORAGE_CLAIMS = (
     "never written to disk",
     "never persisted to disk",
     "No copy is kept on any disk",
+    "files never leave the processing container",
+    "files never leave the container",
+    "File content never leaves the processing container",
 )
 
 

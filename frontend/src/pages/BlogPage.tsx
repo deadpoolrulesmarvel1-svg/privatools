@@ -540,10 +540,10 @@ export default function BlogPage() {
             <p className="section-mark mb-3 inline-block">Workshop</p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-[-0.025em] leading-tight"
                 style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-              Want guides like these without the <span className="italic text-accent">cloud upload</span>?
+              Want guides like these without the <span className="italic text-accent">privacy guesswork</span>?
             </h2>
             <p className="mt-4 text-[14px] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              PrivaTools is free, open-source, and processes everything privately — files never leave the container, and the source code is on GitHub.
+              PrivaTools is free, open-source, and built for private file work — browser-only where possible, with isolated temporary processing when a backend is needed.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link to="/" className="btn-accent">

@@ -15,6 +15,9 @@ const staleStorageClaims = [
     "never written to disk",
     "Your files never touch our disk",
     "No copy is kept on any disk",
+    "files never leave the processing container",
+    "files never leave the container",
+    "File content never leaves the processing container",
 ] as const;
 
 describe("static SEO files", () => {
@@ -58,6 +61,7 @@ describe("static SEO files", () => {
         const surfaces = [
             readFileSync(join(root, "public/llms.txt"), "utf8"),
             readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/BlogPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/PrivacyPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),

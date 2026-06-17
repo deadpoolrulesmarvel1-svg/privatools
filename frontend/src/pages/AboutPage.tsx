@@ -306,7 +306,7 @@ export default function AboutPage() {
               { icon: Users,  title: "Require accounts",        desc: "No email gate, no sign-up flow, no \"premium\" pop-up." },
               { icon: Lock,   title: "Store files",             desc: "Temp dir is cleaned on response; cleanup task fires every 5 minutes for stragglers." },
               { icon: Eye,    title: "Profile you",             desc: "Only anonymous GA4 pageviews, IP-anonymized; blockable with any extension." },
-              { icon: Globe,  title: "Sell data",               desc: "File content never leaves the processing container. We have nothing to sell." },
+              { icon: Globe,  title: "Sell data",               desc: "File content is never sold, shared with third parties, or used for training. We have nothing to sell." },
               { icon: Heart,  title: "Paywall anything",        desc: "No premium tier. No feature locked behind subscription. No watermark on output." },
             ].map((item, i) => {
               const Icon = item.icon;
