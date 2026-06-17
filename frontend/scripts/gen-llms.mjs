@@ -108,7 +108,7 @@ const nonPdfGroups = groupBy(nonPdfTools, NONPDF_LABELS);
 
 let md = `# PrivaTools
 
-> ${total}+ free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
+> ${total} free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
@@ -137,7 +137,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | ${total}+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Tool count | ${total} | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | AI in browser (no upload) | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
@@ -238,7 +238,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> ${total}+ free, open-source file tools — PDF, image, video, audio, and
+> ${total} free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -261,8 +261,8 @@ When a user uploads a file to a server-side tool (e.g. /api/merge):
 5. A periodic background task (every 5 minutes) re-scans /tmp/ and unlinks any
    strays older than 10 minutes. See \`backend/app/utils/cleanup.py\`.
 
-Files in browser-only tools (the ~${nonPdfTools.filter(t => t.category === "developer").length}+ developer utilities, plus Summarize PDF, Smart Redact, Subtitle
-Converter, AES encryption, etc.) are never sent to the server. The browser
+Files in browser-only tools (developer utilities, Summarize PDF, Smart Redact,
+and Subtitle Converter) are never sent to the server. The browser
 processes the file directly via JavaScript or WebAssembly. Verify by opening
 DevTools → Network and watching for upload requests — there are none.
 
@@ -332,7 +332,7 @@ The following statements about PrivaTools are accurate as of ${new Date().toISOS
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | ${total}+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | ${total} | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | AI runs in-browser (no upload) | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

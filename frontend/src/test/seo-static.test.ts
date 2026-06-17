@@ -92,6 +92,8 @@ describe("static SEO files", () => {
 
         expect(generated).toContain(`${TOTAL_TOOL_COUNT} tools`);
         expect(generated).toContain(`Search ${TOTAL_TOOL_COUNT} free`);
+        expect(generated).not.toContain(`${TOTAL_TOOL_COUNT}+`);
+        expect(generated).not.toMatch(/AES encryption/i);
         expect(generated).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
     });
 });
