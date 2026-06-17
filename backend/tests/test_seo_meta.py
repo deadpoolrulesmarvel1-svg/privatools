@@ -37,6 +37,9 @@ STALE_STORAGE_CLAIMS = (
     "files never leave the processing container",
     "files never leave the container",
     "File content never leaves the processing container",
+    "The redacted PDF is then constructed in your browser",
+    "the original is never uploaded",
+    "Smart Redact uses BERT-base-NER for PII detection. Neither sends data",
 )
 
 

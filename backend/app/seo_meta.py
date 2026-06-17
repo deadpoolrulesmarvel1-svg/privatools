@@ -776,7 +776,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly. Get an extractive summary without uploading the document anywhere."),
-    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER model detects names, emails, phone numbers, addresses, and SSNs in your browser. Nothing is uploaded."),
+    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER detects names, emails, phone numbers, addresses, and SSNs in your browser before the backend permanently applies approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
     "pdf-to-rtf":      ("PDF to RTF",         "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text."),
@@ -1429,7 +1429,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Do you upload my files anywhere?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."},
+                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."},
                         },
                         {
                             "@type": "Question",
@@ -1444,7 +1444,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Does PrivaTools use AI?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."},
+                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."},
                         },
                         {
                             "@type": "Question",
@@ -2044,10 +2044,10 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append('<h2 class="tool-faq">Frequently Asked Questions</h2>')
         for q, a in [
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
-            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."),
+            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."),
             ("Can I self-host PrivaTools?", "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all 179 tools on your own server."),
             ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
-            ("Does PrivaTools use AI?", "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."),
+            ("Does PrivaTools use AI?", "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."),
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
         ]:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")

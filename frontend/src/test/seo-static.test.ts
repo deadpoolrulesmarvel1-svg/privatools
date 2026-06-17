@@ -18,6 +18,10 @@ const staleStorageClaims = [
     "files never leave the processing container",
     "files never leave the container",
     "File content never leaves the processing container",
+    "zero requests after the bundle loads",
+    "Smart Redact PDF online with AI — without uploading",
+    "The redacted PDF is then constructed in your browser",
+    "the original is never uploaded",
 ] as const;
 
 describe("static SEO files", () => {
@@ -65,6 +69,7 @@ describe("static SEO files", () => {
             readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/PrivacyPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/data/tools.ts"), "utf8"),
             readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
             readFileSync(join(root, "scripts/gen-llms.mjs"), "utf8"),
         ].join("\n");

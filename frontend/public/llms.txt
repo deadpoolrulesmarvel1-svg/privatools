@@ -327,13 +327,13 @@ Yes. There is no premium tier, no per-day limit, no watermark on output, and no 
 ### Do you upload my files anywhere?
 For server-processed tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked from that temp storage immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
 
-For browser-only tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), files never leave the browser. Verify by watching DevTools → Network.
+For browser-only tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), file content stays in the browser. Browser-side AI tools download model weights once; Smart Redact detects entities locally, then uploads the PDF and approved strings only when applying permanent redactions.
 
 ### Can I self-host PrivaTools?
 Yes. `git clone https://github.com/deadpoolrulesmarvel1-svg/privatools && cd privatools && docker compose up --build`. Everything runs on your own hardware. MIT license — fork, modify, deploy freely.
 
 ### Does PrivaTools use AI?
-Two tools use AI, both running entirely in your browser via WebAssembly: (1) Summarize PDF uses distilbart-cnn-12-6 (~250 MB, cached after first download); (2) Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API.
+Two tools use AI without third-party AI APIs: (1) Summarize PDF uses distilbart-cnn-12-6 (~250 MB, cached after first download) entirely in the browser; (2) Smart Redact uses BERT-base-NER for browser-side PII detection, then the isolated backend applies approved redactions.
 
 ### Are there any limits I should know about?
 - Maximum upload: 500 MB per file

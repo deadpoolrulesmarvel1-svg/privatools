@@ -56,7 +56,7 @@ const FAQ = [
   {
     slug: "ai-training",
     q: "Do you train AI on my uploads?",
-    a: "No. We never read, inspect, or analyze your file contents — we process bytes. The browser-side AI tools (Smart Redact, Summarize) run weights in your browser; nothing leaves the page.",
+    a: "No. We never use uploads for training. Summarize PDF runs the model in your browser, and Smart Redact detects entities in your browser before you approve anything. If you apply Smart Redact, the PDF and selected strings are sent to the isolated backend only to bake in the permanent redactions.",
   },
   {
     slug: "self-host",
@@ -76,7 +76,7 @@ const FAQ = [
   {
     slug: "browser-only-tools",
     q: "Which tools never upload my file at all?",
-    a: "All developer utilities (JWT Decoder, Regex Tester, Base64, Hash Generator, UUID, Password Generator, Lorem Ipsum, JSON/YAML/CSV converters) plus the browser-side AI tools (Smart Redact, Summarize PDF) run entirely in-page. Open DevTools → Network and you'll see zero requests after the bundle loads.",
+    a: "Developer utilities (JWT Decoder, Regex Tester, Base64, Hash Generator, UUID, Password Generator, Lorem Ipsum, JSON/YAML/CSV converters) plus Summarize PDF run entirely in-page. Browser-side AI tools download model weights once; your document content is not sent during summarization or Smart Redact detection.",
   },
   {
     slug: "mobile-support",

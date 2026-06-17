@@ -683,7 +683,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "smart-redact", icon: ShieldCheck, name: "Smart Redact (AI)",
     description: "Local AI auto-detects PII — names, emails, phones, SSNs",
-    longDescription: "Smart Redact PDF online with AI — without uploading. Local NER + regex passes scan your document in the browser to flag people, organizations, locations, emails, phone numbers, SSNs, and credit cards. Review the suggestions, uncheck anything you want to keep, and the chosen strings are sent to your own server (or the demo) for real PyMuPDF redaction — permanent removal, not just a black overlay.",
+    longDescription: "Smart Redact PDF online with AI — local NER + regex passes scan your document in the browser before anything is applied. Review the suggestions, uncheck anything you want to keep, then the PDF and chosen strings are sent to your own server (or the demo) for real PyMuPDF redaction — permanent removal, not just a black overlay.",
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
     category: "security", clientOnly: false, accepts: ".pdf", outputLabel: "redacted.pdf",

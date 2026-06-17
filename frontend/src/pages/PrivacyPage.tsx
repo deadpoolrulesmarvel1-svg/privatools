@@ -287,11 +287,12 @@ export default function PrivacyPage() {
                   JWT Decoder, Regex Tester, Timestamp Converter, URL Encoder, Word Counter,
                   Color Converter, UUID Generator, Lorem Ipsum Generator, Password Generator.</li>
                 <li><strong>Browser-side AI</strong>: Summarize PDF (distilbart-cnn-12-6) and Smart
-                  Redact (BERT-base-NER) run AI models <em>in your browser</em> via the
+                  Redact detection (BERT-base-NER) run AI models <em>in your browser</em> via the
                   @huggingface/transformers WebAssembly runtime. The models (~250 MB) are downloaded
                   once from the Hugging Face CDN and cached in your browser's IndexedDB storage.
-                  After the model is cached, summarization and PII detection happen offline — your
-                  PDF content never touches our server.</li>
+                  After the model is cached, summarization and PII detection happen offline. Smart
+                  Redact sends the PDF and selected strings to the backend only after you approve
+                  redactions, so PyMuPDF can permanently remove the content.</li>
                 <li><strong>Subtitle Converter</strong>: SRT ↔ VTT ↔ ASS conversion happens entirely
                   in your browser.</li>
               </ul>
@@ -300,8 +301,9 @@ export default function PrivacyPage() {
                 <code> huggingface.co</code> and <code>cdn.jsdelivr.net</code> over HTTPS. Hugging Face
                 sees that <em>someone</em> requested the model file (the request includes your IP and
                 user agent, as with any web request); they do not see the content you intend to
-                summarise or redact. Subsequent uses of the tool, including processing your file, run
-                entirely offline from the cached model.
+                summarise or scan for redaction. Subsequent summarization and Smart Redact detection
+                run offline from the cached model; applying Smart Redact still uses the isolated
+                backend to create the final redacted PDF.
               </p>
             </div>
 

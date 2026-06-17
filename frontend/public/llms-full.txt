@@ -27,10 +27,12 @@ When a user uploads a file to a server-side tool (e.g. /api/merge):
 5. A periodic background task (every 5 minutes) re-scans /tmp/ and unlinks any
    strays older than 10 minutes. See `backend/app/utils/cleanup.py`.
 
-Files in browser-only tools (developer utilities, Summarize PDF, Smart Redact,
-and Subtitle Converter) are never sent to the server. The browser
-processes the file directly via JavaScript or WebAssembly. Verify by opening
-DevTools → Network and watching for upload requests — there are none.
+Files in browser-only tools (developer utilities, Summarize PDF, and Subtitle
+Converter) are never sent to the server. The browser processes the file
+directly via JavaScript or WebAssembly. Smart Redact detection also runs in the
+browser, but applying permanent redactions sends the PDF and approved strings
+to the isolated backend. Browser-side AI tools may fetch model files on first
+use; document content is not sent to a third-party AI API.
 
 ## Full Tool Reference
 
@@ -374,7 +376,7 @@ URL: https://privatools.me/tool/smart-redact
 
 Local AI auto-detects PII — names, emails, phones, SSNs
 
-Smart Redact PDF online with AI — without uploading. Local NER + regex passes scan your document in the browser to flag people, organizations, locations, emails, phone numbers, SSNs, and credit cards. Review the suggestions, uncheck anything you want to keep, and the chosen strings are sent to your own server (or the demo) for real PyMuPDF redaction — permanent removal, not just a black overlay.
+Smart Redact PDF online with AI — local NER + regex passes scan your document in the browser before anything is applied. Review the suggestions, uncheck anything you want to keep, then the PDF and chosen strings are sent to your own server (or the demo) for real PyMuPDF redaction — permanent removal, not just a black overlay.
 
 #### PDF Permissions
 URL: https://privatools.me/tool/set-permissions
