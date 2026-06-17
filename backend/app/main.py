@@ -60,6 +60,16 @@ from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 # tightened in tests or relaxed for slower workers without a deploy.
 _JANITOR_INTERVAL = int(os.environ.get("CLEANUP_INTERVAL_SECONDS", "300"))
 _JANITOR_MAX_AGE = int(os.environ.get("TEMP_MAX_AGE_SECONDS", "600"))
+_BUILD_SHA = os.environ.get("PRIVATOOLS_BUILD_SHA", "unknown").strip() or "unknown"
+_BUILD_SHA_SHORT = _BUILD_SHA[:12] if _BUILD_SHA != "unknown" else "unknown"
+
+
+def _health_payload(status: str = "ok") -> dict[str, str]:
+    return {
+        "status": status,
+        "build_sha": _BUILD_SHA,
+        "build_sha_short": _BUILD_SHA_SHORT,
+    }
 
 
 async def _cleanup_task():
@@ -507,7 +517,7 @@ app.include_router(og_image.router)
 async def health():
     """Backwards-compatible health endpoint — kept for the frontend
     `BackendStatusBanner` that probes `/api/health` on startup."""
-    return JSONResponse({"status": "ok"})
+    return JSONResponse(_health_payload())
 
 
 @app.get("/healthz")
@@ -518,7 +528,7 @@ async def healthz():
     side-effects. Use this for "is the process running" monitoring
     (uptime checks, load-balancer health pings).
     """
-    return JSONResponse({"status": "ok"})
+    return JSONResponse(_health_payload())
 
 
 @app.get("/readyz")

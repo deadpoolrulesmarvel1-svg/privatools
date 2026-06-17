@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Poll origin/main and redeploy the Docker Compose app only when a new commit
-# is available. Intended to run from privatools-auto-deploy.service.
+# Poll origin/main and redeploy the Docker Compose app when a new commit is
+# available, the last-success marker is stale, or health reports the wrong SHA.
+# Intended to run from privatools-auto-deploy.service.
 
 set -euo pipefail
 
@@ -17,8 +18,12 @@ log() {
     printf '[privatools-auto-deploy] %s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"
 }
 
-health_ok() {
-    curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null
+health_reports_sha() {
+    local expected_sha="$1"
+    local body
+    body="$(curl --fail --silent --max-time 5 "$HEALTH_URL")" || return 1
+    [[ "$body" == *"\"build_sha\":\"${expected_sha}\""* ]] \
+        || [[ "$body" == *"\"build_sha\": \"${expected_sha}\""* ]]
 }
 
 trap 'rc=$?; log "failed at line $LINENO with exit $rc"; exit "$rc"' ERR
@@ -45,15 +50,15 @@ if [[ "$current_sha" == "$target_sha" ]] \
     && [[ "$deployed_sha" == "$target_sha" ]] \
     && git diff --quiet \
     && git diff --cached --quiet \
-    && health_ok; then
-    log "already deployed ${target_sha:0:12}; health OK; no deploy needed"
+    && health_reports_sha "$target_sha"; then
+    log "already deployed ${target_sha:0:12}; health reports target SHA; no deploy needed"
     exit 0
 fi
 
 if [[ "$current_sha" == "$target_sha" ]] && [[ "$deployed_sha" != "$target_sha" ]]; then
     log "repo is at ${target_sha:0:12} but last successful deploy marker is ${deployed_sha:-missing}; rebuilding"
-elif [[ "$current_sha" == "$target_sha" ]] && ! health_ok; then
-    log "repo is at ${target_sha:0:12} but health check failed; rebuilding"
+elif [[ "$current_sha" == "$target_sha" ]] && ! health_reports_sha "$target_sha"; then
+    log "repo is at ${target_sha:0:12} but health does not report that SHA; rebuilding"
 fi
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -63,18 +68,18 @@ fi
 log "deploying ${current_sha:0:12} -> ${target_sha:0:12}"
 git reset --hard "$target_sha"
 
-docker compose up -d --build
+GIT_SHA="$target_sha" docker compose up -d --build
 docker image prune -f >/dev/null || true
 
 for i in $(seq 1 "$HEALTH_RETRIES"); do
-    if health_ok; then
+    if health_reports_sha "$target_sha"; then
         printf '%s\n' "$target_sha" > "$STATE_FILE"
-        log "deploy complete; health OK after ${i}/${HEALTH_RETRIES} checks"
+        log "deploy complete; health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} checks"
         exit 0
     fi
     sleep "$HEALTH_INTERVAL"
 done
 
-log "health check failed after $((HEALTH_RETRIES * HEALTH_INTERVAL)) seconds"
+log "health check did not report ${target_sha:0:12} after $((HEALTH_RETRIES * HEALTH_INTERVAL)) seconds"
 docker compose ps || true
 exit 1

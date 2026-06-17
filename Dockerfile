@@ -9,6 +9,8 @@ RUN npm run build
 # Stage 2: Production
 FROM python:3.10-slim
 
+ARG GIT_SHA=unknown
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
@@ -80,6 +82,7 @@ RUN mkdir -p /tmp/numba-cache \
 
 ENV ENVIRONMENT=production
 ENV ALLOWED_ORIGINS=https://privatools.me
+ENV PRIVATOOLS_BUILD_SHA=$GIT_SHA
 # numba (used by pymatting → rembg) tries to register a cache locator at
 # import time and fails with "no locator available" inside our slim image.
 # The cleanest workaround is to disable JIT entirely — pymatting's numpy

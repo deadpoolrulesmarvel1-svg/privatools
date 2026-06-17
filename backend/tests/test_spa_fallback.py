@@ -46,7 +46,10 @@ class TestSPAFallback:
         """API routes must still return JSON, not index.html."""
         resp = client.get("/api/health")
         assert resp.status_code == 200
-        assert resp.json() == {"status": "ok"}
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["build_sha"]
+        assert data["build_sha_short"]
 
     def test_static_files_served_directly(self, client):
         """Real static files (e.g. robots.txt) should be served as-is."""
