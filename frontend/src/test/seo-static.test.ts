@@ -39,6 +39,9 @@ const staleStorageClaims = [
     "Summarize and redact with models that run entirely in your browser",
     "Summarize and redact entirely in your browser",
     "\"uploads\": false",
+    "Your files weren't sent anywhere",
+    "everything stays in your browser",
+    "Your files weren't uploaded",
 ] as const;
 
 describe("static SEO files", () => {
@@ -92,6 +95,7 @@ describe("static SEO files", () => {
             readFileSync(join(root, "src/data/blog.ts"), "utf8"),
             readFileSync(join(root, "src/data/tools.ts"), "utf8"),
             readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/ErrorBoundary.tsx"), "utf8"),
             readFileSync(join(root, "src/components/FirstRunWelcome.tsx"), "utf8"),
             readFileSync(join(root, "src/components/HeroArtwork.tsx"), "utf8"),
             readFileSync(join(root, "src/components/OnboardingTour.tsx"), "utf8"),
