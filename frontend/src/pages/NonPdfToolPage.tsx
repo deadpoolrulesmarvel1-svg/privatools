@@ -419,7 +419,7 @@ export default function NonPdfToolPage() {
                     ];
                   }
                   return [
-                    { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed on the self-hosted server and deleted immediately after the response." },
+                    { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed in isolated temporary storage and deleted immediately after the response." },
                     { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly." },
                     { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email, no account." },
                   ];
@@ -492,7 +492,7 @@ export default function NonPdfToolPage() {
               </div>
               <p className="text-[12.5px] text-foreground leading-relaxed">
                 <span className="font-medium">Your files stay private.</span>{" "}
-                {tool.clientOnly ? "Processed entirely in your browser." : "Processed on your own infrastructure — never on third-party clouds."}
+                {tool.clientOnly ? "Processed entirely in your browser." : "Processed in isolated temporary storage — never on third-party clouds."}
               </p>
             </div>
           </div>

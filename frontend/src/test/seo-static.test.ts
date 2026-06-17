@@ -69,6 +69,19 @@ describe("static SEO files", () => {
         expect(surfaces).toContain("isolated temporary");
     });
 
+    it("does not describe hosted tool processing as the user's own infrastructure", () => {
+        const toolPageSurfaces = [
+            readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/NonPdfToolPage.tsx"), "utf8"),
+        ].join("\n");
+
+        expect(toolPageSurfaces).not.toContain("Processed on your own infrastructure");
+        expect(toolPageSurfaces).not.toContain("Files go to your self-hosted server");
+        expect(toolPageSurfaces).not.toContain("Files are processed on the self-hosted server");
+        expect(toolPageSurfaces).toContain("Processed in isolated temporary storage");
+        expect(toolPageSurfaces).toContain("never on third-party clouds");
+    });
+
     it("leaves JSON-LD to the route-aware SEO layer", () => {
         const indexHtml = readFileSync(join(root, "index.html"), "utf8");
 

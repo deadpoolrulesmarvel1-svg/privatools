@@ -473,7 +473,7 @@ export default function ToolPage() {
             <Lock size={14} className="text-accent shrink-0" />
             <p className="text-[13px] text-muted-foreground leading-snug">
               <span className="text-foreground font-medium">Your files stay private.</span>{" "}
-              {tool.clientOnly ? "Processed entirely in your browser." : "Processed on your own infrastructure — never on third-party clouds."}
+              {tool.clientOnly ? "Processed entirely in your browser." : "Processed in isolated temporary storage — never on third-party clouds."}
             </p>
           </div>
           <Link to="/pipeline" className="group inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-accent/20 bg-accent/[0.04] hover:border-accent/40 hover:bg-accent/[0.08] transition-all shrink-0">
@@ -496,7 +496,7 @@ export default function ToolPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { step: "01", title: "Upload",    desc: tool.clientOnly ? "Drag & drop or click. Processing happens in your browser." : "Drag & drop or click. Files go to your self-hosted server, not third-party clouds." },
+                { step: "01", title: "Upload",    desc: tool.clientOnly ? "Drag & drop or click. Processing happens in your browser." : "Drag & drop or click. Files are processed in isolated temporary storage and deleted after the response." },
                 { step: "02", title: "Configure", desc: tool.clientOnly ? "Adjust settings; nothing is uploaded." : "Adjust any settings, then process instantly." },
                 { step: "03", title: "Download",  desc: "Result ready immediately — no waiting, no email." },
               ].map(s => (
