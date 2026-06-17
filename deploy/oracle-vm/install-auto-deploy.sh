@@ -31,4 +31,4 @@ systemctl enable --now privatools-auto-deploy.timer
 systemctl start privatools-auto-deploy.service
 
 systemctl status privatools-auto-deploy.timer --no-pager --lines=20
-systemctl status privatools-auto-deploy.service --no-pager --lines=40
+systemctl status privatools-auto-deploy.service --no-pager --lines=40 || true
