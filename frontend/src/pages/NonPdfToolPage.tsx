@@ -3,8 +3,9 @@ import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from 
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
 import { postsForTool } from "@/data/blog";
 import { cn } from "@/lib/utils";
-import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock } from "lucide-react";
+import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock, Star } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
+import { useFavorites } from "@/hooks/useFavorites";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 import { ToolIllustration } from "@/components/ToolIllustration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -279,6 +280,7 @@ export default function NonPdfToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? nonPdfToolBySlug[slug] : null;
   const { addEntry } = useHistory();
+  const { toggle, isFavorite } = useFavorites();
   // Bumped by the per-tool ErrorBoundary's onReset to force a remount of
   // the tool subtree (clears bad in-memory state without a full reload).
   const [resetKey, setResetKey] = useState(0);
@@ -319,6 +321,7 @@ export default function NonPdfToolPage() {
   const meta = nonPdfCategoryMeta[tool.category];
 
   const ToolIcon = tool.icon;
+  const favorite = isFavorite(tool.slug);
   return (
     <div className={cn("h-full flex flex-col", `cat-${tool.category}`)}>
       {/* Workspace header */}
@@ -345,9 +348,26 @@ export default function NonPdfToolPage() {
                   </span>
                 )}
               </div>
-              <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                {tool.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                  {tool.name}
+                </h1>
+                <button
+                  type="button"
+                  onClick={() => toggle(tool.slug)}
+                  aria-label={favorite ? `Unpin ${tool.name}` : `Pin ${tool.name}`}
+                  aria-pressed={favorite}
+                  title={favorite ? "Pinned to sidebar" : "Pin to sidebar"}
+                  className={cn(
+                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
+                    favorite
+                      ? "border-accent/45 bg-accent/10 text-accent"
+                      : "border-border bg-card text-muted-foreground hover:border-accent/45 hover:text-accent",
+                  )}
+                >
+                  <Star size={16} strokeWidth={1.8} fill={favorite ? "currentColor" : "none"} />
+                </button>
+              </div>
               <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
                 {tool.longDescription || tool.description}
               </p>
@@ -473,7 +493,7 @@ export default function NonPdfToolPage() {
               );
             })()}
 
-            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
+            <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank" rel="noopener noreferrer"
               className="block rounded-xl border border-border bg-card p-5 hover:border-accent/40 transition-colors group">
               <div className="flex items-center gap-2 mb-2">
                 <Github size={14} className="text-foreground" />

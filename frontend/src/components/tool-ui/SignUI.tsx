@@ -48,31 +48,36 @@ export function SignUI() {
         if (file) initCanvas();
     }, [file, initCanvas]);
 
-    const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const rect = canvasRef.current!.getBoundingClientRect();
-        const point = "touches" in e ? e.touches[0] : e;
-        return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
 
-    const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        e.preventDefault();
         drawingRef.current = true;
         const { x, y } = getPos(e);
         ctx.beginPath();
         ctx.moveTo(x, y);
     };
-    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (!drawingRef.current) return;
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
+        e.preventDefault();
         const { x, y } = getPos(e);
         ctx.lineTo(x, y);
         ctx.strokeStyle = "hsl(var(--foreground))";
         ctx.lineWidth = 2.5;
         ctx.stroke();
     };
-    const endDraw = () => {
+    const endDraw = (e?: React.PointerEvent<HTMLCanvasElement>) => {
+        if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
         drawingRef.current = false;
         if (canvasRef.current) setSigData(canvasRef.current.toDataURL("image/png"));
     };
@@ -197,12 +202,13 @@ export function SignUI() {
                             <div className="relative rounded-md border border-dashed border-border-strong bg-paper-2/40 overflow-hidden">
                                 <canvas
                                     ref={canvasRef}
-                                    onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-                                    onTouchStart={e => { e.preventDefault(); startDraw(e); }}
-                                    onTouchMove={e => { e.preventDefault(); draw(e); }}
-                                    onTouchEnd={endDraw}
+                                    onPointerDown={startDraw}
+                                    onPointerMove={draw}
+                                    onPointerUp={endDraw}
+                                    onPointerCancel={endDraw}
                                     aria-label="Draw your signature"
                                     className="w-full cursor-crosshair touch-none"
+                                    style={{ touchAction: "none" }}
                                 />
                                 {!sigData && !sigFile && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

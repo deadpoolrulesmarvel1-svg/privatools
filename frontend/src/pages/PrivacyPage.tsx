@@ -16,7 +16,7 @@ import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github }
 import { cn } from "@/lib/utils";
 
 const LAST_UPDATED = "May 15, 2026";
-const GIT_HISTORY_URL = "https://github.com/taiyeba-dg/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
+const GIT_HISTORY_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
 const SECTIONS: Section[] = [
@@ -359,8 +359,8 @@ export default function PrivacyPage() {
               <p>
                 The entire PrivaTools codebase — frontend and backend — is open source under the MIT
                 license at{" "}
-                <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer">
-                  github.com/taiyeba-dg/privatools
+                <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank" rel="noopener noreferrer">
+                  github.com/deadpoolrulesmarvel1-svg/privatools
                 </a>
                 . You can audit every line of code that handles your files. If you prefer maximum privacy,
                 you can self-host the entire application using Docker.
@@ -386,7 +386,7 @@ export default function PrivacyPage() {
                 If you have questions about this privacy policy or how PrivaTools handles your files,
                 contact us at{" "}
                 <a href="mailto:hello@privatools.me">hello@privatools.me</a> or open an issue on{" "}
-                <a href="https://github.com/taiyeba-dg/privatools/issues" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools/issues" target="_blank" rel="noopener noreferrer">
                   GitHub
                 </a>.
               </p>
@@ -459,7 +459,7 @@ export default function PrivacyPage() {
                 </nav>
                 <div className="px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
                   <a
-                    href="https://github.com/taiyeba-dg/privatools"
+                    href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 hover:text-accent transition-colors"

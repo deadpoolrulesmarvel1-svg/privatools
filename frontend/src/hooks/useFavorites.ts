@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "privatools_favorites";
+const FAVORITES_CHANGED_EVENT = "privatools:favorites-changed";
 /** Hard cap on the number of favorites. Sidebar only ever displays the first
  *  8, but we allow a larger pool so users can curate without losing entries. */
 export const MAX_FAVORITES = 20;
@@ -20,6 +21,7 @@ function loadFavorites(): string[] {
 function saveFavorites(list: string[]) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, MAX_FAVORITES)));
+        queueMicrotask(() => window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT)));
     } catch { /* quota full */ }
 }
 
@@ -30,8 +32,13 @@ export function useFavorites() {
         const handler = (e: StorageEvent) => {
             if (e.key === STORAGE_KEY) setFavorites(loadFavorites());
         };
+        const sameTabHandler = () => setFavorites(loadFavorites());
         window.addEventListener("storage", handler);
-        return () => window.removeEventListener("storage", handler);
+        window.addEventListener(FAVORITES_CHANGED_EVENT, sameTabHandler);
+        return () => {
+            window.removeEventListener("storage", handler);
+            window.removeEventListener(FAVORITES_CHANGED_EVENT, sameTabHandler);
+        };
     }, []);
 
     const toggle = useCallback((slug: string) => {

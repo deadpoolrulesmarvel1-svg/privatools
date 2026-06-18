@@ -132,7 +132,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2>Privacy Considerations</h2>
 <p>Most free online PDF mergers upload your files to their servers, process them, and store them for a period afterward (sometimes 1–24 hours). If your PDFs contain sensitive content — legal contracts, financial statements, medical records — this matters.</p>
-<p>PrivaTools processes files through a FastAPI backend and deletes them immediately after your download. The source code is open and auditable at <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener">GitHub</a>. If you want total certainty, you can self-host the entire stack with Docker.</p>
+<p>PrivaTools processes files through a FastAPI backend and deletes them immediately after your download. The source code is open and auditable at <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank" rel="noopener">GitHub</a>. If you want total certainty, you can self-host the entire stack with Docker.</p>
 
 <h2>What About File Size Limits?</h2>
 <p>PrivaTools supports uploads up to 500&nbsp;MB per file — far more generous than most free tools. Even large scan archives and high-resolution documents can be merged directly without pre-compression.</p>
@@ -435,7 +435,7 @@ export const blogPosts: BlogPost[] = [
 <p>True text editing (changing existing words) is technically possible but has limitations. PDFs don't store text as you'd expect — each character is individually positioned on the page. When you change a word, the surrounding text doesn't reflow automatically. For significant text changes, it's often better to convert the PDF back to Word with <a href="/tool/pdf-to-word">PDF to Word</a>, make your edits, and convert back with <a href="/tool/word-to-pdf">Word to PDF</a>.</p>
 
 <h2>Privacy Matters When Editing Sensitive Documents</h2>
-<p>Contracts, tax forms, medical records, legal filings — these are exactly the types of PDFs people need to edit, and exactly the types you shouldn't upload to random websites. PrivaTools processes files on the server and deletes them within minutes. The code is <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener">open source</a> — you can verify this yourself or self-host the entire stack.</p>
+<p>Contracts, tax forms, medical records, legal filings — these are exactly the types of PDFs people need to edit, and exactly the types you shouldn't upload to random websites. PrivaTools processes files on the server and deletes them within minutes. The code is <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank" rel="noopener">open source</a> — you can verify this yourself or self-host the entire stack.</p>
 
 <p><a href="/tool/edit-pdf">Edit your PDF now — free, no sign-up required →</a></p>
     `,
@@ -1027,7 +1027,7 @@ export const blogPosts: BlogPost[] = [
   <li><strong>No account, ever.</strong> The site has no login mechanism.</li>
   <li><strong>Only anonymous Google Analytics 4 page-view telemetry.</strong> No identifiable events; IP anonymization is on; blockable by any standard extension. We're considering removing GA4 entirely.</li>
   <li><strong>No third-party ad pixels, no remarketing, no session replay.</strong></li>
-  <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/taiyeba-dg/privatools">github.com/taiyeba-dg/privatools</a>. Audit it yourself.</li>
+  <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools">github.com/deadpoolrulesmarvel1-svg/privatools</a>. Audit it yourself.</li>
   <li><strong>Browser-side tools run entirely in your browser.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tool/smart-redact">Smart Redact</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more.</li>
   <li><strong>Self-hostable.</strong> <code>docker compose up --build</code> and you're running your own instance.</li>
 </ul>
