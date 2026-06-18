@@ -1,6 +1,6 @@
 fastapi==0.110.0
 uvicorn[standard]==0.27.1
-python-multipart==0.0.22
+python-multipart==0.0.32
 pikepdf==8.12.0
 pypdf==4.1.0
 pdf2image==1.17.0
