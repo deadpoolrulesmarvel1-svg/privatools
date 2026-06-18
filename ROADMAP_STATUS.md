@@ -82,8 +82,8 @@ Last updated: 2026-06-18
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
-  - [ ] Application-layer Brotli middleware is implemented and locally verified; live activation still requires deploying the follow-up Brotli commit and configuring Cloudflare.
-  - [ ] Live verification on 2026-06-18 after PR merge: production runs build `73c391a82ec`, nonce CSP is live with no Google/Bunny origins, but `curl -H 'Accept-Encoding: br' -sI https://privatools.me/` still returns no `content-encoding: br` before the Brotli follow-up deploy.
+  - [x] Application-layer Brotli middleware is live: production build `e6940bcf67ea` returns `content-encoding: br` on `/` and `/tool/compress-pdf` with nonce CSP intact.
+  - [ ] Cloudflare account/DNS activation remains open; live headers still come directly from `nginx/1.18.0 (Ubuntu)` with no Cloudflare edge headers.
 - [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
