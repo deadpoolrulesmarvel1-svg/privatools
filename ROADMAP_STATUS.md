@@ -29,7 +29,8 @@ Last updated: 2026-06-18
   - [x] Code-ready locally: Privacy page discloses Cloudflare edge CDN and no-store API behavior.
   - [x] Code-ready locally: unused Radix Toast stack removed, `@radix-ui/react-toast` removed, CommandPalette lazy-mounted, `tool-catalog` Vite chunk added, bundle-size check script added.
   - [x] Code-ready locally: Fraunces, Inter, and JetBrains Mono are self-hosted under `frontend/public/fonts`; `index.html` preloads same-origin font files and no longer preconnects to Bunny Fonts.
-  - [ ] Live infra remains open: install `libnginx-mod-brotli` on the VM, reload nginx, configure Cloudflare, and verify `content-encoding: br` after deploy.
+  - [x] Live Brotli is active through application middleware: production returns `content-encoding: br` on `/` and `/tool/compress-pdf` with nonce CSP intact.
+  - [ ] Cloudflare activation remains open; live headers still come directly from `nginx/1.18.0 (Ubuntu)`.
   - [x] Verified locally: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, and `npm run check:bundle`.
   - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.9 KiB gzip.
   - [x] First-paint critical JS path remains below DoD target after mobile work: generated HTML preloads 160.0 KiB gzip of JS (`index`, `vendor-react`, `vendor-icons`, `tool-catalog`) and no longer preloads `vendor-radix`.
@@ -77,8 +78,8 @@ Last updated: 2026-06-18
 - [x] Phase 0 live bugs closed locally.
 - [x] Backend tests >= 250 passing. Current suite has 437 passing and 40 skipped after adding application-layer Brotli coverage plus P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
-- [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
-  - [ ] Live Lighthouse must be rerun after the Brotli follow-up deploy; production currently reports merged build `73c391a82ec`.
+- [x] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
+  - [x] Live Lighthouse on production build `5947c2f07d1c`: `/` = 94/95/100/100, `/tool/compress-pdf` = 99/96/100/100, `/blog/compress-pdf-without-losing-quality` = 98/100/100/100.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.

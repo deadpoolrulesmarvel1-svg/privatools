@@ -290,6 +290,25 @@ def test_compare_tool_count_claims_match_catalog_size():
     assert "all 175+ tools" not in non_pdf_html
 
 
+def test_public_tool_count_claims_match_catalog_size():
+    total = len(seo_meta._PDF_TOOLS) + len(seo_meta._NONPDF_TOOLS)
+    html = "<html><head></head><body><div id='root'></div></body></html>"
+    surfaces = "\n".join(
+        [
+            seo_meta.get_meta_for_path("/")[1],
+            seo_meta.get_meta_for_path("/compare/smallpdf")[1],
+            seo_meta.get_meta_for_path("/compare/adobe-acrobat")[1],
+            seo_meta.get_meta_for_path("/definitely-missing")[1],
+            inject_seo(html, "/"),
+            inject_seo(html, "/definitely-missing"),
+        ]
+    )
+
+    assert f"{total} free" in surfaces
+    assert f"{total} tools" in surfaces
+    assert "179" not in surfaces
+
+
 def test_injected_html_has_single_route_aware_jsonld_script():
     html = "<html><head><title>Old</title></head><body><div id='root'></div></body></html>"
     injected = inject_seo(html, "/tool/merge-pdf")

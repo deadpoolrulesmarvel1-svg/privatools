@@ -21,7 +21,7 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "179 free, open-source file tools for PDF, image, video, audio, and developer "
+        "213 free, open-source file tools for PDF, image, video, audio, and developer "
         "work. Browser-only when possible; isolated temporary processing when needed.",
     ),
     "/privacy": (
@@ -62,12 +62,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/smallpdf": (
         "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
         "PrivaTools vs Smallpdf: no 2-tasks/day limit, no premium upsells, no watermarks. "
-        "179 tools vs 30 tools. See the full comparison.",
+        "213 tools vs 30 tools. See the full comparison.",
     ),
     "/compare/adobe-acrobat": (
         "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
         "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. "
-        "No Adobe ID required, no subscription, 179 tools. Compare features side by side.",
+        "No Adobe ID required, no subscription, 213 tools. Compare features side by side.",
     ),
     "/compare/sejda": (
         "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -82,7 +82,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/foxit": (
         "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
         "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid "
-        "subscription. 179 privacy-first tools with no account required.",
+        "subscription. 213 privacy-first tools with no account required.",
     ),
     "/compare/lightpdf": (
         "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
@@ -97,12 +97,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/dochub": (
         "PrivaTools vs DocHub — Free Tools Compared (2026)",
         "PrivaTools vs DocHub: free, open-source file tools vs DocHub's workflow "
-        "platform. No sign-up, no subscription. 179 tools vs DocHub's feature set.",
+        "platform. No sign-up, no subscription. 213 tools vs DocHub's feature set.",
     ),
     "/compare/pdfescape": (
         "PrivaTools vs PDFescape — Free PDF Editor Compared (2026)",
         "PrivaTools vs PDFescape: free online PDF editors compared side by side. "
-        "PrivaTools is open source with 179 tools and handles files more privately.",
+        "PrivaTools is open source with 213 tools and handles files more privately.",
     ),
     "/compare/nitro-pdf": (
         "PrivaTools vs Nitro PDF — Free vs Paid PDF Tools (2026)",
@@ -1102,7 +1102,7 @@ del _slug, _name, _desc
 
 # Per-tool trust paragraph. Previously a single identical block was emitted on
 # every /tool/* and /tools/* page, which triggered Google's near-duplicate
-# detection across 179 pages. Six variants, picked deterministically by slug
+# detection across the tool-page corpus. Six variants, picked deterministically by slug
 # hash, preserve the same privacy/freedom claims with materially different
 # wording so each URL has a unique paragraph.
 _TRUST_VARIANTS: tuple[str, ...] = (
@@ -1143,7 +1143,7 @@ def _trust_paragraph(slug: str, name: str, total: int) -> str:
 
     Uses a stable hash so the same tool always renders the same variant, but
     different tools get different paragraphs — eliminating the identical
-    boilerplate that previously appeared on all 179 tool pages.
+    boilerplate that previously appeared on every tool page.
     """
     # Plain non-cryptographic hash: sum of byte values. Deterministic across
     # Python invocations (unlike hash(), which is salted by default since 3.3).
@@ -1221,7 +1221,7 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
 # Per-tool lastReviewed dates.
 #
 # Earlier versions of this file set `lastReviewed: date.today().isoformat()`
-# on every render. That inflated freshness signals — Google treats a 179-page
+# on every render. That inflated freshness signals — Google treats a large
 # corpus where every page claims to have been reviewed *today* as suspicious,
 # and it eventually devalues the field entirely. Worse, it conflicts with the
 # fixed `datePublished` by implying constant re-review when no review happened.
@@ -1359,7 +1359,7 @@ def path_is_known(path: str) -> bool:
 # tripping the Soft 404 report.
 _NOT_FOUND_META: tuple[str, str] = (
     "Page Not Found (404) | PrivaTools",
-    "The page you requested doesn't exist on PrivaTools. Browse 179 free PDF, "
+    "The page you requested doesn't exist on PrivaTools. Browse 213 free PDF, "
     "image, video, audio, and developer tools from the homepage, or check the "
     "blog for guides.",
 )
@@ -1577,7 +1577,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Can I self-host PrivaTools?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run `docker compose up --build` to host all 179 tools on your own server."},
+                            "acceptedAnswer": {"@type": "Answer", "text": f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run `docker compose up --build` to host all {_TOTAL_TOOL_COUNT} tools on your own server."},
                         },
                         {
                             "@type": "Question",
@@ -2142,7 +2142,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         )
         parts.append('<h2>Try one of these instead</h2>')
         parts.append('<ul>')
-        parts.append('<li><a href="/">Homepage</a> — browse all 179 free tools</li>')
+        parts.append(f'<li><a href="/">Homepage</a> — browse all {_TOTAL_TOOL_COUNT} free tools</li>')
         parts.append('<li><a href="/tool/merge-pdf">Merge PDF</a></li>')
         parts.append('<li><a href="/tool/compress-pdf">Compress PDF</a></li>')
         parts.append('<li><a href="/tool/pdf-to-word">PDF to Word</a></li>')
@@ -2188,7 +2188,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         for q, a in [
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
             ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."),
-            ("Can I self-host PrivaTools?", "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all 179 tools on your own server."),
+            ("Can I self-host PrivaTools?", f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all {_TOTAL_TOOL_COUNT} tools on your own server."),
             ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
             ("Does PrivaTools use AI?", "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."),
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
