@@ -29,9 +29,27 @@ const SIDEBAR_STATE_KEY = "privatools_sidebar_collapsed";
 const Sidebar = lazy(() => import("./Sidebar").then(m => ({ default: m.Sidebar })));
 const StatusBar = lazy(() => import("./StatusBar").then(m => ({ default: m.StatusBar })));
 
+function useDesktopChrome() {
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsDesktop(media.matches);
+    onChange();
+    media.addEventListener?.("change", onChange);
+    return () => media.removeEventListener?.("change", onChange);
+  }, []);
+
+  return isDesktop;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const isDesktop = useDesktopChrome();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_STATE_KEY) === "1"; } catch { return false; }
   });
@@ -196,30 +214,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar — landmark wraps the inner <nav> which carries its own
            aria-label; we leave only the inner nav labeled to avoid a duplicate
            landmark in the a11y tree. */}
-        <aside
-          className={cn(
-            "hidden lg:flex flex-col flex-shrink-0 border-r border-border bg-paper-2/40 transition-[width] duration-200 ease-out",
-            sidebarCollapsed ? "w-12" : "w-72"
-          )}
-        >
-          <Suspense fallback={<div className="flex-1" />}>
-            <Sidebar collapsed={sidebarCollapsed} />
-          </Suspense>
-          <div className="border-t border-border px-2 py-2 flex items-center justify-between">
-            <span className={cn("inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85 px-2", sidebarCollapsed && "hidden")}>
-              <Lock size={10} className="text-accent" /> Private
-            </span>
-            <button
-              onClick={() => setCollapsed(!sidebarCollapsed)}
-              className="inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-              title={sidebarCollapsed ? "Expand sidebar (⌘B)" : "Collapse sidebar (⌘B)"}
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-expanded={!sidebarCollapsed}
-            >
-              {sidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-            </button>
-          </div>
-        </aside>
+        {isDesktop && (
+          <aside
+            className={cn(
+              "hidden lg:flex flex-col flex-shrink-0 border-r border-border bg-paper-2/40 transition-[width] duration-200 ease-out",
+              sidebarCollapsed ? "w-12" : "w-72"
+            )}
+          >
+            <Suspense fallback={<div className="flex-1" />}>
+              <Sidebar collapsed={sidebarCollapsed} />
+            </Suspense>
+            <div className="border-t border-border px-2 py-2 flex items-center justify-between">
+              <span className={cn("inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85 px-2", sidebarCollapsed && "hidden")}>
+                <Lock size={10} className="text-accent" /> Private
+              </span>
+              <button
+                onClick={() => setCollapsed(!sidebarCollapsed)}
+                className="inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                title={sidebarCollapsed ? "Expand sidebar (⌘B)" : "Collapse sidebar (⌘B)"}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!sidebarCollapsed}
+              >
+                {sidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+              </button>
+            </div>
+          </aside>
+        )}
 
         {/* Mobile drawer */}
         {mobileOpen && (
@@ -276,9 +296,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <MobileNav />
 
       {/* Status bar */}
-      <Suspense fallback={null}>
-        <StatusBar />
-      </Suspense>
+      {isDesktop && (
+        <Suspense fallback={null}>
+          <StatusBar />
+        </Suspense>
+      )}
     </div>
   );
 }
