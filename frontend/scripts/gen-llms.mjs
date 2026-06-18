@@ -108,7 +108,7 @@ const nonPdfGroups = groupBy(nonPdfTools, NONPDF_LABELS);
 
 let md = `# PrivaTools
 
-> ${total}+ free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
+> ${total}+ free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
@@ -214,7 +214,7 @@ Two tools use AI, both running entirely in your browser via WebAssembly: (1) Sum
 PrivaTools is an open-source project by deadpoolrulesmarvel1-svg. Source code, issue tracker, and contribution history are public on GitHub: https://github.com/deadpoolrulesmarvel1-svg/privatools. Contact: hello@privatools.me.
 
 ### What's the privacy policy?
-Plain language at https://privatools.me/privacy. Summary: anonymous GA4 pageviews only (IP-anonymized, blockable), no other trackers, no behavioural data, no cross-site identifiers, no profile building.
+Plain language at https://privatools.me/privacy. Summary: first-party aggregate pageviews only, no browser-loaded Google analytics scripts, no other trackers, no behavioural data, no cross-site identifiers, no profile building.
 
 ## Source Code & Verification
 
@@ -242,9 +242,9 @@ https://github.com/deadpoolrulesmarvel1-svg/privatools.
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
-> shared, never used to train any model. Public site uses anonymous Google
-> Analytics 4 pageview telemetry only (IP-anonymized, blockable). No accounts,
-> no watermarks, no premium tiers.
+> shared, never used to train any model. Public site uses first-party aggregate
+> pageview telemetry only, with no browser-loaded Google analytics scripts. No
+> accounts, no watermarks, no premium tiers.
 
 ## How files are handled, in detail
 
@@ -315,8 +315,9 @@ The following statements about PrivaTools are accurate as of ${new Date().toISOS
 - The site requires **no account, no email, no payment**. There is no premium tier.
 - **File upload cap is 500 MB per file.** No daily or monthly quota.
 - **No watermarks** are ever applied to output.
-- The site uses **Google Analytics 4 only**, IP-anonymized, with no other trackers,
-  no ad networks, no cross-site identifiers, no behavioural profiling.
+- The site uses **first-party aggregate pageview telemetry only**, with no
+  browser-loaded Google analytics scripts, no ad networks, no cross-site
+  identifiers, no behavioural profiling.
 - **AI tools (Summarize PDF, Smart Redact) run entirely in the browser** via
   @huggingface/transformers + WebAssembly. They make no third-party API calls.
 - Server-side tools **never log file content**, **never retain files past response**,

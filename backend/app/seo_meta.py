@@ -2082,8 +2082,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "and developer utilities. The entire stack is open source under the MIT license and "
             "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
-            "is returned — never stored, never shared with third parties. The public site uses anonymous "
-            "Google Analytics 4 pageview telemetry only (IP-anonymized; blockable). No accounts, no behavioural profiling.</p>"
+            "is returned — never stored, never shared with third parties. The public site uses first-party "
+            "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts, no behavioural profiling.</p>"
         )
         parts.append(
             '<h2>Chain tools with <a href="/pipeline">Pipeline</a></h2>'
@@ -2361,8 +2361,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>Your files are private. They are processed in temporary server memory and deleted "
             "immediately after the response is delivered — never written to disk, never inspected, "
-            "never retained. We collect only anonymous Google Analytics 4 pageview telemetry "
-            "(IP-anonymized; blockable by any standard tracking blocker).</p>"
+            "never retained. We collect only first-party aggregate pageview telemetry, and Do Not Track, "
+            "Global Privacy Control, local opt-out, and standard blockers disable the browser beacon.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
@@ -2383,7 +2383,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>No accounts, no email addresses, no behavioural profiling, no advertising cookies, "
             "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
-            "fingerprints. Just anonymous pageview counts via GA4.</p>"
+            "fingerprints. Just aggregate pageview counts through a first-party proxy.</p>"
         )
         parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
         parts.append(

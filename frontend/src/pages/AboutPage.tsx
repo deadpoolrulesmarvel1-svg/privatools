@@ -305,7 +305,7 @@ export default function AboutPage() {
               { icon: EyeOff, title: "Read your files",        desc: "No content telemetry, no AI training on uploads, no inspection." },
               { icon: Users,  title: "Require accounts",        desc: "No email gate, no sign-up flow, no \"premium\" pop-up." },
               { icon: Lock,   title: "Store files",             desc: "Temp dir is cleaned on response; cleanup task fires every 5 minutes for stragglers." },
-              { icon: Eye,    title: "Profile you",             desc: "Only anonymous GA4 pageviews, IP-anonymized; blockable with any extension." },
+              { icon: Eye,    title: "Profile you",             desc: "Only first-party aggregate pageviews, with DNT/GPC and local opt-out support." },
               { icon: Globe,  title: "Sell data",               desc: "File content never leaves the processing container. We have nothing to sell." },
               { icon: Heart,  title: "Paywall anything",        desc: "No premium tier. No feature locked behind subscription. No watermark on output." },
             ].map((item, i) => {

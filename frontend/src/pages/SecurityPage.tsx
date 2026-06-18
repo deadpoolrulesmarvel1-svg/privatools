@@ -75,7 +75,7 @@ function CornerMarks() {
 const SUBPROCESSORS = [
   { name: "Oracle Cloud Infrastructure", purpose: "Hosting the PrivaTools processing server and static deployment environment." },
   { name: "Cloudflare", purpose: "Optional edge CDN, TLS acceleration, and static asset delivery. File-processing API responses are marked no-store." },
-  { name: "Google Analytics 4", purpose: "Aggregate pageview telemetry. It does not receive uploaded file contents." },
+  { name: "Google Analytics 4", purpose: "Aggregate pageview telemetry via a first-party server proxy. Browser pages do not load Google analytics scripts, and uploaded file contents are never forwarded." },
   { name: "Hugging Face CDN", purpose: "Browser-side AI model downloads for local WebAssembly tools. Model requests do not include user file contents." },
   { name: "GitHub", purpose: "Source hosting, issue reports, and public change history." },
 ];

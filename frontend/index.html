@@ -66,12 +66,13 @@
     <!-- Service worker registration lives in src/lib/sw-register.ts so it
          runs in production only and handles updates correctly (skipWaiting +
          controllerchange reload). Don't re-add an inline registration here. -->
-    <!-- Google Analytics (GA4) — deferred to after first paint and disabled for DNT/GPC/local opt-out -->
+    <!-- First-party analytics proxy — no Google scripts in the browser. Disabled for DNT/GPC/local opt-out. -->
     <script>
       (function(){
         var GA_ID = 'G-B3VWQ44MX1';
         var OPT_OUT_KEY = 'pt-analytics-opt-out';
-        var loaded = false;
+        var CLIENT_ID_KEY = 'pt-analytics-client-id';
+        var sent = false;
         function storageOptOut(){
           try { return window.localStorage.getItem(OPT_OUT_KEY) === '1'; }
           catch (e) { return false; }
@@ -87,40 +88,64 @@
         function setDisableFlag(disabled){
           window['ga-disable-' + GA_ID] = !!disabled;
         }
-        function loadGA(){
-          if (loaded) return;
-          loaded = true;
-          var s = document.createElement('script');
-          s.async = true;
-          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-          document.head.appendChild(s);
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          window.gtag = gtag;
-          gtag('js', new Date());
-          gtag('config', GA_ID, { anonymize_ip: true });
+        function randomId(){
+          var bytes = new Uint32Array(2);
+          if (window.crypto && window.crypto.getRandomValues) {
+            window.crypto.getRandomValues(bytes);
+            return String(bytes[0]) + '.' + String(bytes[1]);
+          }
+          return String(Date.now()) + '.' + String(Math.floor(Math.random() * 1000000000));
         }
-        function maybeLoadGA(){
+        function clientId(){
+          try {
+            var existing = window.localStorage.getItem(CLIENT_ID_KEY);
+            if (existing) return existing;
+            var next = randomId();
+            window.localStorage.setItem(CLIENT_ID_KEY, next);
+            return next;
+          } catch (e) {
+            return randomId();
+          }
+        }
+        function sendPageview(){
+          if (sent) return;
           if (analyticsDisabled()) {
             setDisableFlag(true);
             return;
           }
           setDisableFlag(false);
-          loadGA();
+          sent = true;
+          var body = JSON.stringify({
+            path: window.location.pathname,
+            title: document.title,
+            referrer: document.referrer,
+            client_id: clientId()
+          });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/analytics/pageview', new Blob([body], { type: 'application/json' }));
+            return;
+          }
+          fetch('/api/analytics/pageview', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: body,
+            keepalive: true,
+            credentials: 'same-origin'
+          }).catch(function(){});
         }
         window.ptSetAnalyticsDisabled = function(disabled){
           var effectiveDisabled = !!disabled || browserPrivacySignal() || storageOptOut();
           setDisableFlag(effectiveDisabled);
-          if (!effectiveDisabled) maybeLoadGA();
+          if (!effectiveDisabled) sendPageview();
         };
         window.addEventListener('storage', function(event){
           if (event.key === OPT_OUT_KEY) window.ptSetAnalyticsDisabled(storageOptOut());
         });
         setDisableFlag(analyticsDisabled());
         if ('requestIdleCallback' in window) {
-          requestIdleCallback(maybeLoadGA, { timeout: 4000 });
+          requestIdleCallback(sendPageview, { timeout: 4000 });
         } else {
-          window.addEventListener('load', function(){ setTimeout(maybeLoadGA, 1500); });
+          window.addEventListener('load', function(){ setTimeout(sendPageview, 1500); });
         }
       })();
     </script>

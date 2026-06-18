@@ -97,10 +97,10 @@ function AnalyticsOptOutPanel() {
           </div>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
             {preference.browserPrivacySignal
-              ? "Your browser is sending Do Not Track or Global Privacy Control, so Google Analytics will not load."
+              ? "Your browser is sending Do Not Track or Global Privacy Control, so the analytics beacon will not run."
               : preference.localOptOut
-                ? `This browser stores ${ANALYTICS_OPT_OUT_KEY}=1 and blocks Google Analytics from loading.`
-                : "Set a local browser opt-out to stop Google Analytics from loading on this device."}
+                ? `This browser stores ${ANALYTICS_OPT_OUT_KEY}=1 and blocks the analytics beacon.`
+                : "Set a local browser opt-out to stop analytics on this device."}
           </p>
         </div>
         <button
@@ -289,8 +289,8 @@ export default function PrivacyPage() {
               </h1>
 
               <p className="font-display text-[16px] sm:text-[17px] text-muted-foreground mt-5 leading-relaxed max-w-prose">
-                How PrivaTools handles your files, your network requests, and the small amount of anonymous data
-                Google Analytics receives. Written plainly, with no dark patterns.
+                How PrivaTools handles your files, your network requests, and the small amount of aggregate
+                pageview telemetry we collect. Written plainly, with no dark patterns.
               </p>
 
               <div className="mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
@@ -325,10 +325,10 @@ export default function PrivacyPage() {
                     their contents.
                   </p>
                   <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
-                    <strong className="font-semibold">We do collect anonymous pageview telemetry</strong> via Google Analytics 4
-                    (with IP anonymization). No personal data, no behavioural profiling, no advertising — just aggregate
-                    counts. You can disable it with any standard tracking blocker. If you want zero telemetry,
-                    self-host the open-source build via Docker.
+                    <strong className="font-semibold">We do collect anonymous pageview telemetry</strong> through a
+                    first-party <code>/api/analytics/pageview</code> beacon. No Google Analytics scripts run in your
+                    browser; our server forwards aggregate path/title/referrer data to GA4 only when its server-side
+                    secret is configured. Do Not Track, Global Privacy Control, and the local toggle below disable it.
                   </p>
                 </div>
               </aside>
@@ -392,15 +392,15 @@ export default function PrivacyPage() {
                   </p>
                   <ul className="font-display text-[15.5px] text-foreground leading-relaxed space-y-1.5 list-disc pl-6">
                     <li>Names, email addresses, or account credentials (no accounts exist)</li>
-                    <li>Personally identifiable information (your IP address is anonymized before it reaches Google)</li>
+                    <li>Personally identifiable information from analytics beacons</li>
                     <li>Browser fingerprints or canvas-based device identifiers</li>
                     <li>Behavioural profiles, session recordings, or remarketing audiences</li>
                     <li>Advertising cookies or tracking pixels from ad networks</li>
                     <li>File metadata, filenames, or content from uploaded files</li>
                   </ul>
                   <p className="font-display text-[15.5px] text-muted-foreground leading-relaxed mt-3">
-                    We <em>do</em> collect aggregate pageview counts via Google Analytics 4 — see Section 5 for
-                    details and how to opt out.
+                    We <em>do</em> collect aggregate pageview counts through a first-party analytics proxy — see
+                    Section 5 for details and how to opt out.
                   </p>
                 </div>
               </aside>
@@ -430,7 +430,7 @@ export default function PrivacyPage() {
                 Bunny Fonts requests are made.
               </p>
               <ul>
-                <li><strong>Google Analytics (GA4):</strong> We use Google Analytics to understand how visitors use the site — which tools are popular, how people find us, and general usage patterns. Google Analytics collects anonymized page view data, browser type, and approximate location (country-level). It does not have access to your uploaded files. You can opt out using a <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">browser extension</a>.</li>
+                <li><strong>Google Analytics (GA4):</strong> We use a first-party <code>/api/analytics/pageview</code> proxy to understand which pages and tools are useful. Your browser does not load Google Analytics or Google Tag Manager scripts. When the server-side GA4 secret is configured, our backend forwards only the sanitized page path, title, same-origin referrer, and an anonymous client ID; it never forwards uploaded files or file metadata. Do Not Track, Global Privacy Control, this page's opt-out toggle, and standard blockers disable the browser beacon.</li>
                 <li><strong>Cloudflare:</strong> We use Cloudflare as an edge CDN for static files and TLS acceleration. Cloudflare may see standard connection metadata such as IP address, user agent, and requested URL. File uploads and tool outputs are not cached at the edge, and API responses carry no-store cache headers.</li>
               </ul>
               <AnalyticsOptOutPanel />

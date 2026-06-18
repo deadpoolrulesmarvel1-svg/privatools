@@ -12,8 +12,8 @@
  *      offline. /index.html is served for unknown routes (SPA fallback).
  *   4. /api/* — bypassed completely. User files and tool outputs are
  *      privacy-sensitive and must never be cached.
- *   5. Cross-origin (googletagmanager) — pass-through. Self-hosted font
- *      files are cached as same-origin static assets.
+ *   5. Cross-origin requests — pass-through. Self-hosted font files are cached
+ *      as same-origin static assets.
  *
  * Versioning: bumping CACHE_VERSION wipes old caches in `activate`.
  */

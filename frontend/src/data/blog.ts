@@ -1025,7 +1025,7 @@ export const blogPosts: BlogPost[] = [
   <li><strong>Files are processed inside an isolated Docker container.</strong> The container has no network egress; it can't phone home.</li>
   <li><strong>Files are deleted immediately after the HTTP response.</strong> No "2 hours" retention. The cleanup is a background task that fires within seconds.</li>
   <li><strong>No account, ever.</strong> The site has no login mechanism.</li>
-  <li><strong>Only anonymous Google Analytics 4 page-view telemetry.</strong> No identifiable events; IP anonymization is on; blockable by any standard extension. We're considering removing GA4 entirely.</li>
+  <li><strong>Only first-party aggregate page-view telemetry.</strong> The browser sends a small <code>/api/analytics/pageview</code> beacon instead of loading Google scripts; DNT/GPC, local opt-out, and standard blockers stop it.</li>
   <li><strong>No third-party ad pixels, no remarketing, no session replay.</strong></li>
   <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools">github.com/deadpoolrulesmarvel1-svg/privatools</a>. Audit it yourself.</li>
   <li><strong>Browser-side tools run entirely in your browser.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tool/smart-redact">Smart Redact</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more.</li>

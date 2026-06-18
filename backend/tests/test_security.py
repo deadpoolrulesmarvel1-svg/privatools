@@ -335,6 +335,24 @@ class TestSecurityHeaders:
         )
         assert font_src.strip() == "font-src 'self'"
 
+    def test_analytics_csp_uses_first_party_proxy(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "googletagmanager.com" not in csp
+        assert "google-analytics.com" not in csp
+        assert "analytics.google.com" not in csp
+
+        script_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("script-src")
+        )
+        connect_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("connect-src")
+        )
+        assert "google" not in script_src
+        assert "google" not in connect_src
+        assert "'self'" in connect_src
+
     def test_wasm_eval_is_limited_to_browser_ai_tools(self, client):
         normal = client.get("/tool/compress-pdf")
         ai = client.get("/tool/summarize-pdf")

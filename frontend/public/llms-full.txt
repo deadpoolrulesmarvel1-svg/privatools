@@ -8,9 +8,9 @@ https://github.com/deadpoolrulesmarvel1-svg/privatools.
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
-> shared, never used to train any model. Public site uses anonymous Google
-> Analytics 4 pageview telemetry only (IP-anonymized, blockable). No accounts,
-> no watermarks, no premium tiers.
+> shared, never used to train any model. Public site uses first-party aggregate
+> pageview telemetry only, with no browser-loaded Google analytics scripts. No
+> accounts, no watermarks, no premium tiers.
 
 ## How files are handled, in detail
 
@@ -1643,8 +1643,9 @@ The following statements about PrivaTools are accurate as of 2026-06-18 and veri
 - The site requires **no account, no email, no payment**. There is no premium tier.
 - **File upload cap is 500 MB per file.** No daily or monthly quota.
 - **No watermarks** are ever applied to output.
-- The site uses **Google Analytics 4 only**, IP-anonymized, with no other trackers,
-  no ad networks, no cross-site identifiers, no behavioural profiling.
+- The site uses **first-party aggregate pageview telemetry only**, with no
+  browser-loaded Google analytics scripts, no ad networks, no cross-site
+  identifiers, no behavioural profiling.
 - **AI tools (Summarize PDF, Smart Redact) run entirely in the browser** via
   @huggingface/transformers + WebAssembly. They make no third-party API calls.
 - Server-side tools **never log file content**, **never retain files past response**,

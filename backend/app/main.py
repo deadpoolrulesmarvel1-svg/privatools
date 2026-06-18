@@ -55,6 +55,7 @@ from .routes import (
     phase7_tools,
     transparency,
     developer,
+    analytics,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -155,7 +156,6 @@ def _content_security_policy(path: str, nonce: str) -> str:
     script_src = [
         "'self'",
         f"'nonce-{nonce}'",
-        "https://www.googletagmanager.com",
     ]
     if path in _WASM_EVAL_PATHS:
         script_src.append("'wasm-unsafe-eval'")
@@ -165,12 +165,11 @@ def _content_security_policy(path: str, nonce: str) -> str:
         f"script-src {' '.join(script_src)}; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
-        "img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com; "
+        "img-src 'self' data: blob:; "
         # connect-src allows HF transformers to fetch the local-AI models
         # (Summarize PDF, Smart Redact). Models are downloaded once and cached
         # in the browser; the request never carries user file content.
-        # Also allows GA4 collect endpoint (page-view telemetry only).
-        "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net https://www.google-analytics.com https://*.analytics.google.com https://www.google.com; "
+        "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net; "
         "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )
@@ -536,6 +535,7 @@ app.include_router(phase7_tools.router, prefix="/api")
 app.include_router(v12_tools.router, prefix="/api")
 app.include_router(transparency.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)
