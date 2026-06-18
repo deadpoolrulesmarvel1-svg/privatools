@@ -296,8 +296,12 @@ const allTools = [
 // undefined fields — `slug.startsWith("go-")` is the durable signal.
 const isQuickAction = (slug: string) => slug.startsWith("go-");
 
-export default function CommandPalette() {
-    const [open, setOpen] = useState(false);
+type CommandPaletteProps = {
+    defaultOpen?: boolean;
+};
+
+export default function CommandPalette({ defaultOpen = false }: CommandPaletteProps) {
+    const [open, setOpen] = useState(defaultOpen);
     const [query, setQuery] = useState("");
     const [selected, setSelected] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);

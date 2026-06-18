@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
 import { postsForTool } from "@/data/blog";
+import { formatReviewedDate, getToolLastReviewed } from "@/data/tool-review-dates";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock, BookOpen, GitBranch, Star } from "lucide-react";
@@ -405,6 +406,7 @@ export default function ToolPage() {
 
   const ToolIcon = tool.icon;
   const favorite = isFavorite(tool.slug);
+  const reviewedDate = getToolLastReviewed(tool.slug);
   return (
     <div className={cn("h-full flex flex-col", cc)}>
       {/* ─── Workspace header — slim, like Pipeline/Batch ───────────── */}
@@ -433,6 +435,9 @@ export default function ToolPage() {
                     100% Browser
                   </span>
                 )}
+                <span className="section-flag">
+                  Last reviewed <time dateTime={reviewedDate}>{formatReviewedDate(reviewedDate)}</time>
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>

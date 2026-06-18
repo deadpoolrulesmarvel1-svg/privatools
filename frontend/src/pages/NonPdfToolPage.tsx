@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
 import { postsForTool } from "@/data/blog";
+import { formatReviewedDate, getToolLastReviewed } from "@/data/tool-review-dates";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock, Star } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
@@ -322,6 +323,7 @@ export default function NonPdfToolPage() {
 
   const ToolIcon = tool.icon;
   const favorite = isFavorite(tool.slug);
+  const reviewedDate = getToolLastReviewed(tool.slug);
   return (
     <div className={cn("h-full flex flex-col", `cat-${tool.category}`)}>
       {/* Workspace header */}
@@ -347,6 +349,9 @@ export default function NonPdfToolPage() {
                     Client-side
                   </span>
                 )}
+                <span className="section-flag">
+                  Last reviewed <time dateTime={reviewedDate}>{formatReviewedDate(reviewedDate)}</time>
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>

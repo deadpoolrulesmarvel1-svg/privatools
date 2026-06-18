@@ -180,6 +180,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 _SKIP_SEO_PREFIXES = (
     "/api/", "/sitemap", "/robots", "/manifest", "/sw.js",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
+    "/.well-known/",
     # Health / readiness probes must return JSON, never the SPA shell.
     "/healthz", "/readyz",
     # Search-engine site verification files — must serve their actual content

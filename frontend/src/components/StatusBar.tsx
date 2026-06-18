@@ -7,7 +7,8 @@
  * Stays mounted at all times — same role as VS Code's status bar.
  */
 import { memo, useEffect, useState } from "react";
-import { Command, Lock, Github } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Command, Lock, Github, Shield } from "lucide-react";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
@@ -85,6 +86,14 @@ function StatusBarInner() {
                 >
                     <Github size={10} /> MIT · v.live
                 </a>
+                <span className="opacity-40">—</span>
+                <Link
+                    to="/security"
+                    className="inline-flex items-center gap-1.5 hover:text-foreground hover:underline underline-offset-2 decoration-accent/40 transition-colors"
+                    title="Security policy and vulnerability reporting"
+                >
+                    <Shield size={10} /> Security
+                </Link>
                 <span className="opacity-40">—</span>
                 <button
                     onClick={openCmdK}

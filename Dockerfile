@@ -1,10 +1,13 @@
 # Stage 1: Build frontend
 FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
+RUN apt-get update && apt-get install -y --no-install-recommends brotli \
+    && rm -rf /var/lib/apt/lists/*
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
-RUN npm run build
+RUN npm run build \
+    && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
 
 # Stage 2: Production
 FROM python:3.10-slim
@@ -98,4 +101,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--timeout-keep-alive", "120"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--timeout-keep-alive", "30", "--limit-concurrency", "50", "--timeout-graceful-shutdown", "30"]

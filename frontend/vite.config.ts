@@ -162,6 +162,7 @@ export default defineConfig({
             "@radix-ui/react-slot",
           ],
           "vendor-icons": ["lucide-react"],
+          "tool-catalog": ["src/data/tools.ts", "src/data/non-pdf-tools.ts"],
         },
       },
     },

@@ -53,6 +53,7 @@ export function usePrefetch<T>(loader: () => Promise<T>) {
 
 export const loadToolPage         = () => import("@/pages/ToolPage");
 export const loadNonPdfToolPage   = () => import("@/pages/NonPdfToolPage");
+export const loadCommandPalette   = () => import("@/components/CommandPalette");
 
 // The top-3 tools by traffic — preloaded during idle time from the home
 // page so the first navigation is instant. Update this list if analytics
