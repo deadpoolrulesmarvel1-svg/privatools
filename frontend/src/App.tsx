@@ -1,6 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { DynamicHead } from "./components/DynamicHead";
 import { OnboardingTour } from "./components/OnboardingTour";
@@ -128,38 +127,36 @@ function GlobalErrorWire() {
 
 const App = () => (
   <ErrorBoundary scope="app">
-    <TooltipProvider>
-      <Sonner />
-      <BrowserRouter>
-        <GlobalErrorWire />
-        <DynamicHead />
-        <CommandPaletteGate />
-        <ShortcutsHelp />
-        <OnboardingTour />
-        <FirstSuccessListener />
-        <RoutePrefetcher />
-        <AppShell>
-          <BackendStatusBanner />
-          <BatchResumeBanner />
-          <Routes>
-            <Route path="/" element={withRouteFallback(<Index />)} />
-            <Route path="/about" element={withRouteFallback(<AboutPage />)} />
-            <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
-            <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
-            <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
-            <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
-            <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
-            <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
-            <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
-            <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
-            <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
-            <Route path="/security" element={withRouteFallback(<SecurityPage />)} />
-            <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
-            <Route path="*" element={withRouteFallback(<NotFound />)} />
-          </Routes>
-        </AppShell>
-      </BrowserRouter>
-    </TooltipProvider>
+    <Sonner />
+    <BrowserRouter>
+      <GlobalErrorWire />
+      <DynamicHead />
+      <CommandPaletteGate />
+      <ShortcutsHelp />
+      <OnboardingTour />
+      <FirstSuccessListener />
+      <RoutePrefetcher />
+      <AppShell>
+        <BackendStatusBanner />
+        <BatchResumeBanner />
+        <Routes>
+          <Route path="/" element={withRouteFallback(<Index />)} />
+          <Route path="/about" element={withRouteFallback(<AboutPage />)} />
+          <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
+          <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
+          <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
+          <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
+          <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
+          <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
+          <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
+          <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
+          <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
+          <Route path="/security" element={withRouteFallback(<SecurityPage />)} />
+          <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
+          <Route path="*" element={withRouteFallback(<NotFound />)} />
+        </Routes>
+      </AppShell>
+    </BrowserRouter>
   </ErrorBoundary>
 );
 

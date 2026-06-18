@@ -153,7 +153,13 @@ export default defineConfig({
           // share one ~13 KB gz chunk rather than being inlined into 60+
           // tool chunks. Tree-shaking still works through this map — only
           // icons actually imported land in the chunk.
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-react": [
+            "react",
+            "react/jsx-runtime",
+            "react/jsx-dev-runtime",
+            "react-dom",
+            "react-router-dom",
+          ],
           "vendor-radix": [
             "@radix-ui/react-tooltip",
             "@radix-ui/react-dialog",

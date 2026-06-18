@@ -31,6 +31,7 @@ Last updated: 2026-06-18
   - [ ] Live infra remains open: install `libnginx-mod-brotli` on the VM, reload nginx, configure Cloudflare, and verify `content-encoding: br` after deploy.
   - [x] Verified locally: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, and `npm run check:bundle`.
   - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.6 KiB gzip.
+  - [x] First-paint critical JS path trimmed below DoD target: generated HTML preloads 159.5 KiB gzip of JS (`index`, `vendor-react`, `vendor-icons`, `tool-catalog`) and no longer preloads `vendor-radix`.
 - [ ] Phase 2 - Missing Tools `[P2-*]`
   - [x] Tool-count gate cleared locally: DoD command now reports 215 `slug:` lines across `frontend/src/data/tools.ts` and `frontend/src/data/non-pdf-tools.ts`.
   - [x] P2 developer micro-tools slice added locally: `cron-parser`, `sql-formatter`, `graphql-formatter`, `yaml-toml-converter`, `gitignore-generator`, `semver-bumper`, `env-validator`, and `json-to-csv-schema`; all are browser-only and registered in UI, HowTo/FAQ content, SEO metadata, and sitemap coverage.
@@ -54,7 +55,7 @@ Last updated: 2026-06-18
 - [x] Backend tests >= 250 passing. Current suite has 401 passing and 40 skipped after adding P2 catalog/SEO regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
-- [ ] Bundle size first-paint critical path < 170 KB gz.
+- [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 159.5 KiB gzip JS, 180.9 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
   - [ ] Code/config is present locally; live activation still requires deploy, VM nginx module install/reload, and Cloudflare account configuration.
