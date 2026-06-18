@@ -1,13 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { DynamicHead } from "./components/DynamicHead";
-import { OnboardingTour } from "./components/OnboardingTour";
-import { BackendStatusBanner } from "./components/BackendStatusBanner";
-import { BatchResumeBanner } from "./components/BatchResumeBanner";
-import { ShortcutsHelp } from "./components/ShortcutsHelp";
 import { AppShell } from "./components/AppShell";
-import { FirstSuccessListener } from "./components/FirstSuccessListener";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useGlobalErrorHandler } from "./hooks/useGlobalErrorHandler";
 import {
@@ -42,6 +36,12 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SecurityPage = lazy(() => import("./pages/SecurityPage"));
 const CommandPalette = lazy(loadCommandPalette);
+const DynamicHead = lazy(() => import("./components/DynamicHead").then(m => ({ default: m.DynamicHead })));
+const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
+const BackendStatusBanner = lazy(() => import("./components/BackendStatusBanner").then(m => ({ default: m.BackendStatusBanner })));
+const BatchResumeBanner = lazy(() => import("./components/BatchResumeBanner").then(m => ({ default: m.BatchResumeBanner })));
+const ShortcutsHelp = lazy(() => import("./components/ShortcutsHelp").then(m => ({ default: m.ShortcutsHelp })));
+const FirstSuccessListener = lazy(() => import("./components/FirstSuccessListener").then(m => ({ default: m.FirstSuccessListener })));
 
 const RouteLoader = () => (
   <div className="min-h-[40vh] animate-pulse px-4 py-10 sm:px-6">
@@ -118,6 +118,23 @@ function CommandPaletteGate() {
   );
 }
 
+function AfterInitialPaint({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (ready) return;
+    const run = () => setReady(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(run, { timeout: 1200 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(run, 250);
+    return () => window.clearTimeout(id);
+  }, [ready]);
+
+  return ready ? <>{children}</> : null;
+}
+
 /** Wire global JS error handler into the root once. Lives inside the
  *  router so it can use hooks, but renders nothing. */
 function GlobalErrorWire() {
@@ -130,15 +147,23 @@ const App = () => (
     <Sonner />
     <BrowserRouter>
       <GlobalErrorWire />
-      <DynamicHead />
       <CommandPaletteGate />
-      <ShortcutsHelp />
-      <OnboardingTour />
-      <FirstSuccessListener />
+      <AfterInitialPaint>
+        <Suspense fallback={null}>
+          <DynamicHead />
+          <ShortcutsHelp />
+          <OnboardingTour />
+          <FirstSuccessListener />
+        </Suspense>
+      </AfterInitialPaint>
       <RoutePrefetcher />
       <AppShell>
-        <BackendStatusBanner />
-        <BatchResumeBanner />
+        <AfterInitialPaint>
+          <Suspense fallback={null}>
+            <BackendStatusBanner />
+            <BatchResumeBanner />
+          </Suspense>
+        </AfterInitialPaint>
         <Routes>
           <Route path="/" element={withRouteFallback(<Index />)} />
           <Route path="/about" element={withRouteFallback(<AboutPage />)} />
