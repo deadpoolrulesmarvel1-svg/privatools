@@ -56,7 +56,7 @@ function StatusBarInner() {
     return (
         <footer
             role="contentinfo"
-            className="relative z-30 flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md flex items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
+            className="relative z-30 hidden lg:flex flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
         >
             <div className="flex items-center gap-3 min-w-0">
                 <span className="inline-flex items-center gap-1.5 shrink-0" title="All processing happens on your device">

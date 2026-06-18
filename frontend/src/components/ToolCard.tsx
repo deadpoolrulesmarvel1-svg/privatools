@@ -60,7 +60,7 @@ export function ToolCard({ slug, icon: Icon, name, description, category }: Tool
           aria-pressed={favorite}
           title={favorite ? "Pinned to sidebar" : "Pin to sidebar"}
           className={cn(
-            "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "inline-flex h-8 w-8 coarse:h-11 coarse:w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
             favorite
               ? "border-accent/45 bg-accent/10 text-accent"
               : "border-border bg-card text-muted-foreground/70 hover:border-accent/45 hover:text-accent",

@@ -25,6 +25,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
+import { MobileNav } from "./MobileNav";
 
 const SIDEBAR_STATE_KEY = "privatools_sidebar_collapsed";
 
@@ -46,7 +47,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   // Close mobile drawer on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   // Mobile drawer focus management — when the drawer opens, move focus to the
   // close button (a known landmark inside the drawer). When it closes, restore
@@ -113,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           ref={drawerTriggerRef}
           onClick={() => setMobileOpen(o => !o)}
-          className="lg:hidden inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          className="lg:hidden inline-flex h-8 w-8 coarse:h-11 coarse:w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           aria-controls="mobile-nav-drawer"
@@ -150,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Mobile compact search */}
           <button
             onClick={openCmdK}
-            className="sm:hidden inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="sm:hidden inline-flex h-8 w-8 coarse:h-11 coarse:w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             aria-label="Open command palette"
           >
             <Search size={15} />
@@ -161,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-0.5">
           <button
             onClick={openShortcuts}
-            className="hidden md:inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="hidden md:inline-flex h-8 w-8 coarse:h-11 coarse:w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             title="Keyboard shortcuts (?)"
             aria-label="Open keyboard shortcuts"
           >
@@ -169,7 +172,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
           <button
             onClick={toggleTheme}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="inline-flex h-8 w-8 coarse:h-11 coarse:w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -179,7 +182,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="inline-flex h-8 w-8 coarse:h-11 coarse:w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             title="View on GitHub"
             aria-label="View PrivaTools on GitHub"
           >
@@ -206,7 +209,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <button
               onClick={() => setCollapsed(!sidebarCollapsed)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              className="inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
               title={sidebarCollapsed ? "Expand sidebar (⌘B)" : "Collapse sidebar (⌘B)"}
               aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-expanded={!sidebarCollapsed}
@@ -240,7 +243,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <button
                   ref={drawerCloseBtnRef}
                   onClick={() => setMobileOpen(false)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                  className="inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                   aria-label="Close menu"
                 >
                   <X size={14} />
@@ -257,7 +260,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
            focus here on activation. */}
         <main
           id="main-content"
-          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden focus:outline-none"
+          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pb-20 lg:pb-0 focus:outline-none"
           tabIndex={-1}
         >
           <div key={location.pathname} className="workspace-enter min-h-full">
@@ -265,6 +268,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      <MobileNav />
 
       {/* Status bar */}
       <StatusBar />

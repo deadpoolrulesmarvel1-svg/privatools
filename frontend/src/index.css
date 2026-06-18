@@ -1272,6 +1272,7 @@ button.btn-accent:focus-visible {
   aside[aria-label="Tool navigation"],
   aside[aria-label="Mobile menu"],
   [aria-label="Primary"], [aria-label="Breadcrumb"],
+  [aria-label="Mobile primary navigation"],
   [role="dialog"], .pipeline-anim,
   .hero-orb, .hero-backdrop, .hero-artwork, .hero-blade,
   button, [role="button"]:not([data-print]),

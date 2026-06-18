@@ -111,7 +111,7 @@ export function CreateZipUI() {
                                 <FileText size={13} className="text-muted-foreground shrink-0" />
                                 <span className="text-[13px] text-foreground flex-1 truncate">{f.name}</span>
                                 <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground">{f.size}</span>
-                                <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} aria-label={`Remove ${f.name}`} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60">
+                                <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} aria-label={`Remove ${f.name}`} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60">
                                     <X size={12} />
                                 </button>
                             </div>

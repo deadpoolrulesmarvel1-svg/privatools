@@ -31,7 +31,7 @@ Last updated: 2026-06-18
   - [ ] Live infra remains open: install `libnginx-mod-brotli` on the VM, reload nginx, configure Cloudflare, and verify `content-encoding: br` after deploy.
   - [x] Verified locally: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, and `npm run check:bundle`.
   - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.6 KiB gzip.
-  - [x] First-paint critical JS path trimmed below DoD target: generated HTML preloads 159.5 KiB gzip of JS (`index`, `vendor-react`, `vendor-icons`, `tool-catalog`) and no longer preloads `vendor-radix`.
+  - [x] First-paint critical JS path remains below DoD target after mobile work: generated HTML preloads 160.0 KiB gzip of JS (`index`, `vendor-react`, `vendor-icons`, `tool-catalog`) and no longer preloads `vendor-radix`.
 - [ ] Phase 2 - Missing Tools `[P2-*]`
   - [x] Tool-count gate cleared locally: DoD command now reports 215 `slug:` lines across `frontend/src/data/tools.ts` and `frontend/src/data/non-pdf-tools.ts`.
   - [x] P2 developer micro-tools slice added locally: `cron-parser`, `sql-formatter`, `graphql-formatter`, `yaml-toml-converter`, `gitignore-generator`, `semver-bumper`, `env-validator`, and `json-to-csv-schema`; all are browser-only and registered in UI, HowTo/FAQ content, SEO metadata, and sitemap coverage.
@@ -39,7 +39,11 @@ Last updated: 2026-06-18
   - [x] Verified locally after integration: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, `npm run check:bundle`, `python3.10 -m compileall app/ -q`, and backend suite `401 passed, 40 skipped`.
   - [ ] Remaining P2 heavyweight tools are open: Chat with PDF, PDF Translator, quiz generation, voice-to-text, scan-to-PDF, Pipeline/workflows, multi-signer eSign, PDF text find/replace, multi-tool workspace, AI image tools, AVIF/JXL/JXL, object removal, Real-ESRGAN, HTML-to-image, receipt OCR, AV1 output, denoise audio, PDF audiobook, and video upload splitting.
 - [ ] Phase 3 - Existing Tool Quality Upgrades `[P3-*]`
-- [ ] Phase 4 - UI/UX Polish `[P4-ux]`
+- [x] Phase 4 - UI/UX Polish `[P4-ux]`
+  - [x] Persistent `MobileNav` is mounted from `AppShell` on `<lg` viewports and reserves workspace bottom padding (`pb-20`) so tool content is not hidden behind the nav.
+  - [x] Mobile nav active state covers tool routes: `/tool/merge-pdf` marks `Tools` with `aria-current="page"`.
+  - [x] Coarse-pointer 44px target variant added and applied to shell controls, mobile nav items, favorites, and high-use file/action rows.
+  - [x] Browser mobile QA passed locally at `390x844` on `/tool/merge-pdf`: nav remained fixed at viewport bottom before and after scrolling, main padding was `80px`, and all bottom-nav controls measured `64x46`.
 - [ ] Phase 5 - Trust + Privacy Verification `[P5-trust]`
   - [x] Narrow trust slice added locally: RFC 9116 `frontend/public/.well-known/security.txt`, root `SECURITY.md`, and `/security` page.
   - [x] `/security` registered in the frontend router and linked from the privacy related-docs row plus the persistent status/footer bar.
@@ -56,10 +60,10 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 401 passing and 40 skipped after adding P2 catalog/SEO regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 404 passing and 40 skipped after adding P2/P5 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
-- [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 159.5 KiB gzip JS, 180.9 KiB gzip including CSS.
+- [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
   - [ ] Code/config is present locally; live activation still requires deploy, VM nginx module install/reload, and Cloudflare account configuration.
@@ -73,4 +77,4 @@ Last updated: 2026-06-18
 - [ ] Wikidata Q-number minted and linked.
 - [x] OG image validates at 1200x630 by live PNG header.
 - [ ] Pipeline + API + CLI + Extension functional.
-- [ ] Mobile editor/nav/touch target requirements met.
+- [x] Mobile editor/nav/touch target requirements met locally: EditPdfUI and SignUI use Pointer Events; persistent MobileNav and 44px coarse-pointer targets verified at `390x844` on `/tool/merge-pdf`.

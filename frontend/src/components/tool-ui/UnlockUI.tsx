@@ -114,7 +114,7 @@ export function UnlockUI() {
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
                                     <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
-                                <button onClick={() => removeFile(f.id)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
+                                <button onClick={() => removeFile(f.id)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
                                 </button>
                             </div>
@@ -138,7 +138,7 @@ export function UnlockUI() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPw(!showPw)}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                     aria-label={showPw ? "Hide password" : "Show password"}
                                     aria-pressed={showPw}
                                 >

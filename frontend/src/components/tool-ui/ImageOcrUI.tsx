@@ -131,7 +131,7 @@ export function ImageOcrUI() {
                                 {(imgFile.file.size / 1024).toFixed(0)} KB
                             </p>
                         </div>
-                        <button onClick={clear} className="h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 inline-flex items-center justify-center" aria-label="Remove">
+                        <button onClick={clear} className="h-8 w-8 coarse:h-11 coarse:w-11 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 inline-flex items-center justify-center" aria-label="Remove">
                             <Trash2 size={14} />
                         </button>
                     </div>
