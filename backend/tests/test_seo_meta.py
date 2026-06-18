@@ -192,6 +192,14 @@ def test_unknown_tool_does_not_emit_soft_404_schema():
     assert get_jsonld_for_path("/tools/not-a-real-tool") is None
 
 
+def test_security_route_is_known_and_has_meta():
+    assert seo_meta.path_is_known("/security")
+    title, description = get_meta_for_path("/security")
+
+    assert "Security" in title
+    assert "threat model" in description
+
+
 def test_meta_descriptions_do_not_repeat_stale_privacy_overclaims():
     paths = [
         "/",
