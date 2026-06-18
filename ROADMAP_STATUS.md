@@ -59,7 +59,8 @@ Last updated: 2026-06-18
   - [x] Per-tool upload privacy badge added locally: PDF and non-PDF tool pages now show `Never uploaded` for browser-only tools and `No third-party upload` for self-hosted server tools; Privacy page now states fonts are self-hosted.
   - [x] Build-time SRI added locally: production builds now inject SHA-384 `integrity` attributes for generated `/assets/*.js` and `/assets/*.css` tags and `npm run sri:check` verifies the generated HTML hashes.
   - [x] First-party GA4 pageview proxy added locally: browser pages call `/api/analytics/pageview` instead of loading Google analytics scripts; the backend forwards sanitized aggregate events only when `GA4_API_SECRET` is configured.
-  - [ ] Phase 5 deferred items remain open: PGP key, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
+  - [x] Live workflow/README badge verification passed on default branch: Security workflow run `27761741061` is green on `main` commit `5a620e44c9f0`; README contains Security, OpenSSF Scorecard, SBOM, and MIT badges.
+  - [ ] Phase 5 deferred items remain open: PGP key and OpenSSF Best Practices badge submission follow-through.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
   - [x] Top-50 tool page SSR coverage added locally: every top-50 tool page now has TL;DR, deep crawlable guidance, HowTo schema, FAQPage schema, SoftwareApplication schema, visible last-reviewed copy, and at least 800 words of SSR body content.
@@ -76,23 +77,26 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 437 passing and 40 skipped after adding application-layer Brotli coverage plus P2/P5/P6/P7 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 440 passing and 40 skipped after dependency upgrades and P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [x] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
   - [x] Live Lighthouse on production build `5947c2f07d1c`: `/` = 94/95/100/100, `/tool/compress-pdf` = 99/96/100/100, `/blog/compress-pdf-without-losing-quality` = 98/100/100/100.
+  - [x] Live Lighthouse on production build `5a620e44c9f0`: `/` = 90/95/100/100, `/tool/compress-pdf` = 99/96/100/100 on solo rerun, `/blog/compress-pdf-without-losing-quality` = 90/100/100/100. Parallel `/tool/compress-pdf` run produced a transient Lighthouse `NO_LCP` warning and 89 performance, so the solo rerun is the accepted evidence.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
   - [x] Application-layer Brotli middleware is live: production build `e6940bcf67ea` returns `content-encoding: br` on `/` and `/tool/compress-pdf` with nonce CSP intact.
+  - [x] Latest live verification on production build `5a620e44c9f0`: GET `/` and `/security` with `Accept-Encoding: br` return `content-encoding: br`, nonce CSP, HSTS preload, COOP, COEP, and CORP headers.
   - [ ] Cloudflare account/DNS activation remains open; live headers still come directly from `nginx/1.18.0 (Ubuntu)` with no Cloudflare edge headers.
 - [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
-- [ ] Trust deliverables live.
-  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, per-tool upload privacy badges, self-hosted fonts/font CSP, HSTS/COOP/COEP/CORP headers, build-time SRI, first-party GA4 proxy, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
-  - [x] Live verification on 2026-06-18: `/healthz` returned `build_sha=73c391a82ec610b7f63cc1272f47498407ee17b7`; `/.well-known/security.txt` and `/api/transparency/janitor` are reachable; live CSP is nonce-based with no Google/Bunny origins after reloading the updated Oracle nginx config.
-- [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes.
+  - [ ] Blocked by missing `/citability` capability in this Codex session; tool discovery did not expose a citability/GEO scoring tool.
+- [x] Trust deliverables live.
+  - [x] Live verification on 2026-06-18: `/healthz` returned `build_sha=5a620e44c9f022d27ce495b7a342d52864e1eb3b`; `/readyz` is ready; `/.well-known/security.txt`, `/security`, `/api/transparency/janitor`, and `/api/pipeline/templates` are reachable; live CSP is nonce-based; GET `/` and `/security` return Brotli; main Security workflow run `27761741061` is green; README on `main` contains Security, OpenSSF Scorecard, SBOM, and MIT badges; `SECURITY.md` exists on `main`.
+- [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes. MDN Observatory API v2 scan `101727378` returned grade `A+`, score `110`.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.
+  - [ ] Blocked by missing Wikidata credentials/editor action; live Wikidata search for `PrivaTools` returned no existing entity.
 - [x] OG image validates at 1200x630 by live PNG header.
-- [x] Pipeline + API + CLI + Extension functional locally: `/api/pipeline` runs `compress-pdf -> strip-metadata`, `/api-docs` renders, share URLs hydrate `/pipeline`, `npx --no-install privatools --help` works, and the MV3 extension manifest/background smoke checks pass.
+- [x] Pipeline + API + CLI + Extension functional locally: `/api/pipeline` runs `compress-pdf -> strip-metadata`, `/api-docs` renders, share URLs hydrate `/pipeline`, `npx --no-install privatools --help` works, and the MV3 extension manifest/background smoke checks pass. Live `/api/pipeline/templates` returns the expected `email-ready` and `privacy-scrub` templates.
 - [x] Mobile editor/nav/touch target requirements met locally: EditPdfUI and SignUI use Pointer Events; persistent MobileNav and 44px coarse-pointer targets verified at `390x844` on `/tool/merge-pdf`.
