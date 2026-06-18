@@ -4,7 +4,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> 179+ free, open-source file tools — PDF, image, video, audio, and
+> 213+ free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -27,7 +27,7 @@ When a user uploads a file to a server-side tool (e.g. /api/merge):
 5. A periodic background task (every 5 minutes) re-scans /tmp/ and unlinks any
    strays older than 10 minutes. See `backend/app/utils/cleanup.py`.
 
-Files in browser-only tools (the ~18+ developer utilities, plus Summarize PDF, Smart Redact, Subtitle
+Files in browser-only tools (the ~26+ developer utilities, plus Summarize PDF, Smart Redact, Subtitle
 Converter, AES encryption, etc.) are never sent to the server. The browser
 processes the file directly via JavaScript or WebAssembly. Verify by opening
 DevTools → Network and watching for upload requests — there are none.
@@ -762,7 +762,7 @@ Count PDF pages online for free — upload up to 100 PDF files and instantly see
 
 ## Non-PDF Tools
 
-### Image Tools (33 tools)
+### Image Tools (39 tools)
 
 #### Image Compressor
 URL: https://privatools.me/tools/image-compressor
@@ -967,6 +967,48 @@ Convert GIF to PNG (preserves transparency)
 
 Convert GIF to PNG online for free — extracts the first frame as a PNG, preserving transparency. PNG offers much higher color fidelity than GIF's 256-color limit.
 
+#### JPG to TIFF
+URL: https://privatools.me/tools/jpg-to-tiff
+
+Convert JPG photos to TIFF for archive workflows
+
+Convert JPG to TIFF online for free — turn JPEG photos into TIFF files for archival, print, scanning, or document-management systems. Powered by the existing image converter and deleted immediately after processing.
+
+#### PNG to TIFF
+URL: https://privatools.me/tools/png-to-tiff
+
+Convert PNG images to TIFF
+
+Convert PNG to TIFF online for free — preserve lossless image quality while moving PNG graphics into TIFF-based archive, prepress, or scanner workflows. No account, no watermark.
+
+#### WebP to TIFF
+URL: https://privatools.me/tools/webp-to-tiff
+
+Convert WebP images to TIFF
+
+Convert WebP to TIFF online for free — change modern web images into TIFF files for editing, archival, and legacy document systems that do not accept WebP.
+
+#### JPG to BMP
+URL: https://privatools.me/tools/jpg-to-bmp
+
+Convert JPG photos to Windows bitmap BMP
+
+Convert JPG to BMP online for free — create legacy Windows bitmap files from JPEG photos for older software, embroidery tools, or devices that only accept BMP input.
+
+#### PNG to BMP
+URL: https://privatools.me/tools/png-to-bmp
+
+Convert PNG images to BMP
+
+Convert PNG to BMP online for free — export PNG graphics as Windows bitmap files for legacy apps, embedded systems, signage tools, and old editors.
+
+#### WebP to BMP
+URL: https://privatools.me/tools/webp-to-bmp
+
+Convert WebP images to BMP
+
+Convert WebP to BMP online for free — turn modern WebP images into BMP files for older Windows applications and devices that do not understand WebP.
+
 #### Image Color Palette
 URL: https://privatools.me/tools/image-palette
 
@@ -995,7 +1037,7 @@ Mirror an image horizontally or vertically
 
 Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
 
-### Video & Audio Tools (23 tools)
+### Video & Audio Tools (43 tools)
 
 #### Extract Audio from Video
 URL: https://privatools.me/tools/extract-audio
@@ -1130,6 +1172,146 @@ Convert MP4 to WebM for web embedding
 
 Convert MP4 to WebM online for free — WebM (VP9 video + Opus audio) produces 30–50% smaller files than MP4 at equivalent quality. Native HTML5 video support in all modern browsers without a transcoding step on your server.
 
+#### MP3 to WAV
+URL: https://privatools.me/tools/mp3-to-wav
+
+Convert MP3 audio to WAV
+
+Convert MP3 to WAV online for free — decode compressed MP3 audio into a WAV file for editing, transcription, podcast production, or apps that require uncompressed audio.
+
+#### WAV to MP3
+URL: https://privatools.me/tools/wav-to-mp3
+
+Convert WAV audio to smaller MP3 files
+
+Convert WAV to MP3 online for free — shrink uncompressed WAV recordings into widely-compatible MP3 files with a 192 kbps default bitrate.
+
+#### FLAC to MP3
+URL: https://privatools.me/tools/flac-to-mp3
+
+Convert FLAC lossless audio to MP3
+
+Convert FLAC to MP3 online for free — make lossless FLAC music or recordings playable on every phone, browser, car stereo, and editing app.
+
+#### OGG to MP3
+URL: https://privatools.me/tools/ogg-to-mp3
+
+Convert OGG Vorbis audio to MP3
+
+Convert OGG to MP3 online for free — turn open OGG/Vorbis audio into MP3 for universal playback and sharing.
+
+#### AAC to MP3
+URL: https://privatools.me/tools/aac-to-mp3
+
+Convert AAC audio to MP3
+
+Convert AAC to MP3 online for free — change AAC tracks from phones, screen recorders, or video exports into standard MP3 audio.
+
+#### MP3 to OGG
+URL: https://privatools.me/tools/mp3-to-ogg
+
+Convert MP3 audio to OGG Vorbis
+
+Convert MP3 to OGG online for free — re-encode MP3 audio as OGG/Vorbis for open-web projects, games, and Linux-friendly audio workflows.
+
+#### MP3 to FLAC
+URL: https://privatools.me/tools/mp3-to-flac
+
+Convert MP3 audio into a FLAC container
+
+Convert MP3 to FLAC online for free — place decoded MP3 audio in a FLAC file for workflows that require FLAC input. This cannot restore quality lost in the original MP3.
+
+#### MP3 to AAC
+URL: https://privatools.me/tools/mp3-to-aac
+
+Convert MP3 audio to AAC
+
+Convert MP3 to AAC online for free — make AAC audio for Apple workflows, mobile apps, podcasts, and video-editing timelines.
+
+#### WAV to FLAC
+URL: https://privatools.me/tools/wav-to-flac
+
+Convert WAV audio to FLAC
+
+Convert WAV to FLAC online for free — compress uncompressed recordings into lossless FLAC files that preserve quality while reducing storage size.
+
+#### WAV to OGG
+URL: https://privatools.me/tools/wav-to-ogg
+
+Convert WAV audio to OGG Vorbis
+
+Convert WAV to OGG online for free — make compact OGG/Vorbis audio from uncompressed WAV recordings for games, web apps, and open-source media projects.
+
+#### MKV to MP4
+URL: https://privatools.me/tools/mkv-to-mp4
+
+Convert MKV video to MP4
+
+Convert MKV to MP4 online for free — turn flexible Matroska video files into MP4 for phones, browsers, social platforms, and editing apps.
+
+#### MP4 to MOV
+URL: https://privatools.me/tools/mp4-to-mov
+
+Convert MP4 video to Apple MOV
+
+Convert MP4 to MOV online for free — create QuickTime MOV files for Apple workflows, Final Cut, Keynote, and macOS media pipelines.
+
+#### MOV to WebM
+URL: https://privatools.me/tools/mov-to-webm
+
+Convert MOV video to WebM
+
+Convert MOV to WebM online for free — make Apple QuickTime videos smaller and web-native with VP9 video and Opus audio.
+
+#### MKV to WebM
+URL: https://privatools.me/tools/mkv-to-webm
+
+Convert MKV video to WebM
+
+Convert MKV to WebM online for free — re-encode Matroska videos as browser-friendly WebM files for web pages and open media workflows.
+
+#### MP4 to AVI
+URL: https://privatools.me/tools/mp4-to-avi
+
+Convert MP4 video to legacy AVI
+
+Convert MP4 to AVI online for free — export modern MP4 clips into AVI for old Windows apps, media players, or legacy devices.
+
+#### AVI to WebM
+URL: https://privatools.me/tools/avi-to-webm
+
+Convert AVI video to WebM
+
+Convert AVI to WebM online for free — turn older Windows AVI clips into smaller open-web WebM files for browsers and embeds.
+
+#### WebM to MOV
+URL: https://privatools.me/tools/webm-to-mov
+
+Convert WebM video to Apple MOV
+
+Convert WebM to MOV online for free — make WebM videos easier to use in Apple and QuickTime-centric editing workflows.
+
+#### MOV to MKV
+URL: https://privatools.me/tools/mov-to-mkv
+
+Convert MOV video to MKV
+
+Convert MOV to MKV online for free — move Apple QuickTime videos into the open Matroska container for archiving and advanced playback workflows.
+
+#### WebM to GIF
+URL: https://privatools.me/tools/webm-to-gif
+
+Convert WebM video clips to animated GIFs
+
+Convert WebM to GIF online for free — upload a WebM clip and export a looping GIF for chat, documentation, and quick previews.
+
+#### MOV to GIF
+URL: https://privatools.me/tools/mov-to-gif
+
+Convert MOV video clips to animated GIFs
+
+Convert MOV to GIF online for free — turn iPhone, macOS, and QuickTime MOV clips into looping GIFs with the existing video-to-GIF pipeline.
+
 #### Mute Video
 URL: https://privatools.me/tools/mute-video
 
@@ -1158,7 +1340,7 @@ Cut a clip out of any audio file
 
 Trim or cut MP3, WAV, AAC, FLAC, OGG, or M4A files — specify start and end timestamps (HH:MM:SS) and download just the chosen segment. Stream-copy keeps the original quality.
 
-### Developer Tools (18 tools)
+### Developer Tools (26 tools)
 
 #### JSON / XML Formatter
 URL: https://privatools.me/tools/json-xml-formatter
@@ -1286,6 +1468,62 @@ Convert text between UPPER, lower, Title, camelCase, snake_case, kebab-case
 
 Convert text case online for free — translate between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, and more. Live preview as you type. Runs entirely in your browser.
 
+#### Cron Parser
+URL: https://privatools.me/tools/cron-parser
+
+Explain cron expressions and preview upcoming runs
+
+Parse cron expressions online for free — paste a standard 5-field cron schedule, read the plain-English meaning, and preview the next run times in your local browser timezone. 100% client-side.
+
+#### SQL Formatter
+URL: https://privatools.me/tools/sql-formatter
+
+Pretty-print SQL queries without uploading them
+
+Format SQL online for free — paste SELECT, INSERT, UPDATE, DELETE, and JOIN-heavy queries to get readable keyword line breaks and indentation. Runs entirely in your browser so database queries never leave your device.
+
+#### GraphQL Formatter
+URL: https://privatools.me/tools/graphql-formatter
+
+Format GraphQL queries, mutations, and fragments
+
+Format GraphQL online for free — paste compact queries, mutations, fragments, or selection sets and get clean indentation immediately. Browser-only, no server logs, no schema required.
+
+#### YAML to TOML
+URL: https://privatools.me/tools/yaml-toml-converter
+
+Convert common config files between YAML and TOML
+
+Convert YAML to TOML or TOML to YAML online for free — useful for app config, package metadata, and deployment settings. Common nested maps, arrays, booleans, numbers, and strings are handled locally in your browser.
+
+#### .gitignore Generator
+URL: https://privatools.me/tools/gitignore-generator
+
+Build a .gitignore from common stack templates
+
+Generate a .gitignore online for free — combine bundled templates for Node, Python, Vite, Next.js, Docker, Terraform, Go, Rust, macOS, and Windows. No external template API is called.
+
+#### SemVer Bumper
+URL: https://privatools.me/tools/semver-bumper
+
+Calculate patch, minor, major, and prerelease bumps
+
+Bump semantic versions online for free — enter a version like 1.2.3 or v1.2.3-beta.1 and instantly calculate the next patch, minor, major, or prerelease value. Runs entirely in your browser.
+
+#### .env Validator
+URL: https://privatools.me/tools/env-validator
+
+Lint .env files for syntax and risky values
+
+Validate .env files online for free — catch missing equals signs, invalid names, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets. Your environment file stays in your browser.
+
+#### JSON to CSV Schema
+URL: https://privatools.me/tools/json-to-csv-schema
+
+Infer JSON schema and export flattened CSV
+
+Convert JSON to CSV with schema inference online for free — paste an array of objects, flatten nested keys, infer column types, see field coverage, and download a CSV. Pure browser processing.
+
 ### Archive Tools (2 tools)
 
 #### Extract ZIP / TAR
@@ -1399,7 +1637,7 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 The following statements about PrivaTools are accurate as of 2026-06-18 and verifiable in the public source code.
 
-- PrivaTools offers **179 free file tools**: 101 PDF tools and 78 non-PDF tools.
+- PrivaTools offers **213 free file tools**: 101 PDF tools and 112 non-PDF tools.
 - The codebase is **MIT-licensed** at https://github.com/deadpoolrulesmarvel1-svg/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
@@ -1422,7 +1660,7 @@ The following statements about PrivaTools are accurate as of 2026-06-18 and veri
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | 179+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | 213+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | AI runs in-browser (no upload) | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

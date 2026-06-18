@@ -813,6 +813,48 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "flip-image":         ("Flip Image",          "Flip or mirror images online for free — horizontally or vertically. Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Fix selfie mirroring or prep design assets in seconds."),
 }
 
+_FORMAT_ALIAS_TOOLS: dict[str, tuple[str, str]] = {
+    "jpg-to-tiff":  ("JPG to TIFF",  "Convert JPG to TIFF online for free - turn JPEG photos into TIFF files for archival, print, scanning, and document-management workflows."),
+    "png-to-tiff":  ("PNG to TIFF",  "Convert PNG to TIFF online for free - preserve lossless image quality while exporting graphics to TIFF for archive or prepress workflows."),
+    "webp-to-tiff": ("WebP to TIFF", "Convert WebP to TIFF online for free - change modern web images into TIFF files for editors and legacy systems."),
+    "jpg-to-bmp":   ("JPG to BMP",   "Convert JPG to BMP online for free - create legacy Windows bitmap files from JPEG photos for older software and devices."),
+    "png-to-bmp":   ("PNG to BMP",   "Convert PNG to BMP online for free - export PNG graphics as Windows bitmap files for legacy apps, embedded systems, and signage tools."),
+    "webp-to-bmp":  ("WebP to BMP",  "Convert WebP to BMP online for free - turn modern WebP images into BMP files for older Windows applications."),
+    "mp3-to-wav":   ("MP3 to WAV",   "Convert MP3 to WAV online for free - decode compressed audio into WAV for editing, transcription, podcast production, and apps that require WAV input."),
+    "wav-to-mp3":   ("WAV to MP3",   "Convert WAV to MP3 online for free - shrink uncompressed recordings into widely-compatible MP3 files with FFmpeg."),
+    "flac-to-mp3":  ("FLAC to MP3",  "Convert FLAC to MP3 online for free - make lossless FLAC music or recordings playable on phones, browsers, and car stereos."),
+    "ogg-to-mp3":   ("OGG to MP3",   "Convert OGG to MP3 online for free - turn OGG/Vorbis audio into universal MP3 files for sharing and playback."),
+    "aac-to-mp3":   ("AAC to MP3",   "Convert AAC to MP3 online for free - change AAC tracks from phones, screen recorders, and video exports into standard MP3 audio."),
+    "mp3-to-ogg":   ("MP3 to OGG",   "Convert MP3 to OGG online for free - re-encode MP3 audio as OGG/Vorbis for open-web projects, games, and Linux-friendly workflows."),
+    "mp3-to-flac":  ("MP3 to FLAC",  "Convert MP3 to FLAC online for free - place decoded MP3 audio in a FLAC file for workflows that require FLAC input."),
+    "mp3-to-aac":   ("MP3 to AAC",   "Convert MP3 to AAC online for free - make AAC audio for Apple workflows, mobile apps, podcasts, and video-editing timelines."),
+    "wav-to-flac":  ("WAV to FLAC",  "Convert WAV to FLAC online for free - compress uncompressed recordings into lossless FLAC files while preserving quality."),
+    "wav-to-ogg":   ("WAV to OGG",   "Convert WAV to OGG online for free - make compact OGG/Vorbis audio from WAV recordings for games and web apps."),
+    "mkv-to-mp4":   ("MKV to MP4",   "Convert MKV to MP4 online for free - turn Matroska video files into MP4 for phones, browsers, social platforms, and editors."),
+    "mp4-to-mov":   ("MP4 to MOV",   "Convert MP4 to MOV online for free - create QuickTime MOV files for Apple workflows, Final Cut, Keynote, and macOS media pipelines."),
+    "mov-to-webm":  ("MOV to WebM",  "Convert MOV to WebM online for free - make Apple QuickTime videos smaller and web-native with VP9 video and Opus audio."),
+    "mkv-to-webm":  ("MKV to WebM",  "Convert MKV to WebM online for free - re-encode Matroska videos as browser-friendly WebM files for web pages and open media workflows."),
+    "mp4-to-avi":   ("MP4 to AVI",   "Convert MP4 to AVI online for free - export modern MP4 clips into AVI for old Windows apps, media players, and legacy devices."),
+    "avi-to-webm":  ("AVI to WebM",  "Convert AVI to WebM online for free - turn older Windows AVI clips into smaller open-web WebM files for browsers and embeds."),
+    "webm-to-mov":  ("WebM to MOV",  "Convert WebM to MOV online for free - make WebM videos easier to use in Apple and QuickTime-centric editing workflows."),
+    "mov-to-mkv":   ("MOV to MKV",   "Convert MOV to MKV online for free - move Apple QuickTime videos into the open Matroska container for archiving."),
+    "webm-to-gif":  ("WebM to GIF",  "Convert WebM to GIF online for free - upload a WebM clip and export a looping GIF for chat, documentation, and quick previews."),
+    "mov-to-gif":   ("MOV to GIF",   "Convert MOV to GIF online for free - turn iPhone, macOS, and QuickTime MOV clips into looping GIFs."),
+}
+_NONPDF_TOOLS.update(_FORMAT_ALIAS_TOOLS)
+
+_DEV_MICRO_TOOLS: dict[str, tuple[str, str]] = {
+    "cron-parser":         ("Cron Parser",          "Parse cron expressions online for free - explain a standard 5-field cron schedule and preview upcoming run times in your browser timezone."),
+    "sql-formatter":       ("SQL Formatter",        "Format SQL online for free - pretty-print SELECT, INSERT, UPDATE, DELETE, JOIN, WHERE, GROUP BY, and ORDER BY queries entirely in your browser."),
+    "graphql-formatter":   ("GraphQL Formatter",    "Format GraphQL online for free - clean up compact queries, mutations, fragments, arguments, and selection sets without uploading schema or API text."),
+    "yaml-toml-converter": ("YAML to TOML",         "Convert YAML to TOML or TOML to YAML online for free - transform common app config, package metadata, and deployment settings locally in your browser."),
+    "gitignore-generator": (".gitignore Generator", "Generate a .gitignore online for free - combine bundled templates for Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, and Windows."),
+    "semver-bumper":       ("SemVer Bumper",        "Bump semantic versions online for free - calculate patch, minor, major, and prerelease values from SemVer strings like 1.2.3-beta.1."),
+    "env-validator":       (".env Validator",       "Validate .env files online for free - catch syntax mistakes, duplicate keys, empty values, unquoted spaces, and risky-looking short secrets in your browser."),
+    "json-to-csv-schema":  ("JSON to CSV Schema",   "Convert JSON to CSV with schema inference online for free - flatten nested objects, infer column types, inspect coverage, and download CSV locally."),
+}
+_NONPDF_TOOLS.update(_DEV_MICRO_TOOLS)
+
 
 # ---------------------------------------------------------------------------
 # Aliases / synonyms — what users actually type into search engines.
@@ -1102,6 +1144,41 @@ TOOL_LAST_REVIEWED: dict[str, str] = {
     "qr-code":          "2026-01-18",
     "qr-reader":        "2026-01-15",
     "uuid-generator":   "2026-01-12",
+    # Phase 2 conversion aliases — reviewed when added.
+    "jpg-to-tiff":      "2026-06-18",
+    "png-to-tiff":      "2026-06-18",
+    "webp-to-tiff":     "2026-06-18",
+    "jpg-to-bmp":       "2026-06-18",
+    "png-to-bmp":       "2026-06-18",
+    "webp-to-bmp":      "2026-06-18",
+    "mp3-to-wav":       "2026-06-18",
+    "wav-to-mp3":       "2026-06-18",
+    "flac-to-mp3":      "2026-06-18",
+    "ogg-to-mp3":       "2026-06-18",
+    "aac-to-mp3":       "2026-06-18",
+    "mp3-to-ogg":       "2026-06-18",
+    "mp3-to-flac":      "2026-06-18",
+    "mp3-to-aac":       "2026-06-18",
+    "wav-to-flac":      "2026-06-18",
+    "wav-to-ogg":       "2026-06-18",
+    "mkv-to-mp4":       "2026-06-18",
+    "mp4-to-mov":       "2026-06-18",
+    "mov-to-webm":      "2026-06-18",
+    "mkv-to-webm":      "2026-06-18",
+    "mp4-to-avi":       "2026-06-18",
+    "avi-to-webm":      "2026-06-18",
+    "webm-to-mov":      "2026-06-18",
+    "mov-to-mkv":       "2026-06-18",
+    "webm-to-gif":      "2026-06-18",
+    "mov-to-gif":       "2026-06-18",
+    "cron-parser":      "2026-06-18",
+    "sql-formatter":    "2026-06-18",
+    "graphql-formatter":"2026-06-18",
+    "yaml-toml-converter":"2026-06-18",
+    "gitignore-generator":"2026-06-18",
+    "semver-bumper":    "2026-06-18",
+    "env-validator":    "2026-06-18",
+    "json-to-csv-schema":"2026-06-18",
 }
 
 

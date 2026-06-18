@@ -83,6 +83,16 @@ const LazyYamlToJsonUI       = lazyNamed(() => import("@/components/tool-ui/Util
 const LazyJsonToYamlUI       = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "JsonToYamlConverterUI");
 const LazyCaseConverterUI    = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "CaseConverterUI");
 
+// P2 developer micro-tools pack
+const LazyCronParserUI       = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "CronParserUI");
+const LazySqlFormatterUI     = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "SqlFormatterUI");
+const LazyGraphqlFormatterUI = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "GraphqlFormatterUI");
+const LazyYamlTomlUI         = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "YamlTomlConverterUI");
+const LazyGitignoreUI        = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "GitignoreGeneratorUI");
+const LazySemverBumperUI     = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "SemverBumperUI");
+const LazyEnvValidatorUI     = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "EnvValidatorUI");
+const LazyJsonCsvSchemaUI    = lazyNamed(() => import("@/components/tool-ui/DevMicroTools"), "JsonToCsvSchemaUI");
+
 // v1.5.0 / phase 7 — competitor-gap tools
 const LazyVideoSpeedUI       = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "VideoSpeedUI");
 const LazyAudioTrimUI        = lazyNamed(() => import("@/components/tool-ui/Phase7Tools"), "AudioTrimUI");
@@ -257,10 +267,72 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webm" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mp4" }} />;
     case "mp4-to-webm":
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "webm" }} />;
+    // Phase 2 conversion alias pack — route-specific pages using existing converters
+    case "jpg-to-tiff":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".jpg,.jpeg" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "tiff" }} />;
+    case "png-to-tiff":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".png" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "tiff" }} />;
+    case "webp-to-tiff":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "tiff" }} />;
+    case "jpg-to-bmp":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".jpg,.jpeg" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "bmp" }} />;
+    case "png-to-bmp":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".png" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "bmp" }} />;
+    case "webp-to-bmp":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "bmp" }} />;
+    case "mp3-to-wav":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp3" slug={slug} apiEndpoint="/audio-converter" params={{ format: "wav" }} />;
+    case "wav-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".wav" slug={slug} apiEndpoint="/audio-converter" params={{ format: "mp3", bitrate: "192k" }} />;
+    case "flac-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".flac" slug={slug} apiEndpoint="/audio-converter" params={{ format: "mp3", bitrate: "192k" }} />;
+    case "ogg-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".ogg" slug={slug} apiEndpoint="/audio-converter" params={{ format: "mp3", bitrate: "192k" }} />;
+    case "aac-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".aac" slug={slug} apiEndpoint="/audio-converter" params={{ format: "mp3", bitrate: "192k" }} />;
+    case "mp3-to-ogg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp3" slug={slug} apiEndpoint="/audio-converter" params={{ format: "ogg", bitrate: "192k" }} />;
+    case "mp3-to-flac":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp3" slug={slug} apiEndpoint="/audio-converter" params={{ format: "flac" }} />;
+    case "mp3-to-aac":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp3" slug={slug} apiEndpoint="/audio-converter" params={{ format: "aac", bitrate: "192k" }} />;
+    case "wav-to-flac":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".wav" slug={slug} apiEndpoint="/audio-converter" params={{ format: "flac" }} />;
+    case "wav-to-ogg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".wav" slug={slug} apiEndpoint="/audio-converter" params={{ format: "ogg", bitrate: "192k" }} />;
+    case "mkv-to-mp4":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mkv" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mp4" }} />;
+    case "mp4-to-mov":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mov" }} />;
+    case "mov-to-webm":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mov" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "webm" }} />;
+    case "mkv-to-webm":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mkv" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "webm" }} />;
+    case "mp4-to-avi":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "avi" }} />;
+    case "avi-to-webm":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".avi" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "webm" }} />;
+    case "webm-to-mov":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webm" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mov" }} />;
+    case "mov-to-mkv":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mov" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mkv" }} />;
+    case "webm-to-gif":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webm" slug={slug} apiEndpoint="/video-to-gif" />;
+    case "mov-to-gif":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mov" slug={slug} apiEndpoint="/video-to-gif" />;
     // v1.4.0 — browser-only dev converters
     case "yaml-to-json":     return <LazyYamlToJsonUI />;
     case "json-to-yaml":     return <LazyJsonToYamlUI />;
     case "case-converter":   return <LazyCaseConverterUI />;
+    // P2 developer micro-tools
+    case "cron-parser":          return <LazyCronParserUI />;
+    case "sql-formatter":        return <LazySqlFormatterUI />;
+    case "graphql-formatter":    return <LazyGraphqlFormatterUI />;
+    case "yaml-toml-converter":  return <LazyYamlTomlUI />;
+    case "gitignore-generator":  return <LazyGitignoreUI />;
+    case "semver-bumper":        return <LazySemverBumperUI />;
+    case "env-validator":        return <LazyEnvValidatorUI />;
+    case "json-to-csv-schema":   return <LazyJsonCsvSchemaUI />;
     // ── v1.5.0 / phase 7 competitor-gap tools ──────────────────────────
     case "mute-video":
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4,.mov,.webm,.mkv,.avi,.m4v" slug={slug} apiEndpoint="/mute-video" />;

@@ -415,6 +415,46 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Paste your text", "text": "Drop any string — a variable name, sentence, or paragraph — into the input box."},
         {"name": "Copy any case format", "text": "All 12 case variants (camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, dot.case, path/case, and more) appear instantly. Click Copy on the one you want."},
     ],
+    "cron-parser": [
+        {"name": "Paste a cron expression", "text": "Enter a standard 5-field cron schedule: minute, hour, day of month, month, and weekday."},
+        {"name": "Read the explanation", "text": "The tool validates each field and explains the schedule in plain language."},
+        {"name": "Preview upcoming runs", "text": "Next run times are calculated locally in your browser timezone so you can verify the schedule before shipping it."},
+    ],
+    "sql-formatter": [
+        {"name": "Paste SQL", "text": "Drop a compact SELECT, INSERT, UPDATE, DELETE, or JOIN-heavy query into the editor."},
+        {"name": "Review formatted SQL", "text": "Keywords, clauses, commas, and boolean operators are line-broken into a readable layout."},
+        {"name": "Copy the result", "text": "Use the formatted SQL in reviews, docs, migrations, dashboards, or database consoles."},
+    ],
+    "graphql-formatter": [
+        {"name": "Paste GraphQL", "text": "Enter a query, mutation, fragment, or selection set in compact form."},
+        {"name": "Format the operation", "text": "Braces, arguments, arrays, and comma-separated fields are indented in a readable shape."},
+        {"name": "Copy the formatted query", "text": "Paste the result into your app, GraphiQL, Apollo Studio, or pull request."},
+    ],
+    "yaml-toml-converter": [
+        {"name": "Choose a direction", "text": "Switch between YAML to TOML and TOML to YAML depending on the config format you need."},
+        {"name": "Paste config", "text": "Common nested maps, strings, numbers, booleans, and arrays are parsed directly in your browser."},
+        {"name": "Copy converted output", "text": "Use the converted config in pyproject.toml, Cargo.toml, app config, or deployment files."},
+    ],
+    "gitignore-generator": [
+        {"name": "Pick stack templates", "text": "Choose templates such as Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, or Windows."},
+        {"name": "Review the generated file", "text": "The selected templates are combined into one readable .gitignore with section comments."},
+        {"name": "Copy or download", "text": "Copy the text or download it directly as .gitignore for your repository root."},
+    ],
+    "semver-bumper": [
+        {"name": "Enter the current version", "text": "Use a SemVer value such as 1.2.3 or v1.2.3-beta.1."},
+        {"name": "Compare bump types", "text": "Patch, minor, major, and prerelease candidates are calculated side-by-side."},
+        {"name": "Copy the release version", "text": "Use the chosen value in package manifests, tags, changelogs, and release notes."},
+    ],
+    "env-validator": [
+        {"name": "Paste a .env file", "text": "Drop environment variable lines into the browser-only editor."},
+        {"name": "Review warnings", "text": "The validator catches missing equals signs, invalid names, duplicate keys, empty values, unquoted spaces, and short-looking secrets."},
+        {"name": "Fix and copy", "text": "Update your .env file until the report is clean, then copy the corrected content back to your project."},
+    ],
+    "json-to-csv-schema": [
+        {"name": "Paste JSON", "text": "Enter a JSON object or array of objects. Nested objects are flattened to dot-notation columns."},
+        {"name": "Inspect the inferred schema", "text": "Each column shows its inferred type and how many rows contain a value."},
+        {"name": "Copy or download CSV", "text": "Export the flattened CSV for spreadsheets, BI tools, QA fixtures, or one-off data migrations."},
+    ],
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
         {"name": "Upload your video", "text": "Drag-and-drop MP4, MOV, WebM, MKV, AVI, or M4V — up to 200 MB."},
@@ -1400,6 +1440,46 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will it handle existing camelCase or snake_case input correctly?", "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."},
         {"q": "Does it run in my browser?", "a": "Yes — 100%. Your text never leaves the page. Useful for renaming variables, generating CSS class names, or normalizing identifiers without exposing them to a server."},
     ],
+    "cron-parser": [
+        {"q": "Does it support Quartz cron with seconds?", "a": "No. This tool intentionally supports standard 5-field cron because that is what Linux crontab, many schedulers, and most deployment platforms use."},
+        {"q": "Which timezone is used for next runs?", "a": "Your browser's local timezone. The expression itself is not uploaded or evaluated on the server."},
+        {"q": "Can it validate ranges and steps?", "a": "Yes. It catches invalid ranges, bad steps, out-of-bounds values, and expressions with the wrong number of fields."},
+    ],
+    "sql-formatter": [
+        {"q": "Is this a full SQL parser?", "a": "No. It is a lightweight formatter for readable query cleanup. It does not execute, optimize, or validate SQL against a database schema."},
+        {"q": "Will my query be uploaded?", "a": "No. Formatting happens in browser JavaScript, which is useful for production query snippets and private table names."},
+        {"q": "Which SQL dialects work?", "a": "Common SELECT, JOIN, WHERE, GROUP BY, ORDER BY, INSERT, UPDATE, and DELETE syntax formats well across Postgres, MySQL, SQLite, and similar dialects."},
+    ],
+    "graphql-formatter": [
+        {"q": "Does it need my GraphQL schema?", "a": "No. The formatter only structures the query text and does not introspect or validate against a schema."},
+        {"q": "Can it format mutations and fragments?", "a": "Yes. Queries, mutations, fragments, arguments, arrays, and nested selection sets are handled."},
+        {"q": "Is it private?", "a": "Yes. The GraphQL text is formatted locally in your browser."},
+    ],
+    "yaml-toml-converter": [
+        {"q": "Are YAML anchors and custom tags supported?", "a": "No. The converter is designed for common app config: nested maps, strings, numbers, booleans, and simple arrays."},
+        {"q": "Will comments be preserved?", "a": "No. Comments are omitted during conversion because TOML and YAML comments do not map cleanly through a simple object representation."},
+        {"q": "Does it upload config files?", "a": "No. Conversion runs locally in your browser."},
+    ],
+    "gitignore-generator": [
+        {"q": "Does it call the toptal/gitignore API?", "a": "No. The templates are bundled in the app so the generator works offline and does not leak your selected stack."},
+        {"q": "Can I combine multiple templates?", "a": "Yes. Select any combination and the generated .gitignore groups each template under a comment header."},
+        {"q": "Can I download the file directly?", "a": "Yes. You can copy the text or download a .gitignore file from the browser."},
+    ],
+    "semver-bumper": [
+        {"q": "Does it handle prerelease versions?", "a": "Yes. Versions like 1.2.3-beta.1 are accepted, and the prerelease bump increments the trailing number when present."},
+        {"q": "Does it edit package.json?", "a": "No. It only calculates version strings so you can copy the value into your release workflow."},
+        {"q": "What rules does it follow?", "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch."},
+    ],
+    "env-validator": [
+        {"q": "Does this replace secret scanning?", "a": "No. It is a fast syntax and hygiene check. Use dedicated secret scanning before committing any real credentials."},
+        {"q": "Will it reveal my secrets to PrivaTools?", "a": "No. The .env text stays in browser memory and is never sent to the backend."},
+        {"q": "What checks are included?", "a": "Missing equals signs, invalid variable names, duplicate keys, empty values, unquoted spaces, and short-looking secret values."},
+    ],
+    "json-to-csv-schema": [
+        {"q": "How are nested objects handled?", "a": "Nested keys are flattened with dot notation, such as user.email or billing.address.city."},
+        {"q": "What schema is inferred?", "a": "The tool infers simple column types: empty, boolean, number, date, or string, plus value coverage per column."},
+        {"q": "Does large JSON get uploaded?", "a": "No. Parsing, schema inference, and CSV generation all run in your browser."},
+    ],
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
         {"q": "Is the video quality preserved?", "a": "100% — we stream-copy the video track without re-encoding. The output is bit-identical to the input minus the audio stream."},
@@ -1924,3 +2004,68 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is my text saved?", "a": "No — everything runs in your browser and persists only in this session."},
     ],
 }
+
+
+# Phase 2 conversion aliases share the same proven converter backends as the
+# existing image/audio/video format tools, so generate consistent HowTo + FAQ
+# coverage instead of hand-writing near-identical blocks 26 times.
+_P2_FORMAT_ALIAS_CONTENT: tuple[tuple[str, str, str, str, str], ...] = (
+    ("jpg-to-tiff", "JPG to TIFF", "a JPG or JPEG image", "a TIFF image", "image"),
+    ("png-to-tiff", "PNG to TIFF", "a PNG image", "a TIFF image", "image"),
+    ("webp-to-tiff", "WebP to TIFF", "a WebP image", "a TIFF image", "image"),
+    ("jpg-to-bmp", "JPG to BMP", "a JPG or JPEG image", "a BMP image", "image"),
+    ("png-to-bmp", "PNG to BMP", "a PNG image", "a BMP image", "image"),
+    ("webp-to-bmp", "WebP to BMP", "a WebP image", "a BMP image", "image"),
+    ("mp3-to-wav", "MP3 to WAV", "an MP3 audio file", "a WAV audio file", "audio"),
+    ("wav-to-mp3", "WAV to MP3", "a WAV audio file", "an MP3 audio file", "audio"),
+    ("flac-to-mp3", "FLAC to MP3", "a FLAC audio file", "an MP3 audio file", "audio"),
+    ("ogg-to-mp3", "OGG to MP3", "an OGG audio file", "an MP3 audio file", "audio"),
+    ("aac-to-mp3", "AAC to MP3", "an AAC audio file", "an MP3 audio file", "audio"),
+    ("mp3-to-ogg", "MP3 to OGG", "an MP3 audio file", "an OGG audio file", "audio"),
+    ("mp3-to-flac", "MP3 to FLAC", "an MP3 audio file", "a FLAC audio file", "audio"),
+    ("mp3-to-aac", "MP3 to AAC", "an MP3 audio file", "an AAC audio file", "audio"),
+    ("wav-to-flac", "WAV to FLAC", "a WAV audio file", "a FLAC audio file", "audio"),
+    ("wav-to-ogg", "WAV to OGG", "a WAV audio file", "an OGG audio file", "audio"),
+    ("mkv-to-mp4", "MKV to MP4", "an MKV video file", "an MP4 video file", "video"),
+    ("mp4-to-mov", "MP4 to MOV", "an MP4 video file", "a MOV video file", "video"),
+    ("mov-to-webm", "MOV to WebM", "a MOV video file", "a WebM video file", "video"),
+    ("mkv-to-webm", "MKV to WebM", "an MKV video file", "a WebM video file", "video"),
+    ("mp4-to-avi", "MP4 to AVI", "an MP4 video file", "an AVI video file", "video"),
+    ("avi-to-webm", "AVI to WebM", "an AVI video file", "a WebM video file", "video"),
+    ("webm-to-mov", "WebM to MOV", "a WebM video file", "a MOV video file", "video"),
+    ("mov-to-mkv", "MOV to MKV", "a MOV video file", "an MKV video file", "video"),
+    ("webm-to-gif", "WebM to GIF", "a WebM video file", "an animated GIF", "gif"),
+    ("mov-to-gif", "MOV to GIF", "a MOV video file", "an animated GIF", "gif"),
+)
+
+
+for _slug, _name, _input_label, _output_label, _kind in _P2_FORMAT_ALIAS_CONTENT:
+    TOOL_HOWTO.setdefault(_slug, [
+        {"name": f"Upload {_input_label}", "text": f"Drop or select {_input_label}. Files are processed by the same local PrivaTools converter used by the main {_kind} tools."},
+        {"name": f"Convert to {_output_label}", "text": f"Click Convert. PrivaTools preselects the right output format for {_name}, so there are no extra settings to configure."},
+        {"name": f"Download {_output_label}", "text": "The converted file downloads automatically. Temporary input and output files are removed immediately after the response is delivered."},
+    ])
+    if _kind == "image":
+        TOOL_FAQ.setdefault(_slug, [
+            {"q": "Does this upload to a third-party image service?", "a": "No. The conversion runs on the self-hosted PrivaTools backend with Pillow/libvips-style local processing. Files are not sent to an external conversion API."},
+            {"q": "Will image metadata be kept?", "a": "Image conversion strips sensitive metadata by default for privacy, including GPS and camera metadata where present."},
+            {"q": "Can I use this for legacy software?", "a": "Yes. TIFF and BMP outputs are included specifically for archive, print, scanner, and older Windows workflows that reject modern formats."},
+        ])
+    elif _kind == "audio":
+        TOOL_FAQ.setdefault(_slug, [
+            {"q": "Does conversion improve the original audio quality?", "a": "No conversion can restore detail that was already lost. Use it for compatibility, smaller files, or a required container/codec."},
+            {"q": "What engine handles the audio conversion?", "a": "FFmpeg runs server-side with standard codecs for MP3, WAV, OGG, FLAC, and AAC."},
+            {"q": "Are audio files stored?", "a": "No. Input and output files are temporary and deleted after the download response is returned."},
+        ])
+    elif _kind == "gif":
+        TOOL_FAQ.setdefault(_slug, [
+            {"q": "Can I make a GIF from a long video?", "a": "Short clips work best. GIFs grow quickly because every frame is stored as an image; trim the source first for smaller output."},
+            {"q": "Does the GIF include audio?", "a": "No. GIF is an image animation format and cannot contain audio."},
+            {"q": "What engine creates the GIF?", "a": "FFmpeg extracts frames from the uploaded video and encodes them as an animated GIF on the PrivaTools backend."},
+        ])
+    else:
+        TOOL_FAQ.setdefault(_slug, [
+            {"q": "Will the converted video work everywhere?", "a": "MP4 is the most compatible output. MOV is best for Apple workflows, WebM for web embeds, AVI for legacy devices, and MKV for archival containers."},
+            {"q": "Does video conversion reduce quality?", "a": "PrivaTools uses sensible FFmpeg defaults. Some re-encoding is normal when changing containers/codecs, but the defaults target compatibility without obvious quality loss."},
+            {"q": "Are videos retained after conversion?", "a": "No. Uploaded videos and converted outputs are temporary and deleted after the response is sent."},
+        ])

@@ -92,6 +92,19 @@ NON_PDF_TOOLS = [
     # v1.4.0 additions — audio/video converter aliases
     "m4a-to-mp3", "mp4-to-mp3", "mov-to-mp4", "avi-to-mp4",
     "webm-to-mp4", "mp4-to-webm",
+    # Phase 2 conversion alias pack
+    "jpg-to-tiff", "png-to-tiff", "webp-to-tiff",
+    "jpg-to-bmp", "png-to-bmp", "webp-to-bmp",
+    "mp3-to-wav", "wav-to-mp3", "flac-to-mp3", "ogg-to-mp3",
+    "aac-to-mp3", "mp3-to-ogg", "mp3-to-flac", "mp3-to-aac",
+    "wav-to-flac", "wav-to-ogg",
+    "mkv-to-mp4", "mp4-to-mov", "mov-to-webm", "mkv-to-webm",
+    "mp4-to-avi", "avi-to-webm", "webm-to-mov", "mov-to-mkv",
+    "webm-to-gif", "mov-to-gif",
+    # P2 developer micro-tools
+    "cron-parser", "sql-formatter", "graphql-formatter",
+    "yaml-toml-converter", "gitignore-generator", "semver-bumper",
+    "env-validator", "json-to-csv-schema",
     # v1.4.0 additions — browser-only dev converters
     "yaml-to-json", "json-to-yaml", "case-converter",
     # v1.5.0 / phase 7 — competitor-gap tools
