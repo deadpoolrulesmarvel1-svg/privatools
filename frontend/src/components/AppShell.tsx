@@ -18,16 +18,16 @@
  * only. The route renders inside the workspace, scrolling independently
  * of the chrome.
  */
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Sun, Moon, Github, Search, Command, Menu, X, Lock, ChevronsLeft, ChevronsRight, Keyboard } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "./Sidebar";
-import { StatusBar } from "./StatusBar";
 import { MobileNav } from "./MobileNav";
 
 const SIDEBAR_STATE_KEY = "privatools_sidebar_collapsed";
+const Sidebar = lazy(() => import("./Sidebar").then(m => ({ default: m.Sidebar })));
+const StatusBar = lazy(() => import("./StatusBar").then(m => ({ default: m.StatusBar })));
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
@@ -202,7 +202,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             sidebarCollapsed ? "w-12" : "w-72"
           )}
         >
-          <Sidebar collapsed={sidebarCollapsed} />
+          <Suspense fallback={<div className="flex-1" />}>
+            <Sidebar collapsed={sidebarCollapsed} />
+          </Suspense>
           <div className="border-t border-border px-2 py-2 flex items-center justify-between">
             <span className={cn("inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85 px-2", sidebarCollapsed && "hidden")}>
               <Lock size={10} className="text-accent" /> Private
@@ -249,7 +251,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <X size={14} />
                 </button>
               </div>
-              <Sidebar collapsed={false} onNavigate={() => setMobileOpen(false)} />
+              <Suspense fallback={<div className="flex-1" />}>
+                <Sidebar collapsed={false} onNavigate={() => setMobileOpen(false)} />
+              </Suspense>
             </aside>
           </>
         )}
@@ -272,7 +276,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <MobileNav />
 
       {/* Status bar */}
-      <StatusBar />
+      <Suspense fallback={null}>
+        <StatusBar />
+      </Suspense>
     </div>
   );
 }
