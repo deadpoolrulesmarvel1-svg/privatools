@@ -17,6 +17,7 @@ from .rate_limit import limiter
 from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
+    BrotliMiddleware,
     RequestIDMiddleware,
     configure_logging,
     register_error_handlers,
@@ -441,6 +442,7 @@ from starlette.middleware.gzip import GZipMiddleware
 # Order is bottom-up: the LAST add_middleware call is the OUTERMOST
 # layer, so RequestIDMiddleware here runs first on every request and
 # can stamp `request.state.request_id` before anything else touches it.
+app.add_middleware(BrotliMiddleware, minimum_size=500)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)

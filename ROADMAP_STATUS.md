@@ -75,20 +75,20 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 435 passing and 40 skipped after merging current `main` and adding P2/P5/P6/P7 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 437 passing and 40 skipped after adding application-layer Brotli coverage plus P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
-  - [ ] Live Lighthouse must be rerun after deployment; current production `/healthz` still reports build `d7e5e9d86a20`, not the current PR branch.
+  - [ ] Live Lighthouse must be rerun after the Brotli follow-up deploy; production currently reports merged build `73c391a82ec`.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
-  - [ ] Code/config is present locally; live activation still requires deploy, VM nginx module install/reload, and Cloudflare account configuration.
-  - [ ] Live verification on 2026-06-18: `curl -H 'Accept-Encoding: br' -sI https://privatools.me/` returned `vary: Accept-Encoding` but no `content-encoding: br`; response headers still show the pre-PR Google/Bunny CSP.
+  - [ ] Application-layer Brotli middleware is implemented and locally verified; live activation still requires deploying the follow-up Brotli commit and configuring Cloudflare.
+  - [ ] Live verification on 2026-06-18 after PR merge: production runs build `73c391a82ec`, nonce CSP is live with no Google/Bunny origins, but `curl -H 'Accept-Encoding: br' -sI https://privatools.me/` still returns no `content-encoding: br` before the Brotli follow-up deploy.
 - [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
   - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, per-tool upload privacy badges, self-hosted fonts/font CSP, HSTS/COOP/COEP/CORP headers, build-time SRI, first-party GA4 proxy, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
-  - [ ] Live verification on 2026-06-18: `/healthz` returned `build_sha=d7e5e9d86a2051c16a64805f673d931e98e073d0`; production has not deployed this PR branch yet.
+  - [x] Live verification on 2026-06-18: `/healthz` returned `build_sha=73c391a82ec610b7f63cc1272f47498407ee17b7`; `/.well-known/security.txt` and `/api/transparency/janitor` are reachable; live CSP is nonce-based with no Google/Bunny origins after reloading the updated Oracle nginx config.
 - [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.
