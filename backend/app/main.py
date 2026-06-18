@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import re
+import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
@@ -51,6 +53,9 @@ from .routes import (
     new_tools,
     v12_tools,
     phase7_tools,
+    transparency,
+    developer,
+    analytics,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -147,14 +152,52 @@ def _env_positive_int(name: str, default: int) -> int:
 # ---------------------------------------------------------------------------
 # Security headers middleware
 # ---------------------------------------------------------------------------
+_SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
+_WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+
+
+def _inject_csp_nonce(html: str, nonce: str | None) -> str:
+    if not nonce:
+        return html
+    return _SCRIPT_TAG_RE.sub(f'<script nonce="{nonce}"', html)
+
+
+def _content_security_policy(path: str, nonce: str) -> str:
+    script_src = [
+        "'self'",
+        f"'nonce-{nonce}'",
+    ]
+    if path in _WASM_EVAL_PATHS:
+        script_src.append("'wasm-unsafe-eval'")
+
+    return (
+        "default-src 'self'; "
+        f"script-src {' '.join(script_src)}; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self'; "
+        "img-src 'self' data: blob:; "
+        # connect-src allows HF transformers to fetch the local-AI models
+        # (Summarize PDF, Smart Redact). Models are downloaded once and cached
+        # in the browser; the request never carries user file content.
+        "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net; "
+        "worker-src 'self' blob:; "
+        "frame-ancestors 'none';"
+    )
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         # Force Cache-Control: no-store on dynamic /api/ responses so tool
         # outputs (per-user, per-request) are never retained by a shared
         # CDN, transparent proxy, or browser back/forward cache. Skip
@@ -168,19 +211,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Expires"] = "0"
         if request.url.scheme == "https" or os.environ.get("FORCE_HSTS"):
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://www.googletagmanager.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; "
-            "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; "
-            "img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com; "
-            # connect-src allows HF transformers to fetch the local-AI models
-            # (Summarize PDF, Smart Redact). Models are downloaded once and cached
-            # in the browser; the request never carries user file content.
-            # Also allows GA4 collect endpoint (page-view telemetry only).
-            "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net https://www.google-analytics.com https://*.analytics.google.com https://www.google.com; "
-            "worker-src 'self' blob:; "
-            "frame-ancestors 'none';"
+        response.headers["Content-Security-Policy"] = _content_security_policy(
+            request.url.path, nonce
         )
         return response
 
@@ -188,8 +220,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # SPA SEO middleware — inject per-route meta tags into index.html responses
 # ---------------------------------------------------------------------------
 _SKIP_SEO_PREFIXES = (
-    "/api/", "/sitemap", "/robots", "/manifest", "/sw.js",
+    "/api/", "/api-docs", "/sitemap", "/robots", "/manifest", "/sw.js",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
+    "/.well-known/",
     # Health / readiness probes must return JSON, never the SPA shell.
     "/healthz", "/readyz",
     # Search-engine site verification files — must serve their actual content
@@ -262,6 +295,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
             try:
                 from .seo_meta import path_is_known
                 html = _get_seo_html(path, _index_mtime_ns(), blog_content_mtime_ns())
+                html = _inject_csp_nonce(html, getattr(request.state, "csp_nonce", None))
                 # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
                 # return HTTP 404 with a proper "Page not found" SSR body
                 # rendered by inject_seo — without this, the 404 page inherits
@@ -343,7 +377,7 @@ app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url=None if _is_prod else "/docs",
+    docs_url="/api-docs",
     redoc_url=None if _is_prod else "/redoc",
 )
 
@@ -507,6 +541,9 @@ app.include_router(booklet.router, prefix="/api")
 app.include_router(new_tools.router, prefix="/api")
 app.include_router(phase7_tools.router, prefix="/api")
 app.include_router(v12_tools.router, prefix="/api")
+app.include_router(transparency.router, prefix="/api")
+app.include_router(developer.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)
@@ -616,6 +653,14 @@ if _frontend_path.exists():
         # Ensure the resolved path is within the frontend directory
         if not str(file_path).startswith(str(_frontend_path.resolve())):
             return JSONResponse({"detail": "Not found"}, status_code=404)
+        if file_path.is_file() and file_path.suffix.lower() == ".html":
+            html = _inject_csp_nonce(
+                file_path.read_text("utf-8"),
+                getattr(request.state, "csp_nonce", None),
+            )
+            resp = HTMLResponse(content=html)
+            resp.headers["Cache-Control"] = "no-cache"
+            return resp
         if file_path.is_file():
             resp = FileResponse(file_path)
             # Immutable cache for hashed assets (e.g. /assets/index-TSOEbfYo.js)
@@ -631,7 +676,11 @@ if _frontend_path.exists():
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"
         if index.is_file():
-            resp = FileResponse(index)
+            html = _inject_csp_nonce(
+                index.read_text("utf-8"),
+                getattr(request.state, "csp_nonce", None),
+            )
+            resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp
         return JSONResponse({"detail": "Not found"}, status_code=404)

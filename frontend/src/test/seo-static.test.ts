@@ -161,11 +161,16 @@ describe("static SEO files", () => {
         ];
 
         for (const config of deployConfigs) {
-            expect(config).toContain("'unsafe-eval'");
+            expect(config).not.toContain("'unsafe-eval'");
+            expect(config).toContain("'wasm-unsafe-eval'");
             expect(config).toContain("https://huggingface.co");
             expect(config).toContain("https://cdn.jsdelivr.net");
             expect(config).toContain("worker-src 'self' blob:");
-            expect(config).toContain("https://fonts.bunny.net");
+            expect(config).not.toContain("https://fonts.bunny.net");
+            expect(config).not.toContain("https://fonts.googleapis.com");
+            expect(config).not.toContain("https://fonts.gstatic.com");
+            expect(config).not.toContain("https://www.googletagmanager.com");
+            expect(config).not.toContain("https://www.google-analytics.com");
         }
     });
 

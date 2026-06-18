@@ -165,7 +165,7 @@ export function MultiFileUI({
                         {files.map((f, i) => (
                             <div key={f.id} className="group flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-secondary/30 transition-colors">
                                 {ordered && (
-                                    <span className="text-muted-foreground/85 hidden sm:inline-flex items-center justify-center h-7 w-7 rounded">
+                                    <span className="text-muted-foreground/85 hidden sm:inline-flex items-center justify-center h-7 w-7 coarse:h-11 coarse:w-11 rounded">
                                         <GripVertical size={14} />
                                     </span>
                                 )}
@@ -186,7 +186,7 @@ export function MultiFileUI({
                                             onClick={() => move(i, -1)}
                                             disabled={i === 0}
                                             aria-label="Move up"
-                                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                            className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                         >
                                             <ChevronUp size={13} />
                                         </button>
@@ -195,7 +195,7 @@ export function MultiFileUI({
                                             onClick={() => move(i, 1)}
                                             disabled={i === files.length - 1}
                                             aria-label="Move down"
-                                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                            className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                         >
                                             <ChevronDown size={13} />
                                         </button>
@@ -205,7 +205,7 @@ export function MultiFileUI({
                                     type="button"
                                     onClick={() => remove(f.id)}
                                     aria-label="Remove file"
-                                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                 >
                                     <X size={13} />
                                 </button>

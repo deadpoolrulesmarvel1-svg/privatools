@@ -17,6 +17,8 @@ import logging
 import os
 import shutil
 import time
+from collections import deque
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -29,6 +31,9 @@ TEMP_DIR = Path(os.environ.get("TEMP_DIR", "temp"))
 # Default max-age for janitor sweeps (10 minutes). Override via env so
 # we can tighten in tests or loosen on a slow worker.
 DEFAULT_MAX_AGE_SECONDS = int(os.environ.get("TEMP_MAX_AGE_SECONDS", "600"))
+
+_JANITOR_EVENTS: deque[tuple[float, int]] = deque(maxlen=2000)
+_LAST_SWEEP_AT: float | None = None
 
 
 def ensure_temp_dir() -> None:
@@ -43,6 +48,52 @@ def _file_age(item: Path, now: float) -> float | None:
         return None
 
 
+def _count_files(root: Path) -> int:
+    try:
+        if root.is_file() or root.is_symlink():
+            return 1
+        return sum(1 for item in root.rglob("*") if item.is_file() or item.is_symlink())
+    except OSError:
+        return 0
+
+
+def _iso_utc(ts: float | None) -> str | None:
+    if ts is None:
+        return None
+    return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _record_janitor_sweep(files_removed: int, at: float) -> None:
+    global _LAST_SWEEP_AT
+    _LAST_SWEEP_AT = at
+    if files_removed > 0:
+        _JANITOR_EVENTS.append((at, files_removed))
+
+
+def _prune_janitor_events(now: float) -> None:
+    cutoff = now - 24 * 60 * 60
+    while _JANITOR_EVENTS and _JANITOR_EVENTS[0][0] < cutoff:
+        _JANITOR_EVENTS.popleft()
+
+
+def janitor_stats(now: float | None = None) -> dict[str, int | str | None]:
+    """Return aggregate janitor counters for public transparency reporting."""
+    current = time.time() if now is None else now
+    _prune_janitor_events(current)
+    hour_cutoff = current - 60 * 60
+    return {
+        "last_sweep_at": _iso_utc(_LAST_SWEEP_AT),
+        "files_swept_last_hour": sum(count for ts, count in _JANITOR_EVENTS if ts >= hour_cutoff),
+        "files_swept_last_24h": sum(count for _ts, count in _JANITOR_EVENTS),
+    }
+
+
+def _reset_janitor_stats_for_tests() -> None:
+    global _LAST_SWEEP_AT
+    _LAST_SWEEP_AT = None
+    _JANITOR_EVENTS.clear()
+
+
 def cleanup_old_files(max_age_seconds: int | None = None) -> tuple[int, int]:
     """Remove files (and empty subdirs) in TEMP_DIR older than the threshold.
 
@@ -51,11 +102,12 @@ def cleanup_old_files(max_age_seconds: int | None = None) -> tuple[int, int]:
     logged at DEBUG — we don't want a single sticky inode to abort the
     sweep.
     """
+    now = time.time()
     if not TEMP_DIR.exists():
+        _record_janitor_sweep(0, now)
         return (0, 0)
 
     threshold = DEFAULT_MAX_AGE_SECONDS if max_age_seconds is None else max_age_seconds
-    now = time.time()
     files_removed = 0
     dirs_removed = 0
 
@@ -70,6 +122,7 @@ def cleanup_old_files(max_age_seconds: int | None = None) -> tuple[int, int]:
             elif item.is_dir():
                 # mkdtemp() directories from archive-extract / video tools
                 # — wipe the whole subtree.
+                files_removed += _count_files(item)
                 shutil.rmtree(item, ignore_errors=True)
                 dirs_removed += 1
         except OSError as exc:
@@ -82,6 +135,7 @@ def cleanup_old_files(max_age_seconds: int | None = None) -> tuple[int, int]:
             dirs_removed,
             threshold,
         )
+    _record_janitor_sweep(files_removed, now)
     return (files_removed, dirs_removed)
 
 

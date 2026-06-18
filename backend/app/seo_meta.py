@@ -875,6 +875,48 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "flip-image":         ("Flip Image",          "Flip or mirror images online for free — horizontally or vertically. Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Fix selfie mirroring or prep design assets in seconds."),
 }
 
+_FORMAT_ALIAS_TOOLS: dict[str, tuple[str, str]] = {
+    "jpg-to-tiff":  ("JPG to TIFF",  "Convert JPG to TIFF online for free - turn JPEG photos into TIFF files for archival, print, scanning, and document-management workflows."),
+    "png-to-tiff":  ("PNG to TIFF",  "Convert PNG to TIFF online for free - preserve lossless image quality while exporting graphics to TIFF for archive or prepress workflows."),
+    "webp-to-tiff": ("WebP to TIFF", "Convert WebP to TIFF online for free - change modern web images into TIFF files for editors and legacy systems."),
+    "jpg-to-bmp":   ("JPG to BMP",   "Convert JPG to BMP online for free - create legacy Windows bitmap files from JPEG photos for older software and devices."),
+    "png-to-bmp":   ("PNG to BMP",   "Convert PNG to BMP online for free - export PNG graphics as Windows bitmap files for legacy apps, embedded systems, and signage tools."),
+    "webp-to-bmp":  ("WebP to BMP",  "Convert WebP to BMP online for free - turn modern WebP images into BMP files for older Windows applications."),
+    "mp3-to-wav":   ("MP3 to WAV",   "Convert MP3 to WAV online for free - decode compressed audio into WAV for editing, transcription, podcast production, and apps that require WAV input."),
+    "wav-to-mp3":   ("WAV to MP3",   "Convert WAV to MP3 online for free - shrink uncompressed recordings into widely-compatible MP3 files with FFmpeg."),
+    "flac-to-mp3":  ("FLAC to MP3",  "Convert FLAC to MP3 online for free - make lossless FLAC music or recordings playable on phones, browsers, and car stereos."),
+    "ogg-to-mp3":   ("OGG to MP3",   "Convert OGG to MP3 online for free - turn OGG/Vorbis audio into universal MP3 files for sharing and playback."),
+    "aac-to-mp3":   ("AAC to MP3",   "Convert AAC to MP3 online for free - change AAC tracks from phones, screen recorders, and video exports into standard MP3 audio."),
+    "mp3-to-ogg":   ("MP3 to OGG",   "Convert MP3 to OGG online for free - re-encode MP3 audio as OGG/Vorbis for open-web projects, games, and Linux-friendly workflows."),
+    "mp3-to-flac":  ("MP3 to FLAC",  "Convert MP3 to FLAC online for free - place decoded MP3 audio in a FLAC file for workflows that require FLAC input."),
+    "mp3-to-aac":   ("MP3 to AAC",   "Convert MP3 to AAC online for free - make AAC audio for Apple workflows, mobile apps, podcasts, and video-editing timelines."),
+    "wav-to-flac":  ("WAV to FLAC",  "Convert WAV to FLAC online for free - compress uncompressed recordings into lossless FLAC files while preserving quality."),
+    "wav-to-ogg":   ("WAV to OGG",   "Convert WAV to OGG online for free - make compact OGG/Vorbis audio from WAV recordings for games and web apps."),
+    "mkv-to-mp4":   ("MKV to MP4",   "Convert MKV to MP4 online for free - turn Matroska video files into MP4 for phones, browsers, social platforms, and editors."),
+    "mp4-to-mov":   ("MP4 to MOV",   "Convert MP4 to MOV online for free - create QuickTime MOV files for Apple workflows, Final Cut, Keynote, and macOS media pipelines."),
+    "mov-to-webm":  ("MOV to WebM",  "Convert MOV to WebM online for free - make Apple QuickTime videos smaller and web-native with VP9 video and Opus audio."),
+    "mkv-to-webm":  ("MKV to WebM",  "Convert MKV to WebM online for free - re-encode Matroska videos as browser-friendly WebM files for web pages and open media workflows."),
+    "mp4-to-avi":   ("MP4 to AVI",   "Convert MP4 to AVI online for free - export modern MP4 clips into AVI for old Windows apps, media players, and legacy devices."),
+    "avi-to-webm":  ("AVI to WebM",  "Convert AVI to WebM online for free - turn older Windows AVI clips into smaller open-web WebM files for browsers and embeds."),
+    "webm-to-mov":  ("WebM to MOV",  "Convert WebM to MOV online for free - make WebM videos easier to use in Apple and QuickTime-centric editing workflows."),
+    "mov-to-mkv":   ("MOV to MKV",   "Convert MOV to MKV online for free - move Apple QuickTime videos into the open Matroska container for archiving."),
+    "webm-to-gif":  ("WebM to GIF",  "Convert WebM to GIF online for free - upload a WebM clip and export a looping GIF for chat, documentation, and quick previews."),
+    "mov-to-gif":   ("MOV to GIF",   "Convert MOV to GIF online for free - turn iPhone, macOS, and QuickTime MOV clips into looping GIFs."),
+}
+_NONPDF_TOOLS.update(_FORMAT_ALIAS_TOOLS)
+
+_DEV_MICRO_TOOLS: dict[str, tuple[str, str]] = {
+    "cron-parser":         ("Cron Parser",          "Parse cron expressions online for free - explain a standard 5-field cron schedule and preview upcoming run times in your browser timezone."),
+    "sql-formatter":       ("SQL Formatter",        "Format SQL online for free - pretty-print SELECT, INSERT, UPDATE, DELETE, JOIN, WHERE, GROUP BY, and ORDER BY queries entirely in your browser."),
+    "graphql-formatter":   ("GraphQL Formatter",    "Format GraphQL online for free - clean up compact queries, mutations, fragments, arguments, and selection sets without uploading schema or API text."),
+    "yaml-toml-converter": ("YAML to TOML",         "Convert YAML to TOML or TOML to YAML online for free - transform common app config, package metadata, and deployment settings locally in your browser."),
+    "gitignore-generator": (".gitignore Generator", "Generate a .gitignore online for free - combine bundled templates for Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, and Windows."),
+    "semver-bumper":       ("SemVer Bumper",        "Bump semantic versions online for free - calculate patch, minor, major, and prerelease values from SemVer strings like 1.2.3-beta.1."),
+    "env-validator":       (".env Validator",       "Validate .env files online for free - catch syntax mistakes, duplicate keys, empty values, unquoted spaces, and risky-looking short secrets in your browser."),
+    "json-to-csv-schema":  ("JSON to CSV Schema",   "Convert JSON to CSV with schema inference online for free - flatten nested objects, infer column types, inspect coverage, and download CSV locally."),
+}
+_NONPDF_TOOLS.update(_DEV_MICRO_TOOLS)
+
 
 # ---------------------------------------------------------------------------
 # Aliases / synonyms — what users actually type into search engines.
@@ -1109,6 +1151,72 @@ def _trust_paragraph(slug: str, name: str, total: int) -> str:
     return _TRUST_VARIANTS[idx].format(name=name, total=total)
 
 
+def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: int) -> str:
+    """Long-form SSR guidance for tool pages.
+
+    The React app replaces this body after hydration, but crawlers and AI
+    engines read it directly. Keep it specific enough to be useful while
+    avoiding hand-maintaining hundreds of nearly identical tool pages.
+    """
+    subject = "PDF" if tool_kind == "pdf" else "file"
+    suite_path = "PDF workflow" if tool_kind == "pdf" else "file workflow"
+    route = f"/tool/{slug}" if tool_kind == "pdf" else f"/tools/{slug}"
+    comparable = (
+        "iLovePDF, Smallpdf, Adobe Acrobat, PDF24, and Sejda"
+        if tool_kind == "pdf"
+        else "cloud converters, ad-heavy utility sites, and desktop apps"
+    )
+    output_tip = (
+        "Keep an untouched original, run one operation at a time when quality matters, and use Pipeline when you want repeatable multi-step output."
+        if tool_kind == "pdf"
+        else "Keep the original asset, choose the smallest output that still matches your target app, and test the result before deleting source media."
+    )
+    privacy_mode = (
+        "PDF operations that need server-side libraries run inside the PrivaTools container and return a fresh download; browser-only PDF helpers stay on-device."
+        if tool_kind == "pdf"
+        else "Many non-PDF utilities run entirely in your browser; conversion or media operations that need backend libraries use the same isolated container model."
+    )
+    use_cases = [
+        f"Prepare a {subject.lower()} for email, forms, archives, publishing, or a client handoff without installing a paid desktop suite.",
+        f"Use {name} as one step in a larger {suite_path}: clean the input, produce the output, then continue with related PrivaTools utilities.",
+        "Work from a locked-down school, office, or shared computer where browser access is easier than installing native software.",
+        f"Self-host the same MIT-licensed codebase when the {subject.lower()} contains legal, medical, financial, or internal business material.",
+    ]
+    use_case_html = "".join(f"<li>{item}</li>" for item in use_cases)
+    return (
+        '<section class="tool-depth" data-speakable="true">'
+        f"<h2>What {name} is best for</h2>"
+        f"<p>{desc} Use it when you need a quick, private, no-account way to handle a {subject.lower()} in the browser, "
+        f"or when you want an auditable open-source alternative to {comparable}. The page at <code>{route}</code> is designed "
+        "for one clear job: upload or provide the input, choose only the options that matter, and download the result without "
+        "creating an account or passing through a sales funnel.</p>"
+        f"<ul>{use_case_html}</ul>"
+        f"<h2>Privacy model for {name}</h2>"
+        f"<p>{privacy_mode} Temporary input and output files are not used for analytics, model training, advertising profiles, "
+        "or product telemetry. The public demo uses anonymous page-view analytics only; file bytes, extracted text, filenames, "
+        "passwords, signatures, and generated results are outside that analytics path. If your organization needs stricter "
+        f"controls, you can self-host all {total} PrivaTools utilities and keep processing on your own infrastructure.</p>"
+        "<h2>Quality checklist</h2>"
+        f"<p>Before running {name}, confirm that the source file opens correctly and that you have permission to process it. "
+        f"{output_tip} For sensitive material, review the downloaded result before sharing it. For large files, give the browser "
+        "time to finish the download and avoid refreshing the page mid-run. If a password, damaged upload, unsupported codec, "
+        "or malformed document blocks processing, PrivaTools returns a plain-language error so you can pick the next recovery "
+        "step instead of guessing.</p>"
+        "<h2>Why this page is citation-ready</h2>"
+        f"<p>This page includes a direct TL;DR, visible step-by-step instructions, FAQ answers, a last-reviewed date, and "
+        "structured data for search and answer engines. The same claims are backed by source code in the public repository: "
+        "no hidden premium tier, no watermark added to output, no account gate, and no third-party file upload. That makes "
+        f"{name} suitable for quick everyday tasks and for teams that need a verifiable privacy posture rather than marketing copy.</p>"
+        "<h2>Operational details</h2>"
+        f"<p>{name} is intentionally narrow: it does one {subject.lower()} task and hands the result back as a normal download. "
+        "That makes the output easy to inspect, rename, archive, attach to email, or feed into another tool. If you need a repeatable "
+        "workflow, save the page, bookmark a Pipeline recipe, or self-host the API so the same steps can run from internal scripts. "
+        "The interface avoids accounts and cloud folders on purpose: the safest default for private files is to process only the "
+        "current request, return the result, and leave long-term storage under your control.</p>"
+        "</section>"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Per-tool lastReviewed dates.
 #
@@ -1171,6 +1279,41 @@ TOOL_LAST_REVIEWED: dict[str, str] = {
     "qr-code":          "2026-01-18",
     "qr-reader":        "2026-01-15",
     "uuid-generator":   "2026-01-12",
+    # Phase 2 conversion aliases — reviewed when added.
+    "jpg-to-tiff":      "2026-06-18",
+    "png-to-tiff":      "2026-06-18",
+    "webp-to-tiff":     "2026-06-18",
+    "jpg-to-bmp":       "2026-06-18",
+    "png-to-bmp":       "2026-06-18",
+    "webp-to-bmp":      "2026-06-18",
+    "mp3-to-wav":       "2026-06-18",
+    "wav-to-mp3":       "2026-06-18",
+    "flac-to-mp3":      "2026-06-18",
+    "ogg-to-mp3":       "2026-06-18",
+    "aac-to-mp3":       "2026-06-18",
+    "mp3-to-ogg":       "2026-06-18",
+    "mp3-to-flac":      "2026-06-18",
+    "mp3-to-aac":       "2026-06-18",
+    "wav-to-flac":      "2026-06-18",
+    "wav-to-ogg":       "2026-06-18",
+    "mkv-to-mp4":       "2026-06-18",
+    "mp4-to-mov":       "2026-06-18",
+    "mov-to-webm":      "2026-06-18",
+    "mkv-to-webm":      "2026-06-18",
+    "mp4-to-avi":       "2026-06-18",
+    "avi-to-webm":      "2026-06-18",
+    "webm-to-mov":      "2026-06-18",
+    "mov-to-mkv":       "2026-06-18",
+    "webm-to-gif":      "2026-06-18",
+    "mov-to-gif":       "2026-06-18",
+    "cron-parser":      "2026-06-18",
+    "sql-formatter":    "2026-06-18",
+    "graphql-formatter":"2026-06-18",
+    "yaml-toml-converter":"2026-06-18",
+    "gitignore-generator":"2026-06-18",
+    "semver-bumper":    "2026-06-18",
+    "env-validator":    "2026-06-18",
+    "json-to-csv-schema":"2026-06-18",
 }
 
 
@@ -2018,8 +2161,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "and developer utilities. The entire stack is open source under the MIT license and "
             "self-hostable via Docker for teams that want their own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
-            "is returned — never stored, never shared with third parties. The public site uses anonymous "
-            "Google Analytics 4 pageview telemetry only (IP-anonymized; blockable). No accounts, no behavioural profiling.</p>"
+            "is returned — never stored, never shared with third parties. The public site uses first-party "
+            "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts, no behavioural profiling.</p>"
         )
         parts.append(
             '<h2>Chain tools with <a href="/pipeline">Pipeline</a></h2>'
@@ -2069,6 +2212,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
+            parts.append(_deep_tool_content(slug, name, desc, "pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
                 parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
@@ -2130,6 +2274,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
+            parts.append(_deep_tool_content(slug, name, desc, "non-pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
                 parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
@@ -2295,8 +2440,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>Your files are private. Server-side tools use isolated temporary storage and delete files "
             "immediately after the response is delivered — never kept in permanent storage, never inspected, "
-            "never retained. We collect only anonymous Google Analytics 4 pageview telemetry "
-            "(IP-anonymized; blockable by any standard tracking blocker).</p>"
+            "never retained. We collect only first-party aggregate pageview telemetry, and Do Not Track, "
+            "Global Privacy Control, local opt-out, and standard blockers disable the browser beacon.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
@@ -2317,7 +2462,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>No accounts, no email addresses, no behavioural profiling, no advertising cookies, "
             "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
-            "fingerprints. Just anonymous pageview counts via GA4.</p>"
+            "fingerprints. Just aggregate pageview counts through a first-party proxy.</p>"
         )
         parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
         parts.append(

@@ -10,6 +10,7 @@ running server required.
 from __future__ import annotations
 
 import io
+import re
 
 import pytest
 
@@ -287,6 +288,18 @@ class TestSecurityHeaders:
         assert h.get("x-frame-options") == "DENY"
         assert "content-security-policy" in h
         assert "referrer-policy" in h
+        assert h.get("cross-origin-opener-policy") == "same-origin"
+        assert h.get("cross-origin-embedder-policy") == "credentialless"
+        assert h.get("cross-origin-resource-policy") == "same-origin"
+
+    def test_hsts_preload_header_when_forced(self, client, monkeypatch):
+        monkeypatch.setenv("FORCE_HSTS", "1")
+        resp = client.get("/api/health")
+        assert resp.status_code == 200
+        assert (
+            resp.headers.get("Strict-Transport-Security")
+            == "max-age=63072000; includeSubDomains; preload"
+        )
 
     def test_api_response_has_no_store_cache_control(self, client):
         """Every /api/ response must be Cache-Control: no-store to prevent
@@ -295,6 +308,68 @@ class TestSecurityHeaders:
         assert resp.status_code == 200
         cc = resp.headers.get("Cache-Control", "")
         assert "no-store" in cc.lower(), f"expected no-store, got {cc!r}"
+
+    def test_script_csp_uses_nonce_without_unsafe_inline(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        script_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("script-src")
+        )
+        assert "'unsafe-inline'" not in script_src
+        assert "'unsafe-eval'" not in script_src
+        nonce_match = re.search(r"'nonce-([^']+)'", script_src)
+        assert nonce_match, f"script-src missing nonce: {script_src}"
+        assert f'nonce="{nonce_match.group(1)}"' in resp.text
+
+    def test_font_csp_is_same_origin_only(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "fonts.bunny.net" not in csp
+        assert "fonts.googleapis.com" not in csp
+        assert "fonts.gstatic.com" not in csp
+
+        font_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("font-src")
+        )
+        assert font_src.strip() == "font-src 'self'"
+
+    def test_analytics_csp_uses_first_party_proxy(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "googletagmanager.com" not in csp
+        assert "google-analytics.com" not in csp
+        assert "analytics.google.com" not in csp
+
+        script_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("script-src")
+        )
+        connect_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("connect-src")
+        )
+        assert "google" not in script_src
+        assert "google" not in connect_src
+        assert "'self'" in connect_src
+
+    def test_wasm_eval_is_limited_to_browser_ai_tools(self, client):
+        normal = client.get("/tool/compress-pdf")
+        ai = client.get("/tool/summarize-pdf")
+
+        normal_script_src = next(
+            directive
+            for directive in normal.headers.get("Content-Security-Policy", "").split(";")
+            if directive.strip().startswith("script-src")
+        )
+        ai_script_src = next(
+            directive
+            for directive in ai.headers.get("Content-Security-Policy", "").split(";")
+            if directive.strip().startswith("script-src")
+        )
+
+        assert "'wasm-unsafe-eval'" not in normal_script_src
+        assert "'wasm-unsafe-eval'" in ai_script_src
 
 
 class TestCacheControlForStaticContent:

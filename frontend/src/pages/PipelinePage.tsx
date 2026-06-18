@@ -25,7 +25,7 @@ import {
     Plus, X, Play, Download, Loader2, CheckCircle, AlertCircle,
     FileText, Layers, ArrowRight, Search, Trash2,
     ChevronLeft, ChevronRight, Sparkles, RotateCw, GripVertical,
-    BookmarkPlus, Bookmark, Square, RefreshCw, ArrowDown,
+    BookmarkPlus, Bookmark, Square, RefreshCw, ArrowDown, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
@@ -105,6 +105,39 @@ interface SavedPipeline {
 const STORAGE_DRAFT_KEY = "privatools_pipeline_draft";
 const STORAGE_SAVED_KEY = "privatools_pipeline_saved";
 
+function encodePipelineSlugs(slugs: string[]): string {
+    const json = JSON.stringify({ version: 1, steps: slugs });
+    return window.btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodePipelineSlugs(raw: string): string[] {
+    try {
+        const base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+        const parsed = JSON.parse(window.atob(padded));
+        const steps = Array.isArray(parsed) ? parsed : parsed?.steps;
+        if (!Array.isArray(steps)) return [];
+        return steps.filter((s): s is string => typeof s === "string");
+    } catch {
+        return [];
+    }
+}
+
+function loadSharedSlugs(): string[] {
+    try {
+        const raw = new URLSearchParams(window.location.search).get("p");
+        return raw ? decodePipelineSlugs(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function shareUrlForSlugs(slugs: string[]): string {
+    const url = new URL("/pipeline", window.location.origin);
+    url.searchParams.set("p", encodePipelineSlugs(slugs));
+    return url.toString();
+}
+
 function loadDraftSlugs(): string[] {
     try {
         const raw = localStorage.getItem(STORAGE_DRAFT_KEY);
@@ -130,7 +163,8 @@ function loadSavedPipelines(): SavedPipeline[] {
 export default function PipelinePage() {
     // Hydrate draft from localStorage on first mount.
     const [steps, setSteps] = useState<PipelineStep[]>(() => {
-        const slugs = loadDraftSlugs();
+        const sharedSlugs = loadSharedSlugs();
+        const slugs = sharedSlugs.length > 0 ? sharedSlugs : loadDraftSlugs();
         return slugs
             .map(s => pipelineTools.find(t => t.slug === s))
             .filter((t): t is (typeof pipelineTools)[0] => Boolean(t))
@@ -148,6 +182,7 @@ export default function PipelinePage() {
     const [paletteSearch, setPaletteSearch] = useState("");
     const [paletteOpen, setPaletteOpen] = useState(false);  // mobile only
     const [savedPipelines, setSavedPipelines] = useState<SavedPipeline[]>(loadSavedPipelines);
+    const [shareCopied, setShareCopied] = useState(false);
     const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
     const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
     // Name dialog (replaces window.prompt) — open with a suggested name
@@ -180,6 +215,7 @@ export default function PipelinePage() {
                 localStorage.setItem(STORAGE_DRAFT_KEY, JSON.stringify(steps.map(s => s.tool.slug)));
             }
         } catch { /* localStorage may be full or disabled */ }
+        setShareCopied(false);
     }, [steps]);
 
     useEffect(() => {
@@ -285,6 +321,17 @@ export default function PipelinePage() {
                 });
             },
         });
+    };
+
+    const shareCurrentPipeline = async () => {
+        if (steps.length === 0) return;
+        const url = shareUrlForSlugs(steps.map(s => s.tool.slug));
+        try {
+            await navigator.clipboard.writeText(url);
+            setShareCopied(true);
+        } catch {
+            setError(`Share URL: ${url}`);
+        }
     };
 
     const deleteSavedPipeline = (name: string) => {
@@ -443,6 +490,15 @@ export default function PipelinePage() {
                                 title="Save this pipeline for later"
                             >
                                 <BookmarkPlus size={12} /> Save
+                            </button>
+                        )}
+                        {steps.length > 0 && !processing && (
+                            <button
+                                onClick={shareCurrentPipeline}
+                                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                                title="Copy shareable pipeline URL"
+                            >
+                                <Share2 size={12} /> {shareCopied ? "Copied" : "Share"}
                             </button>
                         )}
                         <button

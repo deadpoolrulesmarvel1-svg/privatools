@@ -15,6 +15,8 @@ BACKEND_HELPER_POST_ENDPOINTS = {
     "/fill-form/fields",
     "/metadata/update",
     "/organize-pages/thumbnails",
+    "/pipeline",
+    "/pipeline/validate",
 }
 
 # Make `backend.app.main` importable for the live-app checks below.

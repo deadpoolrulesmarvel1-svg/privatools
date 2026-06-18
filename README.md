@@ -4,11 +4,14 @@
 
 **Every file task, done privately.**
 
-179 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
+213 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
 Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Security](https://github.com/deadpoolrulesmarvel1-svg/privatools/actions/workflows/security.yml/badge.svg)](https://github.com/deadpoolrulesmarvel1-svg/privatools/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/deadpoolrulesmarvel1-svg/privatools/badge)](https://securityscorecards.dev/viewer/?uri=github.com/deadpoolrulesmarvel1-svg/privatools)
+[![SBOM](https://img.shields.io/badge/SBOM-Trivy%20CycloneDX-0f766e?style=for-the-badge)](https://github.com/deadpoolrulesmarvel1-svg/privatools/actions/workflows/security.yml)
 [![Stars](https://img.shields.io/github/stars/deadpoolrulesmarvel1-svg/privatools?style=for-the-badge&logo=github)](https://github.com/deadpoolrulesmarvel1-svg/privatools/stargazers)
 
 </div>
@@ -22,7 +25,7 @@ Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 | **Truly free** | 100%, no quota | Limited free / paid tier |
 | **No account** | Just open and use | Email / sign-up required |
 | **Privacy** | Files processed in an isolated container, deleted on response; many tools never leave your browser | Uploaded to vendor cloud |
-| **Tool count** | **179** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
+| **Tool count** | **213** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
 | **Pipeline** | Chain Merge → Compress → Watermark → Sign in one click | Not offered free |
 | **Self-hostable** | `docker compose up --build` | No |
 | **Open source** | MIT — fork, modify, deploy | Proprietary |
@@ -76,7 +79,7 @@ sudo apt install tesseract-ocr ffmpeg qpdf libreoffice
 
 ---
 
-## 🛠️ All Tools (179)
+## 🛠️ All Tools (213)
 
 ### 📄 PDF Tools (101)
 
@@ -156,7 +159,23 @@ Extract Archive · Create ZIP
 
 ### Pipeline
 
-Chain tools sequentially: queue `Merge → Compress → Watermark → Sign` and download one final PDF. No competitor offers this in the free tier. Available at `/pipeline`.
+Chain tools sequentially and download one final PDF. Drafts auto-save locally,
+named pipelines can be saved, and share links use `/pipeline?p=<base64url>`
+payloads so recipes are portable without an account. Available at `/pipeline`.
+
+The public pipeline API starts with the safe automation subset
+`compress-pdf` and `strip-metadata`:
+
+- API docs: `/api-docs`
+- Templates: `GET /api/pipeline/templates`
+- Validate/share: `POST /api/pipeline/validate`
+- Run a PDF pipeline: `POST /api/pipeline` with `file` and JSON `steps`
+- Optional auth: set `PRIVATOOLS_API_KEYS` and send `X-API-Key`
+
+Developer clients live under `packages/`:
+
+- CLI: `npx --no-install privatools --help`
+- Browser extension: load `packages/extension` unpacked in a Manifest V3 browser
 
 ### Batch
 
@@ -168,7 +187,7 @@ Apply one tool to many files at once. Drop 50 PDFs into Batch Compress, get a ZI
 
 | Shortcut | Action |
 |---|---|
-| `⌘K` / `Ctrl+K` | Open Command Palette (multi-token fuzzy search, 145+ synonyms) |
+| `⌘K` / `Ctrl+K` | Open Command Palette (multi-token fuzzy search, 145+ synonyms, lazy-loaded) |
 | `↑` `↓` | Navigate results |
 | `Enter` | Open selected tool |
 | `Escape` | Close palette |
@@ -199,17 +218,17 @@ privatools/
 ├── frontend/                 # React + Vite + TypeScript
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── tool-ui/         # 130+ per-tool components
+│   │   │   ├── tool-ui/         # 140+ per-tool components
 │   │   │   ├── CommandPalette.tsx  # ⌘K with multi-token fuzzy scoring
 │   │   │   ├── EditorialMasthead.tsx, EditorialFooter.tsx
 │   │   │   └── ...
-│   │   ├── data/             # tools.ts (101 PDF) + non-pdf-tools.ts (78) + blog.ts (15)
+│   │   ├── data/             # tools.ts (101 PDF) + non-pdf-tools.ts (112) + blog.ts (15)
 │   │   ├── hooks/            # useHistory, useTheme, useUxHelpers
 │   │   ├── pages/            # Index, ToolPage, NonPdfToolPage, Pipeline, Batch, Blog, Compare, About, ...
 │   │   └── lib/              # API client, output filename helpers, error mapping
 │   ├── public/
-│   │   ├── llms.txt          # Auto-generated AI crawler index (~30 KB)
-│   │   ├── llms-full.txt     # Verbose AI crawler corpus (~66 KB)
+│   │   ├── llms.txt          # Auto-generated AI crawler index (~33 KB)
+│   │   ├── llms-full.txt     # Verbose AI crawler corpus (~75 KB)
 │   │   ├── manifest.json     # PWA
 │   │   ├── opensearch.xml
 │   │   └── sw.js             # Service worker
@@ -228,7 +247,7 @@ PrivaTools ships with serious AI / answer-engine optimisation:
 - **SSR meta + JSON-LD** for every route via Python middleware (Organization, WebSite, SoftwareApplication, BreadcrumbList, HowTo, FAQPage, BlogPosting, Article+Review, AboutPage, CollectionPage, ItemList, SpeakableSpecification)
 - **`speakable` CSS-selector targets** on every TL;DR and FAQ so voice assistants and featured-snippet pickers get a clean read-aloud target
 - **`llms.txt` + `llms-full.txt`** — auto-generated index and full corpus for AI crawlers (ChatGPT, Claude, Perplexity, Gemini)
-- **HowTo + FAQ schema** on every one of the 179 tools
+- **HowTo + FAQ schema** on every one of the 213 tools
 - **Dynamic OG images** per route via `/api/og-image?p=<path>`
 - **robots.txt** explicitly allows 21 AI crawlers and blocks aggressive ones
 

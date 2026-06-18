@@ -114,7 +114,7 @@ export function CompareUI() {
                             <p className="text-[13px] font-medium text-foreground truncate">{file.name}</p>
                             <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
-                        <button onClick={() => set(null)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
+                        <button onClick={() => set(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                             <X size={13} />
                         </button>
                     </div>

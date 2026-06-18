@@ -24,7 +24,6 @@
  */
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertCircle, RotateCcw, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 type Scope = "app" | "tool";
 
@@ -69,6 +68,26 @@ function CornerMarks() {
         <span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" />
       </span>
     </>
+  );
+}
+
+function RecoveryButton({
+  children,
+  onClick,
+  variant = "default",
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  variant?: "default" | "outline";
+}) {
+  const className = variant === "default"
+    ? "inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    : "inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
+  return (
+    <button type="button" className={className} onClick={onClick}>
+      {children}
+    </button>
   );
 }
 
@@ -148,27 +167,22 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
             {scope === "tool" && this.props.onReset && (
-              <Button
-                variant="default"
-                onClick={this.handleReset}
-                className="gap-2"
-              >
+              <RecoveryButton onClick={this.handleReset}>
                 <RotateCcw size={14} strokeWidth={1.75} />
                 Try again
-              </Button>
+              </RecoveryButton>
             )}
-            <Button
+            <RecoveryButton
               variant={scope === "tool" && this.props.onReset ? "outline" : "default"}
               onClick={this.handleReload}
-              className="gap-2"
             >
               <RotateCcw size={14} strokeWidth={1.75} />
               Reload
-            </Button>
-            <Button variant="outline" onClick={this.handleGoHome} className="gap-2">
+            </RecoveryButton>
+            <RecoveryButton variant="outline" onClick={this.handleGoHome}>
               <Home size={14} strokeWidth={1.75} />
               Go home
-            </Button>
+            </RecoveryButton>
           </div>
 
           {isDev && (

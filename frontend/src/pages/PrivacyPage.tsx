@@ -14,8 +14,14 @@ import { Link } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ANALYTICS_OPT_OUT_KEY,
+  readAnalyticsPrivacyPreference,
+  setAnalyticsOptOut,
+  type AnalyticsPrivacyPreference,
+} from "@/lib/analyticsPrivacy";
 
-const LAST_UPDATED = "May 15, 2026";
+const LAST_UPDATED = "June 18, 2026";
 const GIT_HISTORY_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
@@ -61,6 +67,74 @@ function CornerMarks() {
       <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
       <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
     </>
+  );
+}
+
+function AnalyticsOptOutPanel() {
+  const [preference, setPreference] = useState<AnalyticsPrivacyPreference>(() => readAnalyticsPrivacyPreference());
+
+  useEffect(() => {
+    const refresh = () => setPreference(readAnalyticsPrivacyPreference());
+    window.addEventListener("storage", refresh);
+    return () => window.removeEventListener("storage", refresh);
+  }, []);
+
+  const toggleOptOut = () => {
+    setPreference(setAnalyticsOptOut(!preference.localOptOut));
+  };
+
+  return (
+    <aside className="not-prose my-5 rounded-xl border border-border bg-card overflow-hidden">
+      <div className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">
+              Analytics control
+            </span>
+            <span className="rounded-full border border-border bg-paper-2/60 px-2 py-0.5 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+              {preference.effectiveDisabled ? "Analytics paused" : "Anonymous analytics allowed"}
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+            {preference.browserPrivacySignal
+              ? "Your browser is sending Do Not Track or Global Privacy Control, so the analytics beacon will not run."
+              : preference.localOptOut
+                ? `This browser stores ${ANALYTICS_OPT_OUT_KEY}=1 and blocks the analytics beacon.`
+                : "Set a local browser opt-out to stop analytics on this device."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={preference.localOptOut}
+          onClick={toggleOptOut}
+          className={cn(
+            "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-2.5 transition-colors",
+            preference.localOptOut
+              ? "border-accent/45 bg-accent/[0.08] text-accent"
+              : "border-border bg-paper-2/60 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative h-5 w-9 rounded-full border transition-colors",
+              preference.localOptOut ? "border-accent/60 bg-accent/20" : "border-border bg-background"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-current transition-transform",
+                preference.localOptOut ? "translate-x-[18px]" : "translate-x-1"
+              )}
+            />
+          </span>
+          <span className="font-mono text-[10px] tracking-[0.08em] uppercase">
+            Local opt-out
+          </span>
+        </button>
+      </div>
+    </aside>
   );
 }
 
@@ -215,14 +289,14 @@ export default function PrivacyPage() {
               </h1>
 
               <p className="font-display text-[16px] sm:text-[17px] text-muted-foreground mt-5 leading-relaxed max-w-prose">
-                How PrivaTools handles your files, your network requests, and the small amount of anonymous data
-                Google Analytics receives. Written plainly, with no dark patterns.
+                How PrivaTools handles your files, your network requests, and the small amount of aggregate
+                pageview telemetry we collect. Written plainly, with no dark patterns.
               </p>
 
               <div className="mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
                 <span className="text-foreground">PrivaTools</span>
                 <span className="text-muted-foreground/40">·</span>
-                <span>Last updated <time dateTime="2026-05-15" className="text-accent">{LAST_UPDATED}</time></span>
+                <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
                 <span className="text-muted-foreground/40">·</span>
                 <a
                   href={GIT_HISTORY_URL}
@@ -251,10 +325,10 @@ export default function PrivacyPage() {
                     their contents.
                   </p>
                   <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
-                    <strong className="font-semibold">We do collect anonymous pageview telemetry</strong> via Google Analytics 4
-                    (with IP anonymization). No personal data, no behavioural profiling, no advertising — just aggregate
-                    counts. You can disable it with any standard tracking blocker. If you want zero telemetry,
-                    self-host the open-source build via Docker.
+                    <strong className="font-semibold">We do collect anonymous pageview telemetry</strong> through a
+                    first-party <code>/api/analytics/pageview</code> beacon. No Google Analytics scripts run in your
+                    browser; our server forwards aggregate path/title/referrer data to GA4 only when its server-side
+                    secret is configured. Do Not Track, Global Privacy Control, and the local toggle below disable it.
                   </p>
                 </div>
               </aside>
@@ -320,15 +394,15 @@ export default function PrivacyPage() {
                   </p>
                   <ul className="font-display text-[15.5px] text-foreground leading-relaxed space-y-1.5 list-disc pl-6">
                     <li>Names, email addresses, or account credentials (no accounts exist)</li>
-                    <li>Personally identifiable information (your IP address is anonymized before it reaches Google)</li>
+                    <li>Personally identifiable information from analytics beacons</li>
                     <li>Browser fingerprints or canvas-based device identifiers</li>
                     <li>Behavioural profiles, session recordings, or remarketing audiences</li>
                     <li>Advertising cookies or tracking pixels from ad networks</li>
                     <li>File metadata, filenames, or content from uploaded files</li>
                   </ul>
                   <p className="font-display text-[15.5px] text-muted-foreground leading-relaxed mt-3">
-                    We <em>do</em> collect aggregate pageview counts via Google Analytics 4 — see Section 5 for
-                    details and how to opt out.
+                    We <em>do</em> collect aggregate pageview counts through a first-party analytics proxy — see
+                    Section 5 for details and how to opt out.
                   </p>
                 </div>
               </aside>
@@ -344,15 +418,24 @@ export default function PrivacyPage() {
                 retained for up to 7 days for operational debugging, but these logs never contain file
                 data or personally identifiable information.
               </p>
+              <p>
+                Static assets may be served through Cloudflare's free edge CDN so the app shell loads
+                quickly from a nearby location. File-processing API routes are marked <code>no-store</code>,
+                are configured to bypass edge caching, and continue to run only on the PrivaTools
+                processing server.
+              </p>
 
               <h2 id="third-party">5. Third-Party Services</h2>
               <p>
-                PrivaTools uses the following third-party services:
+                PrivaTools uses the following third-party services. Typography is self-hosted
+                from <code>/fonts</code> on <code>privatools.me</code>; no Google Fonts or
+                Bunny Fonts requests are made.
               </p>
               <ul>
-                <li><strong>Google Analytics (GA4):</strong> We use Google Analytics to understand how visitors use the site — which tools are popular, how people find us, and general usage patterns. Google Analytics collects anonymized page view data, browser type, and approximate location (country-level). It does not have access to your uploaded files. You can opt out using a <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">browser extension</a>.</li>
-                <li><strong>Google Fonts:</strong> Typography is loaded via Bunny Fonts (a privacy-respecting Google Fonts mirror) so font requests do not reach Google's servers.</li>
+                <li><strong>Google Analytics (GA4):</strong> We use a first-party <code>/api/analytics/pageview</code> proxy to understand which pages and tools are useful. Your browser does not load Google Analytics or Google Tag Manager scripts. When the server-side GA4 secret is configured, our backend forwards only the sanitized page path, title, same-origin referrer, and an anonymous client ID; it never forwards uploaded files or file metadata. Do Not Track, Global Privacy Control, this page's opt-out toggle, and standard blockers disable the browser beacon.</li>
+                <li><strong>Cloudflare:</strong> We use Cloudflare as an edge CDN for static files and TLS acceleration. Cloudflare may see standard connection metadata such as IP address, user agent, and requested URL. File uploads and tool outputs are not cached at the edge, and API responses carry no-store cache headers.</li>
               </ul>
+              <AnalyticsOptOutPanel />
               <p>
                 No advertising networks, remarketing scripts, or user profiling tools are used.
               </p>
@@ -399,10 +482,20 @@ export default function PrivacyPage() {
               <p className="section-mark mb-5">§ Related</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
-                  to="/terms"
+                  to="/security"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
                   <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§01</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Security</p>
+                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Vulnerability reporting, threat model, and subprocessors.</p>
+                  </div>
+                </Link>
+                <Link
+                  to="/terms"
+                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
+                >
+                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§02</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Terms of Service</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">The legal terms for using PrivaTools.</p>
@@ -412,7 +505,7 @@ export default function PrivacyPage() {
                   href="mailto:hello@privatools.me"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§02</span>
+                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§03</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
                       <Mail size={12} /> Email us

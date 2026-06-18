@@ -243,7 +243,7 @@ export function MergeUI() {
                                 )}
                             >
                                 {/* Drag handle */}
-                                <span className="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground/80 hover:text-foreground hover:bg-secondary/60 cursor-grab active:cursor-grabbing shrink-0">
+                                <span className="hidden sm:inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground/80 hover:text-foreground hover:bg-secondary/60 cursor-grab active:cursor-grabbing shrink-0">
                                     <GripVertical size={13} />
                                 </span>
                                 {/* Sequence number */}
@@ -285,7 +285,7 @@ export function MergeUI() {
                                         type="button"
                                         onClick={() => moveFile(i, i - 1)}
                                         disabled={i === 0}
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                         aria-label="Move file up"
                                     >
                                         <ChevronUp size={13} />
@@ -294,7 +294,7 @@ export function MergeUI() {
                                         type="button"
                                         onClick={() => moveFile(i, i + 1)}
                                         disabled={i === files.length - 1}
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                         aria-label="Move file down"
                                     >
                                         <ChevronDown size={13} />
@@ -302,7 +302,7 @@ export function MergeUI() {
                                 </div>
                                 <button
                                     onClick={() => setFiles(p => p.filter(x => x.id !== f.id))}
-                                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                     aria-label="Remove file"
                                 >
                                     <X size={13} />

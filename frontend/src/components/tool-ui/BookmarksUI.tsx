@@ -143,7 +143,7 @@ export function BookmarksUI() {
                             <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
                             <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
-                        <button onClick={() => setFile(null)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
+                        <button onClick={() => setFile(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                             <X size={13} />
                         </button>
                     </div>
@@ -187,7 +187,7 @@ export function BookmarksUI() {
                                         </div>
                                         <button
                                             onClick={() => removeMark(i)}
-                                            className="h-8 w-8 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                            className="h-8 w-8 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                                             aria-label="Remove"
                                         >
                                             <Trash2 size={13} />

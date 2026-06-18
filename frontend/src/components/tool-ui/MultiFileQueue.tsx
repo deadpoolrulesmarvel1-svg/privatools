@@ -188,7 +188,7 @@ export function MultiFileQueue({
                                         onClick={() => onReorder(i, i - 1)}
                                         disabled={i === 0}
                                         aria-label="Move up"
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                     >
                                         <ChevronUp size={13} />
                                     </button>
@@ -197,7 +197,7 @@ export function MultiFileQueue({
                                         onClick={() => onReorder(i, i + 1)}
                                         disabled={i === entries.length - 1}
                                         aria-label="Move down"
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                                     >
                                         <ChevronDown size={13} />
                                     </button>
@@ -208,7 +208,7 @@ export function MultiFileQueue({
                                 onClick={() => onRemove(e.id)}
                                 disabled={busy}
                                 aria-label={`Remove ${e.name}`}
-                                className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 transition-colors"
+                                className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 transition-colors"
                             >
                                 <X size={13} />
                             </button>

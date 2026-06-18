@@ -1,8 +1,9 @@
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Category } from "@/data/tools";
 import { prefetchRoute, loadToolPage } from "@/lib/prefetch";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface ToolCardProps {
   slug: string;
@@ -24,6 +25,8 @@ const categoryConfig: Record<Category, { icon: string; bg: string; glow: string 
 
 export function ToolCard({ slug, icon: Icon, name, description, category }: ToolCardProps) {
   const cfg = categoryConfig[category];
+  const { toggle, isFavorite } = useFavorites();
+  const favorite = isFavorite(slug);
   // Warm the ToolPage shell on hover so click-to-render is near-instant.
   // Per-tool UI chunks (CompressUI, MergeUI, etc.) still load on demand
   // inside ToolPage — this only fetches the route shell once.
@@ -42,8 +45,29 @@ export function ToolCard({ slug, icon: Icon, name, description, category }: Tool
         cfg.glow
       )}
     >
-      <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", cfg.bg)}>
-        <Icon size={18} strokeWidth={1.75} className={cfg.icon} />
+      <div className="flex w-full items-start justify-between gap-2">
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", cfg.bg)}>
+          <Icon size={18} strokeWidth={1.75} className={cfg.icon} />
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle(slug);
+          }}
+          aria-label={favorite ? `Unpin ${name}` : `Pin ${name}`}
+          aria-pressed={favorite}
+          title={favorite ? "Pinned to sidebar" : "Pin to sidebar"}
+          className={cn(
+            "inline-flex h-8 w-8 coarse:h-11 coarse:w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            favorite
+              ? "border-accent/45 bg-accent/10 text-accent"
+              : "border-border bg-card text-muted-foreground/70 hover:border-accent/45 hover:text-accent",
+          )}
+        >
+          <Star size={14} strokeWidth={1.8} fill={favorite ? "currentColor" : "none"} />
+        </button>
       </div>
       <div>
         <p className="text-sm font-semibold text-foreground leading-snug">{name}</p>

@@ -5,18 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="dark light" />
-    <!-- Privacy-friendly font CDN (Bunny Fonts mirror; no IP logging, no cookies) -->
-    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
-    <link rel="dns-prefetch" href="https://fonts.bunny.net" />
-    <!-- Preload the two Fraunces weights actually painted above the fold
-         (400 regular + 700 bold). Skips FOIT — paint kicks off before
-         index.css parses the @import. crossorigin matches the woff2 fetch. -->
+    <!-- Preload the two self-hosted Fraunces weights painted above the fold. -->
     <link rel="preload" as="font" type="font/woff2"
-          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-400-normal.woff2"
-          crossorigin />
+          href="/fonts/fraunces-latin-400-normal.woff2" />
     <link rel="preload" as="font" type="font/woff2"
-          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-700-normal.woff2"
-          crossorigin />
+          href="/fonts/fraunces-latin-700-normal.woff2" />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts.">
     <meta name="author" content="PrivaTools" />
@@ -52,24 +45,86 @@
     <!-- Service worker registration lives in src/lib/sw-register.ts so it
          runs in production only and handles updates correctly (skipWaiting +
          controllerchange reload). Don't re-add an inline registration here. -->
-    <!-- Google Analytics (GA4) — deferred to after first paint to protect LCP/INP -->
+    <!-- First-party analytics proxy — no Google scripts in the browser. Disabled for DNT/GPC/local opt-out. -->
     <script>
       (function(){
-        function loadGA(){
-          var s = document.createElement('script');
-          s.async = true;
-          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-B3VWQ44MX1';
-          document.head.appendChild(s);
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          window.gtag = gtag;
-          gtag('js', new Date());
-          gtag('config', 'G-B3VWQ44MX1', { anonymize_ip: true });
+        var GA_ID = 'G-B3VWQ44MX1';
+        var OPT_OUT_KEY = 'pt-analytics-opt-out';
+        var CLIENT_ID_KEY = 'pt-analytics-client-id';
+        var sent = false;
+        function storageOptOut(){
+          try { return window.localStorage.getItem(OPT_OUT_KEY) === '1'; }
+          catch (e) { return false; }
         }
+        function browserPrivacySignal(){
+          var nav = window.navigator || {};
+          var dnt = nav.doNotTrack || nav.msDoNotTrack || window.doNotTrack;
+          return nav.globalPrivacyControl === true || dnt === '1' || dnt === 'yes';
+        }
+        function analyticsDisabled(){
+          return browserPrivacySignal() || storageOptOut();
+        }
+        function setDisableFlag(disabled){
+          window['ga-disable-' + GA_ID] = !!disabled;
+        }
+        function randomId(){
+          var bytes = new Uint32Array(2);
+          if (window.crypto && window.crypto.getRandomValues) {
+            window.crypto.getRandomValues(bytes);
+            return String(bytes[0]) + '.' + String(bytes[1]);
+          }
+          return String(Date.now()) + '.' + String(Math.floor(Math.random() * 1000000000));
+        }
+        function clientId(){
+          try {
+            var existing = window.localStorage.getItem(CLIENT_ID_KEY);
+            if (existing) return existing;
+            var next = randomId();
+            window.localStorage.setItem(CLIENT_ID_KEY, next);
+            return next;
+          } catch (e) {
+            return randomId();
+          }
+        }
+        function sendPageview(){
+          if (sent) return;
+          if (analyticsDisabled()) {
+            setDisableFlag(true);
+            return;
+          }
+          setDisableFlag(false);
+          sent = true;
+          var body = JSON.stringify({
+            path: window.location.pathname,
+            title: document.title,
+            referrer: document.referrer,
+            client_id: clientId()
+          });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/analytics/pageview', new Blob([body], { type: 'application/json' }));
+            return;
+          }
+          fetch('/api/analytics/pageview', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: body,
+            keepalive: true,
+            credentials: 'same-origin'
+          }).catch(function(){});
+        }
+        window.ptSetAnalyticsDisabled = function(disabled){
+          var effectiveDisabled = !!disabled || browserPrivacySignal() || storageOptOut();
+          setDisableFlag(effectiveDisabled);
+          if (!effectiveDisabled) sendPageview();
+        };
+        window.addEventListener('storage', function(event){
+          if (event.key === OPT_OUT_KEY) window.ptSetAnalyticsDisabled(storageOptOut());
+        });
+        setDisableFlag(analyticsDisabled());
         if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadGA, { timeout: 4000 });
+          requestIdleCallback(sendPageview, { timeout: 4000 });
         } else {
-          window.addEventListener('load', function(){ setTimeout(loadGA, 1500); });
+          window.addEventListener('load', function(){ setTimeout(sendPageview, 1500); });
         }
       })();
     </script>

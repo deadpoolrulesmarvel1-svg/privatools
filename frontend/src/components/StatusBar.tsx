@@ -7,7 +7,8 @@
  * Stays mounted at all times — same role as VS Code's status bar.
  */
 import { memo, useEffect, useState } from "react";
-import { Command, Lock, Github } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Command, Lock, Github, Shield } from "lucide-react";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
@@ -56,7 +57,7 @@ function StatusBarInner() {
     return (
         <footer
             role="contentinfo"
-            className="relative z-30 flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md flex items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
+            className="relative z-30 hidden lg:flex flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
         >
             <div className="flex items-center gap-3 min-w-0">
                 <span className="inline-flex items-center gap-1.5 shrink-0" title="Browser-only where possible; isolated backend processing when needed">
@@ -86,6 +87,14 @@ function StatusBarInner() {
                 >
                     <Github size={10} /> MIT · v.live
                 </a>
+                <span className="opacity-40">—</span>
+                <Link
+                    to="/security"
+                    className="inline-flex items-center gap-1.5 hover:text-foreground hover:underline underline-offset-2 decoration-accent/40 transition-colors"
+                    title="Security policy and vulnerability reporting"
+                >
+                    <Shield size={10} /> Security
+                </Link>
                 <span className="opacity-40">—</span>
                 <button
                     onClick={openCmdK}

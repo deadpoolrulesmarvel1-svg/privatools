@@ -12,14 +12,13 @@
  *      offline. /index.html is served for unknown routes (SPA fallback).
  *   4. /api/* — bypassed completely. User files and tool outputs are
  *      privacy-sensitive and must never be cached.
- *   5. Cross-origin (fonts.bunny.net, googletagmanager) — pass-through but
- *      cached opportunistically with stale-while-revalidate so the Fraunces
- *      woff2 files survive offline.
+ *   5. Cross-origin requests — pass-through. Self-hosted font files are cached
+ *      as same-origin static assets.
  *
  * Versioning: bumping CACHE_VERSION wipes old caches in `activate`.
  */
 
-const CACHE_VERSION = "v1.5.0";
+const CACHE_VERSION = "v1.5.1";
 const SHELL_CACHE   = `privatools-shell-${CACHE_VERSION}`;
 const ASSET_CACHE   = `privatools-assets-${CACHE_VERSION}`;
 const ROUTE_CACHE   = `privatools-routes-${CACHE_VERSION}`;
@@ -56,7 +55,7 @@ const isToolRoute = (url) =>
     url.origin === self.location.origin &&
     (url.pathname.startsWith("/tool/") || url.pathname.startsWith("/tools/"));
 const isFontRequest = (url) =>
-    url.hostname === "fonts.bunny.net" || /\.(?:woff2?|ttf|otf|eot)(?:\?|$)/i.test(url.pathname);
+    url.origin === self.location.origin && /\.(?:woff2?|ttf|otf|eot)(?:\?|$)/i.test(url.pathname);
 
 /** Stale-while-revalidate: return cache if present, fetch in the background, replace. */
 async function staleWhileRevalidate(request, cacheName) {
@@ -126,11 +125,13 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // Cross-origin: only handle fonts (Fraunces / Inter from bunny.net).
+    // Cross-origin analytics/model/CDN requests pass through.
     if (url.origin !== self.location.origin) {
-        if (isFontRequest(url)) {
-            event.respondWith(staleWhileRevalidate(request, FONT_CACHE));
-        }
+        return;
+    }
+
+    if (isFontRequest(url)) {
+        event.respondWith(staleWhileRevalidate(request, FONT_CACHE));
         return;
     }
 

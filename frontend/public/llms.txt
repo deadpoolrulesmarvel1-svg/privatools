@@ -1,12 +1,12 @@
 # PrivaTools
 
-> 179 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses anonymous Google Analytics 4 pageview telemetry only (IP-anonymized, blockable by any standard extension). No accounts. No watermarks. No premium tiers.
+> 213 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
 ## Key Facts
 
-- 179 tools: 101 PDF tools + 78 non-PDF tools (image, video/audio, developer, archive, utilities)
+- 213 tools: 101 PDF tools + 112 non-PDF tools (image, video/audio, developer, archive, utilities)
 - 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
 - Open source under the MIT license (https://opensource.org/licenses/MIT)
 - Self-hostable via Docker (`docker compose up --build`) — entire stack runs on your hardware
@@ -29,7 +29,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | 179 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Tool count | 213 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
@@ -191,6 +191,12 @@ Three architectural commitments that are auditable in the source:
 - [BMP to PNG](https://privatools.me/tools/bmp-to-png): Convert BMP bitmap to PNG — lossless, much smaller
 - [GIF to JPG](https://privatools.me/tools/gif-to-jpg): Convert GIF to JPG (uses the first frame)
 - [GIF to PNG](https://privatools.me/tools/gif-to-png): Convert GIF to PNG (preserves transparency)
+- [JPG to TIFF](https://privatools.me/tools/jpg-to-tiff): Convert JPG photos to TIFF for archive workflows
+- [PNG to TIFF](https://privatools.me/tools/png-to-tiff): Convert PNG images to TIFF
+- [WebP to TIFF](https://privatools.me/tools/webp-to-tiff): Convert WebP images to TIFF
+- [JPG to BMP](https://privatools.me/tools/jpg-to-bmp): Convert JPG photos to Windows bitmap BMP
+- [PNG to BMP](https://privatools.me/tools/png-to-bmp): Convert PNG images to BMP
+- [WebP to BMP](https://privatools.me/tools/webp-to-bmp): Convert WebP images to BMP
 - [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
 - [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor part of an image with mosaic or Gaussian blur
 - [Rotate Image](https://privatools.me/tools/rotate-image): Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
@@ -216,6 +222,26 @@ Three architectural commitments that are auditable in the source:
 - [AVI to MP4](https://privatools.me/tools/avi-to-mp4): Convert legacy AVI video to modern MP4
 - [WebM to MP4](https://privatools.me/tools/webm-to-mp4): Convert WebM (Google) video to MP4
 - [MP4 to WebM](https://privatools.me/tools/mp4-to-webm): Convert MP4 to WebM for web embedding
+- [MP3 to WAV](https://privatools.me/tools/mp3-to-wav): Convert MP3 audio to WAV
+- [WAV to MP3](https://privatools.me/tools/wav-to-mp3): Convert WAV audio to smaller MP3 files
+- [FLAC to MP3](https://privatools.me/tools/flac-to-mp3): Convert FLAC lossless audio to MP3
+- [OGG to MP3](https://privatools.me/tools/ogg-to-mp3): Convert OGG Vorbis audio to MP3
+- [AAC to MP3](https://privatools.me/tools/aac-to-mp3): Convert AAC audio to MP3
+- [MP3 to OGG](https://privatools.me/tools/mp3-to-ogg): Convert MP3 audio to OGG Vorbis
+- [MP3 to FLAC](https://privatools.me/tools/mp3-to-flac): Convert MP3 audio into a FLAC container
+- [MP3 to AAC](https://privatools.me/tools/mp3-to-aac): Convert MP3 audio to AAC
+- [WAV to FLAC](https://privatools.me/tools/wav-to-flac): Convert WAV audio to FLAC
+- [WAV to OGG](https://privatools.me/tools/wav-to-ogg): Convert WAV audio to OGG Vorbis
+- [MKV to MP4](https://privatools.me/tools/mkv-to-mp4): Convert MKV video to MP4
+- [MP4 to MOV](https://privatools.me/tools/mp4-to-mov): Convert MP4 video to Apple MOV
+- [MOV to WebM](https://privatools.me/tools/mov-to-webm): Convert MOV video to WebM
+- [MKV to WebM](https://privatools.me/tools/mkv-to-webm): Convert MKV video to WebM
+- [MP4 to AVI](https://privatools.me/tools/mp4-to-avi): Convert MP4 video to legacy AVI
+- [AVI to WebM](https://privatools.me/tools/avi-to-webm): Convert AVI video to WebM
+- [WebM to MOV](https://privatools.me/tools/webm-to-mov): Convert WebM video to Apple MOV
+- [MOV to MKV](https://privatools.me/tools/mov-to-mkv): Convert MOV video to MKV
+- [WebM to GIF](https://privatools.me/tools/webm-to-gif): Convert WebM video clips to animated GIFs
+- [MOV to GIF](https://privatools.me/tools/mov-to-gif): Convert MOV video clips to animated GIFs
 - [Mute Video](https://privatools.me/tools/mute-video): Strip the audio track from any video
 - [Reverse Video](https://privatools.me/tools/reverse-video): Play your video backwards (audio reversed too)
 - [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
@@ -240,6 +266,14 @@ Three architectural commitments that are auditable in the source:
 - [YAML to JSON](https://privatools.me/tools/yaml-to-json): Convert YAML to JSON entirely in your browser
 - [JSON to YAML](https://privatools.me/tools/json-to-yaml): Convert JSON to YAML in your browser
 - [Case Converter](https://privatools.me/tools/case-converter): Convert text between UPPER, lower, Title, camelCase, snake_case, kebab-case
+- [Cron Parser](https://privatools.me/tools/cron-parser): Explain cron expressions and preview upcoming runs
+- [SQL Formatter](https://privatools.me/tools/sql-formatter): Pretty-print SQL queries without uploading them
+- [GraphQL Formatter](https://privatools.me/tools/graphql-formatter): Format GraphQL queries, mutations, and fragments
+- [YAML to TOML](https://privatools.me/tools/yaml-toml-converter): Convert common config files between YAML and TOML
+- [.gitignore Generator](https://privatools.me/tools/gitignore-generator): Build a .gitignore from common stack templates
+- [SemVer Bumper](https://privatools.me/tools/semver-bumper): Calculate patch, minor, major, and prerelease bumps
+- [.env Validator](https://privatools.me/tools/env-validator): Lint .env files for syntax and risky values
+- [JSON to CSV Schema](https://privatools.me/tools/json-to-csv-schema): Infer JSON schema and export flattened CSV
 
 ### Archive Tools
 - [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
@@ -261,7 +295,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (179 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (213 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*
@@ -345,7 +379,7 @@ Two tools use AI without third-party AI APIs: (1) Summarize PDF uses distilbart-
 PrivaTools is an open-source project by deadpoolrulesmarvel1-svg. Source code, issue tracker, and contribution history are public on GitHub: https://github.com/deadpoolrulesmarvel1-svg/privatools. Contact: hello@privatools.me.
 
 ### What's the privacy policy?
-Plain language at https://privatools.me/privacy. Summary: anonymous GA4 pageviews only (IP-anonymized, blockable), no other trackers, no behavioural data, no cross-site identifiers, no profile building.
+Plain language at https://privatools.me/privacy. Summary: first-party aggregate pageviews only, no browser-loaded Google analytics scripts, no other trackers, no behavioural data, no cross-site identifiers, no profile building.
 
 ## Source Code & Verification
 

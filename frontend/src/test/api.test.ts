@@ -177,7 +177,7 @@ function stubSuccessfulXhr() {
 
 function restoreBlobUrlMethod<T extends "createObjectURL" | "revokeObjectURL">(
     method: T,
-    original: URL[T] | undefined,
+    original: (typeof URL)[T] | undefined,
 ) {
     if (original) {
         Object.defineProperty(URL, method, { configurable: true, value: original });

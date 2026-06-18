@@ -3,10 +3,10 @@ import { Home, Search, Layers, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: Search, label: "Search", path: "search" },
-    { icon: Layers, label: "Batch", path: "/batch" },
-    { icon: GitBranch, label: "Pipeline", path: "/pipeline" },
+    { icon: Home, label: "Home", path: "/", active: (pathname: string) => pathname === "/" },
+    { icon: Search, label: "Tools", path: "search", active: (pathname: string) => pathname.startsWith("/tool/") || pathname.startsWith("/tools/") },
+    { icon: Layers, label: "Batch", path: "/batch", active: (pathname: string) => pathname === "/batch" },
+    { icon: GitBranch, label: "Pipeline", path: "/pipeline", active: (pathname: string) => pathname === "/pipeline" },
 ];
 
 export function MobileNav() {
@@ -20,22 +20,38 @@ export function MobileNav() {
     };
 
     return (
-        <nav className="fixed bottom-0 inset-x-0 z-[90] sm:hidden bg-card/95 backdrop-blur-2xl border-t border-border/30 pb-[env(safe-area-inset-bottom)]">
+        <nav
+            aria-label="Mobile primary navigation"
+            className={cn(
+                "fixed bottom-0 inset-x-0 z-[90] lg:hidden bg-card/95 backdrop-blur-2xl border-t border-border/30 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(0,0,0,0.16)]",
+                "translate-y-0"
+            )}
+        >
             <div className="flex items-center justify-around h-16">
                 {navItems.map(item => {
                     const Icon = item.icon;
                     const isSearch = item.path === "search";
-                    const isActive = !isSearch && pathname === item.path;
+                    const isActive = item.active(pathname);
+                    const itemClass = cn(
+                        "relative flex min-h-11 min-w-16 flex-col items-center justify-center gap-0.5 rounded-md px-3 py-1 transition-colors",
+                        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    );
 
                     if (isSearch) {
                         return (
                             <button
+                                type="button"
                                 key={item.label}
                                 onClick={() => handleClick(item.path)}
-                                className="flex flex-col items-center gap-0.5 px-3 py-1"
+                                className={itemClass}
+                                aria-current={isActive ? "page" : undefined}
+                                aria-label="Search tools"
                             >
-                                <Icon size={20} strokeWidth={1.75} className="text-muted-foreground" />
-                                <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                                <Icon size={20} strokeWidth={isActive ? 2 : 1.75} />
+                                <span className={cn("text-[10px]", isActive && "font-semibold")}>{item.label}</span>
+                                {isActive && (
+                                    <span className="absolute top-1.5 right-3 h-1.5 w-1.5 rounded-full bg-primary" />
+                                )}
                             </button>
                         );
                     }
@@ -44,16 +60,16 @@ export function MobileNav() {
                         <Link
                             key={item.label}
                             to={item.path}
-                            className="flex flex-col items-center gap-0.5 px-3 py-1"
+                            className={itemClass}
+                            aria-current={isActive ? "page" : undefined}
                         >
                             <Icon
                                 size={20}
                                 strokeWidth={isActive ? 2 : 1.75}
-                                className={cn(isActive ? "text-primary" : "text-muted-foreground")}
                             />
-                            <span className={cn("text-[10px] relative", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>
+                            <span className={cn("text-[10px] relative", isActive && "font-semibold")}>
                                 {item.label}
-                                {item.label === "Pipeline" && (
+                                {item.label === "Pipeline" && !isActive && (
                                     <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-primary" />
                                 )}
                             </span>

@@ -1,9 +1,6 @@
-import { Suspense, lazy, useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import CommandPalette from "./components/CommandPalette";
 import { DynamicHead } from "./components/DynamicHead";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { BackendStatusBanner } from "./components/BackendStatusBanner";
@@ -19,6 +16,7 @@ import {
   loadCompressUI,
   loadMergeUI,
   loadSplitUI,
+  loadCommandPalette,
 } from "./lib/prefetch";
 
 // @tanstack/react-query is in package.json but no component in the app uses
@@ -42,6 +40,8 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const SecurityPage = lazy(() => import("./pages/SecurityPage"));
+const CommandPalette = lazy(loadCommandPalette);
 
 const RouteLoader = () => (
   <div className="min-h-[40vh] animate-pulse px-4 py-10 sm:px-6">
@@ -95,6 +95,29 @@ function RoutePrefetcher() {
   return null;
 }
 
+function CommandPaletteGate() {
+  const [shouldMount, setShouldMount] = useState(false);
+
+  useEffect(() => {
+    if (shouldMount) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShouldMount(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [shouldMount]);
+
+  if (!shouldMount) return null;
+  return (
+    <Suspense fallback={null}>
+      <CommandPalette defaultOpen />
+    </Suspense>
+  );
+}
+
 /** Wire global JS error handler into the root once. Lives inside the
  *  router so it can use hooks, but renders nothing. */
 function GlobalErrorWire() {
@@ -104,38 +127,36 @@ function GlobalErrorWire() {
 
 const App = () => (
   <ErrorBoundary scope="app">
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <GlobalErrorWire />
-        <DynamicHead />
-        <CommandPalette />
-        <ShortcutsHelp />
-        <OnboardingTour />
-        <FirstSuccessListener />
-        <RoutePrefetcher />
-        <AppShell>
-          <BackendStatusBanner />
-          <BatchResumeBanner />
-          <Routes>
-            <Route path="/" element={withRouteFallback(<Index />)} />
-            <Route path="/about" element={withRouteFallback(<AboutPage />)} />
-            <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
-            <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
-            <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
-            <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
-            <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
-            <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
-            <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
-            <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
-            <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
-            <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
-            <Route path="*" element={withRouteFallback(<NotFound />)} />
-          </Routes>
-        </AppShell>
-      </BrowserRouter>
-    </TooltipProvider>
+    <Sonner />
+    <BrowserRouter>
+      <GlobalErrorWire />
+      <DynamicHead />
+      <CommandPaletteGate />
+      <ShortcutsHelp />
+      <OnboardingTour />
+      <FirstSuccessListener />
+      <RoutePrefetcher />
+      <AppShell>
+        <BackendStatusBanner />
+        <BatchResumeBanner />
+        <Routes>
+          <Route path="/" element={withRouteFallback(<Index />)} />
+          <Route path="/about" element={withRouteFallback(<AboutPage />)} />
+          <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
+          <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
+          <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
+          <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
+          <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
+          <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
+          <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
+          <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
+          <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
+          <Route path="/security" element={withRouteFallback(<SecurityPage />)} />
+          <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
+          <Route path="*" element={withRouteFallback(<NotFound />)} />
+        </Routes>
+      </AppShell>
+    </BrowserRouter>
   </ErrorBoundary>
 );
 

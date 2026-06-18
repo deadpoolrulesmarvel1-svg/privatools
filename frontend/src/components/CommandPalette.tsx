@@ -342,8 +342,12 @@ function acceptsFile(accepts: string | undefined, file: File): boolean {
     });
 }
 
-export default function CommandPalette() {
-    const [open, setOpen] = useState(false);
+type CommandPaletteProps = {
+    defaultOpen?: boolean;
+};
+
+export default function CommandPalette({ defaultOpen = false }: CommandPaletteProps) {
+    const [open, setOpen] = useState(defaultOpen);
     const [query, setQuery] = useState("");
     const [pastedFile, setPastedFile] = useState<File | null>(null);
     const [selected, setSelected] = useState(0);

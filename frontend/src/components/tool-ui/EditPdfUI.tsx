@@ -244,10 +244,11 @@ export function EditPdfUI() {
         // Other tools use drag (mousedown handler below); a pure click does nothing.
     };
 
-    /* ─── Mousedown — start drag/draw/resize ─── */
-    const onOverlayMouseDown = (e: React.MouseEvent) => {
+    /* ─── Pointer gestures — start drag/draw/resize ─── */
+    const onOverlayPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (e.button !== 0) return;
         const target = e.target as HTMLElement;
+        e.currentTarget.setPointerCapture(e.pointerId);
 
         // Click on resize handle?
         if (target.dataset.resizeHandle) {
@@ -257,6 +258,7 @@ export function EditPdfUI() {
             if (!initial) return;
             gestureRef.current = { start: { x: e.clientX, y: e.clientY }, initial };
             setGesture({ kind: "resize", id, handle });
+            e.preventDefault();
             e.stopPropagation();
             return;
         }
@@ -269,6 +271,7 @@ export function EditPdfUI() {
             setSelectedId(id);
             gestureRef.current = { start: { x: e.clientX, y: e.clientY }, initial };
             setGesture({ kind: "move", id });
+            e.preventDefault();
             e.stopPropagation();
             return;
         }
@@ -305,45 +308,43 @@ export function EditPdfUI() {
         }
     };
 
-    /* ─── Mousemove — update transient state ───
-       Refs hold the live edit list + history callbacks so the listener
-       doesn't re-attach on every transient update (which would happen
-       60+ times/sec during a drag if `history` was in the deps array). */
+    /* ─── Pointermove — update transient state ───
+       Refs hold the live edit list + history callbacks so transient updates
+       collapse into one undo frame while pointer capture keeps touch drags
+       alive even if a finger leaves the overlay. */
     const editsRef = useRef(edits);
     editsRef.current = edits;
     const { set: historySet, setTransient: historySetTransient } = history;
 
-    useEffect(() => {
+    const onOverlayPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!gesture) return;
-        const onMove = (e: MouseEvent) => {
-            const start = gestureRef.current.start;
-            const initial = gestureRef.current.initial;
-            if (!initial) return;
-            const dxClient = e.clientX - start.x;
-            const dyClient = e.clientY - start.y;
-            const rect = overlayRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            // Convert client delta to PDF delta (PDF y-axis is inverted vs screen)
-            const dx = (dxClient / rect.width) * pageSize.w;
-            const dy = -(dyClient / rect.height) * pageSize.h;
+        const start = gestureRef.current.start;
+        const initial = gestureRef.current.initial;
+        if (!initial) return;
+        e.preventDefault();
+        const dxClient = e.clientX - start.x;
+        const dyClient = e.clientY - start.y;
+        const rect = overlayRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        // Convert client delta to PDF delta (PDF y-axis is inverted vs screen)
+        const dx = (dxClient / rect.width) * pageSize.w;
+        const dy = -(dyClient / rect.height) * pageSize.h;
 
-            const updated = updateForGesture(initial, gesture, dx, dy, pageSize, e.shiftKey);
-            const nextEdits = editsRef.current.map(x => x.id === initial.id ? updated : x);
-            historySetTransient(nextEdits);
-        };
-        const onUp = () => {
-            // Commit final position to history via .set (creates a new
-            // undo frame; the in-flight transient updates collapse into one)
-            historySet(editsRef.current);
-            setGesture(null);
-        };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-        return () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-        };
-    }, [gesture, pageSize, historySet, historySetTransient]);
+        const updated = updateForGesture(initial, gesture, dx, dy, pageSize, e.shiftKey);
+        const nextEdits = editsRef.current.map(x => x.id === initial.id ? updated : x);
+        historySetTransient(nextEdits);
+    };
+
+    const endOverlayPointerGesture = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        if (!gesture) return;
+        // Commit final position to history via .set (creates a new undo frame;
+        // the in-flight transient updates collapse into one)
+        historySet(editsRef.current);
+        setGesture(null);
+    };
 
     /* ─── Per-edit mutation helpers (each pushes to history) ─── */
     const updateEdit = (id: string, updates: Partial<Edit>) => {
@@ -608,10 +609,21 @@ export function EditPdfUI() {
                                 ref={overlayRef}
                                 data-edit-surface="1"
                                 className="absolute inset-0 rounded-sm select-none"
-                                style={{ cursor: cursorForTool(activeTool) }}
+                                style={{ cursor: cursorForTool(activeTool), touchAction: "none" }}
                                 onClick={onOverlayClick}
-                                onMouseDown={onOverlayMouseDown}
+                                onPointerDown={onOverlayPointerDown}
+                                onPointerMove={onOverlayPointerMove}
+                                onPointerUp={endOverlayPointerGesture}
+                                onPointerCancel={endOverlayPointerGesture}
                             >
+                                <style>{`
+                                    @media (pointer: coarse) {
+                                        .edit-pdf-resize-handle {
+                                            width: 24px !important;
+                                            height: 24px !important;
+                                        }
+                                    }
+                                `}</style>
                                 {pageEdits.map(edit => (
                                     <EditRenderer
                                         key={edit.id}
@@ -930,7 +942,7 @@ function ResizeGripsForBox({ editId }: { editId: string }) {
                 <div key={g.h}
                     data-resize-handle={g.h}
                     data-edit-id={editId}
-                    className="absolute w-2.5 h-2.5 rounded-sm bg-white border-2 border-blue-500"
+                    className="edit-pdf-resize-handle absolute w-2.5 h-2.5 rounded-sm bg-white border-2 border-blue-500"
                     style={{ ...g.style, transform: "translate(-50%, -50%)", zIndex: 30 }}
                 />
             ))}
@@ -943,7 +955,7 @@ function LineEndpointHandle({ editId, which, left, top }: { editId: string; whic
         <div
             data-resize-handle={which}
             data-edit-id={editId}
-            className="absolute w-3 h-3 rounded-full bg-white border-2 border-blue-500"
+            className="edit-pdf-resize-handle absolute w-3 h-3 rounded-full bg-white border-2 border-blue-500"
             style={{ left, top, transform: "translate(-50%, -50%)", zIndex: 30, cursor: "move" }}
         />
     );
@@ -953,7 +965,7 @@ function LineEndpointHandle({ editId, which, left, top }: { editId: string; whic
 function FloatingToolbar({ children, onDuplicate, onDelete }: { children: React.ReactNode; onDuplicate: () => void; onDelete: () => void; }) {
     return (
         <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white shadow-xl px-1.5 py-1 z-40 whitespace-nowrap"
-            onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
+            onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             {children}
             <Divider />
             <button onClick={onDuplicate} title="Duplicate (⌘D)" className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600"><Copy size={12} /></button>
@@ -1067,7 +1079,7 @@ function TextToolbar({ edit, onUpdate, onDuplicate, onDelete }: {
 }) {
     return (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white shadow-xl px-1.5 py-1 z-30 whitespace-nowrap"
-            onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
+            onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             <button onClick={() => {
                 const base = edit.font_family.replace("-Bold", "");
                 onUpdate("font_family", edit.font_family.includes("Bold") ? base : `${base}-Bold`);

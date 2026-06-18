@@ -1,0 +1,5 @@
+Contact: mailto:hello@privatools.me
+Expires: 2027-06-17T23:59:00Z
+Preferred-Languages: en
+Canonical: https://privatools.me/.well-known/security.txt
+Policy: https://privatools.me/security

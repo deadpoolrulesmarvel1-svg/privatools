@@ -1,0 +1,13 @@
+{
+  "name": "privatools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "privatools": "./packages/cli/bin/privatools.mjs"
+  },
+  "workspaces": [
+    "packages/cli"
+  ],
+  "license": "MIT"
+}
