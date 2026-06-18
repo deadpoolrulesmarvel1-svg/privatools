@@ -152,7 +152,23 @@ Extract Archive · Create ZIP
 
 ### Pipeline
 
-Chain tools sequentially: queue `Merge → Compress → Watermark → Sign` and download one final PDF. No competitor offers this in the free tier. Available at `/pipeline`.
+Chain tools sequentially and download one final PDF. Drafts auto-save locally,
+named pipelines can be saved, and share links use `/pipeline?p=<base64url>`
+payloads so recipes are portable without an account. Available at `/pipeline`.
+
+The public pipeline API starts with the safe automation subset
+`compress-pdf` and `strip-metadata`:
+
+- API docs: `/api-docs`
+- Templates: `GET /api/pipeline/templates`
+- Validate/share: `POST /api/pipeline/validate`
+- Run a PDF pipeline: `POST /api/pipeline` with `file` and JSON `steps`
+- Optional auth: set `PRIVATOOLS_API_KEYS` and send `X-API-Key`
+
+Developer clients live under `packages/`:
+
+- CLI: `npx --no-install privatools --help`
+- Browser extension: load `packages/extension` unpacked in a Manifest V3 browser
 
 ### Batch
 

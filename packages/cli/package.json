@@ -1,0 +1,17 @@
+{
+  "name": "privatools",
+  "version": "0.1.0",
+  "description": "CLI helpers for PrivaTools pipeline URLs and API checks.",
+  "type": "module",
+  "bin": {
+    "privatools": "./bin/privatools.mjs"
+  },
+  "files": [
+    "bin"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
+

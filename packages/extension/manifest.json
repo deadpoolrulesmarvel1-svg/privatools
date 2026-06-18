@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "PrivaTools Pipeline",
+  "version": "0.1.0",
+  "description": "Send PDFs and pages to the free, open-source PrivaTools pipeline.",
+  "permissions": ["contextMenus", "tabs"],
+  "host_permissions": ["https://privatools.me/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open PrivaTools Pipeline"
+  }
+}
+

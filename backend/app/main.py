@@ -54,6 +54,7 @@ from .routes import (
     v12_tools,
     phase7_tools,
     transparency,
+    developer,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -207,7 +208,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # SPA SEO middleware — inject per-route meta tags into index.html responses
 # ---------------------------------------------------------------------------
 _SKIP_SEO_PREFIXES = (
-    "/api/", "/sitemap", "/robots", "/manifest", "/sw.js",
+    "/api/", "/api-docs", "/sitemap", "/robots", "/manifest", "/sw.js",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
     "/.well-known/",
     # Health / readiness probes must return JSON, never the SPA shell.
@@ -366,7 +367,7 @@ app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url=None if _is_prod else "/docs",
+    docs_url="/api-docs",
     redoc_url=None if _is_prod else "/redoc",
 )
 
@@ -531,6 +532,7 @@ app.include_router(new_tools.router, prefix="/api")
 app.include_router(phase7_tools.router, prefix="/api")
 app.include_router(v12_tools.router, prefix="/api")
 app.include_router(transparency.router, prefix="/api")
+app.include_router(developer.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)

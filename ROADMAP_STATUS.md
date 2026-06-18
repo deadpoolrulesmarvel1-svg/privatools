@@ -30,7 +30,7 @@ Last updated: 2026-06-18
   - [x] Code-ready locally: unused Radix Toast stack removed, `@radix-ui/react-toast` removed, CommandPalette lazy-mounted, `tool-catalog` Vite chunk added, bundle-size check script added.
   - [ ] Live infra remains open: install `libnginx-mod-brotli` on the VM, reload nginx, configure Cloudflare, and verify `content-encoding: br` after deploy.
   - [x] Verified locally: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, and `npm run check:bundle`.
-  - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.6 KiB gzip.
+  - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.9 KiB gzip.
   - [x] First-paint critical JS path remains below DoD target after mobile work: generated HTML preloads 160.0 KiB gzip of JS (`index`, `vendor-react`, `vendor-icons`, `tool-catalog`) and no longer preloads `vendor-radix`.
 - [ ] Phase 2 - Missing Tools `[P2-*]`
   - [x] Tool-count gate cleared locally: DoD command now reports 215 `slug:` lines across `frontend/src/data/tools.ts` and `frontend/src/data/non-pdf-tools.ts`.
@@ -56,11 +56,18 @@ Last updated: 2026-06-18
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
 - [ ] Phase 7 - Power Features `[P7-power]`
+  - [x] Public API docs exposed locally at `/api-docs`; backend SPA middleware skips `/api-docs` so Swagger UI is not intercepted.
+  - [x] Optional API-key primitive added locally: `PRIVATOOLS_API_KEYS` gates developer routes with `X-API-Key`, while dev remains anonymous when no keys are configured.
+  - [x] Functional backend pipeline API added locally for the safe automation subset: `compress-pdf` and `strip-metadata` via `GET /api/pipeline/templates`, `POST /api/pipeline/validate`, and `POST /api/pipeline`.
+  - [x] Pipeline share URLs added locally: `/pipeline?p=<base64url>` hydrates steps and the page can copy a shareable recipe URL.
+  - [x] Local CLI package added: `npx --no-install privatools --help`, `validate`, and `pipeline-url` work from the repo root.
+  - [x] Manifest V3 extension skeleton added locally with context-menu actions that open PrivaTools Pipeline for pages/PDF links.
+  - [ ] Remaining Phase 7 items stay open: full per-tool pipeline params, Drive/Dropbox pickers, pipeline conditionals, webhooks, activity log, template gallery pages, desktop app, and external output nodes.
 
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 404 passing and 40 skipped after adding P2/P5 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 409 passing and 40 skipped after adding P2/P5/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
@@ -76,5 +83,5 @@ Last updated: 2026-06-18
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.
 - [x] OG image validates at 1200x630 by live PNG header.
-- [ ] Pipeline + API + CLI + Extension functional.
+- [x] Pipeline + API + CLI + Extension functional locally: `/api/pipeline` runs `compress-pdf -> strip-metadata`, `/api-docs` renders, share URLs hydrate `/pipeline`, `npx --no-install privatools --help` works, and the MV3 extension manifest/background smoke checks pass.
 - [x] Mobile editor/nav/touch target requirements met locally: EditPdfUI and SignUI use Pointer Events; persistent MobileNav and 44px coarse-pointer targets verified at `390x844` on `/tool/merge-pdf`.
