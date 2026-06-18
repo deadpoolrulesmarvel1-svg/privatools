@@ -288,6 +288,18 @@ class TestSecurityHeaders:
         assert h.get("x-frame-options") == "DENY"
         assert "content-security-policy" in h
         assert "referrer-policy" in h
+        assert h.get("cross-origin-opener-policy") == "same-origin"
+        assert h.get("cross-origin-embedder-policy") == "credentialless"
+        assert h.get("cross-origin-resource-policy") == "same-origin"
+
+    def test_hsts_preload_header_when_forced(self, client, monkeypatch):
+        monkeypatch.setenv("FORCE_HSTS", "1")
+        resp = client.get("/api/health")
+        assert resp.status_code == 200
+        assert (
+            resp.headers.get("Strict-Transport-Security")
+            == "max-age=63072000; includeSubDomains; preload"
+        )
 
     def test_api_response_has_no_store_cache_control(self, client):
         """Every /api/ response must be Cache-Control: no-store to prevent

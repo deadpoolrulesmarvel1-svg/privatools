@@ -186,6 +186,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         # Force Cache-Control: no-store on dynamic /api/ responses so tool
         # outputs (per-user, per-request) are never retained by a shared
         # CDN, transparent proxy, or browser back/forward cache. Skip
