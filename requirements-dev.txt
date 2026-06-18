@@ -1,5 +1,5 @@
 -r requirements.txt
 
 # Backend test runner and ASGI client used by backend/tests/conftest.py.
-pytest>=8.0,<9
+pytest>=9.1.0,<10
 httpx>=0.27,<1
