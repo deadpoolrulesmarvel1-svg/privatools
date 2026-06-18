@@ -5,6 +5,7 @@ import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 /* Shared "upload PDF → convert" UI for simpler conversion tools. */
 interface SimpleConvertUIProps {
@@ -24,6 +25,18 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     const [progressLabel, setProgressLabel] = useState("Processing…");
 
     const canProcess = !!file && status !== "processing";
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff(slug).then(handoffFile => {
+            if (cancelled || !handoffFile) return;
+            setFile(handoffFile);
+            setStatus("idle");
+            setError(null);
+            setProgress(undefined);
+        });
+        return () => { cancelled = true; };
+    }, [slug]);
 
     const process = useCallback(async () => {
         if (!file) return;

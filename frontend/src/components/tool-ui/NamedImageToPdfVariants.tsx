@@ -11,6 +11,7 @@ export function JpgToPdfUI() {
             accept=".jpg,.jpeg,image/jpeg"
             formatsLabel="JPG / JPEG photos — multiple allowed"
             nounLabel="JPG"
+            handoffSlug="jpg-to-pdf"
         />
     );
 }
@@ -21,6 +22,7 @@ export function PngToPdfUI() {
             accept=".png,image/png"
             formatsLabel="PNG images — transparency preserved, multiple allowed"
             nounLabel="PNG"
+            handoffSlug="png-to-pdf"
         />
     );
 }
@@ -31,6 +33,7 @@ export function HeicToPdfUI() {
             accept=".heic,.heif,image/heic,image/heif"
             formatsLabel="HEIC / HEIF iPhone photos — multiple allowed"
             nounLabel="HEIC photo"
+            handoffSlug="heic-to-pdf"
         />
     );
 }
@@ -41,6 +44,7 @@ export function WebpToPdfUI() {
             accept=".webp,image/webp"
             formatsLabel="WebP images — multiple allowed"
             nounLabel="WebP"
+            handoffSlug="webp-to-pdf"
         />
     );
 }
@@ -51,6 +55,7 @@ export function TiffToPdfUI() {
             accept=".tiff,.tif,image/tiff"
             formatsLabel="TIFF / TIF scans (multi-page TIFFs are unpacked) — multiple allowed"
             nounLabel="TIFF"
+            handoffSlug="tiff-to-pdf"
         />
     );
 }
@@ -61,6 +66,7 @@ export function BmpToPdfUI() {
             accept=".bmp,image/bmp"
             formatsLabel="BMP / Windows bitmap images — multiple allowed"
             nounLabel="BMP"
+            handoffSlug="bmp-to-pdf"
         />
     );
 }
@@ -71,6 +77,7 @@ export function GifToPdfUI() {
             accept=".gif,image/gif"
             formatsLabel="GIF images (first frame for animated GIFs) — multiple allowed"
             nounLabel="GIF"
+            handoffSlug="gif-to-pdf"
         />
     );
 }
@@ -81,6 +88,7 @@ export function SvgToPdfUI() {
             accept=".svg,image/svg+xml"
             formatsLabel="SVG vector files — each becomes one PDF page, multiple allowed"
             nounLabel="SVG"
+            handoffSlug="svg-to-pdf"
         />
     );
 }

@@ -658,10 +658,7 @@ export async function processAndDownload(
     const blob = await res.blob();
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     if (onProgress) onProgress("download", 100);
-    // Prefer server-supplied filename when present — the backend often returns
-    // a Content-Disposition with the "correct" name (e.g. timestamped, with
-    // suffix), and using it avoids the caller having to second-guess.
-    const finalName = filenameFromResponse(res) || filename;
+    const finalName = chooseDownloadFilename(filename, filenameFromResponse(res));
     downloadBlob(blob, finalName);
     const headers: Record<string, string> = {};
     res.headers.forEach((v, k) => { headers[k] = v; });
@@ -690,9 +687,55 @@ export async function processFilesAndDownload(
     const blob = await res.blob();
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     if (onProgress) onProgress("download", 100);
-    const finalName = filenameFromResponse(res) || filename;
+    const finalName = chooseDownloadFilename(filename, filenameFromResponse(res));
     downloadBlob(blob, finalName);
 }
+
+/** Choose the filename users see in their Downloads folder.
+ *
+ * The UI usually knows the source filename and passes an original-preserving
+ * name like `contract_unlocked.pdf`. Some backend routes still send generic
+ * fallbacks like `unlocked.pdf`; those should not clobber the better UI name.
+ * Specific backend names still win when they are not generic one-word labels.
+ */
+export function chooseDownloadFilename(plannedFilename: string, responseFilename: string | null): string {
+    if (!responseFilename) return plannedFilename;
+    const plannedStem = filenameStem(plannedFilename);
+    const responseStem = filenameStem(responseFilename);
+    const plannedLower = plannedStem.toLowerCase();
+    const responseLower = responseStem.toLowerCase();
+    if (!plannedStem || plannedStem === responseStem) return responseFilename;
+    if (/^[a-z0-9]+$/i.test(responseStem) && !GENERIC_PLANNED_STEMS.has(plannedLower)) return plannedFilename;
+
+    const sourceHint = plannedLower.split(/[_-]/)[0];
+    const hasActionSuffix = plannedLower.includes("_") || plannedLower.includes("-");
+    if (
+        hasActionSuffix
+        && sourceHint.length >= 3
+        && !responseLower.includes(sourceHint)
+    ) {
+        return plannedFilename;
+    }
+    return responseFilename;
+}
+
+function filenameStem(filename: string): string {
+    const clean = filename.split(/[\\/]/).pop() || filename;
+    const dot = clean.lastIndexOf(".");
+    return (dot > 0 ? clean.slice(0, dot) : clean).trim();
+}
+
+const GENERIC_PLANNED_STEMS = new Set([
+    "archive",
+    "converted",
+    "document",
+    "file",
+    "images",
+    "output",
+    "pages",
+    "result",
+    "table",
+]);
 
 /** Extract the filename from a response's Content-Disposition header.
  *  Returns null if absent or unparseable. Honors RFC 5987 `filename*=UTF-8''…`. */

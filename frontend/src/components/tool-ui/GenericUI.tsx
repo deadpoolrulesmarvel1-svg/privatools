@@ -9,6 +9,7 @@ import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Cloc
 import { cn, friendlyError } from "@/lib/utils";
 import {
     buildOutputFilename,
+    chooseDownloadFilename,
     downloadBlob,
     formatErrorForClipboard,
     formatFileSize,
@@ -22,6 +23,7 @@ import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-e
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { ProcessingBar } from "./FileUploadZone";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 interface GenericUIProps {
     toolName: string;
@@ -54,15 +56,14 @@ export function GenericUI({
 
     const acceptsLabel = accepts && accepts !== "*" ? accepts.split(",").map(v => v.trim()).filter(Boolean).join(", ") : "Any file";
 
-    const resetResult = () => {
+    const resetResult = useCallback(() => {
         setResultBlob(null);
         setResultFilename(null);
         setProgress(undefined);
         setProgressLabel("Processing...");
-    };
+    }, []);
 
-    const add = (fl: FileList) => {
-        const selected = fl[0];
+    const addFile = useCallback((selected: File) => {
         if (!selected) return;
         resetResult();
         setError(null);
@@ -80,7 +81,20 @@ export function GenericUI({
             file: selected,
         }]);
         setState("idle");
-    };
+    }, [resetResult]);
+
+    const add = useCallback((fl: FileList | File[]) => {
+        const selected = Array.from(fl)[0];
+        if (selected) addFile(selected);
+    }, [addFile]);
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff(slug).then(file => {
+            if (!cancelled && file) addFile(file);
+        });
+        return () => { cancelled = true; };
+    }, [slug, addFile]);
 
     const sizeWarning = files.length > 0 ? getFileSizeWarning(files[0].file.size) : null;
     const timeEstimate = files.length > 0 ? estimateTime(files[0].file.size) : null;
@@ -141,7 +155,10 @@ export function GenericUI({
             setProgress(96);
             const blob = await res.blob();
             if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
-            const finalName = getFilenameFromContentDisposition(res.headers.get("Content-Disposition")) || getPlannedOutputFilename();
+            const finalName = chooseDownloadFilename(
+                getPlannedOutputFilename(),
+                getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
+            );
             setResultBlob(blob);
             setResultFilename(finalName);
             setProgress(100);

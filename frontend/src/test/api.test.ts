@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+    chooseDownloadFilename,
     getErrorStatus,
     getRequestId,
     postFormData,
@@ -129,6 +130,14 @@ describe("api form-data helpers", () => {
         );
 
         expect(xhr.instances[0]?.timeout).toBe(98_765);
+    });
+
+    it("keeps original-based filenames when backend returns generic names", async () => {
+        expect(chooseDownloadFilename("contract_unlocked.pdf", "unlocked.pdf")).toBe("contract_unlocked.pdf");
+        expect(chooseDownloadFilename("scan_compressed.pdf", "compressed.pdf")).toBe("scan_compressed.pdf");
+        expect(chooseDownloadFilename("report_split.zip", "split_pages.zip")).toBe("report_split.zip");
+        expect(chooseDownloadFilename("contract_unlocked.pdf", "contract_unlocked.pdf")).toBe("contract_unlocked.pdf");
+        expect(chooseDownloadFilename("output.pdf", "server_named_report.pdf")).toBe("server_named_report.pdf");
     });
 });
 

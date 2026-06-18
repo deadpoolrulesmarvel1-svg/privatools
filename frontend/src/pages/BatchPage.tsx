@@ -24,7 +24,7 @@ import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromContentType } from "@/lib/tool-endpoints";
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
-import { formatErrorForClipboard, postFormData } from "@/lib/api";
+import { chooseDownloadFilename, formatErrorForClipboard, postFormData } from "@/lib/api";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -268,7 +268,8 @@ export default function BatchPage() {
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);
             const serverFilename = getFilenameFromContentDisposition(resp.headers.get("content-disposition"));
-            const downloadName = serverFilename || buildFallbackFilename(originalFile, resp.headers.get("content-type"));
+            const fallbackFilename = buildFallbackFilename(originalFile, resp.headers.get("content-type"));
+            const downloadName = chooseDownloadFilename(fallbackFilename, serverFilename);
             const durationMs = Math.round(performance.now() - startedAt);
 
             updater(prev => {

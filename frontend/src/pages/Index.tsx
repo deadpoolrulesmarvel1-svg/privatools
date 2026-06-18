@@ -24,6 +24,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useFirstRun } from "@/hooks/useFirstRun";
 import { FirstRunWelcome } from "@/components/FirstRunWelcome";
 import { EmptyState } from "@/components/EmptyState";
+import { storeFileHandoff } from "@/lib/file-handoff";
 
 const TOOL_TOTAL = tools.length + nonPdfTools.length;
 
@@ -144,6 +145,10 @@ export default function Index() {
     const [droppedFile, setDroppedFile] = useState<File | null>(null);
     const [matchedTools, setMatchedTools] = useState<{ pdf: ReturnType<typeof getToolsForExtension>["pdf"]; nonPdf: ReturnType<typeof getToolsForExtension>["nonPdf"] } | null>(null);
 
+    const openToolWithFile = useCallback((file: File, tool: { slug: string; href: string }) => {
+        void storeFileHandoff(file, tool.slug).finally(() => navigate(tool.href));
+    }, [navigate]);
+
     const onDragEnter = useCallback((e: DragEvent) => {
         e.preventDefault();
         setDragDepth(d => d + 1);
@@ -166,17 +171,12 @@ export default function Index() {
         const matched = getToolsForExtension(ext);
         const all = [...matched.pdf, ...matched.nonPdf];
         if (all.length === 1) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                sessionStorage.setItem("privatools_dropped_file", JSON.stringify({ name: file.name, type: file.type, data: reader.result }));
-                navigate(all[0].href);
-            };
-            reader.readAsDataURL(file);
+            openToolWithFile(file, all[0]);
         } else if (all.length > 0) {
             setDroppedFile(file);
             setMatchedTools(matched);
         }
-    }, [navigate]);
+    }, [openToolWithFile]);
 
     useEffect(() => {
         document.addEventListener("dragenter", onDragEnter);
@@ -262,6 +262,10 @@ export default function Index() {
                                 <Link
                                     key={t.slug}
                                     to={t.href}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        openToolWithFile(droppedFile, t);
+                                    }}
                                     className={cn("tool-card group flex items-start gap-3 p-4", t.catClass)}
                                 >
                                     <span className="icon-tile icon-tile-sm shrink-0">
@@ -352,12 +356,7 @@ export default function Index() {
                                         const matched = getToolsForExtension(ext);
                                         const all = [...matched.pdf, ...matched.nonPdf];
                                         if (all.length === 1) {
-                                            const reader = new FileReader();
-                                            reader.onload = () => {
-                                                sessionStorage.setItem("privatools_dropped_file", JSON.stringify({ name: file.name, type: file.type, data: reader.result }));
-                                                navigate(all[0].href);
-                                            };
-                                            reader.readAsDataURL(file);
+                                            openToolWithFile(file, all[0]);
                                         } else if (all.length > 0) {
                                             setDroppedFile(file);
                                             setMatchedTools(matched);

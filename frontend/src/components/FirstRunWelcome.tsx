@@ -21,6 +21,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { START_TOUR_EVENT } from "@/components/OnboardingTour";
+import { storeFileHandoff } from "@/lib/file-handoff";
 
 interface FirstRunWelcomeProps {
     /** Called when any CTA fires or the session times out. */
@@ -31,12 +32,6 @@ interface FirstRunWelcomeProps {
  *  the welcome can step out of the way. 5 minutes feels generous without
  *  leaving the card permanently parked at the top of the page. */
 const AUTO_COMPLETE_MS = 5 * 60 * 1000;
-
-/** Storage key for the pre-selected sample handoff between Dashboard and
- *  Compress UI. The tool UI reads this on mount via `useSamplePrefill`
- *  inside `CompressUI`. Kept namespaced + scoped to sessionStorage so the
- *  link doesn't follow the user across browser sessions. */
-export const PREFILL_KEY = "privatools.prefill-sample";
 
 export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
     const navigate = useNavigate();
@@ -56,23 +51,9 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
         setLoadingSample(true);
         try {
             const file = await loadSamplePdf();
-            // Hand the file to CompressUI via sessionStorage. The tool UI
-            // reads + clears the entry on mount.
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    sessionStorage.setItem(
-                        PREFILL_KEY,
-                        JSON.stringify({ name: file.name, type: file.type, data: reader.result }),
-                    );
-                } catch {
-                    // If sessionStorage is unavailable we still navigate —
-                    // the user just has to manually drag the file in.
-                }
-                onComplete();
-                navigate("/tool/compress-pdf");
-            };
-            reader.readAsDataURL(file);
+            await storeFileHandoff(file, "compress-pdf");
+            onComplete();
+            navigate("/tool/compress-pdf");
         } catch (e) {
             console.error("Failed to load sample PDF", e);
             toast.error("Couldn't load the sample PDF. Try opening a tool from the menu instead.");

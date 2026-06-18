@@ -9,6 +9,7 @@ import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 type PageSize = "auto" | "a4" | "letter";
 const sizes: { id: PageSize; label: string; desc: string }[] = [
@@ -21,12 +22,14 @@ interface ImageToPdfUIProps {
     accept?: string;
     formatsLabel?: string;
     nounLabel?: string;
+    handoffSlug?: string;
 }
 
 export function ImageToPdfUI({
     accept = "image/*",
     formatsLabel = "JPEG · PNG · WebP · BMP · TIFF · HEIC — multiple allowed",
     nounLabel = "image",
+    handoffSlug = "image-to-pdf",
 }: ImageToPdfUIProps = {}) {
     const [files, setFiles] = useState<{ id: string; name: string; size: string; raw: File }[]>([]);
     const [pageSize, setPageSize] = useState<PageSize>("auto");
@@ -36,10 +39,18 @@ export function ImageToPdfUI({
     const [dragIdx, setDragIdx] = useState<number | null>(null);
     const ref = useRef<HTMLInputElement>(null);
 
-    const add = (fl: FileList | File[]) => {
+    const add = useCallback((fl: FileList | File[]) => {
         setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), raw: f }))]);
         setState("idle"); setError(null);
-    };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff(handoffSlug).then(file => {
+            if (!cancelled && file) add([file]);
+        });
+        return () => { cancelled = true; };
+    }, [handoffSlug, add]);
 
     // Try with sample — loads the bundled JPEG so the user can try the flow
     // without leaving the page. Only available when accept includes JPEG-ish
@@ -59,7 +70,7 @@ export function ImageToPdfUI({
         } finally {
             setLoadingSample(false);
         }
-    }, [loadingSample, sampleSupported]);
+    }, [loadingSample, sampleSupported, add]);
 
     const moveFile = (from: number, to: number) => {
         if (to < 0 || to >= files.length || from === to) return;
