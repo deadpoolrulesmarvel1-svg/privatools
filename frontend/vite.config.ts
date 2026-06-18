@@ -29,6 +29,43 @@ const COMPARE_SLUGS = [
   "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
 ];
 
+function manualChunks(id: string): string | undefined {
+  const normalized = id.split(path.sep).join("/");
+
+  if (normalized.endsWith("/src/data/tools.ts") || normalized.endsWith("/src/data/non-pdf-tools.ts")) {
+    return "tool-catalog";
+  }
+
+  if (!normalized.includes("/node_modules/")) {
+    return undefined;
+  }
+
+  if (
+    normalized.includes("/node_modules/react/") ||
+    normalized.includes("/node_modules/react-dom/") ||
+    normalized.includes("/node_modules/react-router") ||
+    normalized.includes("/node_modules/@remix-run/router/")
+  ) {
+    return "vendor-react";
+  }
+
+  if (
+    normalized.includes("/node_modules/@radix-ui/react-tooltip/") ||
+    normalized.includes("/node_modules/@radix-ui/react-dialog/") ||
+    normalized.includes("/node_modules/@radix-ui/react-tabs/") ||
+    normalized.includes("/node_modules/@radix-ui/react-select/") ||
+    normalized.includes("/node_modules/@radix-ui/react-slot/")
+  ) {
+    return "vendor-radix";
+  }
+
+  if (normalized.includes("/node_modules/lucide-react/")) {
+    return "vendor-icons";
+  }
+
+  return undefined;
+}
+
 /**
  * Build-time sitemap generator. Reads tool slugs from the data files and emits
  * /dist/sitemap.xml covering home, static pages, every tool, every blog post,
@@ -147,32 +184,12 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split large vendor libraries into separate cached chunks so
-          // returning users get them from the SW/CDN cache instead of
-          // re-downloading on every deploy.
-          //
-          // lucide-react is grouped here so the 50ish icons our app uses
-          // share one ~13 KB gz chunk rather than being inlined into 60+
-          // tool chunks. Tree-shaking still works through this map — only
-          // icons actually imported land in the chunk.
-          "vendor-react": [
-            "react",
-            "react/jsx-runtime",
-            "react/jsx-dev-runtime",
-            "react-dom",
-            "react-router-dom",
-          ],
-          "vendor-radix": [
-            "@radix-ui/react-tooltip",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-select",
-            "@radix-ui/react-slot",
-          ],
-          "vendor-icons": ["lucide-react"],
-          "tool-catalog": ["src/data/tools.ts", "src/data/non-pdf-tools.ts"],
-        },
+        // Split large vendor libraries into separate cached chunks so
+        // returning users get them from the SW/CDN cache instead of
+        // re-downloading on every deploy. Vite 8/Rolldown requires the
+        // function form here; the object form Rollup accepted in Vite 5 now
+        // fails at build time.
+        manualChunks,
       },
     },
     // Target modern browsers for smaller output
