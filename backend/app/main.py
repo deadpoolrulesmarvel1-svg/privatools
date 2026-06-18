@@ -163,8 +163,8 @@ def _content_security_policy(path: str, nonce: str) -> str:
     return (
         "default-src 'self'; "
         f"script-src {' '.join(script_src)}; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; "
-        "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self'; "
         "img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com; "
         # connect-src allows HF transformers to fetch the local-AI models
         # (Summarize PDF, Smart Redact). Models are downloaded once and cached

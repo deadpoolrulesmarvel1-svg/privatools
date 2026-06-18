@@ -5,18 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="dark light" />
-    <!-- Privacy-friendly font CDN (Bunny Fonts mirror; no IP logging, no cookies) -->
-    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
-    <link rel="dns-prefetch" href="https://fonts.bunny.net" />
-    <!-- Preload the two Fraunces weights actually painted above the fold
-         (400 regular + 700 bold). Skips FOIT — paint kicks off before
-         index.css parses the @import. crossorigin matches the woff2 fetch. -->
+    <!-- Preload the two self-hosted Fraunces weights painted above the fold. -->
     <link rel="preload" as="font" type="font/woff2"
-          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-400-normal.woff2"
-          crossorigin />
+          href="/fonts/fraunces-latin-400-normal.woff2" />
     <link rel="preload" as="font" type="font/woff2"
-          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-700-normal.woff2"
-          crossorigin />
+          href="/fonts/fraunces-latin-700-normal.woff2" />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking, zero accounts.">
     <meta name="author" content="PrivaTools" />

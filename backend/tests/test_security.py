@@ -310,6 +310,19 @@ class TestSecurityHeaders:
         assert nonce_match, f"script-src missing nonce: {script_src}"
         assert f'nonce="{nonce_match.group(1)}"' in resp.text
 
+    def test_font_csp_is_same_origin_only(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "fonts.bunny.net" not in csp
+        assert "fonts.googleapis.com" not in csp
+        assert "fonts.gstatic.com" not in csp
+
+        font_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("font-src")
+        )
+        assert font_src.strip() == "font-src 'self'"
+
     def test_wasm_eval_is_limited_to_browser_ai_tools(self, client):
         normal = client.get("/tool/compress-pdf")
         ai = client.get("/tool/summarize-pdf")

@@ -28,6 +28,7 @@ Last updated: 2026-06-18
   - [x] Code-ready locally: Docker uvicorn command tuned to 2 workers, 30s keepalive, concurrency 50, graceful shutdown 30s.
   - [x] Code-ready locally: Privacy page discloses Cloudflare edge CDN and no-store API behavior.
   - [x] Code-ready locally: unused Radix Toast stack removed, `@radix-ui/react-toast` removed, CommandPalette lazy-mounted, `tool-catalog` Vite chunk added, bundle-size check script added.
+  - [x] Code-ready locally: Fraunces, Inter, and JetBrains Mono are self-hosted under `frontend/public/fonts`; `index.html` preloads same-origin font files and no longer preconnects to Bunny Fonts.
   - [ ] Live infra remains open: install `libnginx-mod-brotli` on the VM, reload nginx, configure Cloudflare, and verify `content-encoding: br` after deploy.
   - [x] Verified locally: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, and `npm run check:bundle`.
   - [x] Bundle check result: largest JS chunks are `transformers.web` 222.8 KiB gzip, `pdf` 126.8 KiB gzip, and app `index` 68.9 KiB gzip.
@@ -52,7 +53,8 @@ Last updated: 2026-06-18
   - [x] Public cleanup transparency added locally: `/api/transparency/janitor` returns aggregate janitor sweep counts without filenames, paths, IPs, or content metadata.
   - [x] GitHub trust automation added locally: security workflow with npm audit, pip-audit, CodeQL, Scorecard, Trivy SARIF, Trivy CycloneDX SBOM; release workflow builds/signs GHCR images with cosign; Dependabot covers npm, pip, and GitHub Actions.
   - [x] Nonce-based script CSP added locally: every served SPA HTML shell gets per-request script nonces; `script-src` no longer allows `unsafe-inline` or regular `unsafe-eval`; `wasm-unsafe-eval` is limited to browser-AI tool routes.
-  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
+  - [x] Self-hosted font trust slice added locally: backend CSP no longer allows Bunny Fonts, Google Fonts, or `fonts.gstatic.com`; service worker caches font files from same-origin only.
+  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, HSTS preload/COOP/COEP/CORP, SRI, GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
   - [x] Top-50 tool page SSR coverage added locally: every top-50 tool page now has TL;DR, deep crawlable guidance, HowTo schema, FAQPage schema, SoftwareApplication schema, visible last-reviewed copy, and at least 800 words of SSR body content.
@@ -69,7 +71,7 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 410 passing and 40 skipped after adding P2/P5/P6/P7 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 411 passing and 40 skipped after adding P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
@@ -79,7 +81,7 @@ Last updated: 2026-06-18
 - [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
-  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
+  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, self-hosted fonts/font CSP, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
 - [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.
