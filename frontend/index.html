@@ -40,7 +40,13 @@
          link with identical target, so the keyboard shortcut still works after
          hydration. -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
-    <div id="root"></div>
+    <div id="root">
+      <div style="min-height:100vh;background:#0b0b0c;color:#ede8da;font-family:Georgia,'Times New Roman',serif">
+        <header style="height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid rgba(237,232,218,.14)">
+          <span style="font-size:19px;font-weight:700;letter-spacing:0">Privatools</span>
+        </header>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- Service worker registration lives in src/lib/sw-register.ts so it
          runs in production only and handles updates correctly (skipWaiting +
