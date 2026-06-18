@@ -6,9 +6,9 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="dark light" />
     <!-- Preload the two self-hosted Fraunces weights painted above the fold. -->
-    <link rel="preload" as="font" type="font/woff2"
+    <link rel="preload" as="font" type="font/woff2" crossorigin media="(min-width: 1024px)"
           href="/fonts/fraunces-latin-400-normal.woff2" />
-    <link rel="preload" as="font" type="font/woff2"
+    <link rel="preload" as="font" type="font/woff2" crossorigin media="(min-width: 1024px)"
           href="/fonts/fraunces-latin-700-normal.woff2" />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts.">
@@ -32,6 +32,31 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="search" type="application/opensearchdescription+xml" title="PrivaTools" href="/opensearch.xml" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <style>
+      #prepaint-brand {
+        position: fixed;
+        z-index: 95;
+        top: 12px;
+        left: 56px;
+        pointer-events: none;
+        font-family: Fraunces, Georgia, "Times New Roman", serif;
+        font-size: 19px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: hsl(var(--foreground, 30 18% 8%));
+      }
+      #prepaint-brand em {
+        color: hsl(var(--accent, 152 82% 30%));
+        font-style: italic;
+      }
+      @media (min-width: 1024px) {
+        #prepaint-brand { left: 16px; }
+      }
+      @media (max-width: 1023px) and (pointer: coarse) {
+        #prepaint-brand { left: 68px; }
+      }
+    </style>
 
   </head>
   <body>
@@ -40,6 +65,7 @@
          link with identical target, so the keyboard shortcut still works after
          hydration. -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
+    <div id="prepaint-brand" aria-hidden="true">Priva<em>tools</em></div>
     <div id="root">
       <div style="min-height:100vh;background:#0b0b0c;color:#ede8da;font-family:Georgia,'Times New Roman',serif">
         <header style="height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid rgba(237,232,218,.14)">

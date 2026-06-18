@@ -4,14 +4,10 @@ import { X, ArrowRight, Shield, Layers, Sparkles, GitBranch, Star, MousePointerS
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
+import { START_TOUR_EVENT } from "@/lib/events";
 
 const STORAGE_KEY = "privatools_onboarding_done";
 const TOOL_TOTAL = tools.length + nonPdfTools.length;
-
-/** Event name the Dashboard welcome card dispatches to force-open the tour
- *  ("Take the tour" button). The tour listens for it regardless of whether
- *  it has been dismissed before — that's the explicit user intent. */
-export const START_TOUR_EVENT = "privatools:start-tour";
 
 interface Step {
     icon: typeof Shield;

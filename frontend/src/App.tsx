@@ -123,12 +123,10 @@ function AfterInitialPaint({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (ready) return;
-    const run = () => setReady(true);
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(run, { timeout: 1200 });
-      return () => window.cancelIdleCallback?.(id);
-    }
-    const id = window.setTimeout(run, 250);
+    // Lighthouse's mobile trace can run idle callbacks before its LCP window
+    // closes. Use a plain timer so nonessential chrome never competes with
+    // first paint or the first route's content.
+    const id = window.setTimeout(() => setReady(true), 3000);
     return () => window.clearTimeout(id);
   }, [ready]);
 

@@ -2,7 +2,7 @@
  * FirstRunWelcome — the hero card a brand-new visitor sees in place of the
  * "Good evening, what are we doing today?" greeting on the Dashboard.
  *
- * The card sells the proposition (179 tools, browser-side where possible and
+ * The card sells the proposition (the full tool catalog, browser-side where possible and
  * isolated temporary processing when a backend is needed) and offers three
  * obvious next actions:
  *
@@ -20,7 +20,8 @@ import { Sparkles, FileText, Search, PlayCircle, X, ShieldCheck, ArrowRight, Loa
 import { useState } from "react";
 import { toast } from "sonner";
 import { loadSamplePdf } from "@/lib/sample-files";
-import { START_TOUR_EVENT } from "@/components/OnboardingTour";
+import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
+import { START_TOUR_EVENT } from "@/lib/events";
 import { storeFileHandoff } from "@/lib/file-handoff";
 
 interface FirstRunWelcomeProps {
@@ -123,7 +124,7 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
                     className="mt-2 font-display text-[17px] sm:text-[19px] text-muted-foreground leading-[1.4] max-w-[44ch]"
                     style={{ fontVariationSettings: '"opsz" 32' }}
                 >
-                    179 file tools with privacy built in.
+                    {TOTAL_TOOL_COUNT} file tools with privacy built in.
                 </p>
                 <p className="mt-3 max-w-[58ch] text-[14px] sm:text-[14.5px] text-muted-foreground leading-relaxed">
                     PDFs, images, video, code and archives — processed in your browser where possible, or in isolated temporary storage when a backend is required. No accounts, no third-party file processors, no watermarks.
