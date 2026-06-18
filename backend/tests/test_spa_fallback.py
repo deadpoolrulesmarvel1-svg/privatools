@@ -27,6 +27,7 @@ class TestSPAFallback:
         "/tools/image-compressor",
         "/tools/remove-background",
         "/about",
+        "/security",
         "/compare",
         "/compare/ilovepdf",
         "/batch",

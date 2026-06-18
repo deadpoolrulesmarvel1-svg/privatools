@@ -29,6 +29,11 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
         "response. No accounts, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
     ),
+    "/security": (
+        "Security & Trust — PrivaTools",
+        "PrivaTools security, threat model, transparency, GDPR rights, and vulnerability reporting "
+        "details for the privacy-first file tool suite.",
+    ),
     "/terms": (
         "Terms of Service — PrivaTools",
         "Terms of service for PrivaTools — open-source under MIT license, no account "
@@ -1348,7 +1353,7 @@ def path_is_known(path: str) -> bool:
         # Static-meta covers /compare/ilovepdf etc. /compare itself is in _STATIC_META.
         return p in _STATIC_META
     # Top-level SPA routes the frontend handles
-    if p in ("/", "/about", "/privacy", "/terms", "/blog", "/compare", "/pipeline", "/batch"):
+    if p in ("/", "/about", "/privacy", "/security", "/terms", "/blog", "/compare", "/pipeline", "/batch"):
         return True
     return False
 
