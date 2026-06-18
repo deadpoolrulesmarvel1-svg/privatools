@@ -442,10 +442,10 @@ from starlette.middleware.gzip import GZipMiddleware
 # Order is bottom-up: the LAST add_middleware call is the OUTERMOST
 # layer, so RequestIDMiddleware here runs first on every request and
 # can stamp `request.state.request_id` before anything else touches it.
-app.add_middleware(BrotliMiddleware, minimum_size=500)
-app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(BrotliMiddleware, minimum_size=500)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(UploadSizeLimitMiddleware)
 app.add_middleware(RequestTimeoutMiddleware)
 app.add_middleware(AccessLogMiddleware)
