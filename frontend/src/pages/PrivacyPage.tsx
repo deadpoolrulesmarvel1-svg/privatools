@@ -425,12 +425,13 @@ export default function PrivacyPage() {
 
               <h2 id="third-party">5. Third-Party Services</h2>
               <p>
-                PrivaTools uses the following third-party services:
+                PrivaTools uses the following third-party services. Typography is self-hosted
+                from <code>/fonts</code> on <code>privatools.me</code>; no Google Fonts or
+                Bunny Fonts requests are made.
               </p>
               <ul>
                 <li><strong>Google Analytics (GA4):</strong> We use Google Analytics to understand how visitors use the site — which tools are popular, how people find us, and general usage patterns. Google Analytics collects anonymized page view data, browser type, and approximate location (country-level). It does not have access to your uploaded files. You can opt out using a <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">browser extension</a>.</li>
                 <li><strong>Cloudflare:</strong> We use Cloudflare as an edge CDN for static files and TLS acceleration. Cloudflare may see standard connection metadata such as IP address, user agent, and requested URL. File uploads and tool outputs are not cached at the edge, and API responses carry no-store cache headers.</li>
-                <li><strong>Google Fonts:</strong> Typography is loaded via Bunny Fonts (a privacy-respecting Google Fonts mirror) so font requests do not reach Google's servers.</li>
               </ul>
               <AnalyticsOptOutPanel />
               <p>

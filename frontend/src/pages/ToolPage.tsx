@@ -13,6 +13,7 @@ import { GenericUI } from "@/components/tool-ui/GenericUI";
 import { ToolIllustration } from "@/components/ToolIllustration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToolSkeleton } from "@/components/ToolSkeleton";
+import { ToolPrivacyBadge } from "@/components/ToolPrivacyBadge";
 
 type AnyModule = Record<string, unknown>;
 
@@ -435,6 +436,7 @@ export default function ToolPage() {
                     100% Browser
                   </span>
                 )}
+                <ToolPrivacyBadge clientOnly={tool.clientOnly} />
                 <span className="section-flag">
                   Last reviewed <time dateTime={reviewedDate}>{formatReviewedDate(reviewedDate)}</time>
                 </span>

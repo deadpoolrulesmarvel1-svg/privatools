@@ -55,7 +55,8 @@ Last updated: 2026-06-18
   - [x] Nonce-based script CSP added locally: every served SPA HTML shell gets per-request script nonces; `script-src` no longer allows `unsafe-inline` or regular `unsafe-eval`; `wasm-unsafe-eval` is limited to browser-AI tool routes.
   - [x] Self-hosted font trust slice added locally: backend CSP no longer allows Bunny Fonts, Google Fonts, or `fonts.gstatic.com`; service worker caches font files from same-origin only.
   - [x] HSTS/COOP/COEP/CORP trust slice added locally: backend emits preload-ready HSTS when HTTPS/`FORCE_HSTS` is active plus `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`, and `Cross-Origin-Resource-Policy: same-origin`; nginx deployment configs mirror the isolation headers.
-  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, SRI, GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
+  - [x] Per-tool upload privacy badge added locally: PDF and non-PDF tool pages now show `Never uploaded` for browser-only tools and `No third-party upload` for self-hosted server tools; Privacy page now states fonts are self-hosted.
+  - [ ] Phase 5 deferred items remain open: PGP key, SRI, GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
   - [x] Top-50 tool page SSR coverage added locally: every top-50 tool page now has TL;DR, deep crawlable guidance, HowTo schema, FAQPage schema, SoftwareApplication schema, visible last-reviewed copy, and at least 800 words of SSR body content.
@@ -82,7 +83,7 @@ Last updated: 2026-06-18
 - [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
-  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, self-hosted fonts/font CSP, HSTS/COOP/COEP/CORP headers, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
+  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, per-tool upload privacy badges, self-hosted fonts/font CSP, HSTS/COOP/COEP/CORP headers, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
 - [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.

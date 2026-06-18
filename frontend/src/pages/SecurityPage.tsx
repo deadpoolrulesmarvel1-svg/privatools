@@ -77,7 +77,6 @@ const SUBPROCESSORS = [
   { name: "Cloudflare", purpose: "Optional edge CDN, TLS acceleration, and static asset delivery. File-processing API responses are marked no-store." },
   { name: "Google Analytics 4", purpose: "Aggregate pageview telemetry. It does not receive uploaded file contents." },
   { name: "Hugging Face CDN", purpose: "Browser-side AI model downloads for local WebAssembly tools. Model requests do not include user file contents." },
-  { name: "Bunny Fonts", purpose: "Font delivery for the public web UI." },
   { name: "GitHub", purpose: "Source hosting, issue reports, and public change history." },
 ];
 
@@ -334,6 +333,7 @@ export default function SecurityPage() {
               <p>
                 These providers may see ordinary web or infrastructure metadata. They should not receive
                 uploaded file contents from PrivaTools file-processing API responses.
+                Fonts are self-hosted from <code>/fonts</code> on <code>privatools.me</code>.
               </p>
             </div>
 
