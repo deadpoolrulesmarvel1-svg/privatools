@@ -20,13 +20,14 @@ const FACTS = [
     "0 files uploaded to a third party",
     "Local AI via WebAssembly",
     "Files deleted within seconds of response",
-    "No tracking, no accounts, no cookies",
+    "No accounts, no ad pixels",
     "MIT licensed — every line public",
     "Self-hostable in one Docker command",
-    "Zero analytics scripts on this page",
+    "Anonymized pageview analytics only",
     "Open source — read the source on GitHub",
-    "Your files never touch our disk",
+    "Temp files unlinked after response",
     "Browser-side tools run with no server",
+    "Server tools run in isolated containers",
 ];
 
 function StatusBarInner() {
@@ -59,7 +60,7 @@ function StatusBarInner() {
             className="relative z-30 hidden lg:flex flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
         >
             <div className="flex items-center gap-3 min-w-0">
-                <span className="inline-flex items-center gap-1.5 shrink-0" title="All processing happens on your device">
+                <span className="inline-flex items-center gap-1.5 shrink-0" title="Browser-only where possible; isolated backend processing when needed">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent animate-accent-pulse" />
                     <span className="text-foreground/80">Private</span>
                 </span>
@@ -73,7 +74,7 @@ function StatusBarInner() {
             </div>
 
             <div className="hidden sm:flex items-center gap-3 shrink-0">
-                <span title={`${TOOL_TOTAL} privacy-first tools, all browser-side or self-hosted`}>
+                <span title={`${TOOL_TOTAL} privacy-first tools, browser-side or isolated backend`}>
                     <span className="text-accent">§</span> {TOOL_TOTAL} tools live
                 </span>
                 <span className="opacity-40">—</span>

@@ -103,7 +103,6 @@ export class ErrorBoundary extends Component<Props, State> {
     // The global handler in useGlobalErrorHandler.ts won't catch these
     // (React swallows render errors before they reach window.onerror),
     // so this log is the only signal in prod.
-    // eslint-disable-next-line no-console
     console.error("[ErrorBoundary]", error, info.componentStack);
     this.setState({ info });
   }
@@ -136,8 +135,8 @@ export class ErrorBoundary extends Component<Props, State> {
         : "This tool crashed";
     const body =
       scope === "app"
-        ? "The app hit an unexpected error. Reloading usually fixes it. Your files weren't sent anywhere — everything stays in your browser."
-        : "This tool stopped responding. Try again, or pick another tool from the sidebar. Your files weren't uploaded.";
+        ? "The app hit an unexpected error. Reloading usually fixes it. Browser-only tools keep data local; if a server-side request already started, it follows the same isolated temporary-storage cleanup path."
+        : "This tool stopped responding. Try again, or pick another tool from the sidebar. Browser-only tools keep data local; server-backed tools use isolated temporary storage and discard files after the response.";
 
     const isDev = import.meta.env.DEV;
 

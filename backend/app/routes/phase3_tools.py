@@ -176,6 +176,11 @@ async def generate_barcode(
         raise HTTPException(status_code=400, detail="ean8 requires 7 or 8 digits")
     if clean_type == "upca" and not re.fullmatch(r"\d{11,12}", clean_data):
         raise HTTPException(status_code=400, detail="upca requires 11 or 12 digits")
+    if clean_type == "code39" and not re.fullmatch(r"[A-Z0-9\-. $/+%]+", clean_data):
+        raise HTTPException(
+            status_code=400,
+            detail="code39 allows uppercase A-Z, digits, spaces, and - . $ / + % only",
+        )
 
     out = None
     try:

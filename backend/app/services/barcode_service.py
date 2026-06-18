@@ -1,7 +1,5 @@
 import logging
 
-from PIL import Image, ImageDraw
-
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
@@ -22,14 +20,12 @@ BARCODE_TYPES = {
 def generate_barcode(
     data: str,
     barcode_type: str = "code128",
-    output_format: str = "png",
 ) -> str:
     """Generate a barcode image from data.
 
     Uses python-barcode for linear barcodes, qrcode for QR codes.
-    On error we still produce a placeholder PNG so the caller doesn't
-    get a 500 — but we log the underlying exception at WARNING so
-    operators see the real failure in the logs.
+    Invalid data must raise ValueError instead of producing a placeholder:
+    callers need a real failure, not a PNG that merely looks barcode-ish.
     """
     if barcode_type == "qr":
         import qrcode
@@ -57,13 +53,7 @@ def generate_barcode(
         # ValueError/IndexError → invalid data for the chosen type
         # (e.g. EAN-13 needs 12 digits + check).
         logger.warning(
-            "Falling back to placeholder barcode for type=%s: %s",
+            "Barcode generation rejected invalid input for type=%s: %s",
             barcode_type, exc,
         )
-        img = Image.new("RGB", (400, 150), "white")
-        ImageDraw.Draw(img).text(
-            (20, 60), f"[{barcode_type.upper()}] {data}", fill="black"
-        )
-        out = temp_output("barcode", "png")
-        img.save(str(out))
-        return str(out)
+        raise ValueError(f"Invalid data for {barcode_type} barcode") from exc

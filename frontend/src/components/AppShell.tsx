@@ -11,7 +11,7 @@
  *   │          │                                      ││
  *   │          │                                      ││
  *   ├──────────┴──────────────────────────────────────┤│
- *   │ StatusBar (28px) — § · MIT · NO UPLOAD · ⌘K     │
+ *   │ StatusBar (28px) — § · MIT · PRIVATE · ⌘K       │
  *   └──────────────────────────────────────────────────┘
  *
  * The sidebar is the navigation — top bar is brand and quick actions
@@ -198,7 +198,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
            landmark in the a11y tree. */}
         <aside
           className={cn(
-            "hidden lg:flex flex-col flex-shrink-0 border-r border-border bg-paper-2/40 transition-[width] duration-[220ms] ease-[cubic-bezier(0.16,0.84,0.44,1)]",
+            "hidden lg:flex flex-col flex-shrink-0 border-r border-border bg-paper-2/40 transition-[width] duration-200 ease-out",
             sidebarCollapsed ? "w-12" : "w-72"
           )}
         >

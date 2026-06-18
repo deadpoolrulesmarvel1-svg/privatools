@@ -5,7 +5,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Loader2, AlertCircle, FileText, X, Plus, Archive, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { formatFileSize, downloadBlob, buildOutputFilename } from "@/lib/api";
+import { formatFileSize, downloadBlob, buildOutputFilename, postFormData } from "@/lib/api";
 
 export function CreateZipUI() {
     const [files, setFiles] = useState<{ id: string; name: string; size: string; file: File }[]>([]);
@@ -28,11 +28,12 @@ export function CreateZipUI() {
         if (files.length === 0) return;
         setStatus("processing"); setError(null);
         try {
-            const fd = new FormData();
-            for (const f of files) fd.append("files", f.file);
-            fd.append("compression", String(compression));
-            const res = await fetch("/api/create-zip", { method: "POST", body: fd });
-            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
+            const res = await postFormData("/create-zip", () => {
+                const fd = new FormData();
+                for (const f of files) fd.append("files", f.file);
+                fd.append("compression", String(compression));
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             downloadBlob(blob, buildOutputFilename(files[0]?.name, "archive", "zip"));
             setStatus("done");

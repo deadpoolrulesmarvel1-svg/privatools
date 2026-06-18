@@ -5,9 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Download, Loader2, AlertCircle, Paperclip, FileText, X, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
-
-const API_BASE = "/api";
+import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
 
 export function AttachmentUI() {
     const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -24,14 +22,12 @@ export function AttachmentUI() {
         if (!pdfFile || !attachFile) return;
         setStatus("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file", pdfFile);
-            fd.append("attachment", attachFile);
-            const res = await fetch(`${API_BASE}/add-attachment`, { method: "POST", body: fd });
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({ detail: "Failed" }));
-                throw new Error(body.detail || `Request failed (${res.status})`);
-            }
+            const res = await postFormData("/add-attachment", () => {
+                const fd = new FormData();
+                fd.append("file", pdfFile);
+                fd.append("attachment", attachFile);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");

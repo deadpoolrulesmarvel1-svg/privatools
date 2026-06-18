@@ -27,12 +27,12 @@ const CLIENT_ONLY = nonPdfTools.filter(t => t.clientOnly).length;
 const TOTAL_ROUNDED = Math.floor(TOTAL / 5) * 5;
 
 const features = [
-  { icon: Lock,   title: "100% Private",       desc: "All processing happens in temporary server memory and is purged immediately. Or self-host so files never leave your infrastructure." },
+  { icon: Lock,   title: "100% Private",       desc: "Server tools use isolated temporary storage and purge files immediately. Or self-host so files never leave your infrastructure." },
   { icon: Zap,    title: "Lightning Fast",     desc: "No queues, no usage gates, no upsells. Drop in a file and a result comes back in seconds." },
   { icon: Globe,  title: "Works Everywhere",   desc: "Any modern browser, any device, any OS. No installs, no plugins, no extensions required." },
   { icon: Code2,  title: "Open Source",        desc: "MIT-licensed. Every line of code that touches your files is public — audit it, fork it, self-host it." },
   { icon: Heart,  title: "Completely Free",    desc: "No freemium, no paywalls, no sign-ups. Every tool is free for everyone, forever." },
-  { icon: Shield, title: "No Tracking",        desc: "No cookies for ads, no fingerprinting, no behavioural profiles. Anonymous analytics only — and blockers don't break anything." },
+  { icon: Shield, title: "No Ad Tracking",     desc: "No cookies for ads, no fingerprinting, no behavioural profiles. Anonymous analytics only — and blockers don't break anything." },
 ];
 
 // Trust signals — surface above the fold next to the hero.
@@ -59,13 +59,13 @@ export default function LandingPage() {
                 className="font-display font-bold text-foreground tracking-tight leading-[1.05] text-4xl sm:text-5xl lg:text-6xl"
                 style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}
               >
-                The Only Toolkit That Never Sees Your Files
+                Private File Tools You Can Audit and Self-Host
               </h1>
               <div className="rule-accent mt-6 mb-6 w-16" />
               <p className="font-display text-lg sm:text-xl text-foreground/80 leading-relaxed max-w-lg">
                 PrivaTools gives you {TOTAL_ROUNDED}+ powerful file tools — PDF, image, video, and developer
-                utilities — with one promise: your files never leave your server. No cloud uploads. No tracking.
-                No accounts. Just tools that work.
+                utilities. Browser-only where possible; isolated temporary processing when a backend is needed.
+                No accounts, no ads, no watermarks.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
                 <Link to="/" className="btn-editorial inline-flex items-center gap-2">

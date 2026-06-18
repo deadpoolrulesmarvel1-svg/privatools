@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle, Download, QrCode, Link as LinkIcon, ImagePlus, X } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, postFormData } from "@/lib/api";
 
 export function QrCodeUI() {
     const [data, setData] = useState("");
@@ -38,18 +38,16 @@ export function QrCodeUI() {
         setState("processing");
         setError(null);
         try {
-            const fd = new FormData();
-            fd.append("data", data);
-            fd.append("size", String(size));
-            fd.append("format", format);
-            fd.append("fg_color", fgColor);
-            fd.append("bg_color", bgColor);
-            if (logo) fd.append("logo", logo);
-            const res = await fetch("/api/qr-code", { method: "POST", body: fd });
-            if (!res.ok) {
-                const b = await res.json().catch(() => ({ detail: "Failed" }));
-                throw new Error(b.detail);
-            }
+            const res = await postFormData("/qr-code", () => {
+                const fd = new FormData();
+                fd.append("data", data);
+                fd.append("size", String(size));
+                fd.append("format", format);
+                fd.append("fg_color", fgColor);
+                fd.append("bg_color", bgColor);
+                if (logo) fd.append("logo", logo);
+                return fd;
+            });
             const blob = await res.blob();
             downloadBlob(blob, format === "pdf" ? "qr_code.pdf" : "qr_code.png");
             setState("done");

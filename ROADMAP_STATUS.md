@@ -75,10 +75,10 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 417 passing and 40 skipped after adding P2/P5/P6/P7 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 435 passing and 40 skipped after merging current `main` and adding P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
-  - [ ] Live Lighthouse must be rerun after deployment; current production `/healthz` still reports build `d7e5e9d86a20`, not PR head `89248b0f9bbe`.
+  - [ ] Live Lighthouse must be rerun after deployment; current production `/healthz` still reports build `d7e5e9d86a20`, not the current PR branch.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.

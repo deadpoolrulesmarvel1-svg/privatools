@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle, PenTool, Upload, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 const PAGE_W = 612;
@@ -97,19 +97,24 @@ export function SignUI() {
         if (!file) return;
         setState("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("page", String(page));
-            fd.append("x", String(x));
-            fd.append("y", String(y));
-            fd.append("width", String(width));
-            fd.append("height", String(height));
-            if (sigFile) fd.append("signature", sigFile);
-            else if (sigData) fd.append("signature_data", sigData);
-            else { setError("Draw a signature or upload an image first"); setState("idle"); return; }
+            if (!sigFile && !sigData) {
+                setError("Draw a signature or upload an image first");
+                setState("idle");
+                return;
+            }
 
-            const res = await fetch("/api/sign-pdf", { method: "POST", body: fd });
-            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Could not sign PDF" })); throw new Error(b.detail); }
+            const res = await postFormData("/sign-pdf", () => {
+                const fd = new FormData();
+                fd.append("file", file);
+                fd.append("page", String(page));
+                fd.append("x", String(x));
+                fd.append("y", String(y));
+                fd.append("width", String(width));
+                fd.append("height", String(height));
+                if (sigFile) fd.append("signature", sigFile);
+                else if (sigData) fd.append("signature_data", sigData);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_signed.pdf`);
             setState("done");

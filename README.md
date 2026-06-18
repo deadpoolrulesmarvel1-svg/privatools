@@ -59,6 +59,13 @@ uvicorn backend.app.main:app --reload --port 8000
 cd frontend && npm install && npm run dev
 ```
 
+To run the backend test suite locally, install the dev requirements:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest backend/tests -q
+```
+
 ### System dependencies (for full feature set)
 
 ```bash
@@ -294,12 +301,12 @@ async def my_tool_endpoint(file: UploadFile = File(...)):
 }
 ```
 
-Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + display title in `backend/app/seo_meta.py` (`_TLDR_OVERRIDES`, `_TOOL_TITLES`), HowTo steps + FAQs in `backend/app/tool_content.py`, and the slug to `backend/app/routes/sitemap.py`. The `GenericUI` component handles single-file upload/download automatically; for richer interactions add a dedicated component under `frontend/src/components/tool-ui/`.
+Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO entry in `backend/app/seo_meta.py` (`_TLDR_OVERRIDES`, `_PDF_TOOLS` or `_NONPDF_TOOLS`), HowTo steps + FAQs in `backend/app/tool_content.py`, and the slug to `backend/app/routes/sitemap.py`. The `GenericUI` component handles single-file upload/download automatically; for richer interactions add a dedicated component under `frontend/src/components/tool-ui/`.
 
 ### Guidelines
 
 - **Privacy first** — never add external API calls that send file content off-server
-- **Test before PR** — `pytest` for backend, `npm run build && npm test` for frontend
+- **Test before PR** — `python -m pytest backend/tests -q` for backend, `npm run build && npm test` for frontend
 - **Match the style** — follow existing patterns in similar tools
 - **Update docs** — add a CHANGELOG entry and a TLDR in `seo_meta.py`
 

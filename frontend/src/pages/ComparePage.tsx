@@ -14,6 +14,7 @@ import {
   Shield, Check, X, Zap, Globe, Lock, Heart, Github, ArrowRight, Cloud, ServerCog,
   DollarSign, Eye, EyeOff, ArrowLeft, ArrowUpDown, Trophy, Minus, Scale,
 } from "lucide-react";
+import { TOTAL_TOOL_COUNT, TOOL_BREADTH_LABEL } from "@/data/site-stats";
 import { cn } from "@/lib/utils";
 
 interface CompetitorData {
@@ -41,7 +42,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Limited",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "No",
       "JSON-LD structured data": "Yes",
       "API available": "Yes (paid)",
@@ -58,7 +59,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Limited",
-      "175+ tools (PDF, image, video, audio, dev)": "No (21 tools, PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (21 tools, PDF only)",
       "Works offline / client-side tools": "No",
       "Desktop app included": "Yes (paid)", "API available": "Yes (paid)",
     },
@@ -74,7 +75,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (Adobe cloud)",
       "No watermarks on free tier": "Limited",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "Desktop app (paid)",
       "E-signatures": "Yes (paid)", "API available": "Yes (paid)",
     },
@@ -90,7 +91,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Yes",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "No",
       "Desktop app included": "No", "API available": "Yes (paid)",
     },
@@ -106,7 +107,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Yes",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "No",
       "Desktop app included": "Yes (Windows)", "API available": "No",
     },
@@ -122,7 +123,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "Enterprise only",
       "Files processed privately": "No (Foxit cloud)",
       "No watermarks on free tier": "N/A (no free tier)",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "Desktop app (paid)",
       "E-signatures": "Yes (paid)", "API available": "Yes (paid)",
     },
@@ -138,7 +139,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Limited",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF + basic image)",
+      [TOOL_BREADTH_LABEL]: "No (PDF + basic image)",
       "Works offline / client-side tools": "No",
       "Desktop app included": "No", "API available": "Yes (paid)",
     },
@@ -154,7 +155,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)",
       "Files processed privately": "Yes (your own server)",
       "No watermarks on free tier": "Yes",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "No (server-side only)",
       "Desktop app included": "No", "API available": "Yes (self-hosted)",
     },
@@ -170,7 +171,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (DocHub cloud)",
       "No watermarks on free tier": "Yes",
-      "175+ tools (PDF, image, video, audio, dev)": "No (document editing only)",
+      [TOOL_BREADTH_LABEL]: "No (document editing only)",
       "Works offline / client-side tools": "No",
       "E-signatures": "Yes (limited free)", "API available": "Yes (paid)",
     },
@@ -186,7 +187,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (uploaded to their servers)",
       "No watermarks on free tier": "Yes",
-      "175+ tools (PDF, image, video, audio, dev)": "No (basic PDF editing only)",
+      [TOOL_BREADTH_LABEL]: "No (basic PDF editing only)",
       "Works offline / client-side tools": "No",
       "Desktop app included": "Yes (Windows, paid)", "API available": "No",
     },
@@ -202,7 +203,7 @@ const competitors: Record<string, CompetitorData> = {
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (Nitro cloud)",
       "No watermarks on free tier": "N/A (no free tier)",
-      "175+ tools (PDF, image, video, audio, dev)": "No (PDF + e-sign only)",
+      [TOOL_BREADTH_LABEL]: "No (PDF + e-sign only)",
       "Works offline / client-side tools": "Desktop app (paid)",
       "E-signatures": "Yes (paid)", "API available": "Yes (paid)",
     },
@@ -218,7 +219,7 @@ const privatoolsFeatures: Record<string, boolean | string> = {
   "Self-hostable": "Yes (Docker)",
   "Files processed privately": "Yes — deleted immediately",
   "No watermarks on free tier": "Yes",
-  "175+ tools (PDF, image, video, audio, dev)": "Yes",
+  [TOOL_BREADTH_LABEL]: "Yes",
   "Works offline / client-side tools": "Yes (dev tools)",
   "JSON-LD structured data": "Yes",
   "Desktop app included": "PWA installable",
@@ -409,7 +410,7 @@ export default function ComparePage() {
               <ul className="space-y-2 text-[13px] text-muted-foreground leading-relaxed">
                 <li className="flex items-start gap-2"><Check size={13} className="text-accent mt-0.5 shrink-0" /> Files unlinked the moment we finish, never retained.</li>
                 <li className="flex items-start gap-2"><Check size={13} className="text-accent mt-0.5 shrink-0" /> Zero account, zero quota, zero upsell pop-ups.</li>
-                <li className="flex items-start gap-2"><Check size={13} className="text-accent mt-0.5 shrink-0" /> 175+ tools across PDF, image, video, audio, dev — one suite.</li>
+                <li className="flex items-start gap-2"><Check size={13} className="text-accent mt-0.5 shrink-0" /> {TOTAL_TOOL_COUNT} tools across PDF, image, video, audio, dev — one suite.</li>
                 <li className="flex items-start gap-2"><Check size={13} className="text-accent mt-0.5 shrink-0" /> MIT-licensed, fully self-hostable in one Docker command.</li>
               </ul>
             </div>
@@ -443,7 +444,7 @@ export default function ComparePage() {
               { icon: Lock,  title: "True privacy",     desc: "Files processed and immediately deleted. No cloud storage, no data mining." },
               { icon: Heart, title: "Actually free",    desc: "No '2 tasks/day' limits, no premium upsells, no watermarks. Every tool, every time." },
               { icon: Globe, title: "Open source",      desc: "MIT licensed. Audit every line of code. Self-host with Docker if you don't trust anybody." },
-              { icon: Zap,   title: "175+ tools",       desc: "Not just PDF — image, video, audio, and developer tools too. All in one place." },
+              { icon: Zap,   title: `${TOTAL_TOOL_COUNT} tools`,       desc: "Not just PDF — image, video, audio, and developer tools too. All in one place." },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
@@ -610,7 +611,7 @@ function DirectoryView() {
             { icon: DollarSign, label: "Truly free",     value: "No quotas" },
             { icon: Lock,       label: "Open source",    value: "MIT licensed" },
             { icon: ServerCog,  label: "Self-hostable",  value: "Docker" },
-            { icon: Zap,        label: "All categories", value: "175+ tools" },
+            { icon: Zap,        label: "All categories", value: `${TOTAL_TOOL_COUNT} tools` },
           ].map((s, i) => {
             const Icon = s.icon;
             return (
@@ -742,7 +743,7 @@ function DirectoryView() {
                   <td className="text-center px-3"><Check size={14} className="inline text-accent" strokeWidth={2.5} aria-hidden="true" /><span className="sr-only">Yes</span></td>
                   <td className="text-center px-3"><Check size={14} className="inline text-accent" strokeWidth={2.5} aria-hidden="true" /><span className="sr-only">Yes</span></td>
                   <td className="text-center px-3"><Check size={14} className="inline text-accent" strokeWidth={2.5} aria-hidden="true" /><span className="sr-only">Yes</span></td>
-                  <td className="text-right px-5 font-mono text-[12px] text-accent font-semibold">175+</td>
+                  <td className="text-right px-5 font-mono text-[12px] text-accent font-semibold">{TOTAL_TOOL_COUNT}</td>
                 </tr>
                 {sorted.map(([key, c]) => {
                   const yes = (label: string) => (<><Check size={13} className="inline text-accent" strokeWidth={2.5} aria-hidden="true" /><span className="sr-only">{label}: yes</span></>);
@@ -881,7 +882,7 @@ function DirectoryView() {
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link to="/" className="btn-accent inline-flex">
-                    Browse all 175+ tools <ArrowRight size={13} />
+                    Browse all {TOTAL_TOOL_COUNT} tools <ArrowRight size={13} />
                   </Link>
                   <a
                     href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
@@ -897,7 +898,7 @@ function DirectoryView() {
                   { icon: Lock,  title: "True privacy",     desc: "Files processed in an isolated container and deleted immediately. No 2-hour retention." },
                   { icon: Heart, title: "Actually free",    desc: "No \"2 tasks/day\" limits, no premium upsells, no watermarks, no account ever required." },
                   { icon: Globe, title: "Open source",      desc: "MIT-licensed. Audit every line. Self-host on Docker if you don't trust anybody." },
-                  { icon: Zap,   title: "175+ tools",       desc: "PDF, image, video, audio, dev utilities — plus browser-side AI for summarization and redaction." },
+                  { icon: Zap,   title: `${TOTAL_TOOL_COUNT} tools`,       desc: "PDF, image, video, audio, dev utilities — plus browser-side AI for summarization and redaction." },
                 ].map((item, i) => {
                   const Icon = item.icon;
                   return (

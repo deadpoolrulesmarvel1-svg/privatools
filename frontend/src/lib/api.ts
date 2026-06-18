@@ -2,8 +2,10 @@
  * Central API client for PrivaTools.
  * All tool UIs use these helpers to communicate with the FastAPI backend.
  */
+import { toast } from "sonner";
 
-const API_BASE = "/api";
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE = `${API_ORIGIN}/api`;
 
 /** Strip an accidental leading "/api" so callers can pass either "/foo" or
  *  "/api/foo" without producing "/api/api/foo". A few tool files have done
@@ -117,6 +119,12 @@ function validateFileCount(files: File[]) {
     }
 }
 
+function validateFormDataFiles(fd: FormData) {
+    for (const value of fd.values()) {
+        if (value instanceof File) validateFileSize(value);
+    }
+}
+
 /** Progress callback: phase ("upload" | "download"), percent 0-100 */
 export type ProgressCallback = (phase: "upload" | "download", percent: number) => void;
 
@@ -148,6 +156,9 @@ export const DEFAULT_RETRY: RetryPolicy = {
  *  typically finishes in <15s, so 60s catches everything except the truly
  *  pathological. Long-running tools (large compress, OCR) override per-call. */
 export const DEFAULT_TIMEOUT_MS = 60_000;
+/** XHR progress uploads preserve the historical 5 minute ceiling by default.
+ *  They still honor per-call timeoutMs, including 0 to disable timeouts. */
+const DEFAULT_PROGRESS_TIMEOUT_MS = 300_000;
 
 /** Decide whether an error from a single attempt should be retried.
  *
@@ -327,8 +338,10 @@ export function uploadFileWithProgress(
     params?: Record<string, string | number | boolean>,
     onProgress?: ProgressCallback,
     signal?: AbortSignal,
+    options?: { timeoutMs?: number },
 ): Promise<Response> {
     validateFileSize(file);
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     fd.append("file", file);
     fd.append("files", file);
@@ -369,23 +382,22 @@ export function uploadFileWithProgress(
                 });
                 resolve(new Response(blob, { status: xhr.status, headers }));
             } else {
-                // Try to parse error from blob response
                 const blob = xhr.response as Blob;
-                blob.text().then(text => {
-                    try {
-                        const data = JSON.parse(text);
-                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
-                    } catch {
-                        reject(new Error(`Request failed (${xhr.status})`));
-                    }
-                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                describeError(new Response(blob, { status: xhr.status, headers }))
+                    .then(reject)
+                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
             }
         };
 
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
         xhr.ontimeout = () => reject(new Error("Request timed out"));
-        xhr.timeout = 300_000; // 5 min
+        xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
 }
@@ -433,9 +445,11 @@ export function uploadFilesWithProgress(
     params?: Record<string, string | number | boolean>,
     onProgress?: ProgressCallback,
     signal?: AbortSignal,
+    options?: { timeoutMs?: number },
 ): Promise<Response> {
     validateFileCount(files);
     for (const f of files) validateFileSize(f);
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     for (const f of files) fd.append("files", f);
     if (params) {
@@ -474,21 +488,21 @@ export function uploadFilesWithProgress(
                 resolve(new Response(blob, { status: xhr.status, headers }));
             } else {
                 const blob = xhr.response as Blob;
-                blob.text().then(text => {
-                    try {
-                        const data = JSON.parse(text);
-                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
-                    } catch {
-                        reject(new Error(`Request failed (${xhr.status})`));
-                    }
-                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                describeError(new Response(blob, { status: xhr.status, headers }))
+                    .then(reject)
+                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
             }
         };
 
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
         xhr.ontimeout = () => reject(new Error("Request timed out"));
-        xhr.timeout = 300_000;
+        xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
 }
@@ -510,6 +524,40 @@ export interface RequestOptions {
     retry?: RetryPolicy;
     onRetry?: RetryCallback;
     timeoutMs?: number;
+}
+
+/** Post arbitrary FormData and return the raw response.
+ *
+ * This covers custom workflows (Batch, Pipeline, multi-input editors) that
+ * need to build their own payload but still deserve the shared timeout,
+ * retry, abort, request-ID, and friendly-error handling used by uploadFile().
+ * Pass a builder when retries are enabled so each attempt gets a fresh body.
+ */
+export async function postFormData(
+    endpoint: string,
+    formData: FormData | (() => FormData),
+    options?: RequestOptions,
+): Promise<Response> {
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const buildBody = typeof formData === "function" ? formData : () => formData;
+    return withRetry(async () => {
+        const body = buildBody();
+        validateFormDataFiles(body);
+        const { signal: combined, cancel } = timeoutSignal(timeoutMs, options?.signal);
+        try {
+            const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {
+                method: "POST",
+                body,
+                signal: combined,
+            });
+            if (!res.ok) throw await describeError(res);
+            return res;
+        } catch (err) {
+            throw decorateTimeoutError(err);
+        } finally {
+            cancel();
+        }
+    }, options?.retry, options?.onRetry, options?.signal);
 }
 
 /** Post form data (no file) and get JSON back. */
@@ -582,10 +630,7 @@ export function downloadBlob(blob: Blob, filename: string) {
         URL.revokeObjectURL(url);
     }, 100);
 
-    // Show toast notification
-    import("sonner").then(({ toast }) => {
-        toast.success("Downloaded!", { description: filename, duration: 3000 });
-    }).catch(() => { });
+    toast.success("Downloaded!", { description: filename, duration: 3000 });
 }
 
 /** Helper: upload file → get blob → download. With progress tracking & abort.
@@ -602,7 +647,7 @@ export async function processAndDownload(
     options?: { retry?: RetryPolicy; onRetry?: RetryCallback; timeoutMs?: number },
 ): Promise<Record<string, string>> {
     const res = onProgress
-        ? await uploadFileWithProgress(endpoint, file, params, onProgress, signal)
+        ? await uploadFileWithProgress(endpoint, file, params, onProgress, signal, { timeoutMs: options?.timeoutMs })
         : await uploadFile(endpoint, file, params, {
             signal,
             retry: options?.retry,
@@ -613,10 +658,7 @@ export async function processAndDownload(
     const blob = await res.blob();
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     if (onProgress) onProgress("download", 100);
-    // Prefer server-supplied filename when present — the backend often returns
-    // a Content-Disposition with the "correct" name (e.g. timestamped, with
-    // suffix), and using it avoids the caller having to second-guess.
-    const finalName = filenameFromResponse(res) || filename;
+    const finalName = chooseDownloadFilename(filename, filenameFromResponse(res));
     downloadBlob(blob, finalName);
     const headers: Record<string, string> = {};
     res.headers.forEach((v, k) => { headers[k] = v; });
@@ -634,7 +676,7 @@ export async function processFilesAndDownload(
     options?: { retry?: RetryPolicy; onRetry?: RetryCallback; timeoutMs?: number },
 ): Promise<void> {
     const res = onProgress
-        ? await uploadFilesWithProgress(endpoint, files, params, onProgress, signal)
+        ? await uploadFilesWithProgress(endpoint, files, params, onProgress, signal, { timeoutMs: options?.timeoutMs })
         : await uploadFiles(endpoint, files, params, {
             signal,
             retry: options?.retry,
@@ -645,9 +687,55 @@ export async function processFilesAndDownload(
     const blob = await res.blob();
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     if (onProgress) onProgress("download", 100);
-    const finalName = filenameFromResponse(res) || filename;
+    const finalName = chooseDownloadFilename(filename, filenameFromResponse(res));
     downloadBlob(blob, finalName);
 }
+
+/** Choose the filename users see in their Downloads folder.
+ *
+ * The UI usually knows the source filename and passes an original-preserving
+ * name like `contract_unlocked.pdf`. Some backend routes still send generic
+ * fallbacks like `unlocked.pdf`; those should not clobber the better UI name.
+ * Specific backend names still win when they are not generic one-word labels.
+ */
+export function chooseDownloadFilename(plannedFilename: string, responseFilename: string | null): string {
+    if (!responseFilename) return plannedFilename;
+    const plannedStem = filenameStem(plannedFilename);
+    const responseStem = filenameStem(responseFilename);
+    const plannedLower = plannedStem.toLowerCase();
+    const responseLower = responseStem.toLowerCase();
+    if (!plannedStem || plannedStem === responseStem) return responseFilename;
+    if (/^[a-z0-9]+$/i.test(responseStem) && !GENERIC_PLANNED_STEMS.has(plannedLower)) return plannedFilename;
+
+    const sourceHint = plannedLower.split(/[_-]/)[0];
+    const hasActionSuffix = plannedLower.includes("_") || plannedLower.includes("-");
+    if (
+        hasActionSuffix
+        && sourceHint.length >= 3
+        && !responseLower.includes(sourceHint)
+    ) {
+        return plannedFilename;
+    }
+    return responseFilename;
+}
+
+function filenameStem(filename: string): string {
+    const clean = filename.split(/[\\/]/).pop() || filename;
+    const dot = clean.lastIndexOf(".");
+    return (dot > 0 ? clean.slice(0, dot) : clean).trim();
+}
+
+const GENERIC_PLANNED_STEMS = new Set([
+    "archive",
+    "converted",
+    "document",
+    "file",
+    "images",
+    "output",
+    "pages",
+    "result",
+    "table",
+]);
 
 /** Extract the filename from a response's Content-Disposition header.
  *  Returns null if absent or unparseable. Honors RFC 5987 `filename*=UTF-8''…`. */

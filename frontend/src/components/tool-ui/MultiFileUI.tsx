@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 interface Item { id: string; name: string; size: string; file: File }
 
@@ -33,7 +34,7 @@ export function MultiFileUI({
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
-    const add = useCallback((fl: FileList) => {
+    const add = useCallback((fl: FileList | File[]) => {
         setFiles(p => [
             ...p,
             ...Array.from(fl).map(f => ({
@@ -46,6 +47,14 @@ export function MultiFileUI({
         setState("idle");
         setError(null);
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff(endpoint.replace(/^\//, "")).then(file => {
+            if (!cancelled && file) add([file]);
+        });
+        return () => { cancelled = true; };
+    }, [endpoint, add]);
 
     const remove = (id: string) => setFiles(p => p.filter(f => f.id !== id));
     const move = (i: number, delta: number) => {

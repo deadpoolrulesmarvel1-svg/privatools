@@ -10,6 +10,14 @@ FRONTEND_DATA_FILES = [
 ]
 TOOL_ENDPOINTS_FILE = ROOT / "frontend" / "src" / "lib" / "tool-endpoints.ts"
 BACKEND_ROUTES_DIR = ROOT / "backend" / "app" / "routes"
+BACKEND_HELPER_POST_ENDPOINTS = {
+    # Support endpoints used inside richer tool UIs, not standalone catalog tools.
+    "/fill-form/fields",
+    "/metadata/update",
+    "/organize-pages/thumbnails",
+    "/pipeline",
+    "/pipeline/validate",
+}
 
 # Make `backend.app.main` importable for the live-app checks below.
 sys.path.insert(0, str(ROOT))
@@ -74,6 +82,28 @@ def test_all_non_client_only_tools_have_backend_routes():
     assert not missing, (
         "Missing backend routes for non-client-only tools: "
         + ", ".join(f"{slug} -> {endpoint}" for slug, endpoint in missing)
+    )
+
+
+def test_every_public_backend_tool_endpoint_is_listed_in_frontend_catalog():
+    """A real processing endpoint should not exist only as hidden backend code."""
+    tools: list[tuple[str, bool]] = []
+    for data_file in FRONTEND_DATA_FILES:
+        tools.extend(_parse_tools(data_file))
+
+    endpoint_overrides = _parse_endpoint_overrides()
+    frontend_endpoints = {
+        endpoint_overrides.get(slug, f"/{slug}")
+        for slug, client_only in tools
+        if not client_only
+    }
+    backend_public_tool_endpoints = _parse_backend_post_endpoints() - BACKEND_HELPER_POST_ENDPOINTS
+
+    missing_from_catalog = sorted(backend_public_tool_endpoints - frontend_endpoints)
+
+    assert not missing_from_catalog, (
+        "Backend POST endpoints are not exposed by any frontend tool registry entry: "
+        + ", ".join(missing_from_catalog)
     )
 
 

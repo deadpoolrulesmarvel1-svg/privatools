@@ -28,7 +28,7 @@ import {
     ZoomOut, X, ChevronLeft, MousePointer2, Image as ImageIcon, Layers,
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { createPortal } from "react-dom";
 import { useEditHistory } from "@/hooks/useEditHistory";
@@ -51,8 +51,6 @@ const loadPdfjs = (): Promise<PdfjsLibType> => {
     }
     return pdfjsLibPromise;
 };
-
-const API_BASE = "/api";
 
 const FONTS = [
     { value: "Helvetica", label: "Helvetica" },
@@ -352,11 +350,11 @@ export function EditPdfUI() {
     const updateEdit = (id: string, updates: Partial<Edit>) => {
         history.set(edits.map(e => e.id === id ? { ...e, ...updates } as Edit : e));
     };
-    const removeEdit = (id: string) => {
+    const removeEdit = useCallback((id: string) => {
         history.set(edits.filter(e => e.id !== id));
         if (selectedId === id) setSelectedId(null);
-    };
-    const duplicateEdit = (id: string) => {
+    }, [edits, history, selectedId]);
+    const duplicateEdit = useCallback((id: string) => {
         const src = edits.find(e => e.id === id);
         if (!src) return;
         const dup = JSON.parse(JSON.stringify(src)) as Edit;
@@ -367,13 +365,13 @@ export function EditPdfUI() {
         if (dup.type === "line") { dup.x1 += 20; dup.y1 -= 20; dup.x2 += 20; dup.y2 -= 20; }
         history.set([...edits, dup]);
         setSelectedId(dup.id);
-    };
-    const nudge = (id: string, dx: number, dy: number) => {
+    }, [edits, history]);
+    const nudge = useCallback((id: string, dx: number, dy: number) => {
         const e = edits.find(x => x.id === id);
         if (!e) return;
         const moved = applyTranslate(e, dx, dy);
         history.set(edits.map(x => x.id === id ? moved : x));
-    };
+    }, [edits, history]);
 
     /* ─── Keyboard ─── */
     const canProcess = !!file && edits.length > 0 && state !== "processing" && !edits.some(e => e.type === "text" && !(e as TextEdit).text.trim());
@@ -382,14 +380,12 @@ export function EditPdfUI() {
         if (!file || edits.length === 0) return;
         setState("processing"); setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
-            const res = await fetch(`${API_BASE}/edit-pdf`, { method: "POST", body: fd });
-            if (!res.ok) {
-                const b = await res.json().catch(() => ({ detail: "Could not apply edits" }));
-                throw new Error(b.detail);
-            }
+            const res = await postFormData("/edit-pdf", () => {
+                const fd = new FormData();
+                fd.append("file", file);
+                fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
+                return fd;
+            }, { timeoutMs: 300_000 });
             setResultBlob(await res.blob());
             setState("done");
         } catch (e: unknown) {
@@ -451,7 +447,7 @@ export function EditPdfUI() {
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [state, canProcess, process, history, selectedId, gesture]);
+    }, [state, canProcess, process, history, selectedId, gesture, duplicateEdit, removeEdit, nudge]);
 
     const handleDownload = () => {
         if (resultBlob) downloadBlob(resultBlob, file ? `${file.name.replace(/\.pdf$/i, "")}_edited.pdf` : "edited.pdf");

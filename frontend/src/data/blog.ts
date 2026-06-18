@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-03-22",
     readTime: "8 min read",
     tldr:
-      "In 2026: PrivaTools (100% free, open source, 175+ tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+      "In 2026: PrivaTools (100% free, open source, 213 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
     relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
@@ -172,7 +172,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Best Overall for Privacy + Tool Count</h2>
-<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 107 (PDF, Image, Video, Developer)</p>
+<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 213 tools (PDF, image, video, audio, developer)</p>
 <p>PrivaTools is open source (MIT license), self-hostable, and covers the most tool categories of any free suite tested. It handles PDF operations, image processing, video tools, and developer utilities — all in one place. Files are processed on the server and immediately deleted.</p>
 <p><strong>Strengths:</strong> No task limits, no ads, no watermarks, open-source and auditable. Covers tools that most PDF suites don't touch (video compression, developer utilities, archive tools).</p>
 <p><strong>Weaknesses:</strong> Server-side processing (not fully client-side). Newer service with a smaller community than established alternatives.</p>
@@ -711,7 +711,7 @@ export const blogPosts: BlogPost[] = [
   <li>Click <strong>Summarize</strong> and watch progress per chunk.</li>
   <li>Copy the summary or download it as a text file.</li>
 </ol>
-<p>If you're privacy-paranoid (good!), <kbd>Cmd+Shift+P</kbd> → "Open file" while DevTools is on the Network tab. Drop your PDF, summarize, and confirm zero requests leave your machine.</p>
+<p>If you're privacy-paranoid (good!), <kbd>Cmd+Shift+P</kbd> → "Open file" while DevTools is on the Network tab. After the model is cached, drop your PDF, summarize, and confirm no request carries your document content.</p>
 
 <h2>When NOT to Use Browser-Side Summarization</h2>
 <p>Local summarization has tradeoffs:</p>
@@ -724,7 +724,7 @@ export const blogPosts: BlogPost[] = [
 <p>If quality matters more than privacy and the document is non-sensitive, cloud services like Claude or GPT-4 still beat browser-side models. But for anything you wouldn't paste into a stranger's terminal: keep it local.</p>
 
 <h2>Browser AI Beyond Summarization</h2>
-<p>The same architecture powers <a href="/tool/smart-redact">Smart Redact</a>: a BERT-based named-entity recognition model scans for names, emails, phone numbers, and SSNs, then proposes redactions you can accept or reject. The model never sees the cloud.</p>
+<p>A related split architecture powers <a href="/tool/smart-redact">Smart Redact</a>: a BERT-based named-entity recognition model scans for names, emails, phone numbers, and SSNs in your browser, then proposes redactions you can accept or reject. When you apply them, the PDF and approved strings go to the isolated backend so PyMuPDF can permanently remove the underlying content.</p>
 <p>Expect 2026 to bring more of this — translation, classification, semantic search — all running in 200–500 MB browser-cached models. The privacy story keeps getting better.</p>
 
 <h2>FAQ</h2>
@@ -751,7 +751,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "PrivaTools Team",
     tldr:
-      "Top iLovePDF alternatives in 2026: PrivaTools (175+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+      "Top iLovePDF alternatives in 2026: PrivaTools (213 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
     relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `
@@ -769,7 +769,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Most Tools, Truly Free, Open Source</h2>
-<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 152</p>
+<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 213 tools</p>
 <p>PrivaTools is the comprehensive open-source alternative. It includes everything iLovePDF does (merge, split, compress, convert, OCR, sign, redact) and a lot it doesn't (video tools, audio tools, AI summarization in your browser, smart redaction with NER, JWT decoder, regex tester). The entire stack is MIT-licensed; you can audit the code or self-host it on Docker.</p>
 <p>Files are processed in an isolated container and deleted immediately on response — no retention period, no upload caps beyond 500 MB per file, no watermarks, no ads, no account ever.</p>
 <p><strong>Best for:</strong> Privacy-conscious users, professionals handling confidential documents, organizations wanting on-premises file tooling.</p>
@@ -821,7 +821,7 @@ export const blogPosts: BlogPost[] = [
     <tr><th>Tool</th><th>Free?</th><th>Account?</th><th>Privacy</th><th>Tools</th></tr>
   </thead>
   <tbody>
-    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>152</td></tr>
+    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>213 tools</td></tr>
     <tr><td>Stirling-PDF</td><td>Yes (self-host)</td><td>No</td><td>You host</td><td>~50</td></tr>
     <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Uploaded</td><td>95+</td></tr>
     <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>2hr retention</td><td>~35</td></tr>
@@ -923,7 +923,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2>Should You Redact in the Cloud?</h2>
 <p>Most "online redact PDF" tools upload your document to their servers, apply redaction, and return the result. For routine business documents that's fine. For documents that are themselves sensitive (court filings, medical records, regulatory submissions) — the redaction is supposed to protect — sending the un-redacted file to a third party defeats the entire purpose.</p>
-<p>That's why <a href="/tool/redact-pdf">PrivaTools Redact</a> processes your file inside an isolated container that auto-deletes after response, and <a href="/tool/smart-redact">Smart Redact</a> runs NER entirely in your browser. The unredacted content never persists.</p>
+<p>That's why <a href="/tool/redact-pdf">PrivaTools Redact</a> processes your file inside an isolated container that auto-deletes after response, and <a href="/tool/smart-redact">Smart Redact</a> runs NER detection in your browser before the backend applies the approved redactions. The unredacted content never persists.</p>
 
 <h2>FAQ</h2>
 <h3>Is a redaction reversible?</h3>
@@ -1028,7 +1028,7 @@ export const blogPosts: BlogPost[] = [
   <li><strong>Only first-party aggregate page-view telemetry.</strong> The browser sends a small <code>/api/analytics/pageview</code> beacon instead of loading Google scripts; DNT/GPC, local opt-out, and standard blockers stop it.</li>
   <li><strong>No third-party ad pixels, no remarketing, no session replay.</strong></li>
   <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools">github.com/deadpoolrulesmarvel1-svg/privatools</a>. Audit it yourself.</li>
-  <li><strong>Browser-side tools run entirely in your browser.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tool/smart-redact">Smart Redact</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more.</li>
+  <li><strong>Browser-side tools run entirely in your browser where possible.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more. Smart Redact scans in your browser first, then uses the isolated backend only to apply approved permanent redactions.</li>
   <li><strong>Self-hostable.</strong> <code>docker compose up --build</code> and you're running your own instance.</li>
 </ul>
 
@@ -1093,7 +1093,7 @@ export const blogPosts: BlogPost[] = [
 
 <h3>HEIC → JPG</h3>
 <ol>
-  <li>Open <a href="/tool/heic-to-jpg">HEIC to JPG</a>.</li>
+  <li>Open <a href="/tools/heic-to-jpg">HEIC to JPG</a>.</li>
   <li>Drag your HEIC.</li>
   <li>Choose JPEG quality (default 85 is fine for most use).</li>
   <li>Click Convert and download.</li>
@@ -1145,7 +1145,7 @@ done</code></pre>
 <h2>Privacy Note</h2>
 <p>HEIC files contain extensive EXIF metadata: GPS location, camera model, capture time, even depth maps. Before sharing converted files publicly, strip the metadata:</p>
 <ul>
-  <li>Use <a href="/tool/remove-exif">Remove EXIF</a> after converting.</li>
+  <li>Use <a href="/tools/remove-exif">Remove EXIF</a> after converting.</li>
   <li>Or view what's in there first with <a href="/tools/view-exif">View EXIF Data</a>.</li>
 </ul>
 <p>For sensitive photos, the online converters worth using are the ones that auto-delete files after conversion (e.g., PrivaTools) rather than retaining them on their servers.</p>

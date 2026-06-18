@@ -23,7 +23,7 @@ const TOTAL_TOOL_COUNT = tools.length + nonPdfTools.length;
 const pageMeta: Record<string, { title: string; description: string }> = {
     "/": {
         title: "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        description: `${TOTAL_TOOL_COUNT} free, open-source file tools — PDF, image, video, and developer utilities. Self-hostable so your files stay on your own infrastructure. Files never leave the processing container, no behavioural tracking, no accounts.`,
+        description: `${TOTAL_TOOL_COUNT} free, open-source file tools — PDF, image, video, and developer utilities. Public demo files use isolated temporary processing; self-host when you want your own infrastructure. No behavioural tracking, no accounts.`,
     },
     "/about": {
         title: "About PrivaTools — How We Handle Your Files | Privacy-First",
@@ -55,11 +55,11 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/smallpdf": {
         title: "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
-        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 175+ tools vs 30 tools. See the full comparison.",
+        description: `PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. ${TOTAL_TOOL_COUNT} tools vs 30 tools. See the full comparison.`,
     },
     "/compare/adobe-acrobat": {
         title: "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
-        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 175+ tools. Compare features side by side.",
+        description: `PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, ${TOTAL_TOOL_COUNT} tools. Compare features side by side.`,
     },
     "/compare/sejda": {
         title: "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -71,7 +71,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/foxit": {
         title: "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
-        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 175+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        description: `PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. ${TOTAL_TOOL_COUNT} privacy-first file tools with no account required vs Foxit's enterprise pricing.`,
     },
     "/compare/lightpdf": {
         title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
@@ -122,7 +122,7 @@ const organizationSchema = {
         height: 192,
     },
     alternateName: "PrivaTools.me",
-    description: `Free, open-source suite of ${TOTAL_TOOL_COUNT} file tools for PDF, image, video, and developer workflows. MIT-licensed and self-hostable via Docker — files stay on your own infrastructure.`,
+    description: `Free, open-source suite of ${TOTAL_TOOL_COUNT} file tools for PDF, image, video, and developer workflows. MIT-licensed and self-hostable via Docker for teams that want their own infrastructure.`,
     foundingDate: "2026",
     license: "https://opensource.org/licenses/MIT",
     sameAs: [
@@ -145,7 +145,7 @@ function getToolFAQ(toolName: string) {
         },
         {
             question: `Is it safe to use ${toolName} online?`,
-            answer: `Yes. PrivaTools is open-source and self-hostable, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned — never stored, shared, or analyzed. Many tools run entirely in your browser.`,
+            answer: `Yes. On the public demo, server-side files are processed in an isolated container with temporary storage and deleted immediately after the response is returned — never stored, shared, or analyzed. Many tools run entirely in your browser. For maximum control, PrivaTools is open source and self-hostable on your own infrastructure.`,
         },
         {
             question: `Do I need to create an account?`,

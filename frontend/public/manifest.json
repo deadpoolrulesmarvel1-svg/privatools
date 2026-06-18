@@ -1,7 +1,7 @@
 {
     "name": "PrivaTools — Privacy-First File Tools",
     "short_name": "PrivaTools",
-    "description": "179 free, open-source file tools — PDF, image, video, audio, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
+    "description": "179 free, open-source file tools — PDF, image, video, audio, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts or watermarks.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0a0b0c",

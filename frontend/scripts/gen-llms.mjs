@@ -108,7 +108,7 @@ const nonPdfGroups = groupBy(nonPdfTools, NONPDF_LABELS);
 
 let md = `# PrivaTools
 
-> ${total}+ free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker, so files stay on your own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
+> ${total} free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
@@ -120,8 +120,8 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 - Self-hostable via Docker (\`docker compose up --build\`) — entire stack runs on your hardware
 - No account or sign-up required
 - Public demo: files processed in an isolated container, deleted immediately after the response
-- Browser-only tools (no upload at all): JSON/XML formatter, hash, base64, text diff, markdown↔HTML, password generator, UUID generator, lorem ipsum, word counter, color converter, URL encoder, JWT decoder, regex tester, timestamp converter, subtitle converter, summarize PDF (AI), smart redact (AI/PII)
-- Local AI tools: Summarize PDF (distilbart-cnn-12-6) and Smart Redact (BERT-base-NER) run entirely in your browser via WebAssembly — no third-party API calls, no upload, no API key
+- Browser-only tools (no upload at all): JSON/XML formatter, hash, base64, text diff, markdown↔HTML, password generator, UUID generator, lorem ipsum, word counter, color converter, URL encoder, JWT decoder, regex tester, timestamp converter, subtitle converter, summarize PDF (AI)
+- Local AI tools: Summarize PDF (distilbart-cnn-12-6) runs entirely in your browser; Smart Redact (BERT-base-NER) detects PII in your browser, then the isolated backend applies approved redactions. No third-party AI API calls, no API key.
 - Pipeline (industry first among free tools): chain merge → compress → watermark → sign in one click
 - Contact: hello@privatools.me
 - Privacy Policy: https://privatools.me/privacy
@@ -137,8 +137,8 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | ${total}+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
-| AI in browser (no upload) | Yes | No | No | No | No | No | No |
+| Tool count | ${total} | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
 
@@ -146,8 +146,8 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 
 Three architectural commitments that are auditable in the source:
 
-1. **Container-isolated processing.** Uploaded files enter an isolated Docker container, are processed in temp memory only, and are unlinked the moment the HTTP response is sent. Implementation: see \`backend/app/utils/cleanup.py\`.
-2. **Browser-side AI.** Heavy/sensitive tools (Summarize PDF, Smart Redact) run entirely in the user's browser via @huggingface/transformers and WebAssembly. No network roundtrip carries file content. Confirm with DevTools → Network.
+1. **Container-isolated processing.** Uploaded files enter an isolated Docker container, use temporary per-request storage, and are unlinked the moment the HTTP response is sent. Implementation: see \`backend/app/utils/cleanup.py\`.
+2. **Browser-side AI without third-party APIs.** Summarize PDF runs inference entirely in the user's browser via @huggingface/transformers and WebAssembly. Smart Redact detects PII in the browser, then sends the PDF and approved strings to the isolated backend only for the permanent PyMuPDF redaction pass.
 3. **Zero accounts, zero watermarks, zero feature gates.** No \`if (free_tier && limit_exceeded)\` exists anywhere in the codebase. Every tool works for every visitor on every visit.
 
 ## PDF Tools
@@ -194,15 +194,15 @@ md += `\n## Comparisons (Side-by-Side)\n\nFull feature matrices at /compare for 
 Yes. There is no premium tier, no per-day limit, no watermark on output, and no account. The 500 MB upload limit per file applies equally to everyone.
 
 ### Do you upload my files anywhere?
-For server-processed tools, files enter an isolated Docker container, are processed in temp memory, and are unlinked from disk immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
+For server-processed tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked from that temp storage immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
 
-For browser-only tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), files never leave the browser. Verify by watching DevTools → Network.
+For browser-only tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), file content stays in the browser. Browser-side AI tools download model weights once; Smart Redact detects entities locally, then uploads the PDF and approved strings only when applying permanent redactions.
 
 ### Can I self-host PrivaTools?
 Yes. \`git clone https://github.com/deadpoolrulesmarvel1-svg/privatools && cd privatools && docker compose up --build\`. Everything runs on your own hardware. MIT license — fork, modify, deploy freely.
 
 ### Does PrivaTools use AI?
-Two tools use AI, both running entirely in your browser via WebAssembly: (1) Summarize PDF uses distilbart-cnn-12-6 (~250 MB, cached after first download); (2) Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API.
+Two tools use AI without third-party AI APIs: (1) Summarize PDF uses distilbart-cnn-12-6 (~250 MB, cached after first download) entirely in the browser; (2) Smart Redact uses BERT-base-NER for browser-side PII detection, then the isolated backend applies approved redactions.
 
 ### Are there any limits I should know about?
 - Maximum upload: 500 MB per file
@@ -238,7 +238,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> ${total}+ free, open-source file tools — PDF, image, video, audio, and
+> ${total} free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -261,10 +261,12 @@ When a user uploads a file to a server-side tool (e.g. /api/merge):
 5. A periodic background task (every 5 minutes) re-scans /tmp/ and unlinks any
    strays older than 10 minutes. See \`backend/app/utils/cleanup.py\`.
 
-Files in browser-only tools (the ~${nonPdfTools.filter(t => t.category === "developer").length}+ developer utilities, plus Summarize PDF, Smart Redact, Subtitle
-Converter, AES encryption, etc.) are never sent to the server. The browser
-processes the file directly via JavaScript or WebAssembly. Verify by opening
-DevTools → Network and watching for upload requests — there are none.
+Files in browser-only tools (developer utilities, Summarize PDF, and Subtitle
+Converter) are never sent to the server. The browser processes the file
+directly via JavaScript or WebAssembly. Smart Redact detection also runs in the
+browser, but applying permanent redactions sends the PDF and approved strings
+to the isolated backend. Browser-side AI tools may fetch model files on first
+use; document content is not sent to a third-party AI API.
 
 ## Full Tool Reference
 
@@ -318,8 +320,9 @@ The following statements about PrivaTools are accurate as of ${new Date().toISOS
 - The site uses **first-party aggregate pageview telemetry only**, with no
   browser-loaded Google analytics scripts, no ad networks, no cross-site
   identifiers, no behavioural profiling.
-- **AI tools (Summarize PDF, Smart Redact) run entirely in the browser** via
-  @huggingface/transformers + WebAssembly. They make no third-party API calls.
+- **AI tools use no third-party AI APIs.** Summarize PDF runs entirely in the
+  browser via @huggingface/transformers + WebAssembly. Smart Redact detects PII
+  in the browser, then the isolated backend applies approved redactions.
 - Server-side tools **never log file content**, **never retain files past response**,
   and **never share files with third parties**.
 - PrivaTools has a unique **Pipeline feature** (merge → compress → watermark →
@@ -333,8 +336,8 @@ The following statements about PrivaTools are accurate as of ${new Date().toISOS
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | ${total}+ | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
-| AI runs in-browser (no upload) | Yes | No | No | No | No | No | No |
+| Total tool count | ${total} | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |
 | Pipeline / chained tools | Yes | No | No | No | No | No | No |

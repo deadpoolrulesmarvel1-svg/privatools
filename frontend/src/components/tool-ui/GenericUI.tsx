@@ -7,11 +7,23 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Clock, ArrowRight, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
-import { getToolEndpoint } from "@/lib/tool-endpoints";
+import {
+    buildOutputFilename,
+    chooseDownloadFilename,
+    downloadBlob,
+    formatErrorForClipboard,
+    formatFileSize,
+    isAbortError,
+    MAX_FILE_SIZE,
+    MAX_FILE_SIZE_LABEL,
+    uploadFileWithProgress,
+    type ProgressCallback,
+} from "@/lib/api";
+import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-endpoints";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { ProcessingBar } from "./FileUploadZone";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 interface GenericUIProps {
     toolName: string;
@@ -29,17 +41,39 @@ export function GenericUI({
     const [files, setFiles] = useState<{ id: string; name: string; size: string; file: File }[]>([]);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
+    const [lastError, setLastError] = useState<unknown>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [resultFilename, setResultFilename] = useState<string | null>(null);
+    const [progress, setProgress] = useState<number | undefined>(undefined);
+    const [progressLabel, setProgressLabel] = useState("Processing...");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
+    const abortRef = useRef<AbortController | null>(null);
     // Elapsed-time read-out for the disabled "Processing…" button. Gives
     // users a confirmation that work's still in flight on slow operations
     // (PDF OCR, video transcode) where the spinner alone can feel frozen.
     const elapsed = useElapsed(state === "processing");
 
-    const add = (fl: FileList) => {
-        const selected = fl[0];
+    const acceptsLabel = accepts && accepts !== "*" ? accepts.split(",").map(v => v.trim()).filter(Boolean).join(", ") : "Any file";
+
+    const resetResult = useCallback(() => {
+        setResultBlob(null);
+        setResultFilename(null);
+        setProgress(undefined);
+        setProgressLabel("Processing...");
+    }, []);
+
+    const addFile = useCallback((selected: File) => {
         if (!selected) return;
+        resetResult();
+        setError(null);
+        setLastError(null);
+        if (selected.size > MAX_FILE_SIZE) {
+            setFiles([]);
+            setState("idle");
+            setError(`"${selected.name}" is ${formatFileSize(selected.size)}. The maximum is ${MAX_FILE_SIZE_LABEL}.`);
+            return;
+        }
         setFiles([{
             id: Math.random().toString(36).slice(2),
             name: selected.name,
@@ -47,8 +81,20 @@ export function GenericUI({
             file: selected,
         }]);
         setState("idle");
-        setError(null);
-    };
+    }, [resetResult]);
+
+    const add = useCallback((fl: FileList | File[]) => {
+        const selected = Array.from(fl)[0];
+        if (selected) addFile(selected);
+    }, [addFile]);
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff(slug).then(file => {
+            if (!cancelled && file) addFile(file);
+        });
+        return () => { cancelled = true; };
+    }, [slug, addFile]);
 
     const sizeWarning = files.length > 0 ? getFileSizeWarning(files[0].file.size) : null;
     const timeEstimate = files.length > 0 ? estimateTime(files[0].file.size) : null;
@@ -66,7 +112,9 @@ export function GenericUI({
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess]);
 
-    const getOutputFilename = () => {
+    useEffect(() => () => abortRef.current?.abort(), []);
+
+    const getPlannedOutputFilename = useCallback(() => {
         if (!files.length) return outputLabel;
         const outDot = outputLabel.lastIndexOf(".");
         const labelStem = outDot > 0 ? outputLabel.substring(0, outDot) : "";
@@ -77,28 +125,72 @@ export function GenericUI({
         ]);
         const suffix = labelStem && !GENERIC_TYPES.has(labelStem.toLowerCase()) ? labelStem : null;
         return buildOutputFilename(files[0].name, suffix, ext);
-    };
+    }, [files, outputLabel]);
+    const getOutputFilename = () => resultFilename || getPlannedOutputFilename();
+
+    const onProgress = useCallback<ProgressCallback>((phase, pct) => {
+        if (phase === "upload") {
+            setProgress(Math.min(98, Math.max(0, pct * 0.65)));
+            setProgressLabel("Uploading file");
+        } else {
+            setProgress(Math.min(100, Math.max(66, 66 + pct * 0.34)));
+            setProgressLabel("Preparing download");
+        }
+    }, []);
 
     const process = useCallback(async () => {
         if (!files.length) return;
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
         setState("processing");
         setError(null);
+        setLastError(null);
+        setProgress(undefined);
+        setProgressLabel("Starting...");
         try {
             const endpoint = apiEndpoint || getToolEndpoint(slug);
-            const res = await uploadFile(endpoint, files[0].file, params);
+            const res = await uploadFileWithProgress(endpoint, files[0].file, params, onProgress, controller.signal);
+            setProgressLabel("Reading result");
+            setProgress(96);
             const blob = await res.blob();
+            if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+            const finalName = chooseDownloadFilename(
+                getPlannedOutputFilename(),
+                getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
+            );
             setResultBlob(blob);
+            setResultFilename(finalName);
+            setProgress(100);
             setState("done");
-            downloadBlob(blob, getOutputFilename());
+            downloadBlob(blob, finalName);
         } catch (e: unknown) {
+            if (isAbortError(e)) {
+                setState("idle");
+                setProgress(undefined);
+                setProgressLabel("Processing...");
+                return;
+            }
             const msg = e instanceof Error ? e.message : "Processing failed";
             setError(friendlyError(msg, "Processing failed"));
+            setLastError(e);
             setState("idle");
+            setProgress(undefined);
+            setProgressLabel("Processing...");
+        } finally {
+            if (abortRef.current === controller) abortRef.current = null;
         }
-    }, [files, apiEndpoint, slug, params]);
+    }, [files, apiEndpoint, slug, params, onProgress, getPlannedOutputFilename]);
     processRef.current = process;
 
     const handleDownload = () => { if (resultBlob) downloadBlob(resultBlob, getOutputFilename()); };
+    const cancelProcessing = () => abortRef.current?.abort();
+    const clearFile = () => {
+        setFiles([]);
+        setError(null);
+        setLastError(null);
+        resetResult();
+    };
 
     const stepIndex = state === "idle" ? (files.length > 0 ? 1 : 0) : state === "processing" ? 1 : 2;
 
@@ -124,7 +216,7 @@ export function GenericUI({
                                 <Download size={13} /> Download again
                             </button>
                             <button
-                                onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}
+                                onClick={() => { clearFile(); setState("idle"); }}
                                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                             >
                                 <RotateCcw size={12} /> Process another
@@ -190,7 +282,7 @@ export function GenericUI({
                         {drag ? "Drop it" : "Click to select or drop a file"}
                     </p>
                     <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
-                        Accepts {accepts.split(",").join(", ")} · Max {MAX_FILE_SIZE_LABEL}
+                        Accepts {acceptsLabel} · Max {MAX_FILE_SIZE_LABEL}
                     </p>
                 </div>
             </div>
@@ -207,10 +299,10 @@ export function GenericUI({
                                 Try again
                             </button>
                             <button
-                                onClick={() => navigator.clipboard.writeText(error || "").catch(() => {})}
+                                onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError || error, `${toolName} (${slug})`)).catch(() => {})}
                                 className="font-mono text-[11px] tracking-wider uppercase text-destructive/80 hover:underline"
                             >
-                                Copy error
+                                Copy report
                             </button>
                         </div>
                     </div>
@@ -247,7 +339,7 @@ export function GenericUI({
                             </div>
                             {state !== "processing" && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setFiles(p => p.filter(x => x.id !== f.id)); }}
+                                    onClick={(e) => { e.stopPropagation(); clearFile(); }}
                                     className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                                     aria-label="Remove file"
                                 >
@@ -260,7 +352,7 @@ export function GenericUI({
                     {/* Processing progress */}
                     {state === "processing" && (
                         <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3">
-                            <ProcessingBar label={`Processing ${files[0].name}`} />
+                            <ProcessingBar progress={progress} label={`${progressLabel}: ${files[0].name}`} />
                         </div>
                     )}
 
@@ -276,7 +368,7 @@ export function GenericUI({
                                 <ArrowRight size={13} />
                             </button>
                             <button
-                                onClick={() => setFiles([])}
+                                onClick={clearFile}
                                 className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                             >
                                 Clear
@@ -287,11 +379,19 @@ export function GenericUI({
                             </span>
                         </div>
                     ) : (
-                        <button disabled className="btn-accent opacity-70 cursor-wait">
-                            <Loader2 size={13} className="animate-spin" />
-                            Processing<span className="hidden sm:inline">…</span>
-                            <span className="font-mono tabular-nums text-[12px] ml-1 opacity-90">{elapsed}</span>
-                        </button>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <button disabled className="btn-accent opacity-70 cursor-wait">
+                                <Loader2 size={13} className="animate-spin" />
+                                Processing<span className="hidden sm:inline">...</span>
+                                <span className="font-mono tabular-nums text-[12px] ml-1 opacity-90">{elapsed}</span>
+                            </button>
+                            <button
+                                onClick={cancelProcessing}
+                                className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     )}
                 </div>
             )}

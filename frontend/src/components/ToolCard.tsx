@@ -40,7 +40,7 @@ export function ToolCard({ slug, icon: Icon, name, description, category }: Tool
       className={cn(
         "group flex flex-col items-start gap-3.5 rounded-xl border border-border bg-card p-4 text-left",
         // Workshop-paper feel: subtle lift + soft drop shadow on hover, never iOS-glossy.
-        "transition-all duration-200 ease-[cubic-bezier(0.16,0.84,0.44,1)]",
+        "transition-all duration-200 ease-out",
         "hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_4px_18px_rgba(0,0,0,0.4)] w-full",
         cfg.glow
       )}

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Clock, GitBranch, Layers, BookOpen, Scale, Info, Home, Zap } from "lucide-react";
+import { Search, ArrowRight, Clock, GitBranch, Layers, BookOpen, Scale, Info, Home, Zap, FileUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
 import { useHistory } from "@/hooks/useHistory";
+import { storeFileHandoff } from "@/lib/file-handoff";
 
 // Per-tool synonyms — invisible search hints so "join pdfs" finds merge-pdf,
 // "shrink" finds compress-pdf, etc. Keep concise; add only common phrasings.
@@ -231,6 +232,7 @@ type QuickAction = {
     synLower: string;
     slugTokens: string[];
     popularity: number;
+    accepts?: string;
     isAction: true;
 };
 const QUICK_ACTIONS: QuickAction[] = [
@@ -270,6 +272,7 @@ const allTools = [
         iconColor: categoryMeta[t.category as Category]?.iconColor ?? "text-blue-400",
         categoryLabel: _CAT_LABEL[t.category] ?? "PDF",
         synonyms: resolveSyn(t.slug, t.synonyms),
+        accepts: t.accepts,
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
         synLower: resolveSyn(t.slug, t.synonyms).toLowerCase(),
@@ -283,6 +286,7 @@ const allTools = [
         iconColor: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconColor ?? "text-pink-400",
         categoryLabel: _CAT_LABEL[t.category] ?? "Tool",
         synonyms: resolveSyn(t.slug, t.synonyms),
+        accepts: t.accepts,
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
         synLower: resolveSyn(t.slug, t.synonyms).toLowerCase(),
@@ -296,6 +300,48 @@ const allTools = [
 // undefined fields — `slug.startsWith("go-")` is the durable signal.
 const isQuickAction = (slug: string) => slug.startsWith("go-");
 
+function extensionFromMime(type: string): string {
+    const subtype = type.split("/")[1]?.split(";")[0]?.toLowerCase() || "bin";
+    if (subtype === "jpeg") return "jpg";
+    if (subtype === "svg+xml") return "svg";
+    return subtype.replace(/[^a-z0-9]+/g, "") || "bin";
+}
+
+function fileExtension(file: File): string {
+    const fromName = file.name.split(".").pop()?.toLowerCase();
+    if (fromName && fromName !== file.name.toLowerCase()) return fromName;
+    return extensionFromMime(file.type);
+}
+
+function fileFromClipboard(data: DataTransfer | null): File | null {
+    if (!data) return null;
+    const direct = Array.from(data.files || [])[0];
+    if (direct) return direct;
+    const itemFile = Array.from(data.items || [])
+        .find(item => item.kind === "file")
+        ?.getAsFile();
+    if (!itemFile) return null;
+    if (itemFile.name) return itemFile;
+    return new File([itemFile], `clipboard.${extensionFromMime(itemFile.type)}`, {
+        type: itemFile.type,
+        lastModified: Date.now(),
+    });
+}
+
+function acceptsFile(accepts: string | undefined, file: File): boolean {
+    if (!accepts || accepts.trim() === "*" || accepts.trim() === "") return false;
+    const ext = fileExtension(file);
+    const mime = file.type.toLowerCase();
+    return accepts.split(",").some(raw => {
+        const token = raw.trim().toLowerCase();
+        if (!token || token === "*") return false;
+        if (token.startsWith(".")) return token.slice(1) === ext;
+        if (token.endsWith("/*")) return Boolean(mime) && mime.startsWith(token.slice(0, -1));
+        if (token.includes("/")) return Boolean(mime) && mime === token;
+        return token.replace(/^\./, "") === ext;
+    });
+}
+
 type CommandPaletteProps = {
     defaultOpen?: boolean;
 };
@@ -303,6 +349,7 @@ type CommandPaletteProps = {
 export default function CommandPalette({ defaultOpen = false }: CommandPaletteProps) {
     const [open, setOpen] = useState(defaultOpen);
     const [query, setQuery] = useState("");
+    const [pastedFile, setPastedFile] = useState<File | null>(null);
     const [selected, setSelected] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
@@ -312,10 +359,18 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
     const navigate = useNavigate();
     const { history } = useHistory();
 
-    const go = useCallback((href: string) => {
+    const openResult = useCallback((result: { href: string; slug: string; isAction?: boolean }) => {
+        const navigateNow = () => {
+            setOpen(false);
+            navigate(result.href);
+        };
+        if (pastedFile && !result.isAction) {
+            void storeFileHandoff(pastedFile, result.slug).finally(navigateNow);
+            return;
+        }
         setOpen(false);
-        navigate(href);
-    }, [navigate]);
+        navigate(result.href);
+    }, [navigate, pastedFile]);
 
     // Global keyboard shortcut
     useEffect(() => {
@@ -336,6 +391,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
         if (open) {
             previouslyFocused.current = document.activeElement as HTMLElement | null;
             setQuery("");
+            setPastedFile(null);
             setSelected(0);
             setTimeout(() => inputRef.current?.focus(), 50);
         } else if (previouslyFocused.current) {
@@ -421,6 +477,15 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
         })) as Result[];
     }, [query, history, searchable]);
 
+    const fileResults = useMemo<Result[]>(() => {
+        if (!pastedFile) return [];
+        return allTools
+            .filter(t => acceptsFile(t.accepts, pastedFile))
+            .sort((a, b) => a.popularity - b.popularity)
+            .slice(0, 16) as Result[];
+    }, [pastedFile]);
+    const activeResults = pastedFile ? fileResults : results;
+
     // Keyboard navigation — also includes a tiny focus trap. The palette has
     // a single tab-stop (the input); Tab/Shift+Tab keep focus inside so users
     // can't escape behind the backdrop with their keyboard.
@@ -429,7 +494,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
         const handler = (e: KeyboardEvent) => {
             if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelected(prev => Math.min(prev + 1, results.length - 1));
+                setSelected(prev => Math.min(prev + 1, Math.max(0, activeResults.length - 1)));
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 setSelected(prev => Math.max(prev - 1, 0));
@@ -438,10 +503,10 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                 setSelected(0);
             } else if (e.key === "End") {
                 e.preventDefault();
-                setSelected(Math.max(0, results.length - 1));
-            } else if (e.key === "Enter" && results[selected]) {
+                setSelected(Math.max(0, activeResults.length - 1));
+            } else if (e.key === "Enter" && activeResults[selected]) {
                 e.preventDefault();
-                go(results[selected].href);
+                openResult(activeResults[selected]);
             } else if (e.key === "Tab") {
                 // Focus trap: bounce focus back to the input. The palette has
                 // only the input as a real tab-stop — results are picked via
@@ -452,7 +517,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [open, selected, results, go]);
+    }, [open, selected, activeResults, openResult]);
 
     // Scroll selected into view
     useEffect(() => {
@@ -484,8 +549,10 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                     {/* Header dateline */}
                     <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
                         <span><span className="text-accent">§</span> Command palette</span>
-                        <span>{query.trim()
-                            ? `${results.length} match${results.length !== 1 ? "es" : ""}`
+                        <span>{pastedFile
+                            ? `${activeResults.length} compatible`
+                            : query.trim()
+                            ? `${activeResults.length} match${activeResults.length !== 1 ? "es" : ""}`
                             : `${allTools.length} tools indexed`}
                         </span>
                     </div>
@@ -502,11 +569,19 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             aria-expanded="true"
                             aria-controls="command-palette-results"
                             aria-autocomplete="list"
-                            aria-activedescendant={results[selected] ? `cmdk-opt-${results[selected].slug}` : undefined}
+                            aria-activedescendant={activeResults[selected] ? `cmdk-opt-${activeResults[selected].slug}` : undefined}
                             className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/85"
                             placeholder={`Search ${allTools.length} tools or jump to a page…`}
                             value={query}
-                            onChange={e => { setQuery(e.target.value); setSelected(0); }}
+                            onChange={e => { setPastedFile(null); setQuery(e.target.value); setSelected(0); }}
+                            onPaste={e => {
+                                const file = fileFromClipboard(e.clipboardData);
+                                if (!file) return;
+                                e.preventDefault();
+                                setPastedFile(file);
+                                setQuery(file.name || file.type || "Clipboard file");
+                                setSelected(0);
+                            }}
                             aria-label="Search tools"
                         />
                         <kbd className="hidden sm:inline-flex items-center font-mono text-[10px] text-muted-foreground bg-secondary border border-border rounded px-1.5 py-0.5">
@@ -517,10 +592,34 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                     {/* Live region — announce result count to assistive tech
                        so a SR user knows how many tools matched their query. */}
                     <div role="status" aria-live="polite" className="sr-only">
-                        {query.trim()
-                            ? `${results.length} ${results.length === 1 ? "result" : "results"} for ${query.trim()}`
+                        {pastedFile
+                            ? `${activeResults.length} ${activeResults.length === 1 ? "tool" : "tools"} can use ${pastedFile.name || "the pasted file"}`
+                            : query.trim()
+                            ? `${activeResults.length} ${activeResults.length === 1 ? "result" : "results"} for ${query.trim()}`
                             : ""}
                     </div>
+
+                    {pastedFile && (
+                        <div className="flex items-center gap-3 px-5 py-3 border-b border-border bg-accent/[0.04]">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10">
+                                <FileUp size={14} className="text-accent" strokeWidth={1.75} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[13.5px] font-semibold text-foreground truncate">{pastedFile.name || "Clipboard file"}</p>
+                                <p className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                                    {activeResults.length} compatible tool{activeResults.length !== 1 ? "s" : ""}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => { setPastedFile(null); setQuery(""); setSelected(0); inputRef.current?.focus(); }}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+                                aria-label="Clear pasted file"
+                            >
+                                <X size={13} />
+                            </button>
+                        </div>
+                    )}
 
                     {/* Results */}
                     <div
@@ -530,7 +629,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                         aria-label="Search results"
                         className="max-h-[55vh] overflow-y-auto py-2 px-2"
                     >
-                        {!query.trim() && history.length > 0 && (
+                        {!pastedFile && !query.trim() && history.length > 0 && (
                             <div className="flex items-center gap-1.5 px-3 pt-2 pb-1.5">
                                 <span className="text-accent font-mono text-[10px]">§</span>
                                 <Clock size={10} className="text-muted-foreground" />
@@ -538,15 +637,15 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             </div>
                         )}
 
-                        {results.length > 0 ? (
-                            results.map((tool, i) => {
+                        {activeResults.length > 0 ? (
+                            activeResults.map((tool, i) => {
                                 const Ic = tool.icon;
                                 // First non-recent and first quick-action and
                                 // first tool transitions get a section label
                                 // when no query is active.
-                                const prev = results[i - 1];
-                                const startActions = !query.trim() && tool.isAction && !prev?.isAction;
-                                const startTools = !query.trim() && !tool.isAction && !tool.isRecent && (prev?.isAction || prev?.isRecent);
+                                const prev = activeResults[i - 1];
+                                const startActions = !pastedFile && !query.trim() && tool.isAction && !prev?.isAction;
+                                const startTools = !pastedFile && !query.trim() && !tool.isAction && !tool.isRecent && (prev?.isAction || prev?.isRecent);
                                 return (
                                     <div key={tool.slug}>
                                         {startActions && (
@@ -567,7 +666,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                                             role="option"
                                             aria-selected={i === selected}
                                             tabIndex={-1}
-                                            onClick={() => go(tool.href)}
+                                            onClick={() => openResult(tool)}
                                             onMouseEnter={() => setSelected(i)}
                                             className={cn(
                                                 "group flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-left transition-colors",
@@ -606,12 +705,16 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             })
                         ) : (
                             <div className="py-14 px-6 text-center">
-                                <p className="font-display text-[18px] font-medium text-foreground italic">No tools match “{query}”.</p>
-                                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">
-                                    Try “merge”, “compress”, “redact”, or “qr”
+                                <p className="font-display text-[18px] font-medium text-foreground italic">
+                                    {pastedFile ? "No compatible tools found." : `No tools match “${query}”.`}
                                 </p>
+                                {!pastedFile && (
+                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">
+                                        Try “merge”, “compress”, “redact”, or “qr”
+                                    </p>
+                                )}
                                 <button
-                                    onClick={() => { setQuery(""); inputRef.current?.focus(); }}
+                                    onClick={() => { setPastedFile(null); setQuery(""); inputRef.current?.focus(); }}
                                     className="mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-border-strong font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     Clear search

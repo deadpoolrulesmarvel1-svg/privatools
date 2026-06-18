@@ -1,0 +1,230 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
+
+const root = process.cwd();
+
+const staleStorageClaims = [
+    "temp memory",
+    "temporary memory",
+    "temporary server memory",
+    "memory only",
+    "processed in memory",
+    "self-hostable via Docker, so files stay on your own infrastructure",
+    "never written to disk",
+    "Your files never touch our disk",
+    "No copy is kept on any disk",
+    "files never leave the processing container",
+    "files never leave the container",
+    "File content never leaves the processing container",
+    "zero requests after the bundle loads",
+    "Smart Redact PDF online with AI — without uploading",
+    "The redacted PDF is then constructed in your browser",
+    "the original is never uploaded",
+    "summarize PDF (AI), smart redact (AI/PII)",
+    "Local AI tools: Summarize PDF (distilbart-cnn-12-6) and Smart Redact (BERT-base-NER) run entirely in your browser",
+    "Heavy/sensitive tools (Summarize PDF, Smart Redact) run entirely in the user's browser",
+    "**AI tools (Summarize PDF, Smart Redact) run entirely in the browser**",
+    "AI in browser (no upload)",
+    "AI runs in-browser (no upload)",
+    "The model never sees the cloud.",
+    "confirm zero requests leave your machine",
+    "Files never reach our servers for tools like <a href=\"/tool/summarize-pdf\">Summarize</a>, <a href=\"/tool/smart-redact\">Smart Redact</a>",
+    "One file, four tools, never uploaded",
+    "179 file tools that don't see your files.",
+    "Nothing leaves the container",
+    "Your file never leaves the container",
+    "processed in your browser where possible, or on a server <span className=\"text-foreground/85 font-medium\">you control</span>",
+    "Summarize and redact with models that run entirely in your browser",
+    "Summarize and redact entirely in your browser",
+    "\"uploads\": false",
+    "Your files weren't sent anywhere",
+    "everything stays in your browser",
+    "Your files weren't uploaded",
+] as const;
+
+describe("static SEO files", () => {
+    it("keeps render-critical assets crawlable", () => {
+        const robots = readFileSync(join(root, "public/robots.txt"), "utf8");
+
+        expect(robots).toContain("Sitemap: https://privatools.me/sitemap.xml");
+        expect(robots).not.toMatch(/^\s*Disallow:\s*\/assets\/?\s*$/m);
+    });
+
+    it("does not overclaim that every tool is browser-only", () => {
+        const indexHtml = readFileSync(join(root, "index.html"), "utf8");
+        const manifest = JSON.parse(readFileSync(join(root, "public/manifest.json"), "utf8")) as { description: string };
+        const statusBar = readFileSync(join(root, "src/components/StatusBar.tsx"), "utf8");
+        const landingPage = readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8");
+        const staticSurfaces = [
+            indexHtml,
+            manifest.description,
+            statusBar,
+            landingPage,
+        ].join("\n");
+
+        expect(staticSurfaces).not.toContain("All processing happens on your device");
+        expect(staticSurfaces).not.toContain("All processing happens locally");
+        expect(staticSurfaces).not.toContain("Zero uploads");
+        expect(staticSurfaces).not.toContain("Zero analytics scripts");
+        expect(staticSurfaces).not.toContain("Your files never touch our disk");
+        expect(staticSurfaces).not.toContain("No cloud uploads. No tracking.");
+        expect(staticSurfaces).not.toContain("No Tracking");
+        expect(indexHtml).toContain("Browser-only when possible");
+        expect(indexHtml).toContain("isolated");
+        expect(manifest.description).toContain("Browser-only when possible");
+        expect(manifest.description).toContain("isolated");
+        expect(statusBar).toContain("Browser-only where possible");
+        expect(statusBar).toContain("isolated backend");
+        expect(landingPage).toContain("Browser-only where possible");
+        expect(landingPage).toContain("isolated temporary processing");
+    });
+
+    it("keeps static privacy storage claims aligned with temp-file processing", () => {
+        const surfaces = [
+            readFileSync(join(root, "public/llms.txt"), "utf8"),
+            readFileSync(join(root, "public/llms-full.txt"), "utf8"),
+            readFileSync(join(root, "public/blog-content.json"), "utf8"),
+            readFileSync(join(root, "public/samples/sample.json"), "utf8"),
+            readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/BlogPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/LandingPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/PrivacyPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/data/blog.ts"), "utf8"),
+            readFileSync(join(root, "src/data/tools.ts"), "utf8"),
+            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/ErrorBoundary.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/FirstRunWelcome.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/HeroArtwork.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/OnboardingTour.tsx"), "utf8"),
+            readFileSync(join(root, "scripts/gen-llms.mjs"), "utf8"),
+        ].join("\n");
+
+        for (const stale of staleStorageClaims) {
+            expect(surfaces).not.toContain(stale);
+        }
+        expect(surfaces).toContain("temporary per-request storage");
+        expect(surfaces).toContain("isolated temporary");
+    });
+
+    it("does not describe hosted tool processing as the user's own infrastructure", () => {
+        const toolPageSurfaces = [
+            readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/NonPdfToolPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+        ].join("\n");
+
+        expect(toolPageSurfaces).not.toContain("Processed on your own infrastructure");
+        expect(toolPageSurfaces).not.toContain("Files go to your self-hosted server");
+        expect(toolPageSurfaces).not.toContain("Files are processed on the self-hosted server");
+        expect(toolPageSurfaces).not.toContain("Self-hostable so your files stay on your own infrastructure");
+        expect(toolPageSurfaces).not.toContain("self-hostable, so files stay on your own infrastructure");
+        expect(toolPageSurfaces).toContain("Processed in isolated temporary storage");
+        expect(toolPageSurfaces).toContain("never on third-party clouds");
+        expect(toolPageSurfaces).toContain("self-hostable on your own infrastructure");
+    });
+
+    it("leaves JSON-LD to the route-aware SEO layer", () => {
+        const indexHtml = readFileSync(join(root, "index.html"), "utf8");
+
+        expect(indexHtml).not.toMatch(/<script[^>]+type=["']application\/ld\+json["']/i);
+    });
+
+    it("keeps Create ZIP claims in llms-full aligned with server processing", () => {
+        const llmsFull = readFileSync(join(root, "public/llms-full.txt"), "utf8");
+
+        expect(llmsFull).not.toContain("Fast local compression with no file upload to external servers");
+        expect(llmsFull).toContain("Fast compression in an isolated container, no third-party uploads");
+    });
+
+    it("keeps generated AI and search files aligned with the current tool count", () => {
+        const generated = [
+            readFileSync(join(root, "public/llms.txt"), "utf8"),
+            readFileSync(join(root, "public/llms-full.txt"), "utf8"),
+            readFileSync(join(root, "public/blog-content.json"), "utf8"),
+            readFileSync(join(root, "public/opensearch.xml"), "utf8"),
+        ].join("\n");
+
+        expect(generated).toContain(`${TOTAL_TOOL_COUNT} tools`);
+        expect(generated).toContain(`Search ${TOTAL_TOOL_COUNT} free`);
+        expect(generated).not.toContain(`${TOTAL_TOOL_COUNT}+`);
+        expect(generated).not.toMatch(/AES encryption/i);
+        expect(generated).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
+    });
+
+    it("keeps production CSP compatible with browser-side AI tools", () => {
+        const deployConfigs = [
+            readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8"),
+            readFileSync(join(root, "..", "deploy/nginx.conf"), "utf8"),
+        ];
+
+        for (const config of deployConfigs) {
+            expect(config).not.toContain("'unsafe-eval'");
+            expect(config).toContain("'wasm-unsafe-eval'");
+            expect(config).toContain("https://huggingface.co");
+            expect(config).toContain("https://cdn.jsdelivr.net");
+            expect(config).toContain("worker-src 'self' blob:");
+            expect(config).not.toContain("https://fonts.bunny.net");
+            expect(config).not.toContain("https://fonts.googleapis.com");
+            expect(config).not.toContain("https://fonts.gstatic.com");
+            expect(config).not.toContain("https://www.googletagmanager.com");
+            expect(config).not.toContain("https://www.google-analytics.com");
+        }
+    });
+
+    it("keeps deploy security headers aligned with the backend policy", () => {
+        const deployConfigs = [
+            readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8"),
+            readFileSync(join(root, "..", "deploy/nginx.conf"), "utf8"),
+        ];
+
+        for (const config of deployConfigs) {
+            expect(config).toContain('add_header X-Frame-Options "DENY" always;');
+            expect(config).not.toContain('X-Frame-Options "SAMEORIGIN"');
+            expect(config).toContain('Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"');
+            expect(config).not.toContain('Strict-Transport-Security "max-age=31536000');
+        }
+    });
+
+    it("keeps oracle nginx as the single public security-header source", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+        const hiddenHeaders = [
+            "X-Frame-Options",
+            "X-Content-Type-Options",
+            "X-XSS-Protection",
+            "Referrer-Policy",
+            "Strict-Transport-Security",
+            "Permissions-Policy",
+            "Content-Security-Policy",
+        ];
+
+        for (const header of hiddenHeaders) {
+            expect(config).toContain(`proxy_hide_header ${header};`);
+        }
+    });
+
+    it("keeps oracle nginx cache policy edge-owned for static/PWA files", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+
+        expect((config.match(/proxy_hide_header Cache-Control;/g) || []).length).toBeGreaterThanOrEqual(4);
+        expect(config).toContain("location = /sw.js");
+        expect(config).toContain('add_header Cache-Control "no-store, max-age=0" always;');
+        expect(config).toContain("location ^~ /assets/");
+        expect(config).toContain('add_header Cache-Control "public, max-age=31536000, immutable" always;');
+        expect(config).toContain("manifest\\.json|robots\\.txt|llms\\.txt|llms-full\\.txt|opensearch\\.xml");
+        expect(config).toContain('add_header Cache-Control "public, max-age=3600" always;');
+        expect(config).toContain('add_header Cache-Control "public, max-age=2592000, immutable" always;');
+        expect(config).not.toContain("expires 30d;");
+    });
+
+    it("keeps privatools.me as the only content-serving hostname", () => {
+        const config = readFileSync(join(root, "..", "deploy/oracle-vm/nginx-privatools.conf"), "utf8");
+
+        expect(config).toContain("server_name www.privatools.me;");
+        expect(config).toContain("server_name privatools.me;");
+        expect(config).toContain("return 301 https://privatools.me$request_uri;");
+        expect(config).not.toContain("return 301 https://$host$request_uri;");
+    });
+});

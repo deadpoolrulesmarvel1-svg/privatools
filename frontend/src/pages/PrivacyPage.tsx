@@ -11,7 +11,7 @@
  * Last-updated timestamp links to the git history for diff transparency.
  */
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -197,7 +197,7 @@ export default function PrivacyPage() {
     };
   }, []);
 
-  const scrollToHeading = (id: string) => {
+  const scrollToHeading = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
     const scrollEl = getScrollEl(articleRef.current);
@@ -208,7 +208,7 @@ export default function PrivacyPage() {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     history.replaceState(null, "", `#${id}`);
-  };
+  }, []);
 
   const scrollToTop = () => {
     const scrollEl = getScrollEl(articleRef.current);
@@ -232,7 +232,7 @@ export default function PrivacyPage() {
       const t = setTimeout(() => scrollToHeading(hash), 60);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [scrollToHeading]);
 
   return (
     <div className="relative">
@@ -320,8 +320,8 @@ export default function PrivacyPage() {
                     <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">§ The short version</span>
                   </div>
                   <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
-                    <strong className="font-semibold">Your files are private.</strong> They are processed in temporary memory and
-                    deleted immediately after the response is delivered. We never read, inspect, store, or share
+                    <strong className="font-semibold">Your files are private.</strong> Server-side tools use isolated temporary
+                    storage and delete files immediately after the response is delivered. We never read, inspect, store, or share
                     their contents.
                   </p>
                   <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
@@ -342,8 +342,8 @@ export default function PrivacyPage() {
                 to our processing server over an encrypted HTTPS connection. Here is exactly what happens:
               </p>
               <ul>
-                <li><strong>Processing:</strong> Your file is held in temporary server memory (RAM) only for the duration of processing. It is never written to disk or permanent storage.</li>
-                <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are purged from memory. This typically takes less than one second after download.</li>
+                <li><strong>Processing:</strong> Your file is held in isolated temporary per-request storage only for the duration of processing. It is never written to permanent storage.</li>
+                <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are unlinked from temporary storage. This typically takes less than one second after download.</li>
                 <li><strong>No inspection:</strong> Our servers process raw bytes. We never read, analyze, index, or inspect the contents of your files. We have no knowledge of what you upload.</li>
                 <li><strong>No retention:</strong> We do not retain copies, backups, thumbnails, or metadata from your files. Once deleted, they are unrecoverable.</li>
               </ul>
@@ -351,9 +351,9 @@ export default function PrivacyPage() {
               <h2 id="client-side-tools">2. Client-Side Tools</h2>
               <p>
                 A growing number of tools run <strong>entirely in your browser</strong> using JavaScript
-                and (in some cases) WebAssembly. Your data never leaves your device — not even
-                temporarily. You can verify by opening browser DevTools → Network and watching for
-                requests during processing.
+                and (in some cases) WebAssembly. For those browser-only processing steps, your data
+                never leaves your device — not even temporarily. You can verify by opening browser
+                DevTools → Network and watching for requests during processing.
               </p>
               <ul>
                 <li><strong>Developer utilities</strong>: JSON / XML Formatter, Text Diff, Base64
@@ -361,11 +361,12 @@ export default function PrivacyPage() {
                   JWT Decoder, Regex Tester, Timestamp Converter, URL Encoder, Word Counter,
                   Color Converter, UUID Generator, Lorem Ipsum Generator, Password Generator.</li>
                 <li><strong>Browser-side AI</strong>: Summarize PDF (distilbart-cnn-12-6) and Smart
-                  Redact (BERT-base-NER) run AI models <em>in your browser</em> via the
+                  Redact detection (BERT-base-NER) run AI models <em>in your browser</em> via the
                   @huggingface/transformers WebAssembly runtime. The models (~250 MB) are downloaded
                   once from the Hugging Face CDN and cached in your browser's IndexedDB storage.
-                  After the model is cached, summarization and PII detection happen offline — your
-                  PDF content never touches our server.</li>
+                  After the model is cached, summarization and PII detection happen offline. Smart
+                  Redact sends the PDF and selected strings to the backend only after you approve
+                  redactions, so PyMuPDF can permanently remove the content.</li>
                 <li><strong>Subtitle Converter</strong>: SRT ↔ VTT ↔ ASS conversion happens entirely
                   in your browser.</li>
               </ul>
@@ -374,8 +375,9 @@ export default function PrivacyPage() {
                 <code> huggingface.co</code> and <code>cdn.jsdelivr.net</code> over HTTPS. Hugging Face
                 sees that <em>someone</em> requested the model file (the request includes your IP and
                 user agent, as with any web request); they do not see the content you intend to
-                summarise or redact. Subsequent uses of the tool, including processing your file, run
-                entirely offline from the cached model.
+                summarise or scan for redaction. Subsequent summarization and Smart Redact detection
+                run offline from the cached model; applying Smart Redact still uses the isolated
+                backend to create the final redacted PDF.
               </p>
             </div>
 

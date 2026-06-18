@@ -15,8 +15,8 @@ import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename, formatErrorForClipboard } from "@/lib/api";
 import { useFormPersist } from "@/hooks/useFormPersist";
 import { loadSamplePdf } from "@/lib/sample-files";
-import { PREFILL_KEY } from "@/components/FirstRunWelcome";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 type Level = "light" | "recommended" | "extreme" | "custom";
 type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
@@ -70,7 +70,7 @@ export function CompressUI() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const addFiles = (fl: FileList | File[]) => {
+    const addFiles = useCallback((fl: FileList | File[]) => {
         const arr = Array.from(fl);
         const newFiles: CompressFile[] = arr
             .filter(f => f.name.toLowerCase().endsWith(".pdf"))
@@ -80,7 +80,7 @@ export function CompressUI() {
             setState("idle");
             setError(null);
         }
-    };
+    }, []);
 
     /** Load the bundled sample PDF and pre-fill the dropzone. Used by the
      *  "Try with a sample file" button and by the FirstRunWelcome handoff. */
@@ -98,29 +98,15 @@ export function CompressUI() {
         } finally {
             setLoadingSample(false);
         }
-    }, [loadingSample]);
+    }, [loadingSample, addFiles]);
 
-    // First-run handoff — if FirstRunWelcome stashed a sample in sessionStorage
-    // we hydrate the files list once on mount and clear the entry so it doesn't
-    // re-fire on subsequent visits.
     useEffect(() => {
         let cancelled = false;
-        try {
-            const raw = sessionStorage.getItem(PREFILL_KEY);
-            if (!raw) return;
-            sessionStorage.removeItem(PREFILL_KEY);
-            const parsed = JSON.parse(raw) as { name: string; type: string; data: string };
-            if (!parsed?.data) return;
-            // data URL → Blob → File. We use fetch() because it handles the
-            // base64 decode + handles all data URL flavors uniformly.
-            fetch(parsed.data).then(r => r.blob()).then(blob => {
-                if (cancelled) return;
-                const f = new File([blob], parsed.name, { type: parsed.type, lastModified: Date.now() });
-                addFiles([f]);
-            }).catch(() => { /* silent — user can still drop a file manually */ });
-        } catch { /* ignored */ }
+        consumeFileHandoff("compress-pdf").then(file => {
+            if (!cancelled && file) addFiles([file]);
+        });
         return () => { cancelled = true; };
-    }, []);
+    }, [addFiles]);
 
     const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
     const totalBytes = files.reduce((s, f) => s + f.bytes, 0);

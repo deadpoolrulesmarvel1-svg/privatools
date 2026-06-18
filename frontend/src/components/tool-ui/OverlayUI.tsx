@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, AlertCircle, FileText, X, Layers, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
 
 const MODES = [
     { value: "overlay" as const, label: "Overlay", desc: "Place B on top of A" },
@@ -31,15 +31,13 @@ export function OverlayUI() {
         setState("processing");
         setError(null);
         try {
-            const fd = new FormData();
-            fd.append("base_file", file1.raw);
-            fd.append("overlay_file", file2.raw);
-            fd.append("mode", mode);
-            const res = await fetch("/api/overlay", { method: "POST", body: fd });
-            if (!res.ok) {
-                const b = await res.json().catch(() => ({ detail: "Failed" }));
-                throw new Error(b.detail);
-            }
+            const res = await postFormData("/overlay", () => {
+                const fd = new FormData();
+                fd.append("base_file", file1.raw);
+                fd.append("overlay_file", file2.raw);
+                fd.append("mode", mode);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             downloadBlob(blob, outputName);

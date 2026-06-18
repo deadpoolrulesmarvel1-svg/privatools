@@ -6,7 +6,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Upload, Shuffle, Loader2, AlertCircle, FileText, X, CheckCircle2, Download, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
 
 type MixMode = "alternate" | "reverse-alternate";
 
@@ -34,15 +34,13 @@ export function AlternateMixUI() {
         setState("processing");
         setError(null);
         try {
-            const fd = new FormData();
-            fd.append("file1", file1.raw);
-            fd.append("file2", file2.raw);
-            fd.append("mode", mode);
-            const res = await fetch("/api/alternate-mix", { method: "POST", body: fd });
-            if (!res.ok) {
-                const b = await res.json().catch(() => ({ detail: "Failed" }));
-                throw new Error(b.detail || "Alternate mix failed");
-            }
+            const res = await postFormData("/alternate-mix", () => {
+                const fd = new FormData();
+                fd.append("file1", file1.raw);
+                fd.append("file2", file2.raw);
+                fd.append("mode", mode);
+                return fd;
+            }, { timeoutMs: 300_000 });
             const blob = await res.blob();
             setResultBlob(blob);
             downloadBlob(blob, outputName);

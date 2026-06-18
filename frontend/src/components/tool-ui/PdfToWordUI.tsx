@@ -137,7 +137,7 @@ export function PdfToWordUI() {
                     />
 
                     <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Tip — scanned PDFs need OCR first. Try <a href="/tools/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> if text doesn't transfer.
+                        <span className="text-accent">§</span> Tip — scanned PDFs need OCR first. Try <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> if text doesn't transfer.
                     </p>
                     <div className="flex items-center gap-3">
                         <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">

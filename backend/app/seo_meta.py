@@ -21,13 +21,13 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "179 free, open-source file tools — PDF, image, video, audio, and developer "
-        "utilities. Self-hostable; files never leave the processing container.",
+        "179 free, open-source file tools for PDF, image, video, audio, and developer "
+        "work. Browser-only when possible; isolated temporary processing when needed.",
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
-        "PrivaTools privacy policy: files processed in temp memory and deleted on "
-        "response. No accounts, no tracking, no ads. Updated May 15, 2026.",
+        "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
+        "response. No accounts, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
     ),
     "/terms": (
         "Terms of Service — PrivaTools",
@@ -311,29 +311,52 @@ _BLOG_POSTS: dict[str, dict] = {
 # ---------------------------------------------------------------------------
 from pathlib import Path as _Path
 
-_BLOG_BODIES: dict[str, dict] = {}
-try:
-    _blog_json = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
-    if _blog_json.exists():
-        with _blog_json.open("r", encoding="utf-8") as _f:
-            _BLOG_BODIES = {p["slug"]: p for p in json.load(_f)}
-except Exception:
-    # Missing or malformed blog-content.json must not crash the app — fall back
-    # to the lighter title-only SSR rendering.
-    _BLOG_BODIES = {}
+_BLOG_JSON = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
+
+
+def blog_content_mtime_ns() -> int:
+    """Return a cache-buster for generated blog body content."""
+    try:
+        return _BLOG_JSON.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=8)
+def _load_blog_bodies(_mtime_ns: int) -> dict[str, dict]:
+    try:
+        if _BLOG_JSON.exists():
+            with _BLOG_JSON.open("r", encoding="utf-8") as _f:
+                return {p["slug"]: p for p in json.load(_f)}
+    except Exception:
+        # Missing or malformed blog-content.json must not crash the app — fall
+        # back to the lighter title-only SSR rendering.
+        return {}
+    return {}
+
+
+def _blog_bodies() -> dict[str, dict]:
+    return _load_blog_bodies(blog_content_mtime_ns())
 
 
 # Reverse map: tool_slug -> list of blog post dicts that reference it via the
 # blog's `relatedTools` array. Used to inject "Mentioned in our guides" links
 # on each tool page — gives the long-tail tools inbound internal links from
 # authoritative blog content, which helps Google allocate crawl budget.
-_TOOL_TO_BLOGS: dict[str, list[dict]] = {}
-for _slug, _post in _BLOG_BODIES.items():
-    for _tool_slug in _post.get("relatedTools") or []:
-        _TOOL_TO_BLOGS.setdefault(_tool_slug, []).append({
-            "slug": _slug,
-            "title": _post.get("title", _slug),
-        })
+@lru_cache(maxsize=8)
+def _tool_to_blogs_for_mtime(_mtime_ns: int) -> dict[str, list[dict]]:
+    tool_to_blogs: dict[str, list[dict]] = {}
+    for slug, post in _load_blog_bodies(_mtime_ns).items():
+        for tool_slug in post.get("relatedTools") or []:
+            tool_to_blogs.setdefault(tool_slug, []).append({
+                "slug": slug,
+                "title": post.get("title", slug),
+            })
+    return tool_to_blogs
+
+
+def _tool_to_blogs() -> dict[str, list[dict]]:
+    return _tool_to_blogs_for_mtime(blog_content_mtime_ns())
 
 
 # ---------------------------------------------------------------------------
@@ -421,6 +444,45 @@ _POPULARITY: dict[str, int] = {
 def _by_popularity(items):
     """Sort an iterable of (slug, ...) tuples by popularity rank."""
     return sorted(items, key=lambda kv: _POPULARITY.get(kv[0], 999))
+
+
+_NONPDF_DOCUMENT_DATA_TOOLS = {"csv-json", "markdown-html"}
+_NONPDF_PHASE7_IMAGE_TOOLS = {"image-palette", "pixelate-image", "rotate-image", "flip-image"}
+_NONPDF_PHASE7_VIDEO_AUDIO_TOOLS = {"mute-video", "reverse-video", "video-speed", "audio-trim"}
+
+
+def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
+    """Return a precise SoftwareApplication subcategory for SEO/answer engines."""
+    rank = _POPULARITY.get(slug, 999)
+
+    if is_pdf_tool:
+        if 10 <= rank <= 21:
+            return "PDF organization tools"
+        if 30 <= rank <= 45:
+            return "PDF editing tools"
+        if 50 <= rank <= 61:
+            return "PDF optimization tools"
+        if 70 <= rank <= 80:
+            return "PDF security tools"
+        if 100 <= rank <= 121:
+            return "Convert to PDF tools"
+        if 130 <= rank <= 145:
+            return "Convert from PDF tools"
+        if 160 <= rank <= 171:
+            return "Advanced PDF tools"
+        return "PDF tools"
+
+    if slug in _NONPDF_DOCUMENT_DATA_TOOLS:
+        return "Document and data tools"
+    if 310 <= rank <= 311:
+        return "Archive tools"
+    if 210 <= rank <= 238 or slug in _NONPDF_PHASE7_IMAGE_TOOLS:
+        return "Image tools"
+    if 250 <= rank <= 268 or slug in _NONPDF_PHASE7_VIDEO_AUDIO_TOOLS:
+        return "Video and audio tools"
+    if 280 <= rank <= 299:
+        return "Developer tools"
+    return "File tools"
 
 
 # ---------------------------------------------------------------------------
@@ -570,7 +632,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "add-subtitles":    "Upload a video plus an .srt subtitle file and download a copy with subtitles burned into the picture.",
     "subtitle-converter":"Paste or upload an SRT/VTT/ASS subtitle file and convert it to any of the other formats — pure-browser.",
     "remove-background":"Upload an image of a person, product, or object and download a transparent-background PNG — U²-Net AI runs server-side.",
-    "extract-archive":  "Upload a ZIP, TAR, or other archive and download a folder/ZIP of the extracted files.",
+    "extract-archive":  "Upload a ZIP or TAR-family archive and download a ZIP of the extracted files.",
     "create-zip":       "Drop any files (any format) and download them packed into a single ZIP archive.",
     "url-to-pdf":       "Type any URL and download a paginated PDF rendering of the page — server-side headless Chrome.",
     # ── Browser-only utilities ─────────────────────────────────────────
@@ -611,7 +673,7 @@ def _tldr_for(slug: str, name: str) -> str:
 # PDF tool meta  (slug → (name, long_description))
 # ---------------------------------------------------------------------------
 _PDF_TOOLS: dict[str, tuple[str, str]] = {
-    "merge-pdf": ("Merge PDF", "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. No file size limits, no sign-up, no watermarks. Your files are processed securely and never stored."),
+    "merge-pdf": ("Merge PDF", "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Your files are processed securely and never stored."),
     "split-pdf": ("Split PDF", "Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Privacy-first: files are never stored on our servers."),
     "split-by-bookmarks": ("Split by Bookmarks", "Split PDF by bookmarks or chapters automatically. Detect table of contents entries and create separate PDFs for each section. Ideal for splitting textbooks, manuals, and reports. Free, private, no sign-up."),
     "split-by-size": ("Split by Size", "Split large PDFs into smaller files by maximum file size. Perfect for email attachments with size limits. Set your target size (e.g., 10 MB) and automatically split into compliant chunks. Free online tool, no registration."),
@@ -714,7 +776,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly. Get an extractive summary without uploading the document anywhere."),
-    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER model detects names, emails, phone numbers, addresses, and SSNs in your browser. Nothing is uploaded."),
+    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER detects names, emails, phone numbers, addresses, and SSNs in your browser before the backend permanently applies approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
     "pdf-to-rtf":      ("PDF to RTF",         "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text."),
@@ -739,8 +801,8 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "text-diff": ("Text Diff / Comparator", "Compare text online for free — paste two versions of text or code and get a line-by-line diff with additions in green and deletions in red. Perfect for code review."),
     "base64": ("Base64 Encoder / Decoder", "Encode and decode Base64 online for free — convert text, files, or binary data to and from Base64 format instantly. Works entirely in your browser, no data sent anywhere."),
     "hash-generator": ("Hash Generator", "Generate cryptographic hashes online for free — compute MD5, SHA-1, SHA-256, SHA-512, and more from text or files. Verify file integrity instantly. 100% private."),
-    "extract-archive": ("Extract Archive", "Extract ZIP, RAR, 7Z, and TAR archives online for free — upload compressed files and extract all contents privately in your browser. No server uploads needed."),
-    "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and no file size limits."),
+    "extract-archive": ("Extract Archive", "Extract ZIP and TAR archives online for free — upload .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz files and extract all contents in an isolated container. Up to 500 MB per file, no sign-up."),
+    "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and up to 500 MB per file."),
     "csv-json": ("CSV to JSON Converter", "Convert CSV to JSON online for free — upload a CSV spreadsheet and get a properly formatted JSON array. Also supports JSON to CSV. Perfect for data transformation."),
     "markdown-html": ("Markdown to HTML Converter", "Convert Markdown to HTML online for free — paste Markdown text and get clean, rendered HTML. Preview the output instantly. Also supports HTML to Markdown."),
     "heic-to-jpg": ("HEIC to JPG Converter", "Convert HEIC to JPG online for free — transform iPhone HEIC/HEIF photos into universally compatible JPG format. Bulk convert multiple photos at once. No upload required."),
@@ -749,7 +811,7 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "image-watermark": ("Add Watermark to Image", "Add text or image watermarks to photos online for free — protect your images with customizable watermarks. Control opacity, position, and size. Batch watermark multiple images at once."),
     "generate-favicon": ("Favicon Generator", "Generate favicons online for free — upload any image and get ICO, PNG, and SVG favicon files for your website in all standard sizes (16x16, 32x32, 48x48, 192x192)."),
     "make-collage": ("Photo Collage Maker", "Create photo collages online for free — arrange multiple images into grid layouts, contact sheets, or custom collages. Download as a high-resolution image file."),
-    "generate-barcode": ("Barcode Generator", "Generate barcodes online for free — create Code 128, QR Code, EAN-13, UPC, and other barcode formats. Download as PNG or SVG. Perfect for product labels and inventory."),
+    "generate-barcode": ("Barcode Generator", "Generate barcodes online for free — create Code 128, QR Code, EAN-13, UPC, and other barcode formats. Download as high-resolution PNG. Perfect for product labels and inventory."),
     "url-to-pdf": ("URL to PDF Converter", "Convert any web page URL to PDF online for free — enter a URL and get a rendered, print-ready PDF of the full page with styles and images preserved."),
     "qr-reader": ("QR Code Reader", "Read and decode QR codes online for free — upload an image containing a QR code and extract the encoded text, URL, or data instantly. No app or camera required."),
     "merge-images": ("Merge Images", "Merge multiple images online for free — combine JPG, PNG, and WebP files side by side or stacked vertically into a single image. Set spacing, alignment, and background color."),
@@ -984,6 +1046,12 @@ def _tool_title(name: str) -> str:
     return f"{name[:budget]}…{brand}"
 
 
+def _howto_name_for(name: str) -> str:
+    """Build a readable HowTo title for action-style and noun-style tools."""
+    normalized = re.sub(r"\s+", " ", name).strip()
+    return f"How to use the {normalized} tool on PrivaTools"
+
+
 # `<meta name="description">` is shown in SERP snippets — Google truncates at
 # ~155–160 chars. JSON-LD descriptions can be longer and are read more carefully
 # by AI engines, so we keep the truncation only at the meta-tag level.
@@ -1039,8 +1107,8 @@ del _slug, _name, _desc
 # wording so each URL has a unique paragraph.
 _TRUST_VARIANTS: tuple[str, ...] = (
     "{name} runs on the same privacy-first stack as every PrivaTools utility: "
-    "files enter an isolated Docker container, are processed in temporary "
-    "memory, and are unlinked the moment your download begins. No account, no "
+    "files enter an isolated Docker container, use temporary per-request "
+    "storage, and are unlinked the moment your download begins. No account, no "
     "watermark, no daily quota.",
 
     "Like the rest of the {total}-tool PrivaTools suite, {name} is MIT-licensed "
@@ -1054,8 +1122,9 @@ _TRUST_VARIANTS: tuple[str, ...] = (
     "at all and run entirely in your browser.",
 
     "Using {name} doesn't require an account, an email address, or a paid plan. "
-    "Your file is held in temp memory only for the duration of processing, then "
-    "permanently unlinked. No watermarks, no upsells, no behavioural tracking.",
+    "Your file is held in isolated temporary storage only for the duration of "
+    "processing, then permanently unlinked. No watermarks, no upsells, no "
+    "behavioural tracking.",
 
     "{name} is one of {total}+ free file utilities on PrivaTools. The entire "
     "stack is open source under the MIT license, so the privacy guarantees can "
@@ -1346,8 +1415,13 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
     return _NOT_FOUND_META
 
 
-@lru_cache(maxsize=512)
 def get_jsonld_for_path(path: str) -> dict | None:
+    """Return a JSON-LD dict for the given URL path, or None."""
+    return _get_jsonld_for_path(path, blog_content_mtime_ns())
+
+
+@lru_cache(maxsize=512)
+def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
     """Return a JSON-LD dict for the given URL path, or None.
 
     The returned dict is shared across all callers (via ``lru_cache``) —
@@ -1370,7 +1444,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
     if path == "/":
         # ItemList of headline tools — gives Google a clean enumerated grid
         # of WebApplications that AI engines can also cite as "what does the
-        # site offer". We include a curated top-25 rather than all 152.
+        # site offer". We include a curated top-25 rather than the full catalog.
         featured_slugs = [
             ("merge-pdf", "/tool/merge-pdf"),
             ("split-pdf", "/tool/split-pdf"),
@@ -1498,7 +1572,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Do you upload my files anywhere?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."},
+                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."},
                         },
                         {
                             "@type": "Question",
@@ -1513,7 +1587,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Does PrivaTools use AI?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."},
+                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."},
                         },
                         {
                             "@type": "Question",
@@ -1536,6 +1610,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
         if prefix == "/tool/":
             if slug not in _PDF_TOOLS:
                 return None
+            is_pdf_tool = True
             tool_entry = _PDF_TOOLS[slug]
             name = tool_entry[0]
             long_description = tool_entry[1]
@@ -1543,6 +1618,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
         else:
             if slug not in _NONPDF_TOOLS:
                 return None
+            is_pdf_tool = False
             tool_entry = _NONPDF_TOOLS[slug]
             name = tool_entry[0]
             long_description = tool_entry[1]
@@ -1613,7 +1689,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 "description": long_description or description,
                 "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
                 "applicationCategory": category,
-                "applicationSubCategory": "PDF & file tools",
+                "applicationSubCategory": _application_subcategory_for(slug, is_pdf_tool),
                 "featureList": feature_list,
                 "keywords": ", ".join(keywords),
                 "operatingSystem": "Web Browser (any)",
@@ -1660,7 +1736,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             per_step = 90 if slug in slow_tools else 30
             graph.append({
                 "@type": "HowTo",
-                "name": f"How to {name} with PrivaTools",
+                "name": _howto_name_for(name),
                 "description": long_description or description,
                 "totalTime": f"PT{steps_count * per_step}S",
                 "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
@@ -1772,7 +1848,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             # Compute wordCount from the full body if available — the static
             # frontmatter often omits it, and Google explicitly reads
             # wordCount when ranking guides.
-            body_data = _BLOG_BODIES.get(slug, {})
+            body_data = _blog_bodies().get(slug, {})
             body_text = body_data.get("body", "") or ""
             word_count = post.get("wordCount") or len(re.findall(r"\w+", body_text)) or None
             blog_post_node = {
@@ -1881,7 +1957,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             },
             {
                 "q": "What happens to files I upload?",
-                "a": "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
+                "a": "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
             },
             {
                 "q": "Is PrivaTools really free?",
@@ -2012,6 +2088,9 @@ def get_jsonld_for_path(path: str) -> dict | None:
 # ---------------------------------------------------------------------------
 # Comparison page data (mirrors frontend ComparePage.tsx for SSR)
 # ---------------------------------------------------------------------------
+_TOTAL_TOOL_COUNT = len(_PDF_TOOLS) + len(_NONPDF_TOOLS)
+_TOOL_BREADTH_FEATURE = f"{_TOTAL_TOOL_COUNT} tools (PDF, image, video, audio, dev)"
+
 _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Free to use": "Yes — 100% free",
     "No account required": "Yes",
@@ -2021,7 +2100,7 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Self-hostable": "Yes (Docker)",
     "Files processed privately": "Yes (server-side, deleted within minutes)",
     "No watermarks on free tier": "Yes",
-    "175+ tools (PDF, image, video, audio, dev)": "Yes (175+ tools)",
+    _TOOL_BREADTH_FEATURE: f"Yes ({_TOTAL_TOOL_COUNT} tools)",
     "Works offline / client-side tools": "Some tools (client-side)",
     "Desktop app included": "No (web-based)",
     "API available": "Self-hosted API",
@@ -2030,17 +2109,17 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
 }
 
 _COMPARE_DATA: dict[str, dict] = {
-    "ilovepdf": {"name": "iLovePDF", "rating": "3.5", "rating_note": "ads + cloud upload reduce score", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "smallpdf": {"name": "Smallpdf", "rating": "3", "rating_note": "2 tasks/day limit + cloud upload", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (21 tools, PDF only)"}},
-    "adobe-acrobat": {"name": "Adobe Acrobat Online", "rating": "4", "rating_note": "excellent features but $23/mo + cloud", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "sejda": {"name": "Sejda PDF", "rating": "3.5", "rating_note": "3 tasks/hour limit", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "pdf24": {"name": "PDF24", "rating": "4", "rating_note": "generous free tier — cloud upload only deduction", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "foxit": {"name": "Foxit PDF", "rating": "3", "rating_note": "paywall + cloud upload", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "lightpdf": {"name": "LightPDF", "rating": "2.5", "rating_note": "aggressive paywall + cloud upload", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "175+ tools (PDF, image, video, audio, dev)": "No (PDF + basic image)"}},
-    "stirling-pdf": {"name": "Stirling PDF", "rating": "4.5", "rating_note": "open source + self-hostable — fellow privacy advocate", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
-    "dochub": {"name": "DocHub", "rating": "3", "rating_note": "5 docs/month free is limiting", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (document editing only)"}},
-    "pdfescape": {"name": "PDFescape", "rating": "3", "rating_note": "10MB + 100 page limit", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "175+ tools (PDF, image, video, audio, dev)": "No (basic PDF editing only)"}},
-    "nitro-pdf": {"name": "Nitro PDF", "rating": "2.5", "rating_note": "no free tier — paid only", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "175+ tools (PDF, image, video, audio, dev)": "No (PDF only)"}},
+    "ilovepdf": {"name": "iLovePDF", "rating": "3.5", "rating_note": "ads + cloud upload reduce score", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "smallpdf": {"name": "Smallpdf", "rating": "3", "rating_note": "2 tasks/day limit + cloud upload", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (21 tools, PDF only)"}},
+    "adobe-acrobat": {"name": "Adobe Acrobat Online", "rating": "4", "rating_note": "excellent features but $23/mo + cloud", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "sejda": {"name": "Sejda PDF", "rating": "3.5", "rating_note": "3 tasks/hour limit", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "pdf24": {"name": "PDF24", "rating": "4", "rating_note": "generous free tier — cloud upload only deduction", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "foxit": {"name": "Foxit PDF", "rating": "3", "rating_note": "paywall + cloud upload", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "lightpdf": {"name": "LightPDF", "rating": "2.5", "rating_note": "aggressive paywall + cloud upload", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF + basic image)"}},
+    "stirling-pdf": {"name": "Stirling PDF", "rating": "4.5", "rating_note": "open source + self-hostable — fellow privacy advocate", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "dochub": {"name": "DocHub", "rating": "3", "rating_note": "5 docs/month free is limiting", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", _TOOL_BREADTH_FEATURE: "No (document editing only)"}},
+    "pdfescape": {"name": "PDFescape", "rating": "3", "rating_note": "10MB + 100 page limit", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", _TOOL_BREADTH_FEATURE: "No (basic PDF editing only)"}},
+    "nitro-pdf": {"name": "Nitro PDF", "rating": "2.5", "rating_note": "no free tier — paid only", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
 }
 
 
@@ -2080,7 +2159,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools — {len(_PDF_TOOLS)} PDF tools and {len(_NONPDF_TOOLS)} image, video, audio, "
             "and developer utilities. The entire stack is open source under the MIT license and "
-            "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
+            "self-hostable via Docker for teams that want their own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
             "is returned — never stored, never shared with third parties. The public site uses first-party "
             "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts, no behavioural profiling.</p>"
@@ -2108,10 +2187,10 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append('<h2 class="tool-faq">Frequently Asked Questions</h2>')
         for q, a in [
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
-            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."),
+            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."),
             ("Can I self-host PrivaTools?", "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all 179 tools on your own server."),
             ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
-            ("Does PrivaTools use AI?", "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."),
+            ("Does PrivaTools use AI?", "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."),
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
         ]:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")
@@ -2136,7 +2215,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(_deep_tool_content(slug, name, desc, "pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>How to {name} with PrivaTools</h2><ol>")
+                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
                 for step in TOOL_HOWTO[slug]:
                     parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
                 parts.append("</ol>")
@@ -2164,7 +2243,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             # Mentioned in our guides — backlinks from this tool to blog posts
             # that reference it. Builds bidirectional internal-link graph that
             # helps Google route crawl budget to long-tail tool pages.
-            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            mentioning_posts = _tool_to_blogs().get(slug, [])
             if mentioning_posts:
                 parts.append("<h2>Mentioned in our guides</h2><ul>")
                 for post in mentioning_posts:
@@ -2198,7 +2277,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(_deep_tool_content(slug, name, desc, "non-pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>How to Use {name}</h2><ol>")
+                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
                 for step in TOOL_HOWTO[slug]:
                     parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
                 parts.append("</ol>")
@@ -2222,7 +2301,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                     parts.append(f'<li><a href="/tools/{s}">{n}</a></li>')
                 parts.append("</ul>")
             # Mentioned in our guides — same reverse-map backlink as /tool/ branch.
-            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            mentioning_posts = _tool_to_blogs().get(slug, [])
             if mentioning_posts:
                 parts.append("<h2>Mentioned in our guides</h2><ul>")
                 for post in mentioning_posts:
@@ -2235,7 +2314,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 '<a href="/tool/merge-pdf">Merge PDF</a>, '
                 '<a href="/tool/compress-pdf">Compress PDF</a>, '
                 '<a href="/tool/pdf-to-word">PDF to Word</a>, or '
-                '<a href="/">all 175+ tools</a>.</p>'
+                f'<a href="/">all {_TOTAL_TOOL_COUNT} tools</a>.</p>'
             )
             return "\n".join(parts)
 
@@ -2261,7 +2340,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
                 f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
-                "no file size limits (up to 500 MB per file), no account required, and no ads. "
+                "a generous 500 MB per-file limit, no account required, and no ads. "
                 "Files are processed in an isolated container and deleted immediately after the "
                 "response is returned — never stored, never shared with third parties. PrivaTools "
                 "is open source under the MIT license and self-hostable via Docker, so you can "
@@ -2279,7 +2358,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/blog/"):]
         post = _BLOG_POSTS.get(slug)
         if post:
-            body_data = _BLOG_BODIES.get(slug, {})
+            body_data = _blog_bodies().get(slug, {})
             tldr = body_data.get("tldr")
 
             parts.append(f"<h1>{post['title']}</h1>")
@@ -2332,7 +2411,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "PrivaTools is a free, open-source, privacy-first suite of "
             f"{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools. "
             "MIT-licensed, self-hostable, no accounts, no ads, no data resale. "
-            "Files uploaded to the public demo are processed in memory and deleted on response — "
+            "Files uploaded to the public demo use isolated temporary storage and are deleted on response — "
             "many tools never upload at all.</p>"
         )
         parts.append(f"<p>{description}</p>")
@@ -2347,7 +2426,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>Frequently Asked Questions</h2>")
         for q, a in [
             ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at deadpoolrulesmarvel1-svg/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
-            ("What happens to files I upload?", "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
+            ("What happens to files I upload?", "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier."),
             ("Can I self-host PrivaTools?", "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server."),
         ]:
@@ -2359,14 +2438,14 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h1>Privacy Policy</h1>")
         parts.append("<p><strong>Last updated:</strong> May 15, 2026</p>")
         parts.append(
-            "<p>Your files are private. They are processed in temporary server memory and deleted "
-            "immediately after the response is delivered — never written to disk, never inspected, "
+            "<p>Your files are private. Server-side tools use isolated temporary storage and delete files "
+            "immediately after the response is delivered — never kept in permanent storage, never inspected, "
             "never retained. We collect only first-party aggregate pageview telemetry, and Do Not Track, "
             "Global Privacy Control, local opt-out, and standard blockers disable the browser beacon.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
-            "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in temp memory only "
+            "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in isolated temporary storage "
             "for the duration of processing. The moment the response is delivered, the file is "
             "unlinked from the temp directory; a cleanup task purges any stragglers every 5 minutes. "
             "No backups, thumbnails, or metadata are retained.</p>"
@@ -2406,8 +2485,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>2. Description of Service</h2>")
         parts.append(
             "<p>PrivaTools provides browser-based file processing for PDF, image, video, audio, "
-            "and developer workflows. Server-side tools hold files in temp memory only and delete "
-            "them immediately after the response. Many tools run entirely in your browser with no "
+            "and developer workflows. Server-side tools use isolated temporary storage and delete "
+            "files immediately after the response. Many tools run entirely in your browser with no "
             "server interaction. Free, no limits, no registration.</p>"
         )
         parts.append("<h2>3. Acceptable Use</h2>")
@@ -2503,7 +2582,12 @@ def inject_seo(html: str, path: str) -> str:
     # React will hydrate over this once JavaScript loads for real users.
     ssr_content = _build_ssr_content(path, title, description)
     if ssr_content:
-        html = html.replace('<div id="root"></div>', f'<div id="root">{ssr_content}</div>', 1)
+        html = re.sub(
+            r'<div\s+id=(["\'])root\1\s*></div>',
+            lambda _match: f'<div id="root">{ssr_content}</div>',
+            html,
+            count=1,
+        )
 
     return html
 

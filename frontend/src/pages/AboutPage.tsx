@@ -56,12 +56,12 @@ const FAQ = [
   {
     slug: "ai-training",
     q: "Do you train AI on my uploads?",
-    a: "No. We never read, inspect, or analyze your file contents — we process bytes. The browser-side AI tools (Smart Redact, Summarize) run weights in your browser; nothing leaves the page.",
+    a: "No. We never use uploads for training. Summarize PDF runs the model in your browser, and Smart Redact detects entities in your browser before you approve anything. If you apply Smart Redact, the PDF and selected strings are sent to the isolated backend only to bake in the permanent redactions.",
   },
   {
     slug: "self-host",
     q: "Can I self-host?",
-    a: "Yes. The whole stack is on GitHub under the MIT license. Clone the repo, run docker compose up --build, and you have 175+ tools on your own infrastructure with the same UI you see here.",
+    a: `Yes. The whole stack is on GitHub under the MIT license. Clone the repo, run docker compose up --build, and you have ${TOTAL} tools on your own infrastructure with the same UI you see here.`,
   },
   {
     slug: "why-free",
@@ -76,7 +76,7 @@ const FAQ = [
   {
     slug: "browser-only-tools",
     q: "Which tools never upload my file at all?",
-    a: "All developer utilities (JWT Decoder, Regex Tester, Base64, Hash Generator, UUID, Password Generator, Lorem Ipsum, JSON/YAML/CSV converters) plus the browser-side AI tools (Smart Redact, Summarize PDF) run entirely in-page. Open DevTools → Network and you'll see zero requests after the bundle loads.",
+    a: "Developer utilities (JWT Decoder, Regex Tester, Base64, Hash Generator, UUID, Password Generator, Lorem Ipsum, JSON/YAML/CSV converters) plus Summarize PDF run entirely in-page. Browser-side AI tools download model weights once; your document content is not sent during summarization or Smart Redact detection.",
   },
   {
     slug: "mobile-support",
@@ -219,7 +219,7 @@ export default function AboutPage() {
           </h2>
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { step: "01", icon: Server, title: "Process in isolation", desc: "Files are received and processed in an isolated container. Memory only — never written to permanent storage, never logged, never indexed.", code: "tempfile.NamedTemporaryFile(delete=True)", src: GUARANTEE_SOURCE.process },
+              { step: "01", icon: Server, title: "Process in isolation", desc: "Files are received and processed in an isolated container. Temporary per-request storage only — never permanent storage, never logged, never indexed.", code: "tempfile.NamedTemporaryFile(delete=True)", src: GUARANTEE_SOURCE.process },
               { step: "02", icon: Trash2, title: "Delete immediately",   desc: "The moment the response is sent, the file is unlinked from the temp directory. Cleanup runs as a background task within seconds.",                 code: "os.unlink(path)  # post-response",          src: GUARANTEE_SOURCE.delete },
               { step: "03", icon: Eye,    title: "Zero knowledge",        desc: "We never inspect, analyze, or read your file contents. Servers process bytes — no telemetry on contents, no AI training on your data.",     code: "# no log_file_content() exists",            src: GUARANTEE_SOURCE.zeroKnow },
             ].map(step => {
@@ -306,7 +306,7 @@ export default function AboutPage() {
               { icon: Users,  title: "Require accounts",        desc: "No email gate, no sign-up flow, no \"premium\" pop-up." },
               { icon: Lock,   title: "Store files",             desc: "Temp dir is cleaned on response; cleanup task fires every 5 minutes for stragglers." },
               { icon: Eye,    title: "Profile you",             desc: "Only first-party aggregate pageviews, with DNT/GPC and local opt-out support." },
-              { icon: Globe,  title: "Sell data",               desc: "File content never leaves the processing container. We have nothing to sell." },
+              { icon: Globe,  title: "Sell data",               desc: "File content is never sold, shared with third parties, or used for training. We have nothing to sell." },
               { icon: Heart,  title: "Paywall anything",        desc: "No premium tier. No feature locked behind subscription. No watermark on output." },
             ].map((item, i) => {
               const Icon = item.icon;
@@ -369,7 +369,7 @@ export default function AboutPage() {
               Icon: Code,
               kicker: "Self-host",
               title: "Self-host in one command.",
-              desc: "If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. 175+ tools on your infrastructure.",
+              desc: `If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. ${TOTAL} tools on your infrastructure.`,
               cta: { label: "Self-host with Docker", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#-quick-start", primary: false, icon: Code },
             },
           ].map((card, i) => {
@@ -593,7 +593,7 @@ export default function AboutPage() {
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             Ready to <span className="italic text-accent">try</span>?
           </h2>
-          <p className="mt-3 text-[15px] text-muted-foreground">No upload to anyone but us. No watermarks. Just pick a tool.</p>
+          <p className="mt-3 text-[15px] text-muted-foreground">Browser-only where possible, self-hostable when a server is needed. No accounts, no watermarks.</p>
           <Link to="/" className="mt-7 btn-accent inline-flex">
             Browse all {TOTAL} tools <ArrowRight size={13} />
           </Link>
@@ -669,10 +669,10 @@ function FileLifecycleDiagram() {
     {
       id: 1, Icon: Upload,      title: "Upload",   detail: "Encrypted in transit (TLS 1.3)",       seconds: "0.0s",
       hoverHead: "Multipart POST",
-      hoverBody: "Streamed straight to /tmp/<uuid> — never buffered to a queue, never written to disk twice.",
+      hoverBody: "Streamed straight to /tmp/<uuid> — never buffered to a queue, never copied into permanent storage.",
     },
     {
-      id: 2, Icon: ShieldCheck, title: "Process",  detail: "Isolated container · memory only",     seconds: "0.4s",
+      id: 2, Icon: ShieldCheck, title: "Process",  detail: "Isolated container · temp storage",    seconds: "0.4s",
       hoverHead: "Stateless worker",
       hoverBody: "pikepdf / Pillow / ffmpeg runs against the temp path. No DB write. No telemetry on the bytes themselves.",
     },

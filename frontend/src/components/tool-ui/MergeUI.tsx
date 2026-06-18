@@ -16,6 +16,7 @@ import { cn, friendlyError, isValidPageRange } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 
 interface MergeFile { id: string; name: string; size: string; file: File; pages: string; }
 
@@ -42,6 +43,14 @@ export function MergeUI() {
         setState("idle");
         setError(null);
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        consumeFileHandoff("merge-pdf").then(file => {
+            if (!cancelled && file) add([file]);
+        });
+        return () => { cancelled = true; };
+    }, [add]);
 
     // Try-with-sample affordance — loads the bundled PDF twice so the merge
     // demo actually has at least two inputs to combine.

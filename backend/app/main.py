@@ -14,7 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .rate_limit import limiter
-from .seo_meta import inject_seo
+from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
     RequestIDMiddleware,
@@ -65,6 +65,16 @@ from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 # tightened in tests or relaxed for slower workers without a deploy.
 _JANITOR_INTERVAL = int(os.environ.get("CLEANUP_INTERVAL_SECONDS", "300"))
 _JANITOR_MAX_AGE = int(os.environ.get("TEMP_MAX_AGE_SECONDS", "600"))
+_BUILD_SHA = os.environ.get("PRIVATOOLS_BUILD_SHA", "unknown").strip() or "unknown"
+_BUILD_SHA_SHORT = _BUILD_SHA[:12] if _BUILD_SHA != "unknown" else "unknown"
+
+
+def _health_payload(status: str = "ok") -> dict[str, str]:
+    return {
+        "status": status,
+        "build_sha": _BUILD_SHA,
+        "build_sha_short": _BUILD_SHA_SHORT,
+    }
 
 
 async def _cleanup_task():
@@ -233,10 +243,8 @@ _INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index
 from functools import lru_cache
 
 @lru_cache(maxsize=256)
-def _get_seo_html(path: str, _mtime_ns: int) -> str:
-    """Cache SEO-injected HTML — keyed by path + index.html mtime so that
-    re-deploys (which rewrite index.html) automatically invalidate the cache
-    without needing a worker restart."""
+def _get_seo_html(path: str, _index_mtime_ns: int, _blog_mtime_ns: int) -> str:
+    """Cache SEO HTML keyed by path plus generated frontend content mtimes."""
     html = _INDEX_HTML.read_text("utf-8")
     return inject_seo(html, path)
 
@@ -286,7 +294,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         if _INDEX_HTML.exists():
             try:
                 from .seo_meta import path_is_known
-                html = _get_seo_html(path, _index_mtime_ns())
+                html = _get_seo_html(path, _index_mtime_ns(), blog_content_mtime_ns())
                 html = _inject_csp_nonce(html, getattr(request.state, "csp_nonce", None))
                 # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
                 # return HTTP 404 with a proper "Page not found" SSR body
@@ -546,7 +554,7 @@ app.include_router(og_image.router)
 async def health():
     """Backwards-compatible health endpoint — kept for the frontend
     `BackendStatusBanner` that probes `/api/health` on startup."""
-    return JSONResponse({"status": "ok"})
+    return JSONResponse(_health_payload())
 
 
 @app.get("/healthz")
@@ -557,7 +565,7 @@ async def healthz():
     side-effects. Use this for "is the process running" monitoring
     (uptime checks, load-balancer health pings).
     """
-    return JSONResponse({"status": "ok"})
+    return JSONResponse(_health_payload())
 
 
 @app.get("/readyz")

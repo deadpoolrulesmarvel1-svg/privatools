@@ -23,7 +23,7 @@ const steps: Step[] = [
     {
         icon: Sparkles,
         title: "Welcome to PrivaTools",
-        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — all running in your browser. No accounts, no uploads to a third party, no watermarks. Free and open-source under MIT.`,
+        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — browser-only where possible, self-hosted when processing needs a server. No accounts, no watermarks. Free and open-source under MIT.`,
     },
     {
         icon: MousePointerSquareDashed,
@@ -37,13 +37,13 @@ const steps: Step[] = [
     },
     {
         icon: Shield,
-        title: "Your file never leaves the container",
-        description: "Open DevTools → Network and watch: jobs go to this server, not a third party. Self-hosted? One Docker command and the whole stack runs on your hardware.",
+        title: "No third-party file processors",
+        description: "Server-side jobs use isolated temporary storage on the PrivaTools backend and are deleted after the response. Self-hosted? One Docker command and the whole stack runs on your hardware.",
     },
     {
         icon: GitBranch,
         title: "Pipelines & local AI",
-        description: "Chain merge → compress → watermark in one click. Summarize and redact with models that run entirely in your browser — no OpenAI, no cloud GPU.",
+        description: "Chain merge → compress → watermark in one click. Summarize in-browser, detect Smart Redact entities in-browser, and apply approved redactions on the isolated backend — no OpenAI, no cloud GPU.",
     },
     {
         icon: Star,

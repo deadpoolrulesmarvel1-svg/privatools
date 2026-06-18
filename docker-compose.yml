@@ -8,6 +8,7 @@ services:
     volumes:
       - app-temp:/app/temp
     environment:
+      - PRIVATOOLS_BUILD_SHA=${GIT_SHA:-unknown}
       - PORT=8000
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300

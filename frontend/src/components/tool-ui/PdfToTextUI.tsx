@@ -108,7 +108,7 @@ export function PdfToTextUI() {
                         <div className="flex-1 min-w-0">
                             <p className="font-display font-semibold text-[13.5px]">Looks like an image-only PDF</p>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                <span className="text-accent">§</span> Try the <a href="/tools/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> tool to extract text from scanned pages.
+                                <span className="text-accent">§</span> Try the <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> tool to extract text from scanned pages.
                             </p>
                         </div>
                     </div>

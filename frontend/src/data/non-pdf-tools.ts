@@ -223,8 +223,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   // ── Archive & File Management ───────────────────────────────────────────────
   {
     slug: "extract-archive", icon: Archive, name: "Extract ZIP / TAR",
-    description: "Extract ZIP and TAR archives locally",
-    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents locally. Download extracted files individually or as a new ZIP. No file size limits, no sign-up.",
+    description: "Extract ZIP and TAR archives privately",
+    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download extracted files individually or as a new ZIP. Up to 500 MB per file, no sign-up.",
     synonyms: "unzip extract zip tar gz files",
     popularity: 110,
     category: "archive", accepts: ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz", outputLabel: "extracted files",
@@ -232,7 +232,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "create-zip", icon: Lock, name: "Create ZIP Archive",
     description: "Bundle multiple files into a ZIP archive",
-    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast local compression with no file upload to external servers. No sign-up, instant download.",
+    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.",
     synonyms: "zip archive compress files into one",
     popularity: 111,
     category: "archive", accepts: "*", outputLabel: "archive.zip",
