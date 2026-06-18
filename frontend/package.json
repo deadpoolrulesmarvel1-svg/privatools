@@ -8,6 +8,8 @@
     "gen:llms": "node scripts/gen-llms.mjs",
     "prebuild": "node scripts/gen-llms.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/inject-sri.mjs",
+    "sri:check": "node scripts/inject-sri.mjs --check",
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "build:check": "npm run build && npm run check:bundle",
     "build:dev": "node scripts/gen-llms.mjs && vite build --mode development",
