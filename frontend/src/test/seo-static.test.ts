@@ -109,6 +109,29 @@ describe("static SEO files", () => {
         expect(surfaces).toContain("isolated temporary");
     });
 
+    it("keeps public tool-count copy aligned with the registry", () => {
+        const manifest = JSON.parse(readFileSync(join(root, "public/manifest.json"), "utf8")) as {
+            description: string;
+            screenshots: Array<{ label?: string }>;
+        };
+        const sample = JSON.parse(readFileSync(join(root, "public/samples/sample.json"), "utf8")) as {
+            description: string;
+            stats: { tools: number };
+        };
+        const surfaces = [
+            manifest.description,
+            manifest.screenshots.map(s => s.label ?? "").join("\n"),
+            sample.description,
+            String(sample.stats.tools),
+        ].join("\n");
+
+        expect(manifest.description).toContain(`${TOTAL_TOOL_COUNT} free`);
+        expect(manifest.screenshots[0]?.label).toContain(`${TOTAL_TOOL_COUNT} Free File Tools`);
+        expect(sample.description).toContain(`${TOTAL_TOOL_COUNT} file tools`);
+        expect(sample.stats.tools).toBe(TOTAL_TOOL_COUNT);
+        expect(surfaces).not.toContain("179");
+    });
+
     it("does not describe hosted tool processing as the user's own infrastructure", () => {
         const toolPageSurfaces = [
             readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),

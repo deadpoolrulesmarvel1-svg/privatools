@@ -1,7 +1,7 @@
 {
   "name": "PrivaTools",
   "version": "1.4.0",
-  "description": "179 file tools with privacy built in",
+  "description": "213 file tools with privacy built in",
   "philosophy": {
     "privacy": "browser-side where possible, isolated temporary processing when needed",
     "third_party_file_processors": false,
@@ -23,7 +23,7 @@
     }
   ],
   "stats": {
-    "tools": 179,
+    "tools": 213,
     "categories": 6,
     "average_jobs_per_user_per_day": 4
   }
