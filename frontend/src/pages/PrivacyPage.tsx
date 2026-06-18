@@ -14,6 +14,12 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ANALYTICS_OPT_OUT_KEY,
+  readAnalyticsPrivacyPreference,
+  setAnalyticsOptOut,
+  type AnalyticsPrivacyPreference,
+} from "@/lib/analyticsPrivacy";
 
 const LAST_UPDATED = "June 18, 2026";
 const GIT_HISTORY_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
@@ -61,6 +67,74 @@ function CornerMarks() {
       <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
       <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
     </>
+  );
+}
+
+function AnalyticsOptOutPanel() {
+  const [preference, setPreference] = useState<AnalyticsPrivacyPreference>(() => readAnalyticsPrivacyPreference());
+
+  useEffect(() => {
+    const refresh = () => setPreference(readAnalyticsPrivacyPreference());
+    window.addEventListener("storage", refresh);
+    return () => window.removeEventListener("storage", refresh);
+  }, []);
+
+  const toggleOptOut = () => {
+    setPreference(setAnalyticsOptOut(!preference.localOptOut));
+  };
+
+  return (
+    <aside className="not-prose my-5 rounded-xl border border-border bg-card overflow-hidden">
+      <div className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">
+              Analytics control
+            </span>
+            <span className="rounded-full border border-border bg-paper-2/60 px-2 py-0.5 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+              {preference.effectiveDisabled ? "Analytics paused" : "Anonymous analytics allowed"}
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+            {preference.browserPrivacySignal
+              ? "Your browser is sending Do Not Track or Global Privacy Control, so Google Analytics will not load."
+              : preference.localOptOut
+                ? `This browser stores ${ANALYTICS_OPT_OUT_KEY}=1 and blocks Google Analytics from loading.`
+                : "Set a local browser opt-out to stop Google Analytics from loading on this device."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={preference.localOptOut}
+          onClick={toggleOptOut}
+          className={cn(
+            "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-2.5 transition-colors",
+            preference.localOptOut
+              ? "border-accent/45 bg-accent/[0.08] text-accent"
+              : "border-border bg-paper-2/60 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative h-5 w-9 rounded-full border transition-colors",
+              preference.localOptOut ? "border-accent/60 bg-accent/20" : "border-border bg-background"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-current transition-transform",
+                preference.localOptOut ? "translate-x-[18px]" : "translate-x-1"
+              )}
+            />
+          </span>
+          <span className="font-mono text-[10px] tracking-[0.08em] uppercase">
+            Local opt-out
+          </span>
+        </button>
+      </div>
+    </aside>
   );
 }
 
@@ -358,6 +432,7 @@ export default function PrivacyPage() {
                 <li><strong>Cloudflare:</strong> We use Cloudflare as an edge CDN for static files and TLS acceleration. Cloudflare may see standard connection metadata such as IP address, user agent, and requested URL. File uploads and tool outputs are not cached at the edge, and API responses carry no-store cache headers.</li>
                 <li><strong>Google Fonts:</strong> Typography is loaded via Bunny Fonts (a privacy-respecting Google Fonts mirror) so font requests do not reach Google's servers.</li>
               </ul>
+              <AnalyticsOptOutPanel />
               <p>
                 No advertising networks, remarketing scripts, or user profiling tools are used.
               </p>

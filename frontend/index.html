@@ -73,24 +73,61 @@
     <!-- Service worker registration lives in src/lib/sw-register.ts so it
          runs in production only and handles updates correctly (skipWaiting +
          controllerchange reload). Don't re-add an inline registration here. -->
-    <!-- Google Analytics (GA4) — deferred to after first paint to protect LCP/INP -->
+    <!-- Google Analytics (GA4) — deferred to after first paint and disabled for DNT/GPC/local opt-out -->
     <script>
       (function(){
+        var GA_ID = 'G-B3VWQ44MX1';
+        var OPT_OUT_KEY = 'pt-analytics-opt-out';
+        var loaded = false;
+        function storageOptOut(){
+          try { return window.localStorage.getItem(OPT_OUT_KEY) === '1'; }
+          catch (e) { return false; }
+        }
+        function browserPrivacySignal(){
+          var nav = window.navigator || {};
+          var dnt = nav.doNotTrack || nav.msDoNotTrack || window.doNotTrack;
+          return nav.globalPrivacyControl === true || dnt === '1' || dnt === 'yes';
+        }
+        function analyticsDisabled(){
+          return browserPrivacySignal() || storageOptOut();
+        }
+        function setDisableFlag(disabled){
+          window['ga-disable-' + GA_ID] = !!disabled;
+        }
         function loadGA(){
+          if (loaded) return;
+          loaded = true;
           var s = document.createElement('script');
           s.async = true;
-          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-B3VWQ44MX1';
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
           document.head.appendChild(s);
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('js', new Date());
-          gtag('config', 'G-B3VWQ44MX1', { anonymize_ip: true });
+          gtag('config', GA_ID, { anonymize_ip: true });
         }
+        function maybeLoadGA(){
+          if (analyticsDisabled()) {
+            setDisableFlag(true);
+            return;
+          }
+          setDisableFlag(false);
+          loadGA();
+        }
+        window.ptSetAnalyticsDisabled = function(disabled){
+          var effectiveDisabled = !!disabled || browserPrivacySignal() || storageOptOut();
+          setDisableFlag(effectiveDisabled);
+          if (!effectiveDisabled) maybeLoadGA();
+        };
+        window.addEventListener('storage', function(event){
+          if (event.key === OPT_OUT_KEY) window.ptSetAnalyticsDisabled(storageOptOut());
+        });
+        setDisableFlag(analyticsDisabled());
         if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadGA, { timeout: 4000 });
+          requestIdleCallback(maybeLoadGA, { timeout: 4000 });
         } else {
-          window.addEventListener('load', function(){ setTimeout(loadGA, 1500); });
+          window.addEventListener('load', function(){ setTimeout(maybeLoadGA, 1500); });
         }
       })();
     </script>

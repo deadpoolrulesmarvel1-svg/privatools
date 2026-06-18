@@ -44,7 +44,10 @@ Last updated: 2026-06-18
   - [x] Narrow trust slice added locally: RFC 9116 `frontend/public/.well-known/security.txt`, root `SECURITY.md`, and `/security` page.
   - [x] `/security` registered in the frontend router and linked from the privacy related-docs row plus the persistent status/footer bar.
   - [x] Backend SPA/SEO skip list includes `/.well-known/` so `security.txt` can serve as a static file instead of the SPA shell.
-  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, nonce CSP, DNT/GA opt-out toggle, GitHub Actions security workflows, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, and `/api/transparency/janitor`.
+  - [x] DNT/GPC/GA opt-out added locally: GA loader respects browser privacy signals and `pt-analytics-opt-out=1`; Privacy page exposes a local opt-out switch.
+  - [x] Public cleanup transparency added locally: `/api/transparency/janitor` returns aggregate janitor sweep counts without filenames, paths, IPs, or content metadata.
+  - [x] GitHub trust automation added locally: security workflow with npm audit, pip-audit, CodeQL, Scorecard, Trivy SARIF, Trivy CycloneDX SBOM; release workflow builds/signs GHCR images with cosign; Dependabot covers npm, pip, and GitHub Actions.
+  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, nonce CSP, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
 - [ ] Phase 7 - Power Features `[P7-power]`
@@ -63,7 +66,7 @@ Last updated: 2026-06-18
   - [ ] Visible review badges are present locally; broader top-50 content/schema requirements remain open.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
-  - [ ] Narrow trust slice is verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, and `SECURITY.md`.
+  - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
 - [ ] CSP nonce-based with no script-src `unsafe-inline`.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.

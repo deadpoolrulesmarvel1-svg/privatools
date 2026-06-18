@@ -51,6 +51,7 @@ from .routes import (
     new_tools,
     v12_tools,
     phase7_tools,
+    transparency,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -500,6 +501,7 @@ app.include_router(booklet.router, prefix="/api")
 app.include_router(new_tools.router, prefix="/api")
 app.include_router(phase7_tools.router, prefix="/api")
 app.include_router(v12_tools.router, prefix="/api")
+app.include_router(transparency.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)
