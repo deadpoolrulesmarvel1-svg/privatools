@@ -4,7 +4,7 @@ python-multipart==0.0.22
 pikepdf==8.12.0
 pypdf==4.1.0
 pdf2image==1.17.0
-Pillow==12.1.1
+Pillow==12.2.0
 reportlab==4.1.0
 aiofiles==23.2.1
 brotli==1.1.0
