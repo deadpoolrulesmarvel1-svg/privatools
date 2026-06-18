@@ -10,6 +10,7 @@ running server required.
 from __future__ import annotations
 
 import io
+import re
 
 import pytest
 
@@ -295,6 +296,37 @@ class TestSecurityHeaders:
         assert resp.status_code == 200
         cc = resp.headers.get("Cache-Control", "")
         assert "no-store" in cc.lower(), f"expected no-store, got {cc!r}"
+
+    def test_script_csp_uses_nonce_without_unsafe_inline(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        script_src = next(
+            directive for directive in csp.split(";") if directive.strip().startswith("script-src")
+        )
+        assert "'unsafe-inline'" not in script_src
+        assert "'unsafe-eval'" not in script_src
+        nonce_match = re.search(r"'nonce-([^']+)'", script_src)
+        assert nonce_match, f"script-src missing nonce: {script_src}"
+        assert f'nonce="{nonce_match.group(1)}"' in resp.text
+
+    def test_wasm_eval_is_limited_to_browser_ai_tools(self, client):
+        normal = client.get("/tool/compress-pdf")
+        ai = client.get("/tool/summarize-pdf")
+
+        normal_script_src = next(
+            directive
+            for directive in normal.headers.get("Content-Security-Policy", "").split(";")
+            if directive.strip().startswith("script-src")
+        )
+        ai_script_src = next(
+            directive
+            for directive in ai.headers.get("Content-Security-Policy", "").split(";")
+            if directive.strip().startswith("script-src")
+        )
+
+        assert "'wasm-unsafe-eval'" not in normal_script_src
+        assert "'wasm-unsafe-eval'" in ai_script_src
 
 
 class TestCacheControlForStaticContent:

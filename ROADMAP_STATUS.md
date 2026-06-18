@@ -47,7 +47,8 @@ Last updated: 2026-06-18
   - [x] DNT/GPC/GA opt-out added locally: GA loader respects browser privacy signals and `pt-analytics-opt-out=1`; Privacy page exposes a local opt-out switch.
   - [x] Public cleanup transparency added locally: `/api/transparency/janitor` returns aggregate janitor sweep counts without filenames, paths, IPs, or content metadata.
   - [x] GitHub trust automation added locally: security workflow with npm audit, pip-audit, CodeQL, Scorecard, Trivy SARIF, Trivy CycloneDX SBOM; release workflow builds/signs GHCR images with cosign; Dependabot covers npm, pip, and GitHub Actions.
-  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, nonce CSP, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
+  - [x] Nonce-based script CSP added locally: every served SPA HTML shell gets per-request script nonces; `script-src` no longer allows `unsafe-inline` or regular `unsafe-eval`; `wasm-unsafe-eval` is limited to browser-AI tool routes.
+  - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
 - [ ] Phase 7 - Power Features `[P7-power]`
@@ -67,7 +68,7 @@ Last updated: 2026-06-18
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
   - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.
-- [ ] CSP nonce-based with no script-src `unsafe-inline`.
+- [x] CSP nonce-based with no script-src `unsafe-inline`. Local backend tests assert matching CSP/body nonces, no `unsafe-inline`, no regular `unsafe-eval`, and `wasm-unsafe-eval` only on browser-AI routes.
 - [x] GitHub org identity unified locally.
 - [ ] Wikidata Q-number minted and linked.
 - [x] OG image validates at 1200x630 by live PNG header.
