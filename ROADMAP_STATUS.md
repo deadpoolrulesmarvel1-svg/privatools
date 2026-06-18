@@ -35,7 +35,7 @@ Last updated: 2026-06-18
   - [x] Tool-count gate cleared locally: DoD command now reports 215 `slug:` lines across `frontend/src/data/tools.ts` and `frontend/src/data/non-pdf-tools.ts`.
   - [x] P2 developer micro-tools slice added locally: `cron-parser`, `sql-formatter`, `graphql-formatter`, `yaml-toml-converter`, `gitignore-generator`, `semver-bumper`, `env-validator`, and `json-to-csv-schema`; all are browser-only and registered in UI, HowTo/FAQ content, SEO metadata, and sitemap coverage.
   - [x] P2 conversion-alias slice added locally: 26 image/audio/video format pages reuse existing image converter, audio converter, video converter, and video-to-GIF backends; registered in UI, endpoint overrides, HowTo/FAQ content, SEO metadata, review dates, sitemap, and generated `llms.txt` artifacts.
-  - [x] Verified locally after integration: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, `npm run check:bundle`, `python3.10 -m compileall app/ -q`, and backend suite `197 passed, 40 skipped`.
+  - [x] Verified locally after integration: `npx tsc --noEmit -p tsconfig.app.json`, `npm run build`, `npm run check:bundle`, `python3.10 -m compileall app/ -q`, and backend suite `401 passed, 40 skipped`.
   - [ ] Remaining P2 heavyweight tools are open: Chat with PDF, PDF Translator, quiz generation, voice-to-text, scan-to-PDF, Pipeline/workflows, multi-signer eSign, PDF text find/replace, multi-tool workspace, AI image tools, AVIF/JXL/JXL, object removal, Real-ESRGAN, HTML-to-image, receipt OCR, AV1 output, denoise audio, PDF audiobook, and video upload splitting.
 - [ ] Phase 3 - Existing Tool Quality Upgrades `[P3-*]`
 - [ ] Phase 4 - UI/UX Polish `[P4-ux]`
@@ -51,7 +51,7 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [ ] Backend tests >= 250 passing. Current suite has 197 passing and 40 skipped.
+- [x] Backend tests >= 250 passing. Current suite has 401 passing and 40 skipped after adding P2 catalog/SEO regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
 - [ ] Bundle size first-paint critical path < 170 KB gz.
