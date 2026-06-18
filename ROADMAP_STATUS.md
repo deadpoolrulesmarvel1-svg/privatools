@@ -55,6 +55,8 @@ Last updated: 2026-06-18
   - [ ] Phase 5 deferred items remain open: PGP key, per-tool never-uploaded badge, HSTS preload/COOP/COEP/CORP, SRI, self-hosted fonts/GA proxy, OpenSSF badge submission follow-through, and live workflow/README badge verification after default-branch deploy.
 - [ ] Phase 6 - SEO / GEO / AI Visibility `[P6-seo]`
   - [x] Narrow SEO slice added locally: visible `Last reviewed <time>` badge on PDF and non-PDF tool pages using a frontend helper mirroring backend curated review dates.
+  - [x] Top-50 tool page SSR coverage added locally: every top-50 tool page now has TL;DR, deep crawlable guidance, HowTo schema, FAQPage schema, SoftwareApplication schema, visible last-reviewed copy, and at least 800 words of SSR body content.
+  - [x] Regression coverage added locally: `tests/test_top50_seo.py` computes top-50 tool paths by popularity and enforces the content/schema/review requirements.
 - [ ] Phase 7 - Power Features `[P7-power]`
   - [x] Public API docs exposed locally at `/api-docs`; backend SPA middleware skips `/api-docs` so Swagger UI is not intercepted.
   - [x] Optional API-key primitive added locally: `PRIVATOOLS_API_KEYS` gates developer routes with `X-API-Key`, while dev remains anonymous when no keys are configured.
@@ -67,15 +69,14 @@ Last updated: 2026-06-18
 ## Definition of Done
 
 - [x] Phase 0 live bugs closed locally.
-- [x] Backend tests >= 250 passing. Current suite has 409 passing and 40 skipped after adding P2/P5/P7 regression coverage.
+- [x] Backend tests >= 250 passing. Current suite has 410 passing and 40 skipped after adding P2/P5/P6/P7 regression coverage.
 - [x] Frontend `tsc --noEmit` and `npm run build` clean.
 - [ ] Lighthouse thresholds met on `/`, `/tool/compress-pdf`, and `/blog/compress-pdf-without-losing-quality`.
 - [x] Bundle size first-paint critical path < 170 KB gz. Latest local HTML-preload measurement: 160.0 KiB gzip JS, 181.6 KiB gzip including CSS.
 - [x] Tool count >= 200. Latest local verification reports 215 via `slug:` count and 213 actual parsed tool entries in generated `llms.txt`.
 - [ ] Brotli + Cloudflare active.
   - [ ] Code/config is present locally; live activation still requires deploy, VM nginx module install/reload, and Cloudflare account configuration.
-- [ ] Top 50 tool pages have required schema/content/review badges.
-  - [ ] Visible review badges are present locally; broader top-50 content/schema requirements remain open.
+- [x] Top 50 tool pages have required schema/content/review badges locally. Regression test enforces TL;DR, 800+ SSR words, deep guidance, HowTo, FAQPage, SoftwareApplication, and visible last-reviewed content.
 - [ ] GEO citability score >= 80.
 - [ ] Trust deliverables live.
   - [ ] Trust slices are verified locally but not yet verified live: `/.well-known/security.txt`, `/security`, `SECURITY.md`, `/api/transparency/janitor`, analytics opt-out, GitHub Actions workflows, release signing workflow, Dependabot, and README badges.

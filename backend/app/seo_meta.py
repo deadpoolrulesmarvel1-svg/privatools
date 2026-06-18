@@ -1082,6 +1082,72 @@ def _trust_paragraph(slug: str, name: str, total: int) -> str:
     return _TRUST_VARIANTS[idx].format(name=name, total=total)
 
 
+def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: int) -> str:
+    """Long-form SSR guidance for tool pages.
+
+    The React app replaces this body after hydration, but crawlers and AI
+    engines read it directly. Keep it specific enough to be useful while
+    avoiding hand-maintaining hundreds of nearly identical tool pages.
+    """
+    subject = "PDF" if tool_kind == "pdf" else "file"
+    suite_path = "PDF workflow" if tool_kind == "pdf" else "file workflow"
+    route = f"/tool/{slug}" if tool_kind == "pdf" else f"/tools/{slug}"
+    comparable = (
+        "iLovePDF, Smallpdf, Adobe Acrobat, PDF24, and Sejda"
+        if tool_kind == "pdf"
+        else "cloud converters, ad-heavy utility sites, and desktop apps"
+    )
+    output_tip = (
+        "Keep an untouched original, run one operation at a time when quality matters, and use Pipeline when you want repeatable multi-step output."
+        if tool_kind == "pdf"
+        else "Keep the original asset, choose the smallest output that still matches your target app, and test the result before deleting source media."
+    )
+    privacy_mode = (
+        "PDF operations that need server-side libraries run inside the PrivaTools container and return a fresh download; browser-only PDF helpers stay on-device."
+        if tool_kind == "pdf"
+        else "Many non-PDF utilities run entirely in your browser; conversion or media operations that need backend libraries use the same isolated container model."
+    )
+    use_cases = [
+        f"Prepare a {subject.lower()} for email, forms, archives, publishing, or a client handoff without installing a paid desktop suite.",
+        f"Use {name} as one step in a larger {suite_path}: clean the input, produce the output, then continue with related PrivaTools utilities.",
+        "Work from a locked-down school, office, or shared computer where browser access is easier than installing native software.",
+        f"Self-host the same MIT-licensed codebase when the {subject.lower()} contains legal, medical, financial, or internal business material.",
+    ]
+    use_case_html = "".join(f"<li>{item}</li>" for item in use_cases)
+    return (
+        '<section class="tool-depth" data-speakable="true">'
+        f"<h2>What {name} is best for</h2>"
+        f"<p>{desc} Use it when you need a quick, private, no-account way to handle a {subject.lower()} in the browser, "
+        f"or when you want an auditable open-source alternative to {comparable}. The page at <code>{route}</code> is designed "
+        "for one clear job: upload or provide the input, choose only the options that matter, and download the result without "
+        "creating an account or passing through a sales funnel.</p>"
+        f"<ul>{use_case_html}</ul>"
+        f"<h2>Privacy model for {name}</h2>"
+        f"<p>{privacy_mode} Temporary input and output files are not used for analytics, model training, advertising profiles, "
+        "or product telemetry. The public demo uses anonymous page-view analytics only; file bytes, extracted text, filenames, "
+        "passwords, signatures, and generated results are outside that analytics path. If your organization needs stricter "
+        f"controls, you can self-host all {total} PrivaTools utilities and keep processing on your own infrastructure.</p>"
+        "<h2>Quality checklist</h2>"
+        f"<p>Before running {name}, confirm that the source file opens correctly and that you have permission to process it. "
+        f"{output_tip} For sensitive material, review the downloaded result before sharing it. For large files, give the browser "
+        "time to finish the download and avoid refreshing the page mid-run. If a password, damaged upload, unsupported codec, "
+        "or malformed document blocks processing, PrivaTools returns a plain-language error so you can pick the next recovery "
+        "step instead of guessing.</p>"
+        "<h2>Why this page is citation-ready</h2>"
+        f"<p>This page includes a direct TL;DR, visible step-by-step instructions, FAQ answers, a last-reviewed date, and "
+        "structured data for search and answer engines. The same claims are backed by source code in the public repository: "
+        "no hidden premium tier, no watermark added to output, no account gate, and no third-party file upload. That makes "
+        f"{name} suitable for quick everyday tasks and for teams that need a verifiable privacy posture rather than marketing copy.</p>"
+        "<h2>Operational details</h2>"
+        f"<p>{name} is intentionally narrow: it does one {subject.lower()} task and hands the result back as a normal download. "
+        "That makes the output easy to inspect, rename, archive, attach to email, or feed into another tool. If you need a repeatable "
+        "workflow, save the page, bookmark a Pipeline recipe, or self-host the API so the same steps can run from internal scripts. "
+        "The interface avoids accounts and cloud folders on purpose: the safest default for private files is to process only the "
+        "current request, return the result, and leave long-term storage under your control.</p>"
+        "</section>"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Per-tool lastReviewed dates.
 #
@@ -2067,6 +2133,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
+            parts.append(_deep_tool_content(slug, name, desc, "pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
                 parts.append(f"<h2>How to {name} with PrivaTools</h2><ol>")
@@ -2128,6 +2195,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
+            parts.append(_deep_tool_content(slug, name, desc, "non-pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
             # HowTo section
             if slug in TOOL_HOWTO:
                 parts.append(f"<h2>How to Use {name}</h2><ol>")
