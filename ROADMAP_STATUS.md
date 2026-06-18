@@ -15,7 +15,10 @@ Last updated: 2026-06-18
 - [x] Frontend build passed: `npm run build`.
 - [x] Backend compile passed: `python3.10 -m compileall app/ -q`.
 - [x] Backend tests passed for current suite: `197 passed, 40 skipped`.
-- [ ] Phase 0 committed and pushed.
+- [x] Phase 0 committed locally: `0be6a12`.
+- [x] Phase 0 pushed to branch: `origin/claude/focused-shaw-fd415a`.
+- [x] Draft PR opened: https://github.com/deadpoolrulesmarvel1-svg/privatools/pull/1
+- [ ] Phase 0 pushed to `main`. Direct default-branch push was blocked by safety review pending explicit approval.
 
 ## Later Phases
 
