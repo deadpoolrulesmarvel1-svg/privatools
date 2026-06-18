@@ -63,6 +63,31 @@ def _parse_backend_post_endpoints() -> set[str]:
     return endpoints
 
 
+def _registered_post_paths(app) -> list[str]:
+    """Return POST paths from FastAPI across flattened and included-router APIs."""
+    paths: list[str] = []
+
+    def visit(route, prefix: str = "") -> None:
+        path = getattr(route, "path", None)
+        methods = getattr(route, "methods", None) or set()
+        if path and "POST" in methods:
+            paths.append(f"{prefix}{path}")
+
+        original_router = getattr(route, "original_router", None)
+        if original_router is None:
+            return
+
+        include_context = getattr(route, "include_context", None)
+        child_prefix = f"{prefix}{getattr(include_context, 'prefix', '')}"
+        for child in getattr(original_router, "routes", []):
+            visit(child, child_prefix)
+
+    for route in app.routes:
+        visit(route)
+
+    return paths
+
+
 def test_all_non_client_only_tools_have_backend_routes():
     tools: list[tuple[str, bool]] = []
     for data_file in FRONTEND_DATA_FILES:
@@ -121,11 +146,7 @@ def test_every_declared_post_route_is_registered_in_app():
     declared = _parse_backend_post_endpoints()
     # FastAPI app paths come back as "/api/foo", we declared as "/foo".
     registered: set[str] = set()
-    for r in app.routes:
-        path = getattr(r, "path", None)
-        methods = getattr(r, "methods", None) or set()
-        if not path or "POST" not in methods:
-            continue
+    for path in _registered_post_paths(app):
         if path.startswith("/api/"):
             registered.add(path[len("/api"):])
 
@@ -140,12 +161,7 @@ def test_no_duplicate_post_endpoint_in_app():
     from collections import Counter
     from backend.app.main import app
 
-    paths = []
-    for r in app.routes:
-        path = getattr(r, "path", None)
-        methods = getattr(r, "methods", None) or set()
-        if path and path.startswith("/api/") and "POST" in methods:
-            paths.append(path)
+    paths = [path for path in _registered_post_paths(app) if path.startswith("/api/")]
     duplicates = [p for p, count in Counter(paths).items() if count > 1]
     assert not duplicates, f"Duplicate POST routes registered: {duplicates}"
 

@@ -18,6 +18,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ..utils.exceptions import ToolError
 
@@ -60,6 +61,12 @@ async def tool_error_handler(request: Request, exc: ToolError) -> JSONResponse:
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Preserve HTTPException semantics but propagate the request-id header."""
     detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
+    if exc.status_code == 400 and detail.startswith("Part exceeded maximum size"):
+        return _json(
+            413,
+            "Form field is too large. Try a smaller signature or upload file.",
+            request=request,
+        )
     return _json(exc.status_code, detail, request=request)
 
 
@@ -187,6 +194,7 @@ def register_error_handlers(app: FastAPI) -> None:
     """
     app.add_exception_handler(ToolError, tool_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     # Keep this last — it's the catch-all.
     app.add_exception_handler(Exception, builtin_exception_handler)
