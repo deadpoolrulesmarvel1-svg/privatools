@@ -9,7 +9,7 @@ reportlab==4.1.0
 aiofiles==23.2.1
 pytesseract==0.3.13
 weasyprint
-slowapi==0.1.9
+slowapi==0.1.10
 PyMuPDF==1.27.2.3
 python-docx
 openpyxl
