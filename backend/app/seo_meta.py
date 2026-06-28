@@ -2859,8 +2859,13 @@ def inject_seo(html: str, path: str) -> str:
         def _replace_root(_match: "re.Match[str]") -> str:
             return f'<div id="root">{ssr_content}</div>'
 
+        # Anchor on the FIRST <script> (or </body>) that follows the root close.
+        # The built dist/index.html hoists the entry module script into <head>
+        # (Vite), and the only thing after <div id="root">…</div> is an inline
+        # <script> — so we must NOT require a type="module" script here, or the
+        # match fails on the production template and the SSR body is dropped.
         html, n = re.subn(
-            r'<div\s+id=(["\'])root\1\s*>.*?</div>(?=\s*<script\b[^>]*\btype="module")',
+            r'<div\s+id=(["\'])root\1\s*>.*?</div>(?=\s*(?:<script|</body))',
             _replace_root,
             html,
             count=1,
