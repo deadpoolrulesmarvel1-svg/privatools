@@ -2,6 +2,12 @@ export const FILE_HANDOFF_KEY = "privatools.file-handoff";
 
 const MAX_HANDOFF_AGE_MS = 10 * 60 * 1000;
 
+// Cap the handoff payload. sessionStorage quota is ~5 MB and a base64 data URL
+// inflates the file by ~33%, so a larger file would throw on setItem (silently
+// failing the handoff) or leave a multi-MB blob sitting in the tab's storage.
+// Above this, we skip the convenience handoff and just re-prompt for upload.
+const MAX_HANDOFF_BYTES = 3 * 1024 * 1024;
+
 type StoredFileHandoff = {
   name: string;
   type: string;
@@ -23,6 +29,8 @@ function readAsDataUrl(file: File): Promise<string> {
 }
 
 export async function storeFileHandoff(file: File, targetSlug?: string): Promise<boolean> {
+  // Skip the handoff for files too large to fit sessionStorage safely.
+  if (file.size > MAX_HANDOFF_BYTES) return false;
   try {
     const payload: StoredFileHandoff = {
       name: file.name || "clipboard-file",
