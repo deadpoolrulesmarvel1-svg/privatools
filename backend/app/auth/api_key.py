@@ -25,8 +25,12 @@ async def require_api_key(api_key: str | None = Security(api_key_header)) -> str
     keys = _configured_keys()
     if not keys:
         return "anonymous-dev"
-    if api_key and any(secrets.compare_digest(api_key, key) for key in keys):
-        return "api-key"
+    if api_key:
+        # Compare as UTF-8 bytes: secrets.compare_digest raises TypeError on a
+        # non-ASCII str, which would surface as an uncaught 500 instead of 401.
+        candidate = api_key.encode("utf-8")
+        if any(secrets.compare_digest(candidate, key.encode("utf-8")) for key in keys):
+            return "api-key"
     raise HTTPException(
         status_code=401,
         detail=f"Missing or invalid {API_KEY_HEADER}",

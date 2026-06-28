@@ -22,14 +22,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-MAX_IMAGE_SIZE = 2 * 1024 * 1024 * 1024  # effectively unlimited
-MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024
-MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB – 24 GB RAM server handles large video
-MAX_ARCHIVE_SIZE = 2 * 1024 * 1024 * 1024
+# Per-route caps aligned with the 500 MB product limit + the UploadSizeLimit
+# middleware. (They were 2 GB — above the middleware cap, so inert for normal
+# Content-Length uploads and only loosening the bound on the chunked path.)
+MAX_IMAGE_SIZE = 500 * 1024 * 1024
+MAX_MEDIA_SIZE = 500 * 1024 * 1024
+MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB
+MAX_ARCHIVE_SIZE = 500 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
 # Cap total uncompressed bytes from a single archive — protects against
-# zip-bomb style inputs where a small archive expands to gigabytes on disk.
-MAX_EXTRACTED_BYTES = 4 * 1024 * 1024 * 1024  # 4 GB
+# zip-bomb style inputs. Enforced against ACTUAL written bytes in _copy_capped.
+MAX_EXTRACTED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
 
 IMAGE_FORMATS = {
@@ -186,9 +189,32 @@ def _safe_archive_name(raw_name: str) -> str:
     return "/".join(parts)
 
 
+_EXTRACT_CHUNK = 1024 * 1024  # 1 MB
+
+
+def _copy_capped(source, target, state: dict) -> None:
+    """Stream source→target, counting ACTUAL bytes against state['remaining'].
+
+    The old code summed the archive's DECLARED member sizes (info.file_size /
+    member.size) before extraction, then used shutil.copyfileobj — which streams
+    the REAL decompressed bytes with no cap, and zipfile only validates the
+    declared size at EOF (after the bytes are already on disk). A bomb that
+    under-declares its sizes therefore slipped the cap and could fill the disk.
+    Counting the real stream here is the authoritative aggregate limit.
+    """
+    while True:
+        chunk = source.read(_EXTRACT_CHUNK)
+        if not chunk:
+            break
+        state["remaining"] -= len(chunk)
+        if state["remaining"] < 0:
+            raise HTTPException(status_code=413, detail="Extracted archive data is too large")
+        target.write(chunk)
+
+
 def _extract_zip_safely(zip_path: str, extract_dir: str) -> None:
-    total_bytes = 0
     file_count = 0
+    state = {"remaining": MAX_EXTRACTED_BYTES}
 
     with zipfile.ZipFile(zip_path, "r") as archive:
         for info in archive.infolist():
@@ -197,21 +223,18 @@ def _extract_zip_safely(zip_path: str, extract_dir: str) -> None:
 
             arc_name = _safe_archive_name(info.filename)
             file_count += 1
-            total_bytes += info.file_size
             if file_count > MAX_ARCHIVE_FILES:
                 raise HTTPException(status_code=413, detail="Archive contains too many files")
-            if total_bytes > MAX_EXTRACTED_BYTES:
-                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
 
             target_path = os.path.join(extract_dir, *arc_name.split("/"))
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             with archive.open(info, "r") as source, open(target_path, "wb") as target:
-                shutil.copyfileobj(source, target)
+                _copy_capped(source, target, state)
 
 
 def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
-    total_bytes = 0
     file_count = 0
+    state = {"remaining": MAX_EXTRACTED_BYTES}
 
     with tarfile.open(tar_path, mode) as archive:
         for member in archive.getmembers():
@@ -220,11 +243,8 @@ def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
 
             arc_name = _safe_archive_name(member.name)
             file_count += 1
-            total_bytes += member.size
             if file_count > MAX_ARCHIVE_FILES:
                 raise HTTPException(status_code=413, detail="Archive contains too many files")
-            if total_bytes > MAX_EXTRACTED_BYTES:
-                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
 
             extracted = archive.extractfile(member)
             if extracted is None:
@@ -233,7 +253,7 @@ def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
             target_path = os.path.join(extract_dir, *arc_name.split("/"))
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             with extracted, open(target_path, "wb") as target:
-                shutil.copyfileobj(extracted, target)
+                _copy_capped(extracted, target, state)
 
 
 def _zip_directory(source_dir: str, output_zip_path: str) -> None:
