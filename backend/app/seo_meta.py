@@ -1476,6 +1476,13 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             ("audio-converter", "/tools/audio-converter"),
             ("jwt-decoder", "/tools/jwt-decoder"),
             ("regex-tester", "/tools/regex-tester"),
+            # Free-winnable niche dev tools — surfaced here so the homepage
+            # entity graph also points AI engines at the pages we can actually
+            # rank for (the PDF heads are owned by DA80-90 incumbents).
+            ("semver-bumper", "/tools/semver-bumper"),
+            ("env-validator", "/tools/env-validator"),
+            ("cron-parser", "/tools/cron-parser"),
+            ("yaml-toml-converter", "/tools/yaml-toml-converter"),
         ]
         featured = []
         for i, (slug, urlpath) in enumerate(featured_slugs, start=1):
@@ -2421,6 +2428,15 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             for cslug, cdata in _COMPARE_DATA.items():
                 parts.append(f'<li><a href="/compare/{cslug}">PrivaTools vs {cdata["name"]}</a></li>')
             parts.append("</ul>")
+        # Internal links down to the specific tools these comparisons are about,
+        # so any external authority the compare pages earn (they're the natural
+        # outreach landing targets) flows to the individual tool pages.
+        popular = [(s, n) for s, (n, _) in _by_popularity(_PDF_TOOLS.items())][:10]
+        parts.append("<h2>Popular free PrivaTools tools</h2><ul>")
+        for s, n in popular:
+            parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
+        parts.append('<li><a href="/tools">Browse all tools &rarr;</a></li>')
+        parts.append("</ul>")
         return "\n".join(parts)
 
     # ── Blog pages ─────────────────────────────────────────────────────────

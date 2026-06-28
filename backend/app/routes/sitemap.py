@@ -181,6 +181,14 @@ _HIGH_PRIORITY_TOOLS: set[str] = {
     "redact-pdf", "watermark",
     "image-compressor", "image-converter", "heic-to-jpg",
     "remove-background", "video-to-gif",
+    # Free-winnable niche dev/utility tools. Per the keyword research, the PDF
+    # heads are owned by DA80-90 incumbents, but these niche dev SERPs (GitHub
+    # repos + small indie tools) are realistically rankable for a new site — so
+    # concentrate crawl-budget priority here, where the wins are actually free.
+    "semver-bumper", "env-validator", "cron-parser", "yaml-toml-converter",
+    "graphql-formatter", "json-to-csv-schema", "gitignore-generator",
+    "sql-formatter", "subtitle-converter", "remove-exif", "view-exif",
+    "json-to-yaml", "yaml-to-json",
 }
 
 
