@@ -2,6 +2,24 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [Unreleased] — Security, reliability & trust hardening
+
+### Security
+- **SSRF closed on the URL→PDF tools.** url-to-pdf and html-to-pdf now SSRF-validate every WeasyPrint sub-resource and re-validate HTTP redirects, so an attacker-supplied page can no longer pull cloud-metadata or internal hosts into a rendered PDF.
+
+### Reliability
+- **Heavy work runs off the event loop.** ~100 route handlers (PDF/image/video processing plus ffmpeg/tesseract subprocesses) now offload to a threadpool, so one large job no longer freezes a worker for every other request.
+- Closed pikepdf/Pillow resource leaks; an empty-PDF booklet now returns a friendly 400.
+
+### Infrastructure & supply chain
+- Runtime container hardened: loopback-only bind, `cap_drop: ALL`, `no-new-privileges`, real memory/CPU/PID caps, and `--proxy-headers` for correct client IPs behind nginx.
+- All GitHub Actions pinned to commit SHAs (OpenSSF Scorecard).
+- Auto-deploy gained an opt-in release-tag gate so an unreviewed push to `main` no longer ships to prod automatically.
+- Removed the dead `backend/requirements.txt` mirror; `.env.example` domains and upload limit aligned with the live `privatools.me` / 500 MB config.
+
+### Note on tool count
+- Current total is **213** tools (PDF + image + video/audio + dev + archive). The "179"/"total now 179" figures in the historical entries below predate the Phase-2 tool slices and are kept for historical accuracy.
+
 ## [1.5.2] — 2026-05-20 — Workshop UI overhaul + production hardening
 
 ### Frontend
