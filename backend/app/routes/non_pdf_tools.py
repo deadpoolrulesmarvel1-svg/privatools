@@ -97,16 +97,26 @@ def _safe_filename(name: str | None, fallback: str) -> str:
 
 
 async def _read_upload(file: UploadFile, max_size: int = 0, label: str = "File") -> bytes:
-    data = await file.read()
-    if not data:
+    # Stream-and-check: read in chunks and abort the moment the cap is exceeded.
+    # `await file.read()` buffered the WHOLE body first and only then checked the
+    # size, so a chunked upload (no Content-Length, which bypasses
+    # UploadSizeLimitMiddleware) could force an unbounded buffer before the
+    # check. Reading incrementally bounds the buffer to max_size.
+    chunks = bytearray()
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        chunks += chunk
+        if max_size and len(chunks) > max_size:
+            limit_mb = max_size / (1024 * 1024)
+            raise HTTPException(
+                status_code=413,
+                detail=f"{label} exceeds the {limit_mb:.0f} MB size limit",
+            )
+    if not chunks:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if max_size and len(data) > max_size:
-        limit_mb = max_size / (1024 * 1024)
-        raise HTTPException(
-            status_code=413,
-            detail=f"{label} exceeds the {limit_mb:.0f} MB size limit",
-        )
-    return data
+    return bytes(chunks)
 
 
 def _new_temp_file(suffix: str) -> str:
