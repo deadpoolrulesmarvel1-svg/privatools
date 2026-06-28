@@ -14,6 +14,17 @@ HEALTH_INTERVAL="${HEALTH_INTERVAL:-6}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
 
+# Deploy gate. Without one, *any* commit reaching ${BRANCH} ships to prod
+# within ~60s with no human approval. Modes:
+#   auto   (default) deploy the latest release tag reachable from ${BRANCH};
+#          fall back to ${BRANCH} HEAD until the first tag exists — so turning
+#          this on changes nothing until you cut your first release tag, after
+#          which only tagged commits deploy.
+#   tag    only deploy a matching tag; never deploy an untagged ${BRANCH} push.
+#   branch legacy: deploy ${BRANCH} HEAD every push (no gate).
+DEPLOY_MODE="${DEPLOY_MODE:-auto}"
+DEPLOY_TAG_GLOB="${DEPLOY_TAG_GLOB:-v*}"
+
 log() {
     printf '[privatools-auto-deploy] %s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"
 }
@@ -36,11 +47,46 @@ fi
 
 cd "$REPO_DIR"
 
-log "fetching ${REMOTE}/${BRANCH}"
-git fetch --prune "$REMOTE" "+refs/heads/${BRANCH}:refs/remotes/${REMOTE}/${BRANCH}"
+log "fetching ${REMOTE}/${BRANCH} (deploy mode=${DEPLOY_MODE})"
+git fetch --prune --tags --force "$REMOTE" "+refs/heads/${BRANCH}:refs/remotes/${REMOTE}/${BRANCH}"
 
 current_sha="$(git rev-parse HEAD)"
-target_sha="$(git rev-parse "refs/remotes/${REMOTE}/${BRANCH}")"
+branch_sha="$(git rev-parse "refs/remotes/${REMOTE}/${BRANCH}")"
+
+# Latest tag matching the glob that is an ancestor of the tracked branch (so a
+# tag pushed on an unmerged branch can't deploy).
+latest_release_tag() {
+    git tag -l "$DEPLOY_TAG_GLOB" --sort=-version:refname \
+        --merged "refs/remotes/${REMOTE}/${BRANCH}" | head -n1
+}
+
+target_ref=""
+case "$DEPLOY_MODE" in
+    branch)
+        target_ref="${REMOTE}/${BRANCH}"
+        target_sha="$branch_sha"
+        ;;
+    tag)
+        target_ref="$(latest_release_tag)"
+        if [[ -z "$target_ref" ]]; then
+            log "mode=tag but no tag matches ${DEPLOY_TAG_GLOB} on ${BRANCH}; nothing to deploy (push a release tag)"
+            exit 0
+        fi
+        target_sha="$(git rev-parse "${target_ref}^{commit}")"
+        ;;
+    auto|*)
+        target_ref="$(latest_release_tag)"
+        if [[ -n "$target_ref" ]]; then
+            target_sha="$(git rev-parse "${target_ref}^{commit}")"
+        else
+            target_ref="${REMOTE}/${BRANCH}"
+            target_sha="$branch_sha"
+            log "no ${DEPLOY_TAG_GLOB} tag yet; deploying ${BRANCH} HEAD (cut a release tag to enable the deploy gate)"
+        fi
+        ;;
+esac
+log "deploy target: ${target_ref} -> ${target_sha:0:12}"
+
 deployed_sha=""
 if [[ -f "$STATE_FILE" ]]; then
     deployed_sha="$(tr -d '[:space:]' < "$STATE_FILE")"

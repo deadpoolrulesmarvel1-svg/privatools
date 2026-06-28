@@ -19,7 +19,9 @@ That installs:
 - `privatools-auto-deploy.service`
 - `privatools-auto-deploy.timer`
 
-The timer checks `origin/main` every minute. It redeploys when a new commit exists, when the last-successful deploy marker does not match the checked-out commit, or when the local health endpoint does not report the checked-out commit. A deploy resets the checkout to `origin/main`, runs `GIT_SHA=<target> docker compose up -d --build`, injects that SHA as the container's `PRIVATOOLS_BUILD_SHA`, prunes dangling images, writes `.privatools-auto-deploy.sha` only after `/api/health` reports the target SHA, and waits for `http://127.0.0.1:8000/api/health`.
+The timer checks the tracked branch every minute. It redeploys when the deploy target changes, when the last-successful deploy marker does not match the checked-out commit, or when the local health endpoint does not report the checked-out commit. A deploy resets the checkout to the target commit, runs `GIT_SHA=<target> docker compose up -d --build`, injects that SHA as the container's `PRIVATOOLS_BUILD_SHA`, prunes dangling images, writes `.privatools-auto-deploy.sha` only after `/api/health` reports the target SHA, and waits for `http://127.0.0.1:8000/api/health`.
+
+**Deploy gate (`DEPLOY_MODE`).** By default (`auto`) the timer deploys the latest release **tag** (`v*`) reachable from `main`, so an unreviewed push to `main` does **not** ship on its own — you ship by tagging (`git tag vX.Y.Z && git push --tags`). Until the first tag exists, `auto` falls back to `main` HEAD, so turning this on changes nothing until you cut a release. Set `DEPLOY_MODE=branch` in `privatools-auto-deploy.service` to keep the legacy deploy-every-push behaviour, or `DEPLOY_MODE=tag` to require a tag (no fallback). Override the tag pattern with `DEPLOY_TAG_GLOB`.
 
 Useful commands:
 
