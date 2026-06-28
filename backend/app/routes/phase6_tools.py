@@ -1,5 +1,6 @@
 """Phase 6 tools: Batch PDF Compress, Image Upscaler, Audio Converter, PDF Page Counter."""
 
+import asyncio
 import io
 import os
 import subprocess
@@ -10,11 +11,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import fitz  # PyMuPDF
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error, MAX_SIZE
 
 router = APIRouter()
@@ -38,7 +40,9 @@ def _compress_single_pdf(pdf_bytes: bytes, level: str) -> bytes:
 
 
 @router.post("/batch-compress-pdf")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def batch_compress_pdf(
+    request: Request,
     files: list[UploadFile] = File(...),
     level: str = Form("balanced"),
 ):
@@ -98,7 +102,9 @@ async def batch_compress_pdf(
 
 
 @router.post("/image-upscaler")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def image_upscaler(
+    request: Request,
     file: UploadFile = File(...),
     scale: int = Form(2),
 ):
@@ -146,7 +152,9 @@ async def image_upscaler(
 
 
 @router.post("/audio-converter")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def audio_converter(
+    request: Request,
     file: UploadFile = File(...),
     format: str = Form("mp3"),
     bitrate: str = Form("192k"),
@@ -177,7 +185,7 @@ async def audio_converter(
     cmd.append(str(out_path))
 
     try:
-        subprocess.run(cmd, capture_output=True, check=True, timeout=120)
+        await asyncio.to_thread(subprocess.run, cmd, capture_output=True, check=True, timeout=120)
     except subprocess.CalledProcessError as exc:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(500, f"Audio conversion failed: {exc.stderr.decode()[:200]}")

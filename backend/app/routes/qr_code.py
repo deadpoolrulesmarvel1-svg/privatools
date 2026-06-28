@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from typing import Optional
@@ -67,7 +68,8 @@ async def generate_qr_code(
             validate_pdf_content(pdf_content)
             temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_pdf.write_bytes(pdf_content)
-            output_path = qr_code_service.embed_qr_in_pdf(
+            output_path = await asyncio.to_thread(
+                qr_code_service.embed_qr_in_pdf,
                 str(temp_pdf), data,
                 page=page, x=x, y=y, qr_size=qr_size,
                 fg_color=fg_color, bg_color=bg_color, logo_bytes=logo_bytes,
@@ -81,7 +83,8 @@ async def generate_qr_code(
             )
 
         if fmt == "pdf":
-            output_path = qr_code_service.generate_qr_pdf(
+            output_path = await asyncio.to_thread(
+                qr_code_service.generate_qr_pdf,
                 data, size=size, fg_color=fg_color, bg_color=bg_color, logo_bytes=logo_bytes,
             )
             cleanup = BackgroundTask(remove_files, output_path)
@@ -91,7 +94,8 @@ async def generate_qr_code(
                 media_type="application/pdf",
                 background=cleanup,
             )
-        output_path = qr_code_service.generate_qr_png(
+        output_path = await asyncio.to_thread(
+            qr_code_service.generate_qr_png,
             data, size=size, fg_color=fg_color, bg_color=bg_color, logo_bytes=logo_bytes,
         )
         cleanup = BackgroundTask(remove_files, output_path)

@@ -15,6 +15,10 @@ def make_booklet(input_path: str) -> str:
 
     with safe_open_pdf(input_path) as pdf:
         n = len(pdf.pages)
+        if n == 0:
+            # An empty source would otherwise silently produce a 0-page booklet
+            # (and the MediaBox lookup below assumes at least one page).
+            raise ValueError("Cannot create a booklet from an empty PDF")
         # Pad to multiple of 4
         while n % 4 != 0:
             blank = pikepdf.Page(pikepdf.Dictionary(

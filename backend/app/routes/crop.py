@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -93,7 +94,8 @@ async def crop_pdf(
                 detail="PDF appears corrupt or unreadable",
             ) from exc
 
-        output_path = crop_service.crop_pdf(
+        output_path = await asyncio.to_thread(
+            crop_service.crop_pdf,
             str(temp_path), top=top, bottom=bottom, left=left, right=right
         )
         stem = safe_stem(file.filename)

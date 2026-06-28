@@ -4,6 +4,7 @@ pdf-to-rtf, view-exif.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 
@@ -80,7 +81,8 @@ async def split_by_text_endpoint(
         validate_pdf_content(content)
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_path.write_bytes(content)
-        output_path = split_by_text_service.split_by_text(
+        output_path = await asyncio.to_thread(
+            split_by_text_service.split_by_text,
             str(temp_path), search.strip(), case_sensitive=case_sensitive
         )
         return FileResponse(
@@ -114,7 +116,7 @@ async def pdf_to_html_endpoint(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_path.write_bytes(content)
-        output_path = pdf_to_html_service.pdf_to_html(str(temp_path))
+        output_path = await asyncio.to_thread(pdf_to_html_service.pdf_to_html, str(temp_path))
         return FileResponse(
             path=output_path,
             filename="document.html",
@@ -143,7 +145,7 @@ async def pdf_to_rtf_endpoint(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_path.write_bytes(content)
-        output_path = pdf_to_rtf_service.pdf_to_rtf(str(temp_path))
+        output_path = await asyncio.to_thread(pdf_to_rtf_service.pdf_to_rtf, str(temp_path))
         return FileResponse(
             path=output_path,
             filename="document.rtf",
@@ -182,7 +184,7 @@ async def view_exif_endpoint(file: UploadFile = File(...)):
                 suffix = f".{ext}"
         temp_path = get_temp_path(f"exif_{uuid.uuid4().hex}{suffix}")
         temp_path.write_bytes(content)
-        data = view_exif_service.view_exif(str(temp_path))
+        data = await asyncio.to_thread(view_exif_service.view_exif, str(temp_path))
         return JSONResponse(content=data, background=BackgroundTask(remove_files, str(temp_path)))
     except HTTPException:
         remove_files(*([str(temp_path)] if temp_path else []))

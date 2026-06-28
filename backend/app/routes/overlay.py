@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -38,7 +39,7 @@ async def overlay(
         validate_pdf_content(content2)
         ovl_path.write_bytes(content2)
 
-        output_path = overlay_service.overlay(str(base_path), str(ovl_path), mode=mode)
+        output_path = await asyncio.to_thread(overlay_service.overlay, str(base_path), str(ovl_path), mode=mode)
         cleanup = BackgroundTask(remove_files, str(base_path), str(ovl_path), output_path)
         return FileResponse(
             path=output_path,

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
@@ -54,7 +55,7 @@ async def ocr_pdf(
         temp_path.write_bytes(content)
 
         if output == "txt":
-            out_path = ocr_service.extract_text_to_file(str(temp_path), lang=lang, dpi=dpi)
+            out_path = await asyncio.to_thread(ocr_service.extract_text_to_file, str(temp_path), lang=lang, dpi=dpi)
             cleanup = BackgroundTask(remove_files, str(temp_path), out_path)
             return FileResponse(
                 path=out_path,
@@ -63,7 +64,7 @@ async def ocr_pdf(
                 background=cleanup,
             )
         if output == "searchable_pdf":
-            out_path = ocr_service.extract_searchable_pdf_to_file(str(temp_path), lang=lang, dpi=dpi)
+            out_path = await asyncio.to_thread(ocr_service.extract_searchable_pdf_to_file, str(temp_path), lang=lang, dpi=dpi)
             cleanup = BackgroundTask(remove_files, str(temp_path), out_path)
             return FileResponse(
                 path=out_path,
@@ -72,7 +73,7 @@ async def ocr_pdf(
                 background=cleanup,
             )
         else:
-            text = ocr_service.extract_text(str(temp_path), lang=lang, dpi=dpi)
+            text = await asyncio.to_thread(ocr_service.extract_text, str(temp_path), lang=lang, dpi=dpi)
             remove_files(str(temp_path))
             return JSONResponse({"text": text})
     except HTTPException:

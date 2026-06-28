@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -28,7 +29,7 @@ async def get_fields(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        fields = fill_form_service.get_form_fields(str(temp_path))
+        fields = await asyncio.to_thread(fill_form_service.get_form_fields, str(temp_path))
         remove_files(str(temp_path))
         return JSONResponse({"fields": fields})
     except HTTPException:
@@ -82,7 +83,7 @@ async def fill_form(file: UploadFile = File(...), field_values: str = Form(...))
                 detail="field_values must be a JSON object of field-name → value",
             )
 
-        output_path = fill_form_service.fill_form(str(temp_path), values)
+        output_path = await asyncio.to_thread(fill_form_service.fill_form, str(temp_path), values)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

@@ -4,6 +4,7 @@ extract dominant color palette from images, pixelate/blur image regions.
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import shutil
@@ -12,10 +13,11 @@ import uuid
 from pathlib import Path
 from collections import Counter
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload
 
@@ -34,6 +36,11 @@ def _suffix(name: str | None) -> str:
     return "." + name.rsplit(".", 1)[-1].lower()
 
 
+async def _run_ffmpeg_async(args: list[str], label: str) -> None:
+    """Run ffmpeg off the event loop so a long encode doesn't block the worker."""
+    await asyncio.to_thread(_run_ffmpeg, args, label)
+
+
 def _run_ffmpeg(args: list[str], label: str) -> None:
     try:
         proc = subprocess.run(args, capture_output=True, timeout=180)
@@ -46,7 +53,8 @@ def _run_ffmpeg(args: list[str], label: str) -> None:
 
 # ─── Mute video (strip audio) ────────────────────────────────────────────
 @router.post("/mute-video")
-async def mute_video_endpoint(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def mute_video_endpoint(request: Request, file: UploadFile = File(...)):
     """Strip the audio track from a video. Stream-copies video so it's instant."""
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
@@ -57,7 +65,7 @@ async def mute_video_endpoint(file: UploadFile = File(...)):
     out_path = get_temp_path(f"mute_out_{uuid.uuid4().hex}{suffix}")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-c:v", "copy", "-an", str(out_path),
         ], "Mute video")
@@ -73,7 +81,8 @@ async def mute_video_endpoint(file: UploadFile = File(...)):
 
 # ─── Reverse video (play backwards, audio reversed too) ──────────────────
 @router.post("/reverse-video")
-async def reverse_video_endpoint(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def reverse_video_endpoint(request: Request, file: UploadFile = File(...)):
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
@@ -84,7 +93,7 @@ async def reverse_video_endpoint(file: UploadFile = File(...)):
     out_path = get_temp_path(f"rev_out_{uuid.uuid4().hex}.mp4")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-vf", "reverse", "-af", "areverse",
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
@@ -103,7 +112,9 @@ async def reverse_video_endpoint(file: UploadFile = File(...)):
 
 # ─── Change video playback speed (0.25× – 4×) ────────────────────────────
 @router.post("/video-speed")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def video_speed_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     speed: float = Form(1.5, ge=0.25, le=4.0),
 ):
@@ -131,7 +142,7 @@ async def video_speed_endpoint(
     a_filter = ",".join(atempo_chain)
     v_filter = f"setpts={1.0 / float(speed):.4f}*PTS"
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-filter_complex", f"[0:v]{v_filter}[v];[0:a]{a_filter}[a]",
             "-map", "[v]", "-map", "[a]",
@@ -154,7 +165,9 @@ ALLOWED_AUDIO = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a", ".wma"}
 
 
 @router.post("/audio-trim")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def audio_trim_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     start: str = Form("00:00:00"),
     end: str = Form("00:00:30"),
@@ -179,7 +192,7 @@ async def audio_trim_endpoint(
     out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-ss", start.strip(), "-to", end.strip(),
             "-i", str(in_path), "-c", "copy", str(out_path),
         ], "Audio trim")

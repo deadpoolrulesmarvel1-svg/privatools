@@ -1,5 +1,6 @@
 """Non-PDF tool routes: image, video/audio, and archive processing."""
 
+import asyncio
 import io
 import logging
 import os
@@ -21,14 +22,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-MAX_IMAGE_SIZE = 2 * 1024 * 1024 * 1024  # effectively unlimited
-MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024
-MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB – 24 GB RAM server handles large video
-MAX_ARCHIVE_SIZE = 2 * 1024 * 1024 * 1024
+# Per-route caps aligned with the 500 MB product limit + the UploadSizeLimit
+# middleware. (They were 2 GB — above the middleware cap, so inert for normal
+# Content-Length uploads and only loosening the bound on the chunked path.)
+MAX_IMAGE_SIZE = 500 * 1024 * 1024
+MAX_MEDIA_SIZE = 500 * 1024 * 1024
+MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB
+MAX_ARCHIVE_SIZE = 500 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
 # Cap total uncompressed bytes from a single archive — protects against
-# zip-bomb style inputs where a small archive expands to gigabytes on disk.
-MAX_EXTRACTED_BYTES = 4 * 1024 * 1024 * 1024  # 4 GB
+# zip-bomb style inputs. Enforced against ACTUAL written bytes in _copy_capped.
+MAX_EXTRACTED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
 
 IMAGE_FORMATS = {
@@ -93,16 +97,26 @@ def _safe_filename(name: str | None, fallback: str) -> str:
 
 
 async def _read_upload(file: UploadFile, max_size: int = 0, label: str = "File") -> bytes:
-    data = await file.read()
-    if not data:
+    # Stream-and-check: read in chunks and abort the moment the cap is exceeded.
+    # `await file.read()` buffered the WHOLE body first and only then checked the
+    # size, so a chunked upload (no Content-Length, which bypasses
+    # UploadSizeLimitMiddleware) could force an unbounded buffer before the
+    # check. Reading incrementally bounds the buffer to max_size.
+    chunks = bytearray()
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        chunks += chunk
+        if max_size and len(chunks) > max_size:
+            limit_mb = max_size / (1024 * 1024)
+            raise HTTPException(
+                status_code=413,
+                detail=f"{label} exceeds the {limit_mb:.0f} MB size limit",
+            )
+    if not chunks:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if max_size and len(data) > max_size:
-        limit_mb = max_size / (1024 * 1024)
-        raise HTTPException(
-            status_code=413,
-            detail=f"{label} exceeds the {limit_mb:.0f} MB size limit",
-        )
-    return data
+    return bytes(chunks)
 
 
 def _new_temp_file(suffix: str) -> str:
@@ -133,6 +147,12 @@ def _write_temp_file(content: bytes, suffix: str) -> str:
             pass
         raise
     return path
+
+
+async def _run_ffmpeg_async(cmd: list[str], timeout: int) -> None:
+    """Run ffmpeg off the event loop — a long encode (up to `timeout`s) must
+    not block the worker from serving other requests."""
+    await asyncio.to_thread(_run_ffmpeg, cmd, timeout)
 
 
 def _run_ffmpeg(cmd: list[str], timeout: int) -> None:
@@ -179,9 +199,32 @@ def _safe_archive_name(raw_name: str) -> str:
     return "/".join(parts)
 
 
+_EXTRACT_CHUNK = 1024 * 1024  # 1 MB
+
+
+def _copy_capped(source, target, state: dict) -> None:
+    """Stream source→target, counting ACTUAL bytes against state['remaining'].
+
+    The old code summed the archive's DECLARED member sizes (info.file_size /
+    member.size) before extraction, then used shutil.copyfileobj — which streams
+    the REAL decompressed bytes with no cap, and zipfile only validates the
+    declared size at EOF (after the bytes are already on disk). A bomb that
+    under-declares its sizes therefore slipped the cap and could fill the disk.
+    Counting the real stream here is the authoritative aggregate limit.
+    """
+    while True:
+        chunk = source.read(_EXTRACT_CHUNK)
+        if not chunk:
+            break
+        state["remaining"] -= len(chunk)
+        if state["remaining"] < 0:
+            raise HTTPException(status_code=413, detail="Extracted archive data is too large")
+        target.write(chunk)
+
+
 def _extract_zip_safely(zip_path: str, extract_dir: str) -> None:
-    total_bytes = 0
     file_count = 0
+    state = {"remaining": MAX_EXTRACTED_BYTES}
 
     with zipfile.ZipFile(zip_path, "r") as archive:
         for info in archive.infolist():
@@ -190,21 +233,18 @@ def _extract_zip_safely(zip_path: str, extract_dir: str) -> None:
 
             arc_name = _safe_archive_name(info.filename)
             file_count += 1
-            total_bytes += info.file_size
             if file_count > MAX_ARCHIVE_FILES:
                 raise HTTPException(status_code=413, detail="Archive contains too many files")
-            if total_bytes > MAX_EXTRACTED_BYTES:
-                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
 
             target_path = os.path.join(extract_dir, *arc_name.split("/"))
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             with archive.open(info, "r") as source, open(target_path, "wb") as target:
-                shutil.copyfileobj(source, target)
+                _copy_capped(source, target, state)
 
 
 def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
-    total_bytes = 0
     file_count = 0
+    state = {"remaining": MAX_EXTRACTED_BYTES}
 
     with tarfile.open(tar_path, mode) as archive:
         for member in archive.getmembers():
@@ -213,11 +253,8 @@ def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
 
             arc_name = _safe_archive_name(member.name)
             file_count += 1
-            total_bytes += member.size
             if file_count > MAX_ARCHIVE_FILES:
                 raise HTTPException(status_code=413, detail="Archive contains too many files")
-            if total_bytes > MAX_EXTRACTED_BYTES:
-                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
 
             extracted = archive.extractfile(member)
             if extracted is None:
@@ -226,7 +263,7 @@ def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
             target_path = os.path.join(extract_dir, *arc_name.split("/"))
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             with extracted, open(target_path, "wb") as target:
-                shutil.copyfileobj(extracted, target)
+                _copy_capped(extracted, target, state)
 
 
 def _zip_directory(source_dir: str, output_zip_path: str) -> None:
@@ -262,26 +299,32 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82,
     from PIL import Image
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
 
     # Detect input format and preserve it
     ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-    if ext == ".png":
-        fmt, mime, suffix = "PNG", "image/png", ".png"
-        # PNG compression: optimize without quality loss
-        save_kwargs = {"optimize": True}
-    elif ext == ".webp":
-        fmt, mime, suffix = "WEBP", "image/webp", ".webp"
-        save_kwargs = {"quality": quality, "method": 4}
-    else:
-        # Default to JPEG for everything else
-        fmt, mime, suffix = "JPEG", "image/jpeg", ".jpg"
-        save_kwargs = {"quality": quality, "optimize": True}
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
 
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, fmt, **save_kwargs)
+    def _work() -> tuple[str, str, str]:
+        img = Image.open(io.BytesIO(data))
+
+        if ext == ".png":
+            fmt, mime, suffix = "PNG", "image/png", ".png"
+            # PNG compression: optimize without quality loss
+            save_kwargs = {"optimize": True}
+        elif ext == ".webp":
+            fmt, mime, suffix = "WEBP", "image/webp", ".webp"
+            save_kwargs = {"quality": quality, "method": 4}
+        else:
+            # Default to JPEG for everything else
+            fmt, mime, suffix = "JPEG", "image/jpeg", ".jpg"
+            save_kwargs = {"quality": quality, "optimize": True}
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, fmt, **save_kwargs)
+        return out_path, mime, suffix
+
+    out_path, mime, suffix = await asyncio.to_thread(_work)
 
     base_name = os.path.splitext(_safe_filename(file.filename, "image"))[0]
     cleanup = BackgroundTask(_cleanup_paths, out_path)
@@ -303,14 +346,20 @@ async def image_converter(file: UploadFile = File(...), target_format: str = For
         raise HTTPException(status_code=400, detail="Unsupported target format")
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
-
-    if pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
 
     suffix = ".jpg" if fmt_key == "jpeg" else f".{fmt_key}"
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, pil_fmt)
+
+    def _work() -> str:
+        img = Image.open(io.BytesIO(data))
+
+        if pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, pil_fmt)
+        return out_path
+
+    out_path = await asyncio.to_thread(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
@@ -334,32 +383,38 @@ async def remove_exif(files: list[UploadFile] = File(...)):
     try:
         for file in files:
             data = await _read_upload(file, MAX_IMAGE_SIZE, label=file.filename or "Image")
-            img = Image.open(io.BytesIO(data))
 
-            if hasattr(img, "getexif"):
-                img.getexif().clear()
-            img.info.pop("exif", None)
+            def _work(data: bytes = data) -> str:
+                img = Image.open(io.BytesIO(data))
 
-            ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-            if ext in (".jpg", ".jpeg"):
-                fmt, suffix = "JPEG", ".jpg"
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-            elif ext == ".webp":
-                fmt, suffix = "WEBP", ".webp"
-            elif ext == ".bmp":
-                fmt, suffix = "BMP", ".bmp"
-            elif ext in (".tif", ".tiff"):
-                fmt, suffix = "TIFF", ".tiff"
-            else:
-                fmt, suffix = "PNG", ".png"
+                if hasattr(img, "getexif"):
+                    img.getexif().clear()
+                img.info.pop("exif", None)
 
-            out_path = _new_temp_file(suffix)
-            icc = img.info.get("icc_profile")
-            save_kwargs = {}
-            if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
-                save_kwargs["icc_profile"] = icc
-            img.save(out_path, fmt, **save_kwargs)
+                ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+                if ext in (".jpg", ".jpeg"):
+                    fmt, suffix = "JPEG", ".jpg"
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                elif ext == ".webp":
+                    fmt, suffix = "WEBP", ".webp"
+                elif ext == ".bmp":
+                    fmt, suffix = "BMP", ".bmp"
+                elif ext in (".tif", ".tiff"):
+                    fmt, suffix = "TIFF", ".tiff"
+                else:
+                    fmt, suffix = "PNG", ".png"
+
+                out_path = _new_temp_file(suffix)
+                icc = img.info.get("icc_profile")
+                save_kwargs = {}
+                if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
+                    save_kwargs["icc_profile"] = icc
+                img.save(out_path, fmt, **save_kwargs)
+                return out_path
+
+            out_path = await asyncio.to_thread(_work)
+            suffix = os.path.splitext(out_path)[1]
             output_paths.append(out_path)
             original_names.append(_safe_filename(file.filename, f"image{suffix}"))
 
@@ -376,12 +431,16 @@ async def remove_exif(files: list[UploadFile] = File(...)):
         # the resulting archive contains every input even when several came in
         # with the same filename.
         zip_path = _new_temp_file(".zip")
-        import zipfile as zf_mod
-        with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
-            used_arcnames: set[str] = set()
-            for i, out in enumerate(output_paths):
-                arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
-                zf.write(out, arcname)
+
+        def _zip_outputs() -> None:
+            import zipfile as zf_mod
+            with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
+                used_arcnames: set[str] = set()
+                for i, out in enumerate(output_paths):
+                    arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
+                    zf.write(out, arcname)
+
+        await asyncio.to_thread(_zip_outputs)
         cleanup = BackgroundTask(_cleanup_paths, *output_paths, zip_path)
         return FileResponse(zip_path, media_type="application/zip",
                             filename="clean_images.zip", background=cleanup)
@@ -408,27 +467,33 @@ async def resize_crop_image(
         raise HTTPException(status_code=400, detail="mode must be either 'resize' or 'crop'")
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
-
-    if mode_normalized == "crop":
-        img = ImageOps.fit(img, (width, height))
-    else:
-        img = img.resize((width, height), Image.LANCZOS)
 
     ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-    if ext in (".jpg", ".jpeg"):
-        fmt = "JPEG"
-        mime_type = "image/jpeg"
-        suffix = ".jpg"
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-    else:
-        fmt = "PNG"
-        mime_type = "image/png"
-        suffix = ".png"
 
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, fmt)
+    def _work() -> tuple[str, str, str]:
+        img = Image.open(io.BytesIO(data))
+
+        if mode_normalized == "crop":
+            img = ImageOps.fit(img, (width, height))
+        else:
+            img = img.resize((width, height), Image.LANCZOS)
+
+        if ext in (".jpg", ".jpeg"):
+            fmt = "JPEG"
+            mime_type = "image/jpeg"
+            suffix = ".jpg"
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+        else:
+            fmt = "PNG"
+            mime_type = "image/png"
+            suffix = ".png"
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, fmt)
+        return out_path, mime_type, suffix
+
+    out_path, mime_type, suffix = await asyncio.to_thread(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
@@ -454,7 +519,7 @@ async def video_to_gif(
     output_path = _new_temp_file(".gif")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -496,7 +561,7 @@ async def extract_audio(request: Request, file: UploadFile = File(...), format: 
     output_path = _new_temp_file(f".{audio_format}")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -539,7 +604,7 @@ async def trim_media(
     output_path = _new_temp_file(ext)
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -572,7 +637,7 @@ async def compress_video(file: UploadFile = File(...), quality: int = Form(28, g
     output_path = _new_temp_file(".mp4")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -641,11 +706,11 @@ async def extract_archive(file: UploadFile = File(...)):
 
     try:
         if archive_kind == "zip":
-            _extract_zip_safely(input_path, extract_dir)
+            await asyncio.to_thread(_extract_zip_safely, input_path, extract_dir)
         else:
-            _extract_tar_safely(input_path, extract_dir, tar_mode)
+            await asyncio.to_thread(_extract_tar_safely, input_path, extract_dir, tar_mode)
 
-        _zip_directory(extract_dir, output_path)
+        await asyncio.to_thread(_zip_directory, extract_dir, output_path)
     except HTTPException:
         _cleanup_paths(input_path, extract_dir, output_path)
         raise

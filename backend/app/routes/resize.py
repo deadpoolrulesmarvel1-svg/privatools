@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from typing import Optional
@@ -72,7 +73,8 @@ async def resize_pdf(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = resize_service.resize_pdf(
+        output_path = await asyncio.to_thread(
+            resize_service.resize_pdf,
             str(temp_path), page_size=page_size, width=width, height=height
         )
         stem = safe_stem(file.filename)

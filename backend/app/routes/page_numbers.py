@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -56,7 +57,8 @@ async def add_page_numbers(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = page_numbers_service.add_page_numbers(
+        output_path = await asyncio.to_thread(
+            page_numbers_service.add_page_numbers,
             str(temp_path),
             position=position,
             start_number=start_number,

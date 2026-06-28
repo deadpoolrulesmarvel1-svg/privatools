@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import math
 import uuid
@@ -132,7 +133,7 @@ async def nup(
             output_path = _nup_2up_stack(str(temp_path))
         else:
             # All other layouts (2-side / 4 / 6 / 9 / 16) go through the shared service.
-            output_path = nup_service.nup(str(temp_path), pages_per_sheet=pages_per_sheet)
+            output_path = await asyncio.to_thread(nup_service.nup, str(temp_path), pages_per_sheet=pages_per_sheet)
 
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
 

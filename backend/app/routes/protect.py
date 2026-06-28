@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import zipfile
 import logging
@@ -76,7 +77,8 @@ async def protect_pdf(
             input_paths.append(str(temp_path))
 
         for inp in input_paths:
-            out = protect_service.protect_pdf(
+            out = await asyncio.to_thread(
+                protect_service.protect_pdf,
                 inp,
                 password=clean_password,
                 owner_pw=clean_owner_password,

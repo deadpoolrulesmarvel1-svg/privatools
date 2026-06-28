@@ -101,4 +101,10 @@ USER appuser
 
 EXPOSE 8000
 
+# NB: we intentionally do NOT pass --proxy-headers --forwarded-allow-ips '*'.
+# With '*', uvicorn would rewrite request.client.host from the LEFTMOST (and
+# therefore client-controllable) X-Forwarded-For entry, which made the
+# rate-limit key spoofable. The rate limiter instead derives the client IP
+# from the RIGHTMOST XFF entry (the one nginx appends) via rate_limit._client_ip,
+# which is spoof-resistant and needs no uvicorn proxy trust.
 CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--timeout-keep-alive", "30", "--limit-concurrency", "50", "--timeout-graceful-shutdown", "30"]

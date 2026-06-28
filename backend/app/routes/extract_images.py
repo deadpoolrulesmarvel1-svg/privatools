@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
@@ -22,7 +23,7 @@ async def extract_images(file: UploadFile = File(...)):
         content = await file.read()
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = extract_images_service.extract_images(str(temp_path))
+        output_path = await asyncio.to_thread(extract_images_service.extract_images, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

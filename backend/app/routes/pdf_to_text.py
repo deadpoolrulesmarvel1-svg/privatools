@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
@@ -23,7 +24,7 @@ async def pdf_to_text(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        result = pdf_to_text_service.extract_text(str(temp_path))
+        result = await asyncio.to_thread(pdf_to_text_service.extract_text, str(temp_path))
         remove_files(str(temp_path))
         return JSONResponse(result)
     except HTTPException:

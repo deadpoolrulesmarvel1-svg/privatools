@@ -209,12 +209,12 @@ export function DynamicHead() {
             setMeta("og:description", desc);
             setMeta("og:url", url);
             setMeta("og:type", "website");
-            setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+            setMeta("og:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
             setMeta("og:image:width", "1200");
             setMeta("og:image:height", "630");
             setMeta("twitter:title", `${tool.name} — Free Online | PrivaTools`);
             setMeta("twitter:description", desc);
-            setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+            setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
             setCanonical(url);
 
             const faq = getToolFAQ(tool.name);
@@ -233,7 +233,7 @@ export function DynamicHead() {
                         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
                         provider: { "@id": `${BASE_URL}/#organization` },
                         isAccessibleForFree: true,
-                        image: `${BASE_URL}/api/og-image?p=${pathname}`,
+                        image: `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`,
                         datePublished: "2026-03-15",
                         dateModified: "2026-03-29",
                         speakable: {
@@ -274,12 +274,12 @@ export function DynamicHead() {
                 setMeta("og:description", post.description);
                 setMeta("og:url", url);
                 setMeta("og:type", "article");
-                setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("og:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
                 setMeta("og:image:width", "1200");
                 setMeta("og:image:height", "630");
                 setMeta("twitter:title", post.title);
                 setMeta("twitter:description", post.description);
-                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
                 setCanonical(url);
 
                 // Word count gives Google + AI extraction a signal of depth.
@@ -300,7 +300,7 @@ export function DynamicHead() {
                             publisher: { "@id": `${BASE_URL}/#organization` },
                             image: {
                                 "@type": "ImageObject",
-                                url: `${BASE_URL}/api/og-image?p=${pathname}`,
+                                url: `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`,
                                 width: 1200,
                                 height: 630,
                             },
@@ -338,12 +338,12 @@ export function DynamicHead() {
                 setMeta("og:description", meta.description);
                 setMeta("og:url", url);
                 setMeta("og:type", "article");
-                setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("og:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
                 setMeta("og:image:width", "1200");
                 setMeta("og:image:height", "630");
                 setMeta("twitter:title", meta.title);
                 setMeta("twitter:description", meta.description);
-                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`);
                 setCanonical(url);
 
                 const competitor = pathname.replace("/compare/", "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -363,7 +363,7 @@ export function DynamicHead() {
                             publisher: { "@id": `${BASE_URL}/#organization` },
                             image: {
                                 "@type": "ImageObject",
-                                url: `${BASE_URL}/api/og-image?p=${pathname}`,
+                                url: `${BASE_URL}/api/og-image?p=${encodeURIComponent(pathname)}`,
                                 width: 1200,
                                 height: 630,
                             },

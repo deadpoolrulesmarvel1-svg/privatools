@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -37,7 +38,7 @@ async def alternate_mix(
         validate_pdf_content(content2)
         path2.write_bytes(content2)
 
-        output_path = alternate_mix_service.alternate_mix(str(path1), str(path2), mode=mode)
+        output_path = await asyncio.to_thread(alternate_mix_service.alternate_mix, str(path1), str(path2), mode=mode)
         cleanup = BackgroundTask(remove_files, str(path1), str(path2), output_path)
         return FileResponse(
             path=output_path,

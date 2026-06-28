@@ -1,4 +1,5 @@
 """PDF to PPTX conversion using PyMuPDF + python-pptx."""
+import asyncio
 import io
 
 import fitz
@@ -9,7 +10,7 @@ from pptx.util import Inches
 from ..utils.filenames import temp_output
 
 
-async def convert_to_pptx(input_path: str) -> str:
+def _convert_to_pptx_sync(input_path: str) -> str:
     doc = fitz.open(input_path)
     try:
         prs = Presentation()
@@ -25,8 +26,8 @@ async def convert_to_pptx(input_path: str) -> str:
 
             # JPEG for smaller files (slides don't need transparency).
             img_data = io.BytesIO()
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            img.save(img_data, format="JPEG", quality=90, optimize=True)
+            with Image.frombytes("RGB", [pix.width, pix.height], pix.samples) as img:
+                img.save(img_data, format="JPEG", quality=90, optimize=True)
             img_data.seek(0)
 
             # Calculate dimensions to fit slide
@@ -52,3 +53,9 @@ async def convert_to_pptx(input_path: str) -> str:
     output_path = temp_output("converted", "pptx")
     prs.save(str(output_path))
     return str(output_path)
+
+
+async def convert_to_pptx(input_path: str) -> str:
+    # The body is pure CPU/PyMuPDF work; offload it so it doesn't block the
+    # event loop (this was declared async but ran synchronously before).
+    return await asyncio.to_thread(_convert_to_pptx_sync, input_path)

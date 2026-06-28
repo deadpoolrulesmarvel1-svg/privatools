@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -101,7 +102,7 @@ async def edit_pdf(
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_pdf.write_bytes(content)
 
-        output_path = edit_pdf_service.edit_pdf(str(temp_pdf), cleaned_edits)
+        output_path = await asyncio.to_thread(edit_pdf_service.edit_pdf, str(temp_pdf), cleaned_edits)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), output_path)
         return FileResponse(
             path=output_path,

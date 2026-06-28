@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -32,7 +33,7 @@ async def get_thumbnails(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        thumbnails = organize_pages_service.generate_thumbnails(str(temp_path))
+        thumbnails = await asyncio.to_thread(organize_pages_service.generate_thumbnails, str(temp_path))
         remove_files(str(temp_path))
         return JSONResponse({"thumbnails": thumbnails})
     except HTTPException:
@@ -95,7 +96,7 @@ async def organize_pages(
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = organize_pages_service.reorder_pages(str(temp_path), order)
+        output_path = await asyncio.to_thread(organize_pages_service.reorder_pages, str(temp_path), order)
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

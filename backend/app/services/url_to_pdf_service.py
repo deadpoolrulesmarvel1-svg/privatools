@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from ..utils.exceptions import DependencyError, ProcessingError
 from ..utils.filenames import temp_output
-from .html_to_pdf_service import _validate_url
+from .html_to_pdf_service import _validate_url, _weasyprint_url_fetcher
 
 
 def url_to_pdf(url: str) -> str:
@@ -37,7 +37,9 @@ def url_to_pdf(url: str) -> str:
         ) from exc
 
     try:
-        HTML(url=url).write_pdf(str(output_path))
+        # Every resource WeasyPrint fetches (the page + sub-resources +
+        # redirects) goes through our SSRF-validating fetcher.
+        HTML(url=url, url_fetcher=_weasyprint_url_fetcher).write_pdf(str(output_path))
     except Exception as exc:
         # WeasyPrint surfaces a wide variety of errors (DNS, TLS, HTTP, parse).
         # Collapse them into a single ProcessingError so the user gets a

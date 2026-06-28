@@ -1,5 +1,6 @@
 """Phase 4 routes: white-out, attachments, permissions, JSON/XML conversion, annotate, shapes, EPUB/RTF."""
 
+import asyncio
 import json
 import logging
 import re
@@ -98,7 +99,7 @@ async def whiteout_pdf(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        out = whiteout_service.whiteout_pdf(str(temp), region_list)
+        out = await asyncio.to_thread(whiteout_service.whiteout_pdf, str(temp), region_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="whiteout.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -138,7 +139,7 @@ async def add_attachment(
         temp_att = get_temp_path(f"att_{uuid.uuid4().hex}{att_suffix}")
         temp_att.write_bytes(att_content)
 
-        out = attachment_service.add_attachment(str(temp_pdf), str(temp_att), safe_attachment_name)
+        out = await asyncio.to_thread(attachment_service.add_attachment, str(temp_pdf), str(temp_att), safe_attachment_name)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), str(temp_att), out)
         return FileResponse(out, filename="with_attachment.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -175,7 +176,8 @@ async def set_permissions(
         temp.write_bytes(content)
         # Avoid a predictable static owner password in the service default.
         safe_owner_password = (owner_password or "").strip() or uuid.uuid4().hex
-        out = permissions_service.set_permissions(
+        out = await asyncio.to_thread(
+            permissions_service.set_permissions,
             str(temp),
             safe_owner_password,
             allow_print,
@@ -207,7 +209,7 @@ async def json_to_pdf(file: UploadFile = File(...)):
         content = await _read_upload(file, label="JSON file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.json")
         temp.write_bytes(content)
-        out = json_to_pdf_service.json_to_pdf(str(temp))
+        out = await asyncio.to_thread(json_to_pdf_service.json_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
     except JSONDecodeError:
@@ -238,7 +240,7 @@ async def xml_to_pdf(file: UploadFile = File(...)):
         content = await _read_upload(file, label="XML file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.xml")
         temp.write_bytes(content)
-        out = xml_to_pdf_service.xml_to_pdf(str(temp))
+        out = await asyncio.to_thread(xml_to_pdf_service.xml_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -269,7 +271,7 @@ async def annotate_pdf(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        out = annotate_service.annotate_pdf(str(temp), ann_list)
+        out = await asyncio.to_thread(annotate_service.annotate_pdf, str(temp), ann_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="annotated.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -300,7 +302,7 @@ async def add_shapes(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        out = shapes_service.add_shapes(str(temp), shape_list)
+        out = await asyncio.to_thread(shapes_service.add_shapes, str(temp), shape_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="shapes.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -325,7 +327,7 @@ async def epub_to_pdf(file: UploadFile = File(...)):
         content = await _read_upload(file, label="EPUB file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.epub")
         temp.write_bytes(content)
-        out = epub_to_pdf_service.epub_to_pdf(str(temp))
+        out = await asyncio.to_thread(epub_to_pdf_service.epub_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="book.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -350,7 +352,7 @@ async def rtf_to_pdf(file: UploadFile = File(...)):
         content = await _read_upload(file, label="RTF file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.rtf")
         temp.write_bytes(content)
-        out = rtf_to_pdf_service.rtf_to_pdf(str(temp))
+        out = await asyncio.to_thread(rtf_to_pdf_service.rtf_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:

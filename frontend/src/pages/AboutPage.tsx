@@ -505,20 +505,14 @@ export default function AboutPage() {
                 <a
                   href={`${REPO_URL}/graphs/contributors`}
                   target="_blank" rel="noreferrer"
-                  className="shrink-0 h-14 w-14 rounded-full border border-accent/35 overflow-hidden bg-accent/10 hover:border-accent transition-colors"
+                  className="shrink-0 h-14 w-14 rounded-full border border-accent/35 flex items-center justify-center bg-accent/10 text-accent hover:border-accent transition-colors"
                   aria-label="Maintainer profile on GitHub"
                 >
-                  <img
-                    src="https://github.com/deadpoolrulesmarvel1-svg.png?size=120"
-                    alt=""
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      // If the image 404s (e.g. CSP block), fall back to identicon.
-                      const t = e.currentTarget;
-                      t.src = "https://github.com/identicons/deadpoolrulesmarvel1-svg.png";
-                    }}
-                  />
+                  {/* Self-hosted glyph instead of a github.com avatar: the strict
+                      img-src CSP blocks third-party images, and fetching the avatar
+                      would leak the visitor's IP to GitHub — neither fits the
+                      privacy posture. */}
+                  <Github size={22} strokeWidth={1.75} />
                 </a>
                 <div className="min-w-0">
                   <p className="font-display italic text-foreground text-[28px] sm:text-[34px] tracking-[-0.015em] leading-tight"

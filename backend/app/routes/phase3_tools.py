@@ -1,5 +1,6 @@
 """Phase 3 routes: URL→PDF, PDF→Markdown, SVG→PNG, barcode, watermark, favicon, collage."""
 
+import asyncio
 import ipaddress
 import logging
 import re
@@ -86,7 +87,7 @@ async def url_to_pdf(request: Request, url: str = Form(...)):
     safe_url = _validate_public_url(url)
     out = None
     try:
-        out = url_to_pdf_service.url_to_pdf(safe_url)
+        out = await asyncio.to_thread(url_to_pdf_service.url_to_pdf, safe_url)
         cleanup = BackgroundTask(remove_files, out)
         return FileResponse(out, filename="webpage.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -112,7 +113,7 @@ async def pdf_to_markdown(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        out = pdf_to_markdown_service.pdf_to_markdown(str(temp))
+        out = await asyncio.to_thread(pdf_to_markdown_service.pdf_to_markdown, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.md", media_type="text/markdown", background=cleanup)
     except HTTPException:
@@ -140,7 +141,7 @@ async def svg_to_png(
         content = await _read_upload(file, label="SVG file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.svg")
         temp.write_bytes(content)
-        out = svg_to_png_service.svg_to_png(str(temp), scale=scale)
+        out = await asyncio.to_thread(svg_to_png_service.svg_to_png, str(temp), scale=scale)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.png", media_type="image/png", background=cleanup)
     except HTTPException:
@@ -184,7 +185,7 @@ async def generate_barcode(
 
     out = None
     try:
-        out = barcode_service.generate_barcode(clean_data, clean_type)
+        out = await asyncio.to_thread(barcode_service.generate_barcode, clean_data, clean_type)
         cleanup = BackgroundTask(remove_files, out)
         return FileResponse(out, filename="barcode.png", media_type="image/png", background=cleanup)
     except ValueError as exc:
@@ -230,7 +231,7 @@ async def image_watermark(
 
         # The service expects PIL alpha channel range (0-255).
         alpha = int(round((opacity / 100) * 255))
-        out = image_watermark_service.add_watermark(str(temp), clean_text, alpha, position, font_size)
+        out = await asyncio.to_thread(image_watermark_service.add_watermark, str(temp), clean_text, alpha, position, font_size)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="watermarked.png", media_type="image/png", background=cleanup)
     except HTTPException:
@@ -257,7 +258,7 @@ async def generate_favicon(file: UploadFile = File(...)):
         content = await _read_upload(file, label="Image file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
         temp.write_bytes(content)
-        out = favicon_service.generate_favicon(str(temp))
+        out = await asyncio.to_thread(favicon_service.generate_favicon, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="favicon.ico", media_type="image/x-icon", background=cleanup)
     except HTTPException:
@@ -298,7 +299,7 @@ async def make_collage(
             temp.write_bytes(content)
             temp_paths.append(temp)
 
-        out = collage_service.make_collage([str(p) for p in temp_paths], columns, spacing, bg_color.strip())
+        out = await asyncio.to_thread(collage_service.make_collage, [str(p) for p in temp_paths], columns, spacing, bg_color.strip())
         all_temps = [str(p) for p in temp_paths] + [out]
         cleanup = BackgroundTask(remove_files, *all_temps)
         return FileResponse(out, filename="collage.jpg", media_type="image/jpeg", background=cleanup)

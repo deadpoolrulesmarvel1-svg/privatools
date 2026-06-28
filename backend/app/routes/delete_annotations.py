@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -73,9 +74,9 @@ async def delete_annotations(
         temp_path.write_bytes(content)
 
         if keep_form_fields:
-            output_path = _delete_annotations_preserving_widgets(str(temp_path))
+            output_path = await asyncio.to_thread(_delete_annotations_preserving_widgets, str(temp_path))
         else:
-            output_path = delete_annotations_service.delete_annotations(str(temp_path))
+            output_path = await asyncio.to_thread(delete_annotations_service.delete_annotations, str(temp_path))
 
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

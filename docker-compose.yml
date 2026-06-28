@@ -4,7 +4,11 @@ services:
   privatools:
     build: .
     ports:
-      - "8000:8000"
+      # Bind to loopback only. The app is meant to sit behind the host's nginx
+      # (which terminates TLS and proxies to 127.0.0.1:8000). The previous
+      # "8000:8000" published on 0.0.0.0, exposing the app on the VM's public
+      # IP and letting clients bypass nginx/TLS and the real-IP forwarding.
+      - "127.0.0.1:8000:8000"
     volumes:
       - app-temp:/app/temp
     environment:
@@ -15,12 +19,29 @@ services:
       - TRUSTED_HOSTS=privatools.me,www.privatools.me,127.0.0.1,localhost
       - ALLOWED_ORIGINS=https://privatools.me,https://www.privatools.me
     restart: unless-stopped
+    # --- Container hardening (mirrors the systemd unit's posture) ---
+    security_opt:
+      - no-new-privileges:true   # a child process can't gain privileges via setuid
+    cap_drop:
+      - ALL                      # the app + ffmpeg/libreoffice/ghostscript need no Linux caps
+    pids_limit: 512              # bound fork-bombs from a crafted file (libreoffice/ffmpeg fan-out)
+    # read_only root fs is the one remaining hardening step. It needs writable
+    # tmpfs mounts for the cache dirs the image redirects to /tmp (fontconfig,
+    # numba) plus a writable libreoffice profile, and must NOT mask the baked
+    # rembg model at /tmp/u2net. Enable after a smoke test of the weasyprint /
+    # office / remove-background tools in a built container:
+    #   read_only: true
+    #   tmpfs:
+    #     - /tmp/cache
+    #     - /tmp/numba-cache
+    #     - /run
     deploy:
       resources:
         limits:
-          memory: 20G
+          memory: 4G             # was 20G — effectively no cap on a small VM; matches the systemd MemoryMax
+          cpus: '3.0'            # matches the systemd CPUQuota=300%
         reservations:
-          memory: 4G
+          memory: 512M
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health\").read()"]
       interval: 30s

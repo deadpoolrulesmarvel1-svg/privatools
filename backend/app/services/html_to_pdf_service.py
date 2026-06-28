@@ -18,9 +18,11 @@ import logging
 import os
 import socket
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from collections import namedtuple
 from urllib.parse import urlparse
 
 from fastapi import HTTPException
@@ -180,6 +182,41 @@ def _wrap_html(html_content: str) -> str:
 _weasyprint_ok: bool | None = None
 
 
+# Per-resource cap for WeasyPrint sub-resources (images / CSS / fonts).
+# Larger than the 5 MB HTML cap because a single hero image can legitimately
+# be a few MB, but still bounded so a malicious page can't exhaust the worker.
+_MAX_SUBRESOURCE_BYTES = 25 * 1024 * 1024
+
+
+def _weasyprint_url_fetcher(url: str, timeout: int = 15, ssl_context=None):
+    """A WeasyPrint ``url_fetcher`` that blocks SSRF on every sub-resource.
+
+    WeasyPrint fetches every resource referenced by the document (images, CSS
+    ``@import``/``url()``, ``<link>``, fonts). Its default fetcher honours
+    ``file://`` and private IPs, so attacker-supplied HTML or a fetched page
+    could pull cloud-metadata or local files into the rendered PDF. We route
+    all network fetches through :func:`safe_url_fetch` (SSRF-validated,
+    redirect-safe), allow inline ``data:`` URIs through (no egress), and refuse
+    every other scheme. Shared by BOTH the url= and string= render paths.
+    """
+    scheme = url.split(":", 1)[0].lower()
+    if scheme in ("http", "https"):
+        result = safe_url_fetch(url, max_bytes=_MAX_SUBRESOURCE_BYTES, timeout=timeout)
+        return {
+            "string": result.body,
+            "mime_type": result.content_type or None,
+            "encoding": result.encoding,
+            "redirected_url": result.final_url,
+        }
+    if scheme == "data":
+        try:
+            from weasyprint.urls import default_url_fetcher
+        except ImportError:  # pragma: no cover - older/newer weasyprint layout
+            from weasyprint import default_url_fetcher
+        return default_url_fetcher(url, timeout=timeout, ssl_context=ssl_context)
+    raise HTTPException(status_code=400, detail=f"Blocked URL scheme: {scheme or 'unknown'}")
+
+
 def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
     """Render with WeasyPrint — proper CSS/font/layout support. Preferred."""
     global _weasyprint_ok
@@ -189,7 +226,10 @@ def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
         raise ImportError("WeasyPrint native libraries not available on this host")
     try:
         from weasyprint import HTML
-        HTML(string=_wrap_html(html_content)).write_pdf(output_path)
+        # url_fetcher so sub-resources in attacker-supplied HTML (<img src=
+        # "file:///etc/passwd">, http://169.254.169.254/...) are SSRF-validated
+        # rather than fetched by WeasyPrint's permissive default fetcher.
+        HTML(string=_wrap_html(html_content), url_fetcher=_weasyprint_url_fetcher).write_pdf(output_path)
         _weasyprint_ok = True
     except (ImportError, OSError):
         _weasyprint_ok = False
@@ -293,6 +333,79 @@ MAX_REMOTE_HTML_BYTES = 5 * 1024 * 1024
 URL_FETCH_TIMEOUT = 15  # seconds — keeps slow remote hosts from holding workers
 
 
+class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """urllib redirect handler that re-validates every hop against the SSRF
+    ruleset.
+
+    Without this, ``urlopen`` transparently follows a redirect from a
+    validated public host to an internal one (e.g. ``public -> 302 ->
+    http://169.254.169.254``), defeating the up-front ``_validate_url``
+    check. We re-run ``_validate_url`` on each ``Location`` before allowing
+    the redirect; a blocked target raises ``HTTPException`` and aborts the
+    fetch.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[override]
+        _validate_url(newurl)  # raises HTTPException(400) on private/file/etc.
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _validating_opener() -> urllib.request.OpenerDirector:
+    """An opener that follows redirects only to validated public URLs."""
+    return urllib.request.build_opener(_ValidatingRedirectHandler)
+
+
+_FetchResult = namedtuple("_FetchResult", ["final_url", "content_type", "encoding", "body"])
+
+
+def safe_url_fetch(
+    url: str,
+    *,
+    max_bytes: int = MAX_REMOTE_HTML_BYTES,
+    timeout: int = URL_FETCH_TIMEOUT,
+    accept_types: tuple[str, ...] | None = None,
+) -> "_FetchResult":
+    """Fetch ``url`` with SSRF protection that survives redirects.
+
+    Validates the URL, follows redirects only to validated public hosts
+    (via :class:`_ValidatingRedirectHandler`), re-checks the final landing
+    URL, enforces an optional content-type allow-list and a hard byte cap.
+    Raises ``HTTPException`` on any violation. Used both by the html-to-pdf
+    URL fallback and by the WeasyPrint sub-resource fetcher in
+    ``url_to_pdf_service`` so the SSRF ruleset lives in exactly one place.
+    """
+    _validate_url(url)
+    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    try:
+        with _validating_opener().open(req, timeout=timeout) as resp:
+            # Belt-and-suspenders: the handler validated each hop, but
+            # re-check the final landing URL too.
+            _validate_url(resp.geturl())
+            content_type = (resp.headers.get_content_type() or "").lower()
+            if accept_types and content_type and not any(t in content_type for t in accept_types):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported content type from URL: {content_type or 'unknown'}",
+                )
+            body = resp.read(max_bytes + 1)
+            if len(body) > max_bytes:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"URL response too large (max {max_bytes // (1024 * 1024)} MB)",
+                )
+            encoding = resp.headers.get_content_charset()
+            return _FetchResult(resp.geturl(), content_type, encoding, body)
+    except HTTPException:
+        raise
+    except urllib.error.HTTPError as exc:
+        raise HTTPException(status_code=400, detail=f"URL fetch failed: HTTP {exc.code}") from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail="URL fetch timed out") from exc
+    except (urllib.error.URLError, OSError) as exc:
+        reason = getattr(exc, "reason", exc)
+        raise HTTPException(status_code=400, detail=f"Could not fetch URL (network error): {reason}") from exc
+
+
 # Per-worker HTTP/HTTPS connection cache. urllib's `urlopen` is one-shot
 # (new socket + TLS handshake every call); a tiny custom pool lets repeat
 # fetches against the same host reuse the established connection. We
@@ -387,7 +500,11 @@ def _fetch_url_html(url: str) -> str:
         logger.debug("html_to_pdf: keep-alive miss for %s://%s: %s", scheme, host, exc)
         req = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=URL_FETCH_TIMEOUT) as resp:
+            # Use the SSRF-validating opener (NOT plain urlopen) so a redirect
+            # to a private/internal host is re-validated and refused. The bare
+            # urlopen here previously followed redirects with no re-check.
+            with _validating_opener().open(req, timeout=URL_FETCH_TIMEOUT) as resp:
+                _validate_url(resp.geturl())
                 return _read_with_caps(resp.headers.items(), resp.read)
         except HTTPException:
             raise

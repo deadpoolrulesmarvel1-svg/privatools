@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from typing import Optional
@@ -33,7 +34,7 @@ async def get_metadata(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        meta = metadata_service.read_metadata(str(temp_path))
+        meta = await asyncio.to_thread(metadata_service.read_metadata, str(temp_path))
         return JSONResponse(meta)
     except HTTPException:
         if temp_path is not None:
