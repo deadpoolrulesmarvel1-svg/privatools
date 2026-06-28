@@ -269,26 +269,32 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82,
     from PIL import Image
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
 
     # Detect input format and preserve it
     ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-    if ext == ".png":
-        fmt, mime, suffix = "PNG", "image/png", ".png"
-        # PNG compression: optimize without quality loss
-        save_kwargs = {"optimize": True}
-    elif ext == ".webp":
-        fmt, mime, suffix = "WEBP", "image/webp", ".webp"
-        save_kwargs = {"quality": quality, "method": 4}
-    else:
-        # Default to JPEG for everything else
-        fmt, mime, suffix = "JPEG", "image/jpeg", ".jpg"
-        save_kwargs = {"quality": quality, "optimize": True}
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
 
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, fmt, **save_kwargs)
+    def _work() -> tuple[str, str, str]:
+        img = Image.open(io.BytesIO(data))
+
+        if ext == ".png":
+            fmt, mime, suffix = "PNG", "image/png", ".png"
+            # PNG compression: optimize without quality loss
+            save_kwargs = {"optimize": True}
+        elif ext == ".webp":
+            fmt, mime, suffix = "WEBP", "image/webp", ".webp"
+            save_kwargs = {"quality": quality, "method": 4}
+        else:
+            # Default to JPEG for everything else
+            fmt, mime, suffix = "JPEG", "image/jpeg", ".jpg"
+            save_kwargs = {"quality": quality, "optimize": True}
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, fmt, **save_kwargs)
+        return out_path, mime, suffix
+
+    out_path, mime, suffix = await asyncio.to_thread(_work)
 
     base_name = os.path.splitext(_safe_filename(file.filename, "image"))[0]
     cleanup = BackgroundTask(_cleanup_paths, out_path)
@@ -310,14 +316,20 @@ async def image_converter(file: UploadFile = File(...), target_format: str = For
         raise HTTPException(status_code=400, detail="Unsupported target format")
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
-
-    if pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
 
     suffix = ".jpg" if fmt_key == "jpeg" else f".{fmt_key}"
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, pil_fmt)
+
+    def _work() -> str:
+        img = Image.open(io.BytesIO(data))
+
+        if pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, pil_fmt)
+        return out_path
+
+    out_path = await asyncio.to_thread(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
@@ -341,32 +353,38 @@ async def remove_exif(files: list[UploadFile] = File(...)):
     try:
         for file in files:
             data = await _read_upload(file, MAX_IMAGE_SIZE, label=file.filename or "Image")
-            img = Image.open(io.BytesIO(data))
 
-            if hasattr(img, "getexif"):
-                img.getexif().clear()
-            img.info.pop("exif", None)
+            def _work(data: bytes = data) -> str:
+                img = Image.open(io.BytesIO(data))
 
-            ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-            if ext in (".jpg", ".jpeg"):
-                fmt, suffix = "JPEG", ".jpg"
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-            elif ext == ".webp":
-                fmt, suffix = "WEBP", ".webp"
-            elif ext == ".bmp":
-                fmt, suffix = "BMP", ".bmp"
-            elif ext in (".tif", ".tiff"):
-                fmt, suffix = "TIFF", ".tiff"
-            else:
-                fmt, suffix = "PNG", ".png"
+                if hasattr(img, "getexif"):
+                    img.getexif().clear()
+                img.info.pop("exif", None)
 
-            out_path = _new_temp_file(suffix)
-            icc = img.info.get("icc_profile")
-            save_kwargs = {}
-            if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
-                save_kwargs["icc_profile"] = icc
-            img.save(out_path, fmt, **save_kwargs)
+                ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+                if ext in (".jpg", ".jpeg"):
+                    fmt, suffix = "JPEG", ".jpg"
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                elif ext == ".webp":
+                    fmt, suffix = "WEBP", ".webp"
+                elif ext == ".bmp":
+                    fmt, suffix = "BMP", ".bmp"
+                elif ext in (".tif", ".tiff"):
+                    fmt, suffix = "TIFF", ".tiff"
+                else:
+                    fmt, suffix = "PNG", ".png"
+
+                out_path = _new_temp_file(suffix)
+                icc = img.info.get("icc_profile")
+                save_kwargs = {}
+                if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
+                    save_kwargs["icc_profile"] = icc
+                img.save(out_path, fmt, **save_kwargs)
+                return out_path
+
+            out_path = await asyncio.to_thread(_work)
+            suffix = os.path.splitext(out_path)[1]
             output_paths.append(out_path)
             original_names.append(_safe_filename(file.filename, f"image{suffix}"))
 
@@ -383,12 +401,16 @@ async def remove_exif(files: list[UploadFile] = File(...)):
         # the resulting archive contains every input even when several came in
         # with the same filename.
         zip_path = _new_temp_file(".zip")
-        import zipfile as zf_mod
-        with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
-            used_arcnames: set[str] = set()
-            for i, out in enumerate(output_paths):
-                arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
-                zf.write(out, arcname)
+
+        def _zip_outputs() -> None:
+            import zipfile as zf_mod
+            with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
+                used_arcnames: set[str] = set()
+                for i, out in enumerate(output_paths):
+                    arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
+                    zf.write(out, arcname)
+
+        await asyncio.to_thread(_zip_outputs)
         cleanup = BackgroundTask(_cleanup_paths, *output_paths, zip_path)
         return FileResponse(zip_path, media_type="application/zip",
                             filename="clean_images.zip", background=cleanup)
@@ -415,27 +437,33 @@ async def resize_crop_image(
         raise HTTPException(status_code=400, detail="mode must be either 'resize' or 'crop'")
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
-
-    if mode_normalized == "crop":
-        img = ImageOps.fit(img, (width, height))
-    else:
-        img = img.resize((width, height), Image.LANCZOS)
 
     ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-    if ext in (".jpg", ".jpeg"):
-        fmt = "JPEG"
-        mime_type = "image/jpeg"
-        suffix = ".jpg"
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-    else:
-        fmt = "PNG"
-        mime_type = "image/png"
-        suffix = ".png"
 
-    out_path = _new_temp_file(suffix)
-    img.save(out_path, fmt)
+    def _work() -> tuple[str, str, str]:
+        img = Image.open(io.BytesIO(data))
+
+        if mode_normalized == "crop":
+            img = ImageOps.fit(img, (width, height))
+        else:
+            img = img.resize((width, height), Image.LANCZOS)
+
+        if ext in (".jpg", ".jpeg"):
+            fmt = "JPEG"
+            mime_type = "image/jpeg"
+            suffix = ".jpg"
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+        else:
+            fmt = "PNG"
+            mime_type = "image/png"
+            suffix = ".png"
+
+        out_path = _new_temp_file(suffix)
+        img.save(out_path, fmt)
+        return out_path, mime_type, suffix
+
+    out_path, mime_type, suffix = await asyncio.to_thread(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
