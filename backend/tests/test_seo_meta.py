@@ -361,6 +361,10 @@ def test_ssr_injects_into_built_dist_style_template():
     which shipped an empty SSR body to production. This fixture mirrors the built
     structure exactly.
     """
+    # Mirrors the real built dist/index.html: entry module script hoisted to
+    # <head>, and an HTML COMMENT (not a script) immediately follows root. Both
+    # earlier regex anchors (type="module"-after-root, then any-script-after-root)
+    # failed on this exact shape and shipped an empty body to production.
     template = (
         "<html><head><title>x</title>"
         '<meta name="robots" content="index,follow" />'
@@ -372,6 +376,7 @@ def test_ssr_injects_into_built_dist_style_template():
         "        <header><span>Privatools</span></header>\n"
         "      </div>\n"
         "    </div>\n"
+        "    <!-- Service worker registration lives in src/lib/sw-register.ts -->\n"
         '    <script nonce="z">/* analytics */</script>'
         "</body></html>"
     )
@@ -381,6 +386,8 @@ def test_ssr_injects_into_built_dist_style_template():
     assert 'href="/tool/' in body, "internal tool links missing from built-style body"
     assert "min-height:100vh" not in body, "prepaint shell not replaced by SSR content"
     assert '<div id="root"></div>' not in out
+    # The comment and trailing script after root must survive intact.
+    assert "sw-register.ts" in out and 'nonce="z"' in out
 
 
 def test_unknown_path_is_noindex_and_not_self_canonical():

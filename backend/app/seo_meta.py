@@ -2773,6 +2773,34 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     return "\n".join(parts)
 
 
+_ROOT_OPEN_RE = re.compile(r'<div\s+id=(["\'])root\1\s*>')
+_DIV_TAG_RE = re.compile(r"<(/?)div\b[^>]*>", re.IGNORECASE)
+
+
+def _inject_into_root(html: str, ssr_content: str) -> str:
+    """Replace the inner content of <div id="root"> with server-rendered HTML.
+
+    Finds root's matching </div> by counting <div>/</div> nesting, so it works
+    no matter what the build puts INSIDE root (a pre-hydration brand shell) or
+    AFTER it (an HTML comment, a hoisted module <script>, an inline <script>).
+
+    History: two earlier regex-anchored versions broke in production because the
+    BUILT frontend/dist/index.html differs from the SOURCE frontend/index.html —
+    Vite hoists the entry module script into <head> and an HTML comment, not the
+    module script, follows root. Balanced matching does not depend on any of
+    that. React replaces #root's children on mount, so this stays hydration-safe.
+    """
+    m = _ROOT_OPEN_RE.search(html)
+    if not m:
+        return html
+    depth = 1
+    for tag in _DIV_TAG_RE.finditer(html, m.end()):
+        depth += -1 if tag.group(1) else 1
+        if depth == 0:
+            return f'{html[:m.start()]}<div id="root">{ssr_content}</div>{html[tag.end():]}'
+    return html  # unbalanced markup — leave the document untouched rather than corrupt it
+
+
 def inject_seo(html: str, path: str) -> str:
     """
     Inject server-side <title>, <meta name="description">,
@@ -2844,40 +2872,10 @@ def inject_seo(html: str, path: str) -> str:
         html = html.replace("</head>", f"  {jsonld_tag}\n</head>", 1)
 
     # Inject SSR content into <div id="root"> so crawlers see real content.
-    # React will hydrate over this once JavaScript loads for real users.
-    #
-    # IMPORTANT: the built template's root is NOT empty — a pre-hydration brand
-    # shell paints inside it for LCP (see frontend/index.html, added in
-    # "[P1-perf] paint prehydration brand shell"). So we must replace the root
-    # element's *entire* inner content, not just a bare `<div id="root"></div>`.
-    # The primary pattern matches the populated root by anchoring on the module
-    # <script> that always follows it; the fallback keeps the empty-root form
-    # working for minimal templates and unit-test fixtures. A function
-    # replacement is used so backslashes/group-refs in ssr_content are literal.
+    # React replaces #root's children on mount, so this is hydration-safe.
     ssr_content = _build_ssr_content(path, title, description)
     if ssr_content:
-        def _replace_root(_match: "re.Match[str]") -> str:
-            return f'<div id="root">{ssr_content}</div>'
-
-        # Anchor on the FIRST <script> (or </body>) that follows the root close.
-        # The built dist/index.html hoists the entry module script into <head>
-        # (Vite), and the only thing after <div id="root">…</div> is an inline
-        # <script> — so we must NOT require a type="module" script here, or the
-        # match fails on the production template and the SSR body is dropped.
-        html, n = re.subn(
-            r'<div\s+id=(["\'])root\1\s*>.*?</div>(?=\s*(?:<script|</body))',
-            _replace_root,
-            html,
-            count=1,
-            flags=re.DOTALL,
-        )
-        if n == 0:
-            html = re.sub(
-                r'<div\s+id=(["\'])root\1\s*></div>',
-                _replace_root,
-                html,
-                count=1,
-            )
+        html = _inject_into_root(html, ssr_content)
 
     return html
 
