@@ -24,6 +24,11 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "213 free, open-source file tools for PDF, image, video, audio, and developer "
         "work. Browser-only when possible; isolated temporary processing when needed.",
     ),
+    "/tools": (
+        "All Free Online Tools — PrivaTools",
+        "Browse every free PrivaTools tool by category — PDF, image, video, audio, and "
+        "developer utilities. Open source, no account, no watermarks, no daily limits.",
+    ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
         "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
@@ -1207,11 +1212,6 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         "time to finish the download and avoid refreshing the page mid-run. If a password, damaged upload, unsupported codec, "
         "or malformed document blocks processing, PrivaTools returns a plain-language error so you can pick the next recovery "
         "step instead of guessing.</p>"
-        "<h2>Why this page is citation-ready</h2>"
-        f"<p>This page includes a direct TL;DR, visible step-by-step instructions, FAQ answers, a last-reviewed date, and "
-        "structured data for search and answer engines. The same claims are backed by source code in the public repository: "
-        "no hidden premium tier, no watermark added to output, no account gate, and no third-party file upload. That makes "
-        f"{name} suitable for quick everyday tasks and for teams that need a verifiable privacy posture rather than marketing copy.</p>"
         "<h2>Operational details</h2>"
         f"<p>{name} is intentionally narrow: it does one {subject.lower()} task and hands the result back as a normal download. "
         "That makes the output easy to inspect, rename, archive, attach to email, or feed into another tool. If you need a repeatable "
@@ -1600,6 +1600,41 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                             "acceptedAnswer": {"@type": "Answer", "text": "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."},
                         },
                     ],
+                },
+            ],
+        }
+
+    if path == "/tools":
+        # Directory hub: a CollectionPage that ties the all-tools index into the
+        # site's entity graph and exposes a crawlable breadcrumb. The full link
+        # list lives in the SSR body (_build_ssr_content) so PageRank flows to
+        # every tool from a second hub besides the homepage.
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "CollectionPage",
+                    "@id": f"{BASE_URL}/tools#webpage",
+                    "url": f"{BASE_URL}/tools",
+                    "name": title,
+                    "description": description,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                    "about": {"@id": f"{BASE_URL}/#organization"},
+                    "speakable": {"@type": "SpeakableSpecification", "cssSelector": ["h1", "h2"]},
+                },
+                {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": 1, "name": "PrivaTools", "item": BASE_URL},
+                        {"@type": "ListItem", "position": 2, "name": "All Tools", "item": f"{BASE_URL}/tools"},
+                    ],
+                },
+                {
+                    "@type": "ItemList",
+                    "name": "All PrivaTools tools",
+                    "description": f"All {_TOTAL_TOOL_COUNT} free PDF, image, video, audio, and developer tools on PrivaTools.",
+                    "numberOfItems": _TOTAL_TOOL_COUNT,
                 },
             ],
         }
@@ -2180,6 +2215,9 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "<p>Bulk-apply any compatible tool to dozens of files at once. Drop a folder of "
             "PDFs into Batch Compress, get a ZIP of compressed outputs back — no per-file clicking.</p>"
         )
+        parts.append(
+            f'<p><a href="/tools">Browse the full directory of all {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} tools &rarr;</a></p>'
+        )
         parts.append("<h2>PDF Tools</h2><ul>")
         for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
             parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
@@ -2199,6 +2237,33 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
         ]:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")
+        return "\n".join(parts)
+
+    # ── All-tools directory hub (/tools) ───────────────────────────────────
+    # A second crawlable hub besides the homepage: a flat, category-grouped
+    # index that links every tool with real <a href> anchors, so internal
+    # PageRank reaches the long-tail tool pages from more than one place.
+    if path == "/tools":
+        parts.append("<h1>All Free Online Tools</h1>")
+        parts.append('<p><a href="/">PrivaTools</a> &rsaquo; All Tools</p>')
+        parts.append(
+            f"<p>Every one of the {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} PrivaTools utilities, grouped by category. "
+            "All free and open source under the MIT license — no account, no watermarks, no daily limits. "
+            "Browser-only where possible; server-side tools run in an isolated container and delete your file "
+            "immediately after the response.</p>"
+        )
+        parts.append(f"<h2>PDF Tools ({len(_PDF_TOOLS)})</h2><ul>")
+        for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
+            parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        parts.append(f"<h2>Image, Video, Audio &amp; Developer Tools ({len(_NONPDF_TOOLS)})</h2><ul>")
+        for slug, (name, desc) in _by_popularity(_NONPDF_TOOLS.items()):
+            parts.append(f'<li><a href="/tools/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        parts.append(
+            '<p>Looking for guides? Visit the <a href="/blog">PrivaTools blog</a>, or see how PrivaTools '
+            '<a href="/compare">compares to iLovePDF, Smallpdf, and Adobe</a>.</p>'
+        )
         return "\n".join(parts)
 
     # ── Individual tool pages (/tool/<slug> and /tools/<slug>) ─────────────

@@ -362,3 +362,29 @@ def test_unknown_path_is_noindex_and_not_self_canonical():
     out = inject_seo(template, "/tool/this-slug-does-not-exist-zzz")
     assert 'content="noindex,nofollow"' in out
     assert 'rel="canonical"' not in out, "404/unknown path must not emit a canonical"
+
+
+def test_tools_hub_is_known_and_renders_full_directory():
+    """The /tools hub must be a known route that server-renders crawlable links
+    to both PDF (/tool/) and non-PDF (/tools/) tools, plus CollectionPage JSON-LD."""
+    from pathlib import Path
+
+    assert seo_meta.path_is_known("/tools")
+    index_html = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    template = index_html.read_text("utf-8")
+    out = inject_seo(template, "/tools")
+    body = out.split("</head>", 1)[-1]
+    assert "<h1>All Free Online Tools</h1>" in body
+    assert 'href="/tool/merge-pdf"' in body
+    assert 'href="/tools/jwt-decoder"' in body
+    assert '"CollectionPage"' in out
+    # canonical points at the hub itself
+    assert 'rel="canonical" href="https://privatools.me/tools"' in out
+
+
+def test_deep_tool_content_has_no_citation_ready_boilerplate():
+    """The self-referential 'citation-ready' section was removed (filler that
+    duplicated across all 213 tools)."""
+    html = "<html><head></head><body><div id='root'></div></body></html>"
+    out = inject_seo(html, "/tool/merge-pdf")
+    assert "citation-ready" not in out

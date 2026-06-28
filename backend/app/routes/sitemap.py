@@ -13,6 +13,7 @@ from functools import lru_cache
 from fastapi import APIRouter, Request
 
 from ..utils.caching import cache_response
+from ..seo_meta import _last_reviewed_for
 
 router = APIRouter()
 
@@ -223,6 +224,9 @@ def _build_sitemap_xml(today_iso: str) -> bytes:
     xml += _entry(f"{BASE_URL}/pipeline", today_iso, "0.7", "weekly")
     xml += _entry(f"{BASE_URL}/compare", today_iso, "0.7", "monthly")
     xml += _entry(f"{BASE_URL}/blog", today_iso, "0.8", "weekly")
+    # All-tools directory hub — a high-value internal-linking surface. Like the
+    # homepage it genuinely changes as the catalogue grows, so today is honest.
+    xml += _entry(f"{BASE_URL}/tools", today_iso, "0.9", "weekly")
 
     # Blog posts — use actual published date
     for slug, published in BLOG_POSTS.items():
@@ -232,24 +236,25 @@ def _build_sitemap_xml(today_iso: str) -> bytes:
     for slug in COMPARE_PAGES:
         xml += _entry(f"{BASE_URL}/compare/{slug}", today_iso, "0.8", "monthly")
 
-    # Tool pages — bump lastmod daily (we iterate constantly). High-volume
-    # tools get priority 0.9 (vs 0.8 for long tail) so crawlers re-fetch
-    # them more often.
-    # Dedupe across the four source lists so each canonical URL appears
-    # exactly once in the sitemap — duplicate entries are technically valid
-    # XML but they waste crawl budget and split priority signals.
+    # Tool pages — lastmod reflects the tool's real last-reviewed date
+    # (_last_reviewed_for), NOT today. Stamping every URL with today's date on
+    # every render makes Google distrust lastmod as a freshness hint; a stable
+    # per-tool date keeps it meaningful so a genuine content change is believed.
+    # High-volume tools get priority 0.9 (vs 0.8 for long tail).
+    # Dedupe across the source lists so each canonical URL appears exactly once
+    # — duplicate entries are valid XML but waste crawl budget and split signals.
     seen_pdf: set[str] = set()
     for slug in (*PDF_TOOLS, *_PDF_V12):
         if slug in seen_pdf:
             continue
         seen_pdf.add(slug)
-        xml += _entry(f"{BASE_URL}/tool/{slug}", today_iso, _tool_priority(slug), "weekly")
+        xml += _entry(f"{BASE_URL}/tool/{slug}", _last_reviewed_for(slug), _tool_priority(slug), "weekly")
     seen_nonpdf: set[str] = set()
     for slug in (*NON_PDF_TOOLS, *_VIDEO_TOOLS_NEW):
         if slug in seen_nonpdf:
             continue
         seen_nonpdf.add(slug)
-        xml += _entry(f"{BASE_URL}/tools/{slug}", today_iso, _tool_priority(slug), "weekly")
+        xml += _entry(f"{BASE_URL}/tools/{slug}", _last_reviewed_for(slug), _tool_priority(slug), "weekly")
 
     xml += "</urlset>"
 
