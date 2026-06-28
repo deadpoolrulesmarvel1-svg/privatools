@@ -4,7 +4,7 @@
 
 **Every file task, done privately.**
 
-213 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
+214 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
 Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
@@ -25,7 +25,7 @@ Zero uploads to third parties. No accounts. No watermarks. No premium tier.
 | **Truly free** | 100%, no quota | Limited free / paid tier |
 | **No account** | Just open and use | Email / sign-up required |
 | **Privacy** | Files processed in an isolated container, deleted on response; many tools never leave your browser | Uploaded to vendor cloud |
-| **Tool count** | **213** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
+| **Tool count** | **214** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
 | **Pipeline** | Chain Merge → Compress → Watermark → Sign in one click | Not offered free |
 | **Self-hostable** | `docker compose up --build` | No |
 | **Open source** | MIT — fork, modify, deploy | Proprietary |
@@ -79,7 +79,7 @@ sudo apt install tesseract-ocr ffmpeg qpdf libreoffice
 
 ---
 
-## 🛠️ All Tools (213)
+## 🛠️ All Tools (214)
 
 ### 📄 PDF Tools (101)
 
@@ -262,7 +262,7 @@ PrivaTools ships with serious AI / answer-engine optimisation:
 - **SSR meta + JSON-LD** for every route via Python middleware (Organization, WebSite, SoftwareApplication, BreadcrumbList, HowTo, FAQPage, BlogPosting, Article+Review, AboutPage, CollectionPage, ItemList, SpeakableSpecification)
 - **`speakable` CSS-selector targets** on every TL;DR and FAQ so voice assistants and featured-snippet pickers get a clean read-aloud target
 - **`llms.txt` + `llms-full.txt`** — auto-generated index and full corpus for AI crawlers (ChatGPT, Claude, Perplexity, Gemini)
-- **HowTo + FAQ schema** on every one of the 213 tools
+- **HowTo + FAQ schema** on every one of the 214 tools
 - **Dynamic OG images** per route via `/api/og-image?p=<path>`
 - **robots.txt** explicitly allows 21 AI crawlers and blocks aggressive ones
 

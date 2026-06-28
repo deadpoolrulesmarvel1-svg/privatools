@@ -8,6 +8,7 @@
 # aren't defined. Concrete annotations evaluate eagerly and dodge that
 # bug; `str | None` already works natively on Python 3.10+ here.
 
+import asyncio
 import logging
 import uuid
 
@@ -21,11 +22,13 @@ import re
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..services import (
     highlight_service,
+    long_image_service,
     pdf_to_svg_service,
     smart_redact_service,
     split_in_half_service,
     video_tools_service,
 )
+from ..utils.exceptions import ProcessingError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -548,3 +551,44 @@ async def audio_merge_endpoint(files: list[UploadFile] = File(...)):
         if output_path: remove_files(output_path)
         logger.exception("audio-merge failed")
         raise HTTPException(status_code=500, detail="Audio merge failed")
+
+
+# ─── PDF → Long Image ──────────────────────────────────────────────────────
+@router.post("/pdf-to-long-image")
+async def pdf_to_long_image_endpoint(
+    file: UploadFile = File(...),
+    format: str = Form("png"),
+    dpi: int = Form(100),
+):
+    """Stitch every page of a PDF into one tall PNG/JPEG."""
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Please upload a PDF file.")
+    ensure_temp_dir()
+    content = await read_upload(file, label=file.filename or "document")
+    validate_pdf_content(content)
+    temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+    temp_path.write_bytes(content)
+    output_path: str | None = None
+    try:
+        # fitz render + Pillow stitch is CPU-heavy → run off the event loop.
+        output_path = await asyncio.to_thread(
+            long_image_service.pdf_to_long_image, str(temp_path), format, dpi
+        )
+        ext = output_path.rsplit(".", 1)[-1]
+        stem = (file.filename or "document").rsplit(".", 1)[0] or "document"
+        cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
+        return FileResponse(
+            path=output_path,
+            filename=f"{stem}_long.{ext}",
+            media_type="image/jpeg" if ext == "jpg" else f"image/{ext}",
+            background=cleanup,
+        )
+    except (ValueError, ProcessingError) as exc:
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception:
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        logger.exception("pdf-to-long-image failed")
+        raise HTTPException(status_code=500, detail="Could not build the long image")

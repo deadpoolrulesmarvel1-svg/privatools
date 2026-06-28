@@ -411,6 +411,7 @@ _POPULARITY: dict[str, int] = {
     "pdf-to-text": 136, "pdf-to-html": 137, "pdf-to-markdown": 138,
     "extract-tables": 139, "pdf-to-rtf": 140, "pdf-to-epub": 141,
     "pdf-to-tiff": 142, "pdf-to-svg": 143, "pdf-to-bmp": 144, "pdf-to-gif": 145,
+    "pdf-to-long-image": 146,
     # ── PDF: advanced ──────────────────────────────────────────────────
     "ocr-pdf": 160, "compare-pdf": 161, "fill-form": 162, "extract-images": 163,
     "summarize-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
@@ -821,6 +822,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "rtf-to-pdf": ("RTF to PDF", "Convert RTF to PDF online for free — upload Rich Text Format files and convert them to high-quality PDF preserving bold, italic, fonts, and paragraph formatting."),
     "pdf-to-excel": ("PDF to Excel", "Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets. Great for invoices, financial reports, and tabular data."),
     "pdf-to-image": ("PDF to Image", "Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose DPI (up to 300), color mode, and output format."),
+    "pdf-to-long-image": ("PDF to Long Image", "Stitch a whole PDF into one long image online for free — every page is rendered and stacked vertically into a single tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), you get the entire document as one picture. Files are processed privately and deleted on response."),
     "pdf-to-pptx": ("PDF to PowerPoint", "Convert PDF to PowerPoint online for free — create a PPTX presentation where each page becomes a slide. Great for presenting PDF content in meetings."),
     "pdf-to-text": ("PDF to Text", "Extract text from PDF online for free — pull all readable text content from your PDF into a clean plain-text document. Works with both text-based and searchable PDFs."),
     "pdf-to-word": ("PDF to Word", "Convert PDF to Word online for free — extract text, paragraphs, and images into an editable DOCX document. No watermarks, no file limits."),

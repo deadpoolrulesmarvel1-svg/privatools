@@ -51,7 +51,7 @@ PDF_TOOLS = [
     "split-in-half", "highlight-pdf", "summarize-pdf",
     "smart-redact",
     # Round-O additions
-    "pdf-to-jpg", "pdf-to-png",
+    "pdf-to-jpg", "pdf-to-png", "pdf-to-long-image",
     # v1.2.0 PDF additions
     "web-optimize-pdf", "split-by-text", "pdf-to-html", "pdf-to-rtf",
 ]

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
   <ShortName>PrivaTools</ShortName>
-  <Description>Search 213 free, privacy-first file tools</Description>
+  <Description>Search 214 free, privacy-first file tools</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Url type="text/html" template="https://privatools.me/?q={searchTerms}" />
   <Image width="16" height="16" type="image/x-icon">https://privatools.me/favicon.ico</Image>

@@ -1,12 +1,12 @@
 # PrivaTools
 
-> 213 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
+> 214 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
 ## Key Facts
 
-- 213 tools: 101 PDF tools + 112 non-PDF tools (image, video/audio, developer, archive, utilities)
+- 214 tools: 102 PDF tools + 112 non-PDF tools (image, video/audio, developer, archive, utilities)
 - 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
 - Open source under the MIT license (https://opensource.org/licenses/MIT)
 - Self-hostable via Docker (`docker compose up --build`) — entire stack runs on your hardware
@@ -29,7 +29,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | 213 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Tool count | 214 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
@@ -130,6 +130,7 @@ Three architectural commitments that are auditable in the source:
 ### Convert from PDF
 - [PDF to Excel](https://privatools.me/tool/pdf-to-excel): Best-effort table/text extraction into a spreadsheet
 - [PDF to Image](https://privatools.me/tool/pdf-to-image): Convert each PDF page into an image file
+- [PDF to Long Image](https://privatools.me/tool/pdf-to-long-image): Stitch every PDF page into one tall image
 - [PDF to TIFF](https://privatools.me/tool/pdf-to-tiff): Convert PDF into a multi-page TIFF image
 - [PDF to BMP](https://privatools.me/tool/pdf-to-bmp): Render PDF pages as Windows BMP bitmaps
 - [PDF to GIF](https://privatools.me/tool/pdf-to-gif): Render PDF pages as GIF images
@@ -295,7 +296,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (213 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (214 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*

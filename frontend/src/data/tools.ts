@@ -395,6 +395,14 @@ const _toolsRaw: Tool[] = [
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
   },
   {
+    slug: "pdf-to-long-image", icon: FileImage, name: "PDF to Long Image",
+    description: "Stitch every PDF page into one tall image",
+    longDescription: "Turn a whole PDF into a single long image online for free — every page is rendered and stacked vertically into one tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), this gives you the entire document as a single picture. Runs on your own server; the file is deleted right after.",
+    synonyms: "stitch combine pages single tall scroll screenshot one image",
+    popularity: 146,
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document_long.png",
+  },
+  {
     slug: "pdf-to-tiff", icon: FileImage, name: "PDF to TIFF",
     description: "Convert PDF into a multi-page TIFF image",
     longDescription: "Convert PDF to TIFF online for free — export your PDF as a single multi-page TIFF image, ideal for archival, fax, healthcare, and legal workflows that require TIFF. All pages bundle into one .tif file with deflate compression.",
