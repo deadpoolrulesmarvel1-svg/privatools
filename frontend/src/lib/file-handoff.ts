@@ -66,12 +66,31 @@ export async function consumeFileHandoff(targetSlug?: string): Promise<File | nu
 
   try {
     sessionStorage.removeItem(FILE_HANDOFF_KEY);
-    const blob = await fetch(payload.data).then(r => r.blob());
-    return new File([blob], payload.name, {
-      type: payload.type || blob.type,
-      lastModified: Date.now(),
-    });
+    // Decode the data URL directly rather than `fetch(dataUrl)` → blob: fetch
+    // of a data: URL is unsupported/inconsistent in some runtimes (notably
+    // node/jsdom under tests), where it yields a Blob that stringifies to
+    // "[object Blob]" instead of the bytes. A manual base64 decode is exact
+    // and works everywhere.
+    return dataUrlToFile(payload.data, payload.name, payload.type);
   } catch {
     return null;
   }
+}
+
+function dataUrlToFile(dataUrl: string, name: string, type?: string): File {
+  const comma = dataUrl.indexOf(",");
+  if (comma === -1) throw new Error("Malformed data URL");
+  const header = dataUrl.slice(0, comma);
+  const body = dataUrl.slice(comma + 1);
+  const mime = type || header.match(/^data:([^;,]*)/)?.[1] || "application/octet-stream";
+
+  let bytes: Uint8Array;
+  if (/;base64/i.test(header)) {
+    const bin = atob(body);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  } else {
+    bytes = new TextEncoder().encode(decodeURIComponent(body));
+  }
+  return new File([bytes], name, { type: mime, lastModified: Date.now() });
 }
