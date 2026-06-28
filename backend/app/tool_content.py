@@ -2039,13 +2039,160 @@ _P2_FORMAT_ALIAS_CONTENT: tuple[tuple[str, str, str, str, str], ...] = (
 )
 
 
+# Per-slug bespoke FAQ for the format-alias converters. Without these, every
+# converter in a media-kind cluster (image/audio/video/gif) renders a
+# byte-identical template FAQ — a near-duplicate "doorway" pattern Google
+# declines to index. Each entry answers the REAL technical distinction of that
+# specific conversion (lossy vs lossless, container vs codec, format use) so the
+# 26 pages read as genuinely different from one another.
+_ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
+    # ── Image ──────────────────────────────────────────────────────────
+    "jpg-to-tiff": [
+        {"q": "Does converting JPG to TIFF improve quality?", "a": "No. JPG is already lossy, and TIFF stores those exact pixels without further loss — but it cannot recover detail JPG discarded. Convert when a workflow (archival, print, scanning, OCR) needs a lossless/uncompressed container, not to 'upscale' a JPG."},
+        {"q": "Why is the TIFF so much larger than the JPG?", "a": "TIFF is uncompressed or losslessly compressed, so a 2 MB JPG can become 20–40 MB. That's expected — you trade file size for a lossless, edit- and print-friendly format."},
+        {"q": "Is the conversion private?", "a": "Yes. It runs on the PrivaTools backend with local image libraries (no third-party API); input and output files are deleted immediately after the response."},
+    ],
+    "png-to-tiff": [
+        {"q": "Is PNG transparency preserved in the TIFF?", "a": "Alpha transparency is preserved where the target TIFF profile supports it. For print/archival TIFF without an alpha channel, transparent areas are flattened to white."},
+        {"q": "Why convert PNG to TIFF?", "a": "TIFF is the standard for print prepress, scanning, and long-term archival. PNG→TIFF is lossless, so no image detail is lost in the conversion."},
+        {"q": "Are my images uploaded to a third party?", "a": "No. Processing is local to the PrivaTools backend; files are temporary and removed right after download."},
+    ],
+    "webp-to-tiff": [
+        {"q": "Does WebP to TIFF lose quality?", "a": "If your WebP is lossy, TIFF can't restore discarded detail; if it's lossless WebP, the TIFF is pixel-identical. Either way TIFF gives you the lossless container that print and archival tools expect."},
+        {"q": "Why not just keep the WebP?", "a": "Many print, scanner, and legacy desktop applications don't read WebP at all. TIFF is universally supported by those workflows."},
+        {"q": "Is it processed privately?", "a": "Yes — local conversion on the PrivaTools backend, with input and output deleted immediately after the response."},
+    ],
+    "jpg-to-bmp": [
+        {"q": "Why convert JPG to BMP?", "a": "BMP is an uncompressed bitmap that legacy Windows apps, embedded systems, and some signage/industrial tools require. JPG→BMP decodes to raw pixels (lossless from the JPG) for maximum compatibility."},
+        {"q": "Will the BMP be much larger?", "a": "Yes — BMP stores every pixel uncompressed, so expect roughly 5–20× the JPG's size."},
+        {"q": "Are files kept after conversion?", "a": "No. Input and output files are temporary and deleted as soon as the download is returned."},
+    ],
+    "png-to-bmp": [
+        {"q": "Is PNG transparency kept in BMP?", "a": "Standard BMP has no alpha channel, so transparent areas are flattened (to white by default). If you need to keep transparency, use PNG→TIFF instead."},
+        {"q": "Why convert to BMP?", "a": "For legacy Windows software, embedded displays, and tools that only accept uncompressed bitmap input."},
+        {"q": "Is the conversion private?", "a": "Yes — local processing on the PrivaTools backend; files removed immediately after the response."},
+    ],
+    "webp-to-bmp": [
+        {"q": "Why convert WebP to BMP?", "a": "To use a modern WebP image in older software or hardware that only reads uncompressed bitmaps. The BMP is a raw, maximally-compatible copy."},
+        {"q": "Is the BMP lossless?", "a": "The BMP is a lossless copy of the decoded WebP pixels; if the source WebP was lossy, those pixels are already final and can't be improved."},
+        {"q": "Are uploads retained?", "a": "No. Files are temporary and deleted right after the download response."},
+    ],
+    # ── Audio ──────────────────────────────────────────────────────────
+    "mp3-to-wav": [
+        {"q": "Does MP3 to WAV improve sound quality?", "a": "No. MP3 is lossy; WAV just stores that same audio uncompressed. The detail MP3 removed can't be restored — convert when a DAW, CD-authoring, or editing tool requires uncompressed PCM/WAV input."},
+        {"q": "Why is the WAV file so big?", "a": "WAV is uncompressed PCM — roughly 10 MB per minute of stereo audio — so a 4 MB MP3 can become around 40 MB."},
+        {"q": "Are my audio files stored?", "a": "No. Input and output are temporary and deleted after the download response is sent. Conversion uses FFmpeg server-side."},
+    ],
+    "wav-to-mp3": [
+        {"q": "What bitrate should I choose?", "a": "192 kbps is a solid default; 256–320 kbps is near-transparent for music. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file."},
+        {"q": "How much smaller will the MP3 be?", "a": "Typically 5–11× smaller than the WAV, depending on the bitrate you pick."},
+        {"q": "Is the conversion private?", "a": "Yes — FFmpeg runs on the PrivaTools backend and the files are deleted immediately after the response."},
+    ],
+    "flac-to-mp3": [
+        {"q": "Will I lose quality converting FLAC to MP3?", "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. At 256–320 kbps the difference is inaudible to most people, but it's a one-way trade for a smaller, universally-compatible file."},
+        {"q": "Why convert FLAC to MP3 at all?", "a": "MP3 plays on virtually every device and is roughly 3–6× smaller than FLAC — ideal for phones, portable players, and sharing."},
+        {"q": "Are files retained?", "a": "No. Uploads and outputs are temporary and removed right after the download."},
+    ],
+    "ogg-to-mp3": [
+        {"q": "Why convert OGG to MP3?", "a": "OGG Vorbis isn't supported by some players, car stereos, and editing apps; MP3 is nearly universal. Both are lossy, so this is about compatibility, not quality."},
+        {"q": "Is there quality loss?", "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. Choose 256–320 kbps to keep it minimal."},
+        {"q": "Is it processed privately?", "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."},
+    ],
+    "aac-to-mp3": [
+        {"q": "Does AAC to MP3 reduce quality?", "a": "Both are lossy, so transcoding AAC→MP3 loses a little detail. Use 256–320 kbps to keep it near-transparent. Convert for devices that don't support AAC/M4A."},
+        {"q": "Why isn't my AAC playing everywhere?", "a": "AAC (often in an .m4a wrapper) has excellent quality-per-byte, but some older or non-Apple devices prefer MP3."},
+        {"q": "Are files kept?", "a": "No — temporary input/output, deleted after the download response."},
+    ],
+    "mp3-to-ogg": [
+        {"q": "Will MP3 to OGG sound better?", "a": "No — both are lossy, and the source MP3's lost detail can't be recovered. OGG Vorbis can be slightly more efficient at the same bitrate, which is useful for open-format projects and games."},
+        {"q": "Why use OGG?", "a": "It's a royalty-free, open format favored by game engines (Godot, Unity) and open-source software."},
+        {"q": "Is the conversion private?", "a": "Yes — local FFmpeg on the PrivaTools backend; files removed after the response."},
+    ],
+    "mp3-to-flac": [
+        {"q": "Does MP3 to FLAC restore lossless quality?", "a": "No. FLAC will losslessly preserve whatever is in the MP3, but it cannot recreate the detail MP3 already discarded — you get a larger file, not better audio. Convert only when a tool specifically requires a lossless container."},
+        {"q": "When is MP3 to FLAC actually useful?", "a": "When a workflow or device only accepts FLAC/lossless input, or to archive the file without further generational loss."},
+        {"q": "Are files retained?", "a": "No. Uploads and outputs are temporary and deleted after the download."},
+    ],
+    "mp3-to-aac": [
+        {"q": "Is AAC better than MP3?", "a": "AAC generally sounds better than MP3 at the same bitrate, but transcoding an existing MP3 won't recover lost detail — it just repackages it. Use it for Apple/M4A workflows."},
+        {"q": "What bitrate should I pick?", "a": "128–256 kbps AAC is typical; AAC is efficient, so 128–192 kbps often matches a higher-bitrate MP3."},
+        {"q": "Is it private?", "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."},
+    ],
+    "wav-to-flac": [
+        {"q": "Is WAV to FLAC lossless?", "a": "Yes — FLAC compresses WAV losslessly, typically to 40–60% of the size with zero quality loss. It's the ideal way to archive uncompressed audio."},
+        {"q": "Will the FLAC play everywhere?", "a": "FLAC is widely supported on desktops and modern players, but not on every older or portable device. Keep WAV or use WAV→MP3 for those."},
+        {"q": "Are files kept?", "a": "No — temporary input/output, removed after the download response."},
+    ],
+    "wav-to-ogg": [
+        {"q": "Why convert WAV to OGG?", "a": "OGG Vorbis produces small, good-quality lossy files in a royalty-free format — handy for games, web audio, and open-source projects, and far smaller than WAV."},
+        {"q": "Is OGG lossy or lossless?", "a": "OGG Vorbis here is lossy; pick a quality level that balances size and fidelity. For lossless, use WAV→FLAC instead."},
+        {"q": "Is the conversion private?", "a": "Yes — local FFmpeg; files deleted right after the response."},
+    ],
+    # ── Video ──────────────────────────────────────────────────────────
+    "mkv-to-mp4": [
+        {"q": "Does MKV to MP4 re-encode the video?", "a": "When the MKV's streams are already MP4-compatible (e.g. H.264/H.265 video + AAC audio), PrivaTools remuxes the container without re-encoding — fast and lossless. Incompatible codecs are re-encoded with sensible defaults."},
+        {"q": "Why MP4 instead of MKV?", "a": "MP4 plays natively on phones, browsers, TVs, and editors; MKV is a flexible container but far less universally supported."},
+        {"q": "Are videos retained after conversion?", "a": "No. Uploaded videos and outputs are temporary and deleted after the response."},
+    ],
+    "mp4-to-mov": [
+        {"q": "Why convert MP4 to MOV?", "a": "MOV is Apple's QuickTime container, preferred by Final Cut Pro, iMovie, and some macOS/iOS workflows. If the codecs are compatible, the conversion is a fast, lossless remux."},
+        {"q": "Is quality lost?", "a": "If it remuxes (same codec), no. If re-encoding is required, defaults target compatibility with minimal visible loss."},
+        {"q": "Are files kept?", "a": "No — temporary input/output, deleted after the download."},
+    ],
+    "mov-to-webm": [
+        {"q": "Why convert MOV to WebM?", "a": "WebM (VP9/Opus) is the open format for fast-loading HTML5 video and is well-supported in browsers. MOV→WebM always re-encodes because the codecs differ."},
+        {"q": "Will the file get smaller?", "a": "Usually yes — WebM/VP9 is efficient for the web and is often smaller than the source MOV at similar quality."},
+        {"q": "Is it processed privately?", "a": "Yes — local FFmpeg on the PrivaTools backend; files removed after the response."},
+    ],
+    "mkv-to-webm": [
+        {"q": "Does MKV to WebM re-encode?", "a": "Often partially — WebM requires VP8/VP9 video and Vorbis/Opus audio, so any stream not already in those codecs is re-encoded. Both are Matroska-based, so the container step itself is straightforward."},
+        {"q": "Why convert to WebM?", "a": "To embed open-format video on the web without proprietary codecs."},
+        {"q": "Are uploads retained?", "a": "No — temporary files, deleted after the response."},
+    ],
+    "mp4-to-avi": [
+        {"q": "Why convert MP4 to AVI?", "a": "AVI is an older container some legacy editors, players, and devices still require. The conversion re-encodes into an AVI-friendly codec, so expect a larger file than the MP4."},
+        {"q": "Will quality drop?", "a": "AVI codecs are less efficient than modern H.264/MP4, so files are larger and re-encoding causes minor loss. Use AVI only when something specifically needs it."},
+        {"q": "Are files kept?", "a": "No — temporary input/output, removed after the download response."},
+    ],
+    "avi-to-webm": [
+        {"q": "Why convert AVI to WebM?", "a": "To turn an old AVI clip into a small, web-ready, open-format video. WebM (VP9/Opus) re-encodes the AVI for efficient browser playback."},
+        {"q": "Will it shrink the file?", "a": "Usually significantly — modern WebM is far more efficient than typical legacy AVI codecs."},
+        {"q": "Is it private?", "a": "Yes — local FFmpeg conversion; files deleted after the response."},
+    ],
+    "webm-to-mov": [
+        {"q": "Why convert WebM to MOV?", "a": "To bring web video into Apple editors (Final Cut, iMovie) that prefer QuickTime/MOV. The codecs differ, so this re-encodes to a MOV-friendly codec like H.264."},
+        {"q": "Any quality loss?", "a": "Re-encoding causes minor loss; the defaults target visual parity with the source."},
+        {"q": "Are files retained?", "a": "No — temporary files, deleted after the download."},
+    ],
+    "mov-to-mkv": [
+        {"q": "Why convert MOV to MKV?", "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. If the MOV's codecs are MKV-compatible, the conversion remuxes losslessly."},
+        {"q": "Is it lossless?", "a": "When remuxing (same codecs), yes — no quality change, just a different container. Incompatible codecs are re-encoded."},
+        {"q": "Are uploads kept?", "a": "No — temporary input/output, removed after the response."},
+    ],
+    # ── Video → GIF ────────────────────────────────────────────────────
+    "webm-to-gif": [
+        {"q": "Why is the GIF larger than the WebM?", "a": "GIF stores every frame as a separate image and is capped at 256 colors, so it's inefficient — a short WebM can become a much larger GIF. Trim the clip first to keep the size down."},
+        {"q": "Will the GIF have sound?", "a": "No — GIF is a silent image-animation format and cannot contain audio."},
+        {"q": "What clip length works best?", "a": "Keep it under about 6–10 seconds; longer clips produce very large GIFs."},
+    ],
+    "mov-to-gif": [
+        {"q": "How long should the clip be?", "a": "Short — a few seconds. GIF encodes every frame as an image, so a long MOV becomes a very large GIF. Trim before converting."},
+        {"q": "Does the GIF keep audio?", "a": "No — GIF has no audio track. Convert to MP4 or WebM if you need sound."},
+        {"q": "Why convert MOV to GIF?", "a": "For short looping clips in chats, docs, and on the web where autoplaying video isn't supported."},
+    ],
+}
+
+
 for _slug, _name, _input_label, _output_label, _kind in _P2_FORMAT_ALIAS_CONTENT:
     TOOL_HOWTO.setdefault(_slug, [
         {"name": f"Upload {_input_label}", "text": f"Drop or select {_input_label}. Files are processed by the same local PrivaTools converter used by the main {_kind} tools."},
         {"name": f"Convert to {_output_label}", "text": f"Click Convert. PrivaTools preselects the right output format for {_name}, so there are no extra settings to configure."},
         {"name": f"Download {_output_label}", "text": "The converted file downloads automatically. Temporary input and output files are removed immediately after the response is delivered."},
     ])
-    if _kind == "image":
+    _bespoke_faq = _ALIAS_FAQ_OVERRIDES.get(_slug)
+    if _bespoke_faq:
+        TOOL_FAQ.setdefault(_slug, _bespoke_faq)
+    elif _kind == "image":
         TOOL_FAQ.setdefault(_slug, [
             {"q": "Does this upload to a third-party image service?", "a": "No. The conversion runs on the self-hosted PrivaTools backend with Pillow/libvips-style local processing. Files are not sent to an external conversion API."},
             {"q": "Will image metadata be kept?", "a": "Image conversion strips sensitive metadata by default for privacy, including GPS and camera metadata where present."},
