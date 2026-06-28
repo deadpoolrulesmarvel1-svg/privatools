@@ -351,6 +351,38 @@ def test_ssr_body_injected_into_real_nonempty_root_template():
     assert '<div id="root"></div>' not in out
 
 
+def test_ssr_injects_into_built_dist_style_template():
+    """Regression guard for the BUILT template shape.
+
+    Production serves frontend/dist/index.html, where Vite hoists the entry
+    `<script type="module">` into <head> and the only script AFTER `<div id="root">`
+    is a plain inline `<script>`. An injector that anchors on a type="module"
+    script following root matches the source index.html but NOT the built file —
+    which shipped an empty SSR body to production. This fixture mirrors the built
+    structure exactly.
+    """
+    template = (
+        "<html><head><title>x</title>"
+        '<meta name="robots" content="index,follow" />'
+        '<script type="module" crossorigin src="/assets/index-abc123.js"></script>'
+        "</head><body>"
+        '<div id="prepaint-brand" aria-hidden="true">Privatools</div>'
+        '<div id="root">\n'
+        '      <div style="min-height:100vh;background:#0b0b0c">\n'
+        "        <header><span>Privatools</span></header>\n"
+        "      </div>\n"
+        "    </div>\n"
+        '    <script nonce="z">/* analytics */</script>'
+        "</body></html>"
+    )
+    out = inject_seo(template, "/tool/merge-pdf")
+    body = out.split("</head>", 1)[-1]
+    assert "<h1" in body, "SSR body not injected into built-dist-style template"
+    assert 'href="/tool/' in body, "internal tool links missing from built-style body"
+    assert "min-height:100vh" not in body, "prepaint shell not replaced by SSR content"
+    assert '<div id="root"></div>' not in out
+
+
 def test_unknown_path_is_noindex_and_not_self_canonical():
     """A 404/unknown route must be noindex and must NOT self-canonicalize
     (self-canonical on a missing URL is the classic Soft-404 trigger). Uses the
