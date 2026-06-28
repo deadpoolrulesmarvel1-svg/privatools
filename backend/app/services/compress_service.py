@@ -38,22 +38,23 @@ def _recompress_image(
 ) -> bytes | None:
     """Downsample and re-compress an image; return new bytes or None to skip."""
     try:
-        img = Image.open(io.BytesIO(data))
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        w, h = img.size
-        if w > max_image_dim or h > max_image_dim:
-            img.thumbnail((max_image_dim, max_image_dim), Image.LANCZOS)
-        out = io.BytesIO()
-        # Progressive JPEG for better web loading + optimize for smaller size
-        img.save(
-            out,
-            format="JPEG",
-            quality=jpeg_quality,
-            optimize=True,
-            progressive=True,
-        )
-        return out.getvalue()
+        # `with` so the decoded image is released even on the image-heavy
+        # path where this runs once per embedded image, per page.
+        with Image.open(io.BytesIO(data)) as src:
+            img = src.convert("RGB") if src.mode in ("RGBA", "P") else src
+            w, h = img.size
+            if w > max_image_dim or h > max_image_dim:
+                img.thumbnail((max_image_dim, max_image_dim), Image.LANCZOS)
+            out = io.BytesIO()
+            # Progressive JPEG for better web loading + optimize for smaller size
+            img.save(
+                out,
+                format="JPEG",
+                quality=jpeg_quality,
+                optimize=True,
+                progressive=True,
+            )
+            return out.getvalue()
     except Exception:
         return None
 
@@ -138,9 +139,9 @@ def compress_pdf(
                     if new_bytes and len(new_bytes) < len(raw):
                         xobj.write(new_bytes, filter=pikepdf.Name("/DCTDecode"))
                         # Get dimensions from the recompressed image
-                        recompressed_img = Image.open(io.BytesIO(new_bytes))
-                        xobj["/Width"] = recompressed_img.width
-                        xobj["/Height"] = recompressed_img.height
+                        with Image.open(io.BytesIO(new_bytes)) as recompressed_img:
+                            xobj["/Width"] = recompressed_img.width
+                            xobj["/Height"] = recompressed_img.height
                         xobj["/ColorSpace"] = pikepdf.Name("/DeviceRGB")
                         xobj["/BitsPerComponent"] = 8
                 except Exception as exc:

@@ -75,12 +75,12 @@ def _build_qr_image(
 
     if logo_bytes:
         try:
-            logo = Image.open(io.BytesIO(logo_bytes))
+            # `with` closes the decoded source; convert always yields a fresh
+            # RGBA copy we can paste with transparency.
+            with Image.open(io.BytesIO(logo_bytes)) as _logo_src:
+                logo = _logo_src.convert("RGBA")
         except Exception as exc:  # pragma: no cover — friendly error path
             raise ValueError("Logo is not a valid image format") from exc
-        # Convert to RGBA so we can paste with transparency.
-        if logo.mode != "RGBA":
-            logo = logo.convert("RGBA")
         # Target roughly 20% of the QR width. Error correction H tolerates up to
         # ~30% damage, so 20% gives plenty of margin.
         target = max(box * 4, full_px // 5)
@@ -184,9 +184,11 @@ def embed_qr_in_pdf(
         c.save()
         packet.seek(0)
 
-        overlay_pdf = pikepdf.Pdf.open(packet)
-        pikepdf.Page(target_page).add_overlay(overlay_pdf.pages[0])
-
-        pdf.save(str(output_path))
+        # `with` so the overlay Pdf is closed even if add_overlay/save raises —
+        # this runs on a per-request hot path and previously leaked the object.
+        # Keep the save inside the block so overlay objects stay resolvable.
+        with pikepdf.Pdf.open(packet) as overlay_pdf:
+            pikepdf.Page(target_page).add_overlay(overlay_pdf.pages[0])
+            pdf.save(str(output_path))
 
     return str(output_path)
