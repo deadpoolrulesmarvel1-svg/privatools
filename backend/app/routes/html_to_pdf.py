@@ -1,9 +1,10 @@
 import asyncio
 import logging
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from typing import Optional
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services import html_to_pdf_service
 from ..utils.cleanup import remove_files
 
@@ -14,7 +15,9 @@ MAX_HTML_BYTES = 2_000_000  # 2 MB
 
 
 @router.post("/html-to-pdf")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def convert_html_to_pdf(
+    request: Request,
     url: Optional[str] = Form(None),
     html_content: Optional[str] = Form(None),
 ):

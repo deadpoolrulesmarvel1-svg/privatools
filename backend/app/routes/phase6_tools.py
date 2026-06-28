@@ -11,11 +11,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import fitz  # PyMuPDF
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error, MAX_SIZE
 
 router = APIRouter()
@@ -39,7 +40,9 @@ def _compress_single_pdf(pdf_bytes: bytes, level: str) -> bytes:
 
 
 @router.post("/batch-compress-pdf")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def batch_compress_pdf(
+    request: Request,
     files: list[UploadFile] = File(...),
     level: str = Form("balanced"),
 ):
@@ -99,7 +102,9 @@ async def batch_compress_pdf(
 
 
 @router.post("/image-upscaler")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def image_upscaler(
+    request: Request,
     file: UploadFile = File(...),
     scale: int = Form(2),
 ):
@@ -147,7 +152,9 @@ async def image_upscaler(
 
 
 @router.post("/audio-converter")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def audio_converter(
+    request: Request,
     file: UploadFile = File(...),
     format: str = Form("mp3"),
     bitrate: str = Form("192k"),

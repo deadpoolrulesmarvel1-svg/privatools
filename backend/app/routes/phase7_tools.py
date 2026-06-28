@@ -13,10 +13,11 @@ import uuid
 from pathlib import Path
 from collections import Counter
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload
 
@@ -52,7 +53,8 @@ def _run_ffmpeg(args: list[str], label: str) -> None:
 
 # ─── Mute video (strip audio) ────────────────────────────────────────────
 @router.post("/mute-video")
-async def mute_video_endpoint(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def mute_video_endpoint(request: Request, file: UploadFile = File(...)):
     """Strip the audio track from a video. Stream-copies video so it's instant."""
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
@@ -79,7 +81,8 @@ async def mute_video_endpoint(file: UploadFile = File(...)):
 
 # ─── Reverse video (play backwards, audio reversed too) ──────────────────
 @router.post("/reverse-video")
-async def reverse_video_endpoint(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def reverse_video_endpoint(request: Request, file: UploadFile = File(...)):
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
@@ -109,7 +112,9 @@ async def reverse_video_endpoint(file: UploadFile = File(...)):
 
 # ─── Change video playback speed (0.25× – 4×) ────────────────────────────
 @router.post("/video-speed")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def video_speed_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     speed: float = Form(1.5, ge=0.25, le=4.0),
 ):
@@ -160,7 +165,9 @@ ALLOWED_AUDIO = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a", ".wma"}
 
 
 @router.post("/audio-trim")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def audio_trim_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     start: str = Form("00:00:00"),
     end: str = Form("00:00:30"),

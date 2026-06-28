@@ -28,6 +28,12 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from backend.app.main import app  # noqa: E402
+from backend.app.rate_limit import limiter  # noqa: E402
+
+# Tests exercise endpoints many times from a single client IP; the per-route
+# rate limits would otherwise produce spurious 429s. Disable the limiter for
+# the whole suite (the limits are verified by their own targeted tests).
+limiter.enabled = False
 
 
 # ---------------------------------------------------------------------------

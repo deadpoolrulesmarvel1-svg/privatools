@@ -4,9 +4,10 @@ import logging
 import tempfile
 import os
 from functools import lru_cache
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import remove_files
 
 router = APIRouter()
@@ -59,7 +60,9 @@ def _extract_text(image_path: str, lang: str) -> str:
 
 
 @router.post("/image-ocr")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def image_ocr(
+    request: Request,
     file: UploadFile = File(...),
     lang: str = Form("eng"),
     output: str = Form("json"),

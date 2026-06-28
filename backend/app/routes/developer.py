@@ -6,12 +6,13 @@ import os
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 from ..auth.api_key import API_KEY_HEADER, require_api_key
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..services import compress_service, strip_metadata_service
 from ..utils.cleanup import (
     ensure_temp_dir,
@@ -156,7 +157,9 @@ async def validate_pipeline(
 
 
 @router.post("/pipeline")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def run_pipeline(
+    request: Request,
     file: UploadFile = File(...),
     steps: str = Form(...),
     _: str = Depends(require_api_key),
