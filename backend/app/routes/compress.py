@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -71,7 +72,8 @@ async def compress_pdf(
         for inp in input_paths:
             total_original += os.path.getsize(inp)
             try:
-                out = compress_service.compress_pdf(
+                out = await asyncio.to_thread(
+                    compress_service.compress_pdf,
                     inp,
                     level=level,
                     jpeg_quality_override=jpeg_quality,

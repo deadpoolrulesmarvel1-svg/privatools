@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 import zipfile
@@ -99,7 +100,7 @@ async def strip_metadata(files: List[UploadFile] = File(...)):
             input_paths.append(str(temp_path))
 
         for inp in input_paths:
-            out = strip_metadata_service.strip_metadata(inp)
+            out = await asyncio.to_thread(strip_metadata_service.strip_metadata, inp)
             output_paths.append(out)
 
         # X-Stripped-Items lets the frontend's "Privacy receipt" UI render

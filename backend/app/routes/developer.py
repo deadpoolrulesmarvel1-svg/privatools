@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import uuid
@@ -175,7 +176,7 @@ async def run_pipeline(
 
         current_path = str(input_path)
         for slug in normalized_steps:
-            current_path = _run_step(slug, current_path)
+            current_path = await asyncio.to_thread(_run_step, slug, current_path)
             paths.append(current_path)
 
         cleanup = BackgroundTask(remove_files, *paths)

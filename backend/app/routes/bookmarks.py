@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -58,7 +59,7 @@ async def add_bookmarks(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = bookmarks_service.add_bookmarks(str(temp_path), bookmarks)
+        output_path = await asyncio.to_thread(bookmarks_service.add_bookmarks, str(temp_path), bookmarks)
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

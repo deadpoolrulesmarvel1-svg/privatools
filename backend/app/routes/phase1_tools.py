@@ -1,5 +1,6 @@
 """Phase 1 tool routes: DOCX/XLSX/PPTX/TXT conversions, PDF stamp, HEIC→JPG."""
 
+import asyncio
 import logging
 import re
 import uuid
@@ -50,7 +51,7 @@ async def word_to_pdf(file: UploadFile = File(...)):
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.docx")
         temp.write_bytes(content)
 
-        out = word_to_pdf_service.word_to_pdf(str(temp))
+        out = await asyncio.to_thread(word_to_pdf_service.word_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -76,7 +77,7 @@ async def excel_to_pdf(file: UploadFile = File(...)):
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.xlsx")
         temp.write_bytes(content)
 
-        out = excel_to_pdf_service.excel_to_pdf(str(temp))
+        out = await asyncio.to_thread(excel_to_pdf_service.excel_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -102,7 +103,7 @@ async def pptx_to_pdf(file: UploadFile = File(...)):
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pptx")
         temp.write_bytes(content)
 
-        out = pptx_to_pdf_service.pptx_to_pdf(str(temp))
+        out = await asyncio.to_thread(pptx_to_pdf_service.pptx_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -146,7 +147,8 @@ async def stamp_pdf(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
 
-        out = stamp_service.stamp_pdf(
+        out = await asyncio.to_thread(
+            stamp_service.stamp_pdf,
             str(temp),
             stamp_type,
             (custom_text or "").strip() or None,
@@ -182,7 +184,7 @@ async def txt_to_pdf(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.txt")
         temp.write_bytes(content)
 
-        out = txt_to_pdf_service.txt_to_pdf(str(temp), font_size=font_size)
+        out = await asyncio.to_thread(txt_to_pdf_service.txt_to_pdf, str(temp), font_size=font_size)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
@@ -213,7 +215,7 @@ async def heic_to_jpg(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
         temp.write_bytes(content)
 
-        out = heic_to_jpg_service.heic_to_jpg(str(temp), quality=quality)
+        out = await asyncio.to_thread(heic_to_jpg_service.heic_to_jpg, str(temp), quality=quality)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="converted.jpg", media_type="image/jpeg", background=cleanup)
     except HTTPException:

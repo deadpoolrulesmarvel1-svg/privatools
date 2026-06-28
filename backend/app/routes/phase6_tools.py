@@ -1,5 +1,6 @@
 """Phase 6 tools: Batch PDF Compress, Image Upscaler, Audio Converter, PDF Page Counter."""
 
+import asyncio
 import io
 import os
 import subprocess
@@ -177,7 +178,7 @@ async def audio_converter(
     cmd.append(str(out_path))
 
     try:
-        subprocess.run(cmd, capture_output=True, check=True, timeout=120)
+        await asyncio.to_thread(subprocess.run, cmd, capture_output=True, check=True, timeout=120)
     except subprocess.CalledProcessError as exc:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(500, f"Audio conversion failed: {exc.stderr.decode()[:200]}")

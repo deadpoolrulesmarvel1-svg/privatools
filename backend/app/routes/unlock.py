@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import zipfile
 import logging
@@ -67,7 +68,7 @@ async def unlock_pdf(
             input_paths.append(str(temp_path))
 
         for inp in input_paths:
-            out = unlock_service.unlock_pdf(inp, password=clean_password)
+            out = await asyncio.to_thread(unlock_service.unlock_pdf, inp, password=clean_password)
             output_paths.append(out)
 
         # Single file: return the PDF directly

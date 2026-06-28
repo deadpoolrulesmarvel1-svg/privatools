@@ -1,5 +1,6 @@
 """Non-PDF tool routes: image, video/audio, and archive processing."""
 
+import asyncio
 import io
 import logging
 import os
@@ -133,6 +134,12 @@ def _write_temp_file(content: bytes, suffix: str) -> str:
             pass
         raise
     return path
+
+
+async def _run_ffmpeg_async(cmd: list[str], timeout: int) -> None:
+    """Run ffmpeg off the event loop — a long encode (up to `timeout`s) must
+    not block the worker from serving other requests."""
+    await asyncio.to_thread(_run_ffmpeg, cmd, timeout)
 
 
 def _run_ffmpeg(cmd: list[str], timeout: int) -> None:
@@ -454,7 +461,7 @@ async def video_to_gif(
     output_path = _new_temp_file(".gif")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -496,7 +503,7 @@ async def extract_audio(request: Request, file: UploadFile = File(...), format: 
     output_path = _new_temp_file(f".{audio_format}")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -539,7 +546,7 @@ async def trim_media(
     output_path = _new_temp_file(ext)
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -572,7 +579,7 @@ async def compress_video(file: UploadFile = File(...), quality: int = Form(28, g
     output_path = _new_temp_file(".mp4")
 
     try:
-        _run_ffmpeg(
+        await _run_ffmpeg_async(
             [
                 "ffmpeg",
                 "-y",
@@ -641,11 +648,11 @@ async def extract_archive(file: UploadFile = File(...)):
 
     try:
         if archive_kind == "zip":
-            _extract_zip_safely(input_path, extract_dir)
+            await asyncio.to_thread(_extract_zip_safely, input_path, extract_dir)
         else:
-            _extract_tar_safely(input_path, extract_dir, tar_mode)
+            await asyncio.to_thread(_extract_tar_safely, input_path, extract_dir, tar_mode)
 
-        _zip_directory(extract_dir, output_path)
+        await asyncio.to_thread(_zip_directory, extract_dir, output_path)
     except HTTPException:
         _cleanup_paths(input_path, extract_dir, output_path)
         raise

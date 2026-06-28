@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -46,8 +47,8 @@ async def split_by_size(
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = split_by_size_service.split_by_size(
-            str(temp_path), max_size_mb=max_size_mb
+        output_path = await asyncio.to_thread(
+            split_by_size_service.split_by_size, str(temp_path), max_size_mb=max_size_mb
         )
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)

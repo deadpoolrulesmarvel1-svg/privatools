@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import List
 import logging
@@ -59,7 +60,7 @@ async def image_to_pdf(
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
 
-        output_path = image_to_pdf_service.images_to_pdf(input_paths, page_size=normalized_page_size)
+        output_path = await asyncio.to_thread(image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size)
         cleanup = BackgroundTask(remove_files, *input_paths, output_path)
         return FileResponse(
             path=output_path,

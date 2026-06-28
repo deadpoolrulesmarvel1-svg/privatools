@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -108,7 +109,7 @@ async def merge_pdfs(
             input_paths.append(str(temp_path))
 
         try:
-            output_path = merge_service.merge_pdfs(input_paths, page_ranges=parsed_ranges)
+            output_path = await asyncio.to_thread(merge_service.merge_pdfs, input_paths, page_ranges=parsed_ranges)
         except ValueError as exc:
             raise HTTPException(
                 status_code=400,

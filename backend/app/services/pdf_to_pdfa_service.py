@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import shutil
 from pathlib import Path
@@ -36,12 +37,7 @@ def _get_srgb_icc() -> bytes:
     return _SRGB_ICC
 
 
-async def convert_to_pdfa(input_path: str) -> str:
-    """Convert a PDF to PDF/A-2b using PyMuPDF + pikepdf XMP tagging.
-
-    PyMuPDF can save with garbage collection and cleaning which produces
-    a well-formed PDF. We then add PDF/A metadata markers via pikepdf.
-    """
+def _convert_to_pdfa_sync(input_path: str) -> str:
     output_path = temp_output("pdfa", "pdf")
 
     doc = fitz.open(input_path)
@@ -87,4 +83,15 @@ async def convert_to_pdfa(input_path: str) -> str:
         temp_out2.unlink(missing_ok=True)
 
     return str(output_path)
+
+
+async def convert_to_pdfa(input_path: str) -> str:
+    """Convert a PDF to PDF/A-2b using PyMuPDF + pikepdf XMP tagging.
+
+    PyMuPDF saves with garbage collection and cleaning to produce a
+    well-formed PDF; pikepdf then adds the PDF/A-2b XMP markers. The work
+    is pure CPU/IO, so it's offloaded to a thread to avoid blocking the
+    event loop (this was declared async but ran synchronously before).
+    """
+    return await asyncio.to_thread(_convert_to_pdfa_sync, input_path)
 

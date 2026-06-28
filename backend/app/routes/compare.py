@@ -1,3 +1,4 @@
+import asyncio
 import re
 import uuid
 import logging
@@ -48,7 +49,8 @@ async def compare(
         path2.write_bytes(content2)
 
         if mode == "visual":
-            output_path = compare_service.compare_visual(
+            output_path = await asyncio.to_thread(
+                compare_service.compare_visual,
                 str(path1), str(path2), highlight_color=highlight_color
             )
             cleanup = BackgroundTask(remove_files, str(path1), str(path2), output_path)
@@ -59,7 +61,7 @@ async def compare(
                 background=cleanup,
             )
 
-        result = compare_service.compare_text(str(path1), str(path2))
+        result = await asyncio.to_thread(compare_service.compare_text, str(path1), str(path2))
         remove_files(str(path1), str(path2))
         return JSONResponse(result)
     except HTTPException:

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -70,7 +71,7 @@ async def split_pdf(
         temp_path.write_bytes(content)
 
         try:
-            output_path = split_service.split_pdf(str(temp_path), mode=mode, pages=pages, n=n)
+            output_path = await asyncio.to_thread(split_service.split_pdf, str(temp_path), mode=mode, pages=pages, n=n)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=_classify_split_error(exc)) from exc
 

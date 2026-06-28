@@ -4,6 +4,7 @@ extract dominant color palette from images, pixelate/blur image regions.
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import shutil
@@ -34,6 +35,11 @@ def _suffix(name: str | None) -> str:
     return "." + name.rsplit(".", 1)[-1].lower()
 
 
+async def _run_ffmpeg_async(args: list[str], label: str) -> None:
+    """Run ffmpeg off the event loop so a long encode doesn't block the worker."""
+    await asyncio.to_thread(_run_ffmpeg, args, label)
+
+
 def _run_ffmpeg(args: list[str], label: str) -> None:
     try:
         proc = subprocess.run(args, capture_output=True, timeout=180)
@@ -57,7 +63,7 @@ async def mute_video_endpoint(file: UploadFile = File(...)):
     out_path = get_temp_path(f"mute_out_{uuid.uuid4().hex}{suffix}")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-c:v", "copy", "-an", str(out_path),
         ], "Mute video")
@@ -84,7 +90,7 @@ async def reverse_video_endpoint(file: UploadFile = File(...)):
     out_path = get_temp_path(f"rev_out_{uuid.uuid4().hex}.mp4")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-vf", "reverse", "-af", "areverse",
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
@@ -131,7 +137,7 @@ async def video_speed_endpoint(
     a_filter = ",".join(atempo_chain)
     v_filter = f"setpts={1.0 / float(speed):.4f}*PTS"
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-filter_complex", f"[0:v]{v_filter}[v];[0:a]{a_filter}[a]",
             "-map", "[v]", "-map", "[a]",
@@ -179,7 +185,7 @@ async def audio_trim_endpoint(
     out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
     in_path.write_bytes(data)
     try:
-        _run_ffmpeg([
+        await _run_ffmpeg_async([
             "ffmpeg", "-y", "-ss", start.strip(), "-to", end.strip(),
             "-i", str(in_path), "-c", "copy", str(out_path),
         ], "Audio trim")

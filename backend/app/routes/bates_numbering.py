@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -90,7 +91,8 @@ async def bates_numbering(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = bates_numbering_service.add_bates_numbering(
+        output_path = await asyncio.to_thread(
+            bates_numbering_service.add_bates_numbering,
             str(temp_path),
             prefix=prefix,
             start_number=start_number,

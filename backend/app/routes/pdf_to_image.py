@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -50,7 +51,7 @@ async def pdf_to_image(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = pdf_to_image_service.pdf_to_images(str(temp_path), fmt=fmt, dpi=dpi)
+        output_path = await asyncio.to_thread(pdf_to_image_service.pdf_to_images, str(temp_path), fmt=fmt, dpi=dpi)
 
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         if output_path.endswith(".zip"):

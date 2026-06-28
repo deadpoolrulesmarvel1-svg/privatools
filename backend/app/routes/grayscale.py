@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
@@ -25,7 +26,7 @@ async def grayscale_pdf(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = grayscale_service.convert_to_grayscale(str(temp_path))
+        output_path = await asyncio.to_thread(grayscale_service.convert_to_grayscale, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

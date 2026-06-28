@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -32,7 +33,7 @@ async def reverse_pdf(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = reverse_pdf_service.reverse_pdf(str(temp_path))
+        output_path = await asyncio.to_thread(reverse_pdf_service.reverse_pdf, str(temp_path))
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

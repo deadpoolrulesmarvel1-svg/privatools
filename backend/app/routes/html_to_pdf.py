@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import FileResponse
@@ -27,9 +28,9 @@ async def convert_html_to_pdf(
     try:
         if url:
             # URL scheme/host validation happens inside url_to_pdf via _validate_url
-            output_path = html_to_pdf_service.url_to_pdf(url)
+            output_path = await asyncio.to_thread(html_to_pdf_service.url_to_pdf, url)
         else:
-            output_path = html_to_pdf_service.html_to_pdf(html_content)
+            output_path = await asyncio.to_thread(html_to_pdf_service.html_to_pdf, html_content)
 
         cleanup = BackgroundTask(remove_files, output_path)
         return FileResponse(

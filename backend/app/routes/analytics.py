@@ -51,7 +51,6 @@ def _clean_referrer(value: str | None) -> str | None:
         return None
     path = parsed.path or "/"
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, path, "", ""))
-    return None
 
 
 def _analytics_config() -> tuple[str, str] | None:

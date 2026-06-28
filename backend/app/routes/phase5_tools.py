@@ -1,5 +1,6 @@
 """Phase 5 routes: merge images, QR code reader."""
 
+import asyncio
 import logging
 import uuid
 from pathlib import Path
@@ -65,7 +66,8 @@ async def merge_images(
             temp.write_bytes(content)
             temp_paths.append(temp)
 
-        out = merge_images_service.merge_images(
+        out = await asyncio.to_thread(
+            merge_images_service.merge_images,
             [str(p) for p in temp_paths], clean_direction,
         )
         all_temps = [str(p) for p in temp_paths] + [out]
@@ -114,7 +116,7 @@ async def read_qr(file: UploadFile = File(...)):
                 detail="QR code reader is unavailable on this server (missing libzbar)",
             )
 
-        codes = qr_reader_service.read_qr(str(temp))
+        codes = await asyncio.to_thread(qr_reader_service.read_qr, str(temp))
         return JSONResponse({"codes": codes})
     except HTTPException:
         _cleanup_on_error(temp)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -50,7 +51,7 @@ async def flatten_pdf(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = flatten_service.flatten_pdf(str(temp_path))
+        output_path = await asyncio.to_thread(flatten_service.flatten_pdf, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

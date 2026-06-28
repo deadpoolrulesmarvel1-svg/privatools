@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 import logging
@@ -151,7 +152,8 @@ async def sign_pdf(
                     ),
                 )
 
-        output_path = sign_service.sign_pdf(
+        output_path = await asyncio.to_thread(
+            sign_service.sign_pdf,
             str(temp_pdf),
             signature_path,
             page=page,

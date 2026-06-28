@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -35,7 +36,7 @@ async def make_booklet(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = booklet_service.make_booklet(str(temp_path))
+        output_path = await asyncio.to_thread(booklet_service.make_booklet, str(temp_path))
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 import io
@@ -88,7 +89,8 @@ async def watermark_pdf(
             watermark_image_path = get_temp_path(f"watermark_{uuid.uuid4().hex}{suffix}")
             watermark_image_path.write_bytes(image_bytes)
 
-        output_path = watermark_service.add_watermark(
+        output_path = await asyncio.to_thread(
+            watermark_service.add_watermark,
             str(temp_path),
             text=clean_text,
             opacity=opacity,

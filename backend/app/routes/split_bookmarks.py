@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -32,7 +33,7 @@ async def split_by_bookmarks(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = split_bookmarks_service.split_by_bookmarks(str(temp_path))
+        output_path = await asyncio.to_thread(split_bookmarks_service.split_by_bookmarks, str(temp_path))
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

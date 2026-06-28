@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -36,7 +37,7 @@ async def repair_pdf(file: UploadFile = File(...)):
         # detecting irrecoverable damage.
         temp_path.write_bytes(content)
 
-        output_path, repair_status = repair_service.repair_pdf(str(temp_path))
+        output_path, repair_status = await asyncio.to_thread(repair_service.repair_pdf, str(temp_path))
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

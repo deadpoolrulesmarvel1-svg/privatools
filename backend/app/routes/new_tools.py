@@ -8,6 +8,7 @@
 # aren't defined. Concrete annotations evaluate eagerly and dodge that
 # bug; `str | None` already works natively on Python 3.10+ here.
 
+import asyncio
 import logging
 import uuid
 
@@ -65,8 +66,8 @@ async def split_in_half_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = split_in_half_service.split_in_half(
-            str(temp_path), direction=direction
+        output_path = await asyncio.to_thread(
+            split_in_half_service.split_in_half, str(temp_path), direction=direction
         )
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
@@ -118,7 +119,8 @@ async def highlight_endpoint(
     output_path: str | None = None
 
     try:
-        output_path, hits = highlight_service.highlight_text(
+        output_path, hits = await asyncio.to_thread(
+            highlight_service.highlight_text,
             str(temp_path), query, color=color, case_sensitive=case_sensitive
         )
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
@@ -157,7 +159,7 @@ async def pdf_to_svg_endpoint(file: UploadFile = File(...)):
     output_path: str | None = None
 
     try:
-        output_path = pdf_to_svg_service.pdf_to_svg(str(temp_path))
+        output_path = await asyncio.to_thread(pdf_to_svg_service.pdf_to_svg, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         is_zip = output_path.endswith(".zip")
         return FileResponse(
@@ -219,7 +221,8 @@ async def smart_redact_endpoint(
     output_path: str | None = None
 
     try:
-        output_path, hits = smart_redact_service.smart_redact(
+        output_path, hits = await asyncio.to_thread(
+            smart_redact_service.smart_redact,
             str(temp_path), parsed, color=color, case_sensitive=case_sensitive
         )
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
@@ -270,7 +273,7 @@ async def video_to_pdf_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.video_to_pdf(str(temp_path), frames=frames)
+        output_path = await asyncio.to_thread(video_tools_service.video_to_pdf, str(temp_path), frames=frames)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
@@ -304,7 +307,7 @@ async def video_converter_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.video_convert(str(temp_path), target_format)
+        output_path = await asyncio.to_thread(video_tools_service.video_convert, str(temp_path), target_format)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         out_ext = output_path.rsplit(".", 1)[-1]
         return FileResponse(
@@ -339,7 +342,7 @@ async def video_resizer_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.video_resize(str(temp_path), preset)
+        output_path = await asyncio.to_thread(video_tools_service.video_resize, str(temp_path), preset)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
@@ -373,7 +376,7 @@ async def video_thumbnail_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.video_thumbnail(str(temp_path), time_seconds)
+        output_path = await asyncio.to_thread(video_tools_service.video_thumbnail, str(temp_path), time_seconds)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
@@ -404,7 +407,7 @@ async def gif_to_mp4_endpoint(file: UploadFile = File(...)):
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.gif_to_mp4(str(temp_path))
+        output_path = await asyncio.to_thread(video_tools_service.gif_to_mp4, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
@@ -444,7 +447,7 @@ async def add_subtitles_endpoint(
     output_path: str | None = None
 
     try:
-        output_path = video_tools_service.burn_subtitles(str(vid_path), str(srt_path))
+        output_path = await asyncio.to_thread(video_tools_service.burn_subtitles, str(vid_path), str(srt_path))
         cleanup = BackgroundTask(remove_files, str(vid_path), str(srt_path), output_path)
         return FileResponse(
             path=output_path,
@@ -483,7 +486,7 @@ async def video_merge_endpoint(files: list[UploadFile] = File(...)):
             tp.write_bytes(content)
             temp_paths.append(str(tp))
 
-        output_path = video_tools_service.video_merge(temp_paths)
+        output_path = await asyncio.to_thread(video_tools_service.video_merge, temp_paths)
         cleanup = BackgroundTask(remove_files, *temp_paths, output_path)
         return FileResponse(
             path=output_path,
@@ -527,7 +530,7 @@ async def audio_merge_endpoint(files: list[UploadFile] = File(...)):
             tp.write_bytes(content)
             temp_paths.append(str(tp))
 
-        output_path = video_tools_service.audio_merge(temp_paths)
+        output_path = await asyncio.to_thread(video_tools_service.audio_merge, temp_paths)
         cleanup = BackgroundTask(remove_files, *temp_paths, output_path)
         return FileResponse(
             path=output_path,

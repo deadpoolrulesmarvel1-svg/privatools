@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -55,7 +56,8 @@ async def add_header_footer(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = header_footer_service.add_header_footer(
+        output_path = await asyncio.to_thread(
+            header_footer_service.add_header_footer,
             str(temp_path),
             header_text=header_text,
             footer_text=footer_text,

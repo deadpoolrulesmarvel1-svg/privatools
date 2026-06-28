@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -45,7 +46,7 @@ async def delete_pages(
         temp_path.write_bytes(content)
 
         try:
-            output_path = delete_pages_service.delete_pages(str(temp_path), pages)
+            output_path = await asyncio.to_thread(delete_pages_service.delete_pages, str(temp_path), pages)
         except ValueError as exc:
             msg = str(exc).lower()
             if "no valid pages" in msg or "no pages" in msg:
