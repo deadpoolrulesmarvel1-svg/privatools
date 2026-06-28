@@ -324,3 +324,67 @@ def test_injected_html_has_single_route_aware_jsonld_script():
     assert injected.count('type="application/ld+json"') == 1
     assert injected.count('id="jsonld-seo"') == 1
     assert "Merge PDF" in injected
+
+
+def test_ssr_body_injected_into_real_nonempty_root_template():
+    """Regression guard for the prepaint-shell bug.
+
+    The production template ships a NON-empty `<div id="root">` (a pre-hydration
+    brand shell for LCP). The SSR body MUST still be injected into it. A
+    bare-empty-root fixture hides this bug, so this test reads the REAL
+    frontend/index.html template the backend serves in production.
+    """
+    from pathlib import Path
+
+    index_html = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    template = index_html.read_text("utf-8")
+    # Sanity: confirm the root is genuinely non-empty (the condition that broke
+    # the old empty-root regex). If a future refactor empties it, that's fine —
+    # the assertions below still guarantee the body ships.
+    assert '<div id="root">' in template
+
+    out = inject_seo(template, "/tool/merge-pdf")
+    body = out.split("</head>", 1)[-1]
+    assert "<h1" in body, "tool <h1> missing from SSR body — injection regex regressed"
+    assert 'href="/tool/' in body, "internal tool links missing from SSR body"
+    # The injected root must not be left empty.
+    assert '<div id="root"></div>' not in out
+
+
+def test_unknown_path_is_noindex_and_not_self_canonical():
+    """A 404/unknown route must be noindex and must NOT self-canonicalize
+    (self-canonical on a missing URL is the classic Soft-404 trigger). Uses the
+    real template so the robots-meta and canonical handling match production."""
+    from pathlib import Path
+
+    index_html = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    template = index_html.read_text("utf-8")
+    out = inject_seo(template, "/tool/this-slug-does-not-exist-zzz")
+    assert 'content="noindex,nofollow"' in out
+    assert 'rel="canonical"' not in out, "404/unknown path must not emit a canonical"
+
+
+def test_tools_hub_is_known_and_renders_full_directory():
+    """The /tools hub must be a known route that server-renders crawlable links
+    to both PDF (/tool/) and non-PDF (/tools/) tools, plus CollectionPage JSON-LD."""
+    from pathlib import Path
+
+    assert seo_meta.path_is_known("/tools")
+    index_html = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    template = index_html.read_text("utf-8")
+    out = inject_seo(template, "/tools")
+    body = out.split("</head>", 1)[-1]
+    assert "<h1>All Free Online Tools</h1>" in body
+    assert 'href="/tool/merge-pdf"' in body
+    assert 'href="/tools/jwt-decoder"' in body
+    assert '"CollectionPage"' in out
+    # canonical points at the hub itself
+    assert 'rel="canonical" href="https://privatools.me/tools"' in out
+
+
+def test_deep_tool_content_has_no_citation_ready_boilerplate():
+    """The self-referential 'citation-ready' section was removed (filler that
+    duplicated across all 213 tools)."""
+    html = "<html><head></head><body><div id='root'></div></body></html>"
+    out = inject_seo(html, "/tool/merge-pdf")
+    assert "citation-ready" not in out

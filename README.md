@@ -155,6 +155,21 @@ Extract Archive · Create ZIP
 
 ---
 
+## 📊 Compare & guides
+
+Honest, side-by-side comparisons with the popular paid tools:
+
+- [PrivaTools vs iLovePDF](https://privatools.me/compare/ilovepdf) · [vs Smallpdf](https://privatools.me/compare/smallpdf) · [vs Adobe Acrobat](https://privatools.me/compare/adobe-acrobat) · [vs Sejda](https://privatools.me/compare/sejda) · [vs PDF24](https://privatools.me/compare/pdf24) · [all comparisons →](https://privatools.me/compare)
+
+In-depth guides on the [blog](https://privatools.me/blog):
+
+- [Best Free PDF Tools in 2026](https://privatools.me/blog/best-free-pdf-tools-2026)
+- [10 Best iLovePDF Alternatives in 2026](https://privatools.me/blog/ilovepdf-alternatives-2026)
+- [How to Compress a PDF Without Losing Quality](https://privatools.me/blog/compress-pdf-without-losing-quality)
+- [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
+
+---
+
 ## 🔗 Power features
 
 ### Pipeline

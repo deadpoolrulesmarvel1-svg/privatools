@@ -24,6 +24,11 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "213 free, open-source file tools for PDF, image, video, audio, and developer "
         "work. Browser-only when possible; isolated temporary processing when needed.",
     ),
+    "/tools": (
+        "All Free Online Tools — PrivaTools",
+        "Browse every free PrivaTools tool by category — PDF, image, video, audio, and "
+        "developer utilities. Open source, no account, no watermarks, no daily limits.",
+    ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
         "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
@@ -658,6 +663,79 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "pixelate-image":   "Upload an image, pick mosaic pixelation or Gaussian blur, set strength, and download a censored copy for privacy-safe sharing.",
     "rotate-image":     "Upload an image, pick 90°, 180°, 270°, or type a custom angle, and download the rotated version — transparency preserved for PNG and WEBP.",
     "flip-image":       "Upload an image and download a horizontally or vertically mirrored copy — fixes selfie-mirroring and lets you build perfect reflections.",
+    # Bespoke, spec-grounded TL;DRs for the format-conversion and dev tools that
+    # previously fell back to the generic "upload, click, download" line. Each
+    # states the real specific (lossy/lossless, transparency, compatibility) so
+    # the long tail is no longer near-duplicate.
+    "bookmarks": "Adds a clickable bookmark outline to a PDF so readers can jump between sections; you can create, rename, reorder, and nest entries to build a table of contents.",
+    "png-to-pdf": "Wraps one or more PNG images into a single PDF, keeping transparency, and lets you reorder pages before exporting.",
+    "heic-to-pdf": "Bundles iPhone HEIC/HEIF photos into one PDF document with no Apple device needed; great for sharing camera shots as a portable file.",
+    "webp-to-pdf": "Packages modern WebP images into a portable PDF, preserving their transparency and quality in a format anyone can open.",
+    "tiff-to-pdf": "Combines multi-page TIFF scans into one PDF, ideal for turning archived scanned documents into a single shareable file.",
+    "bmp-to-pdf": "Turns legacy Windows BMP bitmaps into a portable PDF with custom page sizing, so old uncompressed images become easy to share.",
+    "gif-to-pdf": "Merges GIF images into a single PDF, using just the first frame of any animated GIFs since PDF pages are static.",
+    "svg-to-pdf": "Renders scalable vector SVGs into a print-ready PDF, keeping lines crisp at any size since vectors don't pixelate.",
+    "pdf-to-png": "Renders each PDF page as a lossless PNG at up to 300 DPI, with optional transparency; pages become editable raster images.",
+    "pdf-to-tiff": "Renders PDF pages into multi-page TIFF, the format favored by archival, fax, and document-management systems.",
+    "pdf-to-bmp": "Renders PDF pages as uncompressed Windows BMP bitmaps, handy for legacy tools that only accept BMP input.",
+    "pdf-to-gif": "Turns PDF pages into GIF images, useful for inline previews, social posts, or lightweight thumbnails.",
+    "pdf-to-svg": "Traces PDF pages into scalable SVG vectors that stay sharp at any zoom, ideal for embedding in web pages.",
+    "split-by-text": "Splits a PDF wherever a chosen keyword or phrase appears, with optional case-sensitivity; built for batch-separating statements, contracts, or invoices.",
+    "svg-to-png": "Rasterizes vector SVGs into high-resolution PNGs with custom width, height, and DPI, so icons drop cleanly into slides and docs.",
+    "gif-to-mp4": "Re-encodes an animated GIF as an MP4 video, often cutting file size up to 90% while keeping the motion smooth.",
+    "heic-to-png": "Converts Apple's HEIC iPhone photos to lossless PNG that every browser and editor can open, with transparency support.",
+    "webp-to-jpg": "Converts Google's WebP images to universally-supported JPEG; note JPEG is lossy and drops any transparency to a solid background.",
+    "webp-to-png": "Converts WebP images to lossless PNG, keeping transparency intact and maximizing editor and browser compatibility.",
+    "timestamp-converter": "Translates between Unix epoch timestamps (seconds or milliseconds) and human-readable dates, showing local time and UTC side by side, all in your browser.",
+    "jpg-to-png": "Re-saves a JPEG as lossless PNG; it can't recover detail already lost to JPEG compression, but prevents further loss and supports transparency on later edits.",
+    "png-to-jpg": "Compresses a lossless PNG into a smaller JPEG for faster pages and lighter email attachments, trading some quality and dropping transparency.",
+    "jpg-to-webp": "Re-encodes JPEG photos as WebP, typically 25-35% smaller at similar visual quality, for faster-loading web pages.",
+    "png-to-webp": "Converts lossless PNGs to WebP for dramatically smaller files while keeping transparency, ideal for web assets and icons.",
+    "tiff-to-jpg": "Shrinks high-resolution TIFF scans and pro photos into compact JPEGs you can easily email, post, or upload, at the cost of some detail.",
+    "tiff-to-png": "Converts single- or multi-page TIFFs to web-friendly PNG losslessly, preserving alpha and color depth.",
+    "bmp-to-jpg": "Compresses bulky Windows BMP bitmaps (often 10-50x larger than JPEG) into compact JPEGs, with negligible quality loss on most photos.",
+    "bmp-to-png": "Converts uncompressed BMP bitmaps into compressed lossless PNGs, shrinking file size with no quality loss; great for screenshots, icons, and pixel art.",
+    "gif-to-jpg": "Grabs the first frame of a GIF and saves it as a smaller JPEG, handy for sharing a static still where GIFs aren't supported.",
+    "gif-to-png": "Converts a single-frame GIF to lossless PNG with full transparency, giving you a cleaner, higher-fidelity still image.",
+    "m4a-to-mp3": "Re-encodes Apple M4A audio like iTunes purchases and voice memos into universally-playable MP3 at your chosen bitrate via FFmpeg.",
+    "mov-to-mp4": "Repackages Apple QuickTime MOV into widely-compatible H.264 MP4, copying compatible audio without re-encoding so it's fast and lossless where possible.",
+    "avi-to-mp4": "Modernizes old AVI videos into H.264 MP4 for smooth streaming-friendly playback on phones, browsers, and current TVs.",
+    "webm-to-mp4": "Transcodes Google's VP8/VP9 WebM into H.264 MP4 for compatibility with iOS, older Android, and most editing software.",
+    "mp4-to-webm": "Re-encodes MP4 into VP9 WebM for smaller files and royalty-free open-web streaming; expect a slower encode for the size savings.",
+    "jpg-to-tiff": "Wraps JPEG photos in TIFF for archival, print, scanning, and document-management workflows; it won't restore quality already lost to JPEG.",
+    "png-to-tiff": "Exports PNG graphics to TIFF losslessly, keeping full image quality for archive and prepress workflows.",
+    "webp-to-tiff": "Converts modern WebP images into TIFF files so they work in editors and legacy systems that don't read WebP.",
+    "jpg-to-bmp": "Expands JPEG photos into uncompressed Windows BMP bitmaps for older software and devices that require BMP; file size grows substantially.",
+    "png-to-bmp": "Exports PNG graphics as uncompressed Windows BMP for legacy apps, embedded systems, and signage tools; the BMP will be much larger.",
+    "webp-to-bmp": "Converts modern WebP images into uncompressed BMP bitmaps for older Windows applications that only accept that format.",
+    "mp3-to-wav": "Decodes compressed MP3 into uncompressed WAV for editing, transcription, and podcast tools that need WAV; it won't add back detail MP3 discarded.",
+    "wav-to-mp3": "Compresses bulky uncompressed WAV recordings into small, widely-compatible MP3 files with FFmpeg, trading some fidelity for size.",
+    "flac-to-mp3": "Converts lossless FLAC music into compressed MP3 so it plays on phones, browsers, and car stereos; expect a small quality trade for portability.",
+    "ogg-to-mp3": "Re-encodes OGG/Vorbis audio into universal MP3 for easy sharing and playback; both are lossy, so quality stays roughly comparable.",
+    "aac-to-mp3": "Converts AAC tracks from phones, screen recorders, and video exports into standard MP3 audio for broad compatibility.",
+    "mp3-to-ogg": "Re-encodes MP3 into OGG/Vorbis for open-web projects, games, and Linux-friendly workflows; it's lossy-to-lossy, so don't expect quality gains.",
+    "mp3-to-flac": "Wraps decoded MP3 audio in a lossless FLAC container for workflows that require FLAC; the FLAC can't restore quality MP3 already lost.",
+    "mp3-to-aac": "Converts MP3 into AAC for Apple workflows, mobile apps, podcasts, and video-editing timelines; both are lossy so audio stays similar.",
+    "wav-to-flac": "Compresses uncompressed WAV recordings into lossless FLAC, shrinking file size while preserving every bit of the original audio.",
+    "wav-to-ogg": "Encodes uncompressed WAV into compact OGG/Vorbis for games and web apps, trading some fidelity for much smaller files.",
+    "mkv-to-mp4": "Repackages Matroska MKV into MP4 for phones, browsers, social platforms, and editors; fast and lossless when the codecs already match.",
+    "mp4-to-mov": "Rewraps MP4 into QuickTime MOV for Apple workflows like Final Cut and Keynote; a quick container swap when codecs are compatible.",
+    "mov-to-webm": "Re-encodes Apple QuickTime MOV into web-native WebM with VP9 video and Opus audio, producing smaller browser-friendly files.",
+    "mkv-to-webm": "Transcodes Matroska MKV into browser-friendly WebM for web pages and open-media workflows; a full re-encode, not just a remux.",
+    "mp4-to-avi": "Exports modern MP4 clips into the older AVI container for legacy Windows apps, media players, and aging devices.",
+    "avi-to-webm": "Converts older Windows AVI clips into smaller open-web WebM files suited to browsers and embeds.",
+    "webm-to-mov": "Re-encodes WebM into QuickTime MOV so the video drops cleanly into Apple and QuickTime-centric editing workflows.",
+    "mov-to-mkv": "Moves Apple QuickTime MOV into the open Matroska MKV container for archiving; a fast, lossless remux when codecs are kept.",
+    "webm-to-gif": "Turns a WebM clip into a looping GIF for chat, documentation, and quick previews; expect larger files and fewer colors than the video.",
+    "mov-to-gif": "Converts iPhone, macOS, and QuickTime MOV clips into looping GIFs; great for short snippets, though GIFs are bulkier and lower-color than video.",
+    "cron-parser": "Explains a standard 5-field cron expression in plain language and previews the next run times in your browser's timezone.",
+    "sql-formatter": "Pretty-prints SQL queries like SELECT, INSERT, JOIN, and GROUP BY entirely in your browser, with nothing sent to a server.",
+    "graphql-formatter": "Cleans up and indents compact GraphQL queries, mutations, fragments, and selection sets locally, without uploading your schema or API text.",
+    "yaml-toml-converter": "Converts config between YAML and TOML in either direction, locally in your browser, for app settings, package metadata, and deployment files.",
+    "gitignore-generator": "Builds a .gitignore by combining bundled templates for Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, and Windows.",
+    "semver-bumper": "Calculates the next patch, minor, major, or prerelease value from a semantic version string like 1.2.3-beta.1.",
+    "env-validator": "Scans .env files in your browser for syntax errors, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets.",
+    "json-to-csv-schema": "Flattens nested JSON into CSV with inferred column types and coverage stats, then downloads the result locally in your browser.",
 }
 
 
@@ -1140,6 +1218,36 @@ _TRUST_VARIANTS: tuple[str, ...] = (
     "premium tier, no per-day limit, and no watermark on the output. Files are "
     "deleted from the server within seconds of your download completing. "
     "Source code: github.com/deadpoolrulesmarvel1-svg/privatools.",
+
+    "{name} was built around one rule: your file is yours. Browser-only helpers "
+    "never upload anything; anything that needs the server runs in a throwaway "
+    "container and the file is wiped the instant the response is sent. No "
+    "sign-in, no email, no catch.",
+
+    "There is no paywall behind {name}. It is part of an open-source suite of "
+    "{total} tools released under the MIT license, so you can read exactly how "
+    "your file is handled — or fork it and run the whole thing on a server you "
+    "control.",
+
+    "{name} keeps nothing. The public demo processes your upload in isolated "
+    "temporary storage and unlinks it the moment you have your result — no "
+    "retention window, no analytics on file contents, no third-party file "
+    "sharing. The privacy claim is auditable in the GitHub repo.",
+
+    "Unlike the freemium tools it replaces, {name} has no 'pro' upsell, no "
+    "task-per-day cap, and no stamp on your output. Server-side processing "
+    "happens in a sandboxed container that forgets your file as soon as the "
+    "download finishes.",
+
+    "{name} is free because the whole {total}-tool PrivaTools project is open "
+    "source, not ad-supported. No trackers load in your browser, no account is "
+    "created, and files are deleted immediately after processing — self-host it "
+    "if you want the guarantees on your own hardware.",
+
+    "Reach for {name} when you want the job done without handing your file to a "
+    "data broker. Browser-native tools stay on your device; the rest use a "
+    "single-request isolated container that deletes the file right after "
+    "responding. MIT-licensed and ad-free.",
 )
 
 
@@ -1156,6 +1264,82 @@ def _trust_paragraph(slug: str, name: str, total: int) -> str:
     return _TRUST_VARIANTS[idx].format(name=name, total=total)
 
 
+# Category-specific use-case pools. The old _deep_tool_content used one generic
+# 4-item list (two lines byte-identical across every tool); these pools let an
+# image converter, an audio converter, and a dev tool draw from different
+# real-world scenarios, and a slug-hash rotation varies which ones appear.
+_USE_CASE_POOLS: dict[str, tuple[str, ...]] = {
+    "pdf": (
+        "Prepare a PDF for email, e-filing, or a client handoff without buying a desktop suite.",
+        "Slot {name} into a larger document workflow — clean the file, produce the output, then chain the next PrivaTools step.",
+        "Process a confidential contract, statement, or medical record without uploading it to an ad-supported cloud service.",
+        "Fix a PDF on a locked-down work or library computer where you can't install Acrobat.",
+        "Self-host {name} so sensitive documents never leave your own infrastructure.",
+    ),
+    "image": (
+        "Get an image into the exact format a CMS, marketplace, or print shop demands.",
+        "Batch-convert a folder of photos or graphics in one pass instead of one-by-one in an editor.",
+        "Hand a web-ready or print-ready asset to a designer or developer without opening Photoshop.",
+        "Convert images on a phone or shared computer with nothing to install.",
+        "Self-host {name} when the images are product shots, IDs, or other material you'd rather not upload.",
+    ),
+    "audio": (
+        "Make a recording playable on a device or app that rejects its current format.",
+        "Shrink or expand audio for a podcast, voice memo, or music library without a full DAW.",
+        "Prep an audio file for editing, transcription, or upload to a platform with format rules.",
+        "Convert audio on a managed computer where installing FFmpeg or Audacity isn't allowed.",
+        "Self-host {name} so unreleased tracks or private recordings stay on your own server.",
+    ),
+    "video": (
+        "Make a clip play on a phone, browser, TV, or editor that won't open its current container.",
+        "Re-encode footage for faster web embedding or smaller uploads.",
+        "Prep video for a social platform, LMS, or CMS with strict format requirements.",
+        "Convert a video on a work laptop where you can't install Handbrake or VLC.",
+        "Self-host {name} when the footage is internal, unreleased, or sensitive.",
+    ),
+    "dev": (
+        "Format, validate, or transform config and data without pasting it into an untrusted online tool.",
+        "Keep secrets, tokens, and schemas on your machine — many of these tools never upload at all.",
+        "Drop {name} into a build, review, or debugging step instead of installing yet another CLI.",
+        "Use it on a locked-down machine where you can't add new developer tooling.",
+        "Self-host the MIT-licensed code so internal config and data never touch a third party.",
+    ),
+    "file": (
+        "Handle a file for email, forms, archives, or publishing without installing a paid desktop app.",
+        "Use {name} as one step in a larger workflow, then continue with related PrivaTools utilities.",
+        "Work from a locked-down school, office, or shared computer where browser access beats installing software.",
+        "Process material you'd rather not upload to an ad-supported service — many tools run entirely in your browser.",
+        "Self-host the same MIT-licensed codebase when the file contains legal, medical, financial, or internal data.",
+    ),
+}
+
+_AUDIO_HINTS = ("mp3", "wav", "flac", "ogg", "aac", "m4a", "audio")
+_VIDEO_HINTS = ("mp4", "mov", "mkv", "webm", "avi", "video", "gif")
+_IMAGE_HINTS = ("jpg", "jpeg", "png", "webp", "tiff", "bmp", "heic", "svg", "image", "exif", "favicon", "collage", "upscal", "background", "palette", "pixelate")
+_DEV_HINTS = ("json", "yaml", "toml", "sql", "graphql", "jwt", "regex", "base64", "hash", "cron", "semver", "env", "gitignore", "csv", "markdown", "url-encoder", "uuid", "timestamp", "case-converter", "lorem", "color", "text-diff", "word-counter")
+
+
+def _use_case_category(slug: str, tool_kind: str) -> str:
+    if tool_kind == "pdf":
+        return "pdf"
+    if any(h in slug for h in _AUDIO_HINTS):
+        return "audio"
+    if any(h in slug for h in _VIDEO_HINTS):
+        return "video"
+    if any(h in slug for h in _IMAGE_HINTS):
+        return "image"
+    if any(h in slug for h in _DEV_HINTS):
+        return "dev"
+    return "file"
+
+
+def _use_cases_for(slug: str, name: str, subject: str, tool_kind: str) -> list[str]:
+    pool = _USE_CASE_POOLS[_use_case_category(slug, tool_kind)]
+    offset = sum(slug.encode("utf-8")) % len(pool)
+    rotated = pool[offset:] + pool[:offset]
+    return [item.format(name=name, subject=subject.lower()) for item in rotated[:4]]
+
+
 def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: int) -> str:
     """Long-form SSR guidance for tool pages.
 
@@ -1164,7 +1348,6 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
     avoiding hand-maintaining hundreds of nearly identical tool pages.
     """
     subject = "PDF" if tool_kind == "pdf" else "file"
-    suite_path = "PDF workflow" if tool_kind == "pdf" else "file workflow"
     route = f"/tool/{slug}" if tool_kind == "pdf" else f"/tools/{slug}"
     comparable = (
         "iLovePDF, Smallpdf, Adobe Acrobat, PDF24, and Sejda"
@@ -1181,12 +1364,7 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         if tool_kind == "pdf"
         else "Many non-PDF utilities run entirely in your browser; conversion or media operations that need backend libraries use the same isolated container model."
     )
-    use_cases = [
-        f"Prepare a {subject.lower()} for email, forms, archives, publishing, or a client handoff without installing a paid desktop suite.",
-        f"Use {name} as one step in a larger {suite_path}: clean the input, produce the output, then continue with related PrivaTools utilities.",
-        "Work from a locked-down school, office, or shared computer where browser access is easier than installing native software.",
-        f"Self-host the same MIT-licensed codebase when the {subject.lower()} contains legal, medical, financial, or internal business material.",
-    ]
+    use_cases = _use_cases_for(slug, name, subject, tool_kind)
     use_case_html = "".join(f"<li>{item}</li>" for item in use_cases)
     return (
         '<section class="tool-depth" data-speakable="true">'
@@ -1207,11 +1385,6 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         "time to finish the download and avoid refreshing the page mid-run. If a password, damaged upload, unsupported codec, "
         "or malformed document blocks processing, PrivaTools returns a plain-language error so you can pick the next recovery "
         "step instead of guessing.</p>"
-        "<h2>Why this page is citation-ready</h2>"
-        f"<p>This page includes a direct TL;DR, visible step-by-step instructions, FAQ answers, a last-reviewed date, and "
-        "structured data for search and answer engines. The same claims are backed by source code in the public repository: "
-        "no hidden premium tier, no watermark added to output, no account gate, and no third-party file upload. That makes "
-        f"{name} suitable for quick everyday tasks and for teams that need a verifiable privacy posture rather than marketing copy.</p>"
         "<h2>Operational details</h2>"
         f"<p>{name} is intentionally narrow: it does one {subject.lower()} task and hands the result back as a normal download. "
         "That makes the output easy to inspect, rename, archive, attach to email, or feed into another tool. If you need a repeatable "
@@ -1476,6 +1649,13 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             ("audio-converter", "/tools/audio-converter"),
             ("jwt-decoder", "/tools/jwt-decoder"),
             ("regex-tester", "/tools/regex-tester"),
+            # Free-winnable niche dev tools — surfaced here so the homepage
+            # entity graph also points AI engines at the pages we can actually
+            # rank for (the PDF heads are owned by DA80-90 incumbents).
+            ("semver-bumper", "/tools/semver-bumper"),
+            ("env-validator", "/tools/env-validator"),
+            ("cron-parser", "/tools/cron-parser"),
+            ("yaml-toml-converter", "/tools/yaml-toml-converter"),
         ]
         featured = []
         for i, (slug, urlpath) in enumerate(featured_slugs, start=1):
@@ -1600,6 +1780,41 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                             "acceptedAnswer": {"@type": "Answer", "text": "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."},
                         },
                     ],
+                },
+            ],
+        }
+
+    if path == "/tools":
+        # Directory hub: a CollectionPage that ties the all-tools index into the
+        # site's entity graph and exposes a crawlable breadcrumb. The full link
+        # list lives in the SSR body (_build_ssr_content) so PageRank flows to
+        # every tool from a second hub besides the homepage.
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "CollectionPage",
+                    "@id": f"{BASE_URL}/tools#webpage",
+                    "url": f"{BASE_URL}/tools",
+                    "name": title,
+                    "description": description,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                    "about": {"@id": f"{BASE_URL}/#organization"},
+                    "speakable": {"@type": "SpeakableSpecification", "cssSelector": ["h1", "h2"]},
+                },
+                {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": 1, "name": "PrivaTools", "item": BASE_URL},
+                        {"@type": "ListItem", "position": 2, "name": "All Tools", "item": f"{BASE_URL}/tools"},
+                    ],
+                },
+                {
+                    "@type": "ItemList",
+                    "name": "All PrivaTools tools",
+                    "description": f"All {_TOTAL_TOOL_COUNT} free PDF, image, video, audio, and developer tools on PrivaTools.",
+                    "numberOfItems": _TOTAL_TOOL_COUNT,
                 },
             ],
         }
@@ -2180,6 +2395,9 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "<p>Bulk-apply any compatible tool to dozens of files at once. Drop a folder of "
             "PDFs into Batch Compress, get a ZIP of compressed outputs back — no per-file clicking.</p>"
         )
+        parts.append(
+            f'<p><a href="/tools">Browse the full directory of all {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} tools &rarr;</a></p>'
+        )
         parts.append("<h2>PDF Tools</h2><ul>")
         for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
             parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
@@ -2199,6 +2417,33 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
         ]:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")
+        return "\n".join(parts)
+
+    # ── All-tools directory hub (/tools) ───────────────────────────────────
+    # A second crawlable hub besides the homepage: a flat, category-grouped
+    # index that links every tool with real <a href> anchors, so internal
+    # PageRank reaches the long-tail tool pages from more than one place.
+    if path == "/tools":
+        parts.append("<h1>All Free Online Tools</h1>")
+        parts.append('<p><a href="/">PrivaTools</a> &rsaquo; All Tools</p>')
+        parts.append(
+            f"<p>Every one of the {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} PrivaTools utilities, grouped by category. "
+            "All free and open source under the MIT license — no account, no watermarks, no daily limits. "
+            "Browser-only where possible; server-side tools run in an isolated container and delete your file "
+            "immediately after the response.</p>"
+        )
+        parts.append(f"<h2>PDF Tools ({len(_PDF_TOOLS)})</h2><ul>")
+        for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
+            parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        parts.append(f"<h2>Image, Video, Audio &amp; Developer Tools ({len(_NONPDF_TOOLS)})</h2><ul>")
+        for slug, (name, desc) in _by_popularity(_NONPDF_TOOLS.items()):
+            parts.append(f'<li><a href="/tools/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        parts.append(
+            '<p>Looking for guides? Visit the <a href="/blog">PrivaTools blog</a>, or see how PrivaTools '
+            '<a href="/compare">compares to iLovePDF, Smallpdf, and Adobe</a>.</p>'
+        )
         return "\n".join(parts)
 
     # ── Individual tool pages (/tool/<slug> and /tools/<slug>) ─────────────
@@ -2356,6 +2601,15 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             for cslug, cdata in _COMPARE_DATA.items():
                 parts.append(f'<li><a href="/compare/{cslug}">PrivaTools vs {cdata["name"]}</a></li>')
             parts.append("</ul>")
+        # Internal links down to the specific tools these comparisons are about,
+        # so any external authority the compare pages earn (they're the natural
+        # outreach landing targets) flows to the individual tool pages.
+        popular = [(s, n) for s, (n, _) in _by_popularity(_PDF_TOOLS.items())][:10]
+        parts.append("<h2>Popular free PrivaTools tools</h2><ul>")
+        for s, n in popular:
+            parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
+        parts.append('<li><a href="/tools">Browse all tools &rarr;</a></li>')
+        parts.append("</ul>")
         return "\n".join(parts)
 
     # ── Blog pages ─────────────────────────────────────────────────────────
@@ -2560,11 +2814,17 @@ def inject_seo(html: str, path: str) -> str:
     html = _set_meta(html, 'name="twitter:title"', t)
     html = _set_meta(html, 'name="twitter:description"', d)
 
-    # Update / add canonical
-    if 'rel="canonical"' in html:
-        html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
-    else:
-        html = html.replace("</head>", f'  <link rel="canonical" href="{u}" />\n</head>', 1)
+    # Update / add canonical — but NEVER self-canonicalize an unknown/404 URL.
+    # A 404 page that points its canonical at itself is the classic Soft-404
+    # trigger; for unknown paths we strip the canonical entirely and rely on
+    # the noindex,nofollow set above.
+    if path_is_known(path):
+        if 'rel="canonical"' in html:
+            html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
+        else:
+            html = html.replace("</head>", f'  <link rel="canonical" href="{u}" />\n</head>', 1)
+    elif 'rel="canonical"' in html:
+        html = re.sub(r'\s*<link rel="canonical"[^>]*/?\s*>', "", html, count=1)
 
     # Dynamic OG + Twitter image — both point to the same generated PNG.
     # Twitter requires twitter:image to be set separately, even though it
@@ -2585,14 +2845,34 @@ def inject_seo(html: str, path: str) -> str:
 
     # Inject SSR content into <div id="root"> so crawlers see real content.
     # React will hydrate over this once JavaScript loads for real users.
+    #
+    # IMPORTANT: the built template's root is NOT empty — a pre-hydration brand
+    # shell paints inside it for LCP (see frontend/index.html, added in
+    # "[P1-perf] paint prehydration brand shell"). So we must replace the root
+    # element's *entire* inner content, not just a bare `<div id="root"></div>`.
+    # The primary pattern matches the populated root by anchoring on the module
+    # <script> that always follows it; the fallback keeps the empty-root form
+    # working for minimal templates and unit-test fixtures. A function
+    # replacement is used so backslashes/group-refs in ssr_content are literal.
     ssr_content = _build_ssr_content(path, title, description)
     if ssr_content:
-        html = re.sub(
-            r'<div\s+id=(["\'])root\1\s*></div>',
-            lambda _match: f'<div id="root">{ssr_content}</div>',
+        def _replace_root(_match: "re.Match[str]") -> str:
+            return f'<div id="root">{ssr_content}</div>'
+
+        html, n = re.subn(
+            r'<div\s+id=(["\'])root\1\s*>.*?</div>(?=\s*<script\b[^>]*\btype="module")',
+            _replace_root,
             html,
             count=1,
+            flags=re.DOTALL,
         )
+        if n == 0:
+            html = re.sub(
+                r'<div\s+id=(["\'])root\1\s*></div>',
+                _replace_root,
+                html,
+                count=1,
+            )
 
     return html
 

@@ -29,6 +29,10 @@ const pageMeta: Record<string, { title: string; description: string }> = {
         title: "About PrivaTools — How We Handle Your Files | Privacy-First",
         description: "Learn how PrivaTools processes your files with zero-knowledge architecture. Files are processed and immediately deleted — never stored, never read, never shared. 100% open source.",
     },
+    "/tools": {
+        title: "All Free Online Tools — PrivaTools",
+        description: `Browse all ${TOTAL_TOOL_COUNT} free PrivaTools tools by category — PDF, image, video, audio, and developer utilities. Open source, no account, no watermarks, no daily limits.`,
+    },
     "/batch": {
         title: "Batch Process Files — Apply Tools to Multiple Files | PrivaTools",
         description: "Upload multiple files and apply the same tool to all of them at once. Batch compress, convert, or transform PDF, image, and video files privately. Free, no limits.",

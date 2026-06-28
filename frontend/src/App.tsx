@@ -24,6 +24,7 @@ import {
 const Index = lazy(() => import("./pages/Index"));
 const ToolPage = lazy(() => import("./pages/ToolPage"));
 const NonPdfToolPage = lazy(() => import("./pages/NonPdfToolPage"));
+const AllToolsPage = lazy(() => import("./pages/AllToolsPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComparePage = lazy(() => import("./pages/ComparePage"));
@@ -168,6 +169,7 @@ const App = () => (
           <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
           <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
           <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
+          <Route path="/tools" element={withRouteFallback(<AllToolsPage />)} />
           <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
           <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
           <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
