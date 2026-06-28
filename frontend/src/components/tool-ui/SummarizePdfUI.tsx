@@ -230,7 +230,7 @@ export function SummarizePdfUI() {
                         <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">distilbart-cnn-6-6 · ~250 MB · cached</span>
                     </div>
                     <p className="text-[12.5px] text-foreground leading-relaxed">
-                        <span className="font-medium">Your PDF never leaves this tab.</span> The model runs locally via WebAssembly — no calls to OpenAI, Anthropic, or any other server.
+                        <span className="font-medium">Your PDF never leaves this tab.</span> Summarization runs locally via WebAssembly — no AI APIs (OpenAI, Anthropic), and your document is never uploaded. The model itself downloads once from a public CDN, then caches in your browser.
                     </p>
                 </div>
             </div>

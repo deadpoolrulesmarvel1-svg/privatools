@@ -324,7 +324,7 @@ export function SmartRedactUI() {
                         <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">BERT-base · runs locally</span>
                     </div>
                     <p className="text-[12.5px] text-foreground leading-relaxed">
-                        <span className="font-medium">Scanning happens in your browser.</span> The model + regex passes execute via WebAssembly — only after you confirm do selected strings travel to the server for real PyMuPDF redactions.
+                        <span className="font-medium">Detection happens in your browser.</span> The model + regex passes execute via WebAssembly, so your PDF stays local while PII is found. When you apply, the PDF and your selected strings are sent to our isolated backend for the PyMuPDF redaction, then deleted on response.
                     </p>
                 </div>
             </div>
