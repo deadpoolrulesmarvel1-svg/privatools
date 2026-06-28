@@ -1,0 +1,80 @@
+name: Tests
+
+# The real automated gate: runs the backend pytest suite and the frontend
+# vitest suite on every PR and push to main. (security.yml only builds the
+# frontend; nothing ran the 440 backend tests before this.)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Native libraries the runtime stack needs: pikepdf(qpdf), weasyprint
+      # (pango/cairo/gdk-pixbuf), pyzbar(zbar), pdf2image(poppler), plus the
+      # external processing binaries the tests exercise (tesseract, ffmpeg,
+      # libreoffice). Mirrors the production Dockerfile.
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            tesseract-ocr tesseract-ocr-eng tesseract-ocr-vie \
+            tesseract-ocr-fra tesseract-ocr-deu tesseract-ocr-spa \
+            libzbar0 poppler-utils ffmpeg qpdf \
+            libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui \
+            fonts-dejavu fonts-liberation shared-mime-info
+
+      # The SPA-fallback tests assert real static files are served, so they
+      # need a built frontend/dist to exist.
+      - name: Build frontend (for SPA-fallback tests)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run backend tests
+        run: python -m pytest backend/tests -q
+
+  frontend:
+    name: Frontend tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test
