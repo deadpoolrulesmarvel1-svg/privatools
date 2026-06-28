@@ -101,4 +101,9 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--timeout-keep-alive", "30", "--limit-concurrency", "50", "--timeout-graceful-shutdown", "30"]
+# --proxy-headers + --forwarded-allow-ips='*' so uvicorn honours the
+# X-Forwarded-For nginx sets, giving the rate limiter and access log the real
+# client IP instead of the docker bridge gateway. Safe because the container
+# port is published on 127.0.0.1 only (see docker-compose.yml), so the sole
+# client is the trusted host nginx.
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--timeout-keep-alive", "30", "--limit-concurrency", "50", "--timeout-graceful-shutdown", "30", "--proxy-headers", "--forwarded-allow-ips", "*"]

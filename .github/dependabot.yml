@@ -6,14 +6,11 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
 
+  # Only the root requirements.txt is installed in production, so we track
+  # just that one. (The /backend mirror was removed to avoid duplicate PRs
+  # and version skew.)
   - package-ecosystem: pip
     directory: /
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-
-  - package-ecosystem: pip
-    directory: /backend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
