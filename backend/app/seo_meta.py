@@ -2560,11 +2560,17 @@ def inject_seo(html: str, path: str) -> str:
     html = _set_meta(html, 'name="twitter:title"', t)
     html = _set_meta(html, 'name="twitter:description"', d)
 
-    # Update / add canonical
-    if 'rel="canonical"' in html:
-        html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
-    else:
-        html = html.replace("</head>", f'  <link rel="canonical" href="{u}" />\n</head>', 1)
+    # Update / add canonical — but NEVER self-canonicalize an unknown/404 URL.
+    # A 404 page that points its canonical at itself is the classic Soft-404
+    # trigger; for unknown paths we strip the canonical entirely and rely on
+    # the noindex,nofollow set above.
+    if path_is_known(path):
+        if 'rel="canonical"' in html:
+            html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
+        else:
+            html = html.replace("</head>", f'  <link rel="canonical" href="{u}" />\n</head>', 1)
+    elif 'rel="canonical"' in html:
+        html = re.sub(r'\s*<link rel="canonical"[^>]*/?\s*>', "", html, count=1)
 
     # Dynamic OG + Twitter image — both point to the same generated PNG.
     # Twitter requires twitter:image to be set separately, even though it
@@ -2585,14 +2591,34 @@ def inject_seo(html: str, path: str) -> str:
 
     # Inject SSR content into <div id="root"> so crawlers see real content.
     # React will hydrate over this once JavaScript loads for real users.
+    #
+    # IMPORTANT: the built template's root is NOT empty — a pre-hydration brand
+    # shell paints inside it for LCP (see frontend/index.html, added in
+    # "[P1-perf] paint prehydration brand shell"). So we must replace the root
+    # element's *entire* inner content, not just a bare `<div id="root"></div>`.
+    # The primary pattern matches the populated root by anchoring on the module
+    # <script> that always follows it; the fallback keeps the empty-root form
+    # working for minimal templates and unit-test fixtures. A function
+    # replacement is used so backslashes/group-refs in ssr_content are literal.
     ssr_content = _build_ssr_content(path, title, description)
     if ssr_content:
-        html = re.sub(
-            r'<div\s+id=(["\'])root\1\s*></div>',
-            lambda _match: f'<div id="root">{ssr_content}</div>',
+        def _replace_root(_match: "re.Match[str]") -> str:
+            return f'<div id="root">{ssr_content}</div>'
+
+        html, n = re.subn(
+            r'<div\s+id=(["\'])root\1\s*>.*?</div>(?=\s*<script\b[^>]*\btype="module")',
+            _replace_root,
             html,
             count=1,
+            flags=re.DOTALL,
         )
+        if n == 0:
+            html = re.sub(
+                r'<div\s+id=(["\'])root\1\s*></div>',
+                _replace_root,
+                html,
+                count=1,
+            )
 
     return html
 
