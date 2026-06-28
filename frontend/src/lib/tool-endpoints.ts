@@ -52,6 +52,7 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "audio-merge":    "/audio-merge",
   "pdf-to-jpg":     "/pdf-to-image",
   "pdf-to-png":     "/pdf-to-image",
+  "pdf-to-long-image": "/pdf-to-long-image",
   // v1.2.0 additions
   "web-optimize-pdf": "/web-optimize",
   "split-by-text":    "/split-by-text",
