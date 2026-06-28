@@ -1391,6 +1391,15 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         "workflow, save the page, bookmark a Pipeline recipe, or self-host the API so the same steps can run from internal scripts. "
         "The interface avoids accounts and cloud folders on purpose: the safest default for private files is to process only the "
         "current request, return the result, and leave long-term storage under your control.</p>"
+        f"<h2>Using {name} on any device</h2>"
+        f"<p>{name} runs in any modern browser on Windows, macOS, Linux, Android, and iOS — there is nothing to install, no "
+        "extension to add, and no desktop app to keep updated. Because the interface is a single page, you can bookmark it, send "
+        "the link to a colleague, or open it on a phone and get the same result you would on a laptop. There are no watermarks "
+        "stamped onto your output, no sign-in wall before the download, and no paid tier that unlocks the &ldquo;real&rdquo; "
+        f"version later — the {name} you see is the complete tool. For teams that would rather keep everything in-house, the same "
+        "endpoint ships in the MIT-licensed, self-hostable build, so you can run it behind your own firewall with identical "
+        "behaviour and no outbound calls. That combination — instant in the browser for individuals, fully self-hostable for "
+        "organizations — is what keeps a private file genuinely private from upload to download.</p>"
         "</section>"
     )
 
