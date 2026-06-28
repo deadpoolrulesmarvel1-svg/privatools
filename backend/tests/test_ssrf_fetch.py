@@ -25,6 +25,7 @@ from fastapi import HTTPException
 from backend.app.services.html_to_pdf_service import (
     _ValidatingRedirectHandler,
     _validating_opener,
+    _weasyprint_url_fetcher as _canonical_fetcher,
     safe_url_fetch,
 )
 from backend.app.services.url_to_pdf_service import _weasyprint_url_fetcher
@@ -92,3 +93,11 @@ class TestWeasyprintSubresourceFetcher:
     def test_blocks_file_subresource(self):
         with pytest.raises(HTTPException):
             _weasyprint_url_fetcher(_FILE_URL)
+
+    def test_shared_between_url_and_html_render_paths(self):
+        # Both the url= (url_to_pdf) and string= (html_to_pdf raw HTML) render
+        # paths must use the SAME validated fetcher — a regression where only
+        # one path is protected is exactly the bug this guards against.
+        assert _weasyprint_url_fetcher is _canonical_fetcher
+        with pytest.raises(HTTPException):
+            _canonical_fetcher(_FILE_URL)

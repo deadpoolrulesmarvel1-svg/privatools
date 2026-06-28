@@ -182,6 +182,41 @@ def _wrap_html(html_content: str) -> str:
 _weasyprint_ok: bool | None = None
 
 
+# Per-resource cap for WeasyPrint sub-resources (images / CSS / fonts).
+# Larger than the 5 MB HTML cap because a single hero image can legitimately
+# be a few MB, but still bounded so a malicious page can't exhaust the worker.
+_MAX_SUBRESOURCE_BYTES = 25 * 1024 * 1024
+
+
+def _weasyprint_url_fetcher(url: str, timeout: int = 15, ssl_context=None):
+    """A WeasyPrint ``url_fetcher`` that blocks SSRF on every sub-resource.
+
+    WeasyPrint fetches every resource referenced by the document (images, CSS
+    ``@import``/``url()``, ``<link>``, fonts). Its default fetcher honours
+    ``file://`` and private IPs, so attacker-supplied HTML or a fetched page
+    could pull cloud-metadata or local files into the rendered PDF. We route
+    all network fetches through :func:`safe_url_fetch` (SSRF-validated,
+    redirect-safe), allow inline ``data:`` URIs through (no egress), and refuse
+    every other scheme. Shared by BOTH the url= and string= render paths.
+    """
+    scheme = url.split(":", 1)[0].lower()
+    if scheme in ("http", "https"):
+        result = safe_url_fetch(url, max_bytes=_MAX_SUBRESOURCE_BYTES, timeout=timeout)
+        return {
+            "string": result.body,
+            "mime_type": result.content_type or None,
+            "encoding": result.encoding,
+            "redirected_url": result.final_url,
+        }
+    if scheme == "data":
+        try:
+            from weasyprint.urls import default_url_fetcher
+        except ImportError:  # pragma: no cover - older/newer weasyprint layout
+            from weasyprint import default_url_fetcher
+        return default_url_fetcher(url, timeout=timeout, ssl_context=ssl_context)
+    raise HTTPException(status_code=400, detail=f"Blocked URL scheme: {scheme or 'unknown'}")
+
+
 def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
     """Render with WeasyPrint — proper CSS/font/layout support. Preferred."""
     global _weasyprint_ok
@@ -191,7 +226,10 @@ def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
         raise ImportError("WeasyPrint native libraries not available on this host")
     try:
         from weasyprint import HTML
-        HTML(string=_wrap_html(html_content)).write_pdf(output_path)
+        # url_fetcher so sub-resources in attacker-supplied HTML (<img src=
+        # "file:///etc/passwd">, http://169.254.169.254/...) are SSRF-validated
+        # rather than fetched by WeasyPrint's permissive default fetcher.
+        HTML(string=_wrap_html(html_content), url_fetcher=_weasyprint_url_fetcher).write_pdf(output_path)
         _weasyprint_ok = True
     except (ImportError, OSError):
         _weasyprint_ok = False

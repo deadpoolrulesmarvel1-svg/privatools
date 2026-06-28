@@ -13,44 +13,9 @@ remove protection. Validation now lives in both places.
 
 from __future__ import annotations
 
-from fastapi import HTTPException
-
 from ..utils.exceptions import DependencyError, ProcessingError
 from ..utils.filenames import temp_output
-from .html_to_pdf_service import _validate_url, safe_url_fetch
-
-# Per-resource cap for WeasyPrint sub-resources (images / CSS / fonts).
-# Larger than the 5 MB HTML cap because a single hero image can legitimately
-# be a few MB, but still bounded so a malicious page can't exhaust the worker.
-_MAX_SUBRESOURCE_BYTES = 25 * 1024 * 1024
-
-
-def _weasyprint_url_fetcher(url: str, timeout: int = 15, ssl_context=None):
-    """A WeasyPrint ``url_fetcher`` that blocks SSRF on every sub-resource.
-
-    WeasyPrint fetches the page AND every referenced resource (images, CSS,
-    ``@import``, fonts). Its default fetcher happily honours ``file://`` and
-    private IPs, so an attacker page could pull cloud-metadata or internal
-    services into the rendered PDF. We route all network fetches through
-    :func:`safe_url_fetch` (SSRF-validated, redirect-safe), allow inline
-    ``data:`` URIs through (no egress), and refuse every other scheme.
-    """
-    scheme = url.split(":", 1)[0].lower()
-    if scheme in ("http", "https"):
-        result = safe_url_fetch(url, max_bytes=_MAX_SUBRESOURCE_BYTES, timeout=timeout)
-        return {
-            "string": result.body,
-            "mime_type": result.content_type or None,
-            "encoding": result.encoding,
-            "redirected_url": result.final_url,
-        }
-    if scheme == "data":
-        try:
-            from weasyprint.urls import default_url_fetcher
-        except ImportError:  # pragma: no cover - older/newer weasyprint layout
-            from weasyprint import default_url_fetcher
-        return default_url_fetcher(url, timeout=timeout, ssl_context=ssl_context)
-    raise HTTPException(status_code=400, detail=f"Blocked URL scheme: {scheme or 'unknown'}")
+from .html_to_pdf_service import _validate_url, _weasyprint_url_fetcher
 
 
 def url_to_pdf(url: str) -> str:
