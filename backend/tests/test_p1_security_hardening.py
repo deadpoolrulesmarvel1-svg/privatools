@@ -1,15 +1,35 @@
 """P1 security hardening: prod docs gating (S5), 5xx detail sanitization (S6),
 CSV-injection guard in the table extractor (D6)."""
 
+import asyncio
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
 from fastapi import HTTPException
+from starlette.requests import Request
 
-from backend.app.main import app
+from backend.app.middleware.error_handlers import http_exception_handler
 from backend.app.services.table_extractor_service import _csv_safe
+
+
+def _fake_request(path: str = "/x") -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": path,
+            "raw_path": path.encode(),
+            "query_string": b"",
+            "headers": [],
+            "scheme": "http",
+            "server": ("test", 80),
+            "client": ("test", 1234),
+            "root_path": "",
+        }
+    )
 
 
 # ─── D6: CSV injection guard ──────────────────────────────────────────────
@@ -24,26 +44,29 @@ def test_csv_safe_leaves_normal_cells_untouched():
 
 
 # ─── S6: 5xx responses must not echo internal exception text ──────────────
-def test_5xx_detail_is_generic(client):
-    @app.get("/__boom_p1__")
-    def _boom():
-        raise HTTPException(status_code=500, detail="leaked /etc/secret traceback Xyz")
-
-    r = client.get("/__boom_p1__")
-    assert r.status_code == 500
-    body = r.json()
+def test_5xx_detail_is_generic():
+    resp = asyncio.run(
+        http_exception_handler(
+            _fake_request(),
+            HTTPException(status_code=500, detail="leaked /etc/secret traceback Xyz"),
+        )
+    )
+    assert resp.status_code == 500
+    body = json.loads(resp.body)
     assert body["detail"] == "Processing failed. Please try again."
     assert "secret" not in body["detail"].lower()
 
 
-def test_4xx_detail_passes_through(client):
-    @app.get("/__bad_p1__")
-    def _bad():
-        raise HTTPException(status_code=400, detail="Specific helpful 400 message")
-
-    r = client.get("/__bad_p1__")
-    assert r.status_code == 400
-    assert r.json()["detail"] == "Specific helpful 400 message"
+def test_4xx_detail_passes_through():
+    resp = asyncio.run(
+        http_exception_handler(
+            _fake_request(),
+            HTTPException(status_code=400, detail="Specific helpful 400 message"),
+        )
+    )
+    assert resp.status_code == 400
+    body = json.loads(resp.body)
+    assert body["detail"] == "Specific helpful 400 message"
 
 
 # ─── S5: docs + OpenAPI spec disabled when ENVIRONMENT=production ──────────
