@@ -6,7 +6,9 @@ import re
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
@@ -114,7 +116,9 @@ async def extract_tables(
 
 # ─── Background Remover ──────────────────────────────────
 @router.post("/remove-background")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def remove_background(
+    request: Request,
     file: UploadFile = File(...),
 ):
     """Remove the background from an image (runs locally, no API)."""

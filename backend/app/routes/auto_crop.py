@@ -2,8 +2,9 @@ import asyncio
 import logging
 import uuid
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, Request
 from fastapi.responses import FileResponse
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import (
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/auto-crop")
-async def auto_crop(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def auto_crop(request: Request, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
