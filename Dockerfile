@@ -96,6 +96,16 @@ ENV NUMBA_CACHE_DIR=/tmp/numba-cache
 ENV U2NET_HOME=/tmp/u2net
 ENV XDG_CACHE_HOME=/tmp/cache
 
+# Cap native math/ML thread pools. numpy/scipy and onnxruntime (via rembg) each
+# spin up an OpenMP/BLAS pool sized to the host core count; on the 2-core VM,
+# several concurrent heavy ops would oversubscribe (BLAS pool × in-flight jobs)
+# and thrash the scheduler. One thread per pool keeps each op single-threaded
+# and lets the run_bounded admission gate govern parallelism instead. These are
+# read at library-import time, so they must live in the environment, not code.
+ENV OMP_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+
 # Point Python's tempfile (mkstemp/mkdtemp) at the managed temp volume instead
 # of system /tmp. The media/archive/extract tools use raw tempfile.*; on /tmp
 # the janitor never swept them, so they leaked on every timeout/OOM/crash exit
