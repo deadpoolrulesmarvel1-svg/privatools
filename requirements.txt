@@ -13,7 +13,7 @@
 #   uv pip compile requirements.txt     --generate-hashes --universal --python-version 3.10 -o requirements.lock
 #   uv pip compile requirements-dev.txt --generate-hashes --universal --python-version 3.10 -o requirements-dev.lock
 fastapi==0.137.2
-uvicorn[standard]==0.27.1
+uvicorn[standard]==0.49.0
 python-multipart==0.0.32
 pikepdf==8.12.0
 pypdf==6.13.3
