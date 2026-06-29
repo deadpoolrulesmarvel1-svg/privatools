@@ -56,7 +56,9 @@ async def office_to_pdf(input_path: str) -> str:
         )
 
     temp_input = temp_output("office", suffix.lstrip("."))
-    shutil.copy2(input_path, str(temp_input))
+    # Offload the copy — an office upload can be tens of MB and copy2 would
+    # otherwise block the event loop (the conversion subprocess below is async).
+    await asyncio.to_thread(shutil.copy2, input_path, str(temp_input))
 
     temp_dir = temp_input.parent
     # Per-conversion LibreOffice profile dir. Without this, LibreOffice tries
@@ -117,4 +119,6 @@ async def office_to_pdf(input_path: str) -> str:
     finally:
         # Always tear down the profile dir; the input copy is cleaned up by the
         # caller's normal temp-file cleanup (see route_helpers.cleanup_on_error).
-        shutil.rmtree(str(profile_dir), ignore_errors=True)
+        # Offload the teardown too — the LibreOffice profile dir is many small
+        # files, and rmtree on the loop would stall concurrent requests.
+        await asyncio.to_thread(shutil.rmtree, str(profile_dir), ignore_errors=True)
