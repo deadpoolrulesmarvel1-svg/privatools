@@ -1,3 +1,14 @@
+# Runtime dependencies. Every package is pinned to an exact version so a
+# rebuild is reproducible and CVE exposure can't drift silently between builds
+# (research DEP1). The versions below match what is running in production
+# (captured from `pip freeze` in the deployed image), so pinning is a no-op for
+# behaviour — it just freezes the known-good set. All have manylinux wheels for
+# both linux/arm64 and linux/amd64 at these versions, so the multi-arch release
+# build is unaffected.
+#
+# NOTE: this pins direct deps only. A fully-hashed transitive lockfile
+# (`uv pip compile --generate-hashes`) installed with `--require-hashes` is the
+# next step — deferred until the multi-arch Docker build can be validated for it.
 fastapi==0.137.2
 uvicorn[standard]==0.27.1
 python-multipart==0.0.32
@@ -9,18 +20,18 @@ reportlab==4.1.0
 aiofiles==23.2.1
 brotli==1.2.0
 slowapi==0.1.9
-pymupdf
+pymupdf==1.28.0
 pytesseract==0.3.13
-weasyprint
-python-docx
-openpyxl
-python-pptx
-pillow-heif
-onnxruntime
-rembg
-cairosvg
-python-barcode
-qrcode
-pyzbar
-defusedxml
-mistune
+weasyprint==69.0
+python-docx==1.2.0
+openpyxl==3.1.5
+python-pptx==1.0.2
+pillow-heif==1.4.0
+onnxruntime==1.23.2
+rembg==2.0.69
+cairosvg==2.9.0
+python-barcode==0.16.1
+qrcode==8.2
+pyzbar==0.1.9
+defusedxml==0.7.1
+mistune==3.3.2
