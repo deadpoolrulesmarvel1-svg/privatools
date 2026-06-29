@@ -35,7 +35,7 @@ from ..utils.cleanup import (
     remove_files,
     validate_pdf_content,
 )
-from ..utils.route_helpers import read_upload
+from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
 
 router = APIRouter()
@@ -270,10 +270,9 @@ async def video_to_pdf_endpoint(request: Request,
 ):
     _ensure_video_filename(file.filename)
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "video")
     suffix = "." + (file.filename or "video.mp4").rsplit(".", 1)[-1].lower()
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(file, temp_path, label=file.filename or "video")
     output_path: str | None = None
 
     try:
@@ -305,10 +304,9 @@ async def video_converter_endpoint(request: Request,
 ):
     _ensure_video_filename(file.filename)
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "video")
     suffix = "." + (file.filename or "video.mp4").rsplit(".", 1)[-1].lower()
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(file, temp_path, label=file.filename or "video")
     output_path: str | None = None
 
     try:
@@ -346,10 +344,9 @@ async def video_resizer_endpoint(request: Request,
 ):
     _ensure_video_filename(file.filename)
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "video")
     suffix = "." + (file.filename or "video.mp4").rsplit(".", 1)[-1].lower()
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(file, temp_path, label=file.filename or "video")
     output_path: str | None = None
 
     try:
@@ -381,10 +378,9 @@ async def video_thumbnail_endpoint(request: Request,
 ):
     _ensure_video_filename(file.filename)
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "video")
     suffix = "." + (file.filename or "video.mp4").rsplit(".", 1)[-1].lower()
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(file, temp_path, label=file.filename or "video")
     output_path: str | None = None
 
     try:
@@ -414,9 +410,8 @@ async def gif_to_mp4_endpoint(request: Request, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith(".gif"):
         raise HTTPException(status_code=400, detail="Please upload a .gif file")
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "gif")
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.gif")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(file, temp_path, label=file.filename or "gif")
     output_path: str | None = None
 
     try:
@@ -450,13 +445,11 @@ async def add_subtitles_endpoint(
         raise HTTPException(status_code=400, detail="Subtitle file must be .srt or .vtt")
 
     ensure_temp_dir()
-    vid_content = await read_upload(file, label=file.filename or "video")
-    srt_content = await read_upload(srt, label=srt.filename or "subtitles")
     suffix = "." + (file.filename or "video.mp4").rsplit(".", 1)[-1].lower()
     vid_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
     srt_path = get_temp_path(f"upload_{uuid.uuid4().hex}.srt")
-    vid_path.write_bytes(vid_content)
-    srt_path.write_bytes(srt_content)
+    await stream_upload_to_disk(file, vid_path, label=file.filename or "video")
+    await stream_upload_to_disk(srt, srt_path, label=srt.filename or "subtitles")
     output_path: str | None = None
 
     try:
@@ -494,10 +487,9 @@ async def video_merge_endpoint(request: Request, files: list[UploadFile] = File(
     try:
         for f in files:
             _ensure_video_filename(f.filename)
-            content = await read_upload(f, label=f.filename or "video")
             suffix = "." + (f.filename or "video.mp4").rsplit(".", 1)[-1].lower()
             tp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-            tp.write_bytes(content)
+            await stream_upload_to_disk(f, tp, label=f.filename or "video")
             temp_paths.append(str(tp))
 
         output_path = await run_bounded(video_tools_service.video_merge, temp_paths)
@@ -545,10 +537,9 @@ async def audio_merge_endpoint(request: Request, files: list[UploadFile] = File(
             name = (f.filename or "").lower()
             if not any(name.endswith(ext) for ext in _AUDIO_EXTS):
                 raise HTTPException(status_code=400, detail=f"{f.filename}: unsupported audio format")
-            content = await read_upload(f, label=f.filename or "audio")
             suffix = "." + name.rsplit(".", 1)[-1]
             tp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
-            tp.write_bytes(content)
+            await stream_upload_to_disk(f, tp, label=f.filename or "audio")
             temp_paths.append(str(tp))
 
         output_path = await run_bounded(video_tools_service.audio_merge, temp_paths)
