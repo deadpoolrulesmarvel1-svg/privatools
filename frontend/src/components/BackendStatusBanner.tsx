@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, RefreshCcw, WifiOff, X, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useOnline } from "@/hooks/useOnline";
+import { apiUrl } from "@/lib/api";
 
 type HealthState = "unknown" | "online" | "offline";
 
@@ -61,7 +62,7 @@ export function BackendStatusBanner() {
     setChecking(true);
     const startedAt = performance.now();
     try {
-      const response = await fetch("/api/health", {
+      const response = await fetch(apiUrl("/health"), {
         method: "GET",
         cache: "no-store",
         signal: controller.signal,

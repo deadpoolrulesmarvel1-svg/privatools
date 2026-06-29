@@ -14,6 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .rate_limit import limiter
+from .runtime_config import host_from_url, inject_runtime_config
 from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
@@ -156,6 +157,15 @@ def _env_positive_int(name: str, default: int) -> int:
 _SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
 _WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 
+# api-subdomain split (off by default). When PUBLIC_API_BASE_URL is set to a
+# cross-origin like https://api.privatools.me, the SPA is told — via a runtime
+# <meta> tag in index.html — to send /api requests there instead of
+# same-origin. That keeps large uploads off Cloudflare's proxy (its 100 MB cap)
+# while the apex/www stay edge-cached. Empty/unset = same-origin, so dev and
+# the current prod behave exactly as before until this is set. See
+# app.runtime_config and frontend/src/lib/api.ts (resolveApiOrigin()).
+_PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
+
 
 def _inject_csp_nonce(html: str, nonce: str | None) -> str:
     if not nonce:
@@ -163,7 +173,7 @@ def _inject_csp_nonce(html: str, nonce: str | None) -> str:
     return _SCRIPT_TAG_RE.sub(f'<script nonce="{nonce}"', html)
 
 
-def _content_security_policy(path: str, nonce: str) -> str:
+def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     script_src = [
         "'self'",
         f"'nonce-{nonce}'",
@@ -171,16 +181,22 @@ def _content_security_policy(path: str, nonce: str) -> str:
     if path in _WASM_EVAL_PATHS:
         script_src.append("'wasm-unsafe-eval'")
 
+    # connect-src allows HF transformers to fetch the local-AI models
+    # (Summarize PDF, Smart Redact). Models are downloaded once and cached
+    # in the browser; the request never carries user file content. When the
+    # api-subdomain split is active, the SPA fetches /api from a cross-origin
+    # host, so that origin must be whitelisted here or the browser blocks it.
+    connect_src = ["'self'", "https://huggingface.co", "https://cdn.jsdelivr.net"]
+    if api_base:
+        connect_src.append(api_base)
+
     return (
         "default-src 'self'; "
         f"script-src {' '.join(script_src)}; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
         "img-src 'self' data: blob:; "
-        # connect-src allows HF transformers to fetch the local-AI models
-        # (Summarize PDF, Smart Redact). Models are downloaded once and cached
-        # in the browser; the request never carries user file content.
-        "connect-src 'self' https://huggingface.co https://cdn.jsdelivr.net; "
+        f"connect-src {' '.join(connect_src)}; "
         "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )
@@ -213,7 +229,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if request.url.scheme == "https" or os.environ.get("FORCE_HSTS"):
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = _content_security_policy(
-            request.url.path, nonce
+            request.url.path, nonce, _PUBLIC_API_BASE
         )
         return response
 
@@ -297,6 +313,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
                 from .seo_meta import path_is_known
                 html = _get_seo_html(path, _index_mtime_ns(), blog_content_mtime_ns())
                 html = _inject_csp_nonce(html, getattr(request.state, "csp_nonce", None))
+                html = inject_runtime_config(html, _PUBLIC_API_BASE)
                 # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
                 # return HTTP 404 with a proper "Page not found" SSR body
                 # rendered by inject_seo — without this, the 404 page inherits
@@ -430,13 +447,20 @@ else:
         o = o.strip()
         if not o:
             continue
-        # Strip scheme + path + port to get the bare hostname.
-        host = o.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+        host = host_from_url(o)
         if host:
             _derived.append(host)
     # Dedupe while preserving order. Always merge dev defaults so tests
     # and local nginx still work in any deployment shape.
     _trusted_hosts = list(dict.fromkeys(_derived + _default_hosts))
+
+# api-subdomain split: nginx forwards `Host: api.privatools.me` for the API
+# vhost, which TrustedHostMiddleware would otherwise reject with a 400. Derive
+# that host from PUBLIC_API_BASE_URL so operators set ONE var, not two.
+if _PUBLIC_API_BASE:
+    _api_host = host_from_url(_PUBLIC_API_BASE)
+    if _api_host and _api_host not in _trusted_hosts:
+        _trusted_hosts.append(_api_host)
 
 from starlette.middleware.gzip import GZipMiddleware
 # Order is bottom-up: the LAST add_middleware call is the OUTERMOST
@@ -660,6 +684,7 @@ if _frontend_path.exists():
                 file_path.read_text("utf-8"),
                 getattr(request.state, "csp_nonce", None),
             )
+            html = inject_runtime_config(html, _PUBLIC_API_BASE)
             resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp
@@ -682,6 +707,7 @@ if _frontend_path.exists():
                 index.read_text("utf-8"),
                 getattr(request.state, "csp_nonce", None),
             )
+            html = inject_runtime_config(html, _PUBLIC_API_BASE)
             resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp

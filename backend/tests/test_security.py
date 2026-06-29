@@ -523,3 +523,40 @@ class TestResourceCaps:
             builtin_exception_handler(_StubRequest(), exc)
         )
         assert resp.status_code == 413
+
+
+class TestApiSubdomainSplit:
+    """The api-subdomain split is flag-gated on PUBLIC_API_BASE_URL. Default
+    (unset) must be byte-for-byte the legacy same-origin behaviour; when a
+    cross-origin API base is configured the CSP must whitelist it so the
+    browser doesn't block the SPA's cross-origin fetches. See
+    backend/tests/test_runtime_config.py for the pure-helper coverage."""
+
+    def test_csp_connect_src_omits_api_origin_by_default(self):
+        from backend.app.main import _content_security_policy
+
+        csp = _content_security_policy("/", "nonce123", "")
+        connect = next(
+            d for d in csp.split(";") if d.strip().startswith("connect-src")
+        )
+        assert "api.privatools.me" not in connect
+        assert "'self'" in connect
+
+    def test_csp_connect_src_includes_api_origin_when_configured(self):
+        from backend.app.main import _content_security_policy
+
+        csp = _content_security_policy("/", "nonce123", "https://api.privatools.me")
+        connect = next(
+            d for d in csp.split(";") if d.strip().startswith("connect-src")
+        )
+        assert "https://api.privatools.me" in connect
+        # Widening connect-src must not relax script-src.
+        script = next(d for d in csp.split(";") if d.strip().startswith("script-src"))
+        assert "'unsafe-inline'" not in script
+
+    def test_served_html_has_no_api_meta_tag_by_default(self, client):
+        """With the flag off, the SPA shell carries no api-base meta tag, so
+        the built bundle keeps talking to the same origin."""
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert "privatools:api-base" not in resp.text

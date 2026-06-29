@@ -1,13 +1,41 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+    apiUrl,
     chooseDownloadFilename,
     getErrorStatus,
     getRequestId,
     postFormData,
     processAndDownload,
+    resolveApiOrigin,
     uploadFilesWithProgress,
     uploadFileWithProgress,
 } from "@/lib/api";
+
+describe("resolveApiOrigin (api-subdomain split)", () => {
+    afterEach(() => {
+        document
+            .querySelectorAll('meta[name="privatools:api-base"]')
+            .forEach((m) => m.remove());
+    });
+
+    it("returns same-origin (empty) when no meta tag is present", () => {
+        expect(resolveApiOrigin()).toBe("");
+    });
+
+    it("uses the injected api-base meta tag, stripping a trailing slash", () => {
+        const meta = document.createElement("meta");
+        meta.setAttribute("name", "privatools:api-base");
+        meta.setAttribute("content", "https://api.privatools.me/");
+        document.head.appendChild(meta);
+        expect(resolveApiOrigin()).toBe("https://api.privatools.me");
+    });
+
+    it("apiUrl normalizes endpoints against the same-origin base by default", () => {
+        // No meta tag (removed in afterEach) → API_BASE is "/api".
+        expect(apiUrl("/health")).toBe("/api/health");
+        expect(apiUrl("/api/compress")).toBe("/api/compress");
+    });
+});
 
 const noRetry = { attempts: 0, backoffMs: 1 };
 const originalCreateObjectURL = URL.createObjectURL;
