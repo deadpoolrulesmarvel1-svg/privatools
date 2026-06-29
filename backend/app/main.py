@@ -395,8 +395,12 @@ app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/api-docs",
+    # Gate the interactive docs and the OpenAPI spec off in prod — they
+    # advertise the full (rate-limited but enumerable) tool surface. Available
+    # in dev for exploration. Disabling openapi_url also disables Swagger/ReDoc.
+    docs_url=None if _is_prod else "/api-docs",
     redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Wire rate limiter (slowapi)

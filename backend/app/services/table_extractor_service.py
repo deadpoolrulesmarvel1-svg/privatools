@@ -6,6 +6,19 @@ from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 
+# Cells beginning with these characters are executed as formulas by Excel/
+# Sheets/LibreOffice when the CSV is opened — a CSV-injection vector when the
+# table content comes from an untrusted PDF. Prefix such cells with an
+# apostrophe so spreadsheets render them as literal text.
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(cell: str) -> str:
+    """Neutralize CSV/formula injection in a single extracted cell value."""
+    if cell and cell[0] in _CSV_FORMULA_PREFIXES:
+        return "'" + cell
+    return cell
+
 
 def extract_tables(input_path: str, pages: str = "all") -> str:
     """Extract tables from PDF pages and save as CSV.
@@ -64,6 +77,6 @@ def extract_tables(input_path: str, pages: str = "all") -> str:
     with open(str(output_path), "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         for row in all_rows:
-            writer.writerow(row)
+            writer.writerow([_csv_safe(cell) for cell in row])
 
     return str(output_path)

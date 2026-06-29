@@ -67,6 +67,14 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
             "Form field is too large. Try a smaller signature or upload file.",
             request=request,
         )
+    # Never echo internal exception text to clients on a 5xx. Many route
+    # handlers raise HTTPException(500, detail=f"...{exc}"), which would leak
+    # stack/path fragments and library internals. Log the specifics server-side
+    # (route handlers already logger.exception; this captures the rest) and
+    # return a generic message. 4xx detail is author-curated and passes through.
+    if exc.status_code >= 500:
+        logger.warning("%d on %s: %s", exc.status_code, request.url.path, detail)
+        detail = "Processing failed. Please try again."
     return _json(exc.status_code, detail, request=request)
 
 
