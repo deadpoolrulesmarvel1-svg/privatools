@@ -257,36 +257,38 @@ async def pixelate_image_endpoint(
         raise HTTPException(status_code=400, detail="Please upload an image file.")
     data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     img = Image.open(io.BytesIO(data))
-    if img.mode not in ("RGB", "RGBA"):
-        img = img.convert("RGB")
     mode_clean = (mode or "").lower().strip()
     if mode_clean not in ("pixelate", "blur"):
         raise HTTPException(status_code=400, detail="Mode must be 'pixelate' or 'blur'.")
-    if mode_clean == "pixelate":
-        # Downsample then upsample with nearest-neighbour → mosaic blocks.
-        # Strength 1-100 → block-size 4-80 px (capped so the output isn't unreadable)
-        block = max(2, min(120, int(strength * 0.8) + 4))
-        w, h = img.size
-        # Aim for "block" pixels per side
-        small_w = max(1, w // block)
-        small_h = max(1, h // block)
-        img = img.resize((small_w, small_h), Image.Resampling.BILINEAR)
-        img = img.resize((w, h), Image.Resampling.NEAREST)
-    else:  # blur
-        radius = max(1, int(strength * 0.4) + 1)
-        img = img.filter(ImageFilter.GaussianBlur(radius=radius))
     out_ext = ".jpg" if suffix in (".jpg", ".jpeg") else ".png"
     out_path = get_temp_path(f"pix_out_{uuid.uuid4().hex}{out_ext}")
-    save_kwargs: dict = {}
-    if out_ext == ".jpg":
-        if img.mode == "RGBA":
-            img = img.convert("RGB")
-        save_kwargs["quality"] = 90
-        img.save(out_path, "JPEG", **save_kwargs)
-        media = "image/jpeg"
-    else:
-        img.save(out_path, "PNG")
-        media = "image/png"
+    media = "image/jpeg" if out_ext == ".jpg" else "image/png"
+
+    # The decode + resize/blur + save is CPU-bound — run it off the event loop
+    # so it can't freeze concurrent requests on the 2-core VM.
+    def _work() -> None:
+        image = img
+        if image.mode not in ("RGB", "RGBA"):
+            image = image.convert("RGB")
+        if mode_clean == "pixelate":
+            # Downsample then upsample with nearest-neighbour → mosaic blocks.
+            block = max(2, min(120, int(strength * 0.8) + 4))
+            w, h = image.size
+            small_w = max(1, w // block)
+            small_h = max(1, h // block)
+            image = image.resize((small_w, small_h), Image.Resampling.BILINEAR)
+            image = image.resize((w, h), Image.Resampling.NEAREST)
+        else:  # blur
+            radius = max(1, int(strength * 0.4) + 1)
+            image = image.filter(ImageFilter.GaussianBlur(radius=radius))
+        if out_ext == ".jpg":
+            if image.mode == "RGBA":
+                image = image.convert("RGB")
+            image.save(out_path, "JPEG", quality=90)
+        else:
+            image.save(out_path, "PNG")
+
+    await asyncio.to_thread(_work)
     cleanup = BackgroundTask(remove_files, str(out_path))
     suffix_word = "pixelated" if mode_clean == "pixelate" else "blurred"
     return FileResponse(
