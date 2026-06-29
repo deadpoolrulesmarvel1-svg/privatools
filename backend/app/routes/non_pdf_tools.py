@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
+from ..utils.concurrency import run_bounded
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ def _write_temp_file(content: bytes, suffix: str) -> str:
 async def _run_ffmpeg_async(cmd: list[str], timeout: int) -> None:
     """Run ffmpeg off the event loop — a long encode (up to `timeout`s) must
     not block the worker from serving other requests."""
-    await asyncio.to_thread(_run_ffmpeg, cmd, timeout)
+    await run_bounded(_run_ffmpeg, cmd, timeout)
 
 
 def _run_ffmpeg(cmd: list[str], timeout: int) -> None:
@@ -324,7 +325,7 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82,
         img.save(out_path, fmt, **save_kwargs)
         return out_path, mime, suffix
 
-    out_path, mime, suffix = await asyncio.to_thread(_work)
+    out_path, mime, suffix = await run_bounded(_work)
 
     base_name = os.path.splitext(_safe_filename(file.filename, "image"))[0]
     cleanup = BackgroundTask(_cleanup_paths, out_path)
@@ -360,7 +361,7 @@ async def image_converter(request: Request, file: UploadFile = File(...), target
         img.save(out_path, pil_fmt)
         return out_path
 
-    out_path = await asyncio.to_thread(_work)
+    out_path = await run_bounded(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
@@ -414,7 +415,7 @@ async def remove_exif(files: list[UploadFile] = File(...)):
                 img.save(out_path, fmt, **save_kwargs)
                 return out_path
 
-            out_path = await asyncio.to_thread(_work)
+            out_path = await run_bounded(_work)
             suffix = os.path.splitext(out_path)[1]
             output_paths.append(out_path)
             original_names.append(_safe_filename(file.filename, f"image{suffix}"))
@@ -441,7 +442,7 @@ async def remove_exif(files: list[UploadFile] = File(...)):
                     arcname = _unique_name(f"clean_{original_names[i]}", used_arcnames)
                     zf.write(out, arcname)
 
-        await asyncio.to_thread(_zip_outputs)
+        await run_bounded(_zip_outputs)
         cleanup = BackgroundTask(_cleanup_paths, *output_paths, zip_path)
         return FileResponse(zip_path, media_type="application/zip",
                             filename="clean_images.zip", background=cleanup)
@@ -494,7 +495,7 @@ async def resize_crop_image(
         img.save(out_path, fmt)
         return out_path, mime_type, suffix
 
-    out_path, mime_type, suffix = await asyncio.to_thread(_work)
+    out_path, mime_type, suffix = await run_bounded(_work)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
@@ -710,11 +711,11 @@ async def extract_archive(file: UploadFile = File(...)):
 
     try:
         if archive_kind == "zip":
-            await asyncio.to_thread(_extract_zip_safely, input_path, extract_dir)
+            await run_bounded(_extract_zip_safely, input_path, extract_dir)
         else:
-            await asyncio.to_thread(_extract_tar_safely, input_path, extract_dir, tar_mode)
+            await run_bounded(_extract_tar_safely, input_path, extract_dir, tar_mode)
 
-        await asyncio.to_thread(_zip_directory, extract_dir, output_path)
+        await run_bounded(_zip_directory, extract_dir, output_path)
     except HTTPException:
         _cleanup_paths(input_path, extract_dir, output_path)
         raise

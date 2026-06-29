@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import remove_files
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ async def image_ocr(
         raise
 
     try:
-        text = await asyncio.to_thread(_extract_text, tmp_path, lang)
+        text = await run_bounded(_extract_text, tmp_path, lang)
     except RuntimeError as e:
         remove_files(tmp_path)
         # pytesseract raises RuntimeError on its watchdog timeout — surface that

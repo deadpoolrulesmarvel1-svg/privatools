@@ -7,6 +7,7 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import pdf_to_image_service
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ async def pdf_to_image(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = await asyncio.to_thread(pdf_to_image_service.pdf_to_images, str(temp_path), fmt=fmt, dpi=dpi)
+        output_path = await run_bounded(pdf_to_image_service.pdf_to_images, str(temp_path), fmt=fmt, dpi=dpi)
 
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         if output_path.endswith(".zip"):

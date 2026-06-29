@@ -18,6 +18,7 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 
@@ -99,7 +100,7 @@ async def batch_compress_pdf(
 
     # Compress all files (shared pool) + write the ZIP off the event loop, so a
     # batch can't freeze every other request on this worker (research C2).
-    zip_path = await asyncio.to_thread(_compress_batch_to_zip, pdf_data, level)
+    zip_path = await run_bounded(_compress_batch_to_zip, pdf_data, level)
 
     return FileResponse(
         str(zip_path),
@@ -151,7 +152,7 @@ async def image_upscaler(
         upscaled = img.resize((new_w, new_h), Image.LANCZOS)
         upscaled.save(str(out_path), format=save_format, **save_kwargs)
 
-    await asyncio.to_thread(_work)
+    await run_bounded(_work)
 
     stem = Path(safe_filename(file.filename, "image")).stem
     return FileResponse(
@@ -196,7 +197,7 @@ async def audio_converter(
     cmd.append(str(out_path))
 
     try:
-        await asyncio.to_thread(subprocess.run, cmd, capture_output=True, check=True, timeout=120)
+        await run_bounded(subprocess.run, cmd, capture_output=True, check=True, timeout=120)
     except subprocess.CalledProcessError as exc:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(500, f"Audio conversion failed: {exc.stderr.decode()[:200]}")
@@ -253,7 +254,7 @@ async def pdf_page_counter(
         data = await read_upload(f, label=f.filename or "PDF")
         # Offload the fitz parse — up to 100 inline parses on the loop thread
         # would stall every other request on the 2-core VM.
-        count = await asyncio.to_thread(_count_pdf_pages, data)
+        count = await run_bounded(_count_pdf_pages, data)
         name = safe_filename(f.filename, "document.pdf")
         results.append({"filename": name, "pages": count})
         if count > 0:

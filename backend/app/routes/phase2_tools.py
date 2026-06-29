@@ -15,6 +15,7 @@ from starlette.background import BackgroundTask
 from ..services import bg_remover_service, esign_service, table_extractor_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ async def esign_pdf(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
 
-        out = await asyncio.to_thread(
+        out = await run_bounded(
             esign_service.esign_pdf,
             str(temp), signature, page_number=page,
             x=x, y=y, width=width, height=height
@@ -99,7 +100,7 @@ async def extract_tables(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
 
-        out = await asyncio.to_thread(table_extractor_service.extract_tables, str(temp), pages=pages.strip() or "all")
+        out = await run_bounded(table_extractor_service.extract_tables, str(temp), pages=pages.strip() or "all")
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="tables.csv", media_type="text/csv", background=cleanup)
     except ValueError as e:
@@ -135,7 +136,7 @@ async def remove_background(
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
         temp.write_bytes(content)
 
-        out = await asyncio.to_thread(bg_remover_service.remove_background, str(temp))
+        out = await run_bounded(bg_remover_service.remove_background, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="no_background.png", media_type="image/png", background=cleanup)
     except HTTPException:

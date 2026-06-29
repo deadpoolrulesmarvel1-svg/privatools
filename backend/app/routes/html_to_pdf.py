@@ -7,6 +7,7 @@ from typing import Optional
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services import html_to_pdf_service
 from ..utils.cleanup import remove_files
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -31,9 +32,9 @@ async def convert_html_to_pdf(
     try:
         if url:
             # URL scheme/host validation happens inside url_to_pdf via _validate_url
-            output_path = await asyncio.to_thread(html_to_pdf_service.url_to_pdf, url)
+            output_path = await run_bounded(html_to_pdf_service.url_to_pdf, url)
         else:
-            output_path = await asyncio.to_thread(html_to_pdf_service.html_to_pdf, html_content)
+            output_path = await run_bounded(html_to_pdf_service.html_to_pdf, html_content)
 
         cleanup = BackgroundTask(remove_files, output_path)
         return FileResponse(

@@ -18,6 +18,7 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def _suffix(name: str | None) -> str:
 
 async def _run_ffmpeg_async(args: list[str], label: str) -> None:
     """Run ffmpeg off the event loop so a long encode doesn't block the worker."""
-    await asyncio.to_thread(_run_ffmpeg, args, label)
+    await run_bounded(_run_ffmpeg, args, label)
 
 
 def _run_ffmpeg(args: list[str], label: str) -> None:
@@ -306,7 +307,7 @@ async def pixelate_image_endpoint(
         else:
             image.save(out_path, "PNG")
 
-    await asyncio.to_thread(_work)
+    await run_bounded(_work)
     cleanup = BackgroundTask(remove_files, str(out_path))
     suffix_word = "pixelated" if mode_clean == "pixelate" else "blurred"
     return FileResponse(
