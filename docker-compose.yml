@@ -36,7 +36,7 @@ services:
       resources:
         limits:
           memory: 4G             # was 20G — effectively no cap on a small VM; matches the systemd MemoryMax
-          cpus: '3.0'            # matches the systemd CPUQuota=300%
+          cpus: '1.8'            # VM has 2 cores; cap at 1.8 (Docker rejects >2) and leave ~0.2 for the host/nginx
           pids: 512              # bound fork-bombs (libreoffice/ffmpeg fan-out); under deploy.* to avoid the pids_limit conflict
         reservations:
           memory: 512M
