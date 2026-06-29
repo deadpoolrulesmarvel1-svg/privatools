@@ -35,7 +35,7 @@ from ..utils.cleanup import (
     remove_files,
     validate_pdf_content,
 )
-from ..utils.route_helpers import read_upload, stream_upload_to_disk
+from ..utils.route_helpers import stream_upload_to_disk
 from ..utils.concurrency import run_bounded
 
 router = APIRouter()
@@ -61,11 +61,10 @@ async def split_in_half_endpoint(
         raise HTTPException(status_code=400, detail="Please upload a PDF")
 
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "unknown")
-    validate_pdf_content(content)
-
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(
+        file, temp_path, label=file.filename or "unknown", validate=validate_pdf_content
+    )
     output_path: str | None = None
 
     try:
@@ -114,11 +113,10 @@ async def highlight_endpoint(
         raise HTTPException(status_code=400, detail="Search query must be 500 chars or less")
 
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "unknown")
-    validate_pdf_content(content)
-
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(
+        file, temp_path, label=file.filename or "unknown", validate=validate_pdf_content
+    )
     output_path: str | None = None
 
     try:
@@ -154,11 +152,10 @@ async def pdf_to_svg_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
 
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "unknown")
-    validate_pdf_content(content)
-
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(
+        file, temp_path, label=file.filename or "unknown", validate=validate_pdf_content
+    )
     output_path: str | None = None
 
     try:
@@ -217,10 +214,10 @@ async def smart_redact_endpoint(
         raise HTTPException(status_code=400, detail="too many redaction targets (max 500)")
 
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "unknown")
-    validate_pdf_content(content)
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(
+        file, temp_path, label=file.filename or "unknown", validate=validate_pdf_content
+    )
     output_path: str | None = None
 
     try:
@@ -505,8 +502,8 @@ async def video_merge_endpoint(request: Request, files: list[UploadFile] = File(
         if output_path: remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except HTTPException:
-        # _ensure_video_filename / read_upload raise clean 400/413s — let them
-        # through instead of mangling them into a 500 (and a false stack trace).
+        # _ensure_video_filename / stream_upload_to_disk raise clean 400/413s —
+        # let them through instead of mangling them into a 500 (false stack trace).
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)
         raise
@@ -576,10 +573,10 @@ async def pdf_to_long_image_endpoint(
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF file.")
     ensure_temp_dir()
-    content = await read_upload(file, label=file.filename or "document")
-    validate_pdf_content(content)
     temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp_path.write_bytes(content)
+    await stream_upload_to_disk(
+        file, temp_path, label=file.filename or "document", validate=validate_pdf_content
+    )
     output_path: str | None = None
     try:
         # fitz render + Pillow stitch is CPU-heavy → run off the event loop.
