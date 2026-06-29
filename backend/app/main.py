@@ -649,9 +649,11 @@ async def readyz():
     checks["temp_dir"] = fs_ok
 
     if deps_ok and fs_ok:
-        return JSONResponse({"status": "ready", "checks": checks})
+        return JSONResponse(
+            {"status": "ready", "build_sha": _BUILD_SHA, "checks": checks}
+        )
 
-    body: dict = {"status": "degraded", "checks": checks}
+    body: dict = {"status": "degraded", "build_sha": _BUILD_SHA, "checks": checks}
     if fs_reason:
         body["reason"] = fs_reason
     return JSONResponse(body, status_code=503)
