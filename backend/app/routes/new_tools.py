@@ -500,6 +500,12 @@ async def video_merge_endpoint(files: list[UploadFile] = File(...)):
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException:
+        # _ensure_video_filename / read_upload raise clean 400/413s — let them
+        # through instead of mangling them into a 500 (and a false stack trace).
+        remove_files(*temp_paths)
+        if output_path: remove_files(output_path)
+        raise
     except Exception:
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)

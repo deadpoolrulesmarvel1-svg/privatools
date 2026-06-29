@@ -17,10 +17,15 @@ def svg_to_png(input_path: str, scale: float = 2.0) -> str:
     # Try cairosvg (best quality)
     try:
         import cairosvg
+
+        from .svg_safety import block_external_refs
+        # block_external_refs denies file:// (LFI) and http(s):// (SSRF) refs
+        # in the uploaded SVG; only inline data: URIs are allowed.
         cairosvg.svg2png(
             bytestring=svg_data,
             write_to=str(output_path),
             scale=scale,
+            url_fetcher=block_external_refs,
         )
         return str(output_path)
     except (ImportError, OSError) as exc:
