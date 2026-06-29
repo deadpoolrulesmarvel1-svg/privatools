@@ -26,9 +26,15 @@ from __future__ import annotations
 
 import importlib
 import os
+import shutil
 import threading
 import time
 from typing import Callable
+
+# Fail readiness when the temp volume drops below this — tool outputs and the
+# upload spool all land there, so a full disk silently turns every job into a
+# confusing 500. Threshold is low so it only trips on real exhaustion, not churn.
+_FREE_DISK_MIN_MB = float(os.environ.get("FREE_DISK_MIN_MB", "250"))
 
 # ---------------------------------------------------------------------------
 # Cache
@@ -50,6 +56,22 @@ def _check_module(name: str) -> bool:
         return True
     except Exception:  # noqa: BLE001 — any failure means "not ready"
         return False
+
+
+def _check_free_disk() -> bool:
+    """True if the temp volume has at least ``_FREE_DISK_MIN_MB`` free.
+
+    Probes the managed temp dir (where every tool writes); falls back to the
+    working directory if it isn't there yet. A near-full disk is a genuine
+    readiness failure — the next upload spool or render will fail mid-request.
+    """
+    temp_dir = os.environ.get("TEMP_DIR", "temp")
+    target = temp_dir if os.path.isdir(temp_dir) else "."
+    try:
+        free_mb = shutil.disk_usage(target).free / (1024 * 1024)
+    except OSError:
+        return False
+    return free_mb >= _FREE_DISK_MIN_MB
 
 
 def _check_tessdata() -> bool:
@@ -92,6 +114,7 @@ _CHECKS: list[tuple[str, Callable[[], bool]]] = [
     ("fitz", lambda: _check_module("fitz")),
     ("PIL", lambda: _check_module("PIL")),
     ("tessdata", _check_tessdata),
+    ("free_disk", _check_free_disk),
 ]
 
 
