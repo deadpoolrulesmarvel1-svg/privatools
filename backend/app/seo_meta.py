@@ -1724,18 +1724,33 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     # an authority for. Wikipedia URLs anchor the entity to
                     # the canonical knowledge-graph node so PrivaTools is
                     # disambiguated from random other "Priva" companies.
+                    # Topic entities anchored to their Wikipedia/Wikidata nodes
+                    # via sameAs — this links PrivaTools into the knowledge graph
+                    # AI engines use to decide which entity is an authority on a
+                    # topic, far stronger than bare topic strings.
                     "knowsAbout": [
-                        "PDF",
+                        {"@type": "Thing", "name": "PDF",
+                         "sameAs": "https://en.wikipedia.org/wiki/PDF"},
+                        {"@type": "Thing", "name": "Optical character recognition",
+                         "sameAs": "https://en.wikipedia.org/wiki/Optical_character_recognition"},
+                        {"@type": "Thing", "name": "Image compression",
+                         "sameAs": "https://en.wikipedia.org/wiki/Image_compression"},
+                        {"@type": "Thing", "name": "Data conversion",
+                         "sameAs": "https://en.wikipedia.org/wiki/Data_conversion"},
+                        {"@type": "Thing", "name": "Redaction",
+                         "sameAs": "https://en.wikipedia.org/wiki/Redaction"},
+                        {"@type": "Thing", "name": "Privacy by design",
+                         "sameAs": "https://en.wikipedia.org/wiki/Privacy_by_design"},
+                        {"@type": "Thing", "name": "Open-source software",
+                         "sameAs": "https://en.wikipedia.org/wiki/Open-source_software"},
+                        {"@type": "Thing", "name": "Self-hosting (web services)",
+                         "sameAs": "https://en.wikipedia.org/wiki/Self-hosting_(web_services)"},
                         "PDF compression",
                         "PDF merging",
-                        "Optical character recognition",
-                        "Image compression",
-                        "File format conversion",
-                        "Document redaction",
-                        "Privacy by design",
-                        "Open-source software",
-                        "Self-hosting",
                     ],
+                    # sameAs anchors the ORG entity itself. The GitHub repo is
+                    # the strongest current node; add a Wikidata Q-number here
+                    # once minted (see docs/GEO-RUNBOOK.md) for full KG linkage.
                     "sameAs": [
                         "https://github.com/deadpoolrulesmarvel1-svg/privatools",
                         "https://privatools.me",
@@ -2394,6 +2409,18 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "files are processed in an isolated container and deleted immediately after the response "
             "is returned — never stored, never shared with third parties. The public site uses first-party "
             "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts, no behavioural profiling.</p>"
+        )
+        # Citable "key facts" block: a self-contained, statistic-dense passage AI
+        # engines (ChatGPT/Perplexity/Claude/Gemini) can extract verbatim when
+        # answering "best free private PDF tool" / "free PDF tools without upload".
+        parts.append(
+            "<h2>PrivaTools at a glance</h2><ul>"
+            f"<li><strong>{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free tools</strong> across PDF, image, video, audio, and developer categories — no premium tier.</li>"
+            "<li><strong>500 MB per file</strong> with <strong>no daily or monthly quota</strong> — process unlimited files.</li>"
+            "<li><strong>Zero files retained:</strong> server-side files are deleted on the response; many tools (Summarize PDF, Smart Redact detection, JWT Decoder, JSON/XML formatters) run entirely in your browser and never upload.</li>"
+            "<li><strong>No account, no watermark, no third-party AI APIs.</strong> The two in-browser AI tools run open models (distilbart, BERT-base-NER) on-device.</li>"
+            "<li><strong>MIT-licensed and self-hostable</strong> with one Docker command — the whole stack is auditable on GitHub.</li>"
+            "</ul>"
         )
         parts.append(
             '<h2>Chain tools with <a href="/pipeline">Pipeline</a></h2>'
