@@ -532,31 +532,35 @@ class TestApiSubdomainSplit:
     browser doesn't block the SPA's cross-origin fetches. See
     backend/tests/test_runtime_config.py for the pure-helper coverage."""
 
-    def test_csp_connect_src_omits_api_origin_by_default(self):
+    def test_csp_connect_src_adds_exactly_the_api_origin(self):
+        """Flag off → no api origin in connect-src; flag on → the configured
+        origin is added as a source and nothing else changes. Asserted via set
+        difference: more precise than a substring check, and it keeps the origin
+        out of any containment expression (which would trip CodeQL's
+        incomplete-url-sanitization heuristic on a plain test assertion)."""
         from backend.app.main import _content_security_policy
 
-        csp = _content_security_policy("/", "nonce123", "")
-        connect = next(
-            d for d in csp.split(";") if d.strip().startswith("connect-src")
-        )
-        # Tokenized membership (not substring): exact source match, and avoids
-        # CodeQL's incomplete-url-substring-sanitization heuristic firing on a
-        # plain test assertion.
-        connect_sources = connect.split()
-        assert "https://api.privatools.me" not in connect_sources
-        assert "'self'" in connect_sources
+        def connect_sources(api_base):
+            csp = _content_security_policy("/", "nonce123", api_base)
+            directive = next(
+                d for d in csp.split(";") if d.strip().startswith("connect-src")
+            )
+            return set(directive.split())
 
-    def test_csp_connect_src_includes_api_origin_when_configured(self):
+        off = connect_sources("")
+        on = connect_sources("https://api.privatools.me")
+        assert on - off == {"https://api.privatools.me"}  # adds exactly the origin
+        assert "'self'" in off                            # baseline first-party intact
+
+    def test_csp_widening_does_not_relax_script_src(self):
         from backend.app.main import _content_security_policy
 
         csp = _content_security_policy("/", "nonce123", "https://api.privatools.me")
-        connect = next(
-            d for d in csp.split(";") if d.strip().startswith("connect-src")
+        script = next(
+            d for d in csp.split(";") if d.strip().startswith("script-src")
         )
-        assert "https://api.privatools.me" in connect.split()
-        # Widening connect-src must not relax script-src.
-        script = next(d for d in csp.split(";") if d.strip().startswith("script-src"))
         assert "'unsafe-inline'" not in script
+        assert "'unsafe-eval'" not in script
 
     def test_served_html_has_no_api_meta_tag_by_default(self, client):
         """With the flag off, the SPA shell carries no api-base meta tag, so
