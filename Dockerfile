@@ -52,9 +52,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+# Install Python dependencies from the fully-pinned, hashed lockfile.
+# --require-hashes verifies every wheel/sdist against requirements.lock, so a
+# compromised index or a typosquat can't slip a bad artifact into the image
+# (research DEP1/DEP4). The lock is universal (both arm64 + amd64 hashes) and was
+# dry-run validated under --require-hashes for both arches; regenerate with
+#   uv pip compile requirements.txt --generate-hashes --universal --python-version 3.10 -o requirements.lock
+COPY requirements.txt requirements.lock ./
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
     && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
 
 # Pre-download the rembg u2netp model into the runtime cache directory so the

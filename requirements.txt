@@ -6,9 +6,12 @@
 # both linux/arm64 and linux/amd64 at these versions, so the multi-arch release
 # build is unaffected.
 #
-# NOTE: this pins direct deps only. A fully-hashed transitive lockfile
-# (`uv pip compile --generate-hashes`) installed with `--require-hashes` is the
-# next step — deferred until the multi-arch Docker build can be validated for it.
+# This file is the human-edited SOURCE of runtime deps (direct, pinned). The
+# Docker image and PR CI install from the generated, fully-hashed transitive
+# lockfile `requirements.lock` with `--require-hashes` (integrity — DEP1/DEP4).
+# After editing this file, regenerate the locks:
+#   uv pip compile requirements.txt     --generate-hashes --universal --python-version 3.10 -o requirements.lock
+#   uv pip compile requirements-dev.txt --generate-hashes --universal --python-version 3.10 -o requirements-dev.lock
 fastapi==0.137.2
 uvicorn[standard]==0.27.1
 python-multipart==0.0.32
