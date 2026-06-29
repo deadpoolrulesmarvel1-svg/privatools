@@ -36,6 +36,14 @@ DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/deadpoolrulesmarvel1-svg/privato
 # stuck or failed deploy raises an alert instead of going unnoticed.
 DEPLOY_PING_URL="${DEPLOY_PING_URL:-}"
 
+# cosign signature verification before deploy. release.yml signs each image
+# keyless (Fulcio/OIDC via GitHub Actions); the OCI revision label is
+# unauthenticated, so the signature is the real trust anchor. When cosign is
+# installed on the host, verification is FAIL-CLOSED. The signing identity is
+# the release.yml workflow on a tag ref. (Validated against a real signed image.)
+DEPLOY_COSIGN_IDENTITY_REGEXP="${DEPLOY_COSIGN_IDENTITY_REGEXP:-^https://github.com/deadpoolrulesmarvel1-svg/privatools/\\.github/workflows/release\\.yml@}"
+DEPLOY_COSIGN_OIDC_ISSUER="${DEPLOY_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
+
 ping_deploy() {  # ping_deploy ok|fail
     [[ -z "$DEPLOY_PING_URL" ]] && return 0
     local url="$DEPLOY_PING_URL"
@@ -142,13 +150,33 @@ git reset --hard "$target_sha"
 if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
     image_ref="${DEPLOY_IMAGE_REPO}:${target_ref}"
     log "pulling signed image ${image_ref}"
-    img_rev=""
-    if docker pull "$image_ref" >/dev/null 2>&1; then
-        img_rev="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
+    # Pull; on a transient failure (notably containerd "lease does not exist",
+    # which has stuck deploys mid-pull and required a manual prune), clear
+    # dangling layers and retry once before declaring not-ready for this cycle.
+    if ! docker pull "$image_ref" >/dev/null 2>&1; then
+        log "pull failed; pruning dangling images and retrying once"
+        docker image prune -f >/dev/null 2>&1 || true
+        docker pull "$image_ref" >/dev/null 2>&1 || true
     fi
+    img_rev="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
     if [[ "$img_rev" != "$target_sha" ]]; then
         log "signed image for ${target_ref} not ready yet (revision '${img_rev:0:12}' != ${target_sha:0:12}); will retry next cycle"
         exit 0
+    fi
+    # Verify the cosign signature before running the image. Fail closed when
+    # cosign is installed; warn-and-proceed otherwise (so a host without cosign
+    # still deploys — prod has cosign installed, so it enforces).
+    if command -v cosign >/dev/null 2>&1; then
+        if ! cosign verify "$image_ref" \
+                --certificate-identity-regexp "$DEPLOY_COSIGN_IDENTITY_REGEXP" \
+                --certificate-oidc-issuer "$DEPLOY_COSIGN_OIDC_ISSUER" >/dev/null 2>&1; then
+            log "COSIGN VERIFY FAILED for ${image_ref} — refusing to deploy"
+            ping_deploy fail
+            exit 1
+        fi
+        log "cosign signature verified for ${target_ref}"
+    else
+        log "WARNING: cosign not installed; skipping signature verification (install cosign to enforce)"
     fi
     log "using signed image (revision matches ${target_sha:0:12})"
     PRIVATOOLS_IMAGE="$image_ref" GIT_SHA="$target_sha" docker compose up -d --no-build
