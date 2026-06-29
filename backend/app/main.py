@@ -19,11 +19,15 @@ from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
     BrotliMiddleware,
+    InFlightMiddleware,
     RequestIDMiddleware,
     configure_logging,
+    inflight_count,
+    max_rss_mb,
     register_error_handlers,
 )
 from .utils.health import run_readiness_checks
+from .utils.logging import route_uvicorn_logging
 
 # Configure root logger as early as possible so import-time messages
 # (router registration, lifespan startup) are captured with the same
@@ -91,6 +95,13 @@ async def _cleanup_task():
         try:
             await asyncio.sleep(_JANITOR_INTERVAL)
             cleanup_old_files(_JANITOR_MAX_AGE)
+            # Heartbeat so memory growth + request saturation are visible in the
+            # log stream without any external metrics system (research O5/O6).
+            logger.info(
+                "janitor heartbeat: TEMP_DIR swept, inflight=%d, max_rss_mb=%.1f",
+                inflight_count(),
+                max_rss_mb(),
+            )
         except asyncio.CancelledError:
             raise
         except Exception:  # noqa: BLE001 — never let the janitor die
@@ -100,6 +111,9 @@ async def _cleanup_task():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
+    # Runs after uvicorn has set up its own loggers, so this sticks: route
+    # uvicorn's error/startup lines through our JSON handler (research O3).
+    route_uvicorn_logging()
     logger.info(
         "lifespan: TEMP_DIR ready, janitor every %ds, max-age %ds",
         _JANITOR_INTERVAL,
@@ -477,6 +491,7 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(UploadSizeLimitMiddleware)
 app.add_middleware(RequestTimeoutMiddleware)
 app.add_middleware(AccessLogMiddleware)
+app.add_middleware(InFlightMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,

@@ -196,3 +196,25 @@ def configure_logging(level: str | None = None) -> None:
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
     setattr(root, _CONFIGURED_FLAG, True)
+
+
+def route_uvicorn_logging() -> None:
+    """Route uvicorn's own loggers through the root JSON handler.
+
+    uvicorn installs its own stderr handlers with ``propagate=False`` when it
+    boots — AFTER :func:`configure_logging` runs at import time — so uvicorn's
+    error/startup lines (bind failures, worker crashes, reload notices) bypass
+    our JSON stream and are lost to aggregation. Call this from the lifespan
+    startup, which runs *after* uvicorn configures logging, to clear those
+    handlers and let the records propagate up to the root JSON handler.
+
+    Idempotent and harmless under the test client (no uvicorn handlers exist
+    to clear there).
+    """
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.asgi", "uvicorn.access"):
+        lg = logging.getLogger(name)
+        lg.handlers = []
+        lg.propagate = True
+    # Our AccessLogMiddleware emits the structured access line; keep uvicorn's
+    # own (now-propagating) access logger quiet so we don't double-log.
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
