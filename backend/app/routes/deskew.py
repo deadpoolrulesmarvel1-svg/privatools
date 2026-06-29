@@ -1,8 +1,9 @@
 import asyncio
 import uuid
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from fastapi.responses import FileResponse
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import deskew_service
@@ -12,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/deskew")
-async def deskew(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def deskew(request: Request, file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
     ensure_temp_dir()

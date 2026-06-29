@@ -1,9 +1,10 @@
 import asyncio
 import uuid
 import logging
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import pdf_to_image_service
 
@@ -25,7 +26,9 @@ _FORMAT_CONFIG = {
 
 
 @router.post("/pdf-to-image")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def pdf_to_image(
+    request: Request,
     file: UploadFile = File(...),
     format: str = Form("jpeg"),
     dpi: int = Form(150, ge=36, le=600),

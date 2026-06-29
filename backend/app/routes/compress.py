@@ -5,10 +5,11 @@ import uuid
 import zipfile
 from typing import List
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services import compress_service
 from ..utils.cleanup import (
     ensure_temp_dir,
@@ -26,7 +27,9 @@ MAX_FILES = 100
 
 
 @router.post("/compress")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def compress_pdf(
+    request: Request,
     files: List[UploadFile] = File(...),
     level: str = Form("recommended"),
     jpeg_quality: int | None = Form(None, ge=15, le=95),

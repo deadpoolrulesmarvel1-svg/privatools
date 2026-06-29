@@ -5,10 +5,11 @@ import re
 import uuid
 
 import fitz
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import redact_service
 
@@ -85,7 +86,9 @@ def _validate_redactions(rects: list, page_count: int) -> None:
 
 
 @router.post("/redact")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def redact_pdf(
+    request: Request,
     file: UploadFile = File(...),
     redactions: str = Form(...),
     color: str = Form("#000000"),

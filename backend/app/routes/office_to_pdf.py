@@ -1,8 +1,9 @@
 import uuid
 from pathlib import Path
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from fastapi.responses import FileResponse
+from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
 from ..services import office_to_pdf_service
@@ -15,7 +16,8 @@ ALLOWED_EXTENSIONS = office_to_pdf_service.ALLOWED_EXTENSIONS
 
 
 @router.post("/office-to-pdf")
-async def office_to_pdf(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def office_to_pdf(request: Request, file: UploadFile = File(...)):
     suffix = Path(file.filename).suffix.lower() if file.filename else ""
     if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(
