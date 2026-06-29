@@ -519,9 +519,10 @@ class TestResourceCaps:
             method = "POST"
 
         exc = Image.DecompressionBombError("test bomb")
-        resp = asyncio.get_event_loop().run_until_complete(
-            builtin_exception_handler(_StubRequest(), exc)
-        )
+        # asyncio.run (not get_event_loop().run_until_complete): the latter
+        # raises "no current event loop" on 3.10+ once another test has used
+        # asyncio.run (which sets the loop to None).
+        resp = asyncio.run(builtin_exception_handler(_StubRequest(), exc))
         assert resp.status_code == 413
 
 
