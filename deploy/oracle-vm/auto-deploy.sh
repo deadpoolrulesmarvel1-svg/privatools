@@ -132,30 +132,28 @@ fi
 log "deploying ${current_sha:0:12} -> ${target_sha:0:12}"
 git reset --hard "$target_sha"
 
-# Prefer the prebuilt, cosign-signed GHCR image for the resolved release tag;
-# rebuild locally only as a fallback (branch/HEAD deploy, or image not yet
-# published). Verify the image's revision label matches the target commit so we
-# never run a stale or mismatched artifact.
-deploy_image=""
-if [[ -n "$DEPLOY_IMAGE_REPO" && "$target_ref" != "${REMOTE}/${BRANCH}" ]]; then
+# Deploy the cosign-signed GHCR image release.yml builds for a release tag —
+# and WAIT for it rather than building locally. When a tag is first pushed the
+# image is still building (~20 min); a local-build fallback here would win the
+# race and ship an unsigned, locally-built image on every release, defeating the
+# whole point. So if the signed image isn't published-and-matching yet, skip
+# this cycle and retry on the next one. A local build is used ONLY for
+# branch/HEAD deploys, where no release image exists by design.
+if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
     image_ref="${DEPLOY_IMAGE_REPO}:${target_ref}"
-    log "pulling prebuilt image ${image_ref}"
+    log "pulling signed image ${image_ref}"
+    img_rev=""
     if docker pull "$image_ref" >/dev/null 2>&1; then
         img_rev="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
-        if [[ "$img_rev" == "$target_sha" ]]; then
-            deploy_image="$image_ref"
-            log "using prebuilt image (revision matches ${target_sha:0:12})"
-        else
-            log "image revision '${img_rev:0:12}' != target ${target_sha:0:12}; falling back to local build"
-        fi
-    else
-        log "image pull failed; falling back to local build"
     fi
-fi
-
-if [[ -n "$deploy_image" ]]; then
-    PRIVATOOLS_IMAGE="$deploy_image" GIT_SHA="$target_sha" docker compose up -d --no-build
+    if [[ "$img_rev" != "$target_sha" ]]; then
+        log "signed image for ${target_ref} not ready yet (revision '${img_rev:0:12}' != ${target_sha:0:12}); will retry next cycle"
+        exit 0
+    fi
+    log "using signed image (revision matches ${target_sha:0:12})"
+    PRIVATOOLS_IMAGE="$image_ref" GIT_SHA="$target_sha" docker compose up -d --no-build
 else
+    log "no release tag for ${target_ref}; building locally"
     GIT_SHA="$target_sha" docker compose up -d --build
 fi
 docker image prune -f >/dev/null || true
