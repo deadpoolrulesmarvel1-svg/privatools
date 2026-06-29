@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
+from typing import Callable
 
 from fastapi import HTTPException, UploadFile
 
@@ -134,20 +135,37 @@ async def stream_upload_to_disk(
     label: str = "File",
     max_bytes: int = MAX_SIZE,
     chunk_size: int = 256 * 1024,  # 256 KB chunks
+    validate: Callable[[bytes], None] | None = None,
 ) -> int:
     """Stream an uploaded file to disk in chunks instead of buffering in RAM.
 
     Returns the total number of bytes written. Use this instead of
-    :func:`read_upload` for large files (images, videos, PDFs > 50 MB).
+    :func:`read_upload` for large files (images, videos, PDFs > 50 MB) — peak
+    memory stays at one chunk regardless of upload size, so concurrent large
+    uploads can't OOM the worker.
+
+    If ``validate`` is given it is called once with the FIRST chunk (which
+    holds the magic bytes) and may raise to reject the upload after only one
+    chunk is read — e.g. pass ``validate_pdf_content`` to bounce a non-PDF
+    before hundreds of MB land on disk. The partial file is removed on any
+    rejection (validation, size cap, or empty).
     """
     if file is None:
         raise HTTPException(status_code=400, detail=f"{label} not provided.")
     total = 0
+    first = True
     with open(dest, "wb") as f:
         while True:
             chunk = await file.read(chunk_size)
             if not chunk:
                 break
+            if first and validate is not None:
+                try:
+                    validate(chunk)
+                except Exception:
+                    dest.unlink(missing_ok=True)
+                    raise
+            first = False
             total += len(chunk)
             if total > max_bytes:
                 # Clean up the partial file before raising.
