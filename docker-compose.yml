@@ -61,10 +61,16 @@ services:
         reservations:
           memory: 512M
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health\").read()"]
+      # /readyz exercises the real deps (imports + temp-writable + free disk), so
+      # "unhealthy" means the container genuinely can't serve — not merely
+      # "process is up" (research O4). urlopen raises on the 503 a degraded
+      # /readyz returns, failing the check. start_period gives the app time to
+      # import its deps on first boot before failures are counted.
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/readyz\").read()"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
 volumes:
   app-temp:

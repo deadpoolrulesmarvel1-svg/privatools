@@ -8,7 +8,12 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-/home/ubuntu/privatools}"
 REMOTE="${REMOTE:-origin}"
 BRANCH="${BRANCH:-main}"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/api/health}"
+# Gate on /readyz, NOT the always-200 /api/health liveness probe. /readyz runs
+# the real dependency checks (pikepdf/fitz/PIL importable, tessdata present, temp
+# writable, free disk) and returns build_sha, so a container that came up with
+# broken deps fails the gate (503) instead of deploying "successfully" (research
+# O4). build_sha lets the same check confirm the new revision is live.
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/readyz}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_INTERVAL="${HEALTH_INTERVAL:-6}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
