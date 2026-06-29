@@ -1,6 +1,11 @@
 services:
   privatools:
     build: .
+    # The deploy pulls the cosign-signed image release.yml builds on each tag
+    # (PRIVATOOLS_IMAGE=ghcr.io/...:vX.Y.Z) and runs it with `up --no-build`,
+    # avoiding a heavy rebuild on the VM. Defaults to the locally-built name for
+    # `docker compose up --build` (local dev / build fallback).
+    image: ${PRIVATOOLS_IMAGE:-privatools-privatools:latest}
     ports:
       # Bind to loopback only. The app is meant to sit behind the host's nginx
       # (which terminates TLS and proxies to 127.0.0.1:8000). The previous
