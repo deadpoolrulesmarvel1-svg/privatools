@@ -11,16 +11,33 @@ account, so they're handed off here rather than done in code.
 Today the live `cf-cache-status`/`server` headers come straight from nginx; the
 "edge CDN / Brotli at the edge" framing is aspirational until this is done.
 
-1. Add the `privatools.me` zone in Cloudflare (free plan).
-2. At the registrar, point the domain's nameservers to the two Cloudflare NS.
-3. DNS: proxy (orange-cloud) the `@` and `www` A/AAAA records → the Oracle VM IP `140.245.15.140`.
-4. SSL/TLS mode: **Full (strict)** (the VM already has a Let's Encrypt cert).
-5. Speed → enable **Brotli**, **Auto Minify** off (assets are pre-minified by Vite), **Early Hints** on.
-6. Caching → Cache Level Standard; add a Cache Rule: cache `*/assets/*` and `*.woff2` (the app already sends 1-year immutable cache headers on hashed assets), **bypass cache for `/api/*`** (dynamic + uploads must never be edge-cached).
-7. Verify: `curl -sI https://privatools.me/assets/<hashed>.js | grep -i cf-cache-status` returns `HIT` after a warm-up.
+**Done:** the `privatools.me` zone is added in Cloudflare (free) and the domain's
+nameservers are pointed to Cloudflare (`oaklyn`/`rudy.ns.cloudflare.com`). DNS
+records are imported **grey-clouded** (DNS-only) — so the site/email work
+unchanged while the proxy is enabled deliberately.
 
-Outcome: real edge caching + Brotli for static assets, lower global LCP, and the
-perf/CDN claims become accurate.
+> **Do NOT just orange-cloud the apex.** Cloudflare's free/pro plans cap a
+> **proxied** request body at **100 MB**, but PrivaTools accepts **500 MB**, so
+> proxying the apex as-is silently 413s every large `/api` upload. The fix is the
+> **api-subdomain split**: the SPA's `/api` traffic moves to a grey-clouded
+> `api.privatools.me` (direct to the VM, uncapped, off Cloudflare), while the
+> apex/`www` are proxied for static. The code is shipped and flag-gated on
+> `PUBLIC_API_BASE_URL`. Follow **[deploy/api-subdomain-split.md](../deploy/api-subdomain-split.md)**
+> for the exact ordered activation (add grey `api` record → cert → nginx vhost →
+> flip the backend flag → orange-cloud apex/`www`).
+
+Remaining Cloudflare-dashboard toggles (after the split is live):
+
+- **SSL/TLS** mode → **Full (strict)** (the VM has a real Let's Encrypt cert).
+- **Speed** → enable **Brotli**; leave **Auto Minify** off (Vite pre-minifies); **Early Hints** on.
+- **Caching** → Cache Level Standard; Cache Rule: cache `*/assets/*` and `*.woff2`
+  (the app already sends 1-year immutable headers on hashed assets), **bypass
+  cache for `/api/*`**.
+- Verify: `curl -sI https://privatools.me/assets/<hashed>.js | grep -i cf-cache-status` returns `HIT` after a warm-up.
+
+Outcome: real edge caching + Brotli for static assets, lower global LCP, the
+perf/CDN claims become accurate — and large uploads keep working via the direct
+api host.
 
 ## 2. Mint a Wikidata Q-number — entity disambiguation for AI
 

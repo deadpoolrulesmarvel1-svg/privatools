@@ -523,3 +523,48 @@ class TestResourceCaps:
             builtin_exception_handler(_StubRequest(), exc)
         )
         assert resp.status_code == 413
+
+
+class TestApiSubdomainSplit:
+    """The api-subdomain split is flag-gated on PUBLIC_API_BASE_URL. Default
+    (unset) must be byte-for-byte the legacy same-origin behaviour; when a
+    cross-origin API base is configured the CSP must whitelist it so the
+    browser doesn't block the SPA's cross-origin fetches. See
+    backend/tests/test_runtime_config.py for the pure-helper coverage."""
+
+    def test_csp_connect_src_adds_exactly_the_api_origin(self):
+        """Flag off → no api origin in connect-src; flag on → the configured
+        origin is added as a source and nothing else changes. Asserted via set
+        difference: more precise than a substring check, and it keeps the origin
+        out of any containment expression (which would trip CodeQL's
+        incomplete-url-sanitization heuristic on a plain test assertion)."""
+        from backend.app.main import _content_security_policy
+
+        def connect_sources(api_base):
+            csp = _content_security_policy("/", "nonce123", api_base)
+            directive = next(
+                d for d in csp.split(";") if d.strip().startswith("connect-src")
+            )
+            return set(directive.split())
+
+        off = connect_sources("")
+        on = connect_sources("https://api.privatools.me")
+        assert on - off == {"https://api.privatools.me"}  # adds exactly the origin
+        assert "'self'" in off                            # baseline first-party intact
+
+    def test_csp_widening_does_not_relax_script_src(self):
+        from backend.app.main import _content_security_policy
+
+        csp = _content_security_policy("/", "nonce123", "https://api.privatools.me")
+        script = next(
+            d for d in csp.split(";") if d.strip().startswith("script-src")
+        )
+        assert "'unsafe-inline'" not in script
+        assert "'unsafe-eval'" not in script
+
+    def test_served_html_has_no_api_meta_tag_by_default(self, client):
+        """With the flag off, the SPA shell carries no api-base meta tag, so
+        the built bundle keeps talking to the same origin."""
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert "privatools:api-base" not in resp.text

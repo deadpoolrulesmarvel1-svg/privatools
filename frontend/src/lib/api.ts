@@ -4,7 +4,27 @@
  */
 import { toast } from "sonner";
 
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+/**
+ * Resolve the origin API requests are sent to. Priority:
+ *   1. Runtime `<meta name="privatools:api-base">` injected into index.html by
+ *      the backend when PUBLIC_API_BASE_URL is set (the api-subdomain split).
+ *      Lets one built bundle serve same-origin OR cross-origin with no rebuild.
+ *   2. Build-time `VITE_API_URL` (explicit builds / older config).
+ *   3. Same-origin (empty string) — the default for dev and current prod.
+ * Exported for unit testing; callers use the derived API_BASE / apiUrl().
+ */
+export function resolveApiOrigin(): string {
+    if (typeof document !== "undefined") {
+        const fromMeta = document
+            .querySelector('meta[name="privatools:api-base"]')
+            ?.getAttribute("content")
+            ?.trim();
+        if (fromMeta) return fromMeta.replace(/\/$/, "");
+    }
+    return (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+}
+
+const API_ORIGIN = resolveApiOrigin();
 const API_BASE = `${API_ORIGIN}/api`;
 
 /** Strip an accidental leading "/api" so callers can pass either "/foo" or
@@ -14,6 +34,13 @@ function normalizeEndpoint(ep: string): string {
     if (ep.startsWith("/api/")) return ep.slice(4);
     if (ep === "/api") return "/";
     return ep.startsWith("/") ? ep : "/" + ep;
+}
+
+/** Absolute URL for an API endpoint, honoring the configured API origin
+ *  (same-origin by default, or the api-subdomain when the split is active).
+ *  Use this anywhere a raw `fetch` would otherwise hardcode "/api/...". */
+export function apiUrl(endpoint: string): string {
+    return `${API_BASE}${normalizeEndpoint(endpoint)}`;
 }
 
 /** Turn a Response into a human-readable error message. Distinguishes
