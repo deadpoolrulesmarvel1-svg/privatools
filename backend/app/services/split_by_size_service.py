@@ -60,19 +60,28 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
 
                     if sz > max_bytes and len(current) > MIN_CHUNK_PAGES:
                         # Overshot. Pop pages off the end one at a time and
-                        # re-test until we're under the cap (or down to 1 page).
+                        # re-test until we're under the cap (or down to the
+                        # minimum). EVERY popped page is carried forward to seed
+                        # the next chunk — keeping only the last one (the old
+                        # bug) silently dropped the rest. `carry` preserves the
+                        # original page order (earliest-popped ends up first).
                         candidate.unlink(missing_ok=True)
+                        carry: list = []
                         while len(current) > MIN_CHUNK_PAGES:
-                            popped = current.pop()
+                            carry.insert(0, current.pop())
                             candidate = _save_chunk(current)
-                            sz = os.path.getsize(candidate)
-                            if sz <= max_bytes:
+                            if os.path.getsize(candidate) <= max_bytes:
                                 break
                             candidate.unlink(missing_ok=True)
+                        else:
+                            # Loop exhausted without fitting: `current` is a lone
+                            # page that's still oversized. The last candidate was
+                            # unlinked, so re-save it before recording the path.
+                            candidate = _save_chunk(current)
                         chunks.append(current)
                         chunk_paths.append(candidate)
-                        # Start the next chunk with the page we just popped.
-                        current = [popped]  # type: ignore[name-defined]
+                        # Seed the next chunk with ALL trimmed pages, in order.
+                        current = carry
                     else:
                         # Either still under cap, or we're forced to keep this
                         # single oversized page in its own chunk. Keep going.

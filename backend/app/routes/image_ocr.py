@@ -51,11 +51,17 @@ def _extract_text(image_path: str, lang: str) -> str:
     except ImportError:
         raise RuntimeError("pytesseract and Pillow are required for image OCR")
 
+    # Reuse the same timeout the PDF OCR path enforces — without it a crafted
+    # image can wedge tesseract and pin a shared thread-pool worker forever
+    # (the request timeout can't cancel a running OS thread). pytesseract spawns
+    # a watchdog that kills the stuck process and raises RuntimeError on timeout.
+    from ..services.ocr_service import _TESS_TIMEOUT_SECS
+
     img = Image.open(image_path)
     # Convert to RGB if needed (e.g. RGBA PNGs)
     if img.mode not in ("L", "RGB"):
         img = img.convert("RGB")
-    text = pytesseract.image_to_string(img, lang=lang)
+    text = pytesseract.image_to_string(img, lang=lang, timeout=_TESS_TIMEOUT_SECS)
     return text.strip()
 
 
@@ -122,6 +128,13 @@ async def image_ocr(
         text = await asyncio.to_thread(_extract_text, tmp_path, lang)
     except RuntimeError as e:
         remove_files(tmp_path)
+        # pytesseract raises RuntimeError on its watchdog timeout — surface that
+        # as 504 (the image was too complex/malformed) rather than a generic 500.
+        if "timeout" in str(e).lower():
+            raise HTTPException(
+                status_code=504,
+                detail="OCR timed out — the image was too large, complex, or malformed.",
+            )
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         remove_files(tmp_path)

@@ -36,9 +36,22 @@ _SVG_EXTS = {".svg"}
 def _svg_to_png(svg_path: str) -> str:
     """Rasterize an SVG to a high-res PNG temp file via cairosvg."""
     from cairosvg import svg2png  # cairosvg ships with the rembg dep tree
+
+    from .svg_safety import block_external_refs
+
     out_path = get_temp_path(f"svg_to_png_{uuid.uuid4().hex}.png")
+    with open(svg_path, "rb") as f:
+        svg_data = f.read()
+    # Pass bytestring= (NOT url=) so relative refs can't resolve against the
+    # server filesystem, and block_external_refs denies absolute file:// (LFI)
+    # and http(s):// (SSRF) references — only inline data: URIs are allowed.
     # Render at 2x for crisp output even after PDF embed scaling.
-    svg2png(url=svg_path, write_to=str(out_path), output_width=2400)
+    svg2png(
+        bytestring=svg_data,
+        write_to=str(out_path),
+        output_width=2400,
+        url_fetcher=block_external_refs,
+    )
     return str(out_path)
 
 PAGE_SIZES = {
