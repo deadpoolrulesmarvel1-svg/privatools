@@ -7,6 +7,7 @@ support arbitrary fg/bg colors and a centred logo (which the raw reportlab
 QrCodeWidget does not support).
 """
 import io
+import os
 
 import pikepdf
 from PIL import Image
@@ -16,6 +17,7 @@ from reportlab.pdfgen import canvas
 
 from ..utils.cleanup import safe_open_pdf
 from ..utils.colors import hex_to_rgb_int, parse_hex_color
+from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 
 
@@ -169,26 +171,39 @@ def embed_qr_in_pdf(
         logo_bytes=logo_bytes,
     )
 
-    with safe_open_pdf(input_path) as pdf:
-        page_count = len(pdf.pages)
-        pg_idx = max(0, min(page - 1, page_count - 1))
-        target_page = pdf.pages[pg_idx]
+    try:
+        with safe_open_pdf(input_path) as pdf:
+            page_count = len(pdf.pages)
+            # Reject an out-of-range page instead of silently clamping (which
+            # stamped the QR onto the wrong page and returned 200).
+            if not 1 <= page <= page_count:
+                raise ValidationError(
+                    f"Page {page} is out of range — the PDF has {page_count} page(s)."
+                )
+            target_page = pdf.pages[page - 1]
 
-        mediabox = target_page.mediabox
-        pg_width = float(mediabox[2]) - float(mediabox[0])
-        pg_height = float(mediabox[3]) - float(mediabox[1])
+            mediabox = target_page.mediabox
+            pg_width = float(mediabox[2]) - float(mediabox[0])
+            pg_height = float(mediabox[3]) - float(mediabox[1])
 
-        packet = io.BytesIO()
-        c = canvas.Canvas(packet, pagesize=(pg_width, pg_height))
-        c.drawImage(ImageReader(qr_png_path), x, y, width=qr_size, height=qr_size, mask="auto")
-        c.save()
-        packet.seek(0)
+            packet = io.BytesIO()
+            c = canvas.Canvas(packet, pagesize=(pg_width, pg_height))
+            c.drawImage(ImageReader(qr_png_path), x, y, width=qr_size, height=qr_size, mask="auto")
+            c.save()
+            packet.seek(0)
 
-        # `with` so the overlay Pdf is closed even if add_overlay/save raises —
-        # this runs on a per-request hot path and previously leaked the object.
-        # Keep the save inside the block so overlay objects stay resolvable.
-        with pikepdf.Pdf.open(packet) as overlay_pdf:
-            pikepdf.Page(target_page).add_overlay(overlay_pdf.pages[0])
-            pdf.save(str(output_path))
+            # `with` so the overlay Pdf is closed even if add_overlay/save raises —
+            # this runs on a per-request hot path and previously leaked the object.
+            # Keep the save inside the block so overlay objects stay resolvable.
+            with pikepdf.Pdf.open(packet) as overlay_pdf:
+                pikepdf.Page(target_page).add_overlay(overlay_pdf.pages[0])
+                pdf.save(str(output_path))
+    finally:
+        # The intermediate QR PNG is embedded in the output now — drop it (it
+        # was previously leaked on every call).
+        try:
+            os.unlink(qr_png_path)
+        except OSError:
+            pass
 
     return str(output_path)

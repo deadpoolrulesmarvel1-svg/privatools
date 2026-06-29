@@ -311,11 +311,16 @@ async def video_converter_endpoint(
     try:
         output_path = await asyncio.to_thread(video_tools_service.video_convert, str(temp_path), target_format)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
-        out_ext = output_path.rsplit(".", 1)[-1]
+        out_ext = output_path.rsplit(".", 1)[-1].lower()
+        # Correct IANA types — `video/<ext>` yields invalid video/mkv|avi|mov.
+        video_mime = {
+            "mp4": "video/mp4", "webm": "video/webm", "mkv": "video/x-matroska",
+            "avi": "video/x-msvideo", "mov": "video/quicktime",
+        }.get(out_ext, "application/octet-stream")
         return FileResponse(
             path=output_path,
             filename=f"converted.{out_ext}",
-            media_type=f"video/{out_ext}",
+            media_type=video_mime,
             background=cleanup,
         )
     except ValueError as exc:
