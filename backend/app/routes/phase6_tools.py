@@ -122,25 +122,28 @@ async def image_upscaler(
     new_w = img.width * scale
     new_h = img.height * scale
 
-    # Sanity check — don't create images over 100MP
+    # Sanity check — don't create images over 100MP. (img.width/height read the
+    # header only; the heavy decode happens on .resize() below, which we
+    # offload.)
     if new_w * new_h > 100_000_000:
         raise HTTPException(400, f"Upscaled image would be {new_w}x{new_h} — too large. Use a smaller scale or image.")
 
-    upscaled = img.resize((new_w, new_h), Image.LANCZOS)
-
-    out = io.BytesIO()
     save_format = orig_format if orig_format in ("JPEG", "PNG", "WEBP") else "PNG"
     save_kwargs = {"quality": 95} if save_format == "JPEG" else {}
-    upscaled.save(out, format=save_format, **save_kwargs)
-    out.seek(0)
-
     ext = save_format.lower()
     if ext == "jpeg":
         ext = "jpg"
     mime = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}.get(save_format, "image/png")
-
     out_path = _temp_path(f".{ext}")
-    out_path.write_bytes(out.getvalue())
+
+    # LANCZOS upscale to tens of millions of pixels is one of the heaviest PIL
+    # ops — run it (and the save) off the event loop so it can't freeze every
+    # other concurrent request on the 2-core VM.
+    def _work() -> None:
+        upscaled = img.resize((new_w, new_h), Image.LANCZOS)
+        upscaled.save(str(out_path), format=save_format, **save_kwargs)
+
+    await asyncio.to_thread(_work)
 
     stem = Path(safe_filename(file.filename, "image")).stem
     return FileResponse(
@@ -211,8 +214,23 @@ async def audio_converter(
     )
 
 
+def _count_pdf_pages(data: bytes) -> int:
+    """Parse a PDF and return its page count (-1 if unreadable). PyMuPDF parsing
+    is CPU-bound, so callers run this off the event loop."""
+    try:
+        doc = fitz.open(stream=data, filetype="pdf")
+        try:
+            return doc.page_count
+        finally:
+            doc.close()
+    except Exception:
+        return -1
+
+
 @router.post("/pdf-page-counter")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def pdf_page_counter(
+    request: Request,
     files: list[UploadFile] = File(...),
 ):
     """Count pages in multiple PDFs. Returns JSON with filename and page count."""
@@ -225,12 +243,9 @@ async def pdf_page_counter(
     total = 0
     for f in files:
         data = await read_upload(f, label=f.filename or "PDF")
-        try:
-            doc = fitz.open(stream=data, filetype="pdf")
-            count = doc.page_count
-            doc.close()
-        except Exception:
-            count = -1  # invalid PDF
+        # Offload the fitz parse — up to 100 inline parses on the loop thread
+        # would stall every other request on the 2-core VM.
+        count = await asyncio.to_thread(_count_pdf_pages, data)
         name = safe_filename(f.filename, "document.pdf")
         results.append({"filename": name, "pages": count})
         if count > 0:

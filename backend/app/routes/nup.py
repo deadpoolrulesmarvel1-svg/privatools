@@ -130,7 +130,8 @@ async def nup(
             ) from exc
 
         if pages_per_sheet == 2 and orient == "stack":
-            output_path = _nup_2up_stack(str(temp_path))
+            # Offload like the 'side' layout below — render+save blocks the loop.
+            output_path = await asyncio.to_thread(_nup_2up_stack, str(temp_path))
         else:
             # All other layouts (2-side / 4 / 6 / 9 / 16) go through the shared service.
             output_path = await asyncio.to_thread(nup_service.nup, str(temp_path), pages_per_sheet=pages_per_sheet)

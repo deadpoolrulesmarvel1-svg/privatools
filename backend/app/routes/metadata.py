@@ -186,7 +186,10 @@ async def update_metadata(request: Request, file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = _apply_metadata_update(
+        # pikepdf rewrites the whole PDF here — offload so the resave doesn't
+        # block the event loop on a large file (the read path is already async).
+        output_path = await asyncio.to_thread(
+            _apply_metadata_update,
             str(temp_path),
             title=title,
             author=author,
