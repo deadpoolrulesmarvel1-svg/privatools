@@ -155,13 +155,22 @@ git reset --hard "$target_sha"
 if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
     image_ref="${DEPLOY_IMAGE_REPO}:${target_ref}"
     log "pulling signed image ${image_ref}"
-    # Pull; on a transient failure (notably containerd "lease does not exist",
-    # which has stuck deploys mid-pull and required a manual prune), clear
-    # dangling layers and retry once before declaring not-ready for this cycle.
-    if ! docker pull "$image_ref" >/dev/null 2>&1; then
-        log "pull failed; pruning dangling images and retrying once"
-        docker image prune -f >/dev/null 2>&1 || true
-        docker pull "$image_ref" >/dev/null 2>&1 || true
+    # Pull with a few retries + backoff. A freshly-pushed image sometimes fails
+    # the first pull with a transient containerd error; a plain retry that KEEPS
+    # the partially-pulled layers succeeds — which is why a manual `docker pull`
+    # always worked here while auto-deploy didn't. Deliberately NO `docker image
+    # prune` between attempts: pruning discards the in-progress layers, so every
+    # retry restarts from zero into the same error and the pull never completes
+    # (this stuck several releases until a hand `docker pull`). Keeping the layers
+    # lets this cycle — and the next — resume the download.
+    pulled=false
+    for attempt in 1 2 3; do
+        if docker pull "$image_ref" >/dev/null 2>&1; then pulled=true; break; fi
+        log "pull attempt ${attempt}/3 for ${target_ref} failed; retrying in 12s (layers kept)"
+        sleep 12
+    done
+    if ! $pulled; then
+        log "pull not complete this cycle for ${target_ref}; will resume next cycle"
     fi
     img_rev="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
     if [[ "$img_rev" != "$target_sha" ]]; then
