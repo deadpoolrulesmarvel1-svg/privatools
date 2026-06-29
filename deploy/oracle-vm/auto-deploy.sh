@@ -25,6 +25,24 @@ STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
 DEPLOY_MODE="${DEPLOY_MODE:-auto}"
 DEPLOY_TAG_GLOB="${DEPLOY_TAG_GLOB:-v*}"
 
+# Prefer the cosign-signed image release.yml builds+pushes on each tag over a
+# heavy rebuild on this 2-core VM. The deploy pulls ${DEPLOY_IMAGE_REPO}:<tag>,
+# verifies its org.opencontainers.image.revision label == the tag's commit, and
+# runs it with `up --no-build`. Set DEPLOY_IMAGE_REPO="" to force local builds.
+DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/deadpoolrulesmarvel1-svg/privatools}"
+
+# Optional deploy-health alerting: set DEPLOY_PING_URL to a Healthchecks.io (or
+# similar) check URL. We ping it on success and ping <url>/fail on failure, so a
+# stuck or failed deploy raises an alert instead of going unnoticed.
+DEPLOY_PING_URL="${DEPLOY_PING_URL:-}"
+
+ping_deploy() {  # ping_deploy ok|fail
+    [[ -z "$DEPLOY_PING_URL" ]] && return 0
+    local url="$DEPLOY_PING_URL"
+    [[ "$1" == "fail" ]] && url="${DEPLOY_PING_URL%/}/fail"
+    curl --fail --silent --max-time 8 -o /dev/null "$url" || true
+}
+
 log() {
     printf '[privatools-auto-deploy] %s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"
 }
@@ -37,7 +55,7 @@ health_reports_sha() {
         || [[ "$body" == *"\"build_sha\": \"${expected_sha}\""* ]]
 }
 
-trap 'rc=$?; log "failed at line $LINENO with exit $rc"; exit "$rc"' ERR
+trap 'rc=$?; log "failed at line $LINENO with exit $rc"; ping_deploy fail; exit "$rc"' ERR
 
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
@@ -114,13 +132,39 @@ fi
 log "deploying ${current_sha:0:12} -> ${target_sha:0:12}"
 git reset --hard "$target_sha"
 
-GIT_SHA="$target_sha" docker compose up -d --build
+# Prefer the prebuilt, cosign-signed GHCR image for the resolved release tag;
+# rebuild locally only as a fallback (branch/HEAD deploy, or image not yet
+# published). Verify the image's revision label matches the target commit so we
+# never run a stale or mismatched artifact.
+deploy_image=""
+if [[ -n "$DEPLOY_IMAGE_REPO" && "$target_ref" != "${REMOTE}/${BRANCH}" ]]; then
+    image_ref="${DEPLOY_IMAGE_REPO}:${target_ref}"
+    log "pulling prebuilt image ${image_ref}"
+    if docker pull "$image_ref" >/dev/null 2>&1; then
+        img_rev="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
+        if [[ "$img_rev" == "$target_sha" ]]; then
+            deploy_image="$image_ref"
+            log "using prebuilt image (revision matches ${target_sha:0:12})"
+        else
+            log "image revision '${img_rev:0:12}' != target ${target_sha:0:12}; falling back to local build"
+        fi
+    else
+        log "image pull failed; falling back to local build"
+    fi
+fi
+
+if [[ -n "$deploy_image" ]]; then
+    PRIVATOOLS_IMAGE="$deploy_image" GIT_SHA="$target_sha" docker compose up -d --no-build
+else
+    GIT_SHA="$target_sha" docker compose up -d --build
+fi
 docker image prune -f >/dev/null || true
 
 for i in $(seq 1 "$HEALTH_RETRIES"); do
     if health_reports_sha "$target_sha"; then
         printf '%s\n' "$target_sha" > "$STATE_FILE"
         log "deploy complete; health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} checks"
+        ping_deploy ok
         exit 0
     fi
     sleep "$HEALTH_INTERVAL"
@@ -128,4 +172,5 @@ done
 
 log "health check did not report ${target_sha:0:12} after $((HEALTH_RETRIES * HEALTH_INTERVAL)) seconds"
 docker compose ps || true
+ping_deploy fail
 exit 1
