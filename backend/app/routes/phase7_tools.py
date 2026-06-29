@@ -17,7 +17,7 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
-from ..utils.route_helpers import read_upload
+from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
 
 router = APIRouter()
@@ -58,11 +58,10 @@ async def mute_video_endpoint(request: Request, file: UploadFile = File(...)):
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file (MP4, MOV, WebM, MKV, AVI, M4V).")
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"mute_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"mute_out_{uuid.uuid4().hex}{suffix}")
-    in_path.write_bytes(data)
+    await stream_upload_to_disk(file, in_path, label="Video", max_bytes=MAX_VIDEO_BYTES)
     try:
         await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
@@ -85,12 +84,11 @@ async def reverse_video_endpoint(request: Request, file: UploadFile = File(...))
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"rev_in_{uuid.uuid4().hex}{suffix}")
     # Output as .mp4 regardless of input for max compatibility.
     out_path = get_temp_path(f"rev_out_{uuid.uuid4().hex}.mp4")
-    in_path.write_bytes(data)
+    await stream_upload_to_disk(file, in_path, label="Video", max_bytes=MAX_VIDEO_BYTES)
     try:
         await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
@@ -120,11 +118,10 @@ async def video_speed_endpoint(
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"speed_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"speed_out_{uuid.uuid4().hex}.mp4")
-    in_path.write_bytes(data)
+    await stream_upload_to_disk(file, in_path, label="Video", max_bytes=MAX_VIDEO_BYTES)
     # Build atempo chain — ffmpeg's atempo only handles 0.5-2.0 per call.
     atempo_chain: list[str] = []
     s = float(speed)
@@ -190,7 +187,6 @@ async def audio_trim_endpoint(
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_AUDIO:
         raise HTTPException(status_code=400, detail="Please upload an audio file (MP3, WAV, AAC, FLAC, OGG, M4A).")
-    data = await read_upload(file, label="Audio", max_bytes=MAX_VIDEO_BYTES)
     # Validate timestamps: H:MM:SS or seconds. Use fullmatch + a hard length
     # cap so an attacker can't pass a multi-MB form value to force pathological
     # regex backtracking (defence-in-depth — Starlette already caps form size).
@@ -208,7 +204,7 @@ async def audio_trim_endpoint(
     ensure_temp_dir()
     in_path = get_temp_path(f"atrim_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
-    in_path.write_bytes(data)
+    await stream_upload_to_disk(file, in_path, label="Audio", max_bytes=MAX_VIDEO_BYTES)
     try:
         await _run_ffmpeg_async([
             "ffmpeg", "-y", "-ss", start.strip(), "-to", end.strip(),
