@@ -33,6 +33,7 @@ def test_run_bounded_caps_concurrency(monkeypatch):
     at once even when 10 are launched together — the whole point of the gate."""
     monkeypatch.setattr(concurrency, "MAX_CONCURRENT_HEAVY", 2)
     monkeypatch.setattr(concurrency, "_sem", None)  # force a fresh semaphore
+    monkeypatch.setattr(concurrency, "_executor", None)  # and a fresh sized pool
 
     lock = threading.Lock()
     state = {"now": 0, "peak": 0}
@@ -55,3 +56,43 @@ def test_run_bounded_caps_concurrency(monkeypatch):
     asyncio.run(main())
     assert state["peak"] <= 2, f"semaphore did not bound concurrency: peak={state['peak']}"
     assert state["peak"] >= 1
+
+
+def test_run_bounded_uses_dedicated_heavy_pool():
+    name = asyncio.run(run_bounded(lambda: threading.current_thread().name))
+    assert name.startswith("heavy"), name
+
+
+def test_leaked_heavy_op_does_not_starve_light_io(monkeypatch):
+    """A heavy op that keeps running after its request is cancelled (CPython
+    can't kill the thread) occupies a DEDICATED heavy thread, not the shared
+    default executor — so light asyncio.to_thread work still runs immediately.
+    This isolation is the point of the separate pool."""
+    monkeypatch.setattr(concurrency, "MAX_CONCURRENT_HEAVY", 1)
+    monkeypatch.setattr(concurrency, "_sem", None)
+    monkeypatch.setattr(concurrency, "_executor", None)
+
+    started = threading.Event()
+    release = threading.Event()
+
+    def slow(_):
+        started.set()
+        release.wait(3.0)  # long op that ignores cancellation
+
+    async def main():
+        task = asyncio.create_task(run_bounded(slow, 0))
+        while not started.is_set():
+            await asyncio.sleep(0.01)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        # heavy pool (size 1) is now occupied by the leaked thread; a light
+        # default-executor to_thread must still run promptly.
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(lambda: "ok"), timeout=2.0)
+        finally:
+            release.set()
+
+    assert asyncio.run(main()) == "ok"

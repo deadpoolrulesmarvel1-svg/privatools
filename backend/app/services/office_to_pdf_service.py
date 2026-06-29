@@ -73,6 +73,7 @@ async def office_to_pdf(input_path: str) -> str:
     profile_dir.mkdir(parents=True, exist_ok=True)
     logger.info("office_to_pdf start suffix=%s", suffix)
 
+    proc: asyncio.subprocess.Process | None = None
     try:
         proc = await asyncio.create_subprocess_exec(
             "libreoffice",
@@ -117,6 +118,17 @@ async def office_to_pdf(input_path: str) -> str:
 
         return str(output_path)
     finally:
+        # Kill the subprocess on EVERY exit path so it can't outlive its request.
+        # On cancellation (client disconnect / request timeout) the wait_for above
+        # raises CancelledError, NOT TimeoutError, so the timeout branch's kill is
+        # skipped — without this, LibreOffice would keep running orphaned, holding
+        # CPU + a profile dir after the user is long gone (the request-timeout
+        # subprocess leak the deep research flagged).
+        if proc is not None and proc.returncode is None:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
         # Tear down BOTH per-conversion temp resources here. The caller only
         # knows the original upload and the returned PDF — not this intermediate
         # copy (a separate office_*.<ext> file) nor the LibreOffice profile dir.

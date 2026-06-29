@@ -40,6 +40,15 @@ async def web_optimize(input_path: str) -> str:
         except (OSError, ValueError):
             pass
         raise ToolTimeoutError("qpdf linearize timed out") from exc
+    finally:
+        # On cancellation (client disconnect / request timeout) wait_for raises
+        # CancelledError, not TimeoutError — kill here so qpdf can't outlive the
+        # request (request-timeout subprocess leak).
+        if proc.returncode is None:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
 
     # qpdf exit codes: 0 = ok, 3 = warnings (file still produced)
     if proc.returncode not in (0, 3):
