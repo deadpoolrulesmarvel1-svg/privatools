@@ -213,26 +213,3 @@ def no_store_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
     if extra:
         headers.update(extra)
     return headers
-
-
-_PAGE_RANGE_RE = re.compile(r"^\s*(?:\d+|\d+-\d+|\d+-end|end)(?:\s*,\s*(?:\d+|\d+-\d+|\d+-end|end))*\s*$")
-
-
-def validate_page_range_string(spec: str | None) -> None:
-    """Cheap shape check for a page-range string like ``1,3,5-7,9-end``.
-
-    The full parser lives in ``services/split_service.py``; this is a
-    pre-flight that catches obvious typos before we open the PDF.
-    Empty / None is allowed — callers decide whether the field is
-    required.
-    """
-    if not spec:
-        return
-    if not _PAGE_RANGE_RE.match(spec):
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Page range is invalid. Use formats like \"1\", \"1,3\", "
-                "\"1-3,5,7-9\", or \"5-end\"."
-            ),
-        )

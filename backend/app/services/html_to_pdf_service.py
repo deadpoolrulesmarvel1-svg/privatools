@@ -382,7 +382,9 @@ def safe_url_fetch(
             # re-check the final landing URL too.
             _validate_url(resp.geturl())
             content_type = (resp.headers.get_content_type() or "").lower()
-            if accept_types and content_type and not any(t in content_type for t in accept_types):
+            # Fail closed: a missing/blank Content-Type must NOT bypass the
+            # allowlist (the old `and content_type` short-circuit let it through).
+            if accept_types and not any(t in content_type for t in accept_types):
                 raise HTTPException(
                     status_code=400,
                     detail=f"Unsupported content type from URL: {content_type or 'unknown'}",
@@ -464,7 +466,9 @@ def _fetch_url_html(url: str) -> str:
             if k.lower() == "content-type":
                 content_type = v.lower()
                 break
-        if content_type and not any(t in content_type for t in ("text/html", "application/xhtml", "text/plain", "application/xml")):
+        # Fail closed on a missing/blank Content-Type too (no `content_type and`
+        # short-circuit) so an untyped response can't bypass the allowlist.
+        if not any(t in content_type for t in ("text/html", "application/xhtml", "text/plain", "application/xml")):
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported content type from URL: {content_type or 'unknown'}",

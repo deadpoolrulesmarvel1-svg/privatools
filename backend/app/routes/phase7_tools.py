@@ -7,10 +7,8 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-import shutil
 import subprocess
 import uuid
-from pathlib import Path
 from collections import Counter
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -163,6 +161,22 @@ async def video_speed_endpoint(
 # ─── Audio trim (standalone — distinct from video trim-media) ────────────
 ALLOWED_AUDIO = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a", ".wma"}
 
+# Correct IANA media types — `audio/<ext>` produces invalid types like
+# audio/mp3 / audio/m4a / audio/wma, which some players reject.
+_AUDIO_MIME = {
+    ".mp3": "audio/mpeg", ".wav": "audio/wav", ".aac": "audio/aac",
+    ".flac": "audio/flac", ".ogg": "audio/ogg", ".m4a": "audio/mp4",
+    ".wma": "audio/x-ms-wma",
+}
+
+
+def _ts_to_seconds(ts: str) -> float:
+    """Parse a validated 'H:MM:SS(.ddd)' or 'seconds(.ddd)' timestamp to seconds."""
+    parts = ts.split(":")
+    if len(parts) == 3:
+        return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+    return float(ts)
+
 
 @router.post("/audio-trim")
 @limiter.limit(EXPENSIVE_RATE_LIMIT)
@@ -187,6 +201,9 @@ async def audio_trim_endpoint(
         raise HTTPException(status_code=400, detail="Start must be HH:MM:SS or seconds")
     if len(e_strip) > 32 or not _TS_RE.fullmatch(e_strip):
         raise HTTPException(status_code=400, detail="End must be HH:MM:SS or seconds")
+    if _ts_to_seconds(s_strip) >= _ts_to_seconds(e_strip):
+        # Without this, ffmpeg emits an empty/malformed file returned as a 200.
+        raise HTTPException(status_code=400, detail="End must be greater than start")
     ensure_temp_dir()
     in_path = get_temp_path(f"atrim_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
@@ -198,7 +215,8 @@ async def audio_trim_endpoint(
         ], "Audio trim")
         cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
         return FileResponse(
-            str(out_path), media_type=f"audio/{suffix.lstrip('.')}",
+            str(out_path),
+            media_type=_AUDIO_MIME.get(suffix, "application/octet-stream"),
             filename=f"trimmed{suffix}", background=cleanup,
         )
     except HTTPException:

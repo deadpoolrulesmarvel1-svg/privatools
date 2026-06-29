@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import shutil
 import threading
 import time
 from typing import Callable
@@ -77,11 +76,6 @@ def _check_tessdata() -> bool:
         if os.path.isdir(path):
             return True
     return False
-
-
-def _check_binary(name: str) -> bool:
-    """True when ``name`` resolves to an executable in PATH."""
-    return shutil.which(name) is not None
 
 
 # ---------------------------------------------------------------------------

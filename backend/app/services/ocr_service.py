@@ -63,14 +63,6 @@ def _render_page_to_image(page: fitz.Page, dpi: int = 200) -> Image.Image:
     return img.convert("RGB") if mode == "RGBA" else img
 
 
-def _ocr_single_page(args: tuple) -> tuple[int, str]:
-    """OCR a single page image. Returns (page_index, text)."""
-    idx, img_bytes, width, height, lang = args
-    img = Image.frombytes("RGB", (width, height), img_bytes)
-    text = pytesseract.image_to_string(img, lang=lang, timeout=_TESS_TIMEOUT_SECS)
-    return (idx, text)
-
-
 def _render_and_ocr_text(args: tuple) -> tuple[int, str]:
     """Render page to image then OCR. For use with ThreadPoolExecutor."""
     idx, page_bytes, page_count, lang, dpi = args

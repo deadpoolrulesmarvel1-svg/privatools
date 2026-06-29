@@ -1,40 +1,12 @@
 import asyncio
 import logging
 import shutil
-from pathlib import Path
 
 import fitz  # PyMuPDF
 
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
-
-# Minimal sRGB ICC profile header (used to embed an output intent for PDF/A)
-# This is the minimum required to satisfy PDF/A-2b output intent requirements.
-_SRGB_ICC: bytes | None = None
-
-
-def _get_srgb_icc() -> bytes:
-    """Return a minimal sRGB ICC profile. Try system paths first, fall back to a stub."""
-    global _SRGB_ICC
-    if _SRGB_ICC is not None:
-        return _SRGB_ICC
-
-    # Common system locations for sRGB ICC profiles
-    search_paths = [
-        "/usr/share/color/icc/colord/sRGB.icc",
-        "/usr/share/color/icc/sRGB.icc",
-        "/System/Library/ColorSync/Profiles/sRGB Profile.icc",
-        "/Library/ColorSync/Profiles/sRGB Profile.icc",
-    ]
-    for p in search_paths:
-        if Path(p).exists():
-            _SRGB_ICC = Path(p).read_bytes()
-            return _SRGB_ICC
-
-    # No system ICC profile found — return empty bytes and let fitz handle it.
-    _SRGB_ICC = b""
-    return _SRGB_ICC
 
 
 def _convert_to_pdfa_sync(input_path: str) -> str:
