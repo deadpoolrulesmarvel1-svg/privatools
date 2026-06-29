@@ -117,8 +117,16 @@ async def office_to_pdf(input_path: str) -> str:
 
         return str(output_path)
     finally:
-        # Always tear down the profile dir; the input copy is cleaned up by the
-        # caller's normal temp-file cleanup (see route_helpers.cleanup_on_error).
-        # Offload the teardown too — the LibreOffice profile dir is many small
-        # files, and rmtree on the loop would stall concurrent requests.
+        # Tear down BOTH per-conversion temp resources here. The caller only
+        # knows the original upload and the returned PDF — not this intermediate
+        # copy (a separate office_*.<ext> file) nor the LibreOffice profile dir.
+        # Without cleaning temp_input here it leaks on EVERY path (success and
+        # each failure: timeout / conversion error / missing output) until the
+        # janitor's next sweep, widening the "deleted promptly" window with a
+        # full copy of the user's document. Offload the rmtree — the profile dir
+        # is many small files and rmtree on the loop would stall concurrent reqs.
         await asyncio.to_thread(shutil.rmtree, str(profile_dir), ignore_errors=True)
+        try:
+            temp_input.unlink(missing_ok=True)
+        except OSError:
+            logger.debug("office_to_pdf: could not remove temp input %s", temp_input)
