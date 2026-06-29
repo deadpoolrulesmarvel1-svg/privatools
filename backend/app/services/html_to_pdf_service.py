@@ -17,6 +17,7 @@ import ipaddress
 import logging
 import os
 import socket
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -408,24 +409,40 @@ def safe_url_fetch(
         raise HTTPException(status_code=400, detail=f"Could not fetch URL (network error): {reason}") from exc
 
 
-# Per-worker HTTP/HTTPS connection cache. urllib's `urlopen` is one-shot
+# Per-THREAD HTTP/HTTPS connection cache. urllib's `urlopen` is one-shot
 # (new socket + TLS handshake every call); a tiny custom pool lets repeat
 # fetches against the same host reuse the established connection. We
 # don't import `requests` because it's not a guaranteed dep on the deploy
 # VM and stdlib gives us the same keep-alive for free.
-_conn_cache: dict[tuple[str, str, int], http.client.HTTPConnection] = {}
+#
+# This MUST be thread-local: each tool request runs in its own worker thread
+# (run_bounded / asyncio.to_thread) and http.client connections are not
+# thread-safe. A single shared dict handed concurrent fetches to the same host
+# the *same* connection object, interleaving their request/response cycles —
+# a cross-request data-mix. Thread-local storage keeps the keep-alive reuse
+# within a worker thread while isolating concurrent requests.
+_conn_local = threading.local()
+
+
+def _thread_conn_cache() -> dict[tuple[str, str, int], http.client.HTTPConnection]:
+    cache = getattr(_conn_local, "conns", None)
+    if cache is None:
+        cache = {}
+        _conn_local.conns = cache
+    return cache
 
 
 def _get_conn(scheme: str, host: str, port: int) -> http.client.HTTPConnection:
     key = (scheme, host, port)
-    cached = _conn_cache.get(key)
+    cache = _thread_conn_cache()
+    cached = cache.get(key)
     if cached is not None:
         return cached
     if scheme == "https":
         conn: http.client.HTTPConnection = http.client.HTTPSConnection(host, port, timeout=URL_FETCH_TIMEOUT)
     else:
         conn = http.client.HTTPConnection(host, port, timeout=URL_FETCH_TIMEOUT)
-    _conn_cache[key] = conn
+    cache[key] = conn
     return conn
 
 
@@ -500,7 +517,7 @@ def _fetch_url_html(url: str) -> str:
     except (http.client.HTTPException, OSError, TimeoutError) as exc:
         # Cached connection went stale — drop it and fall back to a fresh
         # one-shot urlopen so we still serve the request.
-        _conn_cache.pop((scheme, host, port), None)
+        _thread_conn_cache().pop((scheme, host, port), None)
         logger.debug("html_to_pdf: keep-alive miss for %s://%s: %s", scheme, host, exc)
         req = urllib.request.Request(url, headers=headers)
         try:
