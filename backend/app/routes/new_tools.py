@@ -262,7 +262,8 @@ def _ensure_video_filename(filename: str | None) -> None:
 
 
 @router.post("/video-to-pdf")
-async def video_to_pdf_endpoint(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_to_pdf_endpoint(request: Request, 
     file: UploadFile = File(...),
     frames: int = Form(12, ge=1, le=100),
 ):
@@ -296,7 +297,8 @@ async def video_to_pdf_endpoint(
 
 # ─── Video Converter ───────────────────────────────────────────────────────
 @router.post("/video-converter")
-async def video_converter_endpoint(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_converter_endpoint(request: Request, 
     file: UploadFile = File(...),
     target_format: str = Form("mp4"),
 ):
@@ -336,7 +338,8 @@ async def video_converter_endpoint(
 
 # ─── Video Resizer ─────────────────────────────────────────────────────────
 @router.post("/video-resizer")
-async def video_resizer_endpoint(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_resizer_endpoint(request: Request, 
     file: UploadFile = File(...),
     preset: str = Form("720p"),
 ):
@@ -370,7 +373,8 @@ async def video_resizer_endpoint(
 
 # ─── Video Thumbnail ───────────────────────────────────────────────────────
 @router.post("/video-thumbnail")
-async def video_thumbnail_endpoint(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_thumbnail_endpoint(request: Request, 
     file: UploadFile = File(...),
     time_seconds: float = Form(1.0, ge=0, le=86400),
 ):
@@ -404,7 +408,8 @@ async def video_thumbnail_endpoint(
 
 # ─── GIF → MP4 ─────────────────────────────────────────────────────────────
 @router.post("/gif-to-mp4")
-async def gif_to_mp4_endpoint(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def gif_to_mp4_endpoint(request: Request, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith(".gif"):
         raise HTTPException(status_code=400, detail="Please upload a .gif file")
     ensure_temp_dir()
@@ -475,7 +480,8 @@ async def add_subtitles_endpoint(
 
 # ─── Video Merge ───────────────────────────────────────────────────────────
 @router.post("/video-merge")
-async def video_merge_endpoint(files: list[UploadFile] = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_merge_endpoint(request: Request, files: list[UploadFile] = File(...)):
     if len(files) < 2:
         raise HTTPException(status_code=400, detail="Upload at least 2 videos to merge")
     if len(files) > 20:
@@ -523,7 +529,8 @@ _AUDIO_EXTS = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a", ".wma"}
 
 
 @router.post("/audio-merge")
-async def audio_merge_endpoint(files: list[UploadFile] = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def audio_merge_endpoint(request: Request, files: list[UploadFile] = File(...)):
     if len(files) < 2:
         raise HTTPException(status_code=400, detail="Upload at least 2 audio files to merge")
     if len(files) > 50:

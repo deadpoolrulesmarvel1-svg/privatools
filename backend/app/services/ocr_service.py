@@ -12,7 +12,7 @@ from PIL import Image
 from ..utils.cleanup import ensure_temp_dir
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
-from ..utils.render import safe_get_pixmap
+from ..utils.render import check_render_page_count, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +127,7 @@ def extract_text(input_path: str, lang: str = "eng", dpi: int = 200) -> str:
         page_count = len(doc)
     finally:
         doc.close()
+    check_render_page_count(page_count)
 
     if page_count == 1:
         # Single page — no overhead from parallelism
@@ -176,6 +177,7 @@ def extract_searchable_pdf_to_file(
         doc.close()
     if page_count == 0:
         raise ValidationError("Cannot run OCR on an empty PDF.")
+    check_render_page_count(page_count)
 
     if page_count == 1:
         # Single page — direct processing

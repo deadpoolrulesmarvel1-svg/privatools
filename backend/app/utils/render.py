@@ -34,6 +34,21 @@ def _env_int(name: str, default: int) -> int:
 MAX_PIXMAP_MP = _env_int("MAX_PIXMAP_MP", 100)
 MAX_PIXMAP_PIXELS = MAX_PIXMAP_MP * 1_000_000
 
+# Page-count backstop for the all-pages-in-RAM paths (OCR, multi-page TIFF):
+# even with each page individually size-capped, accumulating thousands of
+# rendered pages OOMs. Generous default so legitimate large docs pass.
+MAX_RENDER_PAGES = _env_int("MAX_RENDER_PAGES", 2000)
+
+
+def check_render_page_count(n: int) -> None:
+    """Reject an operation that would hold an absurd number of rendered pages
+    in memory at once."""
+    if n > MAX_RENDER_PAGES:
+        raise ValidationError(
+            f"This PDF has too many pages ({n}) for this operation. "
+            f"Max {MAX_RENDER_PAGES} pages — split it first."
+        )
+
 
 def estimate_pixmap_pixels(page: "fitz.Page", *, matrix=None, dpi=None) -> float:
     """Pixels a get_pixmap(matrix=/dpi=) call would allocate for this page."""

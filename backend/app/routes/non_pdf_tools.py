@@ -337,7 +337,8 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82,
 
 
 @router.post("/image-converter")
-async def image_converter(file: UploadFile = File(...), target_format: str = Form("png")):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def image_converter(request: Request, file: UploadFile = File(...), target_format: str = Form("png")):
     from PIL import Image
 
     fmt_key = target_format.lower().strip()
@@ -508,7 +509,8 @@ async def resize_crop_image(
 
 
 @router.post("/video-to-gif")
-async def video_to_gif(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def video_to_gif(request: Request, 
     file: UploadFile = File(...),
     fps: int = Form(10, ge=1, le=30),
     width: int = Form(480, ge=120, le=1920),
@@ -588,7 +590,8 @@ async def extract_audio(request: Request, file: UploadFile = File(...), format: 
 
 
 @router.post("/trim-media")
-async def trim_media(
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def trim_media(request: Request, 
     file: UploadFile = File(...),
     start: str = Form("00:00:00"),
     end: str = Form("00:00:10"),
@@ -630,7 +633,8 @@ async def trim_media(
 
 
 @router.post("/compress-video")
-async def compress_video(file: UploadFile = File(...), quality: int = Form(28, ge=18, le=40)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def compress_video(request: Request, file: UploadFile = File(...), quality: int = Form(28, ge=18, le=40)):
     data = await _read_upload(file, MAX_MEDIA_SIZE, label="Video")
     input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
     input_path = _write_temp_file(data, input_ext)
