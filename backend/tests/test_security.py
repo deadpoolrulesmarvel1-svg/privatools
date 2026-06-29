@@ -539,8 +539,12 @@ class TestApiSubdomainSplit:
         connect = next(
             d for d in csp.split(";") if d.strip().startswith("connect-src")
         )
-        assert "api.privatools.me" not in connect
-        assert "'self'" in connect
+        # Tokenized membership (not substring): exact source match, and avoids
+        # CodeQL's incomplete-url-substring-sanitization heuristic firing on a
+        # plain test assertion.
+        connect_sources = connect.split()
+        assert "https://api.privatools.me" not in connect_sources
+        assert "'self'" in connect_sources
 
     def test_csp_connect_src_includes_api_origin_when_configured(self):
         from backend.app.main import _content_security_policy
@@ -549,7 +553,7 @@ class TestApiSubdomainSplit:
         connect = next(
             d for d in csp.split(";") if d.strip().startswith("connect-src")
         )
-        assert "https://api.privatools.me" in connect
+        assert "https://api.privatools.me" in connect.split()
         # Widening connect-src must not relax script-src.
         script = next(d for d in csp.split(";") if d.strip().startswith("script-src"))
         assert "'unsafe-inline'" not in script
