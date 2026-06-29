@@ -11,6 +11,7 @@ import fitz  # PyMuPDF
 import pikepdf
 
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
         dst = fitz.open()
         for page in src:
             mat = fitz.Matrix(200 / 72, 200 / 72)
-            pix = page.get_pixmap(matrix=mat, colorspace=fitz.csGRAY)
+            pix = safe_get_pixmap(page, matrix=mat, colorspace=fitz.csGRAY)
             new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, pixmap=pix)
         dst.save(output_path, garbage=4, deflate=True)
@@ -107,7 +108,7 @@ def _raster_grayscale(input_path: str, output_path: str) -> str:
         for page in src:
             # 200 DPI for high quality grayscale.
             mat = fitz.Matrix(200 / 72, 200 / 72)
-            pix = page.get_pixmap(matrix=mat, colorspace=fitz.csGRAY)
+            pix = safe_get_pixmap(page, matrix=mat, colorspace=fitz.csGRAY)
             new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, pixmap=pix)
 

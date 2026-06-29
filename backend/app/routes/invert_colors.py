@@ -7,6 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.render import safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def _invert_page(args: tuple) -> tuple:
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     page = doc[0]
     w, h = page.rect.width, page.rect.height
-    pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72))
+    pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
     pix.invert_irect(pix.irect)
     png_bytes = pix.tobytes("png")
     doc.close()
@@ -40,7 +41,7 @@ def _invert(input_path: str, dpi: int) -> str:
         # Few pages — direct sequential (avoids overhead)
         doc = fitz.open()
         for page in src:
-            pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72))
+            pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
             pix.invert_irect(pix.irect)
             new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, pixmap=pix)

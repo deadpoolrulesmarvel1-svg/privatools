@@ -11,6 +11,7 @@ from PIL import Image
 
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 # Bound output height / memory so a huge PDF can't produce a multi-GB canvas.
 _MAX_PAGES = 200
@@ -42,7 +43,7 @@ def pdf_to_long_image(input_path: str, fmt: str = "png", dpi: int = 100) -> str:
         total_h = 0
         try:
             for i in range(n):
-                pix = doc[i].get_pixmap(dpi=dpi)
+                pix = safe_get_pixmap(doc[i], dpi=dpi)
                 img = Image.frombytes(
                     "RGBA" if pix.alpha else "RGB", [pix.width, pix.height], pix.samples
                 )

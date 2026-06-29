@@ -8,6 +8,7 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 
 def _convert_to_pptx_sync(input_path: str) -> str:
@@ -22,7 +23,7 @@ def _convert_to_pptx_sync(input_path: str) -> str:
             slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
 
             # Render at 200 DPI for crisp slides on modern displays.
-            pix = page.get_pixmap(dpi=200)
+            pix = safe_get_pixmap(page, dpi=200)
 
             # JPEG for smaller files (slides don't need transparency).
             img_data = io.BytesIO()

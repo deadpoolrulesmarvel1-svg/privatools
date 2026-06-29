@@ -20,6 +20,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def _render_and_save(args: tuple) -> str:
     try:
         page = doc[0]
         mat = fitz.Matrix(dpi / 72, dpi / 72)
-        pix = page.get_pixmap(matrix=mat)
+        pix = safe_get_pixmap(page, matrix=mat)
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
     finally:
         doc.close()
@@ -79,7 +80,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
             pages_pil: list[Image.Image] = []
             for page in doc:
                 mat = fitz.Matrix(dpi / 72, dpi / 72)
-                pix = page.get_pixmap(matrix=mat)
+                pix = safe_get_pixmap(page, matrix=mat)
                 pages_pil.append(
                     Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 )
@@ -103,7 +104,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
 
         if page_count == 1:
             mat = fitz.Matrix(dpi / 72, dpi / 72)
-            pix = doc[0].get_pixmap(matrix=mat)
+            pix = safe_get_pixmap(doc[0], matrix=mat)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             img_path = get_temp_path(f"page_1_{uuid.uuid4().hex}.{ext}")
             img.save(str(img_path), pil_format)
@@ -121,7 +122,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
         if page_count <= 3:
             for i, page in enumerate(doc):
                 mat = fitz.Matrix(dpi / 72, dpi / 72)
-                pix = page.get_pixmap(matrix=mat)
+                pix = safe_get_pixmap(page, matrix=mat)
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 img_path = get_temp_path(f"page_{i + 1}_{uuid.uuid4().hex}.{ext}")
                 img.save(str(img_path), pil_format)
