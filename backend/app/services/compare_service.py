@@ -7,6 +7,7 @@ from PIL import Image, ImageChops
 from ..utils.colors import hex_to_rgb_int
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 
 # Cap text-mode diff output so a wildly different pair of large PDFs can't
@@ -89,8 +90,8 @@ def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> 
 
         for i in range(max_pages):
             if i < len(doc1) and i < len(doc2):
-                pix1 = doc1[i].get_pixmap(matrix=mat)
-                pix2 = doc2[i].get_pixmap(matrix=mat)
+                pix1 = safe_get_pixmap(doc1[i], matrix=mat)
+                pix2 = safe_get_pixmap(doc2[i], matrix=mat)
 
                 img1 = Image.frombytes("RGB", [pix1.width, pix1.height], pix1.samples)
                 img2 = Image.frombytes("RGB", [pix2.width, pix2.height], pix2.samples)
@@ -108,12 +109,12 @@ def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> 
                 highlighted.paste(red_layer, mask=red_mask)
                 result_images.append(highlighted)
             elif i < len(doc1):
-                pix = doc1[i].get_pixmap(matrix=mat)
+                pix = safe_get_pixmap(doc1[i], matrix=mat)
                 result_images.append(
                     Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 )
             else:
-                pix = doc2[i].get_pixmap(matrix=mat)
+                pix = safe_get_pixmap(doc2[i], matrix=mat)
                 result_images.append(
                     Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 )

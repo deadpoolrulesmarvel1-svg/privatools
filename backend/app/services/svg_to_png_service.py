@@ -2,6 +2,7 @@ import logging
 
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def svg_to_png(input_path: str, scale: float = 2.0) -> str:
             if len(doc) > 0:
                 page = doc[0]
                 mat = fitz.Matrix(scale * 2, scale * 2)  # Higher scale for quality
-                pix = page.get_pixmap(matrix=mat, alpha=True)
+                pix = safe_get_pixmap(page, matrix=mat, alpha=True)
                 pix.save(str(output_path))
                 return str(output_path)
         finally:

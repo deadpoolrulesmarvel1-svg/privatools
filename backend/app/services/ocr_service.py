@@ -12,6 +12,7 @@ from PIL import Image
 from ..utils.cleanup import ensure_temp_dir
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def _validate_lang(lang: str) -> str:
 
 def _render_page_to_image(page: fitz.Page, dpi: int = 200) -> Image.Image:
     mat = fitz.Matrix(dpi / 72, dpi / 72)
-    pix = page.get_pixmap(matrix=mat)
+    pix = safe_get_pixmap(page, matrix=mat)
     mode = "RGBA" if pix.alpha else "RGB"
     img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
     return img.convert("RGB") if mode == "RGBA" else img

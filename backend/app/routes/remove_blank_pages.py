@@ -13,6 +13,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import safe_stem
+from ..utils.render import safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
             continue
 
         # Render at low DPI for blank detection
-        pix = page.get_pixmap(dpi=72)
+        pix = safe_get_pixmap(page, dpi=72)
         samples = pix.samples
         n = pix.n  # channels per pixel
 

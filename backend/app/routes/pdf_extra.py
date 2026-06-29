@@ -16,6 +16,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import remove_files, validate_pdf_content
+from ..utils.render import safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -596,7 +597,7 @@ async def transparent_background(
                 matrix = fitz.Matrix(dpi / 72, dpi / 72)
 
                 for page in src_doc:
-                    pix = page.get_pixmap(matrix=matrix, alpha=False)
+                    pix = safe_get_pixmap(page, matrix=matrix, alpha=False)
                     img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                     rgba = img.convert("RGBA")
                     rgb_data = list(img.getdata())

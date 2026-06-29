@@ -9,6 +9,7 @@ from PIL import Image
 
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
+from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +73,14 @@ def _detect_and_deskew_page(args: tuple) -> tuple:
         page = doc[0]
 
         # Ultra-low DPI for detection
-        detect_pix = page.get_pixmap(matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
+        detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
         angle = _detect_skew_angle_fast(detect_pix)
 
         if abs(angle) <= 0.3:
             return (idx, None, True)  # Keep original page
 
         # Render at 100 DPI and rotate
-        pix = page.get_pixmap(matrix=fitz.Matrix(100 / 72, 100 / 72))
+        pix = safe_get_pixmap(page, matrix=fitz.Matrix(100 / 72, 100 / 72))
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                              resample=Image.Resampling.BICUBIC)
@@ -109,11 +110,11 @@ def deskew(input_path: str) -> str:
             dst = fitz.open()
             try:
                 for page in src:
-                    detect_pix = page.get_pixmap(matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
+                    detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
                     angle = _detect_skew_angle_fast(detect_pix)
 
                     if abs(angle) > 0.3:
-                        pix = page.get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72))
+                        pix = safe_get_pixmap(page, matrix=fitz.Matrix(200 / 72, 200 / 72))
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                         rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                                              resample=Image.Resampling.BICUBIC)
