@@ -139,6 +139,10 @@ async def lifespan(app: FastAPI):
             await task
         except (asyncio.CancelledError, Exception):  # noqa: BLE001
             pass
+        # Release the heavy-work thread pool so its threads don't linger past
+        # graceful shutdown.
+        from .utils.concurrency import shutdown as shutdown_heavy_pool
+        shutdown_heavy_pool()
         logger.info("lifespan: shutdown complete")
 
 

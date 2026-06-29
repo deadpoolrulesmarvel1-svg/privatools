@@ -53,3 +53,37 @@ def test_intermediate_copy_removed_on_conversion_failure(tmp_path, monkeypatch):
     temp_input = captured.get("temp_input")
     assert temp_input is not None, "service never created its intermediate copy"
     assert not temp_input.exists(), f"intermediate copy leaked: {temp_input}"
+
+
+class _CancelledProc:
+    """Stand-in whose communicate() is interrupted (request cancelled / client
+    disconnect) — raises CancelledError, which the timeout branch does NOT catch."""
+
+    def __init__(self):
+        self.returncode = None
+        self.killed = False
+
+    async def communicate(self):
+        raise asyncio.CancelledError()
+
+    def kill(self):
+        self.killed = True
+        self.returncode = -9
+
+
+def test_subprocess_killed_on_cancellation(tmp_path, monkeypatch):
+    src = tmp_path / "in.docx"
+    src.write_bytes(b"PK\x03\x04 enough bytes to copy")
+    proc = _CancelledProc()
+
+    async def fake_exec(*args, **kwargs):
+        return proc
+
+    monkeypatch.setattr(svc.asyncio, "create_subprocess_exec", fake_exec)
+
+    try:
+        asyncio.run(svc.office_to_pdf(str(src)))
+    except (asyncio.CancelledError, Exception):
+        pass
+
+    assert proc.killed, "LibreOffice subprocess was not killed on cancellation (would leak)"
