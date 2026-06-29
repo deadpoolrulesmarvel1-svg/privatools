@@ -7,10 +7,8 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-import shutil
 import subprocess
 import uuid
-from pathlib import Path
 from collections import Counter
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile

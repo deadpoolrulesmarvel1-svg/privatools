@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import math
 import uuid
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile

@@ -17,7 +17,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
-from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error, MAX_SIZE
+from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
 
 router = APIRouter()
 
