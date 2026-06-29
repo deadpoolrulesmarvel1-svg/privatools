@@ -18,6 +18,9 @@ HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_INTERVAL="${HEALTH_INTERVAL:-6}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
+# A target sha that deployed but failed its health gate and was auto-rolled-back.
+# We refuse to redeploy it every cycle (thrash); cleared on the next success.
+FAILED_FILE="${FAILED_FILE:-${REPO_DIR}/.privatools-auto-deploy.failed}"
 
 # Deploy gate. Without one, *any* commit reaching ${BRANCH} ships to prod
 # within ~60s with no human approval. Modes:
@@ -132,6 +135,17 @@ if [[ "$current_sha" == "$target_sha" ]] \
     exit 0
 fi
 
+# If this exact target already deployed-and-failed-health and was rolled back,
+# don't thrash redeploying it every 60s — stay on the rolled-back image and wait
+# for a newer tag to supersede it. (If the rolled-back image is itself unhealthy
+# now, fall through and retry the deploy.)
+if [[ "$current_sha" == "$target_sha" && -f "$FAILED_FILE" \
+      && "$(tr -d '[:space:]' < "$FAILED_FILE")" == "$target_sha" ]] \
+    && curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
+    log "target ${target_sha:0:12} previously failed its health gate and was rolled back; staying on the rolled-back image (push a newer tag to retry)"
+    exit 0
+fi
+
 if [[ "$current_sha" == "$target_sha" ]] && [[ "$deployed_sha" != "$target_sha" ]]; then
     log "repo is at ${target_sha:0:12} but last successful deploy marker is ${deployed_sha:-missing}; rebuilding"
 elif [[ "$current_sha" == "$target_sha" ]] && ! health_reports_sha "$target_sha"; then
@@ -144,6 +158,12 @@ fi
 
 log "deploying ${current_sha:0:12} -> ${target_sha:0:12}"
 git reset --hard "$target_sha"
+
+# Capture the image currently running so we can roll back to it if the new image
+# fails its health gate below (empty on a first deploy / no running container).
+prev_image="$(docker inspect --format '{{.Config.Image}}' \
+    "$(docker compose ps -q 2>/dev/null | head -1)" 2>/dev/null || true)"
+[[ -n "$prev_image" ]] && log "pre-deploy: currently running ${prev_image}"
 
 # Deploy the cosign-signed GHCR image release.yml builds for a release tag —
 # and WAIT for it rather than building locally. When a tag is first pushed the
@@ -203,6 +223,7 @@ docker image prune -f >/dev/null || true
 for i in $(seq 1 "$HEALTH_RETRIES"); do
     if health_reports_sha "$target_sha"; then
         printf '%s\n' "$target_sha" > "$STATE_FILE"
+        rm -f "$FAILED_FILE"
         log "deploy complete; health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} checks"
         ping_deploy ok
         exit 0
@@ -212,5 +233,29 @@ done
 
 log "health check did not report ${target_sha:0:12} after $((HEALTH_RETRIES * HEALTH_INTERVAL)) seconds"
 docker compose ps || true
+
+# Automated rollback: the new image is up but never went healthy. Restore the
+# image that was running before this deploy (it was healthy until now) so prod
+# isn't left broken, and mark this target failed so the next cycle doesn't
+# redeploy it on a loop. Only roll back to a real, different prior image.
+if [[ -n "$prev_image" && "$prev_image" != "${image_ref:-}" ]]; then
+    log "ROLLBACK: restoring previous image ${prev_image}"
+    if PRIVATOOLS_IMAGE="$prev_image" docker compose up -d --no-build; then
+        for i in $(seq 1 "$HEALTH_RETRIES"); do
+            if curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
+                printf '%s\n' "$target_sha" > "$FAILED_FILE"
+                log "ROLLBACK successful after ${i} checks; previous image healthy. Marked ${target_sha:0:12} failed (won't redeploy until a newer tag)."
+                ping_deploy fail
+                exit 1
+            fi
+            sleep "$HEALTH_INTERVAL"
+        done
+        log "ROLLBACK image ALSO unhealthy — prod may be down, manual intervention required"
+    else
+        log "ROLLBACK: 'docker compose up' of ${prev_image} failed"
+    fi
+else
+    log "no prior image to roll back to (first deploy or same image)"
+fi
 ping_deploy fail
 exit 1
