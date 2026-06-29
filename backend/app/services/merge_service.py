@@ -15,7 +15,8 @@ from typing import List, Optional, Sequence
 
 import pikepdf
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
+from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
+from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,11 @@ def merge_pdfs(
                         dst.pages.append(src.pages[i])
                     total_pages_out += len(indices)
 
-        output = get_temp_path("merged.pdf")
+        # Unique per-request path (UUID) — a fixed "merged.pdf" over the shared
+        # temp dir let concurrent /merge requests clobber each other's output
+        # (cross-user PDF leak + corrupt downloads). The route sets the
+        # user-facing download filename separately, so this is transparent.
+        output = temp_output("merged", "pdf")
         dst.save(str(output))
     finally:
         # pikepdf.Pdf doesn't have a true close() in all builds, but we drop
