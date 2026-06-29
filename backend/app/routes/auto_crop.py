@@ -14,6 +14,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import safe_stem
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ async def auto_crop(request: Request, file: UploadFile = File(...)):
                     pass
 
     try:
-        out_path = await asyncio.to_thread(_work)
+        out_path = await run_bounded(_work)
 
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, out_path)

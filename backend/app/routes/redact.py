@@ -12,6 +12,7 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import redact_service
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -132,7 +133,7 @@ async def redact_pdf(
 
         _validate_redactions(rects, page_count)
 
-        output_path = await asyncio.to_thread(redact_service.redact_pdf, str(temp_pdf), rects, color=color)
+        output_path = await run_bounded(redact_service.redact_pdf, str(temp_pdf), rects, color=color)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), output_path)
         return FileResponse(
             path=output_path,

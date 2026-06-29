@@ -8,6 +8,7 @@ from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..utils.exceptions import ToolError
 from ..services import pdf_to_word_service
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ async def pdf_to_word(request: Request, file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = await asyncio.to_thread(pdf_to_word_service.pdf_to_word, str(temp_path))
+        output_path = await run_bounded(pdf_to_word_service.pdf_to_word, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

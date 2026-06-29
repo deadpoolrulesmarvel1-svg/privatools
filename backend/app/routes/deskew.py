@@ -7,6 +7,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import deskew_service
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ async def deskew(request: Request, file: UploadFile = File(...)):
         content = await file.read()
         validate_pdf_content(content)
         temp_path.write_bytes(content)
-        output_path = await asyncio.to_thread(deskew_service.deskew, str(temp_path))
+        output_path = await run_bounded(deskew_service.deskew, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(path=output_path, filename="deskewed.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:

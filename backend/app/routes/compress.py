@@ -18,6 +18,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import read_upload, safe_filename, safe_stem, unique_arcname
+from ..utils.concurrency import run_bounded
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ async def compress_pdf(
         for inp in input_paths:
             total_original += os.path.getsize(inp)
             try:
-                out = await asyncio.to_thread(
+                out = await run_bounded(
                     compress_service.compress_pdf,
                     inp,
                     level=level,
