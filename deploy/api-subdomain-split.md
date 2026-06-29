@@ -42,22 +42,42 @@ talking to the grey api host, so there's never a moment where a proxied apex
    `A · api · 140.245.15.140 · Proxy status: DNS only (grey)`. Leave apex/`www`
    grey for now. Confirm: `dig +short api.privatools.me` → `140.245.15.140`.
 
-2. **Issue the cert on the VM** (api resolves directly, so HTTP-01 works):
+2. **Issue the cert on the VM** (api is grey/direct, so HTTP-01 reaches the VM
+   without Cloudflare in the way). The api `:80` vhost serves the challenge from
+   `/var/www/certbot`, but it isn't deployed yet (its `:443` block references the
+   cert that doesn't exist — chicken-and-egg), so bootstrap issuance with a
+   throwaway `:80` block, then issue via webroot:
    ```bash
    ssh -i "<key>" ubuntu@140.245.15.140
-   sudo certbot certonly --nginx -d api.privatools.me
+   sudo mkdir -p /var/www/certbot
+   sudo tee /etc/nginx/sites-enabled/api-acme-bootstrap.conf >/dev/null <<'CONF'
+   server {
+       listen 80;
+       server_name api.privatools.me;
+       location /.well-known/acme-challenge/ { root /var/www/certbot; }
+       location / { return 404; }
+   }
+   CONF
+   sudo nginx -t && sudo systemctl reload nginx
+   sudo certbot certonly --webroot -w /var/www/certbot -d api.privatools.me \
+        --non-interactive --agree-tos
+   sudo rm /etc/nginx/sites-enabled/api-acme-bootstrap.conf
+   sudo nginx -t && sudo systemctl reload nginx
    ```
-   **Do not continue until the cert exists** — the nginx vhost references
+   This touches only a separate file — the main `privatools` vhost is never
+   edited. Renewal afterward is automatic: the real api `:80` vhost (step 3)
+   keeps serving `/.well-known/acme-challenge/` from `/var/www/certbot`, so
+   `certbot renew` works unattended.
+   **Do not continue until the cert exists** — the api `:443` vhost references
    `/etc/letsencrypt/live/api.privatools.me/`, so a missing cert makes
-   `nginx -t` (step 3) fail. Verify before proceeding:
+   `nginx -t` (step 3) fail. Verify:
    ```bash
    sudo ls -l /etc/letsencrypt/live/api.privatools.me/fullchain.pem \
               /etc/letsencrypt/live/api.privatools.me/privkey.pem
    ```
-   If certbot failed, it's almost always DNS not yet propagated (the `api`
-   record from step 1) or an HTTP-01 challenge timeout — re-check
-   `dig +short api.privatools.me`, wait, and re-run certbot. Don't touch nginx
-   until both files are listed.
+   If certbot failed, it's almost always the `api` DNS record (step 1) not yet
+   propagated or an HTTP-01 timeout — re-check `dig +short api.privatools.me`,
+   wait, and re-run certbot.
 
 3. **Deploy the nginx config** (now contains the api vhost) and reload. The
    `&&` chain only reloads if `nginx -t` passes, so a config error leaves the
