@@ -57,7 +57,10 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          # Install from the hashed lock with --require-hashes so PR CI exercises
+          # the exact integrity-verified path the image build uses — a hash/lock
+          # problem fails here on every PR instead of only at release build time.
+          pip install --require-hashes -r requirements-dev.lock
 
       - name: Run backend tests
         run: python -m pytest backend/tests -q
