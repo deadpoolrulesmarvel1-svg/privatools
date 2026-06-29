@@ -29,6 +29,14 @@ services:
       # Host. Empty = same-origin (unchanged). See deploy/api-subdomain-split.md.
       - PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL:-}
     restart: unless-stopped
+    # Bound container stdout/stderr on disk. The default json-file driver is
+    # unbounded — a 5xx storm or a left-on DEBUG session would fill the VM disk,
+    # which fails temp writes -> /readyz 503 -> docker wedge. Cap at 5×50 MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     # --- Container hardening (mirrors the systemd unit's posture) ---
     security_opt:
       - no-new-privileges:true   # a child process can't gain privileges via setuid

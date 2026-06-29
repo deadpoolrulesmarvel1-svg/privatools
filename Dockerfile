@@ -96,6 +96,13 @@ ENV NUMBA_CACHE_DIR=/tmp/numba-cache
 ENV U2NET_HOME=/tmp/u2net
 ENV XDG_CACHE_HOME=/tmp/cache
 
+# Point Python's tempfile (mkstemp/mkdtemp) at the managed temp volume instead
+# of system /tmp. The media/archive/extract tools use raw tempfile.*; on /tmp
+# the janitor never swept them, so they leaked on every timeout/OOM/crash exit
+# path. /app/temp IS swept (utils.cleanup janitor, which recurses subdirs). The
+# cache dirs above stay on /tmp on purpose (build-baked, not user data).
+ENV TMPDIR=/app/temp
+
 # Switch to non-root user
 USER appuser
 
