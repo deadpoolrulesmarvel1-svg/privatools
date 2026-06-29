@@ -10,6 +10,7 @@ permissions:
   contents: read
   id-token: write
   packages: write
+  security-events: write
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
@@ -44,6 +45,27 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
           provenance: true
+      # Scan the built image (OS packages + installed libs) for known CVEs.
+      # The repo's other Trivy job is scan-type:fs (source tree only) — this is
+      # the S2 gap: we were shipping a signed-but-unscanned artifact. Report-only
+      # for now (continue-on-error + no failing exit-code): surface findings to
+      # the Security tab without blocking releases. Tighten to a hard gate once
+      # the base image + native parser CVEs are triaged.
+      - name: Scan built image for CVEs (report-only)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        continue-on-error: true
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+      - uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        continue-on-error: true
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
       - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign published image digest
         run: cosign sign --yes "${IMAGE_NAME}@${{ steps.build.outputs.digest }}"
