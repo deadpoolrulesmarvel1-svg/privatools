@@ -17,6 +17,7 @@ import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
+import { ResultHandoff } from "./ResultHandoff";
 
 type Level =
     | "light" | "recommended" | "extreme" | "custom"
@@ -288,6 +289,13 @@ export function CompressUI() {
                                     <RotateCcw size={12} /> Compress more
                                 </button>
                             </div>
+                            {files.length === 1 && (
+                                <ResultHandoff
+                                    blob={resultBlob}
+                                    filename={`${files[0].name.replace(/\.pdf$/i, "")}_compressed.pdf`}
+                                    fromSlug="compress-pdf"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

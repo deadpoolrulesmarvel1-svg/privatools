@@ -313,10 +313,32 @@ user's own file manager.
 
 ---
 
-## Already have it, just not surfaced
+## Already have it, just not surfaced ✅ **partly shipped**
 
 `/pipeline` has 17 backend steps and single-upload server-side chaining. `ihatepdf.cv`'s
 `/workflow` is its standout feature and ours is comparable — but theirs has presets,
-save/export as JSON, undo/redo and batch mode, and ours isn't linked from any tool's
-result screen. **That is packaging, not engineering**, and it is the cheapest win in this
-document.
+save/export as JSON, undo/redo and batch mode, and ours wasn't linked from any tool's
+result screen.
+
+**Shipped 2026-08-22: result → next tool handoff.** The competitor audit called DocHub's
+"what would you like to do with this document?" completion modal the single best idea in
+the whole report — it is the entire benefit of their editor model. This is the stateless
+version.
+
+Both halves already existed and had never been connected: `storeFileHandoff` /
+`consumeFileHandoff` move a File into another tool through sessionStorage, and every tool
+UI already *consumes* a handoff on mount. But nothing ever *offered* one from a result —
+outbound handoff existed only from the homepage and the command palette. The chaining was
+built and unreachable at the exact moment someone wants it.
+
+`ResultHandoff` now appears on the result screen of **GenericUI (~118 tools), Merge and
+Compress**, with curated follow-ups per tool. Suggestions carry a reason, because
+"Compress PDF" alone is a menu and "merged files get big — shrink it for email" is an
+answer. Gated on the output actually being a PDF: suggesting Merge after PDF→JPG hands the
+next tool a file it can't open, which is worse than offering nothing.
+
+Nothing is re-uploaded — the handoff is sessionStorage on the user's own device, which is
+exactly why we can offer chaining without the accounts and server-side storage every
+competitor charges for.
+
+**Still open:** pipeline presets, save/export as JSON, undo/redo, and batch mode.

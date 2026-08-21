@@ -13,10 +13,11 @@ import {
     AlertCircle, ChevronUp, ChevronDown, Download, ArrowRight, Sparkles,
 } from "lucide-react";
 import { cn, friendlyError, isValidPageRange } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { uploadFiles, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
+import { ResultHandoff } from "./ResultHandoff";
 
 interface MergeFile { id: string; name: string; size: string; file: File; pages: string; }
 
@@ -24,6 +25,7 @@ export function MergeUI() {
     const [files, setFiles] = useState<MergeFile[]>([]);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
+    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [drag, setDrag] = useState(false);
     const [dragIdx, setDragIdx] = useState<number | null>(null);
     const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
@@ -90,7 +92,10 @@ export function MergeUI() {
             const params: Record<string, string> | undefined = anyRange
                 ? { page_ranges: JSON.stringify(files.map(f => (f.pages.trim() || "all"))) }
                 : undefined;
-            await processFilesAndDownload("/merge", files.map(f => f.file), outputName, params);
+            const res = await uploadFiles("/merge", files.map(f => f.file), params);
+            const blob = await res.blob();
+            downloadBlob(blob, outputName);
+            setResultBlob(blob);
             setState("done");
             emitToolSuccess("Merge PDF");
         } catch (e: unknown) {
@@ -138,11 +143,12 @@ export function MergeUI() {
                             {outputName} · downloaded
                         </p>
                         <button
-                            onClick={() => { setFiles([]); setState("idle"); }}
+                            onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                         >
                             Merge more files
                         </button>
+                        <ResultHandoff blob={resultBlob} filename={outputName} fromSlug="merge-pdf" />
                     </div>
                 </div>
             </div>
