@@ -31,8 +31,8 @@
 #
 #   # 3. prove it installs before committing
 #   pip install --dry-run --require-hashes -r requirements.lock
-fastapi==0.137.2
-uvicorn[standard]==0.27.1
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
 python-multipart==0.0.32
 pikepdf==8.12.0
 pypdf==6.16.1
@@ -41,7 +41,7 @@ Pillow==12.3.0
 reportlab==4.1.0
 brotli==1.2.0
 slowapi==0.1.9
-pymupdf==1.28.0
+pymupdf==1.28.2
 pytesseract==0.3.13
 weasyprint==69.0
 python-docx==1.2.0
@@ -64,4 +64,4 @@ python-barcode==0.16.1
 qrcode==8.2
 pyzbar==0.1.9
 defusedxml==0.7.1
-mistune==3.3.2
+mistune==3.3.4
