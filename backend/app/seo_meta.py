@@ -124,6 +124,16 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "PrivaTools vs Nitro PDF: 100% free open-source tools vs Nitro's paid PDF suite. "
         "No subscription, no account, no file limits. Compare features and pricing.",
     ),
+    "/compare/tinywow": (
+        "PrivaTools vs TinyWow — Free PDF & File Tools Compared (2026)",
+        "PrivaTools vs TinyWow: both free, but TinyWow runs ads and a CAPTCHA on every "
+        "task. Compare tool counts, file limits, ads, and how each handles your files.",
+    ),
+    "/compare/ihatepdf": (
+        "PrivaTools vs ihatepdf.cv — Browser-Based PDF Tools Compared (2026)",
+        "PrivaTools vs ihatepdf.cv: ihatepdf runs every tool in your browser but covers "
+        "PDF only. PrivaTools adds image, video, audio and developer tools. Compare both.",
+    ),
     "/blog": (
         "PrivaTools Blog — PDF Tool Tips, Guides & Reviews",
         "In-depth guides on PDF compression, merging, password removal, and more. "
@@ -816,6 +826,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "delete-annotations": ("Delete PDF Annotations", "Remove all annotations from PDF online — delete highlights, comments, sticky notes, drawings, and markup from your documents. Clean up reviewed PDFs before final distribution."),
     "metadata": ("PDF Metadata Editor", "View and edit PDF metadata online for free — read and modify Title, Author, Subject, Keywords, Creator, and Producer fields. See exactly what information is embedded in your PDF."),
     "set-permissions": ("PDF Permissions", "Set PDF permissions online — control who can print, copy, edit, or annotate your PDF documents. Apply granular access controls with owner password protection."),
+    "accessibility-check": ("PDF Accessibility Checker", "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels and reading order, with a plain-English fix for every issue. Read-only \u2014 your file is never modified. No sign-up, no watermarks."),
     "pdfa-validator": ("PDF/A Validator", "Validate PDF/A compliance online for free. Run basic PDF/A indicator checks to verify your document meets long-term archiving standards. Free tool, no software needed."),
     "verify-signature": ("Verify PDF Digital Signature", "Inspect digital signature fields in a PDF online for free. Verify signature validity, view signer information, and check certificate details."),
     "sanitize-pdf": ("Sanitize PDF", "Aggressively sanitize PDF documents online — remove hidden data, JavaScript, embedded files, and metadata layers for maximum security before sharing or publishing."),

@@ -33,7 +33,7 @@ PDF_TOOLS = [
     "nup", "ocr-pdf", "overlay", "qr-code", "pdf-to-pdfa",
     "remove-blank-pages", "auto-crop",
     "pdf-to-epub", "markdown-to-pdf", "csv-to-pdf",
-    "invert-colors", "pdfa-validator", "verify-signature",
+    "invert-colors", "pdfa-validator", "verify-signature", "accessibility-check",
     "sanitize-pdf", "add-hyperlinks", "form-creator",
     "transparent-background", "stamp-pdf", "esign-pdf",
     "word-to-pdf", "excel-to-pdf", "pptx-to-pdf-convert",
@@ -130,7 +130,7 @@ _PDF_V12 = [
 
 COMPARE_PAGES = [
     "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24", "foxit", "lightpdf",
-    "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+    "stirling-pdf", "dochub", "pdfescape", "nitro-pdf", "tinywow", "ihatepdf",
 ]
 
 # Blog posts with their published dates. Must stay in sync with

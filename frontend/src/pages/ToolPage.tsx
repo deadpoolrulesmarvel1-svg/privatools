@@ -64,6 +64,7 @@ const LazyFormCreatorUI = lazyNamed(() => import("@/components/tool-ui/FormCreat
 const LazyTransparentBackgroundUI = lazyNamed(() => import("@/components/tool-ui/TransparentBackgroundUI"), "TransparentBackgroundUI");
 const LazyInvertColorsUI = lazyNamed(() => import("@/components/tool-ui/InvertColorsUI"), "InvertColorsUI");
 const LazyPdfaValidatorUI = lazyNamed(() => import("@/components/tool-ui/PdfaValidatorUI"), "PdfaValidatorUI");
+const LazyAccessibilityCheckUI = lazyNamed(() => import("@/components/tool-ui/AccessibilityCheckUI"), "AccessibilityCheckUI");
 const LazyVerifySignatureUI = lazyNamed(() => import("@/components/tool-ui/VerifySignatureUI"), "VerifySignatureUI");
 const LazySanitizeUI = lazyNamed(() => import("@/components/tool-ui/SanitizeUI"), "SanitizeUI");
 const LazyUnlockUI = lazyNamed(() => import("@/components/tool-ui/UnlockUI"), "UnlockUI");
@@ -295,6 +296,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "overlay": return <LazyOverlayUI />;
     case "form-creator": return <LazyFormCreatorUI />;
     case "pdfa-validator": return <LazyPdfaValidatorUI />;
+    case "accessibility-check": return <LazyAccessibilityCheckUI />;
     case "verify-signature": return <LazyVerifySignatureUI />;
     case "remove-blank-pages": return <LazyRemoveBlankPagesUI />;
     case "auto-crop": return <LazyAutoCropUI />;

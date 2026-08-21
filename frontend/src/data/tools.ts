@@ -9,7 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
-  ArrowDownUp, BookOpenCheck,
+  ArrowDownUp, BookOpenCheck, Accessibility,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -793,6 +793,15 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
+  },
+
+  {
+    slug: "accessibility-check", icon: Accessibility, name: "PDF Accessibility Checker",
+    description: "Audit a PDF against PDF/UA and WCAG",
+    longDescription: "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.",
+    synonyms: "accessibility a11y pdfua pdf/ua wcag section 508 ada screen reader tagged alt text compliance audit",
+    popularity: 60,
+    category: "security", accepts: ".pdf", outputLabel: "report",
   },
 
   // ── Security & Forensics ────────────────────────────────────────────────────

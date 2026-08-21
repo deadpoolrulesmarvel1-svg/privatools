@@ -27,6 +27,7 @@ const HIGH_PRIORITY_TOOLS = new Set([
 const COMPARE_SLUGS = [
   "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24",
   "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+  "tinywow", "ihatepdf",
 ];
 
 function manualChunks(id: string): string | undefined {

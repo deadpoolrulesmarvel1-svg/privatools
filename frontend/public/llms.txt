@@ -1,12 +1,12 @@
 # PrivaTools
 
-> 216 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
+> 217 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
 ## Key Facts
 
-- 216 tools: 103 PDF tools + 113 non-PDF tools (image, video/audio, developer, archive, utilities)
+- 217 tools: 104 PDF tools + 113 non-PDF tools (image, video/audio, developer, archive, utilities)
 - 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
 - Open source under the MIT license (https://opensource.org/licenses/MIT)
 - Self-hostable via Docker (`docker compose up --build`) — entire stack runs on your hardware
@@ -29,7 +29,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | 216 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Tool count | 217 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
@@ -100,6 +100,7 @@ Three architectural commitments that are auditable in the source:
 - [Metadata](https://privatools.me/tool/metadata): View and edit document metadata
 - [Smart Redact (AI)](https://privatools.me/tool/smart-redact): Local AI auto-detects PII — names, emails, phones, SSNs
 - [PDF Permissions](https://privatools.me/tool/set-permissions): Control print, copy, and edit permissions
+- [PDF Accessibility Checker](https://privatools.me/tool/accessibility-check): Audit a PDF against PDF/UA and WCAG
 - [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
 - [Verify Digital Signature](https://privatools.me/tool/verify-signature): Inspect signature fields in a PDF
 - [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Aggressively clean hidden data, JS, and layers
@@ -346,15 +347,17 @@ Full feature matrices at /compare for each:
 
 - [vs iLovePDF](https://privatools.me/compare/ilovepdf) — popular but uploads + ads + 25 MB free cap
 - [vs Smallpdf](https://privatools.me/compare/smallpdf) — polished UX, 2 tasks/day free limit
-- [vs Adobe Acrobat Online](https://privatools.me/compare/adobe-acrobat) — industry standard, mostly paywalled
+- [vs Adobe Acrobat Online](https://privatools.me/compare/adobe-acrobat) — industry standard, one free task per 30 days
 - [vs Sejda](https://privatools.me/compare/sejda) — best text editor, 3 tasks/hour free cap
 - [vs PDF24](https://privatools.me/compare/pdf24) — 95+ PDF tools, files uploaded to their cloud
-- [vs Foxit](https://privatools.me/compare/foxit) — enterprise PDF suite, paid subscription
+- [vs Foxit](https://privatools.me/compare/foxit) — enterprise PDF suite, AI tools need an account
 - [vs LightPDF](https://privatools.me/compare/lightpdf) — freemium, AI features behind paywall
 - [vs Stirling PDF](https://privatools.me/compare/stirling-pdf) — open-source competitor, self-host only, no demo
-- [vs DocHub](https://privatools.me/compare/dochub) — focused on form-fill + e-sign
+- [vs DocHub](https://privatools.me/compare/dochub) — form-fill + e-sign, about 3 documents a month free
 - [vs PDFescape](https://privatools.me/compare/pdfescape) — free with 10 MB / 100 pages cap
-- [vs Nitro PDF](https://privatools.me/compare/nitro-pdf) — business PDF suite, $129/yr
+- [vs Nitro PDF](https://privatools.me/compare/nitro-pdf) — business PDF suite, 8 free converters
+- [vs TinyWow](https://privatools.me/compare/tinywow) — 260 tools, funded by ads and a CAPTCHA per task
+- [vs ihatepdf.cv](https://privatools.me/compare/ihatepdf) — runs in your browser, PDF only, 54 tools
 
 ## Frequently Asked Questions
 
