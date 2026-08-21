@@ -23,7 +23,7 @@ PDF_TOOLS = [
     "organize-pages", "delete-pages", "extract-pages",
     "edit-pdf", "sign-pdf", "watermark", "header-footer",
     "page-numbers", "bates-numbering", "bookmarks",
-    "compress-pdf", "flatten-pdf", "deskew-pdf", "repair-pdf",
+    "compress-pdf", "flatten-pdf", "remove-watermark", "deskew-pdf", "repair-pdf",
     "resize-pdf", "rotate-pdf", "grayscale-pdf", "crop-pdf",
     "protect-pdf", "unlock-pdf", "redact-pdf", "strip-metadata",
     "delete-annotations", "metadata",
