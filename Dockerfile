@@ -1,5 +1,8 @@
 # Stage 1: Build frontend
-FROM node:20-slim AS frontend-build
+# Pinned by digest so a rebuild of an old tag reproduces byte-for-byte and a
+# hijacked tag cannot silently change the base. Dependabot's docker ecosystem
+# updates these digests — do not unpin to get updates, let it bump them.
+FROM node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS frontend-build
 WORKDIR /app/frontend
 RUN apt-get update && apt-get install -y --no-install-recommends brotli \
     && rm -rf /var/lib/apt/lists/*
@@ -10,7 +13,7 @@ RUN npm run build \
     && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
 
 # Stage 2: Production
-FROM python:3.10-slim
+FROM python:3.10-slim@sha256:a78e4529630cfe8c5199cafd6e0c28ee1579a13f86274396d8b6b2d80367aa3a
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -20,3 +20,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+
+  # The Dockerfile's two base images are pinned by digest (see the comment
+  # there). A digest pin is only safe if something moves it forward — without
+  # this ecosystem the bases would silently freeze on whatever CVEs they carry
+  # at pin time, which is strictly worse than tracking the tag.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
