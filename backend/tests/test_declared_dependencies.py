@@ -91,15 +91,21 @@ def _optional_import_nodes(tree: ast.AST) -> set[int]:
     return optional
 
 
-def _top_level_imports() -> dict[str, Path]:
-    """Map required top-level third-party module -> first file importing it."""
+def _top_level_imports(include_optional: bool = False) -> dict[str, Path]:
+    """Map top-level module -> first file importing it.
+
+    By default only REQUIRED imports (what the dependency check cares about).
+    With include_optional=True, ImportError-guarded imports are included too —
+    needed by the stale-map check, since a mapping for an optionally-imported
+    module is legitimate, not dead weight.
+    """
     found: dict[str, Path] = {}
     for path in sorted(APP.rglob("*.py")):
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:  # pragma: no cover - a parse error is its own failure
             continue
-        optional = _optional_import_nodes(tree)
+        optional = set() if include_optional else _optional_import_nodes(tree)
         for node in ast.walk(tree):
             if id(node) in optional:
                 continue
@@ -191,7 +197,9 @@ def test_markdown_stays_optional_in_pdf_extra():
 
 def test_the_import_map_has_no_stale_entries():
     """A mapping for something no longer imported is dead weight; catch drift."""
-    imported = set(_top_level_imports())
+    # include_optional: pillow_heif is imported only behind an ImportError
+    # guard, so the required-only view would wrongly call its mapping stale.
+    imported = set(_top_level_imports(include_optional=True))
     stale = sorted(k for k in IMPORT_TO_DISTRIBUTION if k not in imported)
     assert not stale, (
         f"IMPORT_TO_DISTRIBUTION maps {stale}, which app code no longer imports. "
