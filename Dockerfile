@@ -2,7 +2,7 @@
 # Pinned by digest so a rebuild of an old tag reproduces byte-for-byte and a
 # hijacked tag cannot silently change the base. Dependabot's docker ecosystem
 # updates these digests — do not unpin to get updates, let it bump them.
-FROM node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS frontend-build
+FROM node:26-slim@sha256:4ebb5ace66f15a24c14c492e01a8beeed4fddf970a856109f5126e703e5fe503 AS frontend-build
 WORKDIR /app/frontend
 RUN apt-get update && apt-get install -y --no-install-recommends brotli \
     && rm -rf /var/lib/apt/lists/*
