@@ -19,12 +19,42 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useFormPersist, type UseFormPersistResult } from "./useFormPersist";
 import { registerCustomized, unregisterCustomized } from "@/lib/localStore/defaults";
-import { shallowEqual } from "@/lib/persistence";
+import { clearPersisted, loadPersisted, savePersisted, shallowEqual } from "@/lib/persistence";
+
+export interface ToolDefaultsOptions {
+  /**
+   * Key this tool used before it moved to its registry slug. Migrated once, on
+   * first render, then removed.
+   *
+   * The tools that already used `useFormPersist` keyed on short names
+   * ("bates", "compress") rather than registry slugs. Renaming the key without
+   * migrating would silently discard every existing user's saved settings.
+   */
+  legacyKey?: string;
+}
 
 export function useToolDefaults<T extends Record<string, unknown>>(
   slug: string,
   defaults: T,
+  options: ToolDefaultsOptions = {},
 ): [T, React.Dispatch<React.SetStateAction<T>>, UseFormPersistResult<T>] {
+  // Runs BEFORE useFormPersist reads, so the migrated value is picked up on the
+  // very first render and the user never sees a flash of defaults.
+  const { legacyKey } = options;
+  const migrated = useRef(false);
+  if (!migrated.current) {
+    migrated.current = true;
+    if (legacyKey && legacyKey !== slug) {
+      const legacy = loadPersisted<T>(legacyKey);
+      // An existing value under the new key wins — it is more recent by
+      // definition, since the legacy key is only ever written by old code.
+      if (legacy !== null && loadPersisted<T>(slug) === null) {
+        savePersisted<T>(slug, legacy);
+      }
+      if (legacy !== null) clearPersisted(legacyKey);
+    }
+  }
+
   const [state, setState, api] = useFormPersist<T>(slug, defaults);
 
   // Mirror the persistence layer's own rule: a value equal to defaults isn't

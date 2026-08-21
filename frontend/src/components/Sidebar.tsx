@@ -14,8 +14,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
     ChevronRight, GitBranch, Layers, History, BookOpen,
     Scale, Info, Home, FileText, Image as ImageIcon, Video, Code as CodeIcon,
-    Archive as ArchiveIcon, FileBox, Star,
-} from "lucide-react";
+    Archive as ArchiveIcon, FileBox, Star, HardDrive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, Category } from "@/data/tools";
 import { nonPdfTools, NonPdfCategory } from "@/data/non-pdf-tools";
@@ -59,6 +58,7 @@ const TOP_NAV = [
     { label: "Compare",  href: "/compare",  icon: Scale },
     { label: "Blog",     href: "/blog",     icon: BookOpen },
     { label: "About",    href: "/about",    icon: Info },
+    { label: "My Stuff", href: "/my-stuff", icon: HardDrive },
 ];
 
 const TOOL_TOTAL = tools.length + nonPdfTools.length;

@@ -9,7 +9,7 @@ import { Loader2, CheckCircle2, AlertCircle, Heading, RotateCcw, Upload, Downloa
 import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { MultiFileQueue } from "./MultiFileQueue";
 
 const HEADER_FOOTER_DEFAULTS = {
@@ -20,7 +20,7 @@ const HEADER_FOOTER_DEFAULTS = {
 
 export function HeaderFooterUI() {
     const proc = useMultiFileProcessor();
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("header-footer", HEADER_FOOTER_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("header-footer", HEADER_FOOTER_DEFAULTS);
     const { headerText, footerText, fontSize } = config;
     const setHeaderText = (v: string) => setConfig(c => ({ ...c, headerText: v }));
     const setFooterText = (v: string) => setConfig(c => ({ ...c, footerText: v }));

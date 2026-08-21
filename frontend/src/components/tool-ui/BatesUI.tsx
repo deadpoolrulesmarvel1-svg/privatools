@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
 import { BatesCounterPicker } from "@/components/BatesCounterPicker";
@@ -42,7 +42,7 @@ const BATES_DEFAULTS = {
 
 export function BatesUI() {
     const proc = useMultiFileProcessor();
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("bates", BATES_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("bates-numbering", BATES_DEFAULTS, { legacyKey: "bates" });
     const { prefix, startNumber, digits, position } = config;
     const setPrefix = (v: string) => setConfig(c => ({ ...c, prefix: v }));
     const setStartNumber = (v: number) => setConfig(c => ({ ...c, startNumber: v }));

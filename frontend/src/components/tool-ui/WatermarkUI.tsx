@@ -19,7 +19,7 @@ import {
     formatErrorForClipboard, postFormData,
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const WATERMARK_DEFAULTS = {
     mode: "text" as "text" | "image",
@@ -55,7 +55,7 @@ let entryCounter = 0;
 
 export function WatermarkUI() {
     const [files, setFiles] = useState<PdfEntry[]>([]);
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("watermark", WATERMARK_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("watermark", WATERMARK_DEFAULTS);
     const { mode, text, opacity, fontSize, imageScale, position } = config;
     const setMode = (v: WatermarkMode) => setConfig(c => ({ ...c, mode: v }));
     const setText = (v: string) => setConfig(c => ({ ...c, text: v }));

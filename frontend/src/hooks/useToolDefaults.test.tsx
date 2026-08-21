@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import * as db from "@/lib/localStore/db";
 import * as defaults from "@/lib/localStore/defaults";
-import { loadPersisted } from "@/lib/persistence";
+import { loadPersisted, savePersisted } from "@/lib/persistence";
 import { useToolDefaults } from "./useToolDefaults";
 
 const DEFAULTS = { level: "recommended", quality: 75 };
@@ -99,6 +99,45 @@ describe("useToolDefaults", () => {
     expect(b.result.current[0]).toEqual(DEFAULTS);
     await waitFor(async () => {
       expect(await defaults.customizedSlugs()).toEqual(["compress-pdf"]);
+    });
+  });
+
+  describe("legacy key migration", () => {
+    // The 6 tools that already used useFormPersist keyed on short names
+    // ("bates", "compress") rather than registry slugs. Renaming the key
+    // without migrating would silently discard every existing user's saved
+    // settings.
+    it("adopts a value stored under the old key", () => {
+      savePersisted("bates", { level: "extreme", quality: 40 });
+      const { result } = renderHook(() =>
+        useToolDefaults("bates-numbering", DEFAULTS, { legacyKey: "bates" }),
+      );
+      expect(result.current[0]).toEqual({ level: "extreme", quality: 40 });
+      expect(result.current[2].restored).toBe(true);
+    });
+
+    it("removes the old key once migrated", async () => {
+      savePersisted("bates", { level: "extreme", quality: 40 });
+      renderHook(() => useToolDefaults("bates-numbering", DEFAULTS, { legacyKey: "bates" }));
+      await waitFor(() => expect(loadPersisted("bates")).toBeNull());
+      expect(loadPersisted("bates-numbering")).toEqual({ level: "extreme", quality: 40 });
+    });
+
+    it("prefers an existing new-key value over the legacy one", () => {
+      savePersisted("bates", { level: "light", quality: 10 });
+      savePersisted("bates-numbering", { level: "extreme", quality: 40 });
+      const { result } = renderHook(() =>
+        useToolDefaults("bates-numbering", DEFAULTS, { legacyKey: "bates" }),
+      );
+      expect(result.current[0]).toEqual({ level: "extreme", quality: 40 });
+    });
+
+    it("is a no-op when there is no legacy value", () => {
+      const { result } = renderHook(() =>
+        useToolDefaults("bates-numbering", DEFAULTS, { legacyKey: "bates" }),
+      );
+      expect(result.current[0]).toEqual(DEFAULTS);
+      expect(result.current[2].restored).toBe(false);
     });
   });
 });
