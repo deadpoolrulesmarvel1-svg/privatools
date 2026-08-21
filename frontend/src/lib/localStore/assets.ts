@@ -16,6 +16,7 @@
  */
 import * as db from "./db";
 import { blobBytes } from "./blobs";
+import { monotonicNow } from "./clock";
 
 export type AssetKind = "signature" | "logo" | "watermark" | "letterhead" | "stamp";
 
@@ -82,7 +83,7 @@ export async function putAsset(kind: AssetKind, name: string, blob: Blob): Promi
     name: name || "untitled",
     mime: blob.type || "application/octet-stream",
     bytes: blob.size,
-    createdAt: Date.now(),
+    createdAt: monotonicNow(),
     data: await blobBytes(blob),
   };
   await db.put("assets", record.id, record);

@@ -12,3 +12,4 @@ export * as toolDefaults from "./defaults";
 export { inventory, exportSetup, eraseEverything, type Inventory } from "./inventory";
 export { hasWebCrypto } from "./crypto";
 export { migrateLegacyKeys } from "./migrate";
+export { monotonicNow } from "./clock";

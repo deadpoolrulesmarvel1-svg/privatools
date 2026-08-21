@@ -11,6 +11,7 @@
  * optimistically.
  */
 import * as db from "./db";
+import { monotonicNow } from "./clock";
 
 const ACTIVE_KEY = "bates:active";
 const PREFIX = "bates:counter:";
@@ -70,7 +71,7 @@ export async function createCounter(input: CounterInput): Promise<BatesCounter> 
     digits: input.digits ?? 6,
     position: input.position ?? "bottom-right",
     next: input.next ?? 1,
-    updatedAt: Date.now(),
+    updatedAt: monotonicNow(),
   };
   await db.put("kv", key(c.id), c);
   if (!(await getActiveCounterId())) await setActiveCounterId(c.id);
@@ -83,7 +84,7 @@ export async function updateCounter(
 ): Promise<BatesCounter> {
   const existing = await getCounter(id);
   if (!existing) throw new Error("No such counter");
-  const updated: BatesCounter = { ...existing, ...patch, id, updatedAt: Date.now() };
+  const updated: BatesCounter = { ...existing, ...patch, id, updatedAt: monotonicNow() };
   await db.put("kv", key(id), updated);
   return updated;
 }

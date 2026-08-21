@@ -12,6 +12,7 @@
  */
 import * as db from "./db";
 import { decryptString, encryptString, type Encrypted } from "./crypto";
+import { monotonicNow } from "./clock";
 
 export interface VaultEntry extends Encrypted {
   id: string;
@@ -64,7 +65,7 @@ export async function addPassword(label: string, password: string): Promise<Vaul
     label: label || "Untitled",
     iv: enc.iv,
     ct: enc.ct,
-    createdAt: Date.now(),
+    createdAt: monotonicNow(),
     lastUsedAt: 0,
     useCount: 0,
   };
@@ -103,7 +104,7 @@ export async function markUsed(id: string): Promise<void> {
   if (!entry) return;
   await db.put("vault", id, {
     ...entry,
-    lastUsedAt: Date.now(),
+    lastUsedAt: monotonicNow(),
     useCount: entry.useCount + 1,
   });
 }
