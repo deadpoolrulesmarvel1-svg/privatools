@@ -169,7 +169,7 @@ subfolders" (which has no meaning without a filesystem).
 
 ---
 
-## Priority 4 — Redaction exemption codes
+## Priority 4 — Redaction exemption codes ✅ **shipped**
 
 **Gap:** Adobe ships two pre-populated exemption-code sets (US FOIA, US Privacy Act),
 stamps the code as overlay text on each redaction, and allows custom sets. **No other
@@ -179,7 +179,23 @@ Ours takes box coordinates with no codes, no overlay text and no report. Adding 
 overlays plus a redaction summary makes the tool usable for actual FOIA production work,
 which is a small audience that currently has exactly one option and pays Adobe for it.
 
-**Files:** `backend/app/services/redact_service.py`, `frontend/src/components/tool-ui/RedactUI.tsx`.
+**Shipped 2026-08-22.** Each redaction box takes an optional `code`, drawn inside the box
+by PyMuPDF's own redaction machinery so the citation is flattened into the page rather than
+left as an annotation someone can peel off. Box colour picks black or white text by
+perceived luminance — an unreadable citation is the same as no citation.
+
+`/api/redact` returns an `X-Redaction-Report` header: the withholding log, counting
+redactions per page and per exemption code, with uncoded ones tracked separately. The UI
+shows it on the result screen and says plainly that it isn't stored anywhere.
+
+Two code sets ship pre-populated in `frontend/src/data/redaction-codes.ts` — **US FOIA**
+(5 U.S.C. § 552(b), 14 codes) and the **US Privacy Act** (5 U.S.C. § 552a, 10 codes).
+Default is no codes, which is right: most redaction is not a statutory production, and an
+unexplained citation is worse than none.
+
+There were no redaction tests in the repo at all before this, so the basics are now covered
+too — content under a rect is genuinely removed, other pages are untouched, out-of-range
+pages are skipped rather than fatal.
 
 ---
 
