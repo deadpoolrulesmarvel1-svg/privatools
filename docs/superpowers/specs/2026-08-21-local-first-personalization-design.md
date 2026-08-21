@@ -101,7 +101,7 @@ IndexedDB database `privatools`, version 1:
 | `secrets` | `"vault-key"` | non-extractable `CryptoKey` (structured-clone preserves non-extractability) |
 | `vault` | `id` (uuid) | `{ id, label, iv, ciphertext, createdAt, lastUsedAt, useCount }` |
 | `assets` | `id` (uuid) | `{ id, kind, name, blob, mime, bytes, createdAt }` |
-| `kv` | string | counters, tool defaults, meta, schema version |
+| `kv` | string | counters, active-counter id, customized-slug index, schema version |
 
 Passwords live **only** as `ciphertext`. `label` is user-supplied and stored in plaintext (it is a nickname like "work docs", not a secret) — the UI warns against putting the password in the label.
 
@@ -202,6 +202,8 @@ Stored as `Blob`, capped at 5 MB each and 25 MB total, with a clear over-quota m
 ```ts
 const [state, setState] = useToolDefaults("compress-pdf", DEFAULTS);
 ```
+
+Tool defaults remain on the existing synchronous `localStorage` layer rather than IndexedDB. `useFormPersist` hydrates synchronously by design so a tool never renders defaults and then flickers into restored values; IndexedDB is async-only and would reintroduce that flicker across all 104 tools. Only the *index* of which slugs are customized lives in IndexedDB, for `/my-stuff`.
 
 A drop-in `useState` replacement — same signature as the existing `useFormPersist`, so adoption is a one-line change per tool. Values are namespaced by tool slug in the `kv` store, debounced, and never persisted when they equal the defaults (keeping the store clean, matching `useFormPersist`'s existing behavior).
 
