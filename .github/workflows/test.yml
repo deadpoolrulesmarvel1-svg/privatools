@@ -83,3 +83,30 @@ jobs:
       - name: Run frontend tests
         working-directory: frontend
         run: npm run test
+
+  image:
+    name: Image builds (docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      # Closes a real blind spot. Until this job existed, release.yml was the
+      # ONLY workflow that built the Dockerfile, and it runs solely on a v*
+      # tag. So a base-image bump (node 20 -> 26) or a change to the build
+      # itself could collect a full set of green PR checks that never once
+      # compiled it, and first execute during an actual release — where a
+      # failure is a broken release rather than a red PR.
+      #
+      # Deliberately amd64-only and push-less: the point is "does this still
+      # build", not reproducing the signed multi-arch artifact. Emulated arm64
+      # would roughly triple the runtime for very little extra signal, since
+      # what breaks on a base-image bump is almost always the build steps
+      # rather than the architecture.
+      - name: Build the image (no push)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
