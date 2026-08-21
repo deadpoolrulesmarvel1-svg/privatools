@@ -176,6 +176,38 @@ def _env_positive_int(name: str, default: int) -> int:
 _SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
 _WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 
+# Pages allowed to talk directly to a BYOK AI provider.
+#
+# Scoped per-path for the same reason _WASM_EVAL_PATHS is: a tool that does not
+# use BYOK has no business being able to reach an AI provider, and scoping means
+# a bug on an unrelated page cannot exfiltrate to one. A global allowlist would
+# hand every one of the 200+ tool pages an egress route it never needs.
+_BYOK_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+
+# Curated on purpose. `connect-src https:` would let a page reach any host,
+# which would give away the guarantee this product is built on, so adding a
+# provider is deliberately a code change rather than a runtime choice.
+#
+# Loopback covers local models (Ollama, LM Studio). It is exempt from
+# mixed-content blocking because loopback is a potentially trustworthy origin,
+# and it can only reach a server on the user's own machine.
+#
+# Kept in sync with frontend/src/lib/byok/providers.ts by
+# backend/tests/test_byok_csp.py — a provider missing here is refused by the
+# browser and looks like a network fault rather than a misconfiguration.
+_BYOK_ORIGINS = [
+    "https://api.anthropic.com",
+    "https://api.openai.com",
+    "https://generativelanguage.googleapis.com",
+    "https://openrouter.ai",
+    "https://api.groq.com",
+    "https://api.together.xyz",
+    "https://api.mistral.ai",
+    "https://api.deepseek.com",
+    "http://localhost:*",
+    "http://127.0.0.1:*",
+]
+
 # api-subdomain split (off by default). When PUBLIC_API_BASE_URL is set to a
 # cross-origin like https://api.privatools.me, the SPA is told — via a runtime
 # <meta> tag in index.html — to send /api requests there instead of
@@ -208,6 +240,8 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     connect_src = ["'self'", "https://huggingface.co", "https://cdn.jsdelivr.net"]
     if api_base:
         connect_src.append(api_base)
+    if path in _BYOK_PATHS:
+        connect_src.extend(_BYOK_ORIGINS)
 
     return (
         "default-src 'self'; "
