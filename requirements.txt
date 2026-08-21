@@ -50,6 +50,11 @@ python-pptx==1.0.2
 pillow-heif==1.4.0
 onnxruntime==1.23.2
 rembg==2.0.81
+# Declared explicitly because app code imports cv2 directly
+# (services/image_watermark_remove_service.py). It used to arrive transitively
+# via rembg; rembg 2.0.81 dropped it, which broke the import. A direct import
+# must be a direct dependency — see test_declared_dependencies.py.
+opencv-python-headless==5.0.0.93
 cairosvg==2.9.0
 python-barcode==0.16.1
 qrcode==8.2
