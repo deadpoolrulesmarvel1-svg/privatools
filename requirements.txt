@@ -55,6 +55,10 @@ rembg==2.0.81
 # via rembg; rembg 2.0.81 dropped it, which broke the import. A direct import
 # must be a direct dependency — see test_declared_dependencies.py.
 opencv-python-headless==5.0.0.93
+# Same reason: image_watermark_remove_service.py does `import numpy as np` at
+# module level. It arrived via opencv/scipy before; declaring it means no
+# upstream reshuffle can remove it.
+numpy==2.5.2
 cairosvg==2.9.0
 python-barcode==0.16.1
 qrcode==8.2

@@ -35,23 +35,19 @@ IMPORT_TO_DISTRIBUTION = {
     "cv2": "opencv-python-headless",
     "fitz": "pymupdf",
     "PIL": "pillow",
-    "pdf2image": "pdf2image",
     "docx": "python-docx",
     "pptx": "python-pptx",
     "barcode": "python-barcode",
-    "pyzbar": "pyzbar",
-    "dotenv": "python-dotenv",
-    "multipart": "python-multipart",
-    "yaml": "pyyaml",
-    "jwt": "pyjwt",
-    "bs4": "beautifulsoup4",
-    "magic": "python-magic",
     "pillow_heif": "pillow-heif",
 }
 
 # Imported by app code but deliberately NOT direct dependencies.
 ALLOWED_TRANSITIVE: set[str] = {
-    "starlette",   # re-exported through fastapi, versioned by it
+    # Both are fastapi's own foundations: it pins them, re-exports them, and
+    # its documentation tells you to import them directly. Unlike opencv under
+    # rembg, neither can be dropped without fastapi ceasing to be fastapi.
+    "starlette",
+    "pydantic",
 }
 
 
@@ -65,15 +61,48 @@ def _declared() -> set[str]:
     return pins
 
 
+def _optional_import_nodes(tree: ast.AST) -> set[int]:
+    """Nodes inside a `try:` that handles ImportError are deliberately optional.
+
+    markdown_to_pdf tries mistune, falls back to markdown, then falls back to a
+    regex. Each fallback is guarded by `except ImportError`, which is a
+    considered design decision — the route degrades instead of failing. Flagging
+    those as undeclared would be wrong, and would pressure someone into either
+    declaring packages the app does not need or deleting a real fallback.
+    """
+    optional: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        catches_import_error = any(
+            (h.type is None)
+            or (isinstance(h.type, ast.Name) and h.type.id in ("ImportError", "ModuleNotFoundError"))
+            or (isinstance(h.type, ast.Tuple) and any(
+                isinstance(e, ast.Name) and e.id in ("ImportError", "ModuleNotFoundError")
+                for e in h.type.elts))
+            for h in node.handlers
+        )
+        if not catches_import_error:
+            continue
+        for stmt in node.body:
+            for sub in ast.walk(stmt):
+                if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                    optional.add(id(sub))
+    return optional
+
+
 def _top_level_imports() -> dict[str, Path]:
-    """Map top-level imported module -> first file importing it."""
+    """Map required top-level third-party module -> first file importing it."""
     found: dict[str, Path] = {}
     for path in sorted(APP.rglob("*.py")):
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:  # pragma: no cover - a parse error is its own failure
             continue
+        optional = _optional_import_nodes(tree)
         for node in ast.walk(tree):
+            if id(node) in optional:
+                continue
             if isinstance(node, ast.Import):
                 names = [a.name.split(".")[0] for a in node.names]
             elif isinstance(node, ast.ImportFrom):
@@ -120,6 +149,43 @@ def test_opencv_is_declared_not_inherited():
     assert "opencv-python-headless" in _declared(), (
         "opencv-python-headless must stay a direct dependency — "
         "image_watermark_remove_service.py imports cv2 at module level."
+    )
+
+
+def test_optional_imports_are_not_flagged():
+    """An `except ImportError` fallback must not be treated as a dependency.
+
+    Guards the carve-out itself: without it this test would demand markdown be
+    declared, when the point of that code is that it works when markdown is
+    absent.
+    """
+    src = (
+        "try:\n"
+        "    import mistune\n"
+        "except ImportError:\n"
+        "    mistune = None\n"
+        "import cv2\n"
+    )
+    tree = ast.parse(src)
+    optional = _optional_import_nodes(tree)
+    imported = [n for n in ast.walk(tree) if isinstance(n, ast.Import)]
+    names = {n.names[0].name: (id(n) in optional) for n in imported}
+    assert names["mistune"] is True, "guarded import should be optional"
+    assert names["cv2"] is False, "unguarded import must still be required"
+
+
+def test_markdown_stays_optional_in_pdf_extra():
+    """The real call site that motivated the carve-out."""
+    tree = ast.parse((APP / "routes" / "pdf_extra.py").read_text(encoding="utf-8"))
+    optional = _optional_import_nodes(tree)
+    guarded = {
+        n.names[0].name
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Import) and id(n) in optional
+    }
+    assert {"mistune", "markdown"} <= guarded, (
+        "markdown_to_pdf's fallback chain is no longer ImportError-guarded; "
+        "either restore the guard or declare the package."
     )
 
 
