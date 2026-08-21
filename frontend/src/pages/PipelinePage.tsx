@@ -38,6 +38,25 @@ import { useFocusTrap } from "@/hooks/useFocusTrap";
  * requiring user-specific input (text, ranges, signatures). Grouped by
  * category in the palette below.
  */
+/**
+ * Steps `/api/pipeline` can run server-side in ONE request.
+ *
+ * When every selected step is in this set we send the document once and the
+ * server chains them; otherwise we fall back to the per-step loop below, which
+ * re-uploads the document for each step. A 50 MB PDF through 5 steps is 250 MB
+ * up either way in the fallback, versus 50 MB on the fast path.
+ *
+ * `test_pipeline_frontend_contract.py` fails if this drifts from the backend
+ * catalog — that drift is exactly why the API sat unused with 2 steps while
+ * this page offered 25.
+ */
+const API_PIPELINE_STEPS = new Set([
+    "compress-pdf", "repair-pdf", "deskew-pdf", "grayscale-pdf", "flatten-pdf",
+    "rotate-pdf", "reverse-pdf", "nup", "booklet-pdf",
+    "page-numbers", "bates-numbering", "header-footer", "watermark", "stamp-pdf",
+    "strip-metadata", "delete-annotations", "pdf-to-pdfa",
+]);
+
 const PIPELINE_TOOL_SLUGS = new Set([
     // Optimize
     "compress-pdf", "flatten-pdf", "deskew-pdf", "repair-pdf", "grayscale-pdf",
@@ -391,6 +410,49 @@ export default function PipelinePage() {
             setCurrentStep(-1);
             abortRef.current = null;
             return;
+        }
+
+        // ── Fast path: one upload, N steps, one download ──────────────
+        // Only for a full run (a retry-from-step needs the intermediate blobs
+        // the per-step loop produces) where every step is server-chainable.
+        const canUseApi =
+            startFromStep === 0 && steps.every(s => API_PIPELINE_STEPS.has(s.tool.slug));
+
+        if (canUseApi) {
+            const all = Object.fromEntries(steps.map((_, i) => [i, "running" as const]));
+            setStepStatuses(all);
+            try {
+                const resp = await postFormData("/pipeline", () => {
+                    const fd = new FormData();
+                    fd.append("file", resumeBlob, file.name);
+                    fd.append("steps", JSON.stringify(steps.map(s => s.tool.slug)));
+                    return fd;
+                }, { signal: controller.signal, timeoutMs: 300_000 });
+
+                const out = await resp.blob();
+                if (!controller.signal.aborted) {
+                    setStepStatuses(Object.fromEntries(steps.map((_, i) => [i, "done" as const])));
+                    const url = URL.createObjectURL(out);
+                    setResultBlob(out);
+                    setResultUrl(url);
+                    downloadBlob(out, `${file.name.replace(/\.pdf$/i, "")}_pipeline.pdf`);
+                }
+                setProcessing(false);
+                setCurrentStep(-1);
+                abortRef.current = null;
+                return;
+            } catch (e: unknown) {
+                if (controller.signal.aborted) {
+                    setStepStatuses({});
+                    setProcessing(false);
+                    setCurrentStep(-1);
+                    abortRef.current = null;
+                    return;
+                }
+                // Server-side chaining failed — fall through to the per-step
+                // loop, which reports WHICH step broke.
+                setStepStatuses({});
+            }
         }
 
         let currentBlob: Blob = resumeBlob;
