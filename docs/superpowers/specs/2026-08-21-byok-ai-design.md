@@ -98,6 +98,38 @@ should not be a runtime decision a user can make.
 only reach a server on the user's own machine, and mixed-content rules already
 confine it.
 
+### Where the CSP change actually goes
+
+Verified 2026-08-21, because getting this wrong wastes a release cycle.
+
+CSP is emitted in **two** places, and they do not both apply everywhere:
+
+- `backend/app/main.py:218` builds it per-request (it carries the script nonce).
+- The live nginx config sets its own, but only inside four static-asset
+  locations — `= /sw.js`, `^~ /assets/`, the manifest/robots/llms regex, and
+  the static file-extension regex. Each does `proxy_hide_header
+  Content-Security-Policy` then `add_header` its own.
+
+`location /`, which serves every SPA page including the tool pages, does
+**neither** — so the app's header passes straight through. Confirmed against
+production: exactly one CSP header is returned and it contains
+`'nonce-…'`, which only the app emits (nginx's uses `'wasm-unsafe-eval'`).
+
+**Therefore the change is a one-file edit to `main.py` and ships through the
+normal release pipeline.** No hand-edit of the VM's nginx config is required,
+which matters because that file is hand-maintained and not auto-deployed —
+`deploy/nginx.conf` in the repo is stale and must not be trusted.
+
+Had both layers emitted a header, the browser would enforce the intersection
+and an app-only change would have silently failed.
+
+### Loopback and mixed content
+
+`http://localhost` / `http://127.0.0.1` from an HTTPS page is **not** blocked as
+mixed content: the spec classifies loopback as a potentially trustworthy origin
+precisely because it cannot leave the device. So local models (Ollama, LM
+Studio) work without an HTTPS certificate.
+
 ---
 
 ## Key storage
