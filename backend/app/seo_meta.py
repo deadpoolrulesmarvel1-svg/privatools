@@ -44,6 +44,11 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "Terms of service for PrivaTools — open-source under MIT license, no account "
         "required, no warranty. You retain rights to your files.",
     ),
+    "/my-stuff": (
+        "My Stuff — PrivaTools",
+        "Everything PrivaTools has stored in this browser: saved passwords, signatures, "
+        "Bates counters, and tool defaults. Review or erase it all. Never leaves your device.",
+    ),
     "/about": (
         "About PrivaTools — How We Handle Your Files | Privacy-First",
         "How PrivaTools processes your files with zero-knowledge architecture. Files "
@@ -200,6 +205,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "one safely, what each claim means, and why most online JWT decoders are risky.",
     ),
 }
+
+# Real pages (HTTP 200) that must never be indexed. Everything else is either a
+# known page (indexed) or unknown (noindex + 404). /my-stuff is a per-device
+# management screen with no content value — surfacing it in search results
+# would be confusing, and it must also stay out of the sitemap.
+NOINDEX_PATHS: frozenset[str] = frozenset({"/my-stuff"})
 
 # ---------------------------------------------------------------------------
 # Blog post metadata  (slug → post info dict)
@@ -2858,7 +2869,7 @@ def inject_seo(html: str, path: str) -> str:
     # Robots directive — for unknown paths, force noindex,nofollow so 404 URLs
     # never get indexed. Real pages keep the index.html default
     # (index,follow,max-image-preview:large).
-    if not path_is_known(path):
+    if not path_is_known(path) or path.rstrip("/") in NOINDEX_PATHS:
         html = _set_meta(html, 'name="robots"', "noindex,nofollow")
 
     # Replace <title>
@@ -2884,7 +2895,7 @@ def inject_seo(html: str, path: str) -> str:
     # A 404 page that points its canonical at itself is the classic Soft-404
     # trigger; for unknown paths we strip the canonical entirely and rely on
     # the noindex,nofollow set above.
-    if path_is_known(path):
+    if path_is_known(path) and path.rstrip("/") not in NOINDEX_PATHS:
         if 'rel="canonical"' in html:
             html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
         else:

@@ -1,16 +1,17 @@
-"""
-Pytest test suite for PrivaTools backend API.
-Tests key endpoints with output validation — not just HTTP 200 checks.
+"""Live HTTP tests against a running server on localhost:8000.
 
-Requires a running server:
-    cd /path/to/privatools
-    python3 -m uvicorn backend.app.main:app --port 8000 &
-    python3 -m pytest backend/tests/test_api.py -v
+These SKIP unless something is listening, and `.github/workflows/test.yml`
+starts no server — so this whole module (40 tests) has never executed in CI.
+Two consequences, both real, both found the first time it was actually run:
 
-If the server isn't running, every test in this file is auto-skipped so a
-plain `pytest tests/` on a dev box doesn't fail on the unreachable host.
-For in-process tests that don't need a server, see test_phased_routes.py
-and test_security.py — they exercise the same surface via TestClient.
+  * `/protect` and `/unlock` moved to multi-file (`files`, plural) at some
+    point and these tests still sent `file`. They 422'd silently for however
+    long, because nothing ran them.
+  * Running all 40 sequentially trips the per-IP cap — `/compress` and friends
+    carry EXPENSIVE_RATE_LIMIT (5/minute). To run this module, raise it:
+        RATE_LIMIT_EXPENSIVE=1000/minute RATE_LIMIT=1000/minute \
+            uvicorn backend.app.main:app --port 8000
+    then `pytest backend/tests/test_api.py`.
 """
 
 import io
@@ -192,9 +193,11 @@ def test_bookmarks_added(small_pdf):
 # ── Security ──
 
 def test_protect_and_unlock(small_pdf):
-    r1 = post("protect", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"password": "secret123"})
+    # NB: /protect takes `files` (plural) — it is multi-file. Sending `file`
+    # yields a 422, which went unnoticed for as long as this module never ran.
+    r1 = post("protect", files={"files": ("test.pdf", small_pdf, "application/pdf")}, data={"password": "secret123"})
     assert r1.status_code == 200
-    r2 = post("unlock", files={"file": ("p.pdf", r1.content, "application/pdf")}, data={"password": "secret123"})
+    r2 = post("unlock", files={"files": ("p.pdf", r1.content, "application/pdf")}, data={"password": "secret123"})
     assert r2.status_code == 200
     assert r2.content[:5] == b"%PDF-"
 
@@ -424,7 +427,7 @@ def test_pdf_to_image_rejects_out_of_range_dpi(small_pdf):
 def test_protect_rejects_blank_password(small_pdf):
     r = post(
         "protect",
-        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        files={"files": ("test.pdf", small_pdf, "application/pdf")},
         data={"password": "   "},
     )
     assert r.status_code == 400

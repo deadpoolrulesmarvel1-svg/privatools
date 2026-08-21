@@ -9,18 +9,36 @@
 # This file is the human-edited SOURCE of runtime deps (direct, pinned). The
 # Docker image and PR CI install from the generated, fully-hashed transitive
 # lockfile `requirements.lock` with `--require-hashes` (integrity — DEP1/DEP4).
-# After editing this file, regenerate the locks:
-#   uv pip compile requirements.txt     --generate-hashes --universal --python-version 3.10 -o requirements.lock
-#   uv pip compile requirements-dev.txt --generate-hashes --universal --python-version 3.10 -o requirements-dev.lock
+#
+# EDITING THIS FILE ALONE HAS NO EFFECT — the image installs from the lock, so a
+# bump here that isn't compiled into the lock silently never reaches production.
+# `backend/tests/test_requirements_lock_sync.py` fails the build if the two drift.
+# (This is why every Dependabot pip PR must be closed rather than merged: it
+# edits this file and never regenerates the lock.)
+#
+# Regenerate on the PROD VM, not a laptop — the lock must resolve for
+# linux/aarch64, and uv otherwise mis-resolves numba/llvmlite for py3.10:
+#
+#   # 1. constraints from the RUNNING container, minus whatever you are bumping
+#   docker exec privatools-privatools-1 pip freeze > prod-freeze.txt
+#   grep -vE '^(pkg-you-are-bumping)==' prod-freeze.txt > constraints.txt
+#
+#   # 2. compile both locks against it
+#   uv pip compile requirements.txt     -c constraints.txt --generate-hashes \
+#       --universal --python-version 3.10 -o requirements.lock
+#   uv pip compile requirements-dev.txt -c constraints.txt --generate-hashes \
+#       --universal --python-version 3.10 -o requirements-dev.lock
+#
+#   # 3. prove it installs before committing
+#   pip install --dry-run --require-hashes -r requirements.lock
 fastapi==0.137.2
 uvicorn[standard]==0.27.1
 python-multipart==0.0.32
 pikepdf==8.12.0
-pypdf==6.13.3
+pypdf==6.14.2
 pdf2image==1.17.0
 Pillow==12.2.0
 reportlab==4.1.0
-aiofiles==23.2.1
 brotli==1.2.0
 slowapi==0.1.9
 pymupdf==1.28.0

@@ -16,6 +16,7 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "compare-pdf": "/compare",
   "sanitize-pdf": "/sanitize",
   "booklet-pdf": "/booklet",
+  "remove-watermark": "/remove-watermark/apply",
   "qr-reader": "/read-qr",
   // Named SEO entries that share the underlying image-to-pdf endpoint:
   "jpg-to-pdf": "/image-to-pdf",

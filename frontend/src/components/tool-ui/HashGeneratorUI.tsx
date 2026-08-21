@@ -4,9 +4,10 @@
  * Workshop aesthetic: tabbed text/file modes, mono output rows with copy
  * affordance, algorithm label in mono uppercase.
  */
-import { useState } from "react";
+import { useState, useCallback} from "react";
 import { Hash, Upload, Copy, Check, FileText, X, Sparkles, ShieldCheck, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "text" | "file";
 interface HashResult { algo: string; value: string; }
@@ -43,8 +44,15 @@ async function hashFile(file: File): Promise<HashResult[]> {
     ];
 }
 
+const HASH_GENERATOR_DEFAULTS: { mode: Mode } = {
+    mode: "text",
+};
+
 export function HashGeneratorUI() {
-    const [mode, setMode] = useState<Mode>("text");
+    const [config, , { setField }] = useToolDefaults("hash-generator", HASH_GENERATOR_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof HASH_GENERATOR_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+
     const [input, setInput] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [results, setResults] = useState<HashResult[]>([]);

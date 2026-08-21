@@ -7,13 +7,21 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Eraser, Download } from 
 import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const TRANSPARENT_BACKGROUND_DEFAULTS: { threshold: number; dpi: number } = {
+    threshold: 245,
+    dpi: 144,
+};
 
 export function TransparentBackgroundUI() {
+    const [config, , { setField }] = useToolDefaults("transparent-background", TRANSPARENT_BACKGROUND_DEFAULTS);
+    const { threshold, dpi } = config;
+    const setThreshold = useCallback((v: React.SetStateAction<typeof TRANSPARENT_BACKGROUND_DEFAULTS["threshold"]>) => setField("threshold", v), [setField]);
+    const setDpi = useCallback((v: React.SetStateAction<typeof TRANSPARENT_BACKGROUND_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
-    const [threshold, setThreshold] = useState(245);
-    const [dpi, setDpi] = useState(144);
 
     const process = useCallback(async () => {
         if (!file) return;

@@ -6,12 +6,20 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Music } from "lucide-rea
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const formats = ["mp3", "wav", "aac", "flac", "ogg"];
 
+const EXTRACT_AUDIO_DEFAULTS: { format: string } = {
+    format: "mp3",
+};
+
 export function ExtractAudioUI() {
+    const [config, , { setField }] = useToolDefaults("extract-audio", EXTRACT_AUDIO_DEFAULTS);
+    const { format } = config;
+    const setFormat = useCallback((v: React.SetStateAction<typeof EXTRACT_AUDIO_DEFAULTS["format"]>) => setField("format", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [format, setFormat] = useState("mp3");
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const canProcess = !!file && status !== "processing";

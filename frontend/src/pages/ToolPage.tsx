@@ -38,6 +38,7 @@ const LazySplitBySizeUI = lazyNamed(() => import("@/components/tool-ui/SplitBySi
 const LazyCompressUI = lazyNamed(() => import("@/components/tool-ui/CompressUI"), "CompressUI");
 const LazyProtectUI = lazyNamed(() => import("@/components/tool-ui/ProtectUI"), "ProtectUI");
 const LazyWatermarkUI = lazyNamed(() => import("@/components/tool-ui/WatermarkUI"), "WatermarkUI");
+const LazyRemoveWatermarkUI = lazyNamed(() => import("@/components/tool-ui/RemoveWatermarkUI"), "RemoveWatermarkUI");
 const LazySignUI = lazyNamed(() => import("@/components/tool-ui/SignUI"), "SignUI");
 const LazyCompareUI = lazyNamed(() => import("@/components/tool-ui/CompareUI"), "CompareUI");
 const LazyOcrUI = lazyNamed(() => import("@/components/tool-ui/OcrUI"), "OcrUI");
@@ -273,6 +274,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "edit-pdf": return <LazyEditPdfUI />;
     case "sign-pdf": return <LazySignUI />;
     case "watermark": return <LazyWatermarkUI />;
+    case "remove-watermark": return <LazyRemoveWatermarkUI />;
     case "header-footer": return <LazyHeaderFooterUI />;
     case "page-numbers": return <LazyPageNumbersUI />;
     case "bates-numbering": return <LazyBatesUI />;

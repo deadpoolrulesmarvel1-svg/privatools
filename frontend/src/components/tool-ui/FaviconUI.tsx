@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Download, Image as Image
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const SIZES = [
     { value: 16,  label: "16",  desc: "Classic" },
@@ -19,10 +20,16 @@ const SIZES = [
     { value: 512, label: "512", desc: "PWA" },
 ];
 
+const FAVICON_DEFAULTS = {
+    selectedSizes: [16, 32, 48, 180],
+};
+
 export function FaviconUI() {
+    const [config, , { setField }] = useToolDefaults("generate-favicon", FAVICON_DEFAULTS);
+    const { selectedSizes } = config;
+    const setSelectedSizes = useCallback((v: React.SetStateAction<typeof FAVICON_DEFAULTS["selectedSizes"]>) => setField("selectedSizes", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [previewSrc, setPreviewSrc] = useState<string | null>(null);
-    const [selectedSizes, setSelectedSizes] = useState<number[]>([16, 32, 48, 180]);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

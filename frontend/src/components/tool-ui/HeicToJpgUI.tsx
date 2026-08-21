@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Download, Image as Image
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const QUALITIES = [
     { value: 95, label: "High",       desc: "Best quality" },
@@ -14,9 +15,16 @@ const QUALITIES = [
     { value: 70, label: "Compressed", desc: "Smaller size" },
 ];
 
+const HEIC_TO_JPG_DEFAULTS: { quality: number } = {
+    quality: 85,
+};
+
 export function HeicToJpgUI() {
+    const [config, , { setField }] = useToolDefaults("heic-to-jpg", HEIC_TO_JPG_DEFAULTS);
+    const { quality } = config;
+    const setQuality = useCallback((v: React.SetStateAction<typeof HEIC_TO_JPG_DEFAULTS["quality"]>) => setField("quality", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [quality, setQuality] = useState(85);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

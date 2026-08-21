@@ -6,6 +6,7 @@ import {
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
   QrCode, Merge, Maximize2, Type,
+  Eraser,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -278,6 +279,14 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "vector raster render bitmap convert",
     popularity: 21,
     category: "image", accepts: ".svg", outputLabel: "converted.png",
+  },
+  {
+    slug: "remove-image-watermark", icon: Eraser, name: "Remove Image Watermark",
+    description: "Erase a watermark from a photo or graphic",
+    longDescription: "Remove watermark from an image online for free. Drag a box over the watermark and it is reconstructed from the surrounding pixels — no account, no upload to third parties. Works best over gradients and texture; a large selection is refused because there would not be enough image left to rebuild from.",
+    synonyms: "erase watermark logo stamp inpaint image photo cleanup",
+    popularity: 64,
+    category: "image", accepts: ".png,.jpg,.jpeg,.webp,.bmp", outputLabel: "no_watermark.png",
   },
   {
     slug: "image-watermark", icon: Stamp, name: "Image Watermark",

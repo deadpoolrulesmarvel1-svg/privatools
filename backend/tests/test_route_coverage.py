@@ -17,6 +17,7 @@ BACKEND_HELPER_POST_ENDPOINTS = {
     "/organize-pages/thumbnails",
     "/pipeline",
     "/pipeline/validate",
+    "/remove-watermark/detect",
 }
 
 # Make `backend.app.main` importable for the live-app checks below.

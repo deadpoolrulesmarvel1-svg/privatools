@@ -6,16 +6,24 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Bookmark, Plus, Trash2, RotateCcw, Code2, ListTree } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mark = { title: string; page: number };
 
+const BOOKMARKS_DEFAULTS: { mode: "rows" | "json" } = {
+    mode: "rows",
+};
+
 export function BookmarksUI() {
+    const [config, , { setField }] = useToolDefaults("bookmarks", BOOKMARKS_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof BOOKMARKS_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
     const [marks, setMarks] = useState<Mark[]>([
         { title: "Chapter 1", page: 1 },
         { title: "Chapter 2", page: 5 },
     ]);
-    const [mode, setMode] = useState<"rows" | "json">("rows");
+
     const [json, setJson] = useState(JSON.stringify(marks, null, 2));
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

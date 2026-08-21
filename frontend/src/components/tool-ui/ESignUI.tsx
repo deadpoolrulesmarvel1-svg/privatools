@@ -7,13 +7,17 @@ import { Download, Loader2, AlertCircle, PenTool, Type, Image as ImageIcon, Chec
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { loadSignature, saveSignature, forgetSignature } from "@/lib/signatureStore";
 
 type SigMode = "draw" | "type" | "upload";
 
 const PAGE_W = 612;
 const PAGE_H = 792;
 const MAX_SIG_FILE_BYTES = 4 * 1024 * 1024;
-const SIG_STORAGE_KEY = "privatool.esign.savedSig.v1";
+// The signature now lives in the shared asset store (lib/localStore/assets)
+// so it appears in /my-stuff and can be reused by the watermark and stamp
+// tools. The old raw localStorage key is migrated on first load by
+// lib/localStore/migrate.ts.
 
 const TYPE_FONTS: { value: string; label: string; css: string }[] = [
     { value: "fraunces",    label: "Classic italic",  css: "italic 44px 'Fraunces', Georgia, serif" },
@@ -68,14 +72,13 @@ export function ESignUI() {
     // Restore saved sig from localStorage on mount — and auto-apply it
     // to the upload slot so users don't have to click "Use" every visit.
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(SIG_STORAGE_KEY);
-            if (saved && saved.startsWith("data:image/")) {
+        void loadSignature().then(saved => {
+            if (saved) {
                 setSavedSig(saved);
                 setSigImage(saved);
                 setMode("upload");
             }
-        } catch { /* sandboxed iframe etc. — ignore */ }
+        });
     }, []);
 
     const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -114,7 +117,7 @@ export function ESignUI() {
         if (rememberSig && hasDrawn && canvasRef.current) {
             try {
                 const data = canvasRef.current.toDataURL("image/png");
-                localStorage.setItem(SIG_STORAGE_KEY, data);
+                void saveSignature(data);
                 setSavedSig(data);
             } catch { /* noop */ }
         }
@@ -131,7 +134,7 @@ export function ESignUI() {
         setHasDrawn(false);
         // Clearing the drawn signature is an escape hatch — wipe the
         // persisted copy too so it doesn't auto-reload on next visit.
-        try { localStorage.removeItem(SIG_STORAGE_KEY); } catch { /* noop */ }
+        void forgetSignature();
         setSavedSig(null);
     };
 
@@ -142,7 +145,8 @@ export function ESignUI() {
     useEffect(() => {
         if (!rememberSig) return;
         const persist = (data: string) => {
-            try { localStorage.setItem(SIG_STORAGE_KEY, data); setSavedSig(data); } catch { /* noop */ }
+            void saveSignature(data);
+            setSavedSig(data);
         };
         if (mode === "type" && typedName.trim()) {
             const c = document.createElement("canvas");
@@ -208,7 +212,7 @@ export function ESignUI() {
     };
 
     const forgetSavedSig = () => {
-        try { localStorage.removeItem(SIG_STORAGE_KEY); } catch { /* noop */ }
+        void forgetSignature();
         setSavedSig(null);
         setRememberSig(false);
     };

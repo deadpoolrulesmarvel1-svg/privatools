@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL, formatFileSize } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Fmt = "jpeg" | "png";
 const formats: { id: Fmt; label: string; desc: string }[] = [
@@ -28,10 +29,18 @@ function estimateOutputSize(srcBytes: number, fmt: Fmt, dpi: number): number {
     return Math.round(srcBytes * dpiScale * fmtScale);
 }
 
+const PDF_TO_IMAGE_DEFAULTS: { format: Fmt; dpi: number } = {
+    format: "jpeg",
+    dpi: 150,
+};
+
 export function PdfToImageUI() {
+    const [config, , { setField }] = useToolDefaults("pdf-to-image", PDF_TO_IMAGE_DEFAULTS);
+    const { format, dpi } = config;
+    const setFormat = useCallback((v: React.SetStateAction<typeof PDF_TO_IMAGE_DEFAULTS["format"]>) => setField("format", v), [setField]);
+    const setDpi = useCallback((v: React.SetStateAction<typeof PDF_TO_IMAGE_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
     const proc = useMultiFileProcessor();
-    const [format, setFormat] = useState<Fmt>("jpeg");
-    const [dpi, setDpi] = useState(150);
+
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);

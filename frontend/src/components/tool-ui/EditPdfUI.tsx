@@ -32,6 +32,7 @@ import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { createPortal } from "react-dom";
 import { useEditHistory } from "@/hooks/useEditHistory";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 // PDF.js is loaded dynamically the first time a user drops a file so the
 // ~440 KB library is excluded from the EditPdfUI route chunk. The promise
@@ -103,7 +104,14 @@ type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "p1" | "
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 function uid() { return Math.random().toString(36).slice(2); }
 
+const EDIT_PDF_DEFAULTS: { showThumbs: boolean } = {
+    showThumbs: true,
+};
+
 export function EditPdfUI() {
+    const [config, , { setField }] = useToolDefaults("edit-pdf", EDIT_PDF_DEFAULTS);
+    const { showThumbs } = config;
+    const setShowThumbs = useCallback((v: React.SetStateAction<typeof EDIT_PDF_DEFAULTS["showThumbs"]>) => setField("showThumbs", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const history = useEditHistory<Edit[]>([]);
     const edits = history.present;
@@ -117,7 +125,7 @@ export function EditPdfUI() {
     const [totalPages, setTotalPages] = useState(0);
     const [pdfDoc, setPdfDoc] = useState<any>(null);
     const [pageSize, setPageSize] = useState({ w: 595, h: 842 });
-    const [showThumbs, setShowThumbs] = useState(true);
+
     const [gesture, setGesture] = useState<GestureKind>(null);
     const gestureRef = useRef<{ start: { x: number; y: number }; initial: Edit | null }>({ start: { x: 0, y: 0 }, initial: null });
     const canvasRef = useRef<HTMLCanvasElement>(null);

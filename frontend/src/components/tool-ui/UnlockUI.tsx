@@ -6,6 +6,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { usePdfPasswordTrial } from "@/hooks/usePdfPasswordTrial";
+import { VaultTrialBanner } from "@/components/VaultTrialBanner";
+import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
 
 type UnlockFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -19,11 +22,32 @@ export function UnlockUI() {
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
+    // Try saved passwords locally (pdf.js) before asking the user. Only a
+    // password that actually works is ever sent to /unlock — wrong candidates
+    // never leave the browser.
+    const { state: trial, run: runTrial, reset: resetTrial } = usePdfPasswordTrial();
+    // Password the user typed themselves, so we only offer to save a password
+    // that wasn't already in the vault.
+    const [typedPassword, setTypedPassword] = useState("");
+
     const addFiles = (fl: FileList) => {
         const next: UnlockFile[] = Array.from(fl)
             .filter(f => f.name.toLowerCase().endsWith(".pdf"))
             .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
-        if (next.length) { setFiles(prev => [...prev, ...next]); setState("idle"); setError(null); }
+        if (!next.length) return;
+        setFiles(prev => [...prev, ...next]);
+        setState("idle");
+        setError(null);
+        // Trial against the first file only: this tool applies one password to
+        // the whole batch, so that's the one that matters.
+        if (files.length === 0) {
+            void runTrial(next[0].raw).then(result => {
+                if (result.status === "unlocked") {
+                    setPassword(result.password);
+                    setTypedPassword("");
+                }
+            });
+        }
     };
     const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
     const canProcess = files.length > 0 && !!password && state !== "processing";
@@ -64,8 +88,19 @@ export function UnlockUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">{files.length}</span> file{files.length !== 1 && "s"} freed
                         </h2>
+                        {/* Offer to save only a password the user typed AND that
+                            we just proved works. A password that came from the
+                            vault is already saved. */}
+                        {typedPassword && (
+                            <div className="mt-5">
+                                <SavePasswordPrompt
+                                    password={typedPassword}
+                                    suggestedLabel={files[0]?.name.replace(/\.pdf$/i, "") ?? ""}
+                                />
+                            </div>
+                        )}
                         <button
-                            onClick={() => { setFiles([]); setState("idle"); setPassword(""); }}
+                            onClick={() => { setFiles([]); setState("idle"); setPassword(""); setTypedPassword(""); resetTrial(); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                         >
                             <RotateCcw size={12} /> Unlock more
@@ -121,6 +156,8 @@ export function UnlockUI() {
                         ))}
                     </div>
 
+                    <VaultTrialBanner state={trial} />
+
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
                             <span className="text-accent">§</span> Document password
@@ -129,7 +166,8 @@ export function UnlockUI() {
                             <div className="relative">
                                 <input
                                     type={showPw ? "text" : "password"}
-                                    value={password} onChange={e => setPassword(e.target.value)}
+                                    value={password}
+                                    onChange={e => { setPassword(e.target.value); setTypedPassword(e.target.value); }}
                                     placeholder="Enter the existing password"
                                     autoFocus
                                     autoComplete="current-password"

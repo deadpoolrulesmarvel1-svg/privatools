@@ -6,11 +6,19 @@ import { useState, useEffect, useCallback } from "react";
 import { Globe, Code2, Download, Loader2, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "url" | "html";
 
+const HTML_TO_PDF_DEFAULTS: { mode: Mode } = {
+    mode: "url",
+};
+
 export function HtmlToPdfUI() {
-    const [mode, setMode] = useState<Mode>("url");
+    const [config, , { setField }] = useToolDefaults("html-to-pdf", HTML_TO_PDF_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof HTML_TO_PDF_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+
     const [url, setUrl] = useState("");
     const [html, setHtml] = useState("");
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");

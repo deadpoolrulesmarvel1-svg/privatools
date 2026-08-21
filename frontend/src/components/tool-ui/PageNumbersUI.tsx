@@ -8,7 +8,7 @@ import { Loader2, CheckCircle2, AlertCircle, ListOrdered, RotateCcw, Upload, Dow
 import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { MultiFileQueue } from "./MultiFileQueue";
 
 const PAGE_NUMBERS_DEFAULTS = {
@@ -28,7 +28,7 @@ const positions = [
 
 export function PageNumbersUI() {
     const proc = useMultiFileProcessor();
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("page-numbers", PAGE_NUMBERS_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("page-numbers", PAGE_NUMBERS_DEFAULTS);
     const { position, startNumber, fontSize } = config;
     const setPosition = (v: string) => setConfig(c => ({ ...c, position: v }));
     const setStartNumber = (v: number) => setConfig(c => ({ ...c, startNumber: v }));

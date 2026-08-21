@@ -60,6 +60,7 @@ from .routes import (
     v12_tools,
     phase7_tools,
     transparency,
+    remove_watermark,
     developer,
     analytics,
 )
@@ -591,6 +592,7 @@ app.include_router(new_tools.router, prefix="/api")
 app.include_router(phase7_tools.router, prefix="/api")
 app.include_router(v12_tools.router, prefix="/api")
 app.include_router(transparency.router, prefix="/api")
+app.include_router(remove_watermark.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 

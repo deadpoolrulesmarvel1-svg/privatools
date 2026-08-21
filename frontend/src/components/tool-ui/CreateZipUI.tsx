@@ -6,13 +6,21 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Loader2, AlertCircle, FileText, X, Plus, Archive, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { formatFileSize, downloadBlob, buildOutputFilename, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const CREATE_ZIP_DEFAULTS: { compression: number } = {
+    compression: 6,
+};
 
 export function CreateZipUI() {
+    const [config, , { setField }] = useToolDefaults("create-zip", CREATE_ZIP_DEFAULTS);
+    const { compression } = config;
+    const setCompression = useCallback((v: React.SetStateAction<typeof CREATE_ZIP_DEFAULTS["compression"]>) => setField("compression", v), [setField]);
     const [files, setFiles] = useState<{ id: string; name: string; size: string; file: File }[]>([]);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);
-    const [compression, setCompression] = useState(6);
+
     const ref = useRef<HTMLInputElement>(null);
 
     const add = (fl: FileList) => {

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MAX_PT = 500;
 const clamp = (v: string) => {
@@ -17,12 +18,21 @@ const clamp = (v: string) => {
     return String(n);
 };
 
+const CROP_DEFAULTS = {
+    top: "50",
+    bottom: "50",
+    left: "30",
+    right: "30",
+};
+
 export function CropUI() {
+    const [config, , { setField }] = useToolDefaults("crop-pdf", CROP_DEFAULTS);
+    const { top, bottom, left, right } = config;
+    const setTop = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["top"]>) => setField("top", v), [setField]);
+    const setBottom = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["bottom"]>) => setField("bottom", v), [setField]);
+    const setLeft = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["left"]>) => setField("left", v), [setField]);
+    const setRight = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["right"]>) => setField("right", v), [setField]);
     const proc = useMultiFileProcessor();
-    const [top, setTop] = useState("50");
-    const [bottom, setBottom] = useState("50");
-    const [left, setLeft] = useState("30");
-    const [right, setRight] = useState("30");
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);

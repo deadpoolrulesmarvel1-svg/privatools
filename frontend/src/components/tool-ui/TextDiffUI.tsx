@@ -5,9 +5,10 @@
  * gutter line numbers (A col / B col), accent-coloured additions and
  * deletions, mono stats footer.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback} from "react";
 import { GitCompare, Plus, Minus, ArrowRightLeft, RotateCcw, Columns2, Rows3, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface DiffLine {
     type: "same" | "added" | "removed";
@@ -59,11 +60,17 @@ function computeDiff(a: string, b: string): DiffLine[] {
     return result;
 }
 
+const TEXT_DIFF_DEFAULTS: { view: DiffMode } = {
+    view: "unified",
+};
+
 export function TextDiffUI() {
+    const [config, , { setField }] = useToolDefaults("text-diff", TEXT_DIFF_DEFAULTS);
+    const { view } = config;
+    const setView = useCallback((v: React.SetStateAction<typeof TEXT_DIFF_DEFAULTS["view"]>) => setField("view", v), [setField]);
     const [textA, setTextA] = useState("");
     const [textB, setTextB] = useState("");
     const [diff, setDiff] = useState<DiffLine[] | null>(null);
-    const [view, setView] = useState<DiffMode>("unified");
 
     const compare = () => setDiff(computeDiff(textA, textB));
     const clear = () => { setTextA(""); setTextB(""); setDiff(null); };

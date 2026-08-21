@@ -7,6 +7,9 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, Shield, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { VaultPasswordPicker } from "@/components/VaultPasswordPicker";
+import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type ProtectFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -60,13 +63,22 @@ function humanizeError(raw: string | undefined): string {
     return raw;
 }
 
+const PROTECT_DEFAULTS: { allowPrint: boolean; allowExtract: boolean; allowModify: boolean } = {
+    allowPrint: true,
+    allowExtract: false,
+    allowModify: false,
+};
+
 export function ProtectUI() {
+    const [config, , { setField }] = useToolDefaults("protect-pdf", PROTECT_DEFAULTS);
+    const { allowPrint, allowExtract, allowModify } = config;
+    const setAllowPrint = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowPrint"]>) => setField("allowPrint", v), [setField]);
+    const setAllowExtract = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowExtract"]>) => setField("allowExtract", v), [setField]);
+    const setAllowModify = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowModify"]>) => setField("allowModify", v), [setField]);
     const [files, setFiles] = useState<ProtectFile[]>([]);
     const [password, setPassword] = useState("");
     const [showPw, setShowPw] = useState(false);
-    const [allowPrint, setAllowPrint] = useState(true);
-    const [allowExtract, setAllowExtract] = useState(false);
-    const [allowModify, setAllowModify] = useState(false);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);
@@ -136,6 +148,16 @@ export function ProtectUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">{files.length}</span> file{files.length !== 1 && "s"} protected
                         </h2>
+                        {/* You just encrypted a document — this is the moment
+                            you most want the password remembered. */}
+                        {password && (
+                            <div className="mt-5">
+                                <SavePasswordPrompt
+                                    password={password}
+                                    suggestedLabel={files[0]?.name.replace(/\.pdf$/i, "") ?? ""}
+                                />
+                            </div>
+                        )}
                         <button
                             onClick={() => { setFiles([]); setState("idle"); setPassword(""); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
@@ -235,6 +257,11 @@ export function ProtectUI() {
                                     </button>
                                 </div>
                             </div>
+                            {/* Reuse a password already in the vault. Protect SETS a
+                                password rather than verifying one, so this is autofill,
+                                not a trial. */}
+                            <VaultPasswordPicker onPick={setPassword} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]" />
+
                             {/* Strength meter — 5 cells */}
                             <div
                                 className="grid grid-cols-5 gap-1"

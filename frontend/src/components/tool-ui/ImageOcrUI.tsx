@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ScanText, Trash2, Copy, Download, Loader2, AlertCircle, Check, Languages } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFileGetJson, uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface OcrResult { text: string; language: string; characters: number; }
 interface ImgFile { file: File; preview: string; }
@@ -26,9 +27,15 @@ const LANGUAGES = [
     { code: "rus",     label: "Russian" },
 ];
 
+const IMAGE_OCR_DEFAULTS = {
+    lang: "eng",
+};
+
 export function ImageOcrUI() {
+    const [config, , { setField }] = useToolDefaults("image-ocr", IMAGE_OCR_DEFAULTS);
+    const { lang } = config;
+    const setLang = useCallback((v: React.SetStateAction<typeof IMAGE_OCR_DEFAULTS["lang"]>) => setField("lang", v), [setField]);
     const [imgFile, setImgFile] = useState<ImgFile | null>(null);
-    const [lang, setLang] = useState("eng");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<OcrResult | null>(null);

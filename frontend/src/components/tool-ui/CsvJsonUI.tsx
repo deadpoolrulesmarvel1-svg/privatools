@@ -2,10 +2,11 @@
  * CsvJsonUI — convert CSV ↔ JSON in-browser.
  * Workshop: mode toggle + code-editor styled input/output panels.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback} from "react";
 import { ArrowLeftRight, Copy, Download, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadBlob } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "csv-to-json" | "json-to-csv";
 
@@ -46,8 +47,15 @@ const DELIM_LABEL: Record<string, string> = { ",": "Comma (,)", ";": "Semicolon 
 const SAMPLE_CSV = "name,age,city\nAlice,30,Boston\nBob,28,Berlin\nCarol,42,Chennai";
 const SAMPLE_JSON = '[\n  {"name":"Alice","age":30,"city":"Boston"},\n  {"name":"Bob","age":28,"city":"Berlin"}\n]';
 
+const CSV_JSON_DEFAULTS: { mode: Mode } = {
+    mode: "csv-to-json",
+};
+
 export function CsvJsonUI() {
-    const [mode, setMode] = useState<Mode>("csv-to-json");
+    const [config, , { setField }] = useToolDefaults("csv-json", CSV_JSON_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof CSV_JSON_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+
     const [input, setInput] = useState("");
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);

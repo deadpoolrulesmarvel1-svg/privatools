@@ -16,9 +16,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { BatesCounterPicker } from "@/components/BatesCounterPicker";
+import * as counters from "@/lib/localStore/counters";
+import { countPdfPages } from "@/lib/pdfMeta";
+import { blobBytes } from "@/lib/localStore/blobs";
 
 const positions = [
     { id: "top-left",      label: "Top-L",  row: 0, col: 0 },
@@ -38,13 +42,25 @@ const BATES_DEFAULTS = {
 
 export function BatesUI() {
     const proc = useMultiFileProcessor();
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("bates", BATES_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("bates-numbering", BATES_DEFAULTS, { legacyKey: "bates" });
     const { prefix, startNumber, digits, position } = config;
     const setPrefix = (v: string) => setConfig(c => ({ ...c, prefix: v }));
     const setStartNumber = (v: number) => setConfig(c => ({ ...c, startNumber: v }));
     const setDigits = (v: number) => setConfig(c => ({ ...c, digits: v }));
     const setPosition = (v: string) => setConfig(c => ({ ...c, position: v }));
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    // Active Bates matter, if the user has created one. Numbering continues
+    // across documents and sessions per matter — a single global counter would
+    // silently corrupt numbering the moment someone works two cases.
+    const [matter, setMatter] = useState<counters.BatesCounter | null>(null);
+    const [advancedTo, setAdvancedTo] = useState<string | null>(null);
+
+    // Seed the stamp settings from the active matter.
+    const activateMatter = useCallback((c: counters.BatesCounter | null) => {
+        setMatter(c);
+        if (!c) return;
+        setConfig(prev => ({ ...prev, prefix: c.prefix, digits: c.digits, position: c.position, startNumber: c.next }));
+    }, [setConfig]);
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
@@ -66,7 +82,27 @@ export function BatesUI() {
             params: { prefix, start_number: startNumber, digits, position },
         }, retry);
         setPhase("done");
-    }, [proc, prefix, startNumber, digits, position]);
+
+        // Advance the matter's counter ONLY for files that actually succeeded.
+        // Gaps in a Bates sequence are a real problem in discovery, so we never
+        // advance optimistically, and never for a failed file.
+        if (matter && proc.doneCount > 0) {
+            const stamped = proc.entries
+                .filter(e => e.status === "done")
+                .map(e => e.file);
+            try {
+                const pages = await countPdfPages(stamped, blobBytes);
+                if (pages > 0) {
+                    const updated = await counters.advanceCounter(matter.id, pages);
+                    setMatter(updated);
+                    setAdvancedTo(counters.formatNext(updated));
+                }
+            } catch {
+                /* counting failed — leave the counter untouched rather than
+                   guessing, and let the user correct it in /my-stuff */
+            }
+        }
+    }, [proc, prefix, startNumber, digits, position, matter]);
 
     const downloadedRef = useRef(false);
     useEffect(() => {
@@ -109,6 +145,11 @@ export function BatesUI() {
                                     <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"} · each file starts at {sample}
                                 </p>
                             )}
+                            {advancedTo && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    <span className="text-accent">§</span> {matter?.name} continues at <span className="text-accent">{advancedTo}</span> next time
+                                </p>
+                            )}
                             <div className="mt-5 flex flex-wrap gap-2">
                                 {proc.doneCount > 0 && (
                                     <button onClick={() => proc.downloadAll("archive_bates")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -124,7 +165,7 @@ export function BatesUI() {
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; setAdvancedTo(null); }}
                                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                                 >
                                     <RotateCcw size={12} /> Number more
@@ -177,6 +218,8 @@ export function BatesUI() {
                         onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
                         busy={phase === "processing"}
                     />
+
+                    <BatesCounterPicker onActivate={activateMatter} />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">

@@ -173,6 +173,14 @@ const _toolsRaw: Tool[] = [
     category: "optimize", accepts: ".pdf", outputLabel: "compressed.pdf",
   },
   {
+    slug: "remove-watermark", icon: Eraser, name: "Remove Watermark",
+    description: "Find and remove visible watermarks from a PDF",
+    longDescription: "Remove watermark from PDF online for free. Detects watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks, logos — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up.",
+    synonyms: "delete watermark strip stamp draft confidential unwatermark",
+    popularity: 71,
+    category: "edit", accepts: ".pdf", outputLabel: "no_watermark.pdf",
+  },
+  {
     slug: "flatten-pdf", icon: GalleryVerticalEnd, name: "Flatten PDF",
     description: "Flatten forms and annotations into PDF content",
     longDescription: "Flatten PDF online — permanently merge interactive form fields, annotations, and layers into static page content. Essential for submitting filled forms, preventing further edits, and ensuring consistent display. Free tool.",

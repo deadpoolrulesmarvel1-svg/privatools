@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename, formatErrorForClipboard } from "@/lib/api";
-import { useFormPersist } from "@/hooks/useFormPersist";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
@@ -45,7 +45,7 @@ const COMPRESS_DEFAULTS = {
 export function CompressUI() {
     const [files, setFiles] = useState<CompressFile[]>([]);
     // Form config persists across refreshes (file picks intentionally don't).
-    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("compress", COMPRESS_DEFAULTS);
+    const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("compress-pdf", COMPRESS_DEFAULTS, { legacyKey: "compress" });
     const { level, customQuality, customMaxDim } = config;
     const setLevel = (v: Level) => setConfig(c => ({ ...c, level: v }));
     const setCustomQuality = (v: number) => setConfig(c => ({ ...c, customQuality: v }));

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback} from "react";
 import { GenericUI } from "./GenericUI";
 import { cn } from "@/lib/utils";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Direction = "vertical" | "horizontal";
 
@@ -9,8 +10,14 @@ const options: { id: Direction; label: string; desc: string }[] = [
     { id: "horizontal", label: "Horizontal cut", desc: "Each page → top half, then bottom half"  },
 ];
 
+const SPLIT_IN_HALF_DEFAULTS: { direction: Direction } = {
+    direction: "vertical",
+};
+
 export function SplitInHalfUI() {
-    const [direction, setDirection] = useState<Direction>("vertical");
+    const [config, , { setField }] = useToolDefaults("split-in-half", SPLIT_IN_HALF_DEFAULTS);
+    const { direction } = config;
+    const setDirection = useCallback((v: React.SetStateAction<typeof SPLIT_IN_HALF_DEFAULTS["direction"]>) => setField("direction", v), [setField]);
 
     return (
         <div className="space-y-4">

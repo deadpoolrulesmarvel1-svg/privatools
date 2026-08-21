@@ -20,6 +20,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODEL_ID = "Xenova/bert-base-NER";
 type Stage = "idle" | "extracting" | "loading-model" | "scanning" | "review" | "redacting" | "done" | "error";
@@ -143,14 +144,21 @@ function groupNerTokens(tokens: NerToken[]): { text: string; type: EntityType }[
         .filter(d => d.text.length >= 2 && /[A-Za-z]/.test(d.text));
 }
 
+const SMART_REDACT_DEFAULTS: { color: string } = {
+    color: "#000000",
+};
+
 export function SmartRedactUI() {
+    const [config, , { setField }] = useToolDefaults("smart-redact", SMART_REDACT_DEFAULTS);
+    const { color } = config;
+    const setColor = useCallback((v: React.SetStateAction<typeof SMART_REDACT_DEFAULTS["color"]>) => setField("color", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [stage, setStage] = useState<Stage>("idle");
     const [progress, setProgress] = useState({ pages: 0, totalPages: 0, modelPercent: 0 });
     const [detections, setDetections] = useState<Detection[]>([]);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
-    const [color, setColor] = useState<string>("#000000");
+
     const [hits, setHits] = useState<number | null>(null);
     const [drag, setDrag] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);

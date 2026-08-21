@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, AlertCircle, FileText, X, Layers, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODES = [
     { value: "overlay" as const, label: "Overlay", desc: "Place B on top of A" },
@@ -14,10 +15,17 @@ const MODES = [
 
 interface FileBox { name: string; size: string; raw: File }
 
+const OVERLAY_DEFAULTS: { mode: "overlay" | "stamp" } = {
+    mode: "overlay",
+};
+
 export function OverlayUI() {
+    const [config, , { setField }] = useToolDefaults("overlay", OVERLAY_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof OVERLAY_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
     const [file1, setFile1] = useState<FileBox | null>(null);
     const [file2, setFile2] = useState<FileBox | null>(null);
-    const [mode, setMode] = useState<"overlay" | "stamp">("overlay");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

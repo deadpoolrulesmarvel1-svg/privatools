@@ -7,11 +7,20 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Loader2, AlertCircle, Moon, Sun, CheckCircle2, X, FileText, Download, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const INVERT_COLORS_DEFAULTS: { mode: "full" | "night"; dpi: number } = {
+    mode: "full",
+    dpi: 150,
+};
 
 export function InvertColorsUI() {
+    const [config, , { setField }] = useToolDefaults("invert-colors", INVERT_COLORS_DEFAULTS);
+    const { mode, dpi } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof INVERT_COLORS_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+    const setDpi = useCallback((v: React.SetStateAction<typeof INVERT_COLORS_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [mode, setMode] = useState<"full" | "night">("full");
-    const [dpi, setDpi] = useState(150);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

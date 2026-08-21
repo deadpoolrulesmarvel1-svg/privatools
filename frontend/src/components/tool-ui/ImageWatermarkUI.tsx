@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const POSITIONS = [
     { value: "top-left",     label: "Top-L" },
@@ -23,12 +24,22 @@ const POSITIONS = [
 const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".bmp"];
 const isImg = (f: File) => IMG_EXTS.some(e => f.name.toLowerCase().endsWith(e));
 
+const IMAGE_WATERMARK_DEFAULTS: { text: string; opacity: number; position: string; fontSize: number } = {
+    text: "WATERMARK",
+    opacity: 140,
+    position: "center",
+    fontSize: 40,
+};
+
 export function ImageWatermarkUI() {
+    const [config, , { setField }] = useToolDefaults("image-watermark", IMAGE_WATERMARK_DEFAULTS);
+    const { text, opacity, position, fontSize } = config;
+    const setText = useCallback((v: React.SetStateAction<typeof IMAGE_WATERMARK_DEFAULTS["text"]>) => setField("text", v), [setField]);
+    const setOpacity = useCallback((v: React.SetStateAction<typeof IMAGE_WATERMARK_DEFAULTS["opacity"]>) => setField("opacity", v), [setField]);
+    const setPosition = useCallback((v: React.SetStateAction<typeof IMAGE_WATERMARK_DEFAULTS["position"]>) => setField("position", v), [setField]);
+    const setFontSize = useCallback((v: React.SetStateAction<typeof IMAGE_WATERMARK_DEFAULTS["fontSize"]>) => setField("fontSize", v), [setField]);
     const proc = useMultiFileProcessor();
-    const [text, setText] = useState("WATERMARK");
-    const [opacity, setOpacity] = useState(140);
-    const [position, setPosition] = useState("center");
-    const [fontSize, setFontSize] = useState(40);
+
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);

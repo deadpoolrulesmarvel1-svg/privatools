@@ -6,17 +6,28 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, AlertCircle, LayoutGrid, CheckCircle2, RotateCcw, Download, X, Wand2 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, buildOutputFilename, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 // Heuristic for a balanced default — square root rounded up keeps proportions
 // close to 1:1 for any file count.
 const suggestColumns = (n: number) => Math.max(1, Math.min(6, Math.ceil(Math.sqrt(n))));
 
+const COLLAGE_DEFAULTS: { columns: number; autoColumns: boolean; spacing: number; bgColor: string } = {
+    columns: 3,
+    autoColumns: true,
+    spacing: 10,
+    bgColor: "#ffffff",
+};
+
 export function CollageUI() {
+    const [config, , { setField }] = useToolDefaults("make-collage", COLLAGE_DEFAULTS);
+    const { columns, autoColumns, spacing, bgColor } = config;
+    const setColumns = useCallback((v: React.SetStateAction<typeof COLLAGE_DEFAULTS["columns"]>) => setField("columns", v), [setField]);
+    const setAutoColumns = useCallback((v: React.SetStateAction<typeof COLLAGE_DEFAULTS["autoColumns"]>) => setField("autoColumns", v), [setField]);
+    const setSpacing = useCallback((v: React.SetStateAction<typeof COLLAGE_DEFAULTS["spacing"]>) => setField("spacing", v), [setField]);
+    const setBgColor = useCallback((v: React.SetStateAction<typeof COLLAGE_DEFAULTS["bgColor"]>) => setField("bgColor", v), [setField]);
     const [files, setFiles] = useState<File[]>([]);
-    const [columns, setColumns] = useState(3);
-    const [autoColumns, setAutoColumns] = useState(true);
-    const [spacing, setSpacing] = useState(10);
-    const [bgColor, setBgColor] = useState("#ffffff");
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -35,7 +46,7 @@ export function CollageUI() {
     // Keep columns synced to file count while in auto mode.
     useEffect(() => {
         if (autoColumns && files.length > 0) setColumns(suggestColumns(files.length));
-    }, [files.length, autoColumns]);
+    }, [files.length, autoColumns, setColumns]);
 
     const canProcess = files.length >= 2 && status !== "processing";
 

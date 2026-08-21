@@ -10,13 +10,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle, Download, QrCode, Link as LinkIcon, ImagePlus, X } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const QR_CODE_DEFAULTS: { size: number; format: "png" | "pdf"; fgColor: string; bgColor: string } = {
+    size: 300,
+    format: "png",
+    fgColor: "#000000",
+    bgColor: "#ffffff",
+};
 
 export function QrCodeUI() {
+    const [config, , { setField }] = useToolDefaults("qr-code", QR_CODE_DEFAULTS);
+    const { size, format, fgColor, bgColor } = config;
+    const setSize = useCallback((v: React.SetStateAction<typeof QR_CODE_DEFAULTS["size"]>) => setField("size", v), [setField]);
+    const setFormat = useCallback((v: React.SetStateAction<typeof QR_CODE_DEFAULTS["format"]>) => setField("format", v), [setField]);
+    const setFgColor = useCallback((v: React.SetStateAction<typeof QR_CODE_DEFAULTS["fgColor"]>) => setField("fgColor", v), [setField]);
+    const setBgColor = useCallback((v: React.SetStateAction<typeof QR_CODE_DEFAULTS["bgColor"]>) => setField("bgColor", v), [setField]);
     const [data, setData] = useState("");
-    const [size, setSize] = useState(300);
-    const [format, setFormat] = useState<"png" | "pdf">("png");
-    const [fgColor, setFgColor] = useState("#000000");
-    const [bgColor, setBgColor] = useState("#ffffff");
+
     const [logo, setLogo] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");

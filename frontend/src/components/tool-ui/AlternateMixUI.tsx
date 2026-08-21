@@ -7,6 +7,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Upload, Shuffle, Loader2, AlertCircle, FileText, X, CheckCircle2, Download, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type MixMode = "alternate" | "reverse-alternate";
 
@@ -17,10 +18,17 @@ const MODES: { value: MixMode; label: string; desc: string }[] = [
 
 interface FileBox { name: string; size: string; raw: File }
 
+const ALTERNATE_MIX_DEFAULTS: { mode: MixMode } = {
+    mode: "alternate",
+};
+
 export function AlternateMixUI() {
+    const [config, , { setField }] = useToolDefaults("alternate-mix", ALTERNATE_MIX_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof ALTERNATE_MIX_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
     const [file1, setFile1] = useState<FileBox | null>(null);
     const [file2, setFile2] = useState<FileBox | null>(null);
-    const [mode, setMode] = useState<MixMode>("alternate");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
