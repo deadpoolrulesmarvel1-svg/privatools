@@ -23,8 +23,17 @@ from ..utils.concurrency import run_bounded
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-VALID_LEVELS = {"light", "recommended", "extreme", "custom"}
+VALID_LEVELS = {
+    # Intensity vocabulary (what the original UI sends).
+    "light", "recommended", "extreme", "custom",
+    # Purpose vocabulary — you know you are emailing something; you should
+    # not have to translate that into a quality percentage.
+    "email", "print", "archive", "web",
+}
 MAX_FILES = 100
+# Enough headroom for any real attachment limit; guards the target search
+# from a nonsense value that would just burn passes.
+MAX_TARGET_MB = 500.0
 
 
 @router.post("/compress")
@@ -35,6 +44,7 @@ async def compress_pdf(
     level: str = Form("recommended"),
     jpeg_quality: int | None = Form(None, ge=15, le=95),
     max_image_dim: int | None = Form(None, ge=300, le=4000),
+    target_size_mb: float | None = Form(None, gt=0),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="Please upload at least one PDF file")
@@ -48,10 +58,15 @@ async def compress_pdf(
             status_code=400,
             detail=f"level must be one of: {', '.join(sorted(VALID_LEVELS))}",
         )
-    if level == "custom" and jpeg_quality is None and max_image_dim is None:
+    if level == "custom" and jpeg_quality is None and max_image_dim is None and target_size_mb is None:
         raise HTTPException(
             status_code=400,
-            detail="level=custom requires at least one of jpeg_quality or max_image_dim",
+            detail="level=custom requires jpeg_quality, max_image_dim or target_size_mb",
+        )
+    if target_size_mb is not None and target_size_mb > MAX_TARGET_MB:
+        raise HTTPException(
+            status_code=400,
+            detail=f"target_size_mb must be {MAX_TARGET_MB:g} or less",
         )
 
     ensure_temp_dir()
@@ -73,16 +88,28 @@ async def compress_pdf(
 
         total_original = 0
         total_compressed = 0
+        target_reports: list[dict] = []
         for inp in input_paths:
             total_original += os.path.getsize(inp)
             try:
-                out = await run_bounded(
-                    compress_service.compress_pdf,
-                    inp,
-                    level=level,
-                    jpeg_quality_override=jpeg_quality,
-                    max_image_dim_override=max_image_dim,
-                )
+                if target_size_mb is not None:
+                    # "Make this fit under 10 MB" is the question people
+                    # actually have. ihatepdf.cv answers it free; Smallpdf and
+                    # iLovePDF put it behind a paid tier.
+                    out, target_info = await run_bounded(
+                        compress_service.compress_to_target,
+                        inp,
+                        int(target_size_mb * 1024 * 1024),
+                    )
+                    target_reports.append(target_info)
+                else:
+                    out = await run_bounded(
+                        compress_service.compress_pdf,
+                        inp,
+                        level=level,
+                        jpeg_quality_override=jpeg_quality,
+                        max_image_dim_override=max_image_dim,
+                    )
             except ValueError as exc:
                 msg = str(exc).lower()
                 if "password" in msg or "encrypted" in msg:
@@ -111,6 +138,11 @@ async def compress_pdf(
                 headers={
                     "X-Original-Size": str(total_original),
                     "X-Compressed-Size": str(total_compressed),
+                    # False when even the most aggressive pass overshoots. Said
+                    # out loud rather than silently handing back a file that
+                    # misses the limit the user asked for.
+                    **({"X-Target-Met": str(target_reports[0]["met"]).lower()}
+                       if target_reports else {}),
                 },
             )
 
@@ -132,6 +164,8 @@ async def compress_pdf(
             headers={
                 "X-Original-Size": str(total_original),
                 "X-Compressed-Size": str(total_compressed),
+                **({"X-Target-Met": str(all(r["met"] for r in target_reports)).lower()}
+                   if target_reports else {}),
             },
         )
     except HTTPException:

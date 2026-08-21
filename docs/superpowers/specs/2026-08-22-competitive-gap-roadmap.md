@@ -199,15 +199,44 @@ pages are skipped rather than fatal.
 
 ---
 
-## Priority 5 — Named optimisation profiles
+## Priority 5 — Named optimisation profiles ✅ **shipped**
 
 **Gap:** Adobe, Nitro and Foxit all ship saveable compression/downsampling profiles;
 we ship one Compress button with three levels.
 
-Not a new engine — a preset layer over the existing compress service, with named
-profiles (Email, Print 300 DPI, Archive, Web) exposing image downsampling, colour
-conversion and compatibility level. `ihatepdf.cv` already does this inside its workflow
-builder, including a custom target-MB mode worth copying.
+**Shipped 2026-08-22.** Four purpose-named profiles — **email**, **print**, **archive**,
+**web** — alongside the existing intensity levels. You know you are emailing something;
+you should not have to translate that into a quality percentage.
+
+Plus `target_size_mb`: "make this fit under 10 MB", which is the form of the question
+people actually have. ihatepdf.cv answers it free; Smallpdf and iLovePDF paywall it. It
+binary-searches a seven-rung ladder so it lands on the *lightest* setting that fits in
+about three passes rather than grinding to the bottom, discards the losing passes, and
+returns `X-Target-Met: false` when even the harshest rung overshoots rather than silently
+handing back a file that misses.
+
+No "strip metadata" flag on any profile, deliberately. Adobe's optimizer has one, but
+folding it into a compression preset would silently delete the document title — the same
+quiet accessibility loss the merge and grayscale fixes were about.
+
+### And it surfaced a production bug
+
+`_recompress_image` opened `read_raw_bytes()` with PIL. For `/DCTDecode` those bytes are a
+complete JPEG, so it worked. For `/FlateDecode` they are zlib-compressed samples with no
+container — PIL raised, the image was skipped, and **the file came back the size it went
+in while the UI reported success.**
+
+Measured on the same generated page at `extreme`:
+
+| Encoding | Before fix | After fix |
+|---|---|---|
+| `/DCTDecode` | 0.18 | 0.18 |
+| `/FlateDecode` | **1.00 — nothing** | **0.47** |
+
+Flate is how screenshots, PNG exports and much scanner output is stored, so this was not
+an edge case. The tell was the `current_filter` argument the function accepted and never
+read. Now decoded through `pikepdf.PdfImage`, which understands the filters and the colour
+space, with the raw-bytes path kept as a fallback and stencil masks skipped.
 
 ---
 
