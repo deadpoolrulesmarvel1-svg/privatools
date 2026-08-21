@@ -21,7 +21,6 @@ function simpleMarkdownToHtml(md: string): string {
         .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
         .replace(/^- (.+)$/gm, "<li>$1</li>")
         .replace(/\n\n/g, "</p><p>")
-        .replace(/^(?!<[h|li|p])/gm, "")
         .trim();
 }
 

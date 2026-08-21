@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { randomInt } from "@/lib/randomInt";
 import { Copy, RefreshCw, Check, AlertCircle, Sparkles, ListPlus } from "lucide-react";
 
 // ─── shared bits ─────────────────────────────────────────────────────────
@@ -67,13 +68,12 @@ export function PasswordGeneratorUI() {
         ].filter(Boolean) as string[];
         if (sets.length === 0) return "";
         const all = sets.join("");
-        const rand = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
         // Guarantee at least one char from each chosen set
-        const out: string[] = sets.map(s => s[rand(s.length)]);
-        for (let i = out.length; i < length; i++) out.push(all[rand(all.length)]);
+        const out: string[] = sets.map(s => s[randomInt(s.length)]);
+        for (let i = out.length; i < length; i++) out.push(all[randomInt(all.length)]);
         // Shuffle
         for (let i = out.length - 1; i > 0; i--) {
-            const j = rand(i + 1);
+            const j = randomInt(i + 1);
             [out[i], out[j]] = [out[j], out[i]];
         }
         return out.join("");
