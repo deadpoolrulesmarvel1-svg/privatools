@@ -36,6 +36,7 @@ const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SecurityPage = lazy(() => import("./pages/SecurityPage"));
+const MyStuffPage = lazy(() => import("./pages/MyStuffPage"));
 const CommandPalette = lazy(loadCommandPalette);
 const DynamicHead = lazy(() => import("./components/DynamicHead").then(m => ({ default: m.DynamicHead })));
 const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
@@ -178,6 +179,7 @@ const App = () => (
           <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
           <Route path="/security" element={withRouteFallback(<SecurityPage />)} />
           <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
+          <Route path="/my-stuff" element={withRouteFallback(<MyStuffPage />)} />
           <Route path="*" element={withRouteFallback(<NotFound />)} />
         </Routes>
       </AppShell>
