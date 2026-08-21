@@ -691,7 +691,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "summarize-pdf", icon: Sparkles, name: "Summarize PDF (AI)",
     description: "Local AI summary — your PDF never leaves your browser",
-    longDescription: "Summarize PDF online with AI — without uploading. PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server like OpenAI or Anthropic. Choose short, medium, or long summaries. First load downloads the ~250 MB model and caches it for next time.",
+    longDescription: "Summarize PDF online with AI — without uploading. By default PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server. If you would rather use a stronger model, you can supply your own API key — then the text goes straight from your browser to that provider, still never through us. Choose short, medium, or long summaries. First load of the on-device model downloads ~250 MB and caches it for next time.",
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
     category: "advanced", clientOnly: true, accepts: ".pdf", outputLabel: "summary.txt",

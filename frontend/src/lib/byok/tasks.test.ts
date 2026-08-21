@@ -30,7 +30,7 @@ describe("summarizeWithByok", () => {
   it("asks for a different length depending on the setting", async () => {
     const f = mockOk("x");
     await summarizeWithByok({ ...ARGS, text: "t", length: "short" });
-    await summarizeWithByok({ ...ARGS, text: "t", length: "detailed" });
+    await summarizeWithByok({ ...ARGS, text: "t", length: "long" });
     const first = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string).system;
     const second = JSON.parse((f.mock.calls[1][1] as RequestInit).body as string).system;
     expect(first).not.toBe(second);

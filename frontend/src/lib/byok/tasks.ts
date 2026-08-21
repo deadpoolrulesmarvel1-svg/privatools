@@ -20,12 +20,12 @@ import type { Message } from "./providers";
  */
 export const MAX_CHARS_PER_CALL = 100_000;
 
-export type SummaryLength = "short" | "medium" | "detailed";
+export type SummaryLength = "short" | "medium" | "long";
 
 const LENGTH_INSTRUCTION: Record<SummaryLength, string> = {
     short: "Summarise the document in 2-3 sentences. Lead with what it is and what it decides or concludes.",
     medium: "Summarise the document in one tight paragraph, then up to five bullet points covering the substantive details.",
-    detailed: "Summarise the document section by section. Keep specific figures, dates, names and obligations rather than generalising them away.",
+    long: "Summarise the document section by section. Keep specific figures, dates, names and obligations rather than generalising them away.",
 };
 
 const BASE_RULES = [
