@@ -8,12 +8,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Upload, X, Download, Loader2, AlertCircle, CheckCircle2, ImageIcon } from "lucide-react";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { cn, friendlyError } from "@/lib/utils";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface ImgFile { file: File; preview: string; }
 
+const IMAGE_COMPRESSOR_DEFAULTS = {
+    quality: 82,
+};
+
 export function ImageCompressorUI() {
+    const [config, , { setField }] = useToolDefaults("image-compressor", IMAGE_COMPRESSOR_DEFAULTS);
+    const { quality } = config;
+    const setQuality = (v: React.SetStateAction<typeof IMAGE_COMPRESSOR_DEFAULTS["quality"]>) => setField("quality", v);
     const [files, setFiles] = useState<ImgFile[]>([]);
-    const [quality, setQuality] = useState(82);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);

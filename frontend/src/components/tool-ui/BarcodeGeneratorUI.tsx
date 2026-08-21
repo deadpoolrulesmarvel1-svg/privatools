@@ -41,9 +41,9 @@ const BARCODE_GENERATOR_DEFAULTS = {
 };
 
 export function BarcodeGeneratorUI() {
-    const [config, setConfig] = useToolDefaults("generate-barcode", BARCODE_GENERATOR_DEFAULTS);
+    const [config, , { setField }] = useToolDefaults("generate-barcode", BARCODE_GENERATOR_DEFAULTS);
     const { barcodeType } = config;
-    const setBarcodeType = (v: typeof BARCODE_GENERATOR_DEFAULTS["barcodeType"]) => setConfig(c => ({ ...c, barcodeType: v }));
+    const setBarcodeType = (v: React.SetStateAction<typeof BARCODE_GENERATOR_DEFAULTS["barcodeType"]>) => setField("barcodeType", v);
     const [data, setData] = useState("");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

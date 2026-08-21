@@ -21,6 +21,20 @@ import { useFormPersist, type UseFormPersistResult } from "./useFormPersist";
 import { registerCustomized, unregisterCustomized } from "@/lib/localStore/defaults";
 import { clearPersisted, loadPersisted, savePersisted, shallowEqual } from "@/lib/persistence";
 
+export interface ToolDefaultsApi<T> extends UseFormPersistResult<T> {
+  /**
+   * Update one field, by value or with an updater function.
+   *
+   * Tools were written against `useState` setters, and several call the
+   * updater form (`setSizes(prev => [...prev, 48])`, `setFlag(v => !v)`). A
+   * per-field setter that only accepted a value silently broke those call
+   * sites — and the repo's `tsc --noEmit` does not catch it, because the root
+   * tsconfig has `files: []` and only project references, so it compiles
+   * nothing without `--build`. Use `--project tsconfig.app.json`.
+   */
+  setField: <K extends keyof T>(key: K, value: React.SetStateAction<T[K]>) => void;
+}
+
 export interface ToolDefaultsOptions {
   /**
    * Key this tool used before it moved to its registry slug. Migrated once, on
@@ -37,7 +51,7 @@ export function useToolDefaults<T extends Record<string, unknown>>(
   slug: string,
   defaults: T,
   options: ToolDefaultsOptions = {},
-): [T, React.Dispatch<React.SetStateAction<T>>, UseFormPersistResult<T>] {
+): [T, React.Dispatch<React.SetStateAction<T>>, ToolDefaultsApi<T>] {
   // Runs BEFORE useFormPersist reads, so the migrated value is picked up on the
   // very first render and the user never sees a flash of defaults.
   const { legacyKey } = options;
@@ -72,11 +86,24 @@ export function useToolDefaults<T extends Record<string, unknown>>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, slug]);
 
+  const setField = useCallback(
+    <K extends keyof T>(key: K, value: React.SetStateAction<T[K]>) => {
+      setState((current) => ({
+        ...current,
+        [key]:
+          typeof value === "function"
+            ? (value as (prev: T[K]) => T[K])(current[key])
+            : value,
+      }));
+    },
+    [setState],
+  );
+
   const reset = useCallback(() => {
     api.reset();
     lastRegistered.current = false;
     void unregisterCustomized(slug);
   }, [api, slug]);
 
-  return [state, setState, { ...api, reset }];
+  return [state, setState, { ...api, reset, setField }];
 }

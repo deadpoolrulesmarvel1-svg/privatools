@@ -8,6 +8,7 @@ import { cn, isValidPageRange, pageRangeError } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Angle = 90 | 180 | 270;
 
@@ -17,9 +18,16 @@ const angles: { value: Angle; label: string; desc: string; preview: string }[] =
     { value: 270, label: "90° left",   desc: "Counter-clockwise",   preview: "↺" },
 ];
 
+const ROTATE_DEFAULTS: { angle: Angle } = {
+    angle: 90,
+};
+
 export function RotateUI() {
+    const [config, , { setField }] = useToolDefaults("rotate-pdf", ROTATE_DEFAULTS);
+    const { angle } = config;
+    const setAngle = (v: React.SetStateAction<typeof ROTATE_DEFAULTS["angle"]>) => setField("angle", v);
     const proc = useMultiFileProcessor();
-    const [angle, setAngle] = useState<Angle>(90);
+
     const [pages, setPages] = useState("all");
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);

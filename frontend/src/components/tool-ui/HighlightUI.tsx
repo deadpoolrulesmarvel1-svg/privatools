@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const COLORS = [
     { id: "yellow", label: "Yellow", swatch: "#ffea00" },
@@ -22,11 +23,19 @@ const COLORS = [
     { id: "orange", label: "Orange", swatch: "#ffa800" },
 ];
 
+const HIGHLIGHT_DEFAULTS = {
+    color: "yellow",
+    caseSensitive: false,
+};
+
 export function HighlightUI() {
+    const [config, , { setField }] = useToolDefaults("highlight-pdf", HIGHLIGHT_DEFAULTS);
+    const { color, caseSensitive } = config;
+    const setColor = (v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["color"]>) => setField("color", v);
+    const setCaseSensitive = (v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["caseSensitive"]>) => setField("caseSensitive", v);
     const proc = useMultiFileProcessor();
     const [query, setQuery] = useState("");
-    const [color, setColor] = useState("yellow");
-    const [caseSensitive, setCaseSensitive] = useState(false);
+
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);

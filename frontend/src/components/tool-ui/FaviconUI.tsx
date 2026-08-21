@@ -25,9 +25,9 @@ const FAVICON_DEFAULTS = {
 };
 
 export function FaviconUI() {
-    const [config, setConfig] = useToolDefaults("generate-favicon", FAVICON_DEFAULTS);
+    const [config, , { setField }] = useToolDefaults("generate-favicon", FAVICON_DEFAULTS);
     const { selectedSizes } = config;
-    const setSelectedSizes = (v: typeof FAVICON_DEFAULTS["selectedSizes"]) => setConfig(c => ({ ...c, selectedSizes: v }));
+    const setSelectedSizes = (v: React.SetStateAction<typeof FAVICON_DEFAULTS["selectedSizes"]>) => setField("selectedSizes", v);
     const [file, setFile] = useState<File | null>(null);
     const [previewSrc, setPreviewSrc] = useState<string | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");

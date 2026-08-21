@@ -26,12 +26,12 @@ const CROP_DEFAULTS = {
 };
 
 export function CropUI() {
-    const [config, setConfig] = useToolDefaults("crop-pdf", CROP_DEFAULTS);
+    const [config, , { setField }] = useToolDefaults("crop-pdf", CROP_DEFAULTS);
     const { top, bottom, left, right } = config;
-    const setTop = (v: typeof CROP_DEFAULTS["top"]) => setConfig(c => ({ ...c, top: v }));
-    const setBottom = (v: typeof CROP_DEFAULTS["bottom"]) => setConfig(c => ({ ...c, bottom: v }));
-    const setLeft = (v: typeof CROP_DEFAULTS["left"]) => setConfig(c => ({ ...c, left: v }));
-    const setRight = (v: typeof CROP_DEFAULTS["right"]) => setConfig(c => ({ ...c, right: v }));
+    const setTop = (v: React.SetStateAction<typeof CROP_DEFAULTS["top"]>) => setField("top", v);
+    const setBottom = (v: React.SetStateAction<typeof CROP_DEFAULTS["bottom"]>) => setField("bottom", v);
+    const setLeft = (v: React.SetStateAction<typeof CROP_DEFAULTS["left"]>) => setField("left", v);
+    const setRight = (v: React.SetStateAction<typeof CROP_DEFAULTS["right"]>) => setField("right", v);
     const proc = useMultiFileProcessor();
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);

@@ -140,4 +140,40 @@ describe("useToolDefaults", () => {
       expect(result.current[2].restored).toBe(false);
     });
   });
+
+  describe("setField", () => {
+    // Generated per-field setters must behave like useState setters, including
+    // the updater-function form — several tools call setX(prev => ...).
+    it("sets a field by value", async () => {
+      const { result } = renderHook(() => useToolDefaults("compress-pdf", DEFAULTS));
+      act(() => result.current[2].setField("level", "extreme"));
+      expect(result.current[0]).toEqual({ ...DEFAULTS, level: "extreme" });
+    });
+
+    it("sets a field with an updater function", async () => {
+      const { result } = renderHook(() => useToolDefaults("compress-pdf", DEFAULTS));
+      act(() => result.current[2].setField("quality", (q) => (q as number) + 5));
+      expect(result.current[0].quality).toBe(80);
+    });
+
+    it("leaves other fields untouched", async () => {
+      const { result } = renderHook(() => useToolDefaults("compress-pdf", DEFAULTS));
+      act(() => result.current[2].setField("quality", 10));
+      expect(result.current[0].level).toBe("recommended");
+    });
+
+    it("supports a boolean toggle via updater", async () => {
+      const BOOL = { caseSensitive: false };
+      const { result } = renderHook(() => useToolDefaults("highlight-pdf", BOOL));
+      act(() => result.current[2].setField("caseSensitive", (v) => !v));
+      expect(result.current[0].caseSensitive).toBe(true);
+    });
+
+    it("supports an array updater", async () => {
+      const ARR = { sizes: [16, 32] as number[] };
+      const { result } = renderHook(() => useToolDefaults("generate-favicon", ARR));
+      act(() => result.current[2].setField("sizes", (prev) => [...(prev as number[]), 48]));
+      expect(result.current[0].sizes).toEqual([16, 32, 48]);
+    });
+  });
 });

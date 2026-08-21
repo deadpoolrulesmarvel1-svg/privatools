@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const sizes = [
     { id: "a4",     label: "A4",     dims: "210 × 297 mm" },
@@ -17,11 +18,20 @@ const sizes = [
     { id: "custom", label: "Custom", dims: "any size"      },
 ];
 
+const RESIZE_DEFAULTS = {
+    pageSize: "a4",
+    width: 595,
+    height: 842,
+};
+
 export function ResizeUI() {
+    const [config, , { setField }] = useToolDefaults("resize-pdf", RESIZE_DEFAULTS);
+    const { pageSize, width, height } = config;
+    const setPageSize = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["pageSize"]>) => setField("pageSize", v);
+    const setWidth = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["width"]>) => setField("width", v);
+    const setHeight = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["height"]>) => setField("height", v);
     const proc = useMultiFileProcessor();
-    const [pageSize, setPageSize] = useState("a4");
-    const [width, setWidth] = useState(595);
-    const [height, setHeight] = useState(842);
+
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);

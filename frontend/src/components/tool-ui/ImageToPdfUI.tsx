@@ -10,6 +10,7 @@ import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type PageSize = "auto" | "a4" | "letter";
 const sizes: { id: PageSize; label: string; desc: string }[] = [
@@ -25,14 +26,21 @@ interface ImageToPdfUIProps {
     handoffSlug?: string;
 }
 
+const IMAGE_TO_PDF_DEFAULTS: { pageSize: PageSize } = {
+    pageSize: "auto",
+};
+
 export function ImageToPdfUI({
     accept = "image/*",
     formatsLabel = "JPEG · PNG · WebP · BMP · TIFF · HEIC — multiple allowed",
     nounLabel = "image",
     handoffSlug = "image-to-pdf",
 }: ImageToPdfUIProps = {}) {
+    const [config, , { setField }] = useToolDefaults("image-to-pdf", IMAGE_TO_PDF_DEFAULTS);
+    const { pageSize } = config;
+    const setPageSize = (v: React.SetStateAction<typeof IMAGE_TO_PDF_DEFAULTS["pageSize"]>) => setField("pageSize", v);
     const [files, setFiles] = useState<{ id: string; name: string; size: string; raw: File }[]>([]);
-    const [pageSize, setPageSize] = useState<PageSize>("auto");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);

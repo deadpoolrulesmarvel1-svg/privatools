@@ -8,6 +8,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, ScissorsLineDashed, RotateCcw } from "lucide-react";
 import { cn, friendlyError, isValidPageRange, pageRangeError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "pages" | "individual" | "every_n";
 
@@ -17,11 +18,20 @@ const modes: { id: Mode; label: string; desc: string; example: string }[] = [
     { id: "every_n",    label: "Every N pages",  desc: "Split into equal chunks",           example: "" },
 ];
 
+const SPLIT_DEFAULTS: { mode: Mode; n: number } = {
+    mode: "pages",
+    n: 2,
+};
+
 export function SplitUI() {
+    const [config, , { setField }] = useToolDefaults("split-pdf", SPLIT_DEFAULTS);
+    const { mode, n } = config;
+    const setMode = (v: React.SetStateAction<typeof SPLIT_DEFAULTS["mode"]>) => setField("mode", v);
+    const setN = (v: React.SetStateAction<typeof SPLIT_DEFAULTS["n"]>) => setField("n", v);
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
-    const [mode, setMode] = useState<Mode>("pages");
+
     const [pages, setPages] = useState("1-3");
-    const [n, setN] = useState(2);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);
