@@ -14,9 +14,9 @@ This test turns that silent drift into a loud failure. When it fires after a
 dependency bump, regenerate the locks:
 
     uv pip compile requirements.txt     --generate-hashes --universal \\
-        --python-version 3.10 -o requirements.lock
+        --python-version 3.12 -o requirements.lock
     uv pip compile requirements-dev.txt --generate-hashes --universal \\
-        --python-version 3.10 -o requirements-dev.lock
+        --python-version 3.12 -o requirements-dev.lock
 """
 
 from __future__ import annotations
