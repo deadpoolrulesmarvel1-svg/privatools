@@ -34,7 +34,7 @@ const IMAGE_OCR_DEFAULTS = {
 export function ImageOcrUI() {
     const [config, , { setField }] = useToolDefaults("image-ocr", IMAGE_OCR_DEFAULTS);
     const { lang } = config;
-    const setLang = (v: React.SetStateAction<typeof IMAGE_OCR_DEFAULTS["lang"]>) => setField("lang", v);
+    const setLang = useCallback((v: React.SetStateAction<typeof IMAGE_OCR_DEFAULTS["lang"]>) => setField("lang", v), [setField]);
     const [imgFile, setImgFile] = useState<ImgFile | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

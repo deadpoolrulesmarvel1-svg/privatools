@@ -27,9 +27,9 @@ const RESIZE_DEFAULTS = {
 export function ResizeUI() {
     const [config, , { setField }] = useToolDefaults("resize-pdf", RESIZE_DEFAULTS);
     const { pageSize, width, height } = config;
-    const setPageSize = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["pageSize"]>) => setField("pageSize", v);
-    const setWidth = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["width"]>) => setField("width", v);
-    const setHeight = (v: React.SetStateAction<typeof RESIZE_DEFAULTS["height"]>) => setField("height", v);
+    const setPageSize = useCallback((v: React.SetStateAction<typeof RESIZE_DEFAULTS["pageSize"]>) => setField("pageSize", v), [setField]);
+    const setWidth = useCallback((v: React.SetStateAction<typeof RESIZE_DEFAULTS["width"]>) => setField("width", v), [setField]);
+    const setHeight = useCallback((v: React.SetStateAction<typeof RESIZE_DEFAULTS["height"]>) => setField("height", v), [setField]);
     const proc = useMultiFileProcessor();
 
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");

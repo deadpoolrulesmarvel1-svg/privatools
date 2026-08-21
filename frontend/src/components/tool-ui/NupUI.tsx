@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle, Layout, RotateCcw } from "lucide-re
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const opts = [
     { id: 2,  label: "2-up",  cols: 2, rows: 1 },
@@ -19,10 +20,18 @@ const opts = [
 // Orientation only matters for 2-up: side-by-side (2×1) or stacked (1×2)
 type Orient = "horizontal" | "vertical";
 
+const NUP_DEFAULTS: { pps: number; orient: Orient } = {
+    pps: 2,
+    orient: "horizontal",
+};
+
 export function NupUI() {
+    const [config, , { setField }] = useToolDefaults("nup", NUP_DEFAULTS);
+    const { pps, orient } = config;
+    const setPps = useCallback((v: React.SetStateAction<typeof NUP_DEFAULTS["pps"]>) => setField("pps", v), [setField]);
+    const setOrient = useCallback((v: React.SetStateAction<typeof NUP_DEFAULTS["orient"]>) => setField("orient", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [pps, setPps] = useState(2);
-    const [orient, setOrient] = useState<Orient>("horizontal");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
 

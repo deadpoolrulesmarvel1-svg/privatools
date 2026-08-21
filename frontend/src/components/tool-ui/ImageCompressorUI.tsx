@@ -19,7 +19,7 @@ const IMAGE_COMPRESSOR_DEFAULTS = {
 export function ImageCompressorUI() {
     const [config, , { setField }] = useToolDefaults("image-compressor", IMAGE_COMPRESSOR_DEFAULTS);
     const { quality } = config;
-    const setQuality = (v: React.SetStateAction<typeof IMAGE_COMPRESSOR_DEFAULTS["quality"]>) => setField("quality", v);
+    const setQuality = useCallback((v: React.SetStateAction<typeof IMAGE_COMPRESSOR_DEFAULTS["quality"]>) => setField("quality", v), [setField]);
     const [files, setFiles] = useState<ImgFile[]>([]);
 
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");

@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2, Stamp, RotateCcw, Download } from "
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const STAMP_PRESETS = [
     { value: "confidential", label: "CONFIDENTIAL", tone: "destructive" },
@@ -27,12 +28,22 @@ const POSITIONS = [
     { value: "bottom",   label: "Bottom" },
 ];
 
+const STAMP_DEFAULTS: { stampType: string; customText: string; opacity: number; position: string } = {
+    stampType: "confidential",
+    customText: "",
+    opacity: 30,
+    position: "center",
+};
+
 export function StampUI() {
+    const [config, , { setField }] = useToolDefaults("stamp-pdf", STAMP_DEFAULTS);
+    const { stampType, customText, opacity, position } = config;
+    const setStampType = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["stampType"]>) => setField("stampType", v), [setField]);
+    const setCustomText = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["customText"]>) => setField("customText", v), [setField]);
+    const setOpacity = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["opacity"]>) => setField("opacity", v), [setField]);
+    const setPosition = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["position"]>) => setField("position", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [stampType, setStampType] = useState("confidential");
-    const [customText, setCustomText] = useState("");
-    const [opacity, setOpacity] = useState(30);
-    const [position, setPosition] = useState("center");
+
     const [pages, setPages] = useState("all");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

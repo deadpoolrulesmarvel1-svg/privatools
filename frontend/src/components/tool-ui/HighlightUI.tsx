@@ -31,8 +31,8 @@ const HIGHLIGHT_DEFAULTS = {
 export function HighlightUI() {
     const [config, , { setField }] = useToolDefaults("highlight-pdf", HIGHLIGHT_DEFAULTS);
     const { color, caseSensitive } = config;
-    const setColor = (v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["color"]>) => setField("color", v);
-    const setCaseSensitive = (v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["caseSensitive"]>) => setField("caseSensitive", v);
+    const setColor = useCallback((v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["color"]>) => setField("color", v), [setField]);
+    const setCaseSensitive = useCallback((v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["caseSensitive"]>) => setField("caseSensitive", v), [setField]);
     const proc = useMultiFileProcessor();
     const [query, setQuery] = useState("");
 

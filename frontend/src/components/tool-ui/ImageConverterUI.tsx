@@ -21,8 +21,8 @@ const IMAGE_CONVERTER_DEFAULTS = {
 export function ImageConverterUI() {
     const [config, , { setField }] = useToolDefaults("image-converter", IMAGE_CONVERTER_DEFAULTS);
     const { target, quality } = config;
-    const setTarget = (v: React.SetStateAction<typeof IMAGE_CONVERTER_DEFAULTS["target"]>) => setField("target", v);
-    const setQuality = (v: React.SetStateAction<typeof IMAGE_CONVERTER_DEFAULTS["quality"]>) => setField("quality", v);
+    const setTarget = useCallback((v: React.SetStateAction<typeof IMAGE_CONVERTER_DEFAULTS["target"]>) => setField("target", v), [setField]);
+    const setQuality = useCallback((v: React.SetStateAction<typeof IMAGE_CONVERTER_DEFAULTS["quality"]>) => setField("quality", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

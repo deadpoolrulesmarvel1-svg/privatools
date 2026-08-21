@@ -26,8 +26,8 @@ const SPLIT_DEFAULTS: { mode: Mode; n: number } = {
 export function SplitUI() {
     const [config, , { setField }] = useToolDefaults("split-pdf", SPLIT_DEFAULTS);
     const { mode, n } = config;
-    const setMode = (v: React.SetStateAction<typeof SPLIT_DEFAULTS["mode"]>) => setField("mode", v);
-    const setN = (v: React.SetStateAction<typeof SPLIT_DEFAULTS["n"]>) => setField("n", v);
+    const setMode = useCallback((v: React.SetStateAction<typeof SPLIT_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+    const setN = useCallback((v: React.SetStateAction<typeof SPLIT_DEFAULTS["n"]>) => setField("n", v), [setField]);
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
 
     const [pages, setPages] = useState("1-3");

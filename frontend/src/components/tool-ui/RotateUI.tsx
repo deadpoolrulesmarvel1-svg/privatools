@@ -25,7 +25,7 @@ const ROTATE_DEFAULTS: { angle: Angle } = {
 export function RotateUI() {
     const [config, , { setField }] = useToolDefaults("rotate-pdf", ROTATE_DEFAULTS);
     const { angle } = config;
-    const setAngle = (v: React.SetStateAction<typeof ROTATE_DEFAULTS["angle"]>) => setField("angle", v);
+    const setAngle = useCallback((v: React.SetStateAction<typeof ROTATE_DEFAULTS["angle"]>) => setField("angle", v), [setField]);
     const proc = useMultiFileProcessor();
 
     const [pages, setPages] = useState("all");

@@ -38,7 +38,7 @@ export function ImageToPdfUI({
 }: ImageToPdfUIProps = {}) {
     const [config, , { setField }] = useToolDefaults("image-to-pdf", IMAGE_TO_PDF_DEFAULTS);
     const { pageSize } = config;
-    const setPageSize = (v: React.SetStateAction<typeof IMAGE_TO_PDF_DEFAULTS["pageSize"]>) => setField("pageSize", v);
+    const setPageSize = useCallback((v: React.SetStateAction<typeof IMAGE_TO_PDF_DEFAULTS["pageSize"]>) => setField("pageSize", v), [setField]);
     const [files, setFiles] = useState<{ id: string; name: string; size: string; raw: File }[]>([]);
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
