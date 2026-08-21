@@ -15,6 +15,8 @@ from typing import List, Optional, Sequence
 
 import pikepdf
 
+from ..utils.pdf_accessibility import preserve_document_properties
+
 from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
@@ -57,6 +59,11 @@ def merge_pdfs(
     try:
         for idx, path in enumerate(input_paths):
             with safe_open_pdf(path) as src:
+                # The first document leads, matching how desktop tools treat a
+                # merge. Without this the merged file loses the language, title
+                # and viewer preferences every input had.
+                if idx == 0:
+                    preserve_document_properties(src, dst)
                 total = len(src.pages)
                 spec = (page_ranges[idx] if page_ranges is not None else None)
                 if spec is None or (isinstance(spec, str) and spec.strip().lower() in ("", "all")):

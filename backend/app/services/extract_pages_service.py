@@ -1,5 +1,7 @@
 import pikepdf
 
+from ..utils.pdf_accessibility import preserve_document_properties
+
 from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
@@ -25,6 +27,9 @@ def extract_pages(input_path: str, pages_str: str) -> str:
         with pikepdf.Pdf.new() as new_pdf:
             for idx in indices:
                 new_pdf.pages.append(pdf.pages[idx])
+            # Pdf.new() starts from an empty catalog, so /Lang, the title and
+            # /ViewerPreferences are dropped unless carried over explicitly.
+            preserve_document_properties(pdf, new_pdf)
             new_pdf.save(str(output_path))
 
     return str(output_path)

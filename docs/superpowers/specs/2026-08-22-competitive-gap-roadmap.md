@@ -71,9 +71,37 @@ most of what real documents fail on:
 - set `/Tabs /S` on every page
 - add `/TU` tooltips to form fields from their field names
 
-**Worth noting:** running the checker against PrivaTools' own tool output scores **28/100**
-— our PDFs come out untagged, with no `/Lang` and no `/Tabs`. Fixing our own output is
-the cheapest possible credibility for this tool, and a separate small task.
+### What the checker found in our own product ✅ **fixed**
+
+Pointing the checker at our own output turned up a real data-loss bug. Feeding an
+accessible PDF that scores **96/100** through each tool:
+
+| Tool | Before | After fix |
+|---|---|---|
+| grayscale-pdf | **11** (−85) | **96** |
+| merge-pdf | **39** (−57) | **72** |
+| extract-pages | **39** (−57) | **72** |
+| rotate · watermark · page-numbers · delete-pages · flatten · compress · pdf-to-pdfa | 96 (no loss) | 96 |
+| strip-metadata | 89 | 89 — correct, it strips the title by design |
+
+**Causes.** `merge` and `extract-pages` build on `pikepdf.Pdf.new()`, whose catalog starts
+empty, so `/Lang`, the title and `/ViewerPreferences` were never carried across. And
+`grayscale` ran a 200 DPI rasterising pass **unconditionally**, contradicting its own
+module docstring — every PDF through `/grayscale` came back as flat images with no
+selectable text, no search, no structure tree and a bigger file.
+
+This matters beyond compliance: someone who paid to have a document remediated lost that
+work by merging it, and nothing in the output said so.
+
+**Fixed** in `backend/app/utils/pdf_accessibility.py` (property preservation) and
+`grayscale_service.py` (rasterise only when coloured vector content is actually present),
+with 12 tests including one proving grayscale still converts colour.
+
+**Still open:** merge and extract-pages remain untagged (72, not 96). Carrying a structure
+tree across a merge means merging `/K` arrays, rewriting the `/ParentTree`, and
+re-pointing struct elements at their new page objects — a real project, not a copy. We
+deliberately do *not* copy `/MarkInfo` without it: claiming `/Marked true` on a document
+with no structure tree is worse than visibly losing the tags.
 
 ---
 
