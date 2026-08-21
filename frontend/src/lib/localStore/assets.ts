@@ -15,6 +15,7 @@
  * refusal that says why.
  */
 import * as db from "./db";
+import { blobBytes } from "./blobs";
 
 export type AssetKind = "signature" | "logo" | "watermark" | "letterhead" | "stamp";
 
@@ -44,20 +45,6 @@ function toMeta(r: AssetRecord): AssetMeta {
 
 function isRecord(v: unknown): v is AssetRecord {
   return !!v && typeof v === "object" && typeof (v as AssetRecord).kind === "string";
-}
-
-/**
- * Read a Blob's bytes. `Blob.arrayBuffer()` is missing in Safari < 14 (and in
- * jsdom), so fall back to FileReader, which is universally available.
- */
-function blobBytes(blob: Blob): Promise<ArrayBuffer> {
-  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
-  return new Promise<ArrayBuffer>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(reader.error ?? new Error("Could not read that file."));
-    reader.readAsArrayBuffer(blob);
-  });
 }
 
 async function records(): Promise<AssetRecord[]> {
@@ -125,7 +112,3 @@ export async function deleteAsset(id: string): Promise<void> {
 export async function clearAssets(): Promise<void> {
   await db.clear("assets");
 }
-
-/** Test hook — exposes the Blob-reading fallback so tests don't depend on
- *  `Blob.arrayBuffer()` being present in the environment. */
-export const _blobBytesForTests = blobBytes;

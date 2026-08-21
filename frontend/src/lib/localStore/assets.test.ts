@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import * as db from "./db";
 import * as assets from "./assets";
+import { blobBytes } from "./blobs";
 
 const blobOf = (n: number, type = "image/png") => new Blob([new Uint8Array(n)], { type });
 
@@ -23,7 +24,7 @@ describe("localStore/assets", () => {
     const payload = new Uint8Array([0, 1, 254, 255, 128]);
     const meta = await assets.putAsset("logo", "l.png", new Blob([payload], { type: "image/png" }));
     const back = await assets.getAssetBlob(meta.id);
-    const bytes = new Uint8Array(await assets._blobBytesForTests(back!));
+    const bytes = new Uint8Array(await blobBytes(back!));
     expect(Array.from(bytes)).toEqual([0, 1, 254, 255, 128]);
   });
 

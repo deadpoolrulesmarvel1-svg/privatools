@@ -29,3 +29,22 @@ if (!globalThis.crypto?.subtle) {
     writable: true,
   });
 }
+
+// localStorage — this jsdom build exposes a bare object with no methods, and
+// `lib/persistence.ts` swallows storage errors by design, so without this the
+// persistence layer silently no-ops in tests instead of being exercised.
+if (typeof localStorage?.setItem !== "function") {
+  const store = new Map<string, string>();
+  const shim: Storage = {
+    get length() {
+      return store.size;
+    },
+    key: (i: number) => [...store.keys()][i] ?? null,
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => void store.set(k, String(v)),
+    removeItem: (k: string) => void store.delete(k),
+    clear: () => store.clear(),
+  };
+  Object.defineProperty(globalThis, "localStorage", { value: shim, configurable: true, writable: true });
+  Object.defineProperty(window, "localStorage", { value: shim, configurable: true, writable: true });
+}
