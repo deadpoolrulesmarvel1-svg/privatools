@@ -615,7 +615,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "nup":              "Upload a PDF and download an n-up version that fits 2/4/6/8 logical pages onto one physical page — saves paper when printing.",
     "overlay":          "Upload a background PDF and a foreground PDF — download a copy with foreground stamped over every background page.",
     "alternate-mix":    "Upload two PDFs and download a copy that interleaves their pages (1A, 1B, 2A, 2B…) — useful for un-imposing two-sided scans.",
-    "summarize-pdf":    "Upload a PDF, click Summarize, and read an extractive summary right on the page — DistilBART runs entirely in your browser, no upload.",
+    "summarize-pdf":    "Upload a PDF, click Summarize, and read the summary right on the page — DistilBART runs entirely in your browser by default, no upload. Optionally bring your own AI key for a stronger model.",
     # ── To PDF: high-volume converters ─────────────────────────────────
     "excel-to-pdf":     "Upload an .xlsx and download a PDF copy with the same formatting — works for multi-sheet workbooks.",
     "pptx-to-pdf-convert":"Upload a .pptx and download a one-slide-per-page PDF — perfect for handouts.",
@@ -872,7 +872,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     # ── Advanced & AI tools ───────────────────────────────────────────────
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
-    "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly. Get an extractive summary without uploading the document anywhere."),
+    "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly, so the document is not uploaded anywhere. Optionally use your own OpenAI, Anthropic or Gemini key for a stronger model; the text then goes straight from your browser to that provider and still never through our servers."),
     "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER detects names, emails, phone numbers, addresses, and SSNs in your browser before the backend permanently applies approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),

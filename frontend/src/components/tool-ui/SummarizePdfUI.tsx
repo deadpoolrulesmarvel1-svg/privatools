@@ -17,6 +17,12 @@ import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Down
 import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { useByok } from "@/hooks/useByok";
+import { ByokPanel } from "@/components/byok/ByokPanel";
+import { getKey } from "@/lib/byok/keyStore";
+import { providerById } from "@/lib/byok/providers";
+import { summarizeWithByok } from "@/lib/byok/tasks";
+import { ByokError } from "@/lib/byok/errors";
 
 type Length = "short" | "medium" | "long";
 const LENGTH_PARAMS: Record<Length, { max: number; min: number; label: string; desc: string }> = {
@@ -118,14 +124,24 @@ function chunkBySentence(text: string, maxWords: number, overlapWords: number): 
     return chunks;
 }
 
-const SUMMARIZE_PDF_DEFAULTS: { length: Length } = {
+type Engine = "local" | "byok";
+
+const SUMMARIZE_PDF_DEFAULTS: { length: Length; engine: Engine; model: string } = {
     length: "medium",
+    // Local stays the default: it needs no key, no account and no money, and
+    // it is the thing that makes this tool different from the competition.
+    // BYOK is an upgrade a user opts into, not the happy path.
+    engine: "local",
+    model: "",
 };
 
 export function SummarizePdfUI() {
     const [config, , { setField }] = useToolDefaults("summarize-pdf", SUMMARIZE_PDF_DEFAULTS);
-    const { length } = config;
+    const { length, engine, model } = config;
     const setLength = useCallback((v: React.SetStateAction<typeof SUMMARIZE_PDF_DEFAULTS["length"]>) => setField("length", v), [setField]);
+    const setEngine = useCallback((v: Engine) => setField("engine", v), [setField]);
+    const setModel = useCallback((v: string) => setField("model", v), [setField]);
+    const byok = useByok();
     const [file, setFile] = useState<File | null>(null);
 
     const [stage, setStage] = useState<Stage>("idle");
@@ -169,7 +185,35 @@ export function SummarizePdfUI() {
                 throw new Error("No extractable text found in this PDF. If it's a scan, run OCR first, then try again.");
             }
 
-            // 2. Load model (cached after first run)
+            // 2a. BYOK: the user's own key and model, straight from this
+            // browser to the provider. Branches before the local model loads
+            // so we never download 250MB the user did not ask for.
+            if (engine === "byok") {
+                if (!byok.ready) {
+                    throw new Error("Add an API key first, or switch back to the on-device model.");
+                }
+                const apiKey = await getKey(byok.provider);
+                if (!apiKey) {
+                    throw new Error("That saved key could not be read. Enter it again, or switch back to the on-device model.");
+                }
+                const provider = providerById(byok.provider);
+                setStage("summarizing");
+                const out = await summarizeWithByok({
+                    providerId: byok.provider,
+                    apiKey,
+                    model: model || provider?.models[0] || "",
+                    text,
+                    length,
+                    onProgress: (done, total) =>
+                        setProgress(p => ({ ...p, chunks: done, totalChunks: total })),
+                });
+                if (cancelledRef.current) return;
+                setSummary(out);
+                setStage("done");
+                return;
+            }
+
+            // 2b. Load the on-device model (cached after first run)
             setStage("loading-model");
             const summarizer = (await getPipeline(percent =>
                 setProgress(p => ({ ...p, modelPercent: percent }))
@@ -205,12 +249,18 @@ export function SummarizePdfUI() {
             setSummary(final.trim());
             setStage("done");
         } catch (err) {
-            console.error(err);
-            const msg = err instanceof Error ? err.message : "Summarization failed";
+            // A ByokError already carries wording aimed at the user and, by
+            // construction, no key material. Anything else falls back to its
+            // own message. console.error is deliberately not given the raw
+            // error here: provider errors can echo the request back.
+            const msg = err instanceof ByokError
+                ? err.userMessage
+                : err instanceof Error ? err.message : "Summarization failed";
+            if (!(err instanceof ByokError)) console.error(err);
             setError(msg);
             setStage("error");
         }
-    }, [file, length]);
+    }, [file, length, engine, model, byok.ready, byok.provider]);
 
     const cancel = () => {
         cancelledRef.current = true;
@@ -234,12 +284,36 @@ export function SummarizePdfUI() {
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">§ Browser AI</span>
-                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">distilbart-cnn-6-6 · ~250 MB · cached</span>
+                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">
+                            {engine === "byok" ? "§ Your own key" : "§ Browser AI"}
+                        </span>
+                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+                            {engine === "byok"
+                                ? `${providerById(byok.provider)?.label ?? "no provider selected"} · your account`
+                                : "distilbart-cnn-6-6 · ~250 MB · cached"}
+                        </span>
                     </div>
-                    <p className="text-[12.5px] text-foreground leading-relaxed">
-                        <span className="font-medium">Your PDF never leaves this tab.</span> Summarization runs locally via WebAssembly — no AI APIs (OpenAI, Anthropic), and your document is never uploaded. The model itself downloads once from a public CDN, then caches in your browser.
-                    </p>
+                    {/*
+                      This banner must track the selected engine. It previously
+                      said "no AI APIs (OpenAI, Anthropic)" unconditionally,
+                      which stopped being true the moment BYOK existed — and it
+                      sits directly above the control that chooses one. A stale
+                      privacy claim next to the thing that contradicts it is
+                      worse than no claim at all.
+                    */}
+                    {engine === "byok" ? (
+                        <p className="text-[12.5px] text-foreground leading-relaxed">
+                            <span className="font-medium">Your PDF's text is sent to {providerById(byok.provider)?.label ?? "the provider you choose"}.</span>{" "}
+                            You asked for that by picking your own key, and it goes straight from this
+                            tab to them — it does not pass through PrivaTools, and we never see it or
+                            your key. Their terms and retention policy apply to what you send, not ours.
+                            Switch to the on-device model if you would rather nothing left this tab.
+                        </p>
+                    ) : (
+                        <p className="text-[12.5px] text-foreground leading-relaxed">
+                            <span className="font-medium">Your PDF never leaves this tab.</span> Summarization runs locally via WebAssembly — no AI APIs, and your document is never uploaded. The model itself downloads once from a public CDN, then caches in your browser.
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -289,6 +363,72 @@ export function SummarizePdfUI() {
                             <X size={13} />
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Engine: on-device model vs the user's own API key */}
+            {file && stage === "idle" && (
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span className="text-accent">§</span> Which model
+                    </div>
+                    <div className="p-3 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setEngine("local")}
+                                aria-pressed={engine === "local"}
+                                className={cn(
+                                    "rounded-lg border p-3 text-left transition-colors",
+                                    engine === "local" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                                )}
+                            >
+                                <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
+                                <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                    Free, no key. Downloads a ~250MB model once, then works offline.
+                                    Quality is modest — it is a small model.
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setEngine("byok")}
+                                aria-pressed={engine === "byok"}
+                                className={cn(
+                                    "rounded-lg border p-3 text-left transition-colors",
+                                    engine === "byok" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                                )}
+                            >
+                                <span className="block text-[13.5px] font-medium text-foreground">My own API key</span>
+                                <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                    Much better summaries, billed to your account by your provider.
+                                    Your file goes to them, not to us.
+                                </span>
+                            </button>
+                        </div>
+
+                        {engine === "byok" && (
+                            <>
+                                <ByokPanel
+                                    byok={byok}
+                                    purpose="The text of this PDF is sent to the provider you choose, using your key."
+                                />
+                                {byok.ready && (
+                                    <label className="block">
+                                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                                            Model (optional)
+                                        </span>
+                                        <input
+                                            type="text"
+                                            value={model}
+                                            onChange={e => setModel(e.target.value)}
+                                            placeholder={providerById(byok.provider)?.models[0] ?? "provider default"}
+                                            className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono"
+                                        />
+                                    </label>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
