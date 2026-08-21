@@ -161,7 +161,12 @@ go unused, and an unused security feature protects nobody.
 - Never in a URL, query string, or fragment.
 - Never in telemetry, analytics, or any log line — including error reports.
 - Never sent to any origin but the selected provider's.
-- Cleared by the existing `eraseEverything()` path, which must learn about it.
+- Cleared by `eraseEverything()`. Correcting an earlier claim in this spec:
+  it needs no change, because it calls `db.destroy()` which drops the whole
+  IndexedDB database — anything in the `secrets` store goes with it. A test
+  still asserts this, since the guarantee is what matters, not the mechanism.
+- Stored in the existing `secrets` store (`db.STORES` already declares it),
+  so no schema migration is required.
 - A redaction helper wraps error surfacing so a provider error echoing the
   request cannot leak the key into a toast or console.
 
