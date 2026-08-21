@@ -22,8 +22,15 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..services.watermark_detect_service import detect_watermarks
+from ..services.image_watermark_remove_service import remove_image_watermark
 from ..services.watermark_remove_service import remove_watermarks
-from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
+from ..utils.cleanup import (
+    ensure_temp_dir,
+    get_temp_path,
+    remove_files,
+    validate_image_content,
+    validate_pdf_content,
+)
 from ..utils.concurrency import run_bounded
 from ..utils.route_helpers import no_store_headers, safe_stem, stream_upload_to_disk
 
@@ -90,6 +97,53 @@ async def apply_watermark_removal(
             output_path,
             media_type="application/pdf",
             filename=f"{stem}_no_watermark.pdf",
+            background=BackgroundTask(remove_files, str(temp_path), output_path),
+            headers=no_store_headers(),
+        )
+    except HTTPException:
+        remove_files(str(temp_path), *([output_path] if output_path else []))
+        raise
+    except Exception:
+        remove_files(str(temp_path), *([output_path] if output_path else []))
+        raise
+
+
+@router.post("/remove-image-watermark")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def remove_image_watermark_route(
+    request: Request,
+    file: UploadFile = File(...),
+    regions: str = Form(...),
+    method: str = Form("telea"),
+):
+    """Inpaint the selected regions out of an image.
+
+    `regions` is a JSON array of {x, y, width, height} in image pixels — the
+    boxes the user dragged over the watermark.
+    """
+    try:
+        parsed = json.loads(regions)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="regions must be a JSON array") from exc
+    if not isinstance(parsed, list) or not parsed:
+        raise HTTPException(status_code=400, detail="Select the watermark area to remove")
+
+    ensure_temp_dir()
+    suffix = (file.filename or "image.png").rsplit(".", 1)[-1].lower()
+    if suffix not in ("png", "jpg", "jpeg", "webp", "bmp"):
+        suffix = "png"
+    temp_path = get_temp_path(f"imgwm_{uuid.uuid4().hex}.{suffix}")
+    output_path = None
+    try:
+        await stream_upload_to_disk(file, temp_path, validate=validate_image_content)
+        output_path = await run_bounded(
+            remove_image_watermark, str(temp_path), parsed, method
+        )
+        stem = safe_stem(file.filename, "image")
+        return FileResponse(
+            output_path,
+            media_type=f"image/{'jpeg' if suffix in ('jpg', 'jpeg') else suffix}",
+            filename=f"{stem}_no_watermark.{suffix}",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
             headers=no_store_headers(),
         )

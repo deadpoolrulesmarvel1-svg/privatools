@@ -79,7 +79,7 @@ NON_PDF_TOOLS = [
     "json-xml-formatter", "text-diff", "base64", "hash-generator",
     "extract-archive", "create-zip",
     "csv-json", "markdown-html", "heic-to-jpg",
-    "remove-background", "svg-to-png", "image-watermark",
+    "remove-background", "svg-to-png", "image-watermark", "remove-image-watermark",
     "generate-favicon", "make-collage", "generate-barcode",
     "url-to-pdf", "qr-reader", "merge-images",
     "image-upscaler", "audio-converter",
