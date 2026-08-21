@@ -51,11 +51,15 @@ jobs:
         # backend/requirements.txt was an uninstalled mirror and has been
         # removed to prevent root-vs-backend version skew).
         #
-        # rembg advisories CVE-2026-40086 / GHSA-55v6-g8pm-pw4c list a fixed
-        # 2.0.75 release, but PyPI currently exposes 2.0.69 as latest. Keep
-        # auditing every other package and remove these ignores once a fixed
-        # rembg artifact is published. REVIEW BY 2026-09-01 — drop the ignores
-        # if 2.0.75+ is on PyPI by then.
+        # rembg advisories CVE-2026-40086 / GHSA-55v6-g8pm-pw4c are fixed in
+        # 2.0.75+, and 2.0.81 is on PyPI — but EVERY rembg release from 2.0.70
+        # onward declares requires_python >=3.11, and this lock targets 3.10.
+        # 2.0.69 is therefore the last version installable here, and the fix is
+        # gated behind the Python 3.10 -> 3.12 migration rather than available
+        # now. Verified against the PyPI metadata for 2.0.70-2.0.81 on
+        # 2026-08-21. Drop both ignores in the same change that moves the lock
+        # off 3.10; do not drop them before, or the audit breaks with an
+        # unsatisfiable resolve rather than a clean pass.
         run: pip-audit -r requirements.txt --ignore-vuln CVE-2026-40086 --ignore-vuln GHSA-55v6-g8pm-pw4c
 
   codeql:
