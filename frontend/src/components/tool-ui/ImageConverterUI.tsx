@@ -8,14 +8,22 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Download } from "lucide-
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const formats = ["jpeg", "png", "webp", "bmp", "tiff"];
 const LOSSY = new Set(["jpeg", "webp"]);
 
+const IMAGE_CONVERTER_DEFAULTS = {
+    target: "png",
+    quality: 85,
+};
+
 export function ImageConverterUI() {
+    const [config, setConfig] = useToolDefaults("image-converter", IMAGE_CONVERTER_DEFAULTS);
+    const { target, quality } = config;
+    const setTarget = (v: typeof IMAGE_CONVERTER_DEFAULTS["target"]) => setConfig(c => ({ ...c, target: v }));
+    const setQuality = (v: typeof IMAGE_CONVERTER_DEFAULTS["quality"]) => setConfig(c => ({ ...c, quality: v }));
     const [file, setFile] = useState<File | null>(null);
-    const [target, setTarget] = useState("png");
-    const [quality, setQuality] = useState(85);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [preview, setPreview] = useState("");

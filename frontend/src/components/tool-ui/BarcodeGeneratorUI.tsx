@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Download, Loader2, AlertCircle, Hash, QrCode, RotateCcw, Sparkles } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const BARCODE_TYPES = [
     { value: "code128", label: "Code 128", desc: "General purpose" },
@@ -35,9 +36,15 @@ function validateBarcodeInput(type: string, raw: string): string | null {
     }
 }
 
+const BARCODE_GENERATOR_DEFAULTS = {
+    barcodeType: "code128",
+};
+
 export function BarcodeGeneratorUI() {
+    const [config, setConfig] = useToolDefaults("generate-barcode", BARCODE_GENERATOR_DEFAULTS);
+    const { barcodeType } = config;
+    const setBarcodeType = (v: typeof BARCODE_GENERATOR_DEFAULTS["barcodeType"]) => setConfig(c => ({ ...c, barcodeType: v }));
     const [data, setData] = useState("");
-    const [barcodeType, setBarcodeType] = useState("code128");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
