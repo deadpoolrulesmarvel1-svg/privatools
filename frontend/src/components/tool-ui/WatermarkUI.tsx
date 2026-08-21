@@ -20,6 +20,7 @@ import {
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { AssetPicker } from "@/components/AssetPicker";
 
 const WATERMARK_DEFAULTS = {
     mode: "text" as "text" | "image",
@@ -383,6 +384,14 @@ export function WatermarkUI() {
                                                 ? <><span className="text-foreground font-medium">{watermarkImage.name}</span> <span className="font-mono text-[10.5px] text-muted-foreground">({watermarkImage.size})</span></>
                                                 : "Choose PNG/JPG/WebP file…"}
                                         </button>
+                                        {/* Reuse a logo saved on this device instead of
+                                            re-uploading it every time. Nothing leaves the
+                                            browser until the tool actually runs. */}
+                                        <AssetPicker
+                                            kind="watermark"
+                                            saveable={watermarkImage?.raw ?? null}
+                                            onPick={(f) => setWatermarkImage({ name: f.name, size: formatFileSize(f.size), raw: f })}
+                                        />
                                         <div className="mt-3">
                                             <div className="flex items-center justify-between mb-1.5">
                                                 <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Scale</label>
