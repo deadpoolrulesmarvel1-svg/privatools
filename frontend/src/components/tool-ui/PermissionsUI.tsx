@@ -7,6 +7,7 @@ import { Download, Loader2, AlertCircle, Shield, Eye, EyeOff, CheckCircle2, Rota
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { VaultPasswordPicker } from "@/components/VaultPasswordPicker";
 
 const PERMS = [
     { key: "allow_print",    label: "Printing",       desc: "Users can print the document" },
@@ -132,6 +133,10 @@ export function PermissionsUI() {
                             <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
                                 <span className="text-accent">§</span> Blank = default owner password
                             </p>
+                            {/* Owner passwords cannot be trialled — pdf.js opens an
+                                owner-protected file with an empty user password, so it
+                                can't verify one. Autofill only. */}
+                            <VaultPasswordPicker onPick={setOwnerPassword} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]" />
                         </div>
                     </div>
 
