@@ -56,7 +56,9 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
+          # Deliberately not upgrading pip here: `pip install --upgrade pip`
+          # pulls an unverified pip from PyPI on every run. The runner's pinned
+          # pip already understands --require-hashes, which is all this needs.
           # Install from the hashed lock with --require-hashes so PR CI exercises
           # the exact integrity-verified path the image build uses — a hash/lock
           # problem fails here on every PR instead of only at release build time.

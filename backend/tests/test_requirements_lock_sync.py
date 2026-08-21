@@ -121,11 +121,32 @@ def test_dev_lock_is_a_superset_of_the_runtime_lock():
 
 def test_lock_is_fully_hashed():
     """`--require-hashes` fails on any entry lacking a hash, so catch it here."""
-    for lock_name in ("requirements.lock", "requirements-dev.lock"):
+    for lock_name in ("requirements.lock", "requirements-dev.lock", "requirements-ci.lock"):
         text = (REPO_ROOT / lock_name).read_text(encoding="utf-8")
         pins = _parse_pins(REPO_ROOT / lock_name)
         assert pins, f"{lock_name} parsed to zero pins"
         assert "--hash=" in text, f"{lock_name} has no hashes — --require-hashes would fail"
+
+
+def test_ci_requirements_match_lock():
+    """CI tooling is hash-pinned too, and drifts the same way if unwatched.
+
+    security.yml installs pip-audit with `--require-hashes -r
+    requirements-ci.lock` rather than a bare `pip install pip-audit`, because
+    that tool runs in CI with repository context — a compromised PyPI release
+    would execute there. That protection is only real while the lock matches
+    requirements-ci.txt, so hold it to the same contract as the other two.
+    """
+    _assert_in_sync("requirements-ci.txt", "requirements-ci.lock")
+
+
+def test_ci_lock_pins_pip_audit():
+    """The whole point of the CI lock is pip-audit; fail loudly if it vanishes."""
+    pins = _parse_pins(REPO_ROOT / "requirements-ci.lock")
+    assert "pip-audit" in pins, (
+        "requirements-ci.lock no longer pins pip-audit — security.yml installs "
+        "from this file and would silently stop auditing."
+    )
 
 
 def test_parser_detects_a_simulated_dependabot_bump(tmp_path):
