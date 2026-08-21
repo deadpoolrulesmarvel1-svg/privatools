@@ -48,3 +48,19 @@ if (typeof localStorage?.setItem !== "function") {
   Object.defineProperty(globalThis, "localStorage", { value: shim, configurable: true, writable: true });
   Object.defineProperty(window, "localStorage", { value: shim, configurable: true, writable: true });
 }
+
+// Object URLs — jsdom implements neither createObjectURL nor revokeObjectURL.
+// Real browsers do (verified: the /my-stuff export downloads correctly), so
+// this is purely a test-environment gap. The shim hands back a blob: URL and
+// tracks revocation so tests can assert cleanup.
+if (typeof URL.createObjectURL !== "function") {
+  let n = 0;
+  const live = new Set<string>();
+  URL.createObjectURL = () => {
+    const url = `blob:privatools/${++n}`;
+    live.add(url);
+    return url;
+  };
+  URL.revokeObjectURL = (url: string) => void live.delete(url);
+  (globalThis as { __liveObjectUrls?: Set<string> }).__liveObjectUrls = live;
+}
