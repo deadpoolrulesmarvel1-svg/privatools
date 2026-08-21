@@ -13,7 +13,7 @@ RUN npm run build \
     && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
 
 # Stage 2: Production
-FROM python:3.10-slim@sha256:a78e4529630cfe8c5199cafd6e0c28ee1579a13f86274396d8b6b2d80367aa3a
+FROM python:3.12-slim@sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -60,7 +60,7 @@ WORKDIR /app
 # compromised index or a typosquat can't slip a bad artifact into the image
 # (research DEP1/DEP4). The lock is universal (both arm64 + amd64 hashes) and was
 # dry-run validated under --require-hashes for both arches; regenerate with
-#   uv pip compile requirements.txt --generate-hashes --universal --python-version 3.10 -o requirements.lock
+#   uv pip compile requirements.txt --generate-hashes --universal --python-version 3.12 -o requirements.lock
 COPY requirements.txt requirements.lock ./
 RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
     && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
