@@ -6,11 +6,11 @@ on:
       - "v*"
   workflow_dispatch:
 
+# Least privilege at the top level: read-only, so any job added later starts
+# with no write scope and must opt in explicitly. The write scopes the release
+# actually needs are granted on the one job that needs them.
 permissions:
   contents: read
-  id-token: write
-  packages: write
-  security-events: write
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
@@ -19,6 +19,11 @@ jobs:
   docker:
     name: Build, push, and sign image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read          # checkout
+      id-token: write         # cosign keyless signing (OIDC)
+      packages: write         # push the image to GHCR
+      security-events: write  # upload the Trivy SARIF report
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
