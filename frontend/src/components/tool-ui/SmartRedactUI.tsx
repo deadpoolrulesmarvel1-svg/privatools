@@ -12,11 +12,23 @@
  *     real PDF and applies PyMuPDF redaction annotations (permanent, not a
  *     black overlay). PDF is downloaded.
  *
- * The PDF *content* never leaves the browser before the user reviews;
- * only the chosen redaction strings are sent server-side for the actual
- * page-level apply step.
+ * With the on-device model, the PDF *content* never leaves the browser before
+ * the user reviews; only the chosen redaction strings are sent server-side for
+ * the actual page-level apply step.
+ *
+ * With BYOK, the document text IS sent to the user's chosen AI provider for
+ * the entity pass — that is the whole point of the option, and the UI says so
+ * plainly rather than burying it. What the regex pass already found (SSNs,
+ * cards, emails, phones) is masked out first, so those specific values never
+ * reach the provider. See lib/byok/redactTask.ts.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useByok } from "@/hooks/useByok";
+import { ByokPanel } from "@/components/byok/ByokPanel";
+import { getKey } from "@/lib/byok/keyStore";
+import { providerById } from "@/lib/byok/providers";
+import { findEntitiesWithByok } from "@/lib/byok/redactTask";
+import { ByokError } from "@/lib/byok/errors";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
@@ -202,6 +214,10 @@ export function SmartRedactUI() {
         setHits(null); setStage("idle");
     }, []);
 
+    const byok = useByok();
+    const [engine, setEngine] = useState<"local" | "byok">("local");
+    const [byokModel, setByokModel] = useState("");
+
     const scan = useCallback(async () => {
         if (!file) return;
         setError(null); setDetections([]); setSelected(new Set());
@@ -221,6 +237,39 @@ export function SmartRedactUI() {
                 while ((m = re.exec(text)) !== null) {
                     regexHits.push({ text: m[0].trim(), type });
                 }
+            }
+
+            // Entity pass. BYOK branches BEFORE the local model loads, so
+            // choosing it never downloads 256MB the user did not ask for.
+            //
+            // The regex hits above are passed as knownPii and masked out
+            // before anything is sent: this tool exists to remove PII, so
+            // shipping the SSNs and card numbers it already found to a third
+            // party — in order to find names — would undercut the point.
+            if (engine === "byok") {
+                if (!byok.ready) throw new Error("Add an API key first, or switch back to the on-device model.");
+                const apiKey = await getKey(byok.provider);
+                if (!apiKey) throw new Error("That saved key could not be read. Enter it again, or switch back to the on-device model.");
+                setStage("scanning");
+                const found = await findEntitiesWithByok({
+                    providerId: byok.provider,
+                    apiKey,
+                    model: byokModel || providerById(byok.provider)?.models[0] || "",
+                    text,
+                    knownPii: regexHits.map(h => h.text),
+                });
+                if (cancelledRef.current) return;
+                const byokHits = found
+                    // Only keep what actually occurs in the document: the model
+                    // is asked to copy exactly, but a paraphrase would silently
+                    // redact nothing, or the wrong thing.
+                    .filter(e => text.includes(e.text))
+                    .map(e => ({ text: e.text.trim(), type: (e.type as EntityType) ?? "MISC" }));
+                const merged = dedupeDetections([...regexHits, ...byokHits]);
+                setDetections(merged);
+                setSelected(new Set(merged.map(keyFor)));
+                setStage("review");
+                return;
             }
 
             // NER pass — slow first time (model load), fast after.
@@ -258,11 +307,17 @@ export function SmartRedactUI() {
             setSelected(new Set(all.map(keyFor)));
             setStage("review");
         } catch (err) {
-            console.error(err);
-            setError(err instanceof Error ? err.message : "Scan failed");
+            // ByokError carries wording written for a user and, by
+            // construction, no key material. The raw error is kept out of
+            // console.error because provider errors can echo the request back.
+            const msg = err instanceof ByokError
+                ? err.userMessage
+                : err instanceof Error ? err.message : "Scan failed";
+            if (!(err instanceof ByokError)) console.error(err);
+            setError(msg);
             setStage("error");
         }
-    }, [file]);
+    }, [file, engine, byokModel, byok.ready, byok.provider]);
 
     const apply = useCallback(async () => {
         if (!file || selected.size === 0) return;
@@ -430,6 +485,97 @@ export function SmartRedactUI() {
             {error && (
                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
+                </div>
+            )}
+
+            {/* Engine choice. The warning here is deliberately stronger than
+                on Summarize PDF: by definition this document contains the
+                personal information the user is trying to remove. */}
+            {file && stage === "idle" && (
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span className="text-accent">§</span> How to find names and organisations
+                    </div>
+                    <div className="p-3 space-y-3">
+                        <p className="text-[12px] text-muted-foreground leading-snug">
+                            Emails, phone numbers, SSNs and card numbers are always found here in
+                            your browser by pattern matching — no model, no network, either way.
+                            This choice only affects how names, organisations and locations are found.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setEngine("local")}
+                                aria-pressed={engine === "local"}
+                                className={cn(
+                                    "rounded-lg border p-3 text-left transition-colors",
+                                    engine === "local" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                                )}
+                            >
+                                <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
+                                <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                    Nothing leaves this tab. Downloads a ~256MB model once. Misses
+                                    some names and indirect identifiers.
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setEngine("byok")}
+                                aria-pressed={engine === "byok"}
+                                className={cn(
+                                    "rounded-lg border p-3 text-left transition-colors",
+                                    engine === "byok" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                                )}
+                            >
+                                <span className="block text-[13.5px] font-medium text-foreground">My own API key</span>
+                                <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                    Catches far more, including indirect identifiers. Sends the rest
+                                    of the document text to your provider.
+                                </span>
+                            </button>
+                        </div>
+
+                        {engine === "byok" && (
+                            <>
+                                <div className="rounded-lg border border-amber-500/40 bg-amber-500/[0.06] px-3 py-2 space-y-1">
+                                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-amber-500 font-medium">
+                                        § Read this first
+                                    </span>
+                                    <p className="text-[12px] text-foreground leading-snug">
+                                        This document contains the personal information you are trying
+                                        to remove. Choosing your own key sends its text to your AI
+                                        provider — that is a real trade, and worth a moment's thought
+                                        for anything sensitive.
+                                    </p>
+                                    <p className="text-[11.5px] text-muted-foreground leading-snug">
+                                        What we can do, we do: anything the pattern pass already found —
+                                        SSNs, card numbers, emails, phone numbers — is replaced with
+                                        placeholders before the text is sent, so your provider never
+                                        receives those. The remaining text is sent intact, because a
+                                        model cannot identify names without the sentences around them.
+                                    </p>
+                                </div>
+                                <ByokPanel
+                                    byok={byok}
+                                    purpose="Used to find names, organisations and locations in this document."
+                                />
+                                {byok.ready && (
+                                    <label className="block">
+                                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                                            Model (optional)
+                                        </span>
+                                        <input
+                                            type="text"
+                                            value={byokModel}
+                                            onChange={e => setByokModel(e.target.value)}
+                                            placeholder={providerById(byok.provider)?.models[0] ?? "provider default"}
+                                            className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono"
+                                        />
+                                    </label>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
