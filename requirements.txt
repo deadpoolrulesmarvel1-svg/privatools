@@ -55,4 +55,4 @@ python-barcode==0.16.1
 qrcode==8.2
 pyzbar==0.1.9
 defusedxml==0.7.1
-mistune==3.3.2
+mistune==3.3.4
