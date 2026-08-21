@@ -8,6 +8,7 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Download, Scaling } from
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const SCALES = [
     { value: 1, label: "1×", desc: "Original" },
@@ -16,9 +17,16 @@ const SCALES = [
     { value: 4, label: "4×", desc: "Ultra HD" },
 ];
 
+const SVG_TO_PNG_DEFAULTS: { scale: number } = {
+    scale: 2,
+};
+
 export function SvgToPngUI() {
+    const [config, , { setField }] = useToolDefaults("svg-to-png", SVG_TO_PNG_DEFAULTS);
+    const { scale } = config;
+    const setScale = useCallback((v: React.SetStateAction<typeof SVG_TO_PNG_DEFAULTS["scale"]>) => setField("scale", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [scale, setScale] = useState(2);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

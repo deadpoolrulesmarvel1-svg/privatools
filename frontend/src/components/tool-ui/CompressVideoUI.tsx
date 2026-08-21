@@ -6,10 +6,18 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Video } from "lucide-rea
 import { friendlyError } from "@/lib/utils";
 import { processAndDownload } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const COMPRESS_VIDEO_DEFAULTS: { quality: number } = {
+    quality: 28,
+};
 
 export function CompressVideoUI() {
+    const [config, , { setField }] = useToolDefaults("compress-video", COMPRESS_VIDEO_DEFAULTS);
+    const { quality } = config;
+    const setQuality = useCallback((v: React.SetStateAction<typeof COMPRESS_VIDEO_DEFAULTS["quality"]>) => setField("quality", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [quality, setQuality] = useState(28);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const canProcess = !!file && status !== "processing";

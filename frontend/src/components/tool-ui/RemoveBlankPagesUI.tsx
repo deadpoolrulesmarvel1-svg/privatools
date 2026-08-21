@@ -7,10 +7,18 @@ import { Loader2, AlertCircle, FileX2, CheckCircle2, RotateCcw } from "lucide-re
 import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const REMOVE_BLANK_PAGES_DEFAULTS: { sensitivity: number } = {
+    sensitivity: 85,
+};
 
 export function RemoveBlankPagesUI() {
+    const [config, , { setField }] = useToolDefaults("remove-blank-pages", REMOVE_BLANK_PAGES_DEFAULTS);
+    const { sensitivity } = config;
+    const setSensitivity = useCallback((v: React.SetStateAction<typeof REMOVE_BLANK_PAGES_DEFAULTS["sensitivity"]>) => setField("sensitivity", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [sensitivity, setSensitivity] = useState(85);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
 

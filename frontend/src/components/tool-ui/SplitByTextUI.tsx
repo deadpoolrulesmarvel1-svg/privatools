@@ -6,11 +6,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Scissors, CheckCircle2, RotateCcw, Download } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const SPLIT_BY_TEXT_DEFAULTS: { caseSensitive: boolean } = {
+    caseSensitive: false,
+};
 
 export function SplitByTextUI() {
+    const [config, , { setField }] = useToolDefaults("split-by-text", SPLIT_BY_TEXT_DEFAULTS);
+    const { caseSensitive } = config;
+    const setCaseSensitive = useCallback((v: React.SetStateAction<typeof SPLIT_BY_TEXT_DEFAULTS["caseSensitive"]>) => setField("caseSensitive", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [search, setSearch] = useState("");
-    const [caseSensitive, setCaseSensitive] = useState(false);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);

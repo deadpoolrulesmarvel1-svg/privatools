@@ -6,14 +6,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, X, AlertCircle, RotateCcw, Combine, MoveHorizontal, MoveVertical, LayoutGrid, GripVertical } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type MergeFile = { id: string; name: string; size: string; raw: File; preview: string };
 type Direction = "horizontal" | "vertical" | "grid";
 let fileId = 0;
 
+const MERGE_IMAGES_DEFAULTS: { direction: Direction } = {
+    direction: "horizontal",
+};
+
 export function MergeImagesUI() {
+    const [config, , { setField }] = useToolDefaults("merge-images", MERGE_IMAGES_DEFAULTS);
+    const { direction } = config;
+    const setDirection = useCallback((v: React.SetStateAction<typeof MERGE_IMAGES_DEFAULTS["direction"]>) => setField("direction", v), [setField]);
     const [files, setFiles] = useState<MergeFile[]>([]);
-    const [direction, setDirection] = useState<Direction>("horizontal");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);

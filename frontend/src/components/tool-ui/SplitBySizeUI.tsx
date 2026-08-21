@@ -7,12 +7,20 @@ import { Loader2, AlertCircle, Maximize2, CheckCircle2, RotateCcw, Download } fr
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const PRESETS = [5, 10, 25, 50];
 
+const SPLIT_BY_SIZE_DEFAULTS: { maxSizeMb: number } = {
+    maxSizeMb: 10,
+};
+
 export function SplitBySizeUI() {
+    const [config, , { setField }] = useToolDefaults("split-by-size", SPLIT_BY_SIZE_DEFAULTS);
+    const { maxSizeMb } = config;
+    const setMaxSizeMb = useCallback((v: React.SetStateAction<typeof SPLIT_BY_SIZE_DEFAULTS["maxSizeMb"]>) => setField("maxSizeMb", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [maxSizeMb, setMaxSizeMb] = useState(10);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
 

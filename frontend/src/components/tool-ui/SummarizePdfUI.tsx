@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Download, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Length = "short" | "medium" | "long";
 const LENGTH_PARAMS: Record<Length, { max: number; min: number; label: string; desc: string }> = {
@@ -117,9 +118,16 @@ function chunkBySentence(text: string, maxWords: number, overlapWords: number): 
     return chunks;
 }
 
+const SUMMARIZE_PDF_DEFAULTS: { length: Length } = {
+    length: "medium",
+};
+
 export function SummarizePdfUI() {
+    const [config, , { setField }] = useToolDefaults("summarize-pdf", SUMMARIZE_PDF_DEFAULTS);
+    const { length } = config;
+    const setLength = useCallback((v: React.SetStateAction<typeof SUMMARIZE_PDF_DEFAULTS["length"]>) => setField("length", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [length, setLength] = useState<Length>("medium");
+
     const [stage, setStage] = useState<Stage>("idle");
     const [progress, setProgress] = useState<PageProgress>({ pages: 0, totalPages: 0, chunks: 0, totalChunks: 0, modelPercent: 0 });
     const [summary, setSummary] = useState<string>("");

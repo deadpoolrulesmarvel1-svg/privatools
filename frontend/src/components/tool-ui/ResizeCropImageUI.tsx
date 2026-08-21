@@ -8,6 +8,7 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Crop, Maximize2 } from "
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const presets = [
     { label: "WhatsApp DP",       w: 500,  h: 500 },
@@ -22,11 +23,20 @@ const presets = [
     { label: "4K 3840×2160",      w: 3840, h: 2160 },
 ];
 
+const RESIZE_CROP_IMAGE_DEFAULTS: { width: number; height: number; mode: "resize" | "crop" } = {
+    width: 800,
+    height: 600,
+    mode: "resize",
+};
+
 export function ResizeCropImageUI() {
+    const [config, , { setField }] = useToolDefaults("resize-crop-image", RESIZE_CROP_IMAGE_DEFAULTS);
+    const { width, height, mode } = config;
+    const setWidth = useCallback((v: React.SetStateAction<typeof RESIZE_CROP_IMAGE_DEFAULTS["width"]>) => setField("width", v), [setField]);
+    const setHeight = useCallback((v: React.SetStateAction<typeof RESIZE_CROP_IMAGE_DEFAULTS["height"]>) => setField("height", v), [setField]);
+    const setMode = useCallback((v: React.SetStateAction<typeof RESIZE_CROP_IMAGE_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [width, setWidth] = useState(800);
-    const [height, setHeight] = useState(600);
-    const [mode, setMode] = useState<"resize" | "crop">("resize");
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);

@@ -4,9 +4,10 @@
  * Tabbed encode/decode, code-editor I/O panels, live conversion,
  * swap action to flip input/output, mono everything.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback} from "react";
 import { KeyRound, Copy, ArrowDownUp, Check, AlertCircle, Sparkles, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "encode" | "decode";
 
@@ -25,8 +26,15 @@ function looksLikeBase64(s: string): boolean {
     return false;
 }
 
+const BASE64_DEFAULTS: { mode: Mode } = {
+    mode: "encode",
+};
+
 export function Base64UI() {
-    const [mode, setMode] = useState<Mode>("encode");
+    const [config, , { setField }] = useToolDefaults("base64", BASE64_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof BASE64_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+
     const [input, setInput] = useState("");
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);

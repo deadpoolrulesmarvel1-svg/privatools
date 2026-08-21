@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Loader2, X, FileText, AlertCircle, Download, GitCompare, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODES = [
     { value: "visual", label: "Visual", desc: "Side-by-side with diff highlights" },
@@ -20,11 +21,19 @@ interface TextResult {
 
 type FileState = { name: string; size: string; raw: File } | null;
 
+const COMPARE_DEFAULTS: { mode: "visual" | "text"; highlight: string } = {
+    mode: "visual",
+    highlight: "#0E8A56",
+};
+
 export function CompareUI() {
+    const [config, , { setField }] = useToolDefaults("compare-pdf", COMPARE_DEFAULTS);
+    const { mode, highlight } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof COMPARE_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+    const setHighlight = useCallback((v: React.SetStateAction<typeof COMPARE_DEFAULTS["highlight"]>) => setField("highlight", v), [setField]);
     const [file1, setFile1] = useState<FileState>(null);
     const [file2, setFile2] = useState<FileState>(null);
-    const [mode, setMode] = useState<"visual" | "text">("visual");
-    const [highlight, setHighlight] = useState("#0E8A56");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);

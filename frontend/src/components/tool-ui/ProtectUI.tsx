@@ -9,6 +9,7 @@ import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { VaultPasswordPicker } from "@/components/VaultPasswordPicker";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type ProtectFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -62,13 +63,22 @@ function humanizeError(raw: string | undefined): string {
     return raw;
 }
 
+const PROTECT_DEFAULTS: { allowPrint: boolean; allowExtract: boolean; allowModify: boolean } = {
+    allowPrint: true,
+    allowExtract: false,
+    allowModify: false,
+};
+
 export function ProtectUI() {
+    const [config, , { setField }] = useToolDefaults("protect-pdf", PROTECT_DEFAULTS);
+    const { allowPrint, allowExtract, allowModify } = config;
+    const setAllowPrint = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowPrint"]>) => setField("allowPrint", v), [setField]);
+    const setAllowExtract = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowExtract"]>) => setField("allowExtract", v), [setField]);
+    const setAllowModify = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowModify"]>) => setField("allowModify", v), [setField]);
     const [files, setFiles] = useState<ProtectFile[]>([]);
     const [password, setPassword] = useState("");
     const [showPw, setShowPw] = useState(false);
-    const [allowPrint, setAllowPrint] = useState(true);
-    const [allowExtract, setAllowExtract] = useState(false);
-    const [allowModify, setAllowModify] = useState(false);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);

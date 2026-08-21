@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Music, Download } from "
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const FORMATS = [
     { v: "mp3",  label: "MP3",  desc: "Universal" },
@@ -17,10 +18,18 @@ const FORMATS = [
 ];
 const BITRATES = ["64k", "128k", "192k", "256k", "320k"];
 
+const AUDIO_CONVERTER_DEFAULTS: { format: string; bitrate: string } = {
+    format: "mp3",
+    bitrate: "192k",
+};
+
 export function AudioConverterUI() {
+    const [config, , { setField }] = useToolDefaults("audio-converter", AUDIO_CONVERTER_DEFAULTS);
+    const { format, bitrate } = config;
+    const setFormat = useCallback((v: React.SetStateAction<typeof AUDIO_CONVERTER_DEFAULTS["format"]>) => setField("format", v), [setField]);
+    const setBitrate = useCallback((v: React.SetStateAction<typeof AUDIO_CONVERTER_DEFAULTS["bitrate"]>) => setField("bitrate", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [format, setFormat] = useState("mp3");
-    const [bitrate, setBitrate] = useState("192k");
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
 

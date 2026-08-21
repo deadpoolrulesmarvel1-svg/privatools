@@ -2,10 +2,11 @@
  * SubtitleConverterUI — SRT ↔ VTT (and basic ASS → SRT/VTT) in-browser.
  * Workshop: lab-card with cue counter, format toggle, signal-green CTA.
  */
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback} from "react";
 import { Upload, AlertCircle, X, FileText, Download, ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadBlob, formatFileSize } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const SAMPLE_SRT = `1
 00:00:00,500 --> 00:00:03,200
@@ -77,10 +78,17 @@ function toVtt(cues: Cue[]): string {
     return "WEBVTT\n\n" + cues.map(c => `${formatTime(c.start, ".")} --> ${formatTime(c.end, ".")}\n${c.text}`).join("\n\n") + "\n";
 }
 
+const SUBTITLE_CONVERTER_DEFAULTS: { target: Target } = {
+    target: "vtt",
+};
+
 export function SubtitleConverterUI() {
+    const [config, , { setField }] = useToolDefaults("subtitle-converter", SUBTITLE_CONVERTER_DEFAULTS);
+    const { target } = config;
+    const setTarget = useCallback((v: React.SetStateAction<typeof SUBTITLE_CONVERTER_DEFAULTS["target"]>) => setField("target", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [text, setText] = useState("");
-    const [target, setTarget] = useState<Target>("vtt");
+
     const [drag, setDrag] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 

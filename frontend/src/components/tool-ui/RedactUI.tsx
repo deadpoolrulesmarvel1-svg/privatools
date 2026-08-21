@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle, EyeOff, Plus, Trash2, RotateCcw } f
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface Box {
     id: string;
@@ -19,12 +20,19 @@ const makeId = () => Math.random().toString(36).slice(2, 8);
 const PAGE_W = 612;
 const PAGE_H = 792;
 
+const REDACT_DEFAULTS: { color: string } = {
+    color: "#000000",
+};
+
 export function RedactUI() {
+    const [config, , { setField }] = useToolDefaults("redact-pdf", REDACT_DEFAULTS);
+    const { color } = config;
+    const setColor = useCallback((v: React.SetStateAction<typeof REDACT_DEFAULTS["color"]>) => setField("color", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [boxes, setBoxes] = useState<Box[]>([
         { id: makeId(), page: 1, x: 100, y: 700, width: 200, height: 20 },
     ]);
-    const [color, setColor] = useState("#000000");
+
     const [selected, setSelected] = useState(boxes[0]?.id || "");
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);

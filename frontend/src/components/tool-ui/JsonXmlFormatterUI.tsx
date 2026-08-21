@@ -4,11 +4,12 @@
  * Workshop aesthetic: tabbed mode picker, code-editor-style two-pane
  * layout (input above, output below), syntax line numbers in the gutter.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback} from "react";
 import { Braces, CheckCircle2, XCircle, Copy, Check, Minimize2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadSampleJsonText } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "json" | "xml";
 type Action = "pretty" | "minify";
@@ -58,8 +59,15 @@ function prettyXml(text: string, action: Action): { result: string; error: strin
     }
 }
 
+const JSON_XML_FORMATTER_DEFAULTS: { mode: Mode } = {
+    mode: "json",
+};
+
 export function JsonXmlFormatterUI() {
-    const [mode, setMode] = useState<Mode>("json");
+    const [config, , { setField }] = useToolDefaults("json-xml-formatter", JSON_XML_FORMATTER_DEFAULTS);
+    const { mode } = config;
+    const setMode = useCallback((v: React.SetStateAction<typeof JSON_XML_FORMATTER_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
+
     const [input, setInput] = useState("");
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);

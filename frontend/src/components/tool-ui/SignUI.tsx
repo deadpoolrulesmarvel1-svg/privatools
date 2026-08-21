@@ -7,20 +7,31 @@ import { Loader2, CheckCircle2, AlertCircle, PenTool, Upload, RotateCcw } from "
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const PAGE_W = 612;
 const PAGE_H = 792;
 const MAX_SIG_FILE_BYTES = 4 * 1024 * 1024; // 4 MB ceiling for sig image upload
 
+const SIGN_DEFAULTS: { x: number; y: number; width: number; height: number } = {
+    x: 50,
+    y: 650,
+    width: 200,
+    height: 80,
+};
+
 export function SignUI() {
+    const [config, , { setField }] = useToolDefaults("sign-pdf", SIGN_DEFAULTS);
+    const { x, y, width, height } = config;
+    const setX = useCallback((v: React.SetStateAction<typeof SIGN_DEFAULTS["x"]>) => setField("x", v), [setField]);
+    const setY = useCallback((v: React.SetStateAction<typeof SIGN_DEFAULTS["y"]>) => setField("y", v), [setField]);
+    const setWidth = useCallback((v: React.SetStateAction<typeof SIGN_DEFAULTS["width"]>) => setField("width", v), [setField]);
+    const setHeight = useCallback((v: React.SetStateAction<typeof SIGN_DEFAULTS["height"]>) => setField("height", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
     const [sigData, setSigData] = useState("");
     const [sigFile, setSigFile] = useState<File | null>(null);
     const [page, setPage] = useState(1);
-    const [x, setX] = useState(50);
-    const [y, setY] = useState(650);
-    const [width, setWidth] = useState(200);
-    const [height, setHeight] = useState(80);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const sigRef = useRef<HTMLInputElement>(null);

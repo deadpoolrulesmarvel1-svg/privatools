@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 // Tesseract language packs actually installed in the production image — keep
 // in sync with the `tesseract-ocr-*` packages in /Dockerfile.
@@ -16,10 +17,18 @@ const DPI_PRESETS: { id: number; label: string; desc: string }[] = [
   { id: 300, label: "Precise",  desc: "300 DPI · best for low-quality / handwriting" },
 ];
 
+const OCR_DEFAULTS: { lang: string; dpi: number } = {
+    lang: "eng",
+    dpi: 200,
+};
+
 export function OcrUI() {
+    const [config, , { setField }] = useToolDefaults("ocr-pdf", OCR_DEFAULTS);
+    const { lang, dpi } = config;
+    const setLang = useCallback((v: React.SetStateAction<typeof OCR_DEFAULTS["lang"]>) => setField("lang", v), [setField]);
+    const setDpi = useCallback((v: React.SetStateAction<typeof OCR_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
-  const [lang, setLang] = useState("eng");
-  const [dpi, setDpi] = useState<number>(200);
+
   const [output, setOutput] = useState<"json" | "txt" | "searchable_pdf">("json");
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);

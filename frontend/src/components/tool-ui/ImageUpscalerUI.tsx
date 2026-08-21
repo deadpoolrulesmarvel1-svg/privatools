@@ -8,10 +8,18 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Scaling, Clock } from "l
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const IMAGE_UPSCALER_DEFAULTS: { scale: 2 | 4 } = {
+    scale: 2,
+};
 
 export function ImageUpscalerUI() {
+    const [config, , { setField }] = useToolDefaults("image-upscaler", IMAGE_UPSCALER_DEFAULTS);
+    const { scale } = config;
+    const setScale = useCallback((v: React.SetStateAction<typeof IMAGE_UPSCALER_DEFAULTS["scale"]>) => setField("scale", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [scale, setScale] = useState<2 | 4>(2);
+
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [srcDims, setSrcDims] = useState<{ w: number; h: number } | null>(null);

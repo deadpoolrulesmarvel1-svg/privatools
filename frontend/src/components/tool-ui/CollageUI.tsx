@@ -46,7 +46,7 @@ export function CollageUI() {
     // Keep columns synced to file count while in auto mode.
     useEffect(() => {
         if (autoColumns && files.length > 0) setColumns(suggestColumns(files.length));
-    }, [files.length, autoColumns]);
+    }, [files.length, autoColumns, setColumns]);
 
     const canProcess = files.length >= 2 && status !== "processing";
 

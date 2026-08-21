@@ -6,11 +6,20 @@ import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Film } from "lucide-reac
 import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
+
+const VIDEO_TO_GIF_DEFAULTS: { fps: number; width: number } = {
+    fps: 10,
+    width: 480,
+};
 
 export function VideoToGifUI() {
+    const [config, , { setField }] = useToolDefaults("video-to-gif", VIDEO_TO_GIF_DEFAULTS);
+    const { fps, width } = config;
+    const setFps = useCallback((v: React.SetStateAction<typeof VIDEO_TO_GIF_DEFAULTS["fps"]>) => setField("fps", v), [setField]);
+    const setWidth = useCallback((v: React.SetStateAction<typeof VIDEO_TO_GIF_DEFAULTS["width"]>) => setField("width", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
-    const [fps, setFps] = useState(10);
-    const [width, setWidth] = useState(480);
+
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const canProcess = !!file && status !== "processing";

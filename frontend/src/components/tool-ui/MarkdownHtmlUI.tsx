@@ -2,10 +2,11 @@
  * MarkdownHtmlUI — convert Markdown to HTML with split-view editor + preview.
  * Workshop: 3-mode toggle (Split / HTML / Preview) + code-editor styled panels.
  */
-import { useState } from "react";
+import { useState, useCallback} from "react";
 import { Copy, Download, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadBlob } from "@/lib/api";
+import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type View = "split" | "html" | "preview";
 
@@ -26,9 +27,16 @@ function simpleMarkdownToHtml(md: string): string {
 
 const SAMPLE = "# Hello World\n\nThis is **bold** and *italic* text.\n\n## Section\n\n- Item one\n- Item two\n\n[Visit example](https://example.com)";
 
+const MARKDOWN_HTML_DEFAULTS: { view: View } = {
+    view: "split",
+};
+
 export function MarkdownHtmlUI() {
+    const [config, , { setField }] = useToolDefaults("markdown-html", MARKDOWN_HTML_DEFAULTS);
+    const { view } = config;
+    const setView = useCallback((v: React.SetStateAction<typeof MARKDOWN_HTML_DEFAULTS["view"]>) => setField("view", v), [setField]);
     const [input, setInput] = useState(SAMPLE);
-    const [view, setView] = useState<View>("split");
+
     const [copied, setCopied] = useState(false);
 
     const html = simpleMarkdownToHtml(input);
