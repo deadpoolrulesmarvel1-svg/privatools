@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
+import { AppProviders } from "./components/AppProviders";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useGlobalErrorHandler } from "./hooks/useGlobalErrorHandler";
 import {
@@ -144,6 +145,10 @@ function GlobalErrorWire() {
 const App = () => (
   <ErrorBoundary scope="app">
     <Sonner />
+    {/* AppProviders must wrap the router: Radix Tooltip throws at render time
+        without a TooltipProvider above it, which crashed every tool that used
+        one (compress, bates) straight into the ErrorBoundary. */}
+    <AppProviders>
     <BrowserRouter>
       <GlobalErrorWire />
       <CommandPaletteGate />
@@ -182,6 +187,7 @@ const App = () => (
         </Routes>
       </AppShell>
     </BrowserRouter>
+    </AppProviders>
   </ErrorBoundary>
 );
 
