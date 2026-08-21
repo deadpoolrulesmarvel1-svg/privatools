@@ -136,7 +136,7 @@ the same explicit per-tool disclosure the BYOK AI tools use.
 
 ---
 
-## Priority 3 — Bates numbering variants
+## Priority 3 — Bates numbering variants ✅ **shipped**
 
 **Gap:** ours exposes prefix, start, digits and 6 positions. Adobe and Foxit both have
 suffix, font control, page range, **a continuous sequence across a multi-file batch**, and
@@ -149,7 +149,23 @@ a production set is numbered continuously across every file in it.
 **Files:** `backend/app/services/bates_numbering_service.py`,
 `backend/app/routes/bates_numbering.py`, `frontend/src/components/tool-ui/BatesUI.tsx`.
 
-**Cheapest high-value slice:** continuous cross-file sequencing + suffix + removal.
+**Shipped 2026-08-22.** `POST /api/bates-numbering-batch` stamps a set as one continuous
+sequence and returns a ZIP plus a numbering manifest recording which range landed on which
+file — the production log a paralegal would otherwise rebuild by hand. The single-file
+endpoint gained a suffix, a page range and font size, and reports `X-Bates-Next` so a
+caller can chain documents manually. `POST /api/bates-remove` and `/tool/bates-remove`
+strip stamps back off by **redaction** rather than an overlay, since the point of removing
+a production number is that it is no longer in the file.
+
+Removal is guarded twice: the text must match the Bates pattern *and* sit within 72pt of
+the page edge, so a figure caption reading "000123" mid-page survives. There is a test for
+exactly that.
+
+The old UI carried a banner telling users "each PDF restarts numbering — merge first if
+you need one continuous run". That banner is gone.
+
+**Still open:** per-page font/colour control, and Adobe's "apply to a folder including
+subfolders" (which has no meaning without a filesystem).
 
 ---
 

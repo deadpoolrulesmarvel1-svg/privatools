@@ -769,6 +769,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://privatools.me/tool/bates-remove</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://privatools.me/tool/accessibility-check</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>weekly</changefreq>

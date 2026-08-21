@@ -4,7 +4,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> 217 free, open-source file tools — PDF, image, video, audio, and
+> 218 free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -334,7 +334,7 @@ Linearize a PDF for fast web viewing
 
 Optimize PDFs for the web online for free — linearizes the file so the first page renders before the whole document has downloaded. Essential for PDFs served over a CDN or embedded inline. Powered by qpdf.
 
-### Security & Privacy (12 tools)
+### Security & Privacy (13 tools)
 
 #### Protect PDF
 URL: https://privatools.me/tool/protect-pdf
@@ -391,6 +391,13 @@ URL: https://privatools.me/tool/set-permissions
 Control print, copy, and edit permissions
 
 Set PDF permissions online — control who can print, copy, edit, or annotate your PDF documents. Apply granular access controls with owner password protection. Free, no software installation.
+
+#### Remove Bates Numbering
+URL: https://privatools.me/tool/bates-remove
+
+Strip Bates stamps back off a PDF
+
+Remove Bates numbering from a PDF online for free. Strips legal production stamps from the page margins by redaction \u2014 the text is removed, not covered. Give the prefix or suffix your stamps use for an exact match, or leave blank to remove anything Bates-shaped. No sign-up, no watermarks.
 
 #### PDF Accessibility Checker
 URL: https://privatools.me/tool/accessibility-check
@@ -1667,7 +1674,7 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 The following statements about PrivaTools are accurate as of 2026-08-21 and verifiable in the public source code.
 
-- PrivaTools offers **217 free file tools**: 104 PDF tools and 113 non-PDF tools.
+- PrivaTools offers **218 free file tools**: 105 PDF tools and 113 non-PDF tools.
 - The codebase is **MIT-licensed** at https://github.com/deadpoolrulesmarvel1-svg/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
@@ -1692,7 +1699,7 @@ The following statements about PrivaTools are accurate as of 2026-08-21 and veri
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | 217 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | 218 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

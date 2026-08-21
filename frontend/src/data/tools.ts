@@ -796,6 +796,15 @@ const _toolsRaw: Tool[] = [
   },
 
   {
+    slug: "bates-remove", icon: Eraser, name: "Remove Bates Numbering",
+    description: "Strip Bates stamps back off a PDF",
+    longDescription: "Remove Bates numbering from a PDF online for free. Strips legal production stamps from the page margins by redaction \u2014 the text is removed, not covered. Give the prefix or suffix your stamps use for an exact match, or leave blank to remove anything Bates-shaped. No sign-up, no watermarks.",
+    synonyms: "remove bates delete bates strip bates numbering legal production stamp discovery unstamp",
+    popularity: 82,
+    category: "security", accepts: ".pdf", outputLabel: "unstamped.pdf",
+  },
+
+  {
     slug: "accessibility-check", icon: Accessibility, name: "PDF Accessibility Checker",
     description: "Audit a PDF against PDF/UA and WCAG",
     longDescription: "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.",
