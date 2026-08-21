@@ -13,7 +13,25 @@ from starlette.background import BackgroundTask
 
 from ..auth.api_key import API_KEY_HEADER, require_api_key
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
-from ..services import compress_service, strip_metadata_service
+from ..services import (
+    bates_numbering_service,
+    booklet_service,
+    compress_service,
+    delete_annotations_service,
+    deskew_service,
+    flatten_service,
+    header_footer_service,
+    nup_service,
+    page_numbers_service,
+    pdf_to_pdfa_service,
+    repair_service,
+    reverse_pdf_service,
+    rotate_service,
+    stamp_service,
+    strip_metadata_service,
+    watermark_service,
+)
+from ..services import grayscale_service
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -26,15 +44,112 @@ router = APIRouter(tags=["developer"])
 
 MAX_PIPELINE_STEPS = 12
 
+# The pipeline's step catalog, and the single source of truth for what
+# `/api/pipeline` can chain. `run` takes the input path and returns the output
+# path — every service below already has exactly that shape, which is why the
+# whole SPA chain can run server-side in ONE request instead of re-uploading
+# the document once per step.
+#
+# Deliberately absent: `invert-colors` and `remove-blank-pages`. Their logic
+# lives inline in the route handler rather than a service module, so the
+# pipeline cannot call them without extracting a service first.
 PIPELINE_STEP_META = {
+    # ── Optimize ──────────────────────────────────────────────────────────
     "compress-pdf": {
         "label": "Compress PDF",
         "description": "Reduce PDF byte size with the recommended compression preset.",
+        "run": compress_service.compress_pdf,
     },
+    "repair-pdf": {
+        "label": "Repair PDF",
+        "description": "Rebuild a damaged or malformed PDF structure.",
+        "run": repair_service.repair_pdf,
+    },
+    "deskew-pdf": {
+        "label": "Deskew",
+        "description": "Straighten pages that were scanned at an angle.",
+        "run": deskew_service.deskew,
+    },
+    "grayscale-pdf": {
+        "label": "Grayscale",
+        "description": "Convert every page to grayscale.",
+        "run": grayscale_service.convert_to_grayscale,
+    },
+    "flatten-pdf": {
+        "label": "Flatten PDF",
+        "description": "Merge form fields and annotations into the page content.",
+        "run": flatten_service.flatten_pdf,
+    },
+    # ── Organize ──────────────────────────────────────────────────────────
+    "rotate-pdf": {
+        "label": "Rotate pages",
+        "description": "Rotate every page by the default quarter turn.",
+        "run": rotate_service.rotate_pdf,
+    },
+    "reverse-pdf": {
+        "label": "Reverse page order",
+        "description": "Reverse the order of all pages in the document.",
+        "run": reverse_pdf_service.reverse_pdf,
+    },
+    "nup": {
+        "label": "N-up layout",
+        "description": "Place multiple pages onto each printed sheet.",
+        "run": nup_service.nup,
+    },
+    "booklet-pdf": {
+        "label": "Booklet imposition",
+        "description": "Reorder pages for saddle-stitch booklet printing.",
+        "run": booklet_service.make_booklet,
+    },
+    # ── Stamp ─────────────────────────────────────────────────────────────
+    "page-numbers": {
+        "label": "Add page numbers",
+        "description": "Stamp sequential page numbers using the default position.",
+        "run": page_numbers_service.add_page_numbers,
+    },
+    "bates-numbering": {
+        "label": "Bates numbering",
+        "description": "Apply sequential Bates numbers for legal discovery.",
+        "run": bates_numbering_service.add_bates_numbering,
+    },
+    "header-footer": {
+        "label": "Header and footer",
+        "description": "Add the default header and footer to every page.",
+        "run": header_footer_service.add_header_footer,
+    },
+    "watermark": {
+        "label": "Watermark",
+        "description": "Overlay the default text watermark on every page.",
+        "run": watermark_service.add_watermark,
+    },
+    "stamp-pdf": {
+        "label": "Stamp",
+        "description": "Apply the default status stamp to every page.",
+        "run": stamp_service.stamp_pdf,
+    },
+    # ── Security ──────────────────────────────────────────────────────────
     "strip-metadata": {
         "label": "Strip metadata",
         "description": "Remove document info and XMP metadata from the PDF.",
+        "run": strip_metadata_service.strip_metadata,
     },
+    "delete-annotations": {
+        "label": "Delete annotations",
+        "description": "Remove every annotation and comment from the document.",
+        "run": delete_annotations_service.delete_annotations,
+    },
+    # ── Convert ───────────────────────────────────────────────────────────
+    "pdf-to-pdfa": {
+        "label": "Convert to PDF/A",
+        "description": "Convert the document to the PDF/A archival profile.",
+        "run": pdf_to_pdfa_service.convert_to_pdfa,
+    },
+}
+
+# `run` is a callable and must never reach a JSON response body.
+PIPELINE_STEP_PUBLIC = {
+    slug: {k: v for k, v in meta.items() if k != "run"}
+    for slug, meta in PIPELINE_STEP_META.items()
 }
 
 PIPELINE_TEMPLATES = [
@@ -114,12 +229,12 @@ def _share_path(steps: list[str]) -> str:
 
 
 def _run_step(slug: str, input_path: str) -> str:
-    if slug == "compress-pdf":
-        return compress_service.compress_pdf(input_path, level="recommended")
-    if slug == "strip-metadata":
-        return strip_metadata_service.strip_metadata(input_path)
-    # _normalize_steps prevents this path, but keep the guard near execution.
-    raise HTTPException(status_code=400, detail=f"Unsupported pipeline step: {slug}")
+    """Run one pipeline step. Takes the previous step's output as its input."""
+    meta = PIPELINE_STEP_META.get(slug)
+    if meta is None:
+        raise HTTPException(status_code=400, detail=f"Unsupported pipeline step: {slug}")
+    return meta["run"](input_path)
+
 
 
 @router.get("/developer/status")
@@ -137,7 +252,7 @@ async def developer_status(_: str = Depends(require_api_key)):
 
 @router.get("/pipeline/templates")
 async def pipeline_templates(_: str = Depends(require_api_key)):
-    return JSONResponse({"templates": PIPELINE_TEMPLATES, "supportedSteps": PIPELINE_STEP_META})
+    return JSONResponse({"templates": PIPELINE_TEMPLATES, "supportedSteps": PIPELINE_STEP_PUBLIC})
 
 
 @router.post("/pipeline/validate")
@@ -151,7 +266,7 @@ async def validate_pipeline(
             "ok": True,
             "steps": steps,
             "sharePath": _share_path(steps),
-            "supportedSteps": PIPELINE_STEP_META,
+            "supportedSteps": PIPELINE_STEP_PUBLIC,
         }
     )
 
