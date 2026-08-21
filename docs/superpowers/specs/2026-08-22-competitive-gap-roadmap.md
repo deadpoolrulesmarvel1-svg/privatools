@@ -97,11 +97,20 @@ work by merging it, and nothing in the output said so.
 `grayscale_service.py` (rasterise only when coloured vector content is actually present),
 with 12 tests including one proving grayscale still converts colour.
 
-**Still open:** merge and extract-pages remain untagged (72, not 96). Carrying a structure
-tree across a merge means merging `/K` arrays, rewriting the `/ParentTree`, and
-re-pointing struct elements at their new page objects — a real project, not a copy. We
-deliberately do *not* copy `/MarkInfo` without it: claiming `/Marked true` on a document
-with no structure tree is worse than visibly losing the tags.
+**Structure tree — also done.** Every tool now reaches **96, full parity with its input.**
+
+The tractable part was one pikepdf behaviour: `dst.pages.append()` copies through the same
+object map as `copy_foreign`, so copying the StructTreeRoot *after* appending pages makes
+every `/Pg` resolve to the page already in the destination rather than a duplicate. That
+turns "re-point every reference" into "prune what didn't come along".
+
+Merge needed more: `/StructParents` keys are only unique within a document, so two tagged
+inputs both numbering from 0 collide — and a collision doesn't error, it silently points
+half the pages at the other document's elements. `StructureTreeMerger` shifts each source
+into its own key range and renumbers the pages it contributed.
+
+It stays all-or-nothing: merging a tagged file with an untagged one leaves the output
+honestly untagged rather than declaring `/Marked true` over content that has no structure.
 
 ---
 
