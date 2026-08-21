@@ -72,8 +72,27 @@ class TestInjectRuntimeConfig:
         assert out.index("privatools:api-base") < out.index("</head>")
         assert "<title>t</title>" in out and "<body>x</body>" in out
 
-    def test_falls_back_to_prepend_without_head(self):
+    def test_leaves_a_document_without_a_head_untouched(self):
+        """Reversed deliberately — the old prepend fallback caused an outage.
+
+        This used to assert the tag was PREPENDED when a document had no
+        </head>. The catch-all static handler runs every .html file through
+        this function, including search-engine verification files, which are
+        a single bare token line with no head:
+
+            google-site-verification: google<token>.html
+
+        Prepending a <meta> tag corrupted them, Google rejected the token and
+        revoked the property — Search Console reported "you don't have access
+        to this property". A document with no </head> is not the SPA shell, so
+        there is nothing for the SPA to read from it and nothing to inject.
+
+        See test_site_verification_files.py.
+        """
         html = "<div>no head here</div>"
         out = inject_runtime_config(html, "https://api.privatools.me")
-        assert out.startswith('<meta name="privatools:api-base"')
-        assert "<div>no head here</div>" in out
+        assert out == html, "a non-SPA document must be served byte-exact"
+
+    def test_leaves_a_verification_token_untouched(self):
+        token = "google-site-verification: googleeeafcf26aae2100f.html"
+        assert inject_runtime_config(token, "https://api.privatools.me") == token

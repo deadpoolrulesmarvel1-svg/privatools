@@ -62,13 +62,27 @@ def runtime_config_meta(api_base: str) -> str:
 def inject_runtime_config(html: str, api_base: str) -> str:
     """Insert the API-origin ``<meta>`` tag into an ``index.html`` string.
 
-    No-op when ``api_base`` is blank. Inserts just before the (last) ``</head>``;
-    if the document has no head, the tag is prepended so the SPA still finds it.
+    No-op when ``api_base`` is blank, and no-op for documents that are not
+    actually HTML pages.
+
+    That second rule is not cosmetic. The catch-all static handler runs every
+    ``.html`` file through here, and search-engine verification files are
+    ``.html`` but contain a single bare token line:
+
+        google-site-verification: google<token>.html
+
+    This function used to PREPEND its tag when a document had no ``</head>``,
+    which corrupted exactly those files — Google then rejected the token and
+    revoked the property. The bug was invisible until ``PUBLIC_API_BASE_URL``
+    was set, because before that this function returned early.
+
+    A document with no ``</head>`` is not the SPA shell, so there is nothing
+    for the SPA to find in it and nothing to inject.
     """
     tag = runtime_config_meta(api_base)
     if not tag:
         return html
     idx = html.lower().rfind("</head>")
     if idx == -1:
-        return tag + html
+        return html
     return f"{html[:idx]}{tag}{html[idx:]}"
