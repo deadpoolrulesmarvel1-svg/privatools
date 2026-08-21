@@ -35,6 +35,7 @@ PDF_TOOLS = [
     "pdf-to-epub", "markdown-to-pdf", "csv-to-pdf",
     "invert-colors", "pdfa-validator", "verify-signature", "accessibility-check",
     "bates-remove",
+    "translate-pdf",
     "sanitize-pdf", "add-hyperlinks", "form-creator",
     "transparent-background", "stamp-pdf", "esign-pdf",
     "word-to-pdf", "excel-to-pdf", "pptx-to-pdf-convert",

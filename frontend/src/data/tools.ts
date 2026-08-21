@@ -9,7 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
-  ArrowDownUp, BookOpenCheck, Accessibility,
+  ArrowDownUp, BookOpenCheck, Accessibility, Languages,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -793,6 +793,16 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
+  },
+
+  {
+    slug: "translate-pdf", icon: Languages, name: "Translate PDF",
+    description: "Translate a PDF without uploading it",
+    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic, Hindi and Russian. No account, no API key, no watermarks. First run downloads the translation model once and caches it.",
+    synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
+    popularity: 45,
+    clientOnly: true,
+    category: "advanced", accepts: ".pdf", outputLabel: "translated text",
   },
 
   {

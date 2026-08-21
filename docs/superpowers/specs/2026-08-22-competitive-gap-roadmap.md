@@ -114,7 +114,7 @@ honestly untagged rather than declaring `/Marked true` over content that has no 
 
 ---
 
-## Priority 2 — Translation
+## Priority 2 — Translation ✅ **shipped**
 
 **Gap:** Foxit, Nitro, LightPDF and TinyWow all ship document translation. PrivaTools has
 none. LightPDF runs five language-pair SEO landing pages off one engine.
@@ -130,9 +130,36 @@ Arabic RTL will not fit the source boxes. Two options:
 
 Recommend (1) first, since it is genuinely useful and the SEO landing pages don't care.
 
-**Open question:** which engine. A local model keeps the privacy story intact but is
-large; a cloud API breaks "nothing leaves the server" for this one tool and would need
-the same explicit per-tool disclosure the BYOK AI tools use.
+**Shipped 2026-08-22** as `/tool/translate-pdf`, entirely on-device.
+
+**Engine:** Helsinki-NLP OPUS-MT via transformers.js — the same local-first arrangement
+Summarize PDF and Smart Redact already use, so no new dependency and no new privacy story
+to explain. pdf.js extracts, the model translates, Blob writes the result. The document is
+never uploaded.
+
+**The pair list was verified, not guessed.** Generated from the HuggingFace model index and
+each entry checked for ONNX weights: 76 OPUS-MT models, giving English → 19 languages and
+24 languages → English. The matrix is deliberately asymmetric because the models are —
+Romanian has `en-ro` but no `ro-en`; Japanese, Korean, Polish, Thai, Turkish and Estonian
+are into-English only. Offering a pair with no model would fail *after* a ~107 MB download,
+which is the worst possible moment to find out.
+
+Non-English pairs are not offered. Pivoting through English means two model downloads and
+compounded errors — not offered beats offered badly.
+
+**Chunking is correctness, not optimisation.** OPUS-MT truncates silently past 512 tokens,
+so an unchunked page loses its back half with no error. Splitting prefers sentence
+boundaries (a sentence cut in half translates badly in both halves) and handles CJK, which
+has no spaces to split on.
+
+**The one thing that leaves the device is opt-in and labelled at the point of use:** there
+is no PDF writer in the browser bundle, so "Save as PDF" posts the *translated text* — never
+the original document — to the existing text-to-PDF renderer. Download-as-text and copy are
+fully local.
+
+**Not done:** re-laying translated text into the original page layout. German expands and
+Arabic is RTL, so text won't fit the source boxes. Output is a clean document, not a
+visual match. Competitors do the layout-preserving version.
 
 ---
 
