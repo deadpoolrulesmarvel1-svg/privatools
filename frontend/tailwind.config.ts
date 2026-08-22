@@ -14,13 +14,15 @@ export default {
       },
     },
     extend: {
+      // Resolved through the token layer so a skin can swap the whole pairing.
+      // The fallbacks live in the --font-* declarations (index.css / skins.css).
       fontFamily: {
-        display: ["Bricolage Grotesque", "Outfit", "system-ui", "sans-serif"],
-        heading: ["Bricolage Grotesque", "Outfit", "system-ui", "sans-serif"],
-        serif:   ["Bricolage Grotesque", "Outfit", "system-ui", "sans-serif"],
-        body:    ["Outfit", "system-ui", "sans-serif"],
-        sans:    ["Outfit", "system-ui", "sans-serif"],
-        mono:    ["DM Mono", "SF Mono", "Menlo", "monospace"],
+        display: ["var(--font-display)"],
+        heading: ["var(--font-display)"],
+        serif:   ["var(--font-display)"],
+        body:    ["var(--font-sans)"],
+        sans:    ["var(--font-sans)"],
+        mono:    ["var(--font-mono)"],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -20,6 +20,7 @@ import { Command, Github, Keyboard, Menu, Moon, Search, Sun, X } from "lucide-re
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 import { CATEGORY_NAV } from "@/lib/nav";
+import { SkinSwitcher } from "./shells/SkinSwitcher";
 
 
 
@@ -87,6 +88,7 @@ export function SiteHeader({
                     <button onClick={onOpenShortcuts} className={cn(iconBtn, "hidden md:inline-flex")} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
                         <Keyboard size={17} />
                     </button>
+                    <SkinSwitcher />
                     <button
                         onClick={toggleTheme}
                         className={iconBtn}

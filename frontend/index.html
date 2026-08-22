@@ -66,7 +66,27 @@
       }
     </style>
 
-  </head>
+      <script>
+      /* Pre-paint theme + skin. Runs before <body> renders so a stored choice
+         never flashes the default palette first. Mirrors lib/skins.ts:
+         `signature` owns :root and therefore carries no data-skin attribute. */
+      (function () {
+        try {
+          var d = document.documentElement;
+          var skin = window.localStorage.getItem('privatools_skin');
+          if (skin && skin !== 'signature' &&
+              ['aurora', 'carbon', 'structured'].indexOf(skin) !== -1) {
+            d.setAttribute('data-skin', skin);
+          }
+          var t = window.localStorage.getItem('privatools_theme');
+          if (t === 'dark' || t === 'light') {
+            d.classList.add(t);
+            d.classList.remove(t === 'dark' ? 'light' : 'dark');
+          }
+        } catch (e) { /* private mode — fall through to defaults */ }
+      })();
+    </script>
+</head>
   <body>
     <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
          Once React mounts, AppShell provides its own (duplicate but harmless) skip
