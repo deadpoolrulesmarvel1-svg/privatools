@@ -1192,6 +1192,55 @@ button.btn-accent:focus-visible {
   outline: 2px solid hsl(var(--foreground));
   outline-offset: 3px;
 }
+/* ── Ported-design overflow guard ─────────────────────────────────── */
+/* Grid and flex items default to `min-width: auto`, which refuses to shrink
+   below the content's intrinsic width. Both imported designs that lay out in
+   fixed tracks hit this at 375px:
+
+   - Aurora puts a full URL in a two-column grid cell, and that one unbreakable
+     string widened the document to 410px.
+   - Structured's sticky header could not shrink its search control below its
+     own label, so the page laid out at 508px inside a 375px viewport and the
+     browser shrank the entire design to fit.
+
+   Letting those boxes shrink, and letting a long URL wrap, fixes both without
+   touching any design's own sizing: min-width:0 only ever permits shrinking,
+   never forces it, and the wrap is scoped to links and buttons, which never
+   hold prose. Structured has no CSS breakpoints at all — it switches layouts
+   in JavaScript off window.innerWidth — so there was no media query to fix
+   this in. */
+[data-skin] :where(div, button, a, p, span, li, header, nav, section, main, aside) { min-width: 0; }
+/* `break-word`, not `anywhere`: both wrap a long URL once the box is narrow,
+   but `anywhere` also lowers the element's min-content width, which let a
+   flex button collapse to one character and stack "Filter" vertically. */
+[data-skin] :where(button, a) { overflow-wrap: break-word; }
+
+/* Aurora's responsive ladder stops at 767px, where its four-up grid becomes
+   two-up and stays there. At 375px that leaves 165px columns — cramped for
+   the cards, and too narrow for the one that holds a full URL, which spilled
+   35px past the viewport and made the page scroll sideways.
+   `:root[…]` rather than `[…]` so this outranks skin-native.css regardless of
+   import order. */
+@media (max-width: 480px) {
+  :root[data-skin="aurora"] { --c4: 1fr; }
+}
+
+/* The designs wrap their data tables in a rounded panel that sets
+   `overflow: hidden` to keep the corners clean. On a phone that clips the
+   table instead of scrolling it, so the right-hand columns — Local, Server,
+   Offline on the tools table — simply could not be reached. Wide content
+   should scroll inside its own box, which is what this makes it do. */
+@media (max-width: 767px) {
+  [data-skin] :has(> table) { overflow-x: auto !important; }
+}
+
+/* A keyboard shortcut hint is noise on a device with no keyboard, and these
+   sit inside the search control where they were the last thing making its row
+   too wide to fit. */
+@media (pointer: coarse) {
+  :where(kbd) { display: none; }
+}
+
 /* ── Touch target floor ───────────────────────────────────────────── */
 /* WCAG 2.5.8 asks for a 24px minimum target. A dozen standalone links and
    buttons sat at 17-20px tall — fine with a mouse, fiddly with a thumb.
@@ -1203,6 +1252,12 @@ button.btn-accent:focus-visible {
    that deliberately sizes itself larger still wins. */
 @media (pointer: coarse) {
   :where(a, button, [role="button"], summary) { min-height: 24px; }
+  /* Width too: icon buttons run 14-23px across, which height alone would
+     leave as a tall sliver rather than a real target. Inert on inline
+     elements, so links inside prose are untouched — same as the height. */
+  :where(a, button, [role="button"]) { min-width: 24px; }
+  /* A checkbox is square, so height alone would leave a 16x24 sliver. */
+  :where(input[type="checkbox"], input[type="radio"]) { min-height: 24px; min-width: 24px; }
 }
 
 /* ── Hover-revealed row actions ───────────────────────────────────── */
