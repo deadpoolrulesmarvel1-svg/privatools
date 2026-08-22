@@ -15,11 +15,13 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from ..auth import accounts
+from ..auth import hashing_pool
 from ..rate_limit import limiter
 
 router = APIRouter()
@@ -27,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 SESSION_COOKIE = "pt_session"
 CREDENTIAL_RATE_LIMIT = os.environ.get("RATE_LIMIT_CREDENTIALS", "10/minute")
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _secure_cookies() -> bool:
@@ -44,6 +50,17 @@ def _set_session_cookie(response: Response, token: str) -> None:
 class Credentials(BaseModel):
     email: str = Field(max_length=accounts.MAX_EMAIL_LENGTH)
     password: str = Field(max_length=1024)
+
+
+class RecoveryRequest(BaseModel):
+    email: str = Field(max_length=accounts.MAX_EMAIL_LENGTH)
+    recovery_code: str = Field(max_length=64)
+    new_password: str = Field(max_length=1024)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(max_length=1024)
+    new_password: str = Field(max_length=1024)
 
 
 class KeyRequest(BaseModel):
@@ -66,23 +83,66 @@ def _public(user: accounts.User) -> dict:
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def register(request: Request, response: Response, body: Credentials):
     try:
-        user = accounts.create_user(body.email, body.password)
+        accounts.normalise_email(body.email)
+        accounts.validate_password(body.password)
+    except accounts.AccountError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # Hashing is 156 ms and 64 MB; run it off the event loop and under a bound.
+    recovery_code = accounts.new_recovery_code()
+    password_hash = await hashing_pool.hash_password(body.password)
+    # Hash the normalised form: the code is verified after stripping
+    # spacing, case and dashes, so it has to be stored that way too.
+    recovery_hash = await hashing_pool.hash_password(
+        accounts.normalise_recovery_code(recovery_code))
+
+    try:
+        user = accounts.create_user_with_hash(body.email, password_hash, recovery_hash)
     except accounts.EmailTaken as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except accounts.AccountError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     _set_session_cookie(response, accounts.create_session(user.id))
-    return {"user": _public(user)}
+    # Returned exactly once. There is no email to resend it to, so the UI has to
+    # make the user save it before moving on.
+    return {"user": _public(user), "recovery_code": recovery_code}
 
 
 @router.post("/auth/login")
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def login(request: Request, response: Response, body: Credentials):
-    user = accounts.authenticate(body.email, body.password)
-    if user is None:
+    # Per-account, because the per-IP limiter does not stop guesses for one
+    # account spread across many addresses.
+    locked = accounts.login_locked_until(body.email)
+    if locked:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed attempts. Try again shortly.",
+            headers={"Retry-After": str(max(1, int((locked - _utcnow()).total_seconds())))},
+        )
+
+    found = accounts.credentials_for(body.email)
+    # Always verify once, even with no account, so the two cases cannot be told
+    # apart by response time.
+    stored = found[1] if found else accounts.DUMMY_HASH
+    ok = await hashing_pool.verify(body.password, stored)
+
+    if not found or not ok:
+        accounts.record_login_failure(body.email)
         # One message for both causes: a distinct "no such account" reply turns
         # this endpoint into an email-enumeration oracle.
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
+
+    user_id = found[0]
+    accounts.clear_login_failures(body.email)
+    new_hash = (
+        await hashing_pool.hash_password(body.password)
+        if accounts.passwords.needs_rehash(stored) else None
+    )
+    accounts.record_login(user_id, new_hash)
+
+    user = accounts.get_user(user_id)
     _set_session_cookie(response, accounts.create_session(user.id))
     return {"user": _public(user)}
 
@@ -105,6 +165,72 @@ async def me(user: accounts.User = Depends(current_user)):
 async def delete_account(response: Response, user: accounts.User = Depends(current_user)):
     accounts.delete_user(user.id)
     response.delete_cookie(SESSION_COOKIE, path="/")
+    return {"ok": True}
+
+
+@router.post("/auth/recover")
+@limiter.limit(CREDENTIAL_RATE_LIMIT)
+async def recover(request: Request, response: Response, body: RecoveryRequest):
+    """Reset a password with the recovery code issued at signup.
+
+    This is the only way back into an account: the product sends no email, so
+    there is no reset link. A wrong code is rate-limited and answered with the
+    same message as a wrong address, so this cannot be used to test which
+    addresses are registered.
+    """
+    try:
+        accounts.validate_password(body.new_password)
+    except accounts.AccountError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    found = accounts.recovery_hash_for(body.email)
+    stored = found[1] if found else accounts.DUMMY_HASH
+    supplied = accounts.normalise_recovery_code(body.recovery_code)
+    ok = await hashing_pool.verify(supplied, stored) if supplied else False
+
+    if not found or not ok:
+        accounts.record_login_failure(body.email)
+        raise HTTPException(status_code=401, detail="That recovery code does not match.")
+
+    # A used code is spent. Issuing a fresh one keeps the account recoverable
+    # next time without another round trip.
+    next_code = accounts.new_recovery_code()
+    accounts.apply_recovery(
+        found[0],
+        await hashing_pool.hash_password(body.new_password),
+        await hashing_pool.hash_password(accounts.normalise_recovery_code(next_code)),
+    )
+    accounts.clear_login_failures(body.email)
+    response.delete_cookie(SESSION_COOKIE, path="/")
+    return {"ok": True, "recovery_code": next_code}
+
+
+@router.post("/auth/password")
+@limiter.limit(CREDENTIAL_RATE_LIMIT)
+async def change_password(
+    request: Request,
+    body: PasswordChange,
+    user: accounts.User = Depends(current_user),
+):
+    """Change the password of the signed-in account.
+
+    Other sessions are dropped and this one is kept, which is what someone
+    changing a password because it may have leaked actually wants.
+    """
+    try:
+        accounts.validate_password(body.new_password)
+    except accounts.AccountError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    found = accounts.credentials_for(user.email)
+    if not found or not await hashing_pool.verify(body.current_password, found[1]):
+        raise HTTPException(status_code=401, detail="Your current password is incorrect.")
+
+    accounts.change_password(
+        user.id,
+        await hashing_pool.hash_password(body.new_password),
+        keep_token=request.cookies.get(SESSION_COOKIE, ""),
+    )
     return {"ok": True}
 
 

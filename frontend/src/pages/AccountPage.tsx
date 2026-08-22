@@ -6,10 +6,10 @@
  * presentation differs.
  */
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, LogOut, Plus, Trash2, ShieldCheck } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-    accountApi, describeKey, defaultKeyLabel, initialAccountState,
+    accountApi, describeKey, defaultKeyLabel, initialAccountState, strengthOf,
     type AccountState,
 } from "@/skins/accountLogic";
 
@@ -32,11 +32,38 @@ export default function AccountPage() {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         patch({ busy: true, error: "" });
-        const req = s.mode === "signup"
-            ? accountApi.register(s.email, s.password)
-            : accountApi.login(s.email, s.password);
-        req.then(({ user }) => { patch({ user, busy: false, password: "", error: "" }); loadKeys(); })
-           .catch((err: Error) => patch({ busy: false, error: err.message }));
+
+        if (s.mode === "recover") {
+            accountApi.recover(s.email, s.recoveryInput, s.password)
+                .then(({ recovery_code }) => patch({
+                    busy: false, password: "", recoveryInput: "",
+                    mode: "signin", recoveryCode: recovery_code, recoverySaved: false,
+                    error: "",
+                }))
+                .catch((err: Error) => patch({ busy: false, error: err.message }));
+            return;
+        }
+
+        if (s.mode === "signup") {
+            accountApi.register(s.email, s.password)
+                .then(({ user, recovery_code }) => {
+                    // Shown once. There is no email to resend it to, so the UI
+                    // holds here until the user says they have saved it.
+                    patch({ user, busy: false, password: "", error: "", recoveryCode: recovery_code });
+                    loadKeys();
+                })
+                .catch((err: Error) => patch({
+                    busy: false,
+                    error: /already exists/i.test(err.message)
+                        ? "That email already has an account — sign in instead."
+                        : err.message,
+                }));
+            return;
+        }
+
+        accountApi.login(s.email, s.password)
+            .then(({ user }) => { patch({ user, busy: false, password: "", error: "" }); loadKeys(); })
+            .catch((err: Error) => patch({ busy: false, error: err.message }));
     };
 
     const newKey = () => {
@@ -74,13 +101,22 @@ export default function AccountPage() {
                     : "Only needed for the developer API. Every tool works without one."}
             </p>
 
-            {!s.user && (
+            {s.recoveryCode && (
+                <RecoveryPanel
+                    code={s.recoveryCode}
+                    saved={s.recoverySaved}
+                    onSaved={() => patch({ recoveryCode: "", recoverySaved: true })}
+                    onAck={() => patch({ recoverySaved: true })}
+                />
+            )}
+
+            {!s.user && !s.recoveryCode && (
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start">
                     <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 grid gap-3">
-                        <div className="flex gap-2">
-                            {(["signin", "signup"] as const).map(m => (
+                        <div className="flex gap-2" role="tablist" aria-label="Account action">
+                            {([["signin", "Sign in"], ["signup", "Create account"]] as const).map(([m, label]) => (
                                 <button
-                                    key={m} type="button"
+                                    key={m} type="button" role="tab" aria-selected={s.mode === m}
                                     onClick={() => patch({ mode: m, error: "" })}
                                     className={cn(
                                         "flex-1 h-9 rounded-lg text-[13px] font-medium border transition-colors",
@@ -89,31 +125,67 @@ export default function AccountPage() {
                                             : "border-border text-muted-foreground hover:text-foreground",
                                     )}
                                 >
-                                    {m === "signin" ? "Sign in" : "Create account"}
+                                    {label}
                                 </button>
                             ))}
                         </div>
 
                         <label className="grid gap-1.5 text-[12px] text-muted-foreground">
                             Email
-                            <input type="email" required autoComplete="email" className={field}
+                            <input type="email" required autoComplete="email" autoFocus className={field}
                                    value={s.email} onChange={e => patch({ email: e.target.value, error: "" })} />
                         </label>
-                        <label className="grid gap-1.5 text-[12px] text-muted-foreground">
-                            Password
-                            <input type="password" required className={field}
-                                   autoComplete={s.mode === "signup" ? "new-password" : "current-password"}
-                                   value={s.password} onChange={e => patch({ password: e.target.value, error: "" })} />
-                        </label>
-                        {s.mode === "signup" && (
-                            <p className="text-[11.5px] text-muted-foreground">
-                                At least 10 characters. Length is what makes a password strong.
-                            </p>
+
+                        {s.mode === "recover" && (
+                            <label className="grid gap-1.5 text-[12px] text-muted-foreground">
+                                Recovery code
+                                <input
+                                    type="text" required autoComplete="one-time-code"
+                                    placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+                                    className={cn(field, "font-mono tracking-[0.08em]")}
+                                    value={s.recoveryInput}
+                                    onChange={e => patch({ recoveryInput: e.target.value, error: "" })}
+                                />
+                            </label>
                         )}
+
+                        <label className="grid gap-1.5 text-[12px] text-muted-foreground">
+                            {s.mode === "recover" ? "New password" : "Password"}
+                            <span className="relative block">
+                                <input
+                                    type={s.showPassword ? "text" : "password"} required className={cn(field, "pr-10")}
+                                    autoComplete={s.mode === "signin" ? "current-password" : "new-password"}
+                                    value={s.password} onChange={e => patch({ password: e.target.value, error: "" })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => patch({ showPassword: !s.showPassword })}
+                                    aria-label={s.showPassword ? "Hide password" : "Show password"}
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                                >
+                                    {s.showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                            </span>
+                        </label>
+
+                        {s.mode !== "signin" && <StrengthMeter password={s.password} />}
+
                         {s.error && <p role="alert" className="text-[12.5px] text-destructive">{s.error}</p>}
+
                         <button type="submit" disabled={s.busy}
                                 className="h-10 rounded-lg bg-primary text-primary-foreground text-[13.5px] font-semibold disabled:opacity-60">
-                            {s.busy ? "Working…" : s.mode === "signup" ? "Create account" : "Sign in"}
+                            {s.busy ? "Working…"
+                                : s.mode === "signup" ? "Create account"
+                                : s.mode === "recover" ? "Reset password"
+                                : "Sign in"}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => patch({ mode: s.mode === "recover" ? "signin" : "recover", error: "" })}
+                            className="text-[12px] text-muted-foreground hover:text-foreground underline underline-offset-2 justify-self-start"
+                        >
+                            {s.mode === "recover" ? "Back to sign in" : "Forgotten your password?"}
                         </button>
                     </form>
 
@@ -130,6 +202,13 @@ export default function AccountPage() {
                             We store your email address and a scrypt hash of your password — never the
                             password itself. Deleting your account removes both immediately, along with
                             every key.
+                        </p>
+                        <p className="mt-2.5 flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
+                            <LifeBuoy size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                            <span>
+                                We send no email — not even a reset link. Instead you get a recovery code
+                                at signup. It is the only way back in, so keep it somewhere safe.
+                            </span>
                         </p>
                     </aside>
                 </div>
@@ -199,5 +278,69 @@ export default function AccountPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+
+/** Length-led strength feedback. Colour is never the only signal — the label says it too. */
+function StrengthMeter({ password }: { password: string }) {
+    const { score, label, hint } = strengthOf(password);
+    const tone = ["bg-destructive", "bg-destructive", "bg-copper", "bg-accent-bright", "bg-success"][score];
+    return (
+        <div aria-live="polite">
+            <div className="flex gap-1" aria-hidden="true">
+                {[0, 1, 2, 3].map(i => (
+                    <span key={i}
+                          className={cn("h-1 flex-1 rounded-full transition-colors",
+                              password && i < score ? tone : "bg-border")} />
+                ))}
+            </div>
+            <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                {label && <span className="font-medium text-foreground">{label}. </span>}{hint}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * The recovery code, shown once.
+ *
+ * This blocks the way forward on purpose. There is no email to resend it to, so
+ * a code the user scrolls past is an account they will eventually lose.
+ */
+function RecoveryPanel({
+    code, saved, onSaved, onAck,
+}: { code: string; saved: boolean; onSaved: () => void; onAck: () => void }) {
+    const [copied, setCopied] = useState(false);
+    const copy = () => {
+        navigator.clipboard.writeText(code).then(() => { setCopied(true); onAck(); }).catch(() => {});
+    };
+    return (
+        <section className="mt-6 rounded-2xl border border-primary/40 bg-primary/[0.06] p-5">
+            <h2 className="font-display text-[16px] font-semibold">Save your recovery code</h2>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                This is shown once and is the only way back into your account. We send no email, so
+                there is no reset link to fall back on.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="rounded-lg border border-border bg-card px-3 py-2 font-mono text-[15px] tracking-[0.12em]">
+                    {code}
+                </code>
+                <button onClick={copy}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-[13px] font-medium">
+                    {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+                    {copied ? "Copied" : "Copy"}
+                </button>
+            </div>
+            <button onClick={onSaved}
+                    className="mt-4 h-9 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground">
+                I have saved it
+            </button>
+            {!saved && (
+                <p className="mt-2 text-[11.5px] text-muted-foreground">
+                    Write it down or put it in a password manager before continuing.
+                </p>
+            )}
+        </section>
     );
 }

@@ -129,6 +129,24 @@ MIGRATIONS: list[tuple[int, str]] = [
         CREATE INDEX idx_api_keys_user ON api_keys(user_id);
         """,
     ),
+    (
+        2,
+        """
+        -- A recovery code is the only way back into an account, because there
+        -- is no email to send a reset link to. Stored as a hash like any other
+        -- secret; shown to the user exactly once.
+        ALTER TABLE users ADD COLUMN recovery_hash TEXT;
+        ALTER TABLE users ADD COLUMN recovery_used_at TEXT;
+
+        -- Per-account login throttling. The per-IP limiter does not stop
+        -- someone spreading guesses for one account across many addresses.
+        CREATE TABLE login_attempts (
+            email_lower TEXT PRIMARY KEY,
+            failures    INTEGER NOT NULL DEFAULT 0,
+            locked_until TEXT
+        );
+        """,
+    ),
 ]
 
 

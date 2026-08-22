@@ -424,6 +424,14 @@ export default function PrivacyPage() {
                 never linked to files processed through the tools.
               </p>
               <p>
+                We do not send email — not a welcome message, not a verification link, not a password
+                reset. That means your email address is never used to contact you, and it also means
+                there is no reset link if you forget your password. Instead you are given a
+                <strong> recovery code</strong> once, when you sign up. We store only a hash of it, so
+                we cannot tell you what it is later; if you lose both your password and your code, the
+                account cannot be recovered by us or by anyone else, and you would create a new one.
+              </p>
+              <p>
                 We do not send marketing email, share your address with anyone, or use it for
                 anything other than signing you in and contacting you about your keys. Deleting your
                 account removes the address, the password hash and every key immediately and

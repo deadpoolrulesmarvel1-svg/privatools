@@ -124,3 +124,109 @@ def test_deleting_the_account_ends_the_session(client):
     _register(client)
     assert client.delete("/api/auth/me").status_code == 200
     assert client.get("/api/auth/me").status_code == 401
+
+
+# ── recovery, password change, throttling ─────────────────────────────────
+
+def test_register_returns_a_recovery_code_once(client):
+    body = _register(client).json()
+    code = body["recovery_code"]
+    assert code.count("-") == 3, "grouped so it can be written down and typed back"
+    # It is never retrievable again — there is no email to resend it to.
+    assert "recovery_code" not in client.get("/api/auth/me").text
+
+
+def test_recovery_code_resets_the_password_and_issues_a_new_one(client):
+    code = _register(client).json()["recovery_code"]
+    client.post("/api/auth/logout")
+
+    res = client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": code, "new_password": "a-brand-new-password",
+    })
+    assert res.status_code == 200
+    assert res.json()["recovery_code"] != code, "a spent code must not still work"
+
+    assert client.post("/api/auth/login", json={
+        "email": CREDS["email"], "password": "a-brand-new-password"}).status_code == 200
+
+
+def test_recovery_code_is_accepted_however_it_is_typed(client):
+    code = _register(client).json()["recovery_code"]
+    client.post("/api/auth/logout")
+    messy = code.lower().replace("-", " ")
+    assert client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": messy, "new_password": "a-brand-new-password",
+    }).status_code == 200
+
+
+def test_a_spent_recovery_code_stops_working(client):
+    code = _register(client).json()["recovery_code"]
+    client.post("/api/auth/logout")
+    client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": code, "new_password": "a-brand-new-password"})
+    again = client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": code, "new_password": "another-new-password"})
+    assert again.status_code == 401
+
+
+def test_recovery_does_not_reveal_whether_an_address_is_registered(client):
+    _register(client)
+    known = client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": "AAAAA-BBBBB-CCCCC-DDDDD",
+        "new_password": "a-brand-new-password"})
+    unknown = client.post("/api/auth/recover", json={
+        "email": "nobody@example.com", "recovery_code": "AAAAA-BBBBB-CCCCC-DDDDD",
+        "new_password": "a-brand-new-password"})
+    assert known.status_code == unknown.status_code == 401
+    assert known.json()["detail"] == unknown.json()["detail"]
+
+
+def test_recovery_ends_every_existing_session(client):
+    code = _register(client).json()["recovery_code"]
+    # still signed in from registration
+    assert client.get("/api/auth/me").status_code == 200
+    client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": code, "new_password": "a-brand-new-password"})
+    # If the old password leaked, whoever had it must not keep a live session.
+    assert client.get("/api/auth/me").status_code == 401
+
+
+def test_password_change_requires_the_current_one(client):
+    _register(client)
+    assert client.post("/api/auth/password", json={
+        "current_password": "not-the-password", "new_password": "a-brand-new-password",
+    }).status_code == 401
+
+
+def test_password_change_keeps_this_session_and_works(client):
+    _register(client)
+    assert client.post("/api/auth/password", json={
+        "current_password": CREDS["password"], "new_password": "a-brand-new-password",
+    }).status_code == 200
+    # The session that made the change survives.
+    assert client.get("/api/auth/me").status_code == 200
+    client.post("/api/auth/logout")
+    assert client.post("/api/auth/login", json={
+        "email": CREDS["email"], "password": "a-brand-new-password"}).status_code == 200
+
+
+def test_repeated_failures_lock_the_account_briefly(client):
+    from backend.app.auth import accounts as acc
+    _register(client)
+    client.post("/api/auth/logout")
+    for _ in range(acc.MAX_FAILURES):
+        client.post("/api/auth/login", json={**CREDS, "password": "wrong-password-here"})
+    # The per-IP limiter does not stop guesses spread across addresses; this does.
+    res = client.post("/api/auth/login", json=CREDS)
+    assert res.status_code == 429
+    assert "Retry-After" in res.headers
+
+
+def test_a_successful_login_clears_the_failure_count(client):
+    from backend.app.auth import accounts as acc
+    _register(client)
+    client.post("/api/auth/logout")
+    for _ in range(acc.MAX_FAILURES - 1):
+        client.post("/api/auth/login", json={**CREDS, "password": "wrong-password-here"})
+    assert client.post("/api/auth/login", json=CREDS).status_code == 200
+    assert acc.login_locked_until(CREDS["email"]) is None

@@ -31,11 +31,15 @@ def _json(
     *,
     request: Request | None = None,
     extra: dict[str, Any] | None = None,
+    passthrough_headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     body: dict[str, Any] = {"detail": detail}
     if extra:
         body.update(extra)
-    headers: dict[str, str] = {}
+    # Headers set on the HTTPException are part of the answer, not decoration:
+    # a 429 without Retry-After tells the client nothing about when to try
+    # again, and a 401 without WWW-Authenticate omits the scheme.
+    headers: dict[str, str] = dict(passthrough_headers or {})
     if request is not None:
         rid = getattr(request.state, "request_id", None)
         if rid:
@@ -102,7 +106,10 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     if exc.status_code >= 500:
         logger.warning("%d on %s: %s", exc.status_code, request.url.path, detail)
         detail = "Processing failed. Please try again."
-    return _json(exc.status_code, detail, request=request)
+    return _json(
+        exc.status_code, detail, request=request,
+        passthrough_headers=getattr(exc, "headers", None) if exc.status_code < 500 else None,
+    )
 
 
 async def validation_error_handler(

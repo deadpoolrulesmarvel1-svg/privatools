@@ -98,6 +98,16 @@ async def _cleanup_task():
         try:
             await asyncio.sleep(_JANITOR_INTERVAL)
             cleanup_old_files(_JANITOR_MAX_AGE)
+            # Expired sessions were being written and never removed — the
+            # purge existed but nothing called it, so the table only grew.
+            try:
+                from .auth.accounts import purge_expired_sessions
+
+                removed = purge_expired_sessions()
+                if removed:
+                    logger.info("janitor: purged %d expired session(s)", removed)
+            except Exception:
+                logger.exception("janitor: session purge failed")
             # Heartbeat so memory growth + request saturation are visible in the
             # log stream without any external metrics system (research O5/O6).
             logger.info(

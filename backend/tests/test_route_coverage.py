@@ -33,6 +33,8 @@ BACKEND_ACCOUNT_POST_ENDPOINTS = {
     "/auth/register",
     "/auth/login",
     "/auth/logout",
+    "/auth/recover",
+    "/auth/password",
     "/keys",
 }
 

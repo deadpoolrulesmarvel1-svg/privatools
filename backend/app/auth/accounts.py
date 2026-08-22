@@ -44,7 +44,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+\.[^@\s]+$")
 
 # Verifying against this when no user matches keeps registered and unregistered
 # addresses indistinguishable by response time.
-_DUMMY_HASH = passwords.hash_password("timing-equalisation-placeholder")
+DUMMY_HASH = passwords.hash_password("timing-equalisation-placeholder")
 
 
 class AccountError(ValueError):
@@ -94,30 +94,69 @@ def _row_to_user(row: sqlite3.Row) -> User:
 
 # ── users ─────────────────────────────────────────────────────────────────
 
-def create_user(email: str, password: str) -> User:
+def validate_password(password: str) -> None:
+    """Check a password before anything expensive happens to it."""
+    try:
+        passwords.validate(password)
+    except passwords.PasswordError as exc:
+        # One error type for all bad user input — a PasswordError escaping to a
+        # route becomes a 500 instead of a 400.
+        raise AccountError(str(exc)) from exc
+
+
+def create_user_with_hash(email: str, password_hash: str, recovery_hash: str) -> User:
+    """Store a new account. Hashing happens in the caller, off the event loop.
+
+    Split from `create_user` because scrypt takes 156 ms and 64 MB: doing it
+    inline in an async route stalled the worker for every other request,
+    including file tools. See auth/hashing_pool.
+    """
     store.init()
     address = normalise_email(email)
-    try:
-        # Checked before hashing, which is deliberately expensive. Re-raised as
-        # an AccountError so callers only ever handle one error type for bad
-        # user input — a PasswordError escaping to a route becomes a 500.
-        passwords.validate(password)
-        digest = passwords.hash_password(password)
-    except passwords.PasswordError as exc:
-        raise AccountError(str(exc)) from exc
     user_id = uuid.uuid4().hex
     created = _now()
     try:
         with store.write() as conn:
             conn.execute(
-                "INSERT INTO users (id, email, email_lower, password_hash, created_at)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (user_id, address, address.lower(), digest, created),
+                "INSERT INTO users (id, email, email_lower, password_hash, created_at, recovery_hash)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, address, address.lower(), password_hash, created, recovery_hash),
             )
     except sqlite3.IntegrityError as exc:
         raise EmailTaken("An account with that email already exists.") from exc
     logger.info("accounts: created user %s", user_id)
     return User(id=user_id, email=address, created_at=created)
+
+
+def credentials_for(email: str) -> tuple[str, str] | None:
+    """`(user_id, password_hash)` for an address, or None."""
+    store.init()
+    try:
+        address = normalise_email(email)
+    except AccountError:
+        return None
+    with store.read() as conn:
+        row = conn.execute(
+            "SELECT id, password_hash FROM users WHERE email_lower = ?", (address.lower(),)
+        ).fetchone()
+    return (row["id"], row["password_hash"]) if row else None
+
+
+def record_login(user_id: str, new_hash: str | None = None) -> None:
+    store.init()
+    with store.write() as conn:
+        conn.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (_now(), user_id))
+        if new_hash:
+            conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+
+
+def create_user(email: str, password: str) -> User:
+    """Synchronous convenience wrapper. Routes use the async path instead."""
+    validate_password(password)
+    user = create_user_with_hash(
+        email, passwords.hash_password(password), passwords.hash_password(normalise_recovery_code(new_recovery_code())),
+    )
+    return user
 
 
 def authenticate(email: str, password: str) -> User | None:
@@ -130,7 +169,7 @@ def authenticate(email: str, password: str) -> User | None:
     try:
         address = normalise_email(email)
     except AccountError:
-        passwords.verify(password, _DUMMY_HASH)
+        passwords.verify(password, DUMMY_HASH)
         return None
 
     with store.read() as conn:
@@ -139,7 +178,7 @@ def authenticate(email: str, password: str) -> User | None:
         ).fetchone()
 
     if row is None:
-        passwords.verify(password, _DUMMY_HASH)
+        passwords.verify(password, DUMMY_HASH)
         return None
     if not passwords.verify(password, row["password_hash"]):
         return None
@@ -309,3 +348,132 @@ def revoke_key(user_id: str, key_id: str) -> bool:
         )
         return cur.rowcount > 0
 
+# ── recovery codes ────────────────────────────────────────────────────────
+#
+# There is no email to send a reset link to — the product does not send email
+# at all, and adding an SMTP dependency to support one flow is the wrong trade.
+# A recovery code, shown once at signup, is the way back in. It is a secret, so
+# only its hash is stored, exactly like a password.
+
+RECOVERY_GROUPS = 4
+RECOVERY_GROUP_LEN = 5
+# No I, O, 0 or 1: this gets written down and typed back, and those are the
+# characters people get wrong.
+RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def new_recovery_code() -> str:
+    groups = [
+        "".join(secrets.choice(RECOVERY_ALPHABET) for _ in range(RECOVERY_GROUP_LEN))
+        for _ in range(RECOVERY_GROUPS)
+    ]
+    return "-".join(groups)
+
+
+def normalise_recovery_code(raw: str) -> str:
+    """Accept it however it was typed — spacing, case and dashes vary."""
+    return "".join(ch for ch in (raw or "").upper() if ch in RECOVERY_ALPHABET)
+
+
+def recovery_hash_for(email: str) -> tuple[str, str] | None:
+    """`(user_id, recovery_hash)` for an address, or None."""
+    store.init()
+    try:
+        address = normalise_email(email)
+    except AccountError:
+        return None
+    with store.read() as conn:
+        row = conn.execute(
+            "SELECT id, recovery_hash FROM users WHERE email_lower = ?", (address.lower(),)
+        ).fetchone()
+    if row is None or not row["recovery_hash"]:
+        return None
+    return (row["id"], row["recovery_hash"])
+
+
+def apply_recovery(user_id: str, password_hash: str, recovery_hash: str) -> None:
+    """Set a new password and a fresh recovery code, and end every session.
+
+    Ending sessions matters: if the account was reached because the old password
+    leaked, whoever had it must not keep a live session.
+    """
+    store.init()
+    with store.write() as conn:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, recovery_hash = ?, recovery_used_at = ?"
+            " WHERE id = ?",
+            (password_hash, recovery_hash, _now(), user_id),
+        )
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+    logger.info("accounts: recovery applied for user %s", user_id)
+
+
+def change_password(user_id: str, password_hash: str, keep_token: str | None = None) -> None:
+    """Set a new password and drop other sessions, keeping the current one."""
+    store.init()
+    with store.write() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+        if keep_token:
+            conn.execute(
+                "DELETE FROM sessions WHERE user_id = ? AND token_hash != ?",
+                (user_id, _sha256(keep_token)),
+            )
+        else:
+            conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+
+
+# ── login throttling ──────────────────────────────────────────────────────
+#
+# The per-IP limiter does not stop someone spreading guesses for one account
+# across many addresses, which is exactly how credential stuffing works.
+
+MAX_FAILURES = 8
+LOCKOUT = timedelta(minutes=15)
+
+
+def login_locked_until(email: str) -> datetime | None:
+    store.init()
+    try:
+        address = normalise_email(email).lower()
+    except AccountError:
+        return None
+    with store.read() as conn:
+        row = conn.execute(
+            "SELECT locked_until FROM login_attempts WHERE email_lower = ?", (address,)
+        ).fetchone()
+    if not row or not row["locked_until"]:
+        return None
+    until = datetime.fromisoformat(row["locked_until"])
+    return until if until > datetime.now(timezone.utc) else None
+
+
+def record_login_failure(email: str) -> None:
+    store.init()
+    try:
+        address = normalise_email(email).lower()
+    except AccountError:
+        return
+    with store.write() as conn:
+        row = conn.execute(
+            "SELECT failures FROM login_attempts WHERE email_lower = ?", (address,)
+        ).fetchone()
+        failures = (row["failures"] if row else 0) + 1
+        locked = (
+            (datetime.now(timezone.utc) + LOCKOUT).isoformat(timespec="seconds")
+            if failures >= MAX_FAILURES else None
+        )
+        conn.execute(
+            "INSERT INTO login_attempts (email_lower, failures, locked_until) VALUES (?, ?, ?)"
+            " ON CONFLICT(email_lower) DO UPDATE SET failures = ?, locked_until = ?",
+            (address, failures, locked, failures, locked),
+        )
+
+
+def clear_login_failures(email: str) -> None:
+    store.init()
+    try:
+        address = normalise_email(email).lower()
+    except AccountError:
+        return
+    with store.write() as conn:
+        conn.execute("DELETE FROM login_attempts WHERE email_lower = ?", (address,))
