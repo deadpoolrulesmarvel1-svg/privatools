@@ -100,6 +100,21 @@ const ATTR_MAP = {
  * None of the values carry bindings and no element that has one also has a
  * `class`, so each becomes a generated class plus a real CSS rule.
  */
+/**
+ * Attributes React treats as booleans. The designs write `disabled="true"`,
+ * which reaches React as the string "true" — truthy, so it happens to work,
+ * but `disabled="false"` is also a non-empty string and would disable the
+ * control. Convert the literal strings to real booleans; a bound value is
+ * already an expression and passes through.
+ */
+const BOOLEAN_ATTRS = new Set([
+  "disabled", "checked", "readOnly", "required", "multiple", "selected",
+  "autoFocus", "hidden", "open", "download", "loop", "muted", "controls",
+  "autoPlay", "reversed", "noValidate", "formNoValidate", "playsInline",
+]);
+
+const FORM_TAGS = new Set(["input", "textarea", "select"]);
+
 const INTERACTION = {
   "style-hover": ":hover",
   "style-active": ":active",
@@ -137,7 +152,13 @@ function attrToJsx(name, value) {
     console.warn(`  unmapped hyphenated attribute: ${name}`);
   }
   if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
-    const ev = "on" + name.slice(2, 3).toUpperCase() + name.slice(3);
+    let ev = "on" + name.slice(2, 3).toUpperCase() + name.slice(3);
+    // React's onChange already fires on every keystroke — it is the DOM's
+    // input event under a different name — and it is the only handler React
+    // accepts as making a `value` field editable. Leaving these as onInput
+    // meant React treated the field as controlled-with-no-handler and refused
+    // every keystroke, which is exactly the bug the warning describes.
+    if (ev === "onInput") ev = "onChange";
     const m = value.match(/^\{\{\s*([^}]+?)\s*\}\}$/);
     return `${ev}={${m ? scopeExpr(m[1]) : `() => {}`}}`;
   }
@@ -149,10 +170,13 @@ function attrToJsx(name, value) {
   const m = value.match(/^\{\{\s*([^}]+?)\s*\}\}$/);
   if (m) return `${name}={${scopeExpr(m[1])}}`;
   if (hasBinding(value)) return `${name}={\`${interp(value)}\`}`;
+  if (BOOLEAN_ATTRS.has(name) && /^(true|false)$/i.test(value.trim())) {
+    return `${name}={${value.trim().toLowerCase()}}`;
+  }
   return `${name}=${JSON.stringify(value)}`;
 }
 
-function parseAttrs(raw) {
+function parseAttrs(raw, tag) {
   const out = [];
   const interactions = [];
   const re = /([\w:-]+)\s*=\s*"([^"]*)"|([\w:-]+)(?=[\s/>])/g;
@@ -171,12 +195,27 @@ function parseAttrs(raw) {
     for (const [pseudo, css] of interactions) interactionRules.push({ cls, pseudo, css });
     out.push(`className=${JSON.stringify(cls)}`);
   }
+
+  // A `value` with no handler makes React render a controlled field that
+  // silently rejects every keystroke — the field looks editable and isn't.
+  // A literal value is the design pre-filling an editable field, so it
+  // becomes defaultValue; a bound one with no handler really is display-only,
+  // so it says so.
+  if (FORM_TAGS.has(tag) && !out.some((a) => /^on(Change|Input)=/.test(a))) {
+    const at = out.findIndex((a) => a.startsWith("value="));
+    if (at !== -1) {
+      const literal = /^value="/.test(out[at]);
+      if (literal) out[at] = out[at].replace(/^value=/, "defaultValue=");
+      else if (!out.some((a) => a.startsWith("readOnly"))) out.push("readOnly={true}");
+    }
+  }
   return out;
 }
 
 export function convert(html, iconRe = DEFAULT_ICON_RE) {
   interactionRules = [];
   interactionSeq = 0;
+  let needsKey = null;
   const tok = /<!--[\s\S]*?-->|<\/([\w-]+)\s*>|<([\w-]+)((?:\s+[\w:-]+\s*=\s*"[^"]*"|\s+[\w:-]+)*)\s*(\/?)>/g;
   let out = "", last = 0, m;
   const stack = [];
@@ -229,13 +268,19 @@ export function convert(html, iconRe = DEFAULT_ICON_RE) {
       const as = attrs.match(/as\s*=\s*"([^"]+)"/);
       const v = as ? as[1] : "item";
       out += `\n${indent()}{(${list ? scopeExpr(list[1]) : "[]"} ?? []).map((${v}, ${v}I) => (\n`;
+      // React needs a key on the element the loop returns. The designs' own
+      // runtime keeps no list identity, so the index is the honest choice —
+      // and it is what these lists already rely on, since every one of them
+      // re-renders wholesale from state rather than being reordered in place.
+      needsKey = `${v}I`;
       loopVars.push(v);
       stack.push("sc-for");
       out += indent();
       continue;
     }
 
-    const jsxAttrs = parseAttrs(attrs);
+    const jsxAttrs = parseAttrs(attrs, tag);
+    if (needsKey) { jsxAttrs.unshift(`key={${needsKey}}`); needsKey = null; }
     const attrStr = jsxAttrs.length ? " " + jsxAttrs.join(" ") : "";
 
     if (selfClose || VOID.has(tag)) { out += `<${tag}${attrStr} />`; continue; }

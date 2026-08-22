@@ -228,6 +228,10 @@ const LIGHT_TOKEN_ADDITIONS = {
  * Carbon's dark palettes were measured and already clear.
  */
 const DARK_CONTRAST_FIXES = {
+  aurora: {
+    // worst surface --pnl3 #132B34; measured on --pnl #0A1720 where it is used
+    "--vi": ["#7568F4", "#796CF4"],     // 4.36:1 -> 4.55:1
+  },
   structured: {
     // worst surface --panel3 #0E3138; lightened rather than darkened, since
     // dark-mode text gains contrast by moving away from the ground.

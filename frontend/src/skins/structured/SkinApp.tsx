@@ -1751,7 +1751,7 @@ Component.prototype.render = function render() {
 
               {(v.navMain ?? []).map((n, nI) => (
           
-      <button onClick={n.go} aria-current={n.cur} style={css(`display:flex;align-items:center;gap:10px;padding:0 10px;height:36px;border-radius:8px;font-size:13.5px;font-weight:${n.fw};color:${n.fg};background:${n.bg};border:1px solid ${n.bd};transition:background 160ms ease,color 160ms ease,border-color 160ms ease`)}>
+      <button key={nI} onClick={n.go} aria-current={n.cur} style={css(`display:flex;align-items:center;gap:10px;padding:0 10px;height:36px;border-radius:8px;font-size:13.5px;font-weight:${n.fw};color:${n.fg};background:${n.bg};border:1px solid ${n.bd};transition:background 160ms ease,color 160ms ease,border-color 160ms ease`)}>
       <span className="ms" style={css(`font-size:19px;color:${n.ic}`)}>{ICON[n.icon]}</span>
       <span style={css("flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis")}>{n.label}</span>
       </button>
@@ -1761,7 +1761,7 @@ Component.prototype.render = function render() {
 
               {(v.navCats ?? []).map((c, cI) => (
           
-      <button onClick={c.go} style={css(`display:flex;align-items:center;gap:10px;padding:0 10px;height:32px;border-radius:8px;font-size:13px;color:${c.fg};background:${c.bg};transition:background 160ms ease,color 160ms ease`)}>
+      <button key={cI} onClick={c.go} style={css(`display:flex;align-items:center;gap:10px;padding:0 10px;height:32px;border-radius:8px;font-size:13px;color:${c.fg};background:${c.bg};transition:background 160ms ease,color 160ms ease`)}>
       <span className="ms" style={css(`font-size:18px;color:${c.ic}`)}>{ICON[c.icon]}</span>
       <span style={css("flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis")}>{c.label}</span>
       </button>
@@ -1772,7 +1772,7 @@ Component.prototype.render = function render() {
 
               {(v.health ?? []).map((h, hI) => (
           
-      <button onClick={h.go} title={h.title} style={css(`display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:${h.bg}`)}>
+      <button key={hI} onClick={h.go} title={h.title} style={css(`display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:${h.bg}`)}>
       <span className="ms" style={css(`font-size:18px;color:${h.color}`)}>{ICON[h.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}>
       <span style={css("display:block;font-size:12.5px;color:var(--ink);line-height:1.3")}>{h.label}</span>
@@ -1798,7 +1798,7 @@ Component.prototype.render = function render() {
 
               {(v.navMain ?? []).map((n, nI) => (
           
-      <button onClick={n.go} aria-current={n.cur} title={n.label} aria-label={n.label} style={css(`display:flex;align-items:center;justify-content:center;width:44px;height:40px;border-radius:9px;background:${n.bg};border:1px solid ${n.bd};transition:background 160ms ease`)}>
+      <button key={nI} onClick={n.go} aria-current={n.cur} title={n.label} aria-label={n.label} style={css(`display:flex;align-items:center;justify-content:center;width:44px;height:40px;border-radius:9px;background:${n.bg};border:1px solid ${n.bd};transition:background 160ms ease`)}>
       <span className="ms" style={css(`font-size:20px;color:${n.ic}`)}>{ICON[n.icon]}</span>
       </button>
 
@@ -1808,7 +1808,7 @@ Component.prototype.render = function render() {
 
               {(v.health ?? []).map((h, hI) => (
           
-      <button onClick={h.go} title={`${h.label} — ${h.state}`} aria-label={`${h.label} — ${h.state}`} style={css("position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:34px;border-radius:8px")}>
+      <button key={hI} onClick={h.go} title={`${h.label} — ${h.state}`} aria-label={`${h.label} — ${h.state}`} style={css("position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:34px;border-radius:8px")}>
       <span className="ms" style={css(`font-size:18px;color:${h.color}`)}>{ICON[h.icon]}</span>
       <span aria-hidden="true" style={css(`position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:${h.color}`)}></span>
       </button>
@@ -1861,7 +1861,7 @@ Component.prototype.render = function render() {
 
                   {(v.themes ?? []).map((t, tI) => (
               
-      <button onClick={t.go} aria-pressed={t.on} title={t.title} style={css(`display:flex;align-items:center;justify-content:center;width:30px;height:26px;border-radius:7px;background:${t.bg};color:${t.fg};transition:background 200ms ease,color 200ms ease`)}><span className="ms" style={css("font-size:17px")}>{ICON[t.icon]}</span></button>
+      <button key={tI} onClick={t.go} aria-pressed={t.on} title={t.title} style={css(`display:flex;align-items:center;justify-content:center;width:30px;height:26px;border-radius:7px;background:${t.bg};color:${t.fg};transition:background 200ms ease,color 200ms ease`)}><span className="ms" style={css("font-size:17px")}>{ICON[t.icon]}</span></button>
 
                   ))}
       </div>
@@ -1911,7 +1911,7 @@ Component.prototype.render = function render() {
 
                       {(v.trust ?? []).map((t, tI) => (
                   
-      <li style={css("display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow)")}>
+      <li key={tI} style={css("display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow)")}>
       <span className="ms" style={css(`font-size:19px;color:${t.color};margin-top:1px`)}>{ICON[t.icon]}</span>
       <span style={css("display:block;min-width:0")}>
       <span style={css("display:block;font-size:12.5px;font-weight:500;line-height:1.25")}>{t.label}</span>
@@ -1951,7 +1951,7 @@ Component.prototype.render = function render() {
 
                         {(v.sources ?? []).map((s, sI) => (
                     
-      <li>
+      <li key={sI}>
       <button onClick={s.go} style={css("width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,transform 160ms ease")} className="dc-i2">
       <span className="ms" style={css(`font-size:18px;color:${s.color}`)}>{ICON[s.icon]}</span>
       <span style={css("font-size:12.5px;font-weight:500")}>{s.label}</span>
@@ -1980,7 +1980,7 @@ Component.prototype.render = function render() {
 
                             {(v.inspect ?? []).map((i, iI) => (
                         
-      <li style={css(`display:flex;align-items:center;gap:8px;font-size:12.5px;color:${i.fg}`)}>
+      <li key={iI} style={css(`display:flex;align-items:center;gap:8px;font-size:12.5px;color:${i.fg}`)}>
       <span className="ms" style={css(`font-size:17px;color:${i.color}`)}>{ICON[i.icon]}</span>
       <span style={css("flex:1")}>{i.label}</span>
       <span style={css("font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--ink3)")}>{i.value}</span>
@@ -2003,7 +2003,7 @@ Component.prototype.render = function render() {
 
                           {(v.suggested ?? []).map((s, sI) => (
                       
-      <li>
+      <li key={sI}>
       <button onClick={s.go} style={css("width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,background 160ms ease")} className="dc-i3">
       <span className="ms" style={css(`font-size:19px;color:${s.color}`)}>{ICON[s.icon]}</span>
       <span style={css("display:block;min-width:0;flex:1")}>
@@ -2030,7 +2030,7 @@ Component.prototype.render = function render() {
 
                       {(v.popular ?? []).map((p, pI) => (
                   
-      <li>
+      <li key={pI}>
       <button onClick={p.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);transition:border-color 160ms ease,transform 160ms ease")} className="dc-i4">
       <span style={css(`display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:${p.tint}`)}><span className="ms" style={css(`font-size:19px;color:${p.color}`)}>{ICON[p.icon]}</span></span>
       <span style={css("font-size:13px;font-weight:500")}>{p.name}</span>
@@ -2052,7 +2052,7 @@ Component.prototype.render = function render() {
 
                         {(v.cats ?? []).map((c, cI) => (
                     
-      <li>
+      <li key={cI}>
       <button onClick={c.go} style={css("width:100%;display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i5">
       <span className="ms" style={css(`font-size:18px;color:${c.color}`)}>{ICON[c.icon]}</span>
       <span style={css("display:block;min-width:0")}>
@@ -2092,7 +2092,7 @@ Component.prototype.render = function render() {
 
                         {(v.health ?? []).map((h, hI) => (
                     
-      <div style={css("display:flex;align-items:center;gap:10px;padding:9px 10px")}>
+      <div key={hI} style={css("display:flex;align-items:center;gap:10px;padding:9px 10px")}>
       <span className="ms" style={css(`font-size:18px;color:${h.color}`)}>{ICON[h.icon]}</span>
       <span style={css("flex:1;font-size:12.5px")}>{h.label}</span>
       <span style={css(`font-size:11.5px;color:${h.color}`)}>{h.state}</span>
@@ -2114,7 +2114,7 @@ Component.prototype.render = function render() {
 
                         {(v.recentRows ?? []).map((r, rI) => (
                     
-      <li style={css("display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--line)")}>
+      <li key={rI} style={css("display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--line)")}>
       <span className="ms" style={css(`font-size:18px;color:${r.color}`)}>{ICON[r.icon]}</span>
       <button onClick={r.go} style={css("flex:1;min-width:0;font-size:13px")}>{r.name}</button>
       <span style={css("font-size:11.5px;color:var(--ink3);font-family:'Geist Mono',ui-monospace,monospace")}>{r.date}</span>
@@ -2165,7 +2165,7 @@ Component.prototype.render = function render() {
 
                     {(v.trust ?? []).map((t, tI) => (
                 
-      <li style={css("display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)")}>
+      <li key={tI} style={css("display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)")}>
       <span className="ms" style={css(`font-size:16px;color:${t.color}`)}>{ICON[t.icon]}</span>
       <span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{t.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{t.sub}</span></span>
       </li>
@@ -2187,7 +2187,7 @@ Component.prototype.render = function render() {
 
                             {(v.famChips ?? []).map((c, cI) => (
                         
-      <li><button onClick={c.go} style={css(`height:28px;padding:0 11px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px;white-space:nowrap;transition:background 160ms ease,border-color 160ms ease`)}>{c.label}</button></li>
+      <li key={cI}><button onClick={c.go} style={css(`height:28px;padding:0 11px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px;white-space:nowrap;transition:background 160ms ease,border-color 160ms ease`)}>{c.label}</button></li>
 
                             ))}
       </ul>
@@ -2221,7 +2221,7 @@ Component.prototype.render = function render() {
 
                               {(v.rows ?? []).map((r, rI) => (
                           
-      <tr onMouseEnter={r.hover} style={css(`border-top:1px solid var(--line);background:${r.bg};transition:background 140ms ease`)}>
+      <tr key={rI} onMouseEnter={r.hover} style={css(`border-top:1px solid var(--line);background:${r.bg};transition:background 140ms ease`)}>
       <td style={css("padding:0 14px")}>
       <button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;height:var(--rowH);width:100%;font-size:13px")}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:${r.tint};flex:none`)}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span></span>
@@ -2252,7 +2252,7 @@ Component.prototype.render = function render() {
 
                             {(v.rows ?? []).map((r, rI) => (
                         
-      <li>
+      <li key={rI}>
       <button onClick={r.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i8">
       <span style={css("display:flex;align-items:center;gap:8px;width:100%")}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:${r.tint}`)}><span className="ms" style={css(`font-size:17px;color:${r.color}`)}>{ICON[r.icon]}</span></span>
@@ -2282,7 +2282,7 @@ Component.prototype.render = function render() {
 
                               {(v.favRows ?? []).map((r, rI) => (
                           
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1")}>{r.name}</span><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.chevron_right}</span></button></li>
+      <li key={rI}><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1")}>{r.name}</span><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.chevron_right}</span></button></li>
 
                               ))}
       </ul>
@@ -2295,7 +2295,7 @@ Component.prototype.render = function render() {
 
                             {(v.recentTools ?? []).map((r, rI) => (
                         
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1")}>{r.name}</span><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.chevron_right}</span></button></li>
+      <li key={rI}><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1")}>{r.name}</span><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.chevron_right}</span></button></li>
 
                             ))}
       </ul>
@@ -2312,7 +2312,7 @@ Component.prototype.render = function render() {
 
                           {(v.quickSearches ?? []).map((s, sI) => (
                       
-      <li><button onClick={s.go} style={css("display:flex;align-items:center;gap:8px;width:100%;padding:6px 4px;font-size:12.5px;color:var(--ink2)")}><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.search}</span>{s.label}</button></li>
+      <li key={sI}><button onClick={s.go} style={css("display:flex;align-items:center;gap:8px;width:100%;padding:6px 4px;font-size:12.5px;color:var(--ink2)")}><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.search}</span>{s.label}</button></li>
 
                           ))}
       </ul>
@@ -2326,13 +2326,13 @@ Component.prototype.render = function render() {
 
                             {(v.selectFilters ?? []).map((f, fI) => (
                         
-      <label style={css("display:block")}>
+      <label key={fI} style={css("display:block")}>
       <span style={css("display:block;font-size:11px;color:var(--ink3);margin-bottom:5px")}>{f.label}</span>
       <select value={f.value} onChange={f.onChange} style={css("width:100%;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12.5px")}>
 
                                   {(f.options ?? []).map((o, oI) => (
                               
-      <option value={o.v}>{o.label}</option>
+      <option key={oI} value={o.v}>{o.label}</option>
 
                                   ))}
       </select>
@@ -2419,7 +2419,7 @@ Component.prototype.render = function render() {
 
                       {(v.trust ?? []).map((t, tI) => (
                   
-      <li style={css("display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)")}>
+      <li key={tI} style={css("display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)")}>
       <span className="ms" style={css(`font-size:16px;color:${t.color}`)}>{ICON[t.icon]}</span>
       <span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{t.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{t.sub}</span></span>
       </li>
@@ -2437,7 +2437,7 @@ Component.prototype.render = function render() {
                       <select value={v.stateValue} onChange={v.setStateDemo} aria-label="Preview a lifecycle state" style={css("height:30px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;color:var(--ink2)")}>
 
                           {(v.stateOpts ?? []).map((o, oI) => (
-                            <option value={o.v}>{o.label}</option>
+                            <option key={oI} value={o.v}>{o.label}</option>
                           ))}
       </select>
       </label>
@@ -2453,7 +2453,7 @@ Component.prototype.render = function render() {
 
                         {(v.steps ?? []).map((s, sI) => (
                     
-      <li style={css(`display:flex;align-items:flex-start;gap:10px;padding:8px 9px;border-radius:9px;background:${s.bg}`)}>
+      <li key={sI} style={css(`display:flex;align-items:flex-start;gap:10px;padding:8px 9px;border-radius:9px;background:${s.bg}`)}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:22px;height:22px;flex:none;border-radius:50%;border:1px solid ${s.ring};color:${s.color};font-size:11px;font-family:'Geist Mono',ui-monospace,monospace`)}>{s.n}</span>
       <span style={css("display:block;min-width:0")}>
       <span style={css(`display:block;font-size:12.5px;font-weight:${s.fw};color:${s.fg}`)}>{s.label}</span>
@@ -2486,7 +2486,7 @@ Component.prototype.render = function render() {
 
                             {(v.tSources ?? []).map((s, sI) => (
                         
-      <li><button onClick={s.go} style={css("width:100%;min-height:44px;display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i10"><span className="ms" style={css("font-size:17px;color:var(--ink2)")}>{ICON[s.icon]}</span><span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12px;font-weight:500")}>{s.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3)")}>{s.sub}</span></span></button></li>
+      <li key={sI}><button onClick={s.go} style={css("width:100%;min-height:44px;display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i10"><span className="ms" style={css("font-size:17px;color:var(--ink2)")}>{ICON[s.icon]}</span><span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12px;font-weight:500")}>{s.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3)")}>{s.sub}</span></span></button></li>
 
                             ))}
       </ul>
@@ -2507,7 +2507,7 @@ Component.prototype.render = function render() {
 
                             {(v.optGroups ?? []).map((o, oI) => (
                         
-      <div>
+      <div key={oI}>
       <div style={css("display:flex;align-items:baseline;flex-wrap:wrap;gap:8px")}>
       <span style={css("font-size:12.5px;font-weight:500")}>{o.label}</span>
 
@@ -2522,7 +2522,7 @@ Component.prototype.render = function render() {
 
                                     {(o.choices ?? []).map((c, cI) => (
                                 
-      <li><button onClick={c.go} role="radio" aria-checked={c.checked} style={css(`width:100%;min-height:44px;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid ${c.bd};border-radius:9px;background:${c.bg};transition:border-color 160ms ease,background 160ms ease`)}>
+      <li key={cI}><button onClick={c.go} role="radio" aria-checked={c.checked} style={css(`width:100%;min-height:44px;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid ${c.bd};border-radius:9px;background:${c.bg};transition:border-color 160ms ease,background 160ms ease`)}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:15px;height:15px;flex:none;border-radius:50%;border:1px solid ${c.ring}`)}><span style={css(`width:7px;height:7px;border-radius:50%;background:${c.dot}`)}></span></span>
       <span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12.5px")}>{c.label}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{c.sub}</span></span>
       </button></li>
@@ -2537,7 +2537,7 @@ Component.prototype.render = function render() {
       <select value={o.value} onChange={o.onChange} aria-label={o.label} style={css("width:100%;max-width:280px;height:36px;margin-top:8px;padding:0 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px")}>
 
                                     {(o.choices ?? []).map((c, cI) => (
-                                      <option value={c.v}>{c.label}</option>
+                                      <option key={cI} value={c.v}>{c.label}</option>
                                     ))}
       </select>
 
@@ -2588,7 +2588,7 @@ Component.prototype.render = function render() {
 
                                     {(o.choices ?? []).map((c, cI) => (
                                 
-      <li><button onClick={c.go} aria-pressed={c.pressed} style={css(`display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px`)}><span className="ms" style={css("font-size:15px")}>{ICON[c.icon]}</span>{c.label}</button></li>
+      <li key={cI}><button onClick={c.go} aria-pressed={c.pressed} style={css(`display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px`)}><span className="ms" style={css("font-size:15px")}>{ICON[c.icon]}</span>{c.label}</button></li>
 
                                     ))}
       </ul>
@@ -2607,7 +2607,7 @@ Component.prototype.render = function render() {
 
                                     {(o.choices ?? []).map((c, cI) => (
                                 
-      <li><button onClick={c.go} aria-label={`Colour ${c.v}`} style={css(`width:30px;height:30px;border-radius:8px;background:${c.v};border:${c.on}`)}></button></li>
+      <li key={cI}><button onClick={c.go} aria-label={`Colour ${c.v}`} style={css(`width:30px;height:30px;border-radius:8px;background:${c.v};border:${c.on}`)}></button></li>
 
                                     ))}
       </ul>
@@ -2620,7 +2620,7 @@ Component.prototype.render = function render() {
 
                                     {(o.pages ?? []).map((p, pI) => (
                                 
-      <li style={css("border:1px solid var(--line);border-radius:9px;background:var(--panel2);overflow:hidden")}>
+      <li key={pI} style={css("border:1px solid var(--line);border-radius:9px;background:var(--panel2);overflow:hidden")}>
       <div aria-hidden="true" style={css("height:64px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,var(--panel3) 0 6px,transparent 6px 12px)")}><span className="ms" style={css("font-size:20px;color:var(--ink3)")}>{ICON.description}</span></div>
       <div style={css("display:flex;align-items:center;gap:2px;padding:5px 6px;border-top:1px solid var(--line)")}>
       <span style={css("flex:1;font-size:10.5px;color:var(--ink2)")}>{p.n}</span>
@@ -2642,10 +2642,10 @@ Component.prototype.render = function render() {
       <div style={css("position:absolute;left:22px;top:26px;width:76px;height:32px;border:1.5px solid var(--coral);background:var(--coralSoft)")}></div>
       </div>
       <div style={css("display:grid;grid-template-columns:repeat(2,minmax(88px,1fr));gap:7px")}>
-      <label style={css("font-size:10.5px;color:var(--ink3)")}>X<input type="number" value="24" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
-      <label style={css("font-size:10.5px;color:var(--ink3)")}>Y<input type="number" value="38" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
-      <label style={css("font-size:10.5px;color:var(--ink3)")}>Width<input type="number" value="112" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
-      <label style={css("font-size:10.5px;color:var(--ink3)")}>Height<input type="number" value="46" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
+      <label style={css("font-size:10.5px;color:var(--ink3)")}>X<input type="number" defaultValue="24" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
+      <label style={css("font-size:10.5px;color:var(--ink3)")}>Y<input type="number" defaultValue="38" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
+      <label style={css("font-size:10.5px;color:var(--ink3)")}>Width<input type="number" defaultValue="112" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
+      <label style={css("font-size:10.5px;color:var(--ink3)")}>Height<input type="number" defaultValue="46" style={css("display:block;width:100%;height:32px;margin-top:3px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:12px")} /></label>
       </div>
       </div>
 
@@ -2765,7 +2765,7 @@ Component.prototype.render = function render() {
 
                         {(v.about ?? []).map((a, aI) => (
                     
-      <li style={css("display:flex;gap:9px;font-size:12.5px;color:var(--ink2);line-height:1.5")}><span style={css("width:5px;height:5px;border-radius:50%;background:var(--em);flex:none;margin-top:7px")}></span>{a}</li>
+      <li key={aI} style={css("display:flex;gap:9px;font-size:12.5px;color:var(--ink2);line-height:1.5")}><span style={css("width:5px;height:5px;border-radius:50%;background:var(--em);flex:none;margin-top:7px")}></span>{a}</li>
 
                         ))}
       </ul>
@@ -2774,7 +2774,7 @@ Component.prototype.render = function render() {
 
                         {(v.faq ?? []).map((f, fI) => (
                     
-      <li style={css("border-top:1px solid var(--line)")}>
+      <li key={fI} style={css("border-top:1px solid var(--line)")}>
       <button onClick={f.go} aria-expanded={f.expanded} style={css("display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:10px 12px;font-size:12.5px")}>
       <span style={css("flex:1")}>{f.q}</span><span className="ms" style={css("font-size:17px;color:var(--ink3)")}>{ICON[f.icon]}</span>
       </button>
@@ -2793,7 +2793,7 @@ Component.prototype.render = function render() {
 
                         {(v.related ?? []).map((r, rI) => (
                     
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i11">
+      <li key={rI}><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i11">
       <span className="ms" style={css(`font-size:17px;color:${r.color}`)}>{ICON[r.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px")}>{r.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.purpose}</span></span>
       <span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.chevron_right}</span>
@@ -2823,7 +2823,7 @@ Component.prototype.render = function render() {
                     <select value={v.pipeStateValue} onChange={v.setPipeState} aria-label="Preview a pipeline state" style={css("height:30px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;color:var(--ink2)")}>
 
                         {(v.pipeStates ?? []).map((s, sI) => (
-                          <option value={s.v}>{s.label}</option>
+                          <option key={sI} value={s.v}>{s.label}</option>
                         ))}
       </select>
       </label>
@@ -2854,7 +2854,7 @@ Component.prototype.render = function render() {
 
                         {(v.nodes ?? []).map((n, nI) => (
                     
-      <li style={css("display:flex;align-items:center;gap:6px")}>
+      <li key={nI} style={css("display:flex;align-items:center;gap:6px")}>
       <div style={css(`width:172px;display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid ${n.bd};border-radius:11px;background:${n.bg};opacity:${n.op};transition:border-color 160ms ease,background 160ms ease`)}>
       <div style={css("display:flex;align-items:center;gap:7px;width:100%")}>
       <span className="ms" style={css(`font-size:17px;color:${n.color}`)}>{ICON[n.icon]}</span>
@@ -2950,7 +2950,7 @@ Component.prototype.render = function render() {
 
                         {(v.library ?? []).map((l, lI) => (
                     
-      <li>
+      <li key={lI}>
       <button onClick={l.add} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i12">
       <span style={css("display:flex;align-items:center;gap:7px;width:100%")}><span className="ms" style={css(`font-size:17px;color:${l.color}`)}>{ICON[l.icon]}</span><span style={css("display:block;flex:1;min-width:0;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{l.name}</span><span className="ms" style={css("font-size:16px;color:var(--em)")}>{ICON.add}</span></span>
       <span style={css("font-size:10.5px;color:var(--ink3);text-align:left;line-height:1.35")}>{l.purpose}</span>
@@ -2973,7 +2973,7 @@ Component.prototype.render = function render() {
 
                         {(v.selOpts ?? []).map((o, oI) => (
                     
-      <div>
+      <div key={oI}>
       <span style={css("display:block;font-size:11px;color:var(--ink3);margin-bottom:4px")}>{o.label}</span>
       <div style={css("display:flex;align-items:center;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;color:var(--ink2)")}>{o.value}</div>
       </div>
@@ -2995,7 +2995,7 @@ Component.prototype.render = function render() {
 
                         {(v.recipes ?? []).map((r, rI) => (
                     
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i13">
+      <li key={rI}><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i13">
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px;font-weight:500")}>{r.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{r.sub}</span></span>
       <span style={css("font-size:10.5px;color:var(--ink3)")}>{r.count}</span>
       </button></li>
@@ -3009,7 +3009,7 @@ Component.prototype.render = function render() {
 
                         {(v.saved ?? []).map((s, sI) => (
                     
-      <li style={css("display:flex;align-items:center;gap:8px")}>
+      <li key={sI} style={css("display:flex;align-items:center;gap:8px")}>
       <button onClick={s.load} style={css("flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:36px;font-size:12.5px")}><span className="ms" style={css("font-size:16px;color:var(--em)")}>{ICON.account_tree}</span><span style={css("flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{s.name}</span><span style={css("font-size:10.5px;color:var(--ink3)")}>{s.count}</span></button>
       <button onClick={s.del} aria-label={s.delLabel} style={css("display:flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:7px")}><span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.close}</span></button>
       </li>
@@ -3036,7 +3036,7 @@ Component.prototype.render = function render() {
                   <select value={v.batchStateValue} onChange={v.setBatchState} aria-label="Preview a batch state" style={css("height:30px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;color:var(--ink2)")}>
 
                       {(v.batchStates ?? []).map((s, sI) => (
-                        <option value={s.v}>{s.label}</option>
+                        <option key={sI} value={s.v}>{s.label}</option>
                       ))}
       </select>
       </label>
@@ -3050,7 +3050,7 @@ Component.prototype.render = function render() {
       <select value={v.batchToolValue} onChange={v.pickBatchTool} aria-label="Choose the batch tool" style={css("height:34px;padding:0 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px")}>
 
                       {(v.batchToolOpts ?? []).map((o, oI) => (
-                        <option value={o.v}>{o.label}</option>
+                        <option key={oI} value={o.v}>{o.label}</option>
                       ))}
       </select>
       <div style={css("display:flex;gap:8px")}>
@@ -3094,7 +3094,7 @@ Component.prototype.render = function render() {
 
                           {(v.batchRows ?? []).map((b, bI) => (
                       
-      <tr style={css("border-top:1px solid var(--line);transition:background 200ms ease")}>
+      <tr key={bI} style={css("border-top:1px solid var(--line);transition:background 200ms ease")}>
       <td style={css("padding:9px 14px")}><span style={css("display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px")}>{b.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{b.size}</span></td>
       <td style={css("padding:9px 8px;color:var(--ink3)")}>{b.tool}</td>
       <td style={css("padding:9px 8px")}><span style={css(`display:inline-flex;align-items:center;gap:6px;color:${b.color}`)}><span className="ms" style={css("font-size:16px")}>{ICON[b.statusIcon]}</span>{b.status}</span></td>
@@ -3152,7 +3152,7 @@ Component.prototype.render = function render() {
 
                         {(v.batchOk ?? []).map((b, bI) => (
                     
-      <li style={css("display:flex;align-items:center;gap:8px;font-size:12px")}><span className="ms" style={css("font-size:15px;color:var(--em)")}>{ICON.draft}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{b.name}</span><span style={css("font-size:10.5px;color:var(--ink3)")}>{b.size}</span></li>
+      <li key={bI} style={css("display:flex;align-items:center;gap:8px;font-size:12px")}><span className="ms" style={css("font-size:15px;color:var(--em)")}>{ICON.draft}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{b.name}</span><span style={css("font-size:10.5px;color:var(--ink3)")}>{b.size}</span></li>
 
                         ))}
       </ul>
@@ -3164,7 +3164,7 @@ Component.prototype.render = function render() {
 
                         {(v.batchBad ?? []).map((b, bI) => (
                     
-      <li style={css("display:flex;align-items:center;gap:8px;font-size:12px")}><span className="ms" style={css("font-size:15px;color:var(--coral)")}>{ICON.draft}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{b.name}</span><span style={css("font-size:10.5px;color:var(--ink3)")}>{b.step}</span></li>
+      <li key={bI} style={css("display:flex;align-items:center;gap:8px;font-size:12px")}><span className="ms" style={css("font-size:15px;color:var(--coral)")}>{ICON.draft}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{b.name}</span><span style={css("font-size:10.5px;color:var(--ink3)")}>{b.step}</span></li>
 
                         ))}
       </ul>
@@ -3192,7 +3192,7 @@ Component.prototype.render = function render() {
 
                   {(v.stuffTiles ?? []).map((t, tI) => (
               
-      <li style={css("display:flex;align-items:center;gap:10px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel)")}>
+      <li key={tI} style={css("display:flex;align-items:center;gap:10px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel)")}>
       <span className="ms" style={css(`font-size:20px;color:${t.color}`)}>{ICON[t.icon]}</span>
       <span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12px;color:var(--ink3)")}>{t.label}</span><span style={css("display:block;font-size:14px;font-weight:500")}>{t.value}</span></span>
       </li>
@@ -3221,7 +3221,7 @@ Component.prototype.render = function render() {
 
                             {(v.activity ?? []).map((a, aI) => (
                         
-      <tr style={css("border-top:1px solid var(--line)")}>
+      <tr key={aI} style={css("border-top:1px solid var(--line)")}>
       <td style={css("padding:9px 14px")}><span style={css("display:flex;align-items:center;gap:8px")}><span className="ms" style={css(`font-size:16px;color:${a.color}`)}>{ICON[a.icon]}</span>{a.name}</span></td>
       <td style={css("padding:9px 8px;color:var(--ink3);font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px")}>{a.date}</td>
       <td style={css("padding:9px 8px;color:var(--ink2)")}>{a.settings}</td>
@@ -3261,7 +3261,7 @@ Component.prototype.render = function render() {
 
                       {(v.assets ?? []).map((a, aI) => (
                   
-      <li style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
+      <li key={aI} style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
       <span className="ms" style={css("font-size:17px;color:var(--em)")}>{ICON[a.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{a.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{a.kind}</span></span>
       <button onClick={a.del} aria-label={a.delLabel} style={css("display:flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:6px")}><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.delete}</span></button>
@@ -3277,7 +3277,7 @@ Component.prototype.render = function render() {
 
                       {(v.bates ?? []).map((b, bI) => (
                   
-      <li style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
+      <li key={bI} style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
       <span className="ms" style={css("font-size:17px;color:var(--violet)")}>{ICON.pin}</span>
       <span style={css("flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{b.name}</span>
       <span style={css("font-size:12px;font-family:'Geist Mono',ui-monospace,monospace;color:var(--ink2)")}>{b.next}</span>
@@ -3294,7 +3294,7 @@ Component.prototype.render = function render() {
 
                       {(v.defaults ?? []).map((d, dI) => (
                   
-      <li style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
+      <li key={dI} style={css("display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;background:var(--panel2)")}>
       <span className="ms" style={css(`font-size:17px;color:${d.color}`)}>{ICON[d.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px")}>{d.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{d.value}</span></span>
       </li>
@@ -3312,7 +3312,7 @@ Component.prototype.render = function render() {
 
                     {(v.conns ?? []).map((c, cI) => (
                 
-      <li style={css("display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)")}>
+      <li key={cI} style={css("display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)")}>
       <span className="ms" style={css("font-size:18px;color:var(--ink2)")}>{ICON[c.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px")}>{c.name}</span><span style={css(`display:block;font-size:10.5px;color:${c.color}`)}>{c.state}</span></span>
       <button onClick={c.toggle} style={css("height:28px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;font-size:11.5px;color:var(--ink2)")}>{c.action}</button>
@@ -3508,7 +3508,7 @@ Component.prototype.render = function render() {
 
                       {(v.vaultEntries ?? []).map((v, vI) => (
                   
-      <li style={css(`display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);animation:slidein 200ms ease both;animation-delay:${v.delay}`)}>
+      <li key={vI} style={css(`display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);animation:slidein 200ms ease both;animation-delay:${v.delay}`)}>
       <span className="ms" style={css("font-size:18px;color:var(--em)")}>{ICON[v.icon]}</span>
       <span style={css("display:block;flex:1;min-width:120px")}><span style={css("display:block;font-size:12.5px;font-weight:500")}>{v.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{v.user}</span></span>
       <span style={css("font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:var(--ink2);min-width:130px")}>{v.secret}</span>
@@ -3554,7 +3554,7 @@ Component.prototype.render = function render() {
 
                     {(v.protections ?? []).map((p, pI) => (
                 
-      <li><button onClick={p.go} role="radio" aria-checked={p.checked} style={css(`width:100%;min-height:44px;display:flex;align-items:center;gap:9px;padding:10px;border:1px solid ${p.bd};border-radius:10px;background:${p.bg}`)}>
+      <li key={pI}><button onClick={p.go} role="radio" aria-checked={p.checked} style={css(`width:100%;min-height:44px;display:flex;align-items:center;gap:9px;padding:10px;border:1px solid ${p.bd};border-radius:10px;background:${p.bg}`)}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:15px;height:15px;flex:none;border-radius:50%;border:1px solid ${p.ring}`)}><span style={css(`width:7px;height:7px;border-radius:50%;background:${p.dot}`)}></span></span>
       <span style={css("display:block;min-width:0;text-align:left")}><span style={css("display:block;font-size:12.5px")}>{p.label}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{p.sub}</span></span>
       </button></li>
@@ -3585,7 +3585,7 @@ Component.prototype.render = function render() {
 
                   {(v.priorities ?? []).map((p, pI) => (
               
-      <button onClick={p.go} style={css(`height:28px;padding:0 11px;border:1px solid ${p.bd};border-radius:99px;background:${p.bg};color:${p.fg};font-size:12px;white-space:nowrap`)}>{p.label}</button>
+      <button key={pI} onClick={p.go} style={css(`height:28px;padding:0 11px;border:1px solid ${p.bd};border-radius:99px;background:${p.bg};color:${p.fg};font-size:12px;white-space:nowrap`)}>{p.label}</button>
 
                   ))}
       </div>
@@ -3601,7 +3601,7 @@ Component.prototype.render = function render() {
 
                             {(v.cmpCols ?? []).map((c, cI) => (
                         
-      <th scope="col" style={css("padding:12px 10px;font-weight:500;font-size:12.5px")}>
+      <th key={cI} scope="col" style={css("padding:12px 10px;font-weight:500;font-size:12.5px")}>
       <button onClick={c.go} style={css("display:block;text-align:left;font-weight:500;font-size:12.5px")}>{c.label}</button>
       <span style={css("display:block;font-size:10px;color:var(--ink3);font-weight:400;margin-top:2px")}>{c.sub}</span>
       <span style={css(`display:block;font-size:10px;color:${c.badgeColor};font-weight:400`)}>{c.badge}</span>
@@ -3614,14 +3614,14 @@ Component.prototype.render = function render() {
 
                           {(v.cmpRows ?? []).map((r, rI) => (
                       
-      <tr style={css(`border-top:1px solid var(--line);background:${r.bg};transition:background 320ms ease`)}>
+      <tr key={rI} style={css(`border-top:1px solid var(--line);background:${r.bg};transition:background 320ms ease`)}>
       <th scope="row" style={css("padding:10px 14px;text-align:left;font-weight:400;color:var(--ink2)")}>
       <span style={css("display:flex;align-items:center;gap:8px")}>{r.feature}<button onClick={r.openEvidence} aria-label="Show evidence" style={css("display:flex")}><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.info}</span></button></span>
       </th>
 
                               {(r.cells ?? []).map((c, cI) => (
                           
-      <td style={css("padding:10px")}><span style={css("display:inline-flex;align-items:center;gap:7px")}><span className="ms" style={css(`font-size:16px;color:${c.color}`)}>{ICON[c.icon]}</span>{c.v}</span></td>
+      <td key={cI} style={css("padding:10px")}><span style={css("display:inline-flex;align-items:center;gap:7px")}><span className="ms" style={css(`font-size:16px;color:${c.color}`)}>{ICON[c.icon]}</span>{c.v}</span></td>
 
                               ))}
       </tr>
@@ -3639,13 +3639,13 @@ Component.prototype.render = function render() {
 
                       {(v.cmpRows ?? []).map((r, rI) => (
                   
-      <li style={css(`border:1px solid var(--line);border-radius:11px;background:${r.bg};padding:11px`)}>
+      <li key={rI} style={css(`border:1px solid var(--line);border-radius:11px;background:${r.bg};padding:11px`)}>
       <div style={css("display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500")}>{r.feature}<button onClick={r.openEvidence} aria-label="Show evidence" style={css("display:flex;margin-left:auto")}><span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.info}</span></button></div>
       <ul style={css("margin-top:8px;display:flex;flex-direction:column;gap:5px")}>
 
                             {(r.cells ?? []).map((c, cI) => (
                         
-      <li style={css("display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)")}><span className="ms" style={css(`font-size:15px;color:${c.color}`)}>{ICON[c.icon]}</span>{c.v}</li>
+      <li key={cI} style={css("display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)")}><span className="ms" style={css(`font-size:15px;color:${c.color}`)}>{ICON[c.icon]}</span>{c.v}</li>
 
                             ))}
       </ul>
@@ -3667,7 +3667,7 @@ Component.prototype.render = function render() {
 
                     {(v.advantages ?? []).map((a, aI) => (
                 
-      <li style={css("padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)")}>
+      <li key={aI} style={css("padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)")}>
       <span style={css("display:block;font-size:12.5px;font-weight:500")}>{a.name}</span>
       <span style={css("display:block;margin-top:4px;font-size:11.5px;color:var(--ink2);line-height:1.45")}>{a.text}</span>
       </li>
@@ -3726,7 +3726,7 @@ Component.prototype.render = function render() {
 
                           {(v.cRows ?? []).map((r, rI) => (
                       
-      <tr style={css("border-top:1px solid var(--line)")}>
+      <tr key={rI} style={css("border-top:1px solid var(--line)")}>
       <th scope="row" style={css("padding:10px 14px;text-align:left;font-weight:400;color:var(--ink2)")}>{r.feature}<span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{r.evidence}</span></th>
       <td style={css("padding:10px")}><span style={css("display:inline-flex;align-items:center;gap:7px")}><span className="ms" style={css(`font-size:16px;color:${r.mineColor}`)}>{ICON[r.mineIcon]}</span>{r.mine}</span></td>
       <td style={css("padding:10px")}><span style={css("display:inline-flex;align-items:center;gap:7px")}><span className="ms" style={css(`font-size:16px;color:${r.theirColor}`)}>{ICON[r.theirIcon]}</span>{r.theirs}</span></td>
@@ -3753,7 +3753,7 @@ Component.prototype.render = function render() {
 
                     {(v.cSlots ?? []).map((s, sI) => (
                 
-      <li><button onClick={s.go} style={css(`width:100%;height:100%;display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid ${s.bd};border-radius:10px;background:${s.bg};text-align:left`)}>
+      <li key={sI}><button onClick={s.go} style={css(`width:100%;height:100%;display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid ${s.bd};border-radius:10px;background:${s.bg};text-align:left`)}>
       <span style={css("display:flex;align-items:center;gap:7px;width:100%")}><span style={css("flex:1;min-width:0;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{s.name}</span><span style={css(`font-size:10px;color:${s.badgeColor};white-space:nowrap`)}>{s.badge}</span></span>
       <span style={css("font-size:10.5px;color:var(--ink3);line-height:1.35")}>{s.sub}</span>
       </button></li>
@@ -3778,7 +3778,7 @@ Component.prototype.render = function render() {
 
                   {(v.blogCats ?? []).map((c, cI) => (
               
-      <button onClick={c.go} style={css(`height:28px;padding:0 11px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px;white-space:nowrap`)}>{c.label}</button>
+      <button key={cI} onClick={c.go} style={css(`height:28px;padding:0 11px;border:1px solid ${c.bd};border-radius:99px;background:${c.bg};color:${c.fg};font-size:12px;white-space:nowrap`)}>{c.label}</button>
 
                   ))}
       </div>
@@ -3798,7 +3798,7 @@ Component.prototype.render = function render() {
 
                   {(v.posts ?? []).map((p, pI) => (
               
-      <li>
+      <li key={pI}>
       <button onClick={p.go} style={css("width:100%;display:flex;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} className="dc-i14">
       <span aria-hidden="true" style={css("width:64px;height:64px;flex:none;border-radius:9px;background:repeating-linear-gradient(135deg,var(--panel3) 0 6px,transparent 6px 12px);display:flex;align-items:center;justify-content:center")}><span className="ms" style={css("font-size:22px;color:var(--em)")}>{ICON.article}</span></span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}>
@@ -3878,7 +3878,7 @@ Component.prototype.render = function render() {
 
                           {(v.postToc ?? []).map((t, tI) => (
                       
-      <li style={css("font-size:12.5px;color:var(--ink2)")}>{t.label}</li>
+      <li key={tI} style={css("font-size:12.5px;color:var(--ink2)")}>{t.label}</li>
 
                           ))}
       </ul>
@@ -3889,7 +3889,7 @@ Component.prototype.render = function render() {
 
                           {(v.relatedTools ?? []).map((r, rI) => (
                       
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.name}</span></button></li>
+      <li key={rI}><button onClick={r.go} style={css("display:flex;align-items:center;gap:8px;width:100%;font-size:12.5px")}><span className="ms" style={css(`font-size:16px;color:${r.color}`)}>{ICON[r.icon]}</span><span style={css("flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.name}</span></button></li>
 
                           ))}
       </ul>
@@ -3900,7 +3900,7 @@ Component.prototype.render = function render() {
 
                           {(v.relatedPosts ?? []).map((p, pI) => (
                       
-      <li><button onClick={p.go} style={css("width:100%;text-align:left;font-size:12.5px;color:var(--ink2)")}>{p.title}<span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{p.date}</span></button></li>
+      <li key={pI}><button onClick={p.go} style={css("width:100%;text-align:left;font-size:12.5px;color:var(--ink2)")}>{p.title}<span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{p.date}</span></button></li>
 
                           ))}
       </ul>
@@ -3930,7 +3930,7 @@ Component.prototype.render = function render() {
 
                     {(v.journey ?? []).map((j, jI) => (
                 
-      <li style={css("display:flex;gap:12px;padding:10px 0")}>
+      <li key={jI} style={css("display:flex;gap:12px;padding:10px 0")}>
       <span style={css("display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex:none;border-radius:8px;background:var(--emSoft)")}><span className="ms" style={css("font-size:17px;color:var(--em)")}>{ICON[j.icon]}</span></span>
       <span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:13px;font-weight:500")}>{j.title}</span><span style={css("display:block;margin-top:2px;font-size:12px;color:var(--ink2)")}>{j.text}</span></span>
       </li>
@@ -3951,7 +3951,7 @@ Component.prototype.render = function render() {
 
                   {(v.pTabs ?? []).map((t, tI) => (
               
-      <button onClick={t.go} style={css(`height:30px;padding:0 12px;border:1px solid ${t.bd};border-radius:99px;background:${t.bg};color:${t.fg};font-size:12px;white-space:nowrap`)}>{t.label}</button>
+      <button key={tI} onClick={t.go} style={css(`height:30px;padding:0 12px;border:1px solid ${t.bd};border-radius:99px;background:${t.bg};color:${t.fg};font-size:12px;white-space:nowrap`)}>{t.label}</button>
 
                   ))}
       </div>
@@ -3960,7 +3960,7 @@ Component.prototype.render = function render() {
 
                     {(v.pSecs ?? []).map((s, sI) => (
                 
-      <section id={s.anchor}>
+      <section key={sI} id={s.anchor}>
       <div style={css("display:flex;align-items:center;gap:9px")}>
       <h2 style={css("font-size:17px;font-weight:500")}>{s.h}</h2>
       <button onClick={s.copy} aria-label={s.copyLabel} style={css("display:flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:6px")}><span className="ms" style={css("font-size:15px;color:var(--ink3)")}>{ICON.link}</span></button>
@@ -3968,7 +3968,7 @@ Component.prototype.render = function render() {
 
                         {(s.ps ?? []).map((p, pI) => (
                     
-      <p style={css("margin-top:8px;font-size:13.5px;color:var(--ink2);line-height:1.65;max-width:68ch;text-wrap:pretty")}>{p.t}</p>
+      <p key={pI} style={css("margin-top:8px;font-size:13.5px;color:var(--ink2);line-height:1.65;max-width:68ch;text-wrap:pretty")}>{p.t}</p>
 
                         ))}
       </section>
@@ -3981,7 +3981,7 @@ Component.prototype.render = function render() {
 
                       {(v.pToc ?? []).map((t, tI) => (
                   
-      <li><button onClick={t.go} style={css("width:100%;text-align:left;font-size:12.5px;color:var(--ink2)")}>{t.label}</button></li>
+      <li key={tI}><button onClick={t.go} style={css("width:100%;text-align:left;font-size:12.5px;color:var(--ink2)")}>{t.label}</button></li>
 
                       ))}
       </ul>
@@ -4041,7 +4041,7 @@ Component.prototype.render = function render() {
       <select value={v.formCat} onChange={v.onCat} aria-label="Category" style={css("width:100%;max-width:280px;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px")}>
 
                           {(v.formCats ?? []).map((c, cI) => (
-                            <option value={c.v}>{c.label}</option>
+                            <option key={cI} value={c.v}>{c.label}</option>
                           ))}
       </select>
       </label>
@@ -4082,7 +4082,7 @@ Component.prototype.render = function render() {
 
                         {(v.channels ?? []).map((c, cI) => (
                     
-      <li><button onClick={c.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:8px 9px;border-radius:9px;transition:background 140ms ease")} className="dc-i15">
+      <li key={cI}><button onClick={c.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:8px 9px;border-radius:9px;transition:background 140ms ease")} className="dc-i15">
       <span className="ms" style={css("font-size:18px;color:var(--em)")}>{ICON[c.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}><span style={css("display:block;font-size:12.5px")}>{c.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{c.sub}</span></span>
       <span style={css("font-size:11px;color:var(--ink3)")}>{c.action}</span>
@@ -4115,7 +4115,7 @@ Component.prototype.render = function render() {
 
                     {(v.components ?? []).map((c, cI) => (
                 
-      <li style={css("display:flex;flex-wrap:wrap;align-items:center;gap:11px;padding:13px 14px;border-top:1px solid var(--line)")}>
+      <li key={cI} style={css("display:flex;flex-wrap:wrap;align-items:center;gap:11px;padding:13px 14px;border-top:1px solid var(--line)")}>
       <span className="ms" style={css(`font-size:19px;color:${c.color};animation:onepulse 2.4s ease-out 1`)}>{ICON[c.icon]}</span>
       <span style={css("display:block;flex:1;min-width:160px")}><span style={css("display:block;font-size:13px;font-weight:500")}>{c.name}</span><span style={css("display:block;font-size:11px;color:var(--ink3)")}>{c.note}</span></span>
       <span style={css(`font-size:12px;color:${c.color}`)}>{c.label}</span>
@@ -4132,7 +4132,7 @@ Component.prototype.render = function render() {
 
                       {(v.logTabs ?? []).map((t, tI) => (
                   
-      <button onClick={t.go} style={css(`height:26px;padding:0 10px;border-radius:7px;background:${t.bg};color:${t.fg};font-size:11.5px`)}>{t.label}</button>
+      <button key={tI} onClick={t.go} style={css(`height:26px;padding:0 10px;border-radius:7px;background:${t.bg};color:${t.fg};font-size:11.5px`)}>{t.label}</button>
 
                       ))}
       </div>
@@ -4141,7 +4141,7 @@ Component.prototype.render = function render() {
 
                     {(v.logRows ?? []).map((r, rI) => (
                 
-      <li style={css("display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:12.5px")}>
+      <li key={rI} style={css("display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:12.5px")}>
       <span style={css("flex:1;color:var(--ink2)")}>{r.k}</span>
       <span style={css("font-family:'Geist Mono',ui-monospace,monospace")}>{r.v}</span>
       </li>
@@ -4169,7 +4169,7 @@ Component.prototype.render = function render() {
 
                     {(v.incidents ?? []).map((i, iI) => (
                 
-      <li style={css("padding:13px 14px;border-top:1px solid var(--line)")}>
+      <li key={iI} style={css("padding:13px 14px;border-top:1px solid var(--line)")}>
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:9px")}>
       <span style={css("font-size:12.5px;font-weight:500")}>{i.service}</span>
       <span style={css(`padding:2px 8px;border:1px solid ${i.sevColor};border-radius:99px;font-size:10.5px;color:${i.sevColor}`)}>{i.severity}</span>
@@ -4180,7 +4180,7 @@ Component.prototype.render = function render() {
 
                           {(i.updates ?? []).map((u, uI) => (
                       
-      <li style={css("display:flex;gap:10px;font-size:12px;color:var(--ink2);line-height:1.5")}><span style={css("flex:0 0 44px;font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--ink3)")}>{u.t}</span>{u.text}</li>
+      <li key={uI} style={css("display:flex;gap:10px;font-size:12px;color:var(--ink2);line-height:1.5")}><span style={css("flex:0 0 44px;font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--ink3)")}>{u.t}</span>{u.text}</li>
 
                           ))}
       </ul>
@@ -4203,7 +4203,7 @@ Component.prototype.render = function render() {
 
                   {(v.atlas ?? []).map((a, aI) => (
               
-      <li style={css("display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)")}>
+      <li key={aI} style={css("display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)")}>
       <span className="ms" style={css(`font-size:22px;color:${a.color}`)}>{ICON[a.icon]}</span>
       <span style={css("font-size:13.5px;font-weight:500")}>{a.title}</span>
       <span style={css("font-size:12px;color:var(--ink2);line-height:1.5;flex:1")}>{a.text}</span>
@@ -4233,7 +4233,7 @@ Component.prototype.render = function render() {
 
                     {(v.fuzzy ?? []).map((f, fI) => (
                 
-      <li><button onClick={f.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i16">
+      <li key={fI}><button onClick={f.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i16">
       <span className="ms" style={css(`font-size:17px;color:${f.color}`)}>{ICON[f.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}><span style={css("display:block;font-size:12.5px")}>{f.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{f.purpose}</span></span>
       <span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.chevron_right}</span>
@@ -4266,7 +4266,7 @@ Component.prototype.render = function render() {
 
                   {(v.viewports ?? []).map((v, vI) => (
               
-      <button onClick={v.go} style={css(`height:30px;padding:0 12px;border:1px solid ${v.bd};border-radius:99px;background:${v.bg};color:${v.fg};font-size:12px;white-space:nowrap`)}>{v.label}</button>
+      <button key={vI} onClick={v.go} style={css(`height:30px;padding:0 12px;border:1px solid ${v.bd};border-radius:99px;background:${v.bg};color:${v.fg};font-size:12px;white-space:nowrap`)}>{v.label}</button>
 
                   ))}
       <button onClick={v.probeBadTool} style={css("height:30px;padding:0 12px;border:1px solid var(--line);border-radius:99px;background:var(--panel2);color:var(--ink2);font-size:12px;white-space:nowrap")}>Probe unknown tool URL</button>
@@ -4280,7 +4280,7 @@ Component.prototype.render = function render() {
 
                         {(v.btnStates ?? []).map((b, bI) => (
                     
-      <button style={css(`height:34px;padding:0 13px;border-radius:8px;background:${b.bg};color:${b.fg};opacity:${b.op};font-size:12.5px;font-weight:500`)}>{b.label}</button>
+      <button key={bI} style={css(`height:34px;padding:0 13px;border-radius:8px;background:${b.bg};color:${b.fg};opacity:${b.op};font-size:12.5px;font-weight:500`)}>{b.label}</button>
 
                         ))}
       <button style={css("display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border:1px solid var(--line2);border-radius:8px;font-size:12.5px")}><span className="ms" style={css("font-size:16px;color:var(--em);animation:shimmer 1.2s ease-in-out infinite")}>{ICON.progress_activity}</span>Loading</button>
@@ -4292,7 +4292,7 @@ Component.prototype.render = function render() {
 
                         {(v.badges ?? []).map((b, bI) => (
                     
-      <span style={css(`display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;background:var(--panel2);font-size:11.5px;color:${b.color};white-space:nowrap`)}><span style={css(`width:6px;height:6px;border-radius:50%;background:${b.color}`)}></span>{b.label}</span>
+      <span key={bI} style={css(`display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;background:var(--panel2);font-size:11.5px;color:${b.color};white-space:nowrap`)}><span style={css(`width:6px;height:6px;border-radius:50%;background:${b.color}`)}></span>{b.label}</span>
 
                         ))}
       </div>
@@ -4301,9 +4301,9 @@ Component.prototype.render = function render() {
       <h3 style={css("font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)")}>Text input</h3>
       <div style={css("display:flex;flex-direction:column;gap:7px;margin-top:9px")}>
       <input placeholder="Empty" aria-label="Empty input" style={css("height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
-      <input value="Filled value" aria-label="Filled input" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
-      <input value="Invalid value" aria-label="Invalid input" aria-invalid="true" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--coral);border-radius:9px;background:var(--coralSoft);font-size:12.5px")} />
-      <input value="Disabled" aria-label="Disabled input" disabled="disabled" style={css("height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel3);font-size:12.5px;opacity:.6")} />
+      <input defaultValue="Filled value" aria-label="Filled input" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
+      <input defaultValue="Invalid value" aria-label="Invalid input" aria-invalid="true" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--coral);border-radius:9px;background:var(--coralSoft);font-size:12.5px")} />
+      <input defaultValue="Disabled" aria-label="Disabled input" disabled="disabled" style={css("height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel3);font-size:12.5px;opacity:.6")} />
       </div>
       </div>
       <div>
@@ -4312,7 +4312,7 @@ Component.prototype.render = function render() {
 
                         {(v.alerts ?? []).map((a, aI) => (
                     
-      <span style={css(`display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid ${a.color};border-radius:9px;background:${a.bg};font-size:12px`)}><span className="ms" style={css(`font-size:17px;color:${a.color}`)}>{ICON[a.icon]}</span>{a.label}</span>
+      <span key={aI} style={css(`display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid ${a.color};border-radius:9px;background:${a.bg};font-size:12px`)}><span className="ms" style={css(`font-size:17px;color:${a.color}`)}>{ICON[a.icon]}</span>{a.label}</span>
 
                         ))}
       </div>
@@ -4352,7 +4352,7 @@ Component.prototype.render = function render() {
 
                         {(v.showRoutes ?? []).map((r, rI) => (
                     
-      <tr style={css("border-top:1px solid var(--line)")}>
+      <tr key={rI} style={css("border-top:1px solid var(--line)")}>
       <td style={css("padding:8px 14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px;color:var(--ink2)")}>{r.path}</td>
       <td style={css("padding:8px 10px")}>{r.name}</td>
       <td style={css("padding:8px 10px")}><span className="ms" style={css("font-size:16px;color:var(--em)")}>{ICON.check}</span></td>
@@ -4372,7 +4372,7 @@ Component.prototype.render = function render() {
 
                     {(v.showStates ?? []).map((s, sI) => (
                 
-      <li style={css("display:flex;flex-wrap:wrap;gap:10px;padding:11px 16px;border-top:1px solid var(--line)")}>
+      <li key={sI} style={css("display:flex;flex-wrap:wrap;gap:10px;padding:11px 16px;border-top:1px solid var(--line)")}>
       <span style={css("flex:0 0 140px;font-size:12.5px;font-weight:500")}>{s.area}</span>
       <span style={css("flex:1;min-width:200px;font-size:12px;color:var(--ink2);line-height:1.5")}>{s.list}</span>
       </li>
@@ -4386,7 +4386,7 @@ Component.prototype.render = function render() {
 
                     {(v.showQA ?? []).map((q, qI) => (
                 
-      <li style={css("display:flex;flex-wrap:wrap;gap:10px;padding:11px 16px;border-top:1px solid var(--line)")}>
+      <li key={qI} style={css("display:flex;flex-wrap:wrap;gap:10px;padding:11px 16px;border-top:1px solid var(--line)")}>
       <span style={css("flex:0 0 120px;font-size:12.5px;font-weight:500")}>{q.area}</span>
       <span style={css("flex:1;min-width:220px;font-size:12px;color:var(--ink2);line-height:1.5")}>{q.text}</span>
       </li>
@@ -4408,7 +4408,7 @@ Component.prototype.render = function render() {
 
                         {(v.persistRows ?? []).map((r, rI) => (
                     
-      <tr style={css("border-top:1px solid var(--line)")}>
+      <tr key={rI} style={css("border-top:1px solid var(--line)")}>
       <td style={css("padding:8px 14px")}>{r.k}</td>
       <td style={css(`padding:8px 10px;color:${r.color}`)}>{r.v}</td>
       <td style={css("padding:8px 14px;color:var(--ink3)")}>{r.note}</td>
@@ -4436,7 +4436,7 @@ Component.prototype.render = function render() {
 
                         {(v.schemaRows ?? []).map((r, rI) => (
                     
-      <tr style={css("border-top:1px solid var(--line)")}>
+      <tr key={rI} style={css("border-top:1px solid var(--line)")}>
       <td style={css("padding:8px 14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px;color:var(--ink2)")}>{r.field}</td>
       <td style={css("padding:8px 10px;color:var(--ink3)")}>{r.type}</td>
       <td style={css("padding:8px 14px;color:var(--ink2)")}>{r.note}</td>
@@ -4453,7 +4453,7 @@ Component.prototype.render = function render() {
 
                     {(v.showLimits ?? []).map((l, lI) => (
                 
-      <li style={css("display:flex;gap:9px;font-size:12px;color:var(--ink2);line-height:1.5")}><span style={css("width:5px;height:5px;border-radius:50%;background:var(--amber);flex:none;margin-top:6px")}></span>{l.t}</li>
+      <li key={lI} style={css("display:flex;gap:9px;font-size:12px;color:var(--ink2);line-height:1.5")}><span style={css("width:5px;height:5px;border-radius:50%;background:var(--amber);flex:none;margin-top:6px")}></span>{l.t}</li>
 
                     ))}
       </ul>
@@ -4478,10 +4478,10 @@ Component.prototype.render = function render() {
       <button type="button" onClick={v.acctShowSignUp} style={css(`flex:1;height:34px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;border:1px solid ${v.acctSignUpBd};background:${v.acctSignUpBg};color:${v.acctSignUpFg}`)}>Create account</button>
       </div>
       <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Email
-              <input type="email" value={v.acctEmail} onInput={v.acctSetEmail} autoComplete="email" required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+              <input type="email" value={v.acctEmail} onChange={v.acctSetEmail} autoComplete="email" required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
       <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Password
-              <input type="password" value={v.acctPassword} onInput={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+              <input type="password" value={v.acctPassword} onChange={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
       <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--ink3)`)}>At least 10 characters. Length is what makes a password strong.</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12px;color:var(--coral)`)}>{v.acctError}</div>
@@ -4512,7 +4512,7 @@ Component.prototype.render = function render() {
 
                       {(v.acctKeys ?? []).map((k, kI) => (
                   
-      <div style={css("display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid var(--line)")}>
+      <div key={kI} style={css("display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid var(--line)")}>
       <div style={css("flex:1;min-width:0")}>
       <div style={css(`font-size:13px;color:${k.labelColor}`)}>{k.label}</div>
       <div style={css("font-size:11px;color:var(--ink3)")}>{k.meta}</div>
@@ -4550,7 +4550,7 @@ Component.prototype.render = function render() {
 
                     {(v.vltEntries ?? []).map((e, eI) => (
                 
-      <div style={css("display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)")}>
+      <div key={eI} style={css("display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)")}>
       <div style={css("flex:1;min-width:0")}>
       <div style={css(`font-size:13px;font-weight:600;color:${e.labelColor}`)}>{e.label}</div>
       <div style={css("font-family:'Geist Mono',monospace;font-size:12px")}>{e.secret}</div>
@@ -4567,10 +4567,10 @@ Component.prototype.render = function render() {
       <form onSubmit={v.vltAdd} style={css("flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
       <div style={css("font-size:14px;font-weight:500")}>Add a password</div>
       <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3);margin-top:11px")}>Name
-              <input type="text" value={v.vltLabel} onInput={v.vltSetLabel} placeholder="e.g. Bank statements" style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+              <input type="text" value={v.vltLabel} onChange={v.vltSetLabel} placeholder="e.g. Bank statements" style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
       <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3);margin-top:9px")}>Password
-              <input type="password" value={v.vltPassword} onInput={v.vltSetPassword} autoComplete="off" style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+              <input type="password" value={v.vltPassword} onChange={v.vltSetPassword} autoComplete="off" style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
       <div role="alert" style={css(`display:${v.vltErrD};margin-top:8px;font-size:12px;color:var(--coral)`)}>{v.vltError}</div>
       <button type="submit" disabled={v.vltBusy} style={css(`margin-top:11px;width:100%;opacity:${v.vltBusyOpacity};height:38px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:var(--em);color:var(--bg)`)}>{v.vltAddLabel}</button>
@@ -4598,7 +4598,7 @@ Component.prototype.render = function render() {
 
                   {(v.rtChips ?? []).map((c, cI) => (
               
-      <span style={css(`display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:${c.fg};border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:${c.bg}`)}>
+      <span key={cI} style={css(`display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:${c.fg};border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:${c.bg}`)}>
       <span className="ms" style={css("font-size:14px")}>{ICON[c.icon]}</span>{c.label}</span>
 
                   ))}
@@ -4612,7 +4612,7 @@ Component.prototype.render = function render() {
 
                     {(v.rtRelated ?? []).map((r, rI) => (
                 
-      <button type="button" onClick={r.go} style={css("text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;color:var(--ink)")}>
+      <button key={rI} type="button" onClick={r.go} style={css("text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;color:var(--ink)")}>
       <span className="ms" style={css("font-size:18px;color:var(--em)")}>{ICON[r.icon]}</span>
       <div style={css("font-size:13px;margin-top:7px")}>{r.name}</div>
       <div style={css("font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.45")}>{r.desc}</div>
@@ -4637,7 +4637,7 @@ Component.prototype.render = function render() {
 
                   {(v.footerLinks ?? []).map((l, lI) => (
               
-      <button onClick={l.go} style={css("font-size:12px;color:var(--ink2)")}>{l.label}</button>
+      <button key={lI} onClick={l.go} style={css("font-size:12px;color:var(--ink2)")}>{l.label}</button>
 
                   ))}
       </nav>
@@ -4658,7 +4658,7 @@ Component.prototype.render = function render() {
 
                   {(v.evidenceRows ?? []).map((r, rI) => (
               
-      <li style={css("display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)")}>
+      <li key={rI} style={css("display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)")}>
       <span style={css("flex:0 0 78px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)")}>{r.k}</span>
       <span style={css("flex:1;font-size:12.5px;color:var(--ink2);line-height:1.5")}>{r.v}</span>
       </li>
@@ -4677,7 +4677,7 @@ Component.prototype.render = function render() {
 
               {(v.navMobile ?? []).map((m, mI) => (
           
-      <button onClick={m.go} aria-current={m.cur} style={css(`flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:6px 2px;color:${m.fg};background:${m.bg}`)}>
+      <button key={mI} onClick={m.go} aria-current={m.cur} style={css(`flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:6px 2px;color:${m.fg};background:${m.bg}`)}>
       <span className="ms" style={css("font-size:21px")}>{ICON[m.icon]}</span>
       <span style={css("font-size:10.5px")}>{m.label}</span>
       </button>
@@ -4701,7 +4701,7 @@ Component.prototype.render = function render() {
 
                 {(v.navMain ?? []).map((n, nI) => (
             
-      <button onClick={n.goClose} style={css(`display:flex;align-items:center;gap:11px;min-height:44px;padding:0 10px;border-radius:9px;font-size:14px;color:${n.fg};background:${n.bg}`)}>
+      <button key={nI} onClick={n.goClose} style={css(`display:flex;align-items:center;gap:11px;min-height:44px;padding:0 10px;border-radius:9px;font-size:14px;color:${n.fg};background:${n.bg}`)}>
       <span className="ms" style={css(`font-size:20px;color:${n.ic}`)}>{ICON[n.icon]}</span>{n.label}
                   </button>
 
@@ -4710,7 +4710,7 @@ Component.prototype.render = function render() {
 
                 {(v.navCats ?? []).map((c, cI) => (
             
-      <button onClick={c.goClose} style={css("display:flex;align-items:center;gap:11px;min-height:44px;padding:0 10px;border-radius:9px;font-size:14px;color:var(--ink2)")}>
+      <button key={cI} onClick={c.goClose} style={css("display:flex;align-items:center;gap:11px;min-height:44px;padding:0 10px;border-radius:9px;font-size:14px;color:var(--ink2)")}>
       <span className="ms" style={css(`font-size:20px;color:${c.ic}`)}>{ICON[c.icon]}</span>{c.label}
                   </button>
 
@@ -4720,7 +4720,7 @@ Component.prototype.render = function render() {
 
                     {(v.themes ?? []).map((t, tI) => (
                 
-      <button onClick={t.go} aria-pressed={t.on} style={css(`flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:9px;border:1px solid var(--line);background:${t.bg};color:${t.fg};font-size:12px`)}><span className="ms" style={css("font-size:18px")}>{ICON[t.icon]}</span>{t.title}</button>
+      <button key={tI} onClick={t.go} aria-pressed={t.on} style={css(`flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:9px;border:1px solid var(--line);background:${t.bg};color:${t.fg};font-size:12px`)}><span className="ms" style={css("font-size:18px")}>{ICON[t.icon]}</span>{t.title}</button>
 
                     ))}
       </div>
@@ -4755,7 +4755,7 @@ Component.prototype.render = function render() {
 
                 {(v.pResults ?? []).map((r, rI) => (
             
-      <button onClick={r.go} onMouseEnter={r.hover} aria-selected={r.sel} style={css(`width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:${r.bg};animation:slidein ${r.delay} ease both`)}>
+      <button key={rI} onClick={r.go} onMouseEnter={r.hover} aria-selected={r.sel} style={css(`width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:${r.bg};animation:slidein ${r.delay} ease both`)}>
       <span className="ms" style={css(`font-size:19px;color:${r.color}`)}>{ICON[r.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}>
       <span style={css("display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.name}</span>
