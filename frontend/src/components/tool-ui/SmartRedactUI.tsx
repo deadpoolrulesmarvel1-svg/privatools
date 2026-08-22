@@ -39,7 +39,7 @@ const TYPE_META: Record<EntityType, { label: string; color: string }> = {
     ORG:   { label: "Organizations", color: "bg-violet-500/10 text-violet-300 border-violet-500/30" },
     LOC:   { label: "Locations",     color: "bg-accent/10 text-accent border-accent/30" },
     MISC:  { label: "Other entities",color: "bg-slate-500/10 text-slate-300 border-slate-500/30" },
-    EMAIL: { label: "Emails",        color: "bg-blue-500/10 text-blue-300 border-blue-500/30" },
+    EMAIL: { label: "Emails",        color: "bg-accent/10 text-blue-300 border-accent/30" },
     PHONE: { label: "Phone numbers", color: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
     SSN:   { label: "SSNs",          color: "bg-orange-500/10 text-orange-300 border-orange-500/30" },
     CARD:  { label: "Credit cards",  color: "bg-copper-soft text-copper border-copper/30" },

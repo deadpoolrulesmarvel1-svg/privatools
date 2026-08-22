@@ -14,7 +14,7 @@ interface ToolCardProps {
 }
 
 const categoryConfig: Record<Category, { icon: string; bg: string; glow: string }> = {
-  organize:   { icon: "text-blue-400",    bg: "bg-blue-500/10",    glow: "hover:border-blue-500/30 hover:shadow-[0_0_20px_-4px_hsl(217_90%_60%/0.25)]" },
+  organize:   { icon: "text-blue-400",    bg: "bg-accent/10",    glow: "hover:border-accent/30 hover:shadow-[0_0_20px_-4px_hsl(217_90%_60%/0.25)]" },
   edit:       { icon: "text-violet-400",  bg: "bg-violet-500/10",  glow: "hover:border-violet-500/30 hover:shadow-[0_0_20px_-4px_hsl(263_70%_65%/0.25)]" },
   optimize:   { icon: "text-teal-400",    bg: "bg-teal-500/10",    glow: "hover:border-teal-500/30 hover:shadow-[0_0_20px_-4px_hsl(174_60%_50%/0.25)]" },
   security:   { icon: "text-rose-400",    bg: "bg-rose-500/10",    glow: "hover:border-rose-500/30 hover:shadow-[0_0_20px_-4px_hsl(0_72%_60%/0.25)]" },

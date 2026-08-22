@@ -268,7 +268,7 @@ const allTools = [
     ...tools.map(t => ({
         slug: t.slug, name: t.name, description: t.description, icon: t.icon,
         href: `/tool/${t.slug}`,
-        iconBg: categoryMeta[t.category as Category]?.iconBg ?? "bg-blue-500/10",
+        iconBg: categoryMeta[t.category as Category]?.iconBg ?? "bg-accent/10",
         iconColor: categoryMeta[t.category as Category]?.iconColor ?? "text-blue-400",
         categoryLabel: _CAT_LABEL[t.category] ?? "PDF",
         synonyms: resolveSyn(t.slug, t.synonyms),

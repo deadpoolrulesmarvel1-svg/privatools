@@ -15,15 +15,16 @@ export default {
     },
     extend: {
       fontFamily: {
-        // One family, two roles. `display` and `heading` stay as aliases so the
-        // ~200 components already using font-display keep working; they now
-        // resolve to Geist at a heavier weight rather than a serif.
-        display: ["Geist", "system-ui", "sans-serif"],
-        heading: ["Geist", "system-ui", "sans-serif"],
-        body:    ["Geist", "system-ui", "sans-serif"],
-        sans:    ["Geist", "system-ui", "sans-serif"],
-        mono:    ["Geist Mono", "SF Mono", "Menlo", "monospace"],
-        serif:   ["Geist", "system-ui", "sans-serif"],
+        // Display and body are different families on purpose: one characterful
+        // grotesque for headings, one refined grotesk for everything read at
+        // size. `heading`/`serif` stay as aliases so existing components keep
+        // working.
+        display: ["Bricolage Grotesque", "Archivo", "system-ui", "sans-serif"],
+        heading: ["Bricolage Grotesque", "Archivo", "system-ui", "sans-serif"],
+        serif:   ["Bricolage Grotesque", "Archivo", "system-ui", "sans-serif"],
+        body:    ["Archivo", "system-ui", "sans-serif"],
+        sans:    ["Archivo", "system-ui", "sans-serif"],
+        mono:    ["DM Mono", "SF Mono", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
