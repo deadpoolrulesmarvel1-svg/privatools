@@ -9,7 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
-  ArrowDownUp, BookOpenCheck,
+  ArrowDownUp, BookOpenCheck, Accessibility, Languages,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -793,6 +793,34 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
+  },
+
+  {
+    slug: "translate-pdf", icon: Languages, name: "Translate PDF",
+    description: "Translate a PDF without uploading it",
+    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic, Hindi and Russian. No account, no API key, no watermarks. First run downloads the translation model once and caches it.",
+    synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
+    popularity: 45,
+    clientOnly: true,
+    category: "advanced", accepts: ".pdf", outputLabel: "translated text",
+  },
+
+  {
+    slug: "bates-remove", icon: Eraser, name: "Remove Bates Numbering",
+    description: "Strip Bates stamps back off a PDF",
+    longDescription: "Remove Bates numbering from a PDF online for free. Strips legal production stamps from the page margins by redaction \u2014 the text is removed, not covered. Give the prefix or suffix your stamps use for an exact match, or leave blank to remove anything Bates-shaped. No sign-up, no watermarks.",
+    synonyms: "remove bates delete bates strip bates numbering legal production stamp discovery unstamp",
+    popularity: 82,
+    category: "security", accepts: ".pdf", outputLabel: "unstamped.pdf",
+  },
+
+  {
+    slug: "accessibility-check", icon: Accessibility, name: "PDF Accessibility Checker",
+    description: "Audit a PDF against PDF/UA and WCAG",
+    longDescription: "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.",
+    synonyms: "accessibility a11y pdfua pdf/ua wcag section 508 ada screen reader tagged alt text compliance audit",
+    popularity: 60,
+    category: "security", accepts: ".pdf", outputLabel: "report",
   },
 
   // ── Security & Forensics ────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> 216 free, open-source file tools — PDF, image, video, audio, and
+> 219 free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -334,7 +334,7 @@ Linearize a PDF for fast web viewing
 
 Optimize PDFs for the web online for free — linearizes the file so the first page renders before the whole document has downloaded. Essential for PDFs served over a CDN or embedded inline. Powered by qpdf.
 
-### Security & Privacy (11 tools)
+### Security & Privacy (13 tools)
 
 #### Protect PDF
 URL: https://privatools.me/tool/protect-pdf
@@ -391,6 +391,20 @@ URL: https://privatools.me/tool/set-permissions
 Control print, copy, and edit permissions
 
 Set PDF permissions online — control who can print, copy, edit, or annotate your PDF documents. Apply granular access controls with owner password protection. Free, no software installation.
+
+#### Remove Bates Numbering
+URL: https://privatools.me/tool/bates-remove
+
+Strip Bates stamps back off a PDF
+
+Remove Bates numbering from a PDF online for free. Strips legal production stamps from the page margins by redaction \u2014 the text is removed, not covered. Give the prefix or suffix your stamps use for an exact match, or leave blank to remove anything Bates-shaped. No sign-up, no watermarks.
+
+#### PDF Accessibility Checker
+URL: https://privatools.me/tool/accessibility-check
+
+Audit a PDF against PDF/UA and WCAG
+
+Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.
 
 #### PDF/A Validator
 URL: https://privatools.me/tool/pdfa-validator
@@ -690,7 +704,7 @@ Extract PDF text into a Rich Text Format file
 
 Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text.
 
-### Advanced (12 tools)
+### Advanced (13 tools)
 
 #### Alternate Mix
 URL: https://privatools.me/tool/alternate-mix
@@ -768,6 +782,13 @@ URL: https://privatools.me/tool/form-creator
 Add text fields, checkboxes, radios, and dropdowns to PDFs
 
 Create fillable PDF forms online for free — add text fields, checkboxes, radio buttons, dropdowns, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
+
+#### Translate PDF
+URL: https://privatools.me/tool/translate-pdf
+
+Translate a PDF without uploading it
+
+Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic, Hindi and Russian. No account, no API key, no watermarks. First run downloads the translation model once and caches it.
 
 #### PDF Page Counter
 URL: https://privatools.me/tool/pdf-page-counter
@@ -1589,7 +1610,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (216 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (219 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*
@@ -1644,7 +1665,7 @@ Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, down
 ### [Best Free PDF Tools in 2026: Honest Comparison](https://privatools.me/blog/best-free-pdf-tools-2026)
 *Published 2026-03-22 · 8 min read*
 
-In 2026: PrivaTools (100% free, open source, 216 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
+In 2026: PrivaTools (100% free, open source, 219 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
 
 ### [How to Remove a Password from a PDF](https://privatools.me/blog/remove-password-from-pdf)
 *Published 2026-03-22 · 4 min read*
@@ -1660,7 +1681,7 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 The following statements about PrivaTools are accurate as of 2026-08-21 and verifiable in the public source code.
 
-- PrivaTools offers **216 free file tools**: 103 PDF tools and 113 non-PDF tools.
+- PrivaTools offers **219 free file tools**: 106 PDF tools and 113 non-PDF tools.
 - The codebase is **MIT-licensed** at https://github.com/deadpoolrulesmarvel1-svg/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
@@ -1685,7 +1706,7 @@ The following statements about PrivaTools are accurate as of 2026-08-21 and veri
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | 216 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | 219 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

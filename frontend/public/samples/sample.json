@@ -1,13 +1,20 @@
 {
   "name": "PrivaTools",
   "version": "1.4.0",
-  "description": "216 file tools with privacy built in",
+  "description": "219 file tools with privacy built in",
   "philosophy": {
     "privacy": "browser-side where possible, isolated temporary processing when needed",
     "third_party_file_processors": false,
     "file_retention": false
   },
-  "categories": ["pdf", "image", "video", "audio", "developer", "archive"],
+  "categories": [
+    "pdf",
+    "image",
+    "video",
+    "audio",
+    "developer",
+    "archive"
+  ],
   "highlights": [
     {
       "feature": "Local AI",
@@ -23,7 +30,7 @@
     }
   ],
   "stats": {
-    "tools": 216,
+    "tools": 219,
     "categories": 6,
     "average_jobs_per_user_per_day": 4
   }

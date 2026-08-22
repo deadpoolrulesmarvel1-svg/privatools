@@ -85,6 +85,25 @@ def _validate_redactions(rects: list, page_count: int) -> None:
                 ),
             )
 
+        # Optional statutory exemption code, e.g. "(b)(6)" for FOIA. Bounded
+        # because it is drawn inside the redaction box — a long string either
+        # overflows or renders unreadably small.
+        code = r.get("code")
+        if code is not None:
+            if not isinstance(code, str):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Redaction #{i + 1} code must be a string",
+                )
+            if len(code) > redact_service.MAX_CODE_CHARS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Redaction #{i + 1} code must be "
+                        f"{redact_service.MAX_CODE_CHARS} characters or fewer"
+                    ),
+                )
+
 
 @router.post("/redact")
 @limiter.limit(EXPENSIVE_RATE_LIMIT)
@@ -133,13 +152,21 @@ async def redact_pdf(
 
         _validate_redactions(rects, page_count)
 
-        output_path = await run_bounded(redact_service.redact_pdf, str(temp_pdf), rects, color=color)
+        output_path, report = await run_bounded(
+            redact_service.redact_pdf, str(temp_pdf), rects, color=color
+        )
         cleanup = BackgroundTask(remove_files, str(temp_pdf), output_path)
         return FileResponse(
             path=output_path,
             filename="redacted.pdf",
             media_type="application/pdf",
             background=cleanup,
+            headers={
+                # The withholding log: how many redactions per page and how many
+                # under each exemption code. A FOIA production needs this
+                # accounting; without it the released PDF is the only record.
+                "X-Redaction-Report": json.dumps(report),
+            },
         )
     except HTTPException:
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])

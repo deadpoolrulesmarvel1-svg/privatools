@@ -17,8 +17,15 @@ import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
+import { ResultHandoff } from "./ResultHandoff";
 
-type Level = "light" | "recommended" | "extreme" | "custom";
+type Level =
+    | "light" | "recommended" | "extreme" | "custom"
+    // Purpose-named profiles: you know you are emailing something, and
+    // shouldn't have to translate that into a quality percentage.
+    | "email" | "print" | "archive" | "web"
+    // Client-side only — sends level=custom plus target_size_mb.
+    | "target";
 type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
 let fileId = 0;
 
@@ -27,27 +34,38 @@ const levels: { id: Level; label: string; desc: string; saving: string; intensit
     { id: "recommended", label: "Recommended", desc: "Balanced quality & size",                           saving: "~50% smaller", intensity: 55 },
     { id: "extreme",     label: "Extreme",     desc: "Maximum compression",                               saving: "~75% smaller", intensity: 85 },
     { id: "custom",      label: "Custom",      desc: "Set JPEG quality + max image dimension yourself", saving: "Tunable",      intensity: 65 },
+    { id: "email",       label: "Email",       desc: "Small enough for a 10 MB attachment limit",       saving: "~70% smaller", intensity: 78 },
+    { id: "print",       label: "Print",       desc: "300 DPI equivalent, minimal quality loss",        saving: "~15% smaller", intensity: 18 },
+    { id: "archive",     label: "Archive",     desc: "Long-term storage, quality preserved",            saving: "~30% smaller", intensity: 35 },
+    { id: "web",         label: "Web",         desc: "Fast to load in a browser",                       saving: "~55% smaller", intensity: 60 },
+    { id: "target",      label: "Target size", desc: "Compress until it fits a size you choose",        saving: "You decide",   intensity: 70 },
 ];
 
 // Map level → expected fraction saved (rough; tuned to match server behavior)
-const SAVINGS_BY_LEVEL: Record<Exclude<Level, "custom">, number> = {
+const SAVINGS_BY_LEVEL: Record<Exclude<Level, "custom" | "target">, number> = {
     light: 0.20,
     recommended: 0.50,
     extreme: 0.75,
+    email: 0.70,
+    print: 0.15,
+    archive: 0.30,
+    web: 0.55,
 };
 
 const COMPRESS_DEFAULTS = {
     level: "recommended" as Level,
     customQuality: 75,
     customMaxDim: 1800,
+    targetMb: 10,
 };
 
 export function CompressUI() {
     const [files, setFiles] = useState<CompressFile[]>([]);
     // Form config persists across refreshes (file picks intentionally don't).
     const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("compress-pdf", COMPRESS_DEFAULTS, { legacyKey: "compress" });
-    const { level, customQuality, customMaxDim } = config;
+    const { level, customQuality, customMaxDim, targetMb } = config;
     const setLevel = (v: Level) => setConfig(c => ({ ...c, level: v }));
+    const setTargetMb = (v: number) => setConfig(c => ({ ...c, targetMb: v }));
     const setCustomQuality = (v: number) => setConfig(c => ({ ...c, customQuality: v }));
     const setCustomMaxDim = (v: number) => setConfig(c => ({ ...c, customMaxDim: v }));
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
@@ -57,6 +75,9 @@ export function CompressUI() {
     const [retryNote, setRetryNote] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [compressedSize, setCompressedSize] = useState<number>(0);
+    // null when target mode wasn't used. false means even the harshest
+    // setting overshot — said out loud rather than quietly missing.
+    const [targetMet, setTargetMet] = useState<boolean | null>(null);
     const ref = useRef<HTMLInputElement>(null);
 
     // Show "Restored previous settings" toast once on mount if we loaded non-default values.
@@ -113,7 +134,7 @@ export function CompressUI() {
     const canProcess = files.length > 0 && state !== "processing";
 
     // Live estimated output size (front-end heuristic, server may differ)
-    const estimatedSavingFraction = level === "custom"
+    const estimatedSavingFraction = level === "target" ? 0.5 : level === "custom"
         // Linear: q=15→0.85 saved, q=95→0.10 saved
         ? Math.max(0.1, Math.min(0.85, 1 - (customQuality / 100) * 0.95))
         : SAVINGS_BY_LEVEL[level];
@@ -134,6 +155,12 @@ export function CompressUI() {
                 params.jpeg_quality = customQuality;
                 params.max_image_dim = customMaxDim;
             }
+            if (level === "target") {
+                // The server searches for the lightest setting that fits, so it
+                // takes the target rather than a quality figure.
+                params.level = "custom";
+                params.target_size_mb = targetMb;
+            }
             if (files.length === 1) {
                 const res = await uploadFile("/compress", files[0].raw, params, {
                     onRetry,
@@ -142,6 +169,8 @@ export function CompressUI() {
                 const blob = await res.blob();
                 const cSize = parseInt(res.headers.get("X-Compressed-Size") || "0") || blob.size;
                 setCompressedSize(cSize);
+                const met = res.headers.get("X-Target-Met");
+                setTargetMet(met === null ? null : met === "true");
                 setResultBlob(blob);
                 setState("done");
                 emitToolSuccess("Compress PDF");
@@ -158,6 +187,7 @@ export function CompressUI() {
                     { onRetry, timeoutMs: 180_000 },
                 );
                 setCompressedSize(0);
+                setTargetMet(null);
                 setResultBlob(null);
                 setState("done");
                 emitToolSuccess("Compress PDF");
@@ -170,7 +200,7 @@ export function CompressUI() {
         } finally {
             setRetryNote(null);
         }
-    }, [files, level, customQuality, customMaxDim]);
+    }, [files, level, customQuality, customMaxDim, targetMb]);
 
     const copyErrorToClipboard = useCallback(() => {
         const blob = formatErrorForClipboard(errorObj ?? error, "Compress PDF");
@@ -194,6 +224,7 @@ export function CompressUI() {
 
     if (state === "done") {
         const savings = files.length === 1 && compressedSize > 0 ? Math.round((1 - compressedSize / totalBytes) * 100) : 0;
+        const targetMissed = targetMet === false;
         const compressedBarWidth = compressedSize > 0 ? Math.max(5, Math.round((compressedSize / totalBytes) * 100)) : 0;
 
         return (
@@ -207,6 +238,11 @@ export function CompressUI() {
                         <div className="flex-1 min-w-0">
                             <p className="section-mark mb-2">Compressed</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {targetMissed && (
+                                    <span className="block font-mono text-[11px] tracking-[0.04em] text-copper mt-1.5">
+                                        § Couldn&apos;t reach {targetMb} MB — this is the smallest we could make it
+                                    </span>
+                                )}
                                 {files.length === 1 && compressedSize > 0 ? (
                                     <>Smaller by <span className="italic text-accent">{savings}%</span></>
                                 ) : (
@@ -253,6 +289,13 @@ export function CompressUI() {
                                     <RotateCcw size={12} /> Compress more
                                 </button>
                             </div>
+                            {files.length === 1 && (
+                                <ResultHandoff
+                                    blob={resultBlob}
+                                    filename={`${files[0].name.replace(/\.pdf$/i, "")}_compressed.pdf`}
+                                    fromSlug="compress-pdf"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -412,6 +455,49 @@ export function CompressUI() {
                                 );
                             })}
                         </div>
+
+                        {/* Target size */}
+                        {level === "target" && (
+                            <div className="border-t border-border bg-paper-2/30 p-4 animate-fade-in">
+                                <label htmlFor="target-mb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                                    Target size
+                                </label>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                    <input
+                                        id="target-mb"
+                                        type="number" inputMode="decimal"
+                                        min={0.1} max={500} step={0.5}
+                                        value={targetMb}
+                                        onChange={e => setTargetMb(Math.max(0.1, Math.min(500, parseFloat(e.target.value) || 10)))}
+                                        className="w-28 rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                    />
+                                    <span className="font-mono text-[12px] text-muted-foreground">MB</span>
+                                    <div className="flex gap-1.5 ml-1">
+                                        {[5, 10, 25].map(mb => (
+                                            <button
+                                                key={mb}
+                                                type="button"
+                                                onClick={() => setTargetMb(mb)}
+                                                className={cn(
+                                                    "h-7 px-2.5 rounded-md border font-mono text-[11px] transition-colors",
+                                                    targetMb === mb
+                                                        ? "border-accent bg-accent/10 text-foreground"
+                                                        : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+                                                )}
+                                            >
+                                                {mb} MB
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                                    We try progressively harder settings and stop at the lightest one
+                                    that fits, so the file isn't squeezed more than it needs to be.
+                                    If the target can't be reached you'll get the smallest version we
+                                    could make, and we'll say so.
+                                </p>
+                            </div>
+                        )}
 
                         {/* Custom sliders */}
                         {level === "custom" && (

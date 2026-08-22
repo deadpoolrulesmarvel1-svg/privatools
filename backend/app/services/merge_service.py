@@ -15,6 +15,11 @@ from typing import List, Optional, Sequence
 
 import pikepdf
 
+from ..utils.pdf_accessibility import (
+    StructureTreeMerger,
+    preserve_document_properties,
+)
+
 from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
@@ -54,10 +59,17 @@ def merge_pdfs(
 
     dst = pikepdf.Pdf.new()
     total_pages_out = 0
+    struct_merger = StructureTreeMerger(dst)
     try:
         for idx, path in enumerate(input_paths):
             with safe_open_pdf(path) as src:
+                # The first document leads, matching how desktop tools treat a
+                # merge. Without this the merged file loses the language, title
+                # and viewer preferences every input had.
+                if idx == 0:
+                    preserve_document_properties(src, dst)
                 total = len(src.pages)
+                first_page = len(dst.pages)
                 spec = (page_ranges[idx] if page_ranges is not None else None)
                 if spec is None or (isinstance(spec, str) and spec.strip().lower() in ("", "all")):
                     dst.pages.extend(src.pages)
@@ -67,6 +79,12 @@ def merge_pdfs(
                     for i in indices:
                         dst.pages.append(src.pages[i])
                     total_pages_out += len(indices)
+                # Must happen here, while `src` is still open and immediately
+                # after its pages were appended — that append is what lets each
+                # struct element's /Pg resolve to the page now in `dst`.
+                struct_merger.add_source(src, first_page, len(dst.pages) - 1)
+
+        struct_merger.finalize()
 
         # Unique per-request path (UUID) — a fixed "merged.pdf" over the shared
         # temp dir let concurrent /merge requests clobber each other's output

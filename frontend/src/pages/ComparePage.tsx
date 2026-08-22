@@ -51,7 +51,7 @@ const competitors: Record<string, CompetitorData> = {
   smallpdf: {
     name: "Smallpdf", slug: "smallpdf",
     tagline: "Swiss PDF tool with aggressive upsells",
-    toolCount: "30+ (PDF + AI)", pricing: "$9/mo Pro", freeLimit: "2 tasks/day",
+    toolCount: "30+ (PDF + AI)", pricing: "$12–15/mo Pro", freeLimit: "2 conversions/day",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
       "Free to use": "Limited (2 tasks/day)", "No account required": "No",
@@ -67,10 +67,10 @@ const competitors: Record<string, CompetitorData> = {
   "adobe-acrobat": {
     name: "Adobe Acrobat Online", slug: "adobe-acrobat",
     tagline: "Industry standard with expensive subscription",
-    toolCount: "20+ (PDF)", pricing: "$23/mo Pro", freeLimit: "Very limited",
+    toolCount: "45 online tools", pricing: "$19.99/mo Pro", freeLimit: "1 task / 30 days",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
-      "Free to use": "Very limited", "No account required": "No (Adobe ID required)",
+      "Free to use": "1 task per 30 days", "No account required": "No (Adobe ID required)",
       "No file size limits": "No", "No ads": "Yes",
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (Adobe cloud)",
@@ -115,14 +115,14 @@ const competitors: Record<string, CompetitorData> = {
   foxit: {
     name: "Foxit PDF", slug: "foxit",
     tagline: "Enterprise PDF suite with paid subscription",
-    toolCount: "15+ (PDF + e-sign)", pricing: "$14/mo Cloud", freeLimit: "Very limited",
+    toolCount: "~34 free tools", pricing: "$129.99/yr Editor", freeLimit: "No documented cap",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
-      "Free to use": "No (paid subscription)", "No account required": "No",
+      "Free to use": "Yes (34 basic tools)", "No account required": "Not for basic tools",
       "No file size limits": "No", "No ads": "Yes",
       "Open source": "No", "Self-hostable": "Enterprise only",
       "Files processed privately": "No (Foxit cloud)",
-      "No watermarks on free tier": "N/A (no free tier)",
+      "No watermarks on free tier": "Yes",
       [TOOL_BREADTH_LABEL]: "No (PDF only)",
       "Works offline / client-side tools": "Desktop app (paid)",
       "E-signatures": "Yes (paid)", "API available": "Yes (paid)",
@@ -131,11 +131,11 @@ const competitors: Record<string, CompetitorData> = {
   lightpdf: {
     name: "LightPDF", slug: "lightpdf",
     tagline: "Freemium PDF tools with AI features behind paywall",
-    toolCount: "~20 (PDF + AI)", pricing: "$10/mo Premium", freeLimit: "Limited",
+    toolCount: "92 (PDF + AI)", pricing: "$9.90/mo · $49.90 lifetime", freeLimit: "Works anonymously",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
       "Free to use": "Limited", "No account required": "No",
-      "No file size limits": "No", "No ads": "No",
+      "No file size limits": "No", "No ads": "Yes",
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (files uploaded to their servers)",
       "No watermarks on free tier": "Limited",
@@ -163,10 +163,10 @@ const competitors: Record<string, CompetitorData> = {
   dochub: {
     name: "DocHub", slug: "dochub",
     tagline: "Document signing and editing platform",
-    toolCount: "Form-fill / e-sign", pricing: "$7/mo Pro", freeLimit: "5 docs/mo",
+    toolCount: "~42 features", pricing: "$12/mo Pro", freeLimit: "~3 docs / 30 days",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
-      "Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No",
+      "Free to use": "Limited (~3 docs / 30 days)", "No account required": "No",
       "No file size limits": "No", "No ads": "Yes",
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (DocHub cloud)",
@@ -179,7 +179,7 @@ const competitors: Record<string, CompetitorData> = {
   pdfescape: {
     name: "PDFescape", slug: "pdfescape",
     tagline: "Free online PDF editor with basic tools",
-    toolCount: "~15 (basic)", pricing: "$3/mo Premium", freeLimit: "10 MB, 100 pages",
+    toolCount: "4 + 25-tool editor", pricing: "$2.99/mo Premium", freeLimit: "10 MB, 100 pages",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
       "Free to use": "Limited (10MB, 100 pages)", "No account required": "Yes (online version)",
@@ -195,10 +195,10 @@ const competitors: Record<string, CompetitorData> = {
   "nitro-pdf": {
     name: "Nitro PDF", slug: "nitro-pdf",
     tagline: "Business PDF suite with paid subscription",
-    toolCount: "PDF + e-sign", pricing: "$129/yr Pro", freeLimit: "14-day trial",
+    toolCount: "8 free converters", pricing: "$180/user/yr", freeLimit: "1 conversion, then signup",
     openSource: false, selfHostable: false, cloudUploads: true,
     features: {
-      "Free to use": "No (paid, 14-day trial only)", "No account required": "No",
+      "Free to use": "8 converters, ~1 use", "No account required": "No",
       "No file size limits": "No", "No ads": "Yes",
       "Open source": "No", "Self-hostable": "No",
       "Files processed privately": "No (Nitro cloud)",
@@ -206,6 +206,38 @@ const competitors: Record<string, CompetitorData> = {
       [TOOL_BREADTH_LABEL]: "No (PDF + e-sign only)",
       "Works offline / client-side tools": "Desktop app (paid)",
       "E-signatures": "Yes (paid)", "API available": "Yes (paid)",
+    },
+  },
+  tinywow: {
+    name: "TinyWow", slug: "tinywow",
+    tagline: "The largest free tool suite — paid for with heavy advertising",
+    toolCount: "260 (all types)", pricing: "$20/mo · $180/yr", freeLimit: "Ads + CAPTCHA",
+    openSource: false, selfHostable: false, cloudUploads: true,
+    features: {
+      "Free to use": "Yes (ads + CAPTCHA)", "No account required": "Yes",
+      "No file size limits": "No (500 MB)", "No ads": "No",
+      "Open source": "No", "Self-hostable": "No",
+      "Files processed privately": "No (uploaded, deleted after 1 hour)",
+      "No watermarks on free tier": "Yes",
+      [TOOL_BREADTH_LABEL]: "Yes (PDF, image, video, AI writing)",
+      "Works offline / client-side tools": "No",
+      "Desktop app included": "No", "API available": "No",
+    },
+  },
+  ihatepdf: {
+    name: "ihatepdf.cv", slug: "ihatepdf",
+    tagline: "Runs entirely in your browser — PDF only, funded by donations",
+    toolCount: "54 (PDF only)", pricing: "Free (donations)", freeLimit: "Unmetered",
+    openSource: false, selfHostable: false, cloudUploads: false,
+    features: {
+      "Free to use": "Yes", "No account required": "Yes",
+      "No file size limits": "Limited by device memory", "No ads": "Yes",
+      "Open source": "No", "Self-hostable": "No",
+      "Files processed privately": "Yes (runs in your browser)",
+      "No watermarks on free tier": "Yes",
+      [TOOL_BREADTH_LABEL]: "No (PDF only)",
+      "Works offline / client-side tools": "Yes",
+      "Desktop app included": "No", "API available": "No",
     },
   },
 };
@@ -258,8 +290,9 @@ function FeatureCell({ value, highlight }: { value: boolean | string; highlight?
 
 // Approximate monthly pricing — used for the savings calc on Compare directory.
 const MONTHLY_PRICING: Record<string, number> = {
-  ilovepdf: 4, smallpdf: 9, "adobe-acrobat": 23, sejda: 7.5, pdf24: 0,
-  foxit: 14, lightpdf: 10, "stirling-pdf": 0, dochub: 7, pdfescape: 3, "nitro-pdf": 10.75,
+  ilovepdf: 4, smallpdf: 12, "adobe-acrobat": 19.99, sejda: 7.5, pdf24: 0,
+  foxit: 10.83, lightpdf: 9.9, "stirling-pdf": 0, dochub: 12, pdfescape: 2.99, "nitro-pdf": 15,
+  tinywow: 20, ihatepdf: 0,
 };
 
 /**
@@ -282,6 +315,8 @@ const COMPETITOR_EDGE: Record<string, string | undefined> = {
   dochub:          "Google Workspace + Microsoft 365 integration for in-app signing",
   pdfescape:       "Long-running brand recognition since 2007",
   "nitro-pdf":     "Enterprise volume licensing and Sign-as-a-Service product",
+  tinywow:         "Wider catalogue — 260 tools, including AI writing and image generation",
+  ihatepdf:        "Genuinely processes every tool in your browser — nothing is uploaded at all",
 };
 
 /** Count how many of the four "fundamental" axes PrivaTools wins on. */

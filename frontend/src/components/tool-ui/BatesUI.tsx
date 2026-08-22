@@ -1,10 +1,14 @@
 /**
  * BatesUI — sequential legal-style Bates numbering on every page of one or many PDFs.
  *
- * Multi-file caveat: each PDF gets its own sequence starting at `start_number`.
- * Continuing numbering across files would need backend changes (a single multi-
- * file endpoint with offset bookkeeping) — out of scope here. We surface this
- * limitation in the UI so users don't get bitten.
+ * Multiple files are stamped as ONE continuous sequence: file 2 picks up where
+ * file 1 stopped, which is what a production set actually requires. That runs
+ * through the single-request /bates-numbering-batch endpoint rather than N
+ * independent calls, because the numbering has to be decided server-side in one
+ * pass — and because a production is atomic. Half a numbered set is not a
+ * partial success, it is a set you have to redo.
+ *
+ * A single file still uses /bates-numbering, which keeps the per-file queue UI.
  */
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
@@ -14,8 +18,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { cn, friendlyError } from "@/lib/utils";
+import { MAX_FILE_SIZE_LABEL, uploadFiles, downloadBlob } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
@@ -35,16 +39,26 @@ const positions = [
 
 const BATES_DEFAULTS = {
     prefix: "DOC-",
+    suffix: "",
     startNumber: 1,
     digits: 6,
     position: "bottom-right",
 };
 
+interface BatesManifestEntry {
+    index: number;
+    pages: number;
+    firstBates: string;
+    lastBates: string;
+    file?: string;
+}
+
 export function BatesUI() {
     const proc = useMultiFileProcessor();
     const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("bates-numbering", BATES_DEFAULTS, { legacyKey: "bates" });
-    const { prefix, startNumber, digits, position } = config;
+    const { prefix, suffix, startNumber, digits, position } = config;
     const setPrefix = (v: string) => setConfig(c => ({ ...c, prefix: v }));
+    const setSuffix = (v: string) => setConfig(c => ({ ...c, suffix: v }));
     const setStartNumber = (v: number) => setConfig(c => ({ ...c, startNumber: v }));
     const setDigits = (v: number) => setConfig(c => ({ ...c, digits: v }));
     const setPosition = (v: string) => setConfig(c => ({ ...c, position: v }));
@@ -54,6 +68,8 @@ export function BatesUI() {
     // silently corrupt numbering the moment someone works two cases.
     const [matter, setMatter] = useState<counters.BatesCounter | null>(null);
     const [advancedTo, setAdvancedTo] = useState<string | null>(null);
+    const [manifest, setManifest] = useState<BatesManifestEntry[] | null>(null);
+    const [batchError, setBatchError] = useState<string | null>(null);
 
     // Seed the stamp settings from the active matter.
     const activateMatter = useCallback((c: counters.BatesCounter | null) => {
@@ -69,17 +85,43 @@ export function BatesUI() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const sample = `${prefix}${String(startNumber).padStart(digits, "0")}`;
+    const sample = `${prefix}${String(startNumber).padStart(digits, "0")}${suffix}`;
     const canProcess = proc.entries.length > 0 && phase !== "processing";
     const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
     const process = useCallback(async (retry = false) => {
         setPhase("processing");
+        setBatchError(null);
+
+        // More than one file is a production set, and a production set carries
+        // ONE sequence. That has to be decided in a single server-side pass —
+        // N independent calls would restart every file at `startNumber`.
+        const files = proc.entries.map(e => e.file);
+        if (files.length > 1) {
+            try {
+                const res = await uploadFiles("/bates-numbering-batch", files, {
+                    prefix, suffix, start_number: startNumber, digits, position,
+                });
+                const header = res.headers.get("X-Bates-Manifest");
+                if (header) {
+                    try { setManifest(JSON.parse(header) as BatesManifestEntry[]); }
+                    catch { /* header is a convenience; the ZIP is the deliverable */ }
+                }
+                downloadBlob(await res.blob(), "bates_numbered.zip");
+                setPhase("done");
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : "Failed";
+                setBatchError(friendlyError(msg, "Couldn't number that set."));
+                setPhase("idle");
+            }
+            return;
+        }
+
         await proc.run({
             endpoint: "/bates-numbering",
             outputSuffix: "bates",
             outputExt: "pdf",
-            params: { prefix, start_number: startNumber, digits, position },
+            params: { prefix, suffix, start_number: startNumber, digits, position },
         }, retry);
         setPhase("done");
 
@@ -102,15 +144,15 @@ export function BatesUI() {
                    guessing, and let the user correct it in /my-stuff */
             }
         }
-    }, [proc, prefix, startNumber, digits, position, matter]);
+    }, [proc, prefix, suffix, startNumber, digits, position, matter]);
 
     const downloadedRef = useRef(false);
     useEffect(() => {
-        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+        if (phase === "done" && !manifest && !downloadedRef.current && proc.doneCount > 0) {
             downloadedRef.current = true;
             proc.downloadAll("archive_bates");
         }
-    }, [phase, proc]);
+    }, [phase, proc, manifest]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -136,13 +178,21 @@ export function BatesUI() {
                         <div className="flex-1 min-w-0">
                             <p className="section-mark mb-2">Bates numbered</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                {isMulti
+                                {manifest
+                                    ? <>Numbered <span className="italic text-accent">{manifest[0]?.firstBates}</span> to <span className="italic text-accent">{manifest[manifest.length - 1]?.lastBates}</span></>
+                                    : isMulti
                                     ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} stamped{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
                                     : <>Stamped from <span className="italic text-accent">{sample}</span></>}
                             </h2>
-                            {isMulti && proc.doneCount > 0 && (
+                            {manifest && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"} · each file starts at {sample}
+                                    <span className="text-accent">§</span> {manifest.length} files · one continuous sequence ·{" "}
+                                    {manifest.reduce((n, m) => n + m.pages, 0)} pages · ZIP downloaded
+                                </p>
+                            )}
+                            {!manifest && isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"} · starting at {sample}
                                 </p>
                             )}
                             {advancedTo && (
@@ -150,8 +200,29 @@ export function BatesUI() {
                                     <span className="text-accent">§</span> {matter?.name} continues at <span className="text-accent">{advancedTo}</span> next time
                                 </p>
                             )}
+                            {manifest && (
+                                <div className="mt-4 rounded-lg border border-border bg-card/60 overflow-hidden">
+                                    <div className="px-3 py-1.5 border-b border-border bg-paper-2/40 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                                        <span className="text-accent">§</span> Numbering manifest
+                                    </div>
+                                    <div className="max-h-56 overflow-y-auto divide-y divide-border">
+                                        {manifest.map(m => (
+                                            <div key={m.index} className="px-3 py-1.5 flex items-baseline justify-between gap-3 font-mono text-[11.5px]">
+                                                <span className="truncate text-muted-foreground">{m.file ?? `File ${m.index + 1}`}</span>
+                                                <span className="shrink-0 tabular-nums text-foreground">
+                                                    {m.firstBates}<span className="text-muted-foreground"> – </span>{m.lastBates}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80">
+                                        Also saved as bates-manifest.json inside the ZIP
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="mt-5 flex flex-wrap gap-2">
-                                {proc.doneCount > 0 && (
+                                {(manifest || proc.doneCount > 0) && (
                                     <button onClick={() => proc.downloadAll("archive_bates")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
                                         <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
                                     </button>
@@ -165,7 +236,7 @@ export function BatesUI() {
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; setAdvancedTo(null); }}
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; setAdvancedTo(null); setManifest(null); setBatchError(null); }}
                                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                                 >
                                     <RotateCcw size={12} /> Number more
@@ -219,6 +290,12 @@ export function BatesUI() {
                         busy={phase === "processing"}
                     />
 
+                    {batchError && (
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive" role="alert">
+                            <AlertCircle size={13} className="shrink-0" />{batchError}
+                        </div>
+                    )}
+
                     <BatesCounterPicker onActivate={activateMatter} />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -226,11 +303,20 @@ export function BatesUI() {
                             <span><span className="text-accent">§</span> Number format</span>
                             <span className="text-accent">{sample}</span>
                         </div>
-                        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <div className="sm:col-span-1">
                                 <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Prefix</label>
                                 <input
                                     value={prefix} onChange={e => setPrefix(e.target.value)} placeholder="DOC-"
+                                    maxLength={32}
+                                    className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                />
+                            </div>
+                            <div className="sm:col-span-1">
+                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Suffix</label>
+                                <input
+                                    value={suffix} onChange={e => setSuffix(e.target.value)} placeholder="-CONF"
+                                    maxLength={32}
                                     className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 />
                             </div>
@@ -271,11 +357,12 @@ export function BatesUI() {
                     </div>
 
                     {proc.entries.length > 1 && (
-                        <div className="flex items-start gap-2 rounded-lg border border-copper/30 bg-copper-soft/30 px-3 py-2 text-[12px] text-foreground">
-                            <AlertCircle size={12} className="shrink-0 mt-0.5 text-copper" />
+                        <div className="flex items-start gap-2 rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2 text-[12px] text-foreground">
+                            <Info size={12} className="shrink-0 mt-0.5 text-accent" />
                             <span>
-                                Each PDF restarts numbering at <span className="font-mono font-semibold text-foreground">{sample}</span>.
-                                Merge first if you need one continuous run across the batch.
+                                All {proc.entries.length} files are numbered as one continuous run
+                                starting at <span className="font-mono font-semibold text-foreground">{sample}</span>.
+                                You'll get a ZIP with a numbering manifest.
                             </span>
                         </div>
                     )}

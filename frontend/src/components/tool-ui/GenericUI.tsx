@@ -24,6 +24,7 @@ import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { ProcessingBar } from "./FileUploadZone";
 import { consumeFileHandoff } from "@/lib/file-handoff";
+import { ResultHandoff } from "./ResultHandoff";
 
 interface GenericUIProps {
     toolName: string;
@@ -222,6 +223,7 @@ export function GenericUI({
                                 <RotateCcw size={12} /> Process another
                             </button>
                         </div>
+                        <ResultHandoff blob={resultBlob} filename={getOutputFilename()} fromSlug={slug} />
                     </div>
                 </div>
             </div>

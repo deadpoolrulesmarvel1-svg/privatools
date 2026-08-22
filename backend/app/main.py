@@ -63,6 +63,7 @@ from .routes import (
     remove_watermark,
     developer,
     analytics,
+    accessibility,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -629,6 +630,7 @@ app.include_router(transparency.router, prefix="/api")
 app.include_router(remove_watermark.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
+app.include_router(accessibility.router, prefix="/api")
 
 # Sitemap + OG image
 app.include_router(sitemap.router)

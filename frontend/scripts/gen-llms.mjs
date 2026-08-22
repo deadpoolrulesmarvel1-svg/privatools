@@ -178,15 +178,17 @@ for (const p of blogPosts.slice(0, 10)) {
 md += `\n## Comparisons (Side-by-Side)\n\nFull feature matrices at /compare for each:\n
 - [vs iLovePDF](https://privatools.me/compare/ilovepdf) — popular but uploads + ads + 25 MB free cap
 - [vs Smallpdf](https://privatools.me/compare/smallpdf) — polished UX, 2 tasks/day free limit
-- [vs Adobe Acrobat Online](https://privatools.me/compare/adobe-acrobat) — industry standard, mostly paywalled
+- [vs Adobe Acrobat Online](https://privatools.me/compare/adobe-acrobat) — industry standard, one free task per 30 days
 - [vs Sejda](https://privatools.me/compare/sejda) — best text editor, 3 tasks/hour free cap
 - [vs PDF24](https://privatools.me/compare/pdf24) — 95+ PDF tools, files uploaded to their cloud
-- [vs Foxit](https://privatools.me/compare/foxit) — enterprise PDF suite, paid subscription
+- [vs Foxit](https://privatools.me/compare/foxit) — enterprise PDF suite, AI tools need an account
 - [vs LightPDF](https://privatools.me/compare/lightpdf) — freemium, AI features behind paywall
 - [vs Stirling PDF](https://privatools.me/compare/stirling-pdf) — open-source competitor, self-host only, no demo
-- [vs DocHub](https://privatools.me/compare/dochub) — focused on form-fill + e-sign
+- [vs DocHub](https://privatools.me/compare/dochub) — form-fill + e-sign, about 3 documents a month free
 - [vs PDFescape](https://privatools.me/compare/pdfescape) — free with 10 MB / 100 pages cap
-- [vs Nitro PDF](https://privatools.me/compare/nitro-pdf) — business PDF suite, $129/yr
+- [vs Nitro PDF](https://privatools.me/compare/nitro-pdf) — business PDF suite, 8 free converters
+- [vs TinyWow](https://privatools.me/compare/tinywow) — 260 tools, funded by ads and a CAPTCHA per task
+- [vs ihatepdf.cv](https://privatools.me/compare/ihatepdf) — runs in your browser, PDF only, 54 tools
 
 ## Frequently Asked Questions
 
@@ -433,6 +435,7 @@ for (const p of blogPosts) {
 const COMPARE_PAGES = [
     "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24",
     "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+    "tinywow", "ihatepdf",
 ];
 for (const slug of COMPARE_PAGES) {
     sitemap += entry(`${BASE}/compare/${slug}`, TODAY, "0.7", "monthly");

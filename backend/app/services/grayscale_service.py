@@ -32,6 +32,75 @@ def convert_to_grayscale(input_path: str) -> str:
         return _raster_grayscale(input_path, str(output_path))
 
 
+def _has_non_gray_marking_content(pdf_path: str) -> bool:
+    """Does any page paint text or vectors in a colour that isn't already gray?
+
+    Pass 1 handles embedded *images*. Pass 2 exists for coloured *text and
+    vector strokes* — and the only way it knows how to fix those is to
+    rasterise the page, which destroys the text layer, the structure tree and
+    the file size along with the colour.
+
+    So it should only run when there is actually coloured marking content.
+    This walks the content streams looking for a colour operator with non-gray
+    operands:
+
+      r g b  rg/RG   -> coloured unless r == g == b
+      c m y k  k/K   -> coloured unless c == m == y == 0 (pure black channel)
+      cs/CS + sc/scn -> coloured if the space is DeviceRGB/DeviceCMYK
+
+    Deliberately conservative: anything unparseable returns True, which keeps
+    the old rasterising behaviour. A wrong answer must never leave colour in
+    the output — it may only cost us the optimisation.
+    """
+    try:
+        with pikepdf.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                try:
+                    instructions = pikepdf.parse_content_stream(page)
+                except Exception:
+                    return True  # unparseable — assume colour, rasterise
+                colour_space_is_colour = False
+                for operands, operator in instructions:
+                    op = str(operator)
+                    try:
+                        if op in ("rg", "RG"):
+                            r, g, b = (float(v) for v in operands[:3])
+                            if not (r == g == b):
+                                return True
+                        elif op in ("k", "K"):
+                            c, m, y, _k = (float(v) for v in operands[:4])
+                            if not (c == m == y == 0):
+                                return True
+                        elif op in ("cs", "CS"):
+                            name = str(operands[0]) if operands else ""
+                            colour_space_is_colour = name in (
+                                "/DeviceRGB", "/DeviceCMYK", "/DeviceN",
+                            )
+                        elif op in ("sc", "scn", "SC", "SCN"):
+                            if colour_space_is_colour:
+                                return True
+                            # An explicit 3- or 4-component colour is coloured
+                            # regardless of what space we think we're in.
+                            vals = [float(v) for v in operands if _is_number(v)]
+                            if len(vals) == 3 and not (vals[0] == vals[1] == vals[2]):
+                                return True
+                            if len(vals) == 4 and not (vals[0] == vals[1] == vals[2] == 0):
+                                return True
+                    except (TypeError, ValueError, IndexError):
+                        return True  # odd operands — assume colour
+    except Exception:
+        return True
+    return False
+
+
+def _is_number(value) -> bool:
+    try:
+        float(value)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
 def _vector_grayscale(input_path: str, output_path: str) -> str:
     """Convert images to grayscale while preserving vector text/graphics.
 
@@ -74,8 +143,22 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
 
         pdf.save(output_path, compress_streams=True)
 
-    # Pass 2: Re-render through fitz with grayscale colorspace to handle
-    # any remaining colored text / vector strokes from pass 1.
+    # Pass 2: Re-render through fitz with grayscale colorspace to handle any
+    # remaining coloured text / vector strokes from pass 1.
+    #
+    # This used to run unconditionally, which contradicted this module's own
+    # docstring ("preserving vector text and graphics ... falls back to
+    # rasterization only for pages that fail"). Every PDF put through
+    # /grayscale came back as 200 DPI images: no selectable text, no search,
+    # no structure tree, and a much larger file. Measured on a tagged input,
+    # the accessibility score went from 96/100 to 11/100.
+    #
+    # Now it only runs when there is coloured marking content that pass 1
+    # could not reach.
+    if not _has_non_gray_marking_content(output_path):
+        logger.debug("grayscale: no coloured vector content — skipping re-render")
+        return output_path
+
     src = None
     dst = None
     try:

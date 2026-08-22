@@ -12,6 +12,11 @@ TOOL_ENDPOINTS_FILE = ROOT / "frontend" / "src" / "lib" / "tool-endpoints.ts"
 BACKEND_ROUTES_DIR = ROOT / "backend" / "app" / "routes"
 BACKEND_HELPER_POST_ENDPOINTS = {
     # Support endpoints used inside richer tool UIs, not standalone catalog tools.
+    # The multi-file path for the existing Bates tool. It isn't a separate tool
+    # page: BatesUI posts here instead of /bates-numbering when more than one
+    # file is queued, because a production set carries ONE continuous sequence
+    # and that has to be decided in a single server-side pass.
+    "/bates-numbering-batch",
     "/fill-form/fields",
     "/metadata/update",
     "/organize-pages/thumbnails",
