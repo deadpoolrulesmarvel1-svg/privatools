@@ -30,12 +30,13 @@ const SECTIONS: Section[] = [
   { id: "files-you-upload",    title: "1. Files You Upload" },
   { id: "client-side-tools",   title: "2. Client-Side Tools" },
   { id: "what-we-dont-collect",title: "3. Information We Do Not Collect", flag: true },
-  { id: "server-infrastructure",title: "4. Server Infrastructure" },
-  { id: "third-party",         title: "5. Third-Party Services" },
-  { id: "open-source",         title: "6. Open Source Transparency" },
-  { id: "childrens-privacy",   title: "7. Children's Privacy" },
-  { id: "changes",             title: "8. Changes to This Policy" },
-  { id: "contact",             title: "9. Contact" },
+  { id: "developer-accounts", title: "4. Developer Accounts" },
+  { id: "server-infrastructure",title: "5. Server Infrastructure" },
+  { id: "third-party",         title: "6. Third-Party Services" },
+  { id: "open-source",         title: "7. Open Source Transparency" },
+  { id: "childrens-privacy",   title: "8. Children's Privacy" },
+  { id: "changes",             title: "9. Changes to This Policy" },
+  { id: "contact",             title: "10. Contact" },
 ];
 
 /** Hand-rolled smooth scroll (matches BlogPostPage logic) for nested overflow containers. */
@@ -393,7 +394,7 @@ export default function PrivacyPage() {
                     We do not collect:
                   </p>
                   <ul className="font-display text-[15.5px] text-foreground leading-relaxed space-y-1.5 list-disc pl-6">
-                    <li>Names, email addresses, or account credentials (no accounts exist)</li>
+                    <li>Names, phone numbers, postal addresses, or payment details</li>
                     <li>Personally identifiable information from analytics beacons</li>
                     <li>Browser fingerprints or canvas-based device identifiers</li>
                     <li>Behavioural profiles, session recordings, or remarketing audiences</li>
@@ -402,14 +403,39 @@ export default function PrivacyPage() {
                   </ul>
                   <p className="font-display text-[15.5px] text-muted-foreground leading-relaxed mt-3">
                     We <em>do</em> collect aggregate pageview counts through a first-party analytics proxy — see
-                    Section 5 for details and how to opt out.
+                    Section 6 for details and how to opt out.
                   </p>
                 </div>
               </aside>
             </section>
 
             <div className="blog-prose prose-headings:scroll-mt-20">
-              <h2 id="server-infrastructure">4. Server Infrastructure</h2>
+              <h2 id="developer-accounts">4. Developer Accounts</h2>
+              <p>
+                Every file tool on this site works with no account. You do not need to sign up to use
+                anything, and nothing on a tool page asks you to.
+              </p>
+              <p>
+                An account exists for one purpose: issuing API keys for the developer API. If you
+                create one, we store your <strong>email address</strong> and a <strong>scrypt hash of
+                your password</strong> — never the password itself. We also store the keys you issue,
+                as a hash plus a short public identifier, so a key can be checked and rate-limited
+                without us holding the secret. Nothing else about you is recorded, and an account is
+                never linked to files processed through the tools.
+              </p>
+              <p>
+                We do not send marketing email, share your address with anyone, or use it for
+                anything other than signing you in and contacting you about your keys. Deleting your
+                account removes the address, the password hash and every key immediately and
+                permanently; there is no soft-delete and no backup copy to restore from.
+              </p>
+              <p>
+                If you would rather not create an account at all, you do not have to. Every tool
+                remains free, unlimited and anonymous, and a self-hosted deployment can issue its own
+                keys through configuration instead.
+              </p>
+
+              <h2 id="server-infrastructure">5. Server Infrastructure</h2>
               <p>
                 PrivaTools runs on Oracle Cloud Infrastructure (ARM-based, 24 GB RAM). The server is
                 located in a single data center and is maintained by the PrivaTools team. We use HTTPS
@@ -425,7 +451,7 @@ export default function PrivacyPage() {
                 processing server.
               </p>
 
-              <h2 id="third-party">5. Third-Party Services</h2>
+              <h2 id="third-party">6. Third-Party Services</h2>
               <p>
                 PrivaTools uses the following third-party services. Typography is self-hosted
                 from <code>/fonts</code> on <code>privatools.me</code>; no Google Fonts or
@@ -440,7 +466,7 @@ export default function PrivacyPage() {
                 No advertising networks, remarketing scripts, or user profiling tools are used.
               </p>
 
-              <h2 id="open-source">6. Open Source Transparency</h2>
+              <h2 id="open-source">7. Open Source Transparency</h2>
               <p>
                 The entire PrivaTools codebase — frontend and backend — is open source under the MIT
                 license at{" "}
@@ -451,14 +477,16 @@ export default function PrivacyPage() {
                 you can self-host the entire application using Docker.
               </p>
 
-              <h2 id="childrens-privacy">7. Children's Privacy</h2>
+              <h2 id="childrens-privacy">8. Children's Privacy</h2>
               <p>
-                PrivaTools does not knowingly collect any information from anyone, including children
-                under 13. Since we collect no personal data and require no accounts, there is no
-                age-specific data to protect.
+                The file tools require no account and collect no personal data, so a child using
+                them leaves nothing behind. Developer accounts are optional, are intended for
+                developers using the API, and are not directed at children. We do not knowingly
+                create an account for anyone under 13 — if you believe we have, contact us and we
+                will delete it and its keys.
               </p>
 
-              <h2 id="changes">8. Changes to This Policy</h2>
+              <h2 id="changes">9. Changes to This Policy</h2>
               <p>
                 If we change this privacy policy, we will update the "Last updated" date at the top of
                 this page. Since we collect no user data, we have no way to notify you directly — we
@@ -466,7 +494,7 @@ export default function PrivacyPage() {
                 tracked in the public git history linked above.
               </p>
 
-              <h2 id="contact">9. Contact</h2>
+              <h2 id="contact">10. Contact</h2>
               <p>
                 If you have questions about this privacy policy or how PrivaTools handles your files,
                 contact us at{" "}

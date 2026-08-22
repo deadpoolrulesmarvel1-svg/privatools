@@ -304,7 +304,7 @@ export default function Index() {
                             <span className="text-muted-foreground italic font-medium">What are we doing today?</span>
                         </h1>
                         <p className="mt-4 max-w-[58ch] text-[14.5px] sm:text-[15px] text-muted-foreground leading-relaxed">
-                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — browser-only where possible, self-hosted when processing needs a server. No accounts, no watermarks.
+                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — browser-only where possible, self-hosted when processing needs a server. No account needed, no watermarks.
                         </p>
 
                         {/* Big workshop CTA — primary action on the dashboard */}

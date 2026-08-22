@@ -38,7 +38,7 @@ const features = [
 // Trust signals — surface above the fold next to the hero.
 const TRUST_SIGNALS = [
   { icon: FileCheck,  label: "MIT licensed",       sub: "Audit the code"    , href: "https://github.com/deadpoolrulesmarvel1-svg/privatools/blob/main/LICENSE" },
-  { icon: ServerOff,  label: "No account required",sub: "Zero sign-up flow" , href: undefined },
+  { icon: ServerOff,  label: "No account required",sub: "Never for the tools" , href: undefined },
   { icon: Package,    label: "Self-hostable",      sub: "Docker, one command", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#self-host" },
 ];
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
               <p className="font-display text-lg sm:text-xl text-foreground/80 leading-relaxed max-w-lg">
                 PrivaTools gives you {TOTAL_ROUNDED}+ powerful file tools — PDF, image, video, and developer
                 utilities. Browser-only where possible; isolated temporary processing when a backend is needed.
-                No accounts, no ads, no watermarks.
+                No account needed, no ads, no watermarks.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
                 <Link to="/" className="btn-editorial inline-flex items-center gap-2">

@@ -32,7 +32,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/privacy": (
         "Privacy Policy — PrivaTools",
         "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
-        "response. No accounts, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
+        "response. No account needed, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
     ),
     "/security": (
         "Security & Trust — PrivaTools",
@@ -72,7 +72,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/ilovepdf": (
         "PrivaTools vs iLovePDF — Honest Feature Comparison (2026)",
         "PrivaTools vs iLovePDF: pricing, file limits, privacy, features. PrivaTools "
-        "is 100% free with no ads, no accounts, and open source.",
+        "is 100% free with no ads, no account needed, and open source.",
     ),
     "/compare/smallpdf": (
         "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
@@ -102,7 +102,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/lightpdf": (
         "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
         "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. "
-        "No file limits, no accounts, no ads. Compare privacy and features.",
+        "No file limits, no account needed, no ads. Compare privacy and features.",
     ),
     "/compare/stirling-pdf": (
         "PrivaTools vs Stirling PDF — Compared (2026)",
@@ -2434,7 +2434,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "self-hostable via Docker for teams that want their own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
             "is returned — never stored, never shared with third parties. The public site uses first-party "
-            "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts, no behavioural profiling.</p>"
+            "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No account needed, no behavioural profiling.</p>"
         )
         # Citable "key facts" block: a self-contained, statistic-dense passage AI
         # engines (ChatGPT/Perplexity/Claude/Gemini) can extract verbatim when
@@ -2733,7 +2733,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             '<p class="about-tldr" data-speakable="true"><strong>TL;DR:</strong> '
             "PrivaTools is a free, open-source, privacy-first suite of "
             f"{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools. "
-            "MIT-licensed, self-hostable, no accounts, no ads, no data resale. "
+            "MIT-licensed, self-hostable, no account needed, no ads, no data resale. "
             "Files uploaded to the public demo use isolated temporary storage and are deleted on response — "
             "many tools never upload at all.</p>"
         )
@@ -2783,7 +2783,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         )
         parts.append("<h2>3. What We Don't Collect</h2>")
         parts.append(
-            "<p>No accounts, no email addresses, no behavioural profiling, no advertising cookies, "
+            "<p>No account needed, no behavioural profiling, no advertising cookies, "
             "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
             "fingerprints. Just aggregate pageview counts through a first-party proxy.</p>"
         )

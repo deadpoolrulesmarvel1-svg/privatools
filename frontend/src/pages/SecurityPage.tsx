@@ -2,7 +2,7 @@
  * SecurityPage - factual trust and vulnerability reporting page.
  *
  * Keep claims tied to things the codebase currently does: open source,
- * no accounts, no paid tier, temporary processing, no-store API responses,
+ * no account needed, no paid tier, temporary processing, no-store API responses,
  * and browser-side tools where applicable. Do not imply external audits,
  * certifications, SOC 2, ISO, or formal bug bounty coverage.
  */
@@ -251,7 +251,7 @@ export default function SecurityPage() {
                   </div>
                   <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
                     Security reports go to <a className="text-accent hover:underline underline-offset-2" href="mailto:hello@privatools.me">hello@privatools.me</a>.
-                    PrivaTools is open source, has no accounts, and keeps file-processing routes on
+                    PrivaTools is open source, needs no account to use, and keeps file-processing routes on
                     temporary server storage or in your browser, depending on the tool.
                   </p>
                   <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
@@ -319,10 +319,13 @@ export default function SecurityPage() {
 
               <h2 id="rights">5. Privacy Rights</h2>
               <p>
-                Because PrivaTools has no accounts and does not intentionally retain uploaded file contents,
-                most file-specific access, deletion, or export requests cannot be fulfilled after processing:
-                the service should no longer have the file. For privacy questions about operational logs,
-                analytics, or infrastructure metadata, contact <a href="mailto:hello@privatools.me">hello@privatools.me</a>.
+                PrivaTools does not intentionally retain uploaded file contents, so most file-specific
+                access, deletion, or export requests cannot be fulfilled after processing: the service
+                should no longer have the file. If you have created an optional developer account, the
+                data held against it is your email address and your API keys — you can view it and delete
+                it permanently from your account at any time, without contacting us. For privacy questions
+                about operational logs, analytics, or infrastructure metadata, contact
+                <a href="mailto:hello@privatools.me">hello@privatools.me</a>.
               </p>
               <p>
                 The <Link to="/privacy">Privacy Policy</Link> explains anonymous telemetry, subprocessors,

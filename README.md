@@ -5,7 +5,7 @@
 **Every file task, done privately.**
 
 214 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
-Zero uploads to third parties. No accounts. No watermarks. No premium tier.
+Zero uploads to third parties. No account needed. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
@@ -331,7 +331,7 @@ Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO en
 
 - ✅ Files processed in an **isolated Docker container**, unlinked from disk immediately after the response
 - ✅ Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) **run entirely in your browser** — no upload at all
-- ✅ **No accounts, no sign-ups, no email, no payment**
+- ✅ **No account, sign-up, email or payment needed to use any tool**
 - ✅ **No watermarks, no daily quota, no premium tier**
 - ✅ **500 MB upload limit per file**, unlimited files per day
 - ✅ AI runs via WebAssembly **in your browser** — no third-party AI APIs

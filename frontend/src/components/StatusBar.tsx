@@ -20,7 +20,7 @@ const FACTS = [
     "0 files uploaded to a third party",
     "Local AI via WebAssembly",
     "Files deleted within seconds of response",
-    "No accounts, no ad pixels",
+    "No account needed, no ad pixels",
     "MIT licensed — every line public",
     "Self-hostable in one Docker command",
     "Anonymized pageview analytics only",

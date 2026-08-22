@@ -19,7 +19,7 @@ const steps: Step[] = [
     {
         icon: Sparkles,
         title: "Welcome to PrivaTools",
-        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — browser-only where possible, self-hosted when processing needs a server. No accounts, no watermarks. Free and open-source under MIT.`,
+        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — browser-only where possible, self-hosted when processing needs a server. No account needed, no watermarks. Free and open-source under MIT.`,
     },
     {
         icon: MousePointerSquareDashed,

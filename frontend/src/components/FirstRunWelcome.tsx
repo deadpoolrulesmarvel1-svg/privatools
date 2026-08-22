@@ -127,7 +127,7 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
                     {TOTAL_TOOL_COUNT} file tools with privacy built in.
                 </p>
                 <p className="mt-3 max-w-[58ch] text-[14px] sm:text-[14.5px] text-muted-foreground leading-relaxed">
-                    PDFs, images, video, code and archives — processed in your browser where possible, or in isolated temporary storage when a backend is required. No accounts, no third-party file processors, no watermarks.
+                    PDFs, images, video, code and archives — processed in your browser where possible, or in isolated temporary storage when a backend is required. No account needed, no third-party file processors, no watermarks.
                 </p>
 
                 {/* CTAs */}

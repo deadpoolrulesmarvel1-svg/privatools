@@ -587,7 +587,7 @@ export default function AboutPage() {
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             Ready to <span className="italic text-accent">try</span>?
           </h2>
-          <p className="mt-3 text-[15px] text-muted-foreground">Browser-only where possible, self-hostable when a server is needed. No accounts, no watermarks.</p>
+          <p className="mt-3 text-[15px] text-muted-foreground">Browser-only where possible, self-hostable when a server is needed. No account needed, no watermarks.</p>
           <Link to="/" className="mt-7 btn-accent inline-flex">
             Browse all {TOTAL} tools <ArrowRight size={13} />
           </Link>

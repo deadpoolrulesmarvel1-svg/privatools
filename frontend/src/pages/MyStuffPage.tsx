@@ -138,7 +138,7 @@ export default function MyStuffPage() {
       </header>
 
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        PrivaTools has no accounts and never uploads any of this. Everything below lives in
+        PrivaTools needs no account and never uploads any of this. Everything below lives in
         this browser, on this device, and goes away if you clear your browsing data.
       </p>
 
