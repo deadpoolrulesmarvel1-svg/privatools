@@ -44,7 +44,7 @@ export function SiteHeader({
     return (
         <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
             {/* Tier 1 — brand, search, actions */}
-            <div className="mx-auto max-w-[1200px] px-4 sm:px-6 h-14 flex items-center gap-3">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center gap-3">
                 <button
                     ref={mobileTriggerRef}
                     onClick={onToggleMobile}
@@ -103,7 +103,7 @@ export function SiteHeader({
             {/* Tier 2 — the category bar. Scrolls horizontally on small screens
                 rather than wrapping, so the header height never jumps. */}
             <nav aria-label="Tool categories" className="border-t border-border">
-                <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <ul className="flex items-center gap-1 overflow-x-auto no-scrollbar -mx-1 px-1">
                         {CATEGORY_NAV.map(item => {
                             const active = item.match(pathname, search);

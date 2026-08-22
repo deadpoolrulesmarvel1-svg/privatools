@@ -66,7 +66,7 @@ const TOTAL_TOOLS = tools.length + nonPdfTools.length;
 export function SiteFooter() {
     return (
         <footer className="mt-20 border-t border-border bg-paper-2/50">
-            <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-12">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
                 <div className="grid gap-x-8 gap-y-9 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                     {COLUMNS.map(col => (
                         <nav key={col.label} aria-label={col.label}>

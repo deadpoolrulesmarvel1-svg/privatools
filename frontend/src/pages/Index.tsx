@@ -13,8 +13,7 @@ import {
     Search, X, ArrowRight, Upload, Command, GitBranch,
     Sparkles, FileText, Image as ImageIcon, Video, Code as CodeIcon,
     Archive as ArchiveIcon, FileBox, Cpu,
-    Pin, Clock, ShieldCheck, Newspaper,
-} from "lucide-react";
+    Pin, Clock, ShieldCheck, } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
@@ -373,7 +372,7 @@ export default function Index() {
                                 className="group mt-4 inline-flex items-center gap-2 max-w-full text-left rounded-lg border border-border/70 bg-paper-2/30 hover:bg-accent/[0.05] hover:border-accent/40 px-3 py-2 transition-colors"
                             >
                                 <span className="font-medium inline-flex items-center gap-1 text-[11px] text-accent shrink-0">
-                                    <Newspaper size={11} /> New
+                                    <Sparkles size={11} /> New
                                 </span>
                                 <span className="text-[12.5px] text-muted-foreground truncate group-hover:text-foreground transition-colors">
                                     {LATEST_POST.title}

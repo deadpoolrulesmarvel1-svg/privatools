@@ -136,11 +136,12 @@
     --muted-foreground: 196 14% 38%;     /* #536B70 — AA on white */
 
     /* Energy, not another button colour: highlights, badges, "new". */
-    --accent: 36 100% 50%;               /* #FFA000 */
-    --accent-foreground: 195 42% 8%;
+    --accent: 34 100% 32%;               /* #A35C00 — 5.0:1 on white */
+    --accent-bright: 38 100% 50%;        /* #FFA800 — fills only, never text */
+    --accent-foreground: 0 0% 100%;
     --accent-soft: 40 100% 94%;
 
-    --copper: 28 92% 42%;                /* warning */
+    --copper: 28 92% 33%;                /* warning — 4.7:1 on white */
     --copper-soft: 32 100% 94%;
     --success: 158 80% 30%;
     --success-soft: 158 60% 94%;
@@ -192,7 +193,8 @@
     --primary: 175 75% 47%;              /* lifted so it holds on a dark ground */
     --primary-foreground: 195 45% 6%;
 
-    --accent: 40 100% 58%;
+    --accent: 40 100% 62%;
+    --accent-bright: 40 100% 62%;
     --accent-foreground: 195 45% 6%;
     --accent-soft: 36 60% 16%;
 
@@ -382,13 +384,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  height: 24px;
-  padding: 0 0.625rem;
+  height: 26px;
+  padding: 0 0.75rem;
   background: hsl(var(--paper-2));
   color: hsl(var(--muted-foreground));
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0;
+  border-radius: 999px;
   border-radius: 6px;
   border: 1px solid hsl(var(--border));
 }
@@ -553,26 +556,27 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 44px;
-  padding: 0 1.25rem;
+  height: 48px;
+  padding: 0 1.75rem;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
-  letter-spacing: -0.005em;
-  border-radius: 8px;
-  transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.08),
-    0 1px 2px 0 rgba(20,15,5,0.20);
+  border-radius: 999px;
+  box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.32), 0 8px 20px -8px hsl(var(--primary) / 0.5);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.15s ease;
 }
 .btn-editorial:hover {
-  background: hsl(var(--primary) / 0.92);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.12),
-    0 4px 14px -2px rgba(20,15,5,0.30),
-    0 0 0 3px hsl(var(--accent) / 0.18);
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.32), 0 16px 32px -10px hsl(var(--primary) / 0.55);
+}
+.btn-editorial:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  .btn-editorial, .btn-editorial:hover, .btn-editorial:active { transition: none; transform: none; }
 }
 .btn-editorial:active { transform: translateY(1px); }
 
@@ -931,6 +935,39 @@
    own with the same Tailwind geometry, so rather than editing 56 files this
    upgrades all of them at once: softer corners, more room, and a lift on hover
    so the target feels alive rather than like a fieldset. */
+/* Route transition. Content arrives rather than blinking into place; the
+   header and footer stay put so only the changing region moves. */
+@keyframes route-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.workspace-enter {
+  animation: route-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Anything interactive that should feel like an object rather than a rectangle. */
+.press {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.press:hover  { transform: translateY(-2px); }
+.press:active { transform: translateY(1px); transition-duration: 0.08s; }
+
+/* A slow drift for ambient background shapes. Deliberately long and subtle —
+   ambient motion should be noticed only if you look for it. */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(0, -14px, 0) scale(1.04); }
+}
+.drift      { animation: drift 14s ease-in-out infinite; }
+.drift-slow { animation: drift 22s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-enter { animation: none; }
+  .press, .press:hover, .press:active { transition: none; transform: none; }
+  .drift, .drift-slow { animation: none; }
+}
+
 /* ── Motion ───────────────────────────────────────────────────────────────
    Nothing should mount all at once. A grid that appears as a single block
    reads as a screenshot; the same grid cascading in reads as a place that is
