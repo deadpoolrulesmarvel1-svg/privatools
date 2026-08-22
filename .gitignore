@@ -33,3 +33,6 @@ lo_input_*.pdf
 
 # SSH keys and other secrets — never commit these
 .secrets/
+
+# Durable app state (accounts, API keys). Created at runtime; never committed.
+data/

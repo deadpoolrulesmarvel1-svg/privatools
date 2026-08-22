@@ -14,9 +14,13 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - app-temp:/app/temp
+      # Accounts and API keys. Deliberately NOT app-temp: the cleanup janitor
+      # sweeps that volume by age and would delete the user table.
+      - app-data:/app/data
     environment:
       - PRIVATOOLS_BUILD_SHA=${GIT_SHA:-unknown}
       - PORT=8000
+      - PRIVATOOLS_DATA_DIR=/app/data
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300
       - TRUSTED_HOSTS=privatools.me,www.privatools.me,127.0.0.1,localhost
@@ -74,3 +78,4 @@ services:
 
 volumes:
   app-temp:
+  app-data:

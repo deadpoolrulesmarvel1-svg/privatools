@@ -65,6 +65,7 @@ from .routes import (
     analytics,
     accessibility,
 )
+from .routes import accounts as accounts_routes
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
 
@@ -113,6 +114,15 @@ async def _cleanup_task():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
+    # Durable state (accounts, API keys) lives on its own volume, separate from
+    # TEMP_DIR — the janitor sweeps that one. Creating the schema here means a
+    # fresh deploy is ready before the first request.
+    try:
+        from .store import init as init_store
+
+        init_store()
+    except Exception:
+        logger.exception("lifespan: durable store unavailable; accounts disabled")
     # Runs after uvicorn has set up its own loggers, so this sticks: route
     # uvicorn's error/startup lines through our JSON handler (research O3).
     route_uvicorn_logging()
@@ -630,6 +640,7 @@ app.include_router(transparency.router, prefix="/api")
 app.include_router(remove_watermark.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
+app.include_router(accounts_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
 
 # Sitemap + OG image
