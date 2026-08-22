@@ -309,18 +309,3 @@ def revoke_key(user_id: str, key_id: str) -> bool:
         )
         return cur.rowcount > 0
 
-
-def any_keys_issued() -> bool:
-    """True once any user has created a key.
-
-    Guards the open-deployment path in :func:`.api_key.require_api_key`: an
-    install with no static allowlist stays open only while no user key exists.
-    The moment someone issues one, unauthenticated calls stop being anonymous —
-    otherwise issuing a key would weaken the deployment rather than secure it.
-    """
-    store.init()
-    with store.read() as conn:
-        row = conn.execute(
-            "SELECT 1 FROM api_keys WHERE revoked_at IS NULL LIMIT 1"
-        ).fetchone()
-    return row is not None

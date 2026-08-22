@@ -644,6 +644,85 @@ app.include_router(accounts_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
 
 # Sitemap + OG image
+
+# ── /api/v1 ────────────────────────────────────────────────────────────
+# The same routers, mounted again behind auth and quota. One handler serves
+# both surfaces, so a fix reaches both and they cannot drift. The
+# unversioned /api/* routes stay open and unmetered — the site's own
+# frontend calls them — and are documented as unstable.
+from .api_v1 import router as api_v1  # noqa: E402
+
+app.middleware("http")(api_v1.attach_quota_headers)
+api_v1.mount(app, [
+    merge.router,
+    split.router,
+    compress.router,
+    pdf_to_image.router,
+    image_to_pdf.router,
+    rotate.router,
+    protect.router,
+    unlock.router,
+    watermark.router,
+    pdf_to_word.router,
+    page_numbers.router,
+    ocr.router,
+    office_to_pdf.router,
+    metadata.router,
+    extract_pages.router,
+    delete_pages.router,
+    pdf_to_text.router,
+    pdf_to_excel.router,
+    pdf_to_pptx.router,
+    strip_metadata.router,
+    delete_annotations.router,
+    repair.router,
+    crop.router,
+    resize.router,
+    flatten.router,
+    header_footer.router,
+    bates_numbering.router,
+    grayscale.router,
+    bookmarks.router,
+    pdf_to_pdfa.router,
+    extract_images.router,
+    organize_pages.router,
+    alternate_mix.router,
+    split_bookmarks.router,
+    split_by_size.router,
+    nup.router,
+    overlay.router,
+    fill_form.router,
+    compare.router,
+    deskew.router,
+    sign.router,
+    redact.router,
+    html_to_pdf.router,
+    edit_pdf.router,
+    qr_code.router,
+    remove_blank_pages.router,
+    auto_crop.router,
+    invert_colors.router,
+    pdf_security.router,
+    pdf_extra.router,
+    non_pdf_tools.router,
+    image_ocr.router,
+    phase1_tools.router,
+    phase2_tools.router,
+    phase3_tools.router,
+    phase4_tools.router,
+    phase5_tools.router,
+    phase6_tools.router,
+    reverse_pdf.router,
+    booklet.router,
+    new_tools.router,
+    phase7_tools.router,
+    v12_tools.router,
+    transparency.router,
+    remove_watermark.router,
+    developer.router,
+    accessibility.router,
+])
+
 app.include_router(sitemap.router)
 app.include_router(og_image.router)
 

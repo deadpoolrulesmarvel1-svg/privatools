@@ -51,16 +51,13 @@ async def require_api_key(api_key: str | None = Security(api_key_header)) -> str
 
     keys = _configured_keys()
     if not keys:
-        # No user keys matched and no static allowlist: open deployment.
-        from . import accounts
-
-        try:
-            has_any = accounts.any_keys_issued()
-        except Exception:
-            has_any = False
-        if not has_any:
-            return "anonymous-dev"
-    elif api_key:
+        # No static allowlist: this surface stays open. It must — the site's own
+        # frontend calls these routes, and an earlier version of this gate
+        # closed them as soon as any user issued a key, which 401'd the public
+        # pipeline endpoint for everyone. Metering and fail-closed behaviour
+        # belong to /api/v1, which has its own dependency.
+        return "anonymous-dev"
+    if api_key:
         # Compare as UTF-8 bytes: secrets.compare_digest raises TypeError on a
         # non-ASCII str, which would surface as an uncaught 500 instead of 401.
         candidate = api_key.encode("utf-8")
