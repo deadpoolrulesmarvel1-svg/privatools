@@ -51,7 +51,38 @@ const at = (path, extraFlags = []) => ({
     palette: PALETTE,
 });
 
+/**
+ * This design's route table lists `['/', 'home']` first and treats any pattern
+ * ending in "/" as a prefix — so `/tools`, `/blog`, everything, matches `home`
+ * before its own entry is reached. Its prototype never noticed: navigation was
+ * in-app clicks that set state directly, never a URL.
+ *
+ * Exact matches are tried before prefixes, which is what the table clearly
+ * intends and what makes its URLs work when typed or shared.
+ */
+function withFixedRouting(Base) {
+    return class WithFixedRouting extends Base {
+        parsePath(raw) {
+            let path = String(raw || "/").split("?")[0];
+            if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+            if (!path) path = "/";
+
+            const table = this.routeTable();
+            for (const [pattern, route] of table) {
+                if (!pattern.endsWith("/") && path === pattern) return { route, param: null };
+            }
+            for (const [pattern, route] of table) {
+                if (pattern.endsWith("/") && pattern !== "/" &&
+                    path.indexOf(pattern) === 0 && path.length > pattern.length) {
+                    return { route, param: path.slice(pattern.length) };
+                }
+            }
+            return { route: "404", param: path };
+        }
+    };
+}
+
 export default withVault(
-    withAccounts(withRealCatalogue(Base), at("/account")),
+    withAccounts(withRealCatalogue(withFixedRouting(Base)), at("/account")),
     at("/my-stuff/vault", ["isVault", "isStuff"]),
 );
