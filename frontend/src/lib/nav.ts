@@ -20,4 +20,6 @@ export const CATEGORY_NAV: NavItem[] = [
     { label: "Pipeline", href: "/pipeline", match: startsWith("/pipeline") },
     { label: "Batch", href: "/batch", match: startsWith("/batch") },
     { label: "Compare", href: "/compare", match: startsWith("/compare") },
+    { label: "Vault", href: "/my-stuff/vault", match: startsWith("/my-stuff/vault") },
+    { label: "Account", href: "/account", match: startsWith("/account") },
 ];

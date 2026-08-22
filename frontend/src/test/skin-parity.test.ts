@@ -67,11 +67,27 @@ describe("parity", () => {
         });
     }
 
-    it("every skin with an extension list has the file to back it", () => {
+    it("every ported skin with an extension list has the file to back it", () => {
         for (const skin of SKINS) {
+            // Signature is not a ported design — it is this app's own React
+            // routes, so it delivers extra surfaces as pages rather than
+            // through the generator seam and has no extensions file.
+            if (skin === "signature") continue;
             if (EXTENSION_SURFACES[skin].length === 0) continue;
             const file = resolve(__dirname, `../skins/extensions/${skin}.tsx`);
             expect(existsSync(file), `${skin} declares extension surfaces but ${file} does not exist`).toBe(true);
+        }
+    });
+
+    it("signature's extra surfaces exist as real routed pages", () => {
+        // The parity manifest is only as good as the files behind it.
+        for (const page of ["AccountPage", "VaultPage", "StatusPage", "SupportPage"]) {
+            const file = resolve(__dirname, `../pages/${page}.tsx`);
+            expect(existsSync(file), `${page}.tsx is missing`).toBe(true);
+        }
+        const app = readFileSync(resolve(__dirname, "../App.tsx"), "utf8");
+        for (const path of ["/account", "/account/keys", "/my-stuff/vault", "/status", "/support"]) {
+            expect(app, `App.tsx has no route for ${path}`).toContain(`path="${path}"`);
         }
     });
 });

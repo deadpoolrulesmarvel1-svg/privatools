@@ -110,6 +110,8 @@ export function SiteFooter() {
                         {[
                             { label: "About", href: "/about" },
                             { label: "Blog", href: "/blog" },
+                            { label: "Status", href: "/status" },
+                            { label: "Support", href: "/support" },
                             { label: "Privacy", href: "/privacy" },
                             { label: "Security", href: "/security" },
                             { label: "Terms", href: "/terms" },

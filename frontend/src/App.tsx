@@ -38,6 +38,10 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SecurityPage = lazy(() => import("./pages/SecurityPage"));
 const MyStuffPage = lazy(() => import("./pages/MyStuffPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const VaultPage = lazy(() => import("./pages/VaultPage"));
+const StatusPage = lazy(() => import("./pages/StatusPage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
 const CommandPalette = lazy(loadCommandPalette);
 const DynamicHead = lazy(() => import("./components/DynamicHead").then(m => ({ default: m.DynamicHead })));
 const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
@@ -185,6 +189,11 @@ const App = () => (
           <Route path="/security" element={withRouteFallback(<SecurityPage />)} />
           <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
           <Route path="/my-stuff" element={withRouteFallback(<MyStuffPage />)} />
+          <Route path="/my-stuff/vault" element={withRouteFallback(<VaultPage />)} />
+          <Route path="/account" element={withRouteFallback(<AccountPage />)} />
+          <Route path="/account/keys" element={withRouteFallback(<AccountPage />)} />
+          <Route path="/status" element={withRouteFallback(<StatusPage />)} />
+          <Route path="/support" element={withRouteFallback(<SupportPage />)} />
           <Route path="*" element={withRouteFallback(<NotFound />)} />
         </Routes>
       </AppShell>

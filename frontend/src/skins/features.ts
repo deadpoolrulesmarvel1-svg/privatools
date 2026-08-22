@@ -38,10 +38,17 @@ export const FEATURES: Feature[] = [
     { id: "my-stuff", label: "My Stuff", path: "/my-stuff", why: "local activity, defaults, assets" },
     { id: "vault", label: "Vault", path: "/my-stuff/vault", why: "real AES-GCM password vault (localStore/crypto)" },
 
-    // ── built features the imported designs had no surface for ────────────
-    { id: "byok", label: "AI keys", path: "/ai-keys", why: "bring-your-own-key AI, already built in lib/byok" },
-    { id: "translate", label: "Translate", path: "/translate", why: "on-device translation, already built" },
-    { id: "signatures", label: "Signatures", path: "/signatures", why: "saved signatures, already built" },
+    // BYOK, translate and saved signatures were listed here as missing
+    // surfaces. They are not: each lives inside a tool — ByokPanel inside the
+    // AI tools, translate as the `translate-pdf` tool, signatures inside
+    // ESignUI — and every theme reaches all of them through the catalogue. The
+    // "tool" entry above already covers them, so requiring separate routes
+    // would have meant building three redundant pages per theme.
+    //
+    // A standalone place to manage saved AI keys across tools would be a real
+    // addition, but it does not exist in ANY theme today, including the house
+    // design. That is a product gap, not a parity gap, and belongs in the
+    // roadmap rather than here.
 
     // ── accounts and the developer API ────────────────────────────────────
     { id: "account", label: "Account", path: "/account", why: "sign in / sign up" },
@@ -76,7 +83,10 @@ export const NATIVE_SURFACES: Record<string, string[]> = {
     ],
     aurora: [
         "home", "tools", "tool", "pipeline", "batch", "my-stuff",
-        "compare", "blog", "privacy", "support", "status",
+        "compare", "blog", "support", "status",
+        // One `policy` route serves a set of documents — about, privacy,
+        // security, terms, processors, accessibility — each at its own hash.
+        "about", "privacy", "security", "terms",
     ],
     carbon: [
         "home", "tools", "tool", "pipeline", "batch", "my-stuff",
@@ -101,7 +111,7 @@ export function missingFrom(skin: string): Feature[] {
  * Filled in as each is built; `PENDING` below is what is still outstanding.
  */
 export const EXTENSION_SURFACES: Record<string, string[]> = {
-    signature: [],
+    signature: ["vault", "account", "api-keys", "status", "support"],
     aurora: ["account", "api-keys", "vault"],
     carbon: ["account", "api-keys", "vault"],
     structured: ["account", "api-keys", "vault"],
@@ -117,10 +127,10 @@ export const EXTENSION_SURFACES: Record<string, string[]> = {
  * something goes missing that is NOT listed here.
  */
 export const PENDING: Record<string, string[]> = {
-    signature: ["vault", "byok", "translate", "signatures", "account", "api-keys", "status", "support"],
-    aurora: ["byok", "translate", "signatures", "about", "security", "terms"],
-    carbon: ["byok", "translate", "signatures"],
-    structured: ["byok", "translate", "signatures"],
+    signature: [],
+    aurora: [],
+    carbon: [],
+    structured: [],
 };
 
 /** Everything a skin can reach today. */
