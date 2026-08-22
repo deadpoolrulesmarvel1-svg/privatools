@@ -1,6 +1,10 @@
-/** Mirrors the static anchor in index.html so the pre-hydration and hydrated
- *  skip links resolve to the same target. Every shell renders one. */
+import { useEffect } from "react";
+
+/** Takes over from the static anchor in index.html, which exists only so the
+ *  skip link works before React mounts. Both in the DOM at once would make a
+ *  keyboard user Tab through the same affordance twice, so this retires it. */
 export function SkipLink() {
+    useEffect(() => { document.getElementById("prepaint-skip")?.remove(); }, []);
     return (
         <a
             href="#main-content"

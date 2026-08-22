@@ -71,12 +71,12 @@ export function SiteFooter() {
                     {COLUMNS.map(col => (
                         <nav key={col.label} aria-label={col.label}>
                             <h2 className="text-[13px] font-semibold text-foreground mb-3">{col.label}</h2>
-                            <ul className="space-y-1.5">
+                            <ul className="space-y-0.5">
                                 {col.items.map(item => (
                                     <li key={item.slug}>
                                         <Link
                                             to={item.href}
-                                            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="block py-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                             {item.name}
                                         </Link>
@@ -86,7 +86,7 @@ export function SiteFooter() {
                                     <li>
                                         <Link
                                             to={col.href}
-                                            className="text-[13px] text-accent hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="block py-1 text-[13px] text-accent hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                             All {col.total}
                                         </Link>
@@ -106,7 +106,7 @@ export function SiteFooter() {
                             as soon as they're processed.
                         </span>
                     </p>
-                    <nav aria-label="Site" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
+                    <nav aria-label="Site" className="flex flex-wrap items-center gap-x-4 gap-y-0 text-[13px]">
                         {[
                             { label: "About", href: "/about" },
                             { label: "Blog", href: "/blog" },
@@ -119,7 +119,7 @@ export function SiteFooter() {
                             <Link
                                 key={l.href}
                                 to={l.href}
-                                className="text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 {l.label}
                             </Link>
@@ -128,7 +128,7 @@ export function SiteFooter() {
                             href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             Source
                         </a>

@@ -9,7 +9,7 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items }: BreadcrumbProps) {
     return (
         <nav className="flex items-center gap-1 text-[12px] text-muted-foreground mb-4 flex-wrap border-l-2 border-primary/20 pl-3">
-            <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors">
+            <Link to="/" className="inline-flex items-center gap-1 min-h-[24px] py-1 hover:text-primary transition-colors">
                 <Home size={11} />
                 <span>Home</span>
             </Link>
@@ -19,7 +19,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                     <span key={i} className="flex items-center gap-1">
                         <span className="text-muted-foreground">/</span>
                         {item.href ? (
-                            <Link to={item.href} className="text-muted-foreground hover:text-primary transition-colors">{item.label}</Link>
+                            <Link to={item.href} className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{item.label}</Link>
                         ) : (
                             <span className={cn(
                                 "font-medium",

@@ -66,7 +66,7 @@ export function AssetPicker({
                 <button
                   type="button"
                   aria-label={`Delete ${a.name}`}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-9 coarse:w-9 rounded text-muted-foreground hover:text-destructive transition-colors"
                   onClick={() => remove(a.id)}
                 >
                   <Trash2 size={11} aria-hidden="true" />

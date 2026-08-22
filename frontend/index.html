@@ -89,10 +89,10 @@
 </head>
   <body>
     <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
-         Once React mounts, AppShell provides its own (duplicate but harmless) skip
-         link with identical target, so the keyboard shortcut still works after
-         hydration. -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
+         AppShell renders its own once React mounts and removes this one by id;
+         leaving both would make a keyboard user Tab past the same affordance
+         twice. -->
+    <a id="prepaint-skip" href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
     <div id="prepaint-brand" aria-hidden="true">Priva<em>tools</em></div>
     <div id="root">
       <div id="prepaint-shell" style="min-height:100vh;background:#ffffff;color:#0b0d10;font-family:Archivo,system-ui,sans-serif">

@@ -785,7 +785,7 @@ function DirectoryView() {
                   return (
                   <tr key={key} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
                     <td className="px-5 py-3">
-                      <Link to={`/compare/${key}`} className="font-display font-semibold text-[14px] text-foreground tracking-[-0.015em] hover:text-accent transition-colors">{c.name}</Link>
+                      <Link to={`/compare/${key}`} className="font-display font-semibold text-[14px] text-foreground tracking-[-0.015em] hover:text-accent transition-colors inline-flex items-center min-h-[24px]">{c.name}</Link>
                     </td>
                     <td className="text-center px-3">{c.pricing?.toLowerCase().startsWith("free") ? yes("Free") : no("Free")}</td>
                     <td className="text-center px-3">{c.openSource ? yes("Open source") : no("Open source")}</td>

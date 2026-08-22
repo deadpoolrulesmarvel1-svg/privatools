@@ -213,12 +213,12 @@ export default function MyStuffPage() {
                     </code>
                   )}
                 </span>
-                <span className="flex shrink-0 items-center gap-3">
+                <span className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => reveal(e.id)}
                     aria-label={revealed[e.id] ? `Hide ${e.label}` : `Show ${e.label}`}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-11 coarse:w-11 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                   >
                     {revealed[e.id] ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -229,7 +229,7 @@ export default function MyStuffPage() {
                   <button
                     type="button"
                     aria-label={`Delete ${e.label}`}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-11 coarse:w-11 rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
                     onClick={async () => {
                       await vault.deleteEntry(e.id);
                       await refresh();

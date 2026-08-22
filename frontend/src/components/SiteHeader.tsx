@@ -39,7 +39,7 @@ export function SiteHeader({
     const { pathname, search } = useLocation();
 
     const iconBtn =
-        "inline-flex h-9 w-9 coarse:h-11 coarse:w-11 items-center justify-center rounded-lg " +
+        "inline-flex shrink-0 h-9 w-9 coarse:h-11 coarse:w-11 items-center justify-center rounded-lg " +
         "text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors " +
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 

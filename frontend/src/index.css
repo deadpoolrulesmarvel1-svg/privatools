@@ -1192,6 +1192,19 @@ button.btn-accent:focus-visible {
   outline: 2px solid hsl(var(--foreground));
   outline-offset: 3px;
 }
+/* ── Touch target floor ───────────────────────────────────────────── */
+/* WCAG 2.5.8 asks for a 24px minimum target. A dozen standalone links and
+   buttons sat at 17-20px tall — fine with a mouse, fiddly with a thumb.
+
+   `min-height` has no effect on `display:inline`, so this reaches exactly the
+   controls that need it: standalone links and buttons, which are inline-flex
+   or block. Links inside running prose stay inline and untouched, which is
+   also what 2.5.8's inline exception wants. Zero specificity, so any element
+   that deliberately sizes itself larger still wins. */
+@media (pointer: coarse) {
+  :where(a, button, [role="button"], summary) { min-height: 24px; }
+}
+
 /* ── Hover-revealed row actions ───────────────────────────────────── */
 /* List rows hide their delete/reorder buttons behind `group-hover:opacity-100`.
    Hover is the one interaction a keyboard has no access to, so those buttons
