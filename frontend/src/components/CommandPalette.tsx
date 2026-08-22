@@ -584,7 +584,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             }}
                             aria-label="Search tools"
                         />
-                        <kbd className="hidden sm:inline-flex items-center font-mono text-[10px] text-muted-foreground bg-secondary border border-border rounded px-1.5 py-0.5">
+                        <kbd className="hidden sm:inline-flex items-center text-[10px] text-muted-foreground bg-secondary border border-border rounded px-1.5 py-0.5">
                             ESC
                         </kbd>
                     </div>

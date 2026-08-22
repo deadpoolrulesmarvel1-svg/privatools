@@ -215,7 +215,7 @@ export function BatesUI() {
                                             </div>
                                         ))}
                                     </div>
-                                    <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80">
+                                    <p className="px-3 py-1.5 border-t border-border text-[10px] tracking-[0.04em] text-muted-foreground/80">
                                         Also saved as bates-manifest.json inside the ZIP
                                     </p>
                                 </div>

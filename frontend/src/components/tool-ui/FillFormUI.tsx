@@ -170,7 +170,7 @@ export function FillFormUI() {
                 </div>
                 <div className="p-3 space-y-1.5 max-h-[60vh] overflow-y-auto">
                     {filtered.length === 0 && (
-                        <p className="font-mono text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No matching fields</p>
+                        <p className="text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No matching fields</p>
                     )}
                     {filtered.map((field, i) => {
                         const tone = TYPE_CHIP_TONE[field.type] || TYPE_CHIP_TONE.text;

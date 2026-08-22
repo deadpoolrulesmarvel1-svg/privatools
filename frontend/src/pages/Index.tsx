@@ -255,7 +255,7 @@ export default function Index() {
                             <X size={13} /> <span className="hidden sm:inline">Back to dashboard</span><span className="sm:hidden">Back</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 stagger-in">
                         {allMatched.map(t => {
                             const Icon = t.icon;
                             return (
@@ -397,11 +397,11 @@ export default function Index() {
                                     Browse all {TOOL_TOTAL} <ArrowRight size={11} />
                                 </Link>
                             </div>
-                            <p className="font-mono text-[10.5px] text-muted-foreground/80 mt-1 ml-[18px]">
+                            <p className="text-[13px] text-muted-foreground mt-1 ml-[18px]">
                                 {favorites.length > 0 ? "Your favorite tools, one click away" : "The eight tools people open most"}
                             </p>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 animate-grid-enter">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 stagger-in">
                             {pinned.map(tool => {
                                 const Icon = tool.icon;
                                 return (
@@ -430,7 +430,7 @@ export default function Index() {
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                                 <Clock size={14} className="inline -mt-1 text-muted-foreground" /> Recent
                             </h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">{recent.length > 0 ? "last session" : "nothing yet"}</span>
+                            <span className="text-[13px] text-muted-foreground">{recent.length > 0 ? "last session" : "nothing yet"}</span>
                         </div>
                         {recent.length > 0 ? (
                             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
@@ -475,9 +475,9 @@ export default function Index() {
                     <section className="mb-12 animate-fade-up stagger-4">
                         <div className="flex items-baseline gap-3 mb-4">
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">Suites</h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">browse by file type</span>
+                            <span className="text-[13px] text-muted-foreground">browse by file type</span>
                         </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 animate-grid-enter">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 stagger-in">
                             {SUITE_TILES.map(s => {
                                 const Icon = s.icon;
                                 return (
@@ -515,7 +515,7 @@ export default function Index() {
                                 <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                                     <GitBranch size={14} className="inline -mt-1 text-accent" /> Workflows
                                 </h2>
-                                <span className="font-mono text-[10.5px] text-muted-foreground/80">pre-baked Pipelines</span>
+                                <span className="text-[13px] text-muted-foreground">pre-baked pipelines</span>
                             </div>
                             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
                                 {SUGGESTED_PIPELINES.map((p, i) => (
@@ -584,7 +584,7 @@ export default function Index() {
                     <section className="mb-12 animate-fade-up stagger-6">
                         <div className="flex items-baseline gap-3 mb-4">
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">Receipts</h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">verifiable, no marketing</span>
+                            <span className="text-[13px] text-muted-foreground">verifiable, no marketing</span>
                         </div>
 
                         {/* Mobile: stacked feature rows. Desktop: 3-col grid. */}

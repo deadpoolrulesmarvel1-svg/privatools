@@ -464,11 +464,20 @@
   overflow: hidden;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: 14px;
+  border-radius: 20px;
   transition:
-    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    transform   0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow  0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform   0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow  0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-tile:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--tile, var(--primary)) / 0.55);
+  box-shadow: 0 20px 44px -24px hsl(var(--tile, var(--primary)) / 0.7),
+              0 2px 8px -4px hsl(var(--foreground) / 0.08);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-tile, .hero-tile:hover { transition: none; transform: none; }
 }
 .hero-tile:active { transform: translateY(0); transition-duration: 0.06s; }
 .hero-tile::before {
@@ -731,19 +740,19 @@
 }
 
 /* ── Per-suite tile color (set --tile per element) ────────────────── */
-.cat-organize { --tile: 200 90% 45%; }   /* cyan */
-.cat-edit     { --tile: 270 70% 55%; }   /* violet */
-.cat-optimize { --tile: 152 76% 35%; }   /* the brand green itself */
-.cat-security { --tile: 350 80% 50%; }   /* rose */
-.cat-to-pdf   { --tile: 22  85% 45%; }   /* burnt orange / copper */
-.cat-from-pdf { --tile: 220 75% 55%; }   /* blue */
-.cat-advanced { --tile: 250 75% 60%; }   /* indigo */
+.cat-organize { --tile: var(--cat-organize); }
+.cat-edit     { --tile: var(--cat-edit); }
+.cat-optimize { --tile: var(--cat-optimize); }
+.cat-security { --tile: var(--cat-security); }
+.cat-to-pdf   { --tile: var(--cat-to-pdf); }
+.cat-from-pdf { --tile: var(--cat-from-pdf); }
+.cat-advanced { --tile: var(--cat-advanced); }
 
-.cat-image          { --tile: 320 75% 55%; } /* pink */
-.cat-video-audio    { --tile: 18  85% 50%; } /* orange-red */
-.cat-developer      { --tile: 195 85% 45%; } /* sky */
-.cat-archive        { --tile: 45  85% 45%; } /* amber */
-.cat-document-office{ --tile: 80  65% 40%; } /* lime-olive */
+.cat-image          { --tile: var(--cat-image); }
+.cat-video-audio    { --tile: var(--cat-video); }
+.cat-developer      { --tile: var(--cat-developer); }
+.cat-archive        { --tile: var(--cat-archive); }
+.cat-document-office{ --tile: var(--cat-document); }
 
 .dark .cat-organize { --tile: 200 80% 60%; }
 .dark .cat-edit     { --tile: 270 75% 70%; }
@@ -763,13 +772,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  width: 40px;
-  border-radius: 10px;
-  color: hsl(var(--tile, var(--accent)));
-  background: hsl(var(--tile, var(--accent)) / 0.10);
-  border: 1px solid hsl(var(--tile, var(--accent)) / 0.20);
-  transition: background 0.15s ease, transform 0.18s ease, border-color 0.18s ease;
+  height: 42px;
+  width: 42px;
+  border-radius: 14px;
+  color: #fff;
+  background: hsl(var(--tile, var(--primary)));
+  border: none;
+  box-shadow: 0 8px 18px -10px hsl(var(--tile, var(--primary)) / 0.85);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-tile:hover .icon-tile,
+.tool-card:hover .icon-tile {
+  transform: scale(1.08) rotate(-3deg);
+  box-shadow: 0 12px 26px -10px hsl(var(--tile, var(--primary)) / 0.95);
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-tile, .hero-tile:hover .icon-tile, .tool-card:hover .icon-tile {
+    transition: none; transform: none;
+  }
 }
 .tool-card:hover .icon-tile,
 .hero-tile:hover .icon-tile {
@@ -870,6 +891,59 @@
    own with the same Tailwind geometry, so rather than editing 56 files this
    upgrades all of them at once: softer corners, more room, and a lift on hover
    so the target feels alive rather than like a fieldset. */
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Nothing should mount all at once. A grid that appears as a single block
+   reads as a screenshot; the same grid cascading in reads as a place that is
+   doing something. Y-translation plus opacity only — both GPU-composited. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.stagger-in > * {
+  opacity: 0;
+  animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* Capped at 12 — past that the last card would wait most of a second, which
+   reads as jank rather than choreography. */
+.stagger-in > *:nth-child(1)  { animation-delay: 0.02s; }
+.stagger-in > *:nth-child(2)  { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(3)  { animation-delay: 0.08s; }
+.stagger-in > *:nth-child(4)  { animation-delay: 0.11s; }
+.stagger-in > *:nth-child(5)  { animation-delay: 0.14s; }
+.stagger-in > *:nth-child(6)  { animation-delay: 0.17s; }
+.stagger-in > *:nth-child(7)  { animation-delay: 0.20s; }
+.stagger-in > *:nth-child(8)  { animation-delay: 0.23s; }
+.stagger-in > *:nth-child(9)  { animation-delay: 0.26s; }
+.stagger-in > *:nth-child(10) { animation-delay: 0.29s; }
+.stagger-in > *:nth-child(11) { animation-delay: 0.32s; }
+.stagger-in > *:nth-child(n+12) { animation-delay: 0.35s; }
+
+/* Scroll reveal — sections settle in as they enter the viewport. */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in > * { animation: none; opacity: 1; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Card shadow carries the card's own hue rather than generic black, so a grid
+   of tools reads as coloured objects on a page instead of grey rectangles. */
+.tool-card:hover {
+  box-shadow: 0 18px 40px -22px var(--hue), 0 2px 8px -4px hsl(var(--foreground) / 0.08);
+}
+
 .dropzone-surface {
   border-radius: 28px !important;
   padding-top: 3.5rem !important;

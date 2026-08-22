@@ -136,7 +136,7 @@ export function RemoveWatermarkUI() {
                             <span className="italic text-accent">{chosen.size}</span>{" "}
                             watermark{chosen.size !== 1 && "s"} removed
                         </h2>
-                        <p className="mt-1 font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
+                        <p className="mt-1 text-[11px] tracking-[0.04em] text-muted-foreground">
                             The rest of the page is untouched
                         </p>
                         <button onClick={reset} className="mt-5 inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-4 text-[13px] font-medium hover:bg-secondary/60">

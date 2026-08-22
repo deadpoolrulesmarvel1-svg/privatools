@@ -219,7 +219,7 @@ export default function NotFound() {
 
         {/* Report broken link */}
         <div className="mt-12 pt-8 border-t border-border max-w-md mx-auto">
-          <p className="font-mono-meta text-[11.5px] tracking-widest text-muted-foreground mb-2">
+          <p className="-meta text-[11.5px] tracking-widest text-muted-foreground mb-2">
             Followed a link here?
           </p>
           <a

@@ -174,7 +174,7 @@ export function CompareUI() {
                     </div>
                     <div className="p-3 max-h-[420px] overflow-auto">
                         {textResult.diff.length === 0 ? (
-                            <p className="font-mono text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No textual differences found</p>
+                            <p className="text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No textual differences found</p>
                         ) : (
                             <pre className="font-mono text-[12px] leading-relaxed text-foreground whitespace-pre-wrap">
                                 {textResult.diff.slice(0, 200).map((l, i) => {
