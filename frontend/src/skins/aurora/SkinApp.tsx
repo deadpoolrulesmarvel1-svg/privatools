@@ -2043,7 +2043,7 @@ Component.prototype.render = function render() {
     <>
 
       <div style={css("display:flex;min-height:100vh;background:var(--bg0);position:relative")}>
-      <a href="#main" onClick={v.skipToMain} style={css("position:absolute;left:8px;top:-60px;z-index:100;padding:10px 14px;border-radius:10px;background:var(--pnl);border:1px solid var(--em);color:var(--text);font-size:13px")}>Skip to content</a>
+      <a href="#main" onClick={v.skipToMain} style={css("position:absolute;left:8px;top:-60px;z-index:100;padding:10px 14px;border-radius:10px;background:var(--pnl);border:1px solid var(--em);color:var(--text);font-size:13px")} className="dc-i1">Skip to content</a>
       <nav aria-label="Primary" style={css("display:var(--rail-d);flex-direction:column;width:var(--rail-w);flex:0 0 var(--rail-w);border-right:1px solid var(--line);background:var(--bg1);position:sticky;top:0;height:100vh;padding:20px 12px 14px;gap:4px;z-index:20")}>
       <a href="#home" onClick={v.goHome} style={css("display:flex;align-items:center;gap:10px;padding:6px 8px 18px;color:var(--text)")}>
       <span style={css("width:28px;height:28px;border-radius:8px;background:linear-gradient(145deg,var(--tl),var(--em) 60%,var(--vi));display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px -4px var(--em)")}>
@@ -2165,7 +2165,7 @@ Component.prototype.render = function render() {
       </div>
       </section>
       <section style={css("margin-top:18px;display:grid;grid-template-columns:var(--c2);gap:var(--gap);align-items:start")}>
-      <div role="button" tabindex="0" aria-label="Drop a file or press Enter to choose one" onKeyDown={v.onDropKey} onDragOver={v.onDragOver} onDragLeave={v.onDragLeave} onDrop={v.onDrop} style={css(`border:1px dashed ${v.dropBd};border-radius:18px;background:${v.dropBg};padding:26px;transition:border-color .2s ease,background .2s ease;position:relative;overflow:hidden`)}>
+      <div role="button" tabIndex="0" aria-label="Drop a file or press Enter to choose one" onKeyDown={v.onDropKey} onDragOver={v.onDragOver} onDragLeave={v.onDragLeave} onDrop={v.onDrop} style={css(`border:1px dashed ${v.dropBd};border-radius:18px;background:${v.dropBg};padding:26px;transition:border-color .2s ease,background .2s ease;position:relative;overflow:hidden`)}>
       <div style={css("display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px")}>
       <div style={css(`width:52px;height:52px;border-radius:14px;border:1px solid var(--line2);background:var(--pnl2);display:flex;align-items:center;justify-content:center;transform:${v.dropIconT};transition:transform .25s ease`)}>
       <span style={css("font-family:'Material Symbols Rounded';font-size:24px;color:var(--em);font-variation-settings:'wght' 300")}>{ICON[v.dropIcon]}</span>
@@ -2308,7 +2308,7 @@ Component.prototype.render = function render() {
 
                     {(v.popular ?? []).map((t, tI) => (
                 
-      <button type="button" onClick={t.onClick} style={css(`text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:14px;cursor:pointer;color:var(--text);animation:rise .3s ease both;animation-delay:${t.delay};transition:transform .18s ease,border-color .18s ease`)} style-hover="transform:translateY(-2px);border-color:var(--line2);background:var(--pnl2)">
+      <button type="button" onClick={t.onClick} style={css(`text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:14px;cursor:pointer;color:var(--text);animation:rise .3s ease both;animation-delay:${t.delay};transition:transform .18s ease,border-color .18s ease`)} className="dc-i2">
       <span style={css(`font-family:'Material Symbols Rounded';font-size:22px;color:${t.color};font-variation-settings:'wght' 300`)}>{ICON[t.icon]}</span>
       <span style={css("display:block;font-size:13.5px;font-weight:600;margin-top:10px")}>{t.name}</span>
       <span style={css("display:block;font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.35")}>{t.short}</span>
@@ -2505,7 +2505,7 @@ Component.prototype.render = function render() {
 
                       {(v.toolList ?? []).map((t, tI) => (
                   
-      <div style={css(`position:relative;border:1px solid var(--line);border-radius:15px;background:var(--pnl);padding:14px;animation:rise .28s ease both;animation-delay:${t.delay};transition:border-color .18s ease,transform .18s ease`)} style-hover="border-color:var(--line2);transform:translateY(-2px)">
+      <div style={css(`position:relative;border:1px solid var(--line);border-radius:15px;background:var(--pnl);padding:14px;animation:rise .28s ease both;animation-delay:${t.delay};transition:border-color .18s ease,transform .18s ease`)} className="dc-i3">
       <button type="button" onClick={t.onFav} aria-label={t.favAria} style={css(`position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:transparent;color:${t.favColor};cursor:pointer`)}>
       <span style={css(`font-family:'Material Symbols Rounded';font-size:16px;font-variation-settings:'FILL' ${t.favFill}`)}>{ICON.star}</span></button>
       <button type="button" onClick={t.onClick} style={css("display:block;width:100%;text-align:left;background:transparent;border:none;padding:0;cursor:pointer;color:var(--text)")}>
@@ -2631,7 +2631,7 @@ Component.prototype.render = function render() {
 
                     {Boolean(v.showDrop) && (<>
                 
-      <div role="button" tabindex="0" aria-label="Add files: drop here or press Enter" onKeyDown={v.onToolDropKey} onDragOver={v.onToolDragOver} onDragLeave={v.onToolDragLeave} onDrop={v.onToolDrop} style={css(`margin-top:14px;border:1px dashed ${v.tDropBd};border-radius:15px;background:${v.tDropBg};padding:26px 18px;text-align:center;transition:border-color .2s ease,background .2s ease`)}>
+      <div role="button" tabIndex="0" aria-label="Add files: drop here or press Enter" onKeyDown={v.onToolDropKey} onDragOver={v.onToolDragOver} onDragLeave={v.onToolDragLeave} onDrop={v.onToolDrop} style={css(`margin-top:14px;border:1px dashed ${v.tDropBd};border-radius:15px;background:${v.tDropBg};padding:26px 18px;text-align:center;transition:border-color .2s ease,background .2s ease`)}>
       <div style={css(`width:48px;height:48px;margin:0 auto;border-radius:13px;border:1px solid var(--line2);background:var(--pnl2);display:flex;align-items:center;justify-content:center;transform:${v.tDropT};transition:transform .25s ease`)}>
       <span style={css("font-family:'Material Symbols Rounded';font-size:23px;color:var(--em);font-variation-settings:'wght' 300")}>{ICON[v.tDropIcon]}</span>
       </div>
@@ -3381,7 +3381,7 @@ Component.prototype.render = function render() {
 
                         {(v.msCards ?? []).map((c, cI) => (
                     
-      <button type="button" onClick={c.onClick} style={css("text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--pnl);padding:16px;cursor:pointer;color:var(--text);min-height:132px;position:relative;overflow:hidden;transition:transform .18s ease,border-color .18s ease")} style-hover="transform:translateY(-2px);border-color:var(--line2)">
+      <button type="button" onClick={c.onClick} style={css("text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--pnl);padding:16px;cursor:pointer;color:var(--text);min-height:132px;position:relative;overflow:hidden;transition:transform .18s ease,border-color .18s ease")} className="dc-i4">
       <span style={css("display:block;font-family:Sora,sans-serif;font-size:16px;font-weight:600")}>{c.name}</span>
       <span style={css("display:block;font-size:12px;color:var(--text2);margin-top:6px;line-height:1.45;max-width:82%")}>{c.desc}</span>
       <span style={css("display:block;font-size:11.5px;color:var(--em);margin-top:10px")}>{c.meta}</span>
@@ -3995,7 +3995,7 @@ Component.prototype.render = function render() {
 
                   {(v.blogPosts ?? []).map((p, pI) => (
               
-      <button type="button" onClick={p.onClick} style={css("text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--pnl);padding:0;cursor:pointer;color:var(--text);overflow:hidden;transition:transform .18s ease,border-color .18s ease")} style-hover="transform:translateY(-2px);border-color:var(--line2)">
+      <button type="button" onClick={p.onClick} style={css("text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--pnl);padding:0;cursor:pointer;color:var(--text);overflow:hidden;transition:transform .18s ease,border-color .18s ease")} className="dc-i5">
       <span style={css("display:block;height:110px;position:relative;overflow:hidden;background:var(--bg1)")}>
       <span aria-hidden="true" style={css("position:absolute;inset:-40%;opacity:var(--aurora-o);background:radial-gradient(45% 50% at 35% 45%,rgba(19,184,178,.5),transparent 70%),radial-gradient(40% 45% at 70% 40%,rgba(117,104,244,.42),transparent 70%);filter:blur(26px);animation:aur1 22s ease-in-out infinite")}></span>
       <span style={css("position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--text2);border:1px solid var(--line2);background:var(--pnl);border-radius:20px;padding:3px 9px")}>{p.cat}</span>

@@ -20,6 +20,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ATTR_MAP } from "./dc-convert.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -50,10 +51,15 @@ function interp(value) {
 }
 const hasBinding = (v) => /\{\{/.test(v);
 
+
 function attrToJsx(name, value) {
   if (name === "style-focus" || name.startsWith("hint-")) return null;
-  if (name === "class") name = "className";
-  if (name === "for") name = "htmlFor";
+  if (Object.prototype.hasOwnProperty.call(ATTR_MAP, name)) name = ATTR_MAP[name];
+  else if (name.includes("-") && !/^(data|aria)-/.test(name)) {
+    // Surface anything hyphenated that isn't a namespaced attribute, rather
+    // than letting React drop it silently the way stroke-width was dropped.
+    console.warn(`  unmapped hyphenated attribute: ${name}`);
+  }
   if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
     const ev = "on" + name.slice(2, 3).toUpperCase() + name.slice(3);
     const m = value.match(/^\{\{\s*([^}]+?)\s*\}\}$/);

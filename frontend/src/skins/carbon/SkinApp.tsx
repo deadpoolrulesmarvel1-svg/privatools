@@ -42,16 +42,16 @@ const PAL = {
     panel:'rgba(233,239,238,.58)', panel2:'linear-gradient(150deg,rgba(38,200,186,.10),rgba(251,252,250,.9))',
     heroBg:'linear-gradient(120deg,#FBFCFA 0%,#EFF3F1 52%,#E4EDEB 100%)',
     line:'rgba(23,32,36,.11)', line2:'rgba(23,32,36,.19)', hover:'rgba(23,32,36,.045)',
-    txt:'#172024', txt2:'#4E5F65', txt3:'#77878C',
-    aqua:'#0F9C97', aquaTxt:'#0B7C79', teal:'#0F8A80', ok:'#0F8A80', lav:'#5B47C4',
-    amber:'#9A6510', coral:'#BE3F35', onAqua:'#FFFFFF',
+    txt:'#172024', txt2:'#4E5F65', txt3:'#606E72',
+    aqua:'#0D8480', aquaTxt:'#0B7875', teal:'#0D7970', ok:'#0D7970', lav:'#5B47C4',
+    amber:'#94610F', coral:'#BE3F35', onAqua:'#FFFFFF',
     aquaBg:'rgba(15,156,151,.11)', okBg:'rgba(15,138,128,.12)', amberBg:'rgba(154,101,16,.11)',
     coralBg:'rgba(190,63,53,.10)', lavBg:'rgba(91,71,196,.11)',
     edge:'rgba(15,156,151,.34)', edgeSoft:'rgba(15,156,151,.22)', edgeHot:'rgba(15,156,151,.5)',
     glassA:'rgba(79,225,222,.2)', glassB:'rgba(146,124,255,.12)', glassC:'rgba(79,225,222,.3)',
     sheen:'rgba(255,255,255,.75)', halo:'rgba(38,200,186,.12)', halo2:'rgba(146,124,255,.08)',
     aquaGlow:'rgba(15,156,151,.18)', scrim:'rgba(23,32,36,.4)', grainO:'.035',
-    link:'#0B7C79', linkH:'#0F9C97'
+    link:'#0B7875', linkH:'#0C7874'
   }
 };
 
@@ -2176,7 +2176,7 @@ Component.prototype.render = function render() {
 
       <div style={css(`display:flex;min-height:100vh;background:var(--pt-bg,#04080B);color:var(--pt-txt,#E8F1F2);position:relative;overflow-x:hidden;${v.frameStyle}`)}>
       <div aria-hidden="true" style={css("position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.55;background-image:radial-gradient(circle at 78% 6%,var(--pt-halo,rgba(79,225,222,.10)),transparent 46%),radial-gradient(circle at 8% 88%,var(--pt-halo2,rgba(146,124,255,.07)),transparent 42%)")}></div>
-      <a href="#main" style={css("position:absolute;left:-9999px;top:8px;z-index:99;padding:8px 14px;border-radius:8px;background:var(--pt-solid,#0B141A);border:1px solid var(--pt-line2,rgba(255,255,255,.14))")}>Skip to content</a>
+      <a href="#main" style={css("position:absolute;left:-9999px;top:8px;z-index:99;padding:8px 14px;border-radius:8px;background:var(--pt-solid,#0B141A);border:1px solid var(--pt-line2,rgba(255,255,255,.14))")} className="dc-i1">Skip to content</a>
       <nav aria-label="Primary" style={css(`${v.railStyle}`)}>
       <div style={css(`${v.railHeadStyle}`)}>
       <div style={css("position:relative;width:30px;height:30px;flex:none;border-radius:9px;border:1px solid var(--pt-edge,rgba(79,225,222,.34));background:linear-gradient(145deg,var(--pt-glassA,rgba(79,225,222,.16)),var(--pt-glassB,rgba(146,124,255,.08)));display:grid;place-items:center;overflow:hidden")}>
@@ -2208,7 +2208,7 @@ Component.prototype.render = function render() {
 
                 {(g.items ?? []).map((n, nI) => (
             
-      <button onClick={n.go} aria-current={n.cur} title={n.name} style={css(`width:100%;display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;margin-bottom:2px;text-align:left;font-size:13.5px;font-weight:${n.fw};color:${n.col};background:${n.bg};border:1px solid ${n.bd};justify-content:${n.just};transition:background 180ms ease,color 180ms ease,transform 140ms ease`)} style-hover="background:var(--pt-hover,rgba(255,255,255,.05))" style-active="transform:translateY(1px)">
+      <button onClick={n.go} aria-current={n.cur} title={n.name} style={css(`width:100%;display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;margin-bottom:2px;text-align:left;font-size:13.5px;font-weight:${n.fw};color:${n.col};background:${n.bg};border:1px solid ${n.bd};justify-content:${n.just};transition:background 180ms ease,color 180ms ease,transform 140ms ease`)} className="dc-i2">
       <span className="material-symbols-rounded" style={css(`font-size:18px;color:${n.ic}`)}>{ICON[n.icon]}</span>
       <span style={css(`${n.lbl}`)}>{n.name}</span>
 
@@ -2259,7 +2259,7 @@ Component.prototype.render = function render() {
       </div>
       <span style={css("font-size:14.5px;font-weight:700")}>PrivaTools</span>
       </div>
-      <button onClick={v.openPalette} style={css(`${v.searchBtnStyle}`)} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.34))">
+      <button onClick={v.openPalette} style={css(`${v.searchBtnStyle}`)} className="dc-i3">
       <span className="material-symbols-rounded" style={css("font-size:18px;color:var(--pt-txt3,#6B8085)")}>{ICON.search}</span>
       <span style={css(`${v.searchLabelStyle}`)}>Search 200+ tools or type a command…</span>
       <span style={css(`${v.kbdStyle}`)}>⌘K</span>
@@ -2285,10 +2285,10 @@ Component.prototype.render = function render() {
       <h1 style={css("margin:0;font-size:clamp(34px,4.4vw,58px);line-height:1.04;font-weight:800;letter-spacing:-.03em;text-wrap:balance")}>Work with files.<br />Keep them private.</h1>
       <p style={css("margin:16px 0 0;font-size:clamp(14px,1.2vw,17px);color:var(--pt-txt2,#9FB3B8);font-weight:500")}>Free forever. No account. No ads. No analytics.</p>
       <div style={css("display:flex;flex-wrap:wrap;gap:8px;margin-top:22px")}>
-      <button onClick={v.goTools} style={css("display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));box-shadow:0 6px 18px var(--pt-aquaGlow,rgba(79,225,222,.22));transition:transform 150ms ease,box-shadow 200ms ease")} style-hover="transform:translateY(-2px);box-shadow:0 10px 26px var(--pt-aquaGlow,rgba(79,225,222,.3))" style-active="transform:none;box-shadow:0 2px 8px var(--pt-aquaGlow,rgba(79,225,222,.2))">
+      <button onClick={v.goTools} style={css("display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));box-shadow:0 6px 18px var(--pt-aquaGlow,rgba(79,225,222,.22));transition:transform 150ms ease,box-shadow 200ms ease")} className="dc-i4">
                         Browse all tools <span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.arrow_forward}</span>
       </button>
-      <button onClick={v.goPipeline} style={css("display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--pt-txt,#E8F1F2);border:1px solid var(--pt-line2,rgba(255,255,255,.14));background:var(--pt-panel,rgba(13,23,29,.6));transition:border-color 180ms ease,transform 150ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.34));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={v.goPipeline} style={css("display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--pt-txt,#E8F1F2);border:1px solid var(--pt-line2,rgba(255,255,255,.14));background:var(--pt-panel,rgba(13,23,29,.6));transition:border-color 180ms ease,transform 150ms ease")} className="dc-i5">
       <span className="material-symbols-rounded" style={css("font-size:17px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON.account_tree}</span> Build a pipeline
                       </button>
       </div>
@@ -2337,7 +2337,7 @@ Component.prototype.render = function render() {
 
                           {(v.sources ?? []).map((s, sI) => (
                       
-      <button onClick={s.pick} style={css("display:grid;gap:5px;justify-items:center;padding:14px 8px;background:var(--pt-solid,#0B141A);transition:background 170ms ease")} style-hover="background:var(--pt-hover,rgba(255,255,255,.05))">
+      <button onClick={s.pick} style={css("display:grid;gap:5px;justify-items:center;padding:14px 8px;background:var(--pt-solid,#0B141A);transition:background 170ms ease")} className="dc-i6">
       <span className="material-symbols-rounded" style={css(`font-size:20px;color:${s.col}`)}>{ICON[s.icon]}</span>
       <span style={css("font-size:11.5px;font-weight:600")}>{s.name}</span>
       <span style={css("font-size:10px;color:var(--pt-txt3,#6B8085)")}>{s.sub}</span>
@@ -2371,7 +2371,7 @@ Component.prototype.render = function render() {
 
                             {(v.actions ?? []).map((a, aI) => (
                         
-      <button onClick={a.go} style={css("display:flex;align-items:center;gap:10px;padding:12px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.34));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={a.go} style={css("display:flex;align-items:center;gap:10px;padding:12px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;transition:border-color 180ms ease,transform 160ms ease")} className="dc-i7">
       <span className="material-symbols-rounded" style={css("font-size:18px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON[a.icon]}</span>
       <span style={css("min-width:0")}><span style={css("display:block;font-size:12.5px;font-weight:700")}>{a.name}</span><span style={css("display:block;font-size:10.5px;color:var(--pt-txt3,#6B8085)")}>{a.sub}</span></span>
       </button>
@@ -2393,7 +2393,7 @@ Component.prototype.render = function render() {
 
                         {(v.activity ?? []).map((r, rI) => (
                     
-      <div style={css("display:grid;grid-template-columns:1.4fr 1fr .9fr .6fr;gap:0;align-items:center;padding:11px 18px;border-top:1px solid var(--pt-line,rgba(255,255,255,.08));font-size:12.5px;transition:background 160ms ease")} style-hover="background:var(--pt-hover,rgba(255,255,255,.04))">
+      <div style={css("display:grid;grid-template-columns:1.4fr 1fr .9fr .6fr;gap:0;align-items:center;padding:11px 18px;border-top:1px solid var(--pt-line,rgba(255,255,255,.08));font-size:12.5px;transition:background 160ms ease")} className="dc-i8">
       <span style={css("display:flex;align-items:center;gap:9px;font-weight:600;min-width:0")}><span className="material-symbols-rounded" style={css("font-size:15px;color:var(--pt-ok,#26C8BA)")}>{ICON.check}</span><span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{r.tool}</span></span>
       <span style={css("color:var(--pt-txt2,#9FB3B8);font-size:12px")}>{r.date}</span>
       <span style={css("color:var(--pt-txt2,#9FB3B8);font-size:12px")}>{r.set}</span>
@@ -2401,7 +2401,7 @@ Component.prototype.render = function render() {
       </div>
 
                         ))}
-      <button onClick={v.goMyStuff} style={css("width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-top:1px solid var(--pt-line,rgba(255,255,255,.08));font-size:12.5px;font-weight:700;color:var(--pt-aquaTxt,#4FE1DE);transition:background 170ms ease")} style-hover="background:var(--pt-hover,rgba(255,255,255,.05))">See all activity <span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON.arrow_forward}</span></button>
+      <button onClick={v.goMyStuff} style={css("width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-top:1px solid var(--pt-line,rgba(255,255,255,.08));font-size:12.5px;font-weight:700;color:var(--pt-aquaTxt,#4FE1DE);transition:background 170ms ease")} className="dc-i9">See all activity <span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON.arrow_forward}</span></button>
       </section>
       <section aria-label="Browse by category" style={css("border-radius:18px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-solid,#0B141A);padding:16px 18px 18px")}>
       <h2 style={css("margin:0 0 12px;font-size:15px;font-weight:700")}>Browse by category</h2>
@@ -2409,7 +2409,7 @@ Component.prototype.render = function render() {
 
                           {(v.families ?? []).map((f, fI) => (
                       
-      <button onClick={f.go} style={css("display:grid;gap:3px;padding:13px 12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.34));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={f.go} style={css("display:grid;gap:3px;padding:13px 12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;transition:border-color 180ms ease,transform 160ms ease")} className="dc-i10">
       <span className="material-symbols-rounded" style={css(`font-size:18px;color:${f.col}`)}>{ICON[f.icon]}</span>
       <span style={css("font-size:12.5px;font-weight:700;margin-top:4px")}>{f.name}</span>
       <span style={css("font-size:10.5px;color:var(--pt-txt3,#6B8085)")}>{f.count} tools</span>
@@ -2438,7 +2438,7 @@ Component.prototype.render = function render() {
       <section aria-label="Install PrivaTools" style={css("position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--pt-edgeSoft,rgba(79,225,222,.2));background:var(--pt-panel2,linear-gradient(150deg,rgba(79,225,222,.09),rgba(13,23,29,.6)));padding:16px 17px")}>
       <h2 style={css("margin:0;font-size:14.5px;font-weight:700")}>Install PrivaTools</h2>
       <p style={css("margin:6px 0 0;font-size:12px;color:var(--pt-txt2,#9FB3B8);line-height:1.5")}>Get the full experience. Works offline once cached.</p>
-      <button onClick={v.goPwa} style={css("width:100%;margin-top:13px;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} style-hover="transform:translateY(-2px)" style-active="transform:none">Install PWA</button>
+      <button onClick={v.goPwa} style={css("width:100%;margin-top:13px;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} className="dc-i11">Install PWA</button>
       <a href="#/pwa" style={css("display:block;text-align:center;margin-top:9px;font-size:12px;font-weight:600;border-bottom:none")}>Learn more</a>
       </section>
       <section aria-label="System status" style={css("border-radius:18px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-solid,#0B141A);padding:16px 17px")}>
@@ -2464,7 +2464,7 @@ Component.prototype.render = function render() {
 
                           {(v.popular ?? []).map((p, pI) => (
                       
-      <button onClick={p.go} style={css("display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;font-size:11.5px;font-weight:600;transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.34));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={p.go} style={css("display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.08));background:var(--pt-panel,rgba(13,23,29,.6));text-align:left;font-size:11.5px;font-weight:600;transition:border-color 180ms ease,transform 160ms ease")} className="dc-i12">
       <span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-lav,#927CFF)")}>{ICON[p.icon]}</span>
       <span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{p.name}</span>
       </button>
@@ -2542,7 +2542,7 @@ Component.prototype.render = function render() {
 
                     {(v.taskChips ?? []).map((c, cI) => (
                 
-      <button onClick={c.go} aria-pressed={c.on} style={css(`display:flex;align-items:center;gap:6px;white-space:nowrap;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid ${c.bd};background:${c.bg};color:${c.col};transition:border-color 170ms ease`)} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))">{c.name}<span style={css("opacity:.55;font-family:'IBM Plex Mono',monospace;font-size:11px")}>{c.n}</span></button>
+      <button onClick={c.go} aria-pressed={c.on} style={css(`display:flex;align-items:center;gap:6px;white-space:nowrap;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid ${c.bd};background:${c.bg};color:${c.col};transition:border-color 170ms ease`)} className="dc-i13">{c.name}<span style={css("opacity:.55;font-family:'IBM Plex Mono',monospace;font-size:11px")}>{c.n}</span></button>
 
                     ))}
       </div>
@@ -2573,7 +2573,7 @@ Component.prototype.render = function render() {
 
                           {(v.rows ?? []).map((r, rI) => (
                       
-      <div style={css(`${r.rowStyle}`)} style-hover="background:var(--pt-hover,rgba(255,255,255,.04))">
+      <div style={css(`${r.rowStyle}`)} className="dc-i14">
       <button onClick={r.fav} aria-label="Favourite" style={css("display:grid;place-items:center;width:26px;height:26px;border-radius:7px")}><span className="material-symbols-rounded" style={css(`font-size:17px;color:${r.favCol};font-variation-settings:'FILL' ${r.favFill}`)}>{ICON.star}</span></button>
       <button onClick={r.go} onMouseEnter={r.peek} style={css("display:flex;align-items:center;gap:10px;text-align:left;min-width:0")}>
       <span className="material-symbols-rounded" style={css(`font-size:17px;color:${r.famCol}`)}>{ICON[r.icon]}</span>
@@ -2596,7 +2596,7 @@ Component.prototype.render = function render() {
 
                           {(v.rows ?? []).map((r, rI) => (
                       
-      <button onClick={r.go} onMouseEnter={r.peek} style={css("display:grid;gap:6px;text-align:left;padding:15px;border-radius:14px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);transition:border-color 180ms ease,transform 170ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-3px)" style-active="transform:none">
+      <button onClick={r.go} onMouseEnter={r.peek} style={css("display:grid;gap:6px;text-align:left;padding:15px;border-radius:14px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);transition:border-color 180ms ease,transform 170ms ease")} className="dc-i15">
       <span style={css("display:flex;align-items:center;justify-content:space-between;gap:8px")}>
       <span className="material-symbols-rounded" style={css(`font-size:20px;color:${r.famCol}`)}>{ICON[r.icon]}</span>
       <span style={css(`font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;color:${r.mCol};background:${r.mBg}`)}>{r.mode}</span>
@@ -2665,7 +2665,7 @@ Component.prototype.render = function render() {
 
                             ))}
       </div>
-      <button onClick={v.peek.go} style={css("width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} style-hover="transform:translateY(-2px)" style-active="transform:none">Open {v.peek.name} <span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.arrow_forward}</span></button>
+      <button onClick={v.peek.go} style={css("width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} className="dc-i16">Open {v.peek.name} <span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.arrow_forward}</span></button>
       <div style={css("font-size:11px;color:var(--pt-txt3,#6B8085);text-align:center;margin-top:9px")}>Up to 500 MB · results stay in this tab</div>
       </div>
       </div>
@@ -2759,7 +2759,7 @@ Component.prototype.render = function render() {
                                   {Boolean(f.showBar) && (<>
                                     <span style={css("width:74px;height:4px;border-radius:4px;background:var(--pt-line,rgba(255,255,255,.085));overflow:hidden;flex:none")}><span style={css(`${f.barStyle}`)}></span></span>
                                   </>)}
-      <button onClick={f.remove} aria-label="Remove file" style={css("width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-coral,#FF7A6B)"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.close}</span></button>
+      <button onClick={f.remove} aria-label="Remove file" style={css("width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} className="dc-i17"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.close}</span></button>
       </div>
 
                               ))}
@@ -2989,7 +2989,7 @@ Component.prototype.render = function render() {
 
                             </>)}
       <div style={css("display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding-top:4px")}>
-      <button onClick={v.tl.start} disabled={v.tl.startDisabled} style={css(`${v.tl.startStyle}`)} style-hover="transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={v.tl.start} disabled={v.tl.startDisabled} style={css(`${v.tl.startStyle}`)} className="dc-i18">
       <span className="material-symbols-rounded" style={css("font-size:18px")}>{ICON[v.tl.startIcon]}</span>{v.tl.startLabel}
                             </button>
       <button onClick={v.tl.reset} style={css("padding:13px 18px;border-radius:11px;font-size:13px;font-weight:600;border:1px solid var(--pt-line2,rgba(255,255,255,.15))")}>Start over</button>
@@ -3125,7 +3125,7 @@ Component.prototype.render = function render() {
 
                           {(v.tl.related ?? []).map((r, rI) => (
                       
-      <button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:42px;transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:42px;transition:border-color 180ms ease,transform 160ms ease")} className="dc-i19">
       <span className="material-symbols-rounded" style={css(`font-size:16px;color:${r.col}`)}>{ICON[r.icon]}</span>
       <span style={css("flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{r.name}</span>
       <span style={css(`font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;color:${r.mCol};background:${r.mBg}`)}>{r.mode}</span>
@@ -3151,7 +3151,7 @@ Component.prototype.render = function render() {
       </div>
       <div style={css("display:flex;gap:8px;flex-wrap:wrap;flex:none")}>
       <button onClick={v.pp.save} style={css("display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:11px;font-size:13px;font-weight:600;border:1px solid var(--pt-line2,rgba(255,255,255,.15));min-height:44px")}><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.bookmark_add}</span>Save pipeline</button>
-      <button onClick={v.pp.run} style={css("display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));min-height:44px;transition:transform 150ms ease")} style-hover="transform:translateY(-2px)" style-active="transform:none"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.play_arrow}</span>{v.pp.runLabel}</button>
+      <button onClick={v.pp.run} style={css("display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));min-height:44px;transition:transform 150ms ease")} className="dc-i20"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.play_arrow}</span>{v.pp.runLabel}</button>
       </div>
       </div>
       <div style={css(`${v.jumpRowStyle}`)}>
@@ -3174,7 +3174,7 @@ Component.prototype.render = function render() {
 
                         {(v.pp.recipes ?? []).map((r, rI) => (
                     
-      <button onClick={r.go} style={css("display:grid;gap:3px;text-align:left;padding:13px 15px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={r.go} style={css("display:grid;gap:3px;text-align:left;padding:13px 15px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));transition:border-color 180ms ease,transform 160ms ease")} className="dc-i21">
       <span style={css("font-size:13px;font-weight:700")}>{r.name}</span><span style={css("font-size:11.5px;color:var(--pt-txt3,#6B8085)")}>{r.sub}</span>
       </button>
 
@@ -3220,7 +3220,7 @@ Component.prototype.render = function render() {
       </div>
 
                       ))}
-      <button onClick={v.pp.addStep} style={css("flex:none;width:120px;display:grid;place-items:center;gap:6px;border-radius:14px;border:1px dashed var(--pt-line2,rgba(255,255,255,.15));color:var(--pt-txt2,#9FB3B8);margin-left:10px")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));color:var(--pt-aquaTxt,#4FE1DE)">
+      <button onClick={v.pp.addStep} style={css("flex:none;width:120px;display:grid;place-items:center;gap:6px;border-radius:14px;border:1px dashed var(--pt-line2,rgba(255,255,255,.15));color:var(--pt-txt2,#9FB3B8);margin-left:10px")} className="dc-i22">
       <span className="material-symbols-rounded" style={css("font-size:22px")}>{ICON.add}</span><span style={css("font-size:11.5px;font-weight:700")}>Add step</span>
       </button>
       </div>
@@ -3338,7 +3338,7 @@ Component.prototype.render = function render() {
 
                           {(v.pp.saved ?? []).map((s, sI) => (
                       
-      <button onClick={s.go} style={css("display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:44px;transition:border-color 180ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))">
+      <button onClick={s.go} style={css("display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:44px;transition:border-color 180ms ease")} className="dc-i23">
       <span className="material-symbols-rounded" style={css("font-size:17px;color:var(--pt-lav,#927CFF)")}>{ICON.bookmark}</span>
       <span style={css("flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{s.name}</span><span style={css("display:block;font-size:11px;color:var(--pt-txt3,#6B8085)")}>{s.sub}</span></span>
       <span className="material-symbols-rounded" style={css("font-size:17px;color:var(--pt-txt3,#6B8085)")}>{ICON.play_arrow}</span>
@@ -3363,7 +3363,7 @@ Component.prototype.render = function render() {
 
                               {(g.items ?? []).map((i, iI) => (
                           
-      <button onClick={i.go} style={css("display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:9px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:40px;transition:border-color 180ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))">
+      <button onClick={i.go} style={css("display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:9px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:40px;transition:border-color 180ms ease")} className="dc-i24">
       <span className="material-symbols-rounded" style={css(`font-size:15px;color:${i.col}`)}>{ICON[i.icon]}</span>
       <span style={css("flex:1;min-width:0;font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{i.name}</span>
       </button>
@@ -3390,7 +3390,7 @@ Component.prototype.render = function render() {
       </div>
       <div style={css("display:flex;gap:8px;flex-wrap:wrap;flex:none")}>
       <button onClick={v.bt.pause} style={css("display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:11px;font-size:13px;font-weight:600;border:1px solid var(--pt-line2,rgba(255,255,255,.15));min-height:44px")}><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON[v.bt.pauseIcon]}</span>{v.bt.pauseLabel}</button>
-      <button onClick={v.bt.run} style={css("display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));min-height:44px;transition:transform 150ms ease")} style-hover="transform:translateY(-2px)" style-active="transform:none"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.play_arrow}</span>Run batch</button>
+      <button onClick={v.bt.run} style={css("display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));min-height:44px;transition:transform 150ms ease")} className="dc-i25"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.play_arrow}</span>Run batch</button>
       </div>
       </div>
       <div style={css(`${v.jumpRowStyle}`)}>
@@ -3589,7 +3589,7 @@ Component.prototype.render = function render() {
 
                     {(v.ms.cards ?? []).map((c, cI) => (
                 
-      <a href={c.href} style={css(`display:grid;gap:4px;text-align:left;padding:15px 16px;border-radius:14px;border:1px solid ${c.bd};background:var(--pt-solid,#0B141A);border-bottom:1px solid ${c.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 170ms ease`)} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-3px)" style-active="transform:none">
+      <a href={c.href} style={css(`display:grid;gap:4px;text-align:left;padding:15px 16px;border-radius:14px;border:1px solid ${c.bd};background:var(--pt-solid,#0B141A);border-bottom:1px solid ${c.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 170ms ease`)} className="dc-i26">
       <span style={css("display:flex;align-items:center;gap:9px")}><span className="material-symbols-rounded" style={css(`font-size:19px;color:${c.col}`)}>{ICON[c.icon]}</span><span style={css("font-size:13.5px;font-weight:700")}>{c.name}</span></span>
       <span style={css("display:block;font-size:11.5px;color:var(--pt-txt3,#6B8085);line-height:1.4")}>{c.sub}</span>
       <span style={css("display:flex;align-items:baseline;gap:7px;margin-top:6px")}><span style={css("font-size:24px;font-weight:800;letter-spacing:-.02em")}>{c.n}</span><span style={css("font-size:11px;color:var(--pt-txt3,#6B8085)")}>{c.unit}</span></span>
@@ -3626,10 +3626,10 @@ Component.prototype.render = function render() {
 
                           {(v.ms.activity ?? []).map((r, rI) => (
                       
-      <div style={css(`${r.rowStyle}`)} style-hover="background:var(--pt-hover,rgba(255,255,255,.04))">
+      <div style={css(`${r.rowStyle}`)} className="dc-i27">
       <span style={css("display:flex;align-items:center;gap:9px;min-width:0;font-size:12.5px;font-weight:600")}><span className="material-symbols-rounded" style={css("font-size:15px;color:var(--pt-ok,#26C8BA)")}>{ICON.check}</span><span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{r.tool}</span></span>
       <span style={css("font-size:12px;color:var(--pt-txt2,#9FB3B8)")}>{r.date}</span>
-      <span style={css("font-size:12px;color:var(--pt-txt2,#9FB3B8);display:flex;align-items:center;gap:8px;min-width:0")}><span style={css("flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{r.set}</span><button onClick={r.del} aria-label="Delete this activity entry" style={css("width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-coral,#FF7A6B)"><span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON.delete}</span></button></span>
+      <span style={css("font-size:12px;color:var(--pt-txt2,#9FB3B8);display:flex;align-items:center;gap:8px;min-width:0")}><span style={css("flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{r.set}</span><button onClick={r.del} aria-label="Delete this activity entry" style={css("width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} className="dc-i28"><span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON.delete}</span></button></span>
       </div>
 
                           ))}
@@ -3677,7 +3677,7 @@ Component.prototype.render = function render() {
                                 {Boolean(i.value) && (<>
                                   <span style={css("font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:var(--pt-txt2,#9FB3B8);white-space:nowrap")}>{i.value}</span>
                                 </>)}
-      <button onClick={i.remove} aria-label={i.removeLabel} style={css("width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-coral,#FF7A6B)"><span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON[i.removeIcon]}</span></button>
+      <button onClick={i.remove} aria-label={i.removeLabel} style={css("width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} className="dc-i29"><span className="material-symbols-rounded" style={css("font-size:16px")}>{ICON[i.removeIcon]}</span></button>
       </div>
 
                             ))}
@@ -3820,7 +3820,7 @@ Component.prototype.render = function render() {
       <button onClick={i.reveal} aria-label={i.revealLabel} style={css("width:38px;height:38px;display:grid;place-items:center;border-radius:9px;color:var(--pt-aquaTxt,#4FE1DE)")}><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON[i.revealIcon]}</span></button>
       <button onClick={i.copy} aria-label={`Copy password for ${i.name}`} style={css("width:38px;height:38px;display:grid;place-items:center;border-radius:9px;color:var(--pt-txt2,#9FB3B8)")}><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.content_copy}</span></button>
       <button onClick={i.edit} aria-label={`Edit ${i.name}`} style={css("width:38px;height:38px;display:grid;place-items:center;border-radius:9px;color:var(--pt-txt2,#9FB3B8)")}><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.edit}</span></button>
-      <button onClick={i.del} aria-label={`Delete ${i.name}`} style={css("width:38px;height:38px;display:grid;place-items:center;border-radius:9px;color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-coral,#FF7A6B)"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.delete}</span></button>
+      <button onClick={i.del} aria-label={`Delete ${i.name}`} style={css("width:38px;height:38px;display:grid;place-items:center;border-radius:9px;color:var(--pt-txt3,#6B8085)")} className="dc-i30"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.delete}</span></button>
       </span>
       </div>
 
@@ -4164,7 +4164,7 @@ Component.prototype.render = function render() {
 
                       {(v.cm.pages ?? []).map((p, pI) => (
                   
-      <a href={p.href} style={css(`display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;border:1px solid ${p.bd};background:${p.bg};min-height:46px;border-bottom:1px solid ${p.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 160ms ease`)} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-2px)" style-active="transform:none">
+      <a href={p.href} style={css(`display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;border:1px solid ${p.bd};background:${p.bg};min-height:46px;border-bottom:1px solid ${p.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 160ms ease`)} className="dc-i31">
       <span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-txt3,#6B8085)")}>{ICON.balance}</span>
       <span style={css("flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{p.name}</span>
       <span style={css("font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--pt-txt3,#6B8085);white-space:nowrap")}>{p.tag}</span>
@@ -4247,7 +4247,7 @@ Component.prototype.render = function render() {
 
                       {(v.bl.posts ?? []).map((p, pI) => (
                   
-      <a href={p.href} style={css(`display:flex;align-items:center;gap:13px;padding:14px 15px;border-radius:13px;border:1px solid ${p.bd};background:var(--pt-solid,#0B141A);min-height:56px;border-bottom:1px solid ${p.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 160ms ease`)} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-2px)" style-active="transform:none">
+      <a href={p.href} style={css(`display:flex;align-items:center;gap:13px;padding:14px 15px;border-radius:13px;border:1px solid ${p.bd};background:var(--pt-solid,#0B141A);min-height:56px;border-bottom:1px solid ${p.bd};color:var(--pt-txt,#E8F1F2);transition:border-color 180ms ease,transform 160ms ease`)} className="dc-i32">
       <span style={css("flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--pt-panel,rgba(13,23,29,.62));font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--pt-txt3,#6B8085)")}>{p.n}</span>
       <span style={css("flex:1;min-width:0")}>
       <span style={css("display:block;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--pt-aquaTxt,#4FE1DE)")}>{p.cat}</span>
@@ -4367,7 +4367,7 @@ Component.prototype.render = function render() {
 
                             {(v.bl.a.tools ?? []).map((t, tI) => (
                         
-      <a href={t.href} style={css("display:flex;align-items:center;gap:9px;padding:11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:44px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2)")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))"><span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON.build}</span><span style={css("flex:1;min-width:0;font-size:12px;font-weight:600")}>{t.name}</span></a>
+      <a href={t.href} style={css("display:flex;align-items:center;gap:9px;padding:11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:44px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2)")} className="dc-i33"><span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON.build}</span><span style={css("flex:1;min-width:0;font-size:12px;font-weight:600")}>{t.name}</span></a>
 
                             ))}
       </div>
@@ -4378,7 +4378,7 @@ Component.prototype.render = function render() {
 
                             {(v.bl.a.related ?? []).map((r, rI) => (
                         
-      <a href={r.href} style={css("display:grid;gap:3px;padding:11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:44px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2)")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))"><span style={css("font-size:12px;font-weight:600")}>{r.name}</span><span style={css("font-size:11px;color:var(--pt-txt3,#6B8085)")}>{r.sub}</span></a>
+      <a href={r.href} style={css("display:grid;gap:3px;padding:11px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:44px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2)")} className="dc-i34"><span style={css("font-size:12px;font-weight:600")}>{r.name}</span><span style={css("font-size:11px;color:var(--pt-txt3,#6B8085)")}>{r.sub}</span></a>
 
                             ))}
       </div>
@@ -4402,7 +4402,7 @@ Component.prototype.render = function render() {
 
                           {(v.bl.guesses ?? []).map((g, gI) => (
                       
-      <a href={g.href} style={css("display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:46px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2);font-size:12.5px;font-weight:600")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32))"><span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON.article}</span>{g.name}</a>
+      <a href={g.href} style={css("display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));min-height:46px;border-bottom:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt,#E8F1F2);font-size:12.5px;font-weight:600")} className="dc-i35"><span className="material-symbols-rounded" style={css("font-size:16px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON.article}</span>{g.name}</a>
 
                           ))}
       </div>
@@ -4477,7 +4477,7 @@ Component.prototype.render = function render() {
 
                         {(v.pl.toc ?? []).map((t, tI) => (
                     
-      <a href={t.href} style={css("font-size:12.5px;padding:7px 9px;border-radius:8px;border-bottom:none;color:var(--pt-txt2,#9FB3B8)")} style-hover="background:var(--pt-hover,rgba(255,255,255,.05));color:var(--pt-txt,#E8F1F2)">{t.name}</a>
+      <a href={t.href} style={css("font-size:12.5px;padding:7px 9px;border-radius:8px;border-bottom:none;color:var(--pt-txt2,#9FB3B8)")} className="dc-i36">{t.name}</a>
 
                         ))}
       </div>
@@ -4489,7 +4489,7 @@ Component.prototype.render = function render() {
       <section id={s.id} style={css("border-radius:18px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);padding:20px 22px;margin-bottom:12px;scroll-margin-top:90px")}>
       <div style={css("display:flex;align-items:flex-start;justify-content:space-between;gap:12px")}>
       <h2 style={css("margin:0;font-size:19px;font-weight:700;letter-spacing:-.015em")}>{s.h}</h2>
-      <button onClick={s.copy} title="Copy link to this section" aria-label="Copy link to this section" style={css("width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:9px;border:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-aquaTxt,#4FE1DE);border-color:var(--pt-edge,rgba(79,225,222,.32))"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.link}</span></button>
+      <button onClick={s.copy} title="Copy link to this section" aria-label="Copy link to this section" style={css("width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:9px;border:1px solid var(--pt-line,rgba(255,255,255,.085));color:var(--pt-txt3,#6B8085)")} className="dc-i37"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.link}</span></button>
       </div>
 
                           {(s.paras ?? []).map((p, pI) => (
@@ -4559,7 +4559,7 @@ Component.prototype.render = function render() {
       <textarea value={v.sp.note} onChange={v.sp.setNote} rows="4" placeholder="What did you expect, and what happened instead?" style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));font-size:13px;resize:vertical;line-height:1.6")}></textarea></label>
       <label style={css("display:grid;gap:6px")}><span style={css("font-size:12px;font-weight:700")}>Your email <span style={css("color:var(--pt-txt3,#6B8085);font-weight:500")}>(optional — only for a reply)</span></span>
       <input value={v.sp.email} onChange={v.sp.setEmail} placeholder="you@example.com" style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));font-size:13px;min-height:44px")} /></label>
-      <button onClick={v.sp.submit} style={css("padding:13px;border-radius:11px;font-size:13.5px;font-weight:700;min-height:46px;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} style-hover="transform:translateY(-2px)" style-active="transform:none">Send report</button>
+      <button onClick={v.sp.submit} style={css("padding:13px;border-radius:11px;font-size:13.5px;font-weight:700;min-height:46px;color:var(--pt-onAqua,#04191B);background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));transition:transform 150ms ease")} className="dc-i38">Send report</button>
       </div>
 
                       </>)}
@@ -4610,7 +4610,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);font-size:12px")}>
       <span style={css(`${v.ss.pulseStyle}`)}></span>
       <span style={css("font-family:'IBM Plex Mono',monospace;color:var(--pt-txt2,#9FB3B8)")}>{v.ss.stamp}</span>
-      <button onClick={v.ss.refresh} aria-label="Refresh status" style={css("width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} style-hover="color:var(--pt-aquaTxt,#4FE1DE)"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.refresh}</span></button>
+      <button onClick={v.ss.refresh} aria-label="Refresh status" style={css("width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--pt-txt3,#6B8085)")} className="dc-i39"><span className="material-symbols-rounded" style={css("font-size:17px")}>{ICON.refresh}</span></button>
       </div>
       </div>
       <div style={css(`${v.jumpRowStyle2}`)}>
@@ -4716,7 +4716,7 @@ Component.prototype.render = function render() {
 
                         {(v.nf.guesses ?? []).map((g, gI) => (
                     
-      <button onClick={g.go} style={css("display:flex;align-items:center;gap:10px;padding:12px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:46px;transition:border-color 180ms ease,transform 160ms ease")} style-hover="border-color:var(--pt-edge,rgba(79,225,222,.32));transform:translateY(-2px)" style-active="transform:none">
+      <button onClick={g.go} style={css("display:flex;align-items:center;gap:10px;padding:12px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));text-align:left;min-height:46px;transition:border-color 180ms ease,transform 160ms ease")} className="dc-i40">
       <span className="material-symbols-rounded" style={css("font-size:18px;color:var(--pt-aquaTxt,#4FE1DE)")}>{ICON[g.icon]}</span>
       <span style={css("flex:1;min-width:0")}><span style={css("display:block;font-size:13px;font-weight:700")}>{g.name}</span><span style={css("display:block;font-size:11.5px;color:var(--pt-txt3,#6B8085)")}>{g.sub}</span></span>
       <span className="material-symbols-rounded" style={css("font-size:17px;color:var(--pt-txt3,#6B8085)")}>{ICON.arrow_forward}</span>

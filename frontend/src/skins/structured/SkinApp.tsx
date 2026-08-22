@@ -363,7 +363,7 @@ class Component extends React.Component {
     window.addEventListener('hashchange', this.onNav);
 
     this.load();
-    this.applyTheme(this.state.theme || this.props.initialTheme || 'dark');
+    if (!document.documentElement.getAttribute('data-theme')) this.applyTheme(this.state.theme || this.props.initialTheme || 'dark');
     var hit = this.readUrl() || { route: 'home', param: null };
     this.setState({ route: hit.route });
     this.applyRouteState(hit, false);
@@ -487,7 +487,8 @@ class Component extends React.Component {
     var eff = t;
     if (t === 'system') eff = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', eff);
-    this.setState({ theme: t });
+    var self = this;
+    this.setState({ theme: t }, function () { self.save(); });
   }
   go(route, slug) {
     this.applyRouteState({ route: route, param: slug || null }, true);
@@ -1738,7 +1739,7 @@ Component.prototype.render = function render() {
       <aside role="navigation" aria-label="Primary" style={css("width:216px;flex:none;position:sticky;top:0;align-self:flex-start;height:100vh;display:flex;flex-direction:column;background:var(--bg2);border-right:1px solid var(--line)")}>
       <button onClick={v.goHome} style={css("display:flex;align-items:center;gap:10px;padding:18px 16px 16px")} aria-label="PrivaTools home">
       <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:26px;height:26px;flex:none")}>
-      <g fill="none" stroke="var(--em)" stroke-width="1.6" stroke-linejoin="round">
+      <g fill="none" stroke="var(--em)" strokeWidth="1.6" strokeLinejoin="round">
       <path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path>
       <path d="M6 13 L20 21 L34 13"></path>
       <path d="M20 21 L20 35"></path>
@@ -1790,7 +1791,7 @@ Component.prototype.render = function render() {
     
       <aside role="navigation" aria-label="Primary" style={css("width:64px;flex:none;position:sticky;top:0;align-self:flex-start;height:100vh;display:flex;flex-direction:column;align-items:center;background:var(--bg2);border-right:1px solid var(--line)")}>
       <button onClick={v.goHome} aria-label="PrivaTools home" style={css("display:flex;align-items:center;justify-content:center;width:44px;height:52px")}>
-      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:24px;height:24px")}><g fill="none" stroke="var(--em)" stroke-width="1.8" stroke-linejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
+      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:24px;height:24px")}><g fill="none" stroke="var(--em)" strokeWidth="1.8" strokeLinejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
       </button>
       <button onClick={v.railExpand} aria-label="Expand navigation" style={css("display:flex;align-items:center;justify-content:center;width:40px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--panel)")}><span className="ms" style={css("font-size:18px;color:var(--ink3)")}>{ICON.right_panel_open}</span></button>
       <nav style={css("display:flex;flex-direction:column;gap:3px;padding:10px 0;overflow-y:auto;flex:1")}>
@@ -1825,7 +1826,7 @@ Component.prototype.render = function render() {
         
       <button onClick={v.openDrawer} aria-label="Open menu" style={css("display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-left:-10px;border-radius:10px")}><span className="ms" style={css("font-size:22px")}>{ICON.menu}</span></button>
       <span style={css("display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600")}>
-      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:22px;height:22px")}><g fill="none" stroke="var(--em)" stroke-width="1.8" stroke-linejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
+      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:22px;height:22px")}><g fill="none" stroke="var(--em)" strokeWidth="1.8" strokeLinejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
                 PrivaTools
               </span>
 
@@ -1844,7 +1845,7 @@ Component.prototype.render = function render() {
 
             {Boolean(v.searchInBar) && (<>
         
-      <button onClick={v.openPalette} style={css("flex:1;max-width:520px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink3);transition:border-color 160ms ease")} style-hover="border-color:var(--line2)">
+      <button onClick={v.openPalette} style={css("flex:1;max-width:520px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink3);transition:border-color 160ms ease")} className="dc-i1">
       <span className="ms" style={css("font-size:18px")}>{ICON.search}</span>
       <span style={css("flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left")}>Search tools, files and actions</span>
       <kbd style={css("font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;color:var(--ink3)")}>⌘K</kbd>
@@ -1880,7 +1881,7 @@ Component.prototype.render = function render() {
       <section style={css("position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg2),var(--bg))")}>
       <div aria-hidden="true" style={css("position:absolute;inset:0;opacity:var(--wave);pointer-events:none")}>
       <svg viewBox="0 0 1400 220" preserveAspectRatio="none" style={css("position:absolute;inset:0;width:130%;height:100%")}>
-      <g fill="none" stroke="var(--em)" stroke-width="1">
+      <g fill="none" stroke="var(--em)" strokeWidth="1">
       <path d="M-40 150 C 220 70 420 190 700 130 S 1120 40 1440 110" opacity=".5" style={css("animation:drift 17s linear infinite alternate")}></path>
       <path d="M-40 172 C 240 100 460 208 720 152 S 1140 66 1440 134" opacity=".34" style={css("animation:drift 21s linear infinite alternate-reverse")}></path>
       <path d="M-40 128 C 200 52 400 168 680 104 S 1100 20 1440 88" opacity=".22" style={css("animation:drift 14s linear infinite alternate")}></path>
@@ -1896,7 +1897,7 @@ Component.prototype.render = function render() {
       </div>
       <div id="cubeMark" style={css("width:clamp(92px,18vw,150px);height:clamp(74px,14vw,120px);flex:0 0 auto;transition:transform 220ms ease")}>
       <svg viewBox="0 0 160 130" aria-hidden="true" style={css("width:100%;height:100%")}>
-      <g fill="none" stroke="var(--em)" stroke-width="1.5" stroke-linejoin="round">
+      <g fill="none" stroke="var(--em)" strokeWidth="1.5" strokeLinejoin="round">
       <path d="M80 16 L128 42 L128 92 L80 118 L32 92 L32 42 Z"></path>
       <path d="M32 42 L80 68 L128 42"></path>
       <path d="M80 68 L80 118"></path>
@@ -1951,7 +1952,7 @@ Component.prototype.render = function render() {
                         {(v.sources ?? []).map((s, sI) => (
                     
       <li>
-      <button onClick={s.go} style={css("width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,transform 160ms ease")} style-hover="border-color:var(--emLine);transform:translateY(-1px)">
+      <button onClick={s.go} style={css("width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,transform 160ms ease")} className="dc-i2">
       <span className="ms" style={css(`font-size:18px;color:${s.color}`)}>{ICON[s.icon]}</span>
       <span style={css("font-size:12.5px;font-weight:500")}>{s.label}</span>
       <span style={css("font-size:10.5px;color:var(--ink3)")}>{s.sub}</span>
@@ -2003,7 +2004,7 @@ Component.prototype.render = function render() {
                           {(v.suggested ?? []).map((s, sI) => (
                       
       <li>
-      <button onClick={s.go} style={css("width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,background 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={s.go} style={css("width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease,background 160ms ease")} className="dc-i3">
       <span className="ms" style={css(`font-size:19px;color:${s.color}`)}>{ICON[s.icon]}</span>
       <span style={css("display:block;min-width:0;flex:1")}>
       <span style={css("display:block;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{s.name}</span>
@@ -2030,7 +2031,7 @@ Component.prototype.render = function render() {
                       {(v.popular ?? []).map((p, pI) => (
                   
       <li>
-      <button onClick={p.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);transition:border-color 160ms ease,transform 160ms ease")} style-hover="border-color:var(--emLine);transform:translateY(-1px)">
+      <button onClick={p.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);transition:border-color 160ms ease,transform 160ms ease")} className="dc-i4">
       <span style={css(`display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:${p.tint}`)}><span className="ms" style={css(`font-size:19px;color:${p.color}`)}>{ICON[p.icon]}</span></span>
       <span style={css("font-size:13px;font-weight:500")}>{p.name}</span>
       <span style={css("font-size:11px;color:var(--ink3);line-height:1.35")}>{p.purpose}</span>
@@ -2052,7 +2053,7 @@ Component.prototype.render = function render() {
                         {(v.cats ?? []).map((c, cI) => (
                     
       <li>
-      <button onClick={c.go} style={css("width:100%;display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={c.go} style={css("width:100%;display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i5">
       <span className="ms" style={css(`font-size:18px;color:${c.color}`)}>{ICON[c.icon]}</span>
       <span style={css("display:block;min-width:0")}>
       <span style={css("display:block;font-size:12.5px;font-weight:500")}>{c.label}</span>
@@ -2066,12 +2067,12 @@ Component.prototype.render = function render() {
       </div>
       <div style={css("display:flex;flex-direction:column;gap:14px")}>
       <div style={css("display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px")}>
-      <button onClick={v.goPipeline} style={css("display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={v.goPipeline} style={css("display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} className="dc-i6">
       <span className="ms" style={css("font-size:20px;color:var(--em)")}>{ICON.account_tree}</span>
       <span style={css("font-size:13px;font-weight:500")}>Pipeline</span>
       <span style={css("font-size:11px;color:var(--ink3);line-height:1.35")}>Chain tools in order and run one file through the whole chain.</span>
       </button>
-      <button onClick={v.goBatch} style={css("display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={v.goBatch} style={css("display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} className="dc-i7">
       <span className="ms" style={css("font-size:20px;color:var(--blue)")}>{ICON.grid_view}</span>
       <span style={css("font-size:13px;font-weight:500")}>Batch</span>
       <span style={css("font-size:11px;color:var(--ink3);line-height:1.35")}>Run one tool across many files with per-item status.</span>
@@ -2252,7 +2253,7 @@ Component.prototype.render = function render() {
                             {(v.rows ?? []).map((r, rI) => (
                         
       <li>
-      <button onClick={r.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={r.go} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i8">
       <span style={css("display:flex;align-items:center;gap:8px;width:100%")}>
       <span style={css(`display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:${r.tint}`)}><span className="ms" style={css(`font-size:17px;color:${r.color}`)}>{ICON[r.icon]}</span></span>
       <span style={css("flex:1;font-size:13px;font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.name}</span>
@@ -2362,7 +2363,7 @@ Component.prototype.render = function render() {
       <span style={css("padding:3px 8px;border:1px solid var(--line);border-radius:6px;font-size:10.5px;color:var(--ink3);font-family:'Geist Mono',ui-monospace,monospace")}>{v.pv.io}</span>
       <span style={css("padding:3px 8px;border:1px solid var(--line);border-radius:6px;font-size:10.5px;color:var(--ink3)")}>Up to 500 MB</span>
       </div>
-      <button onClick={v.pv.go} style={css("width:100%;margin-top:11px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 12px;border:1.5px dashed var(--line2);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={v.pv.go} style={css("width:100%;margin-top:11px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 12px;border:1.5px dashed var(--line2);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i9">
       <span className="ms" style={css("font-size:24px;color:var(--em)")}>{ICON.note_add}</span>
       <span style={css("font-size:12.5px")}>Drop a file here</span>
       <span style={css("font-size:11px;color:var(--ink3)")}>or choose a file</span>
@@ -2383,7 +2384,7 @@ Component.prototype.render = function render() {
       <section style={css("position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg2),var(--bg))")}>
       <div aria-hidden="true" style={css("position:absolute;inset:0;opacity:var(--wave);pointer-events:none")}>
       <svg viewBox="0 0 1400 160" preserveAspectRatio="none" style={css("position:absolute;inset:0;width:130%;height:100%")}>
-      <g fill="none" stroke="var(--em)" stroke-width="1">
+      <g fill="none" stroke="var(--em)" strokeWidth="1">
       <path d="M-40 110 C 240 46 460 140 720 96 S 1140 30 1440 88" opacity=".4" style={css("animation:drift 18s linear infinite alternate")}></path>
       <path d="M-40 132 C 260 74 480 158 740 118 S 1160 52 1440 110" opacity=".26" style={css("animation:drift 24s linear infinite alternate-reverse")}></path>
       <path d="M-40 88 C 220 30 420 120 700 74 S 1120 14 1440 66" opacity=".16" style={css("animation:drift 15s linear infinite alternate")}></path>
@@ -2406,7 +2407,7 @@ Component.prototype.render = function render() {
       </div>
       <div style={css("width:clamp(78px,12vw,110px);height:clamp(62px,10vw,88px);flex:0 0 auto;opacity:.9")}>
       <svg viewBox="0 0 160 130" aria-hidden="true" style={css("width:100%;height:100%")}>
-      <g fill="none" stroke="var(--em)" stroke-width="1.5" stroke-linejoin="round">
+      <g fill="none" stroke="var(--em)" strokeWidth="1.5" strokeLinejoin="round">
       <path d="M80 16 L128 42 L128 92 L80 118 L32 92 L32 42 Z"></path>
       <path d="M32 42 L80 68 L128 42"></path><path d="M80 68 L80 118"></path>
       </g>
@@ -2485,7 +2486,7 @@ Component.prototype.render = function render() {
 
                             {(v.tSources ?? []).map((s, sI) => (
                         
-      <li><button onClick={s.go} style={css("width:100%;min-height:44px;display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)"><span className="ms" style={css("font-size:17px;color:var(--ink2)")}>{ICON[s.icon]}</span><span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12px;font-weight:500")}>{s.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3)")}>{s.sub}</span></span></button></li>
+      <li><button onClick={s.go} style={css("width:100%;min-height:44px;display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i10"><span className="ms" style={css("font-size:17px;color:var(--ink2)")}>{ICON[s.icon]}</span><span style={css("display:block;min-width:0")}><span style={css("display:block;font-size:12px;font-weight:500")}>{s.label}</span><span style={css("display:block;font-size:10px;color:var(--ink3)")}>{s.sub}</span></span></button></li>
 
                             ))}
       </ul>
@@ -2792,7 +2793,7 @@ Component.prototype.render = function render() {
 
                         {(v.related ?? []).map((r, rI) => (
                     
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} style-hover="background:var(--panel2)">
+      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i11">
       <span className="ms" style={css(`font-size:17px;color:${r.color}`)}>{ICON[r.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px")}>{r.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{r.purpose}</span></span>
       <span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.chevron_right}</span>
@@ -2950,7 +2951,7 @@ Component.prototype.render = function render() {
                         {(v.library ?? []).map((l, lI) => (
                     
       <li>
-      <button onClick={l.add} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={l.add} style={css("width:100%;height:100%;display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i12">
       <span style={css("display:flex;align-items:center;gap:7px;width:100%")}><span className="ms" style={css(`font-size:17px;color:${l.color}`)}>{ICON[l.icon]}</span><span style={css("display:block;flex:1;min-width:0;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{l.name}</span><span className="ms" style={css("font-size:16px;color:var(--em)")}>{ICON.add}</span></span>
       <span style={css("font-size:10.5px;color:var(--ink3);text-align:left;line-height:1.35")}>{l.purpose}</span>
       <span style={css(`display:inline-flex;align-items:center;gap:4px;font-size:10px;color:${l.modeColor}`)}><span style={css(`width:5px;height:5px;border-radius:50%;background:${l.modeColor}`)}></span>{l.mode}</span>
@@ -2994,7 +2995,7 @@ Component.prototype.render = function render() {
 
                         {(v.recipes ?? []).map((r, rI) => (
                     
-      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <li><button onClick={r.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);transition:border-color 160ms ease")} className="dc-i13">
       <span style={css("display:block;flex:1;min-width:0")}><span style={css("display:block;font-size:12.5px;font-weight:500")}>{r.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{r.sub}</span></span>
       <span style={css("font-size:10.5px;color:var(--ink3)")}>{r.count}</span>
       </button></li>
@@ -3384,7 +3385,7 @@ Component.prototype.render = function render() {
 
                     {Boolean(v.vaultPinKind) && (<>
                 
-      <input type="password" inputmode="numeric" value={v.pin} onChange={v.onPin} aria-label="New PIN" aria-invalid={v.hasPinErr} style={css("display:block;width:160px;height:44px;margin:14px auto 0;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
+      <input type="password" inputMode="numeric" value={v.pin} onChange={v.onPin} aria-label="New PIN" aria-invalid={v.hasPinErr} style={css("display:block;width:160px;height:44px;margin:14px auto 0;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
 
                       {Boolean(v.hasPinErr) && (<>
                         <p role="alert" style={css("margin-top:9px;font-size:12px;color:var(--coral);text-align:center")}>{v.pinErr}</p>
@@ -3423,7 +3424,7 @@ Component.prototype.render = function render() {
 
                     {Boolean(v.vaultPinKind) && (<>
                 
-      <input type="password" inputmode="numeric" value={v.pin} onChange={v.onPin} aria-label="Confirm PIN" aria-invalid={v.hasPinErr} style={css("display:block;width:160px;height:44px;margin:14px auto 0;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
+      <input type="password" inputMode="numeric" value={v.pin} onChange={v.onPin} aria-label="Confirm PIN" aria-invalid={v.hasPinErr} style={css("display:block;width:160px;height:44px;margin:14px auto 0;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
 
                       {Boolean(v.hasPinErr) && (<>
                         <p role="alert" style={css("margin-top:9px;font-size:12px;color:var(--coral);text-align:center")}>{v.pinErr}</p>
@@ -3457,7 +3458,7 @@ Component.prototype.render = function render() {
       <span className="ms" style={css("font-size:28px;color:var(--em)")}>{ICON.pin}</span>
       <h2 style={css("margin-top:8px;font-size:16px;font-weight:500")}>Enter your PIN</h2>
       <p style={css("margin-top:4px;font-size:12px;color:var(--ink3)")}>Four to six digits, checked on this device only.</p>
-      <input type="password" inputmode="numeric" value={v.pin} onChange={v.onPin} aria-label="PIN" aria-invalid={v.hasPinErr} style={css("width:160px;height:44px;margin-top:14px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
+      <input type="password" inputMode="numeric" value={v.pin} onChange={v.onPin} aria-label="PIN" aria-invalid={v.hasPinErr} style={css("width:160px;height:44px;margin-top:14px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);font-size:20px;letter-spacing:.4em;text-align:center;font-family:'Geist Mono',ui-monospace,monospace")} />
 
                     {Boolean(v.hasPinErr) && (<>
                       <p role="alert" style={css("margin-top:9px;font-size:12px;color:var(--coral)")}>{v.pinErr}</p>
@@ -3798,7 +3799,7 @@ Component.prototype.render = function render() {
                   {(v.posts ?? []).map((p, pI) => (
               
       <li>
-      <button onClick={p.go} style={css("width:100%;display:flex;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} style-hover="border-color:var(--emLine)">
+      <button onClick={p.go} style={css("width:100%;display:flex;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color 160ms ease")} className="dc-i14">
       <span aria-hidden="true" style={css("width:64px;height:64px;flex:none;border-radius:9px;background:repeating-linear-gradient(135deg,var(--panel3) 0 6px,transparent 6px 12px);display:flex;align-items:center;justify-content:center")}><span className="ms" style={css("font-size:22px;color:var(--em)")}>{ICON.article}</span></span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}>
       <span style={css("display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:10.5px;color:var(--ink3)")}><span style={css("padding:2px 7px;border:1px solid var(--line);border-radius:99px")}>{p.cat}</span>{p.date}<span>·</span>{p.read}</span>
@@ -4081,7 +4082,7 @@ Component.prototype.render = function render() {
 
                         {(v.channels ?? []).map((c, cI) => (
                     
-      <li><button onClick={c.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:8px 9px;border-radius:9px;transition:background 140ms ease")} style-hover="background:var(--panel2)">
+      <li><button onClick={c.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:8px 9px;border-radius:9px;transition:background 140ms ease")} className="dc-i15">
       <span className="ms" style={css("font-size:18px;color:var(--em)")}>{ICON[c.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}><span style={css("display:block;font-size:12.5px")}>{c.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{c.sub}</span></span>
       <span style={css("font-size:11px;color:var(--ink3)")}>{c.action}</span>
@@ -4232,7 +4233,7 @@ Component.prototype.render = function render() {
 
                     {(v.fuzzy ?? []).map((f, fI) => (
                 
-      <li><button onClick={f.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} style-hover="background:var(--panel2)">
+      <li><button onClick={f.go} style={css("display:flex;align-items:center;gap:9px;width:100%;min-height:40px;padding:6px 8px;border-radius:9px;transition:background 140ms ease")} className="dc-i16">
       <span className="ms" style={css(`font-size:17px;color:${f.color}`)}>{ICON[f.icon]}</span>
       <span style={css("display:block;flex:1;min-width:0;text-align:left")}><span style={css("display:block;font-size:12.5px")}>{f.name}</span><span style={css("display:block;font-size:10.5px;color:var(--ink3)")}>{f.purpose}</span></span>
       <span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.chevron_right}</span>
@@ -4300,8 +4301,8 @@ Component.prototype.render = function render() {
       <h3 style={css("font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)")}>Text input</h3>
       <div style={css("display:flex;flex-direction:column;gap:7px;margin-top:9px")}>
       <input placeholder="Empty" aria-label="Empty input" style={css("height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
-      <input value="Filled value" aria-label="Filled input" readonly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
-      <input value="Invalid value" aria-label="Invalid input" aria-invalid="true" readonly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--coral);border-radius:9px;background:var(--coralSoft);font-size:12.5px")} />
+      <input value="Filled value" aria-label="Filled input" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);font-size:12.5px")} />
+      <input value="Invalid value" aria-label="Invalid input" aria-invalid="true" readOnly="readonly" style={css("height:36px;padding:0 10px;border:1px solid var(--coral);border-radius:9px;background:var(--coralSoft);font-size:12.5px")} />
       <input value="Disabled" aria-label="Disabled input" disabled="disabled" style={css("height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel3);font-size:12.5px;opacity:.6")} />
       </div>
       </div>
@@ -4627,7 +4628,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start")}>
       <div style={css("flex:1 1 220px")}>
       <span style={css("display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600")}>
-      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:20px;height:20px")}><g fill="none" stroke="var(--em)" stroke-width="1.8" stroke-linejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
+      <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:20px;height:20px")}><g fill="none" stroke="var(--em)" strokeWidth="1.8" strokeLinejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
                     PrivaTools
                   </span>
       <p style={css("margin-top:6px;font-size:11.5px;color:var(--ink3);max-width:34ch;line-height:1.5")}>Free forever, owner-funded, built by an individual in India. 200+ free file tools, local-first, 500 MB per file.</p>
@@ -4693,7 +4694,7 @@ Component.prototype.render = function render() {
       <div onClick={v.closeDrawer} style={css("position:absolute;inset:0;background:rgba(2,10,16,.6)")}></div>
       <aside role="dialog" aria-modal="true" aria-label="Menu" style={css("position:relative;width:264px;max-width:84vw;height:100%;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--line);animation:slidein 200ms ease both")}>
       <div style={css("display:flex;align-items:center;justify-content:space-between;padding:14px 12px")}>
-      <span style={css("display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600")}><svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:22px;height:22px")}><g fill="none" stroke="var(--em)" stroke-width="1.8" stroke-linejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>PrivaTools</span>
+      <span style={css("display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600")}><svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:22px;height:22px")}><g fill="none" stroke="var(--em)" strokeWidth="1.8" strokeLinejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>PrivaTools</span>
       <button onClick={v.closeDrawer} aria-label="Close menu" style={css("display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px")}><span className="ms" style={css("font-size:22px")}>{ICON.close}</span></button>
       </div>
       <nav style={css("display:flex;flex-direction:column;gap:2px;padding:4px 10px 16px")}>
@@ -4903,7 +4904,7 @@ Component.prototype.render = function render() {
 /** The design's own prop defaults, from its data-props schema. */
 Component.defaultProps = {
   "initialTheme": "dark",
-  "accent": "#20D497",
+  "accent": "",
   "density": "comfortable",
   "serverState": "best-effort",
   "reducedMotion": false

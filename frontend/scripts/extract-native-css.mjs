@@ -81,6 +81,11 @@ function topLevelRules(css) {
 const selectorOf = (rule) => rule.slice(0, rule.indexOf("{")).trim();
 const bodyOf = (rule) => rule.slice(rule.indexOf("{") + 1, rule.lastIndexOf("}"));
 
+/** The design's light-mode root, however it chose to spell it. */
+function isLightRoot(sel) {
+  return /^(?::root|html)?\[data-theme=["']?light["']?\]$/.test(sel.trim());
+}
+
 function convert(id, css) {
   const SKIN = `[data-skin="${id}"]`;
   // Aurora and Structured set data-theme on <html> themselves, so their own
@@ -107,7 +112,7 @@ function convert(id, css) {
         // A media query redeclaring :root is this design's responsive layout
         // system — it must apply to both modes, so it scopes to the skin root.
         if (s === ":root") return `${SKIN}{${bodyOf(r)}}`;
-        if (s === '[data-theme="light"]') return `${LIGHT}{${bodyOf(r)}}`;
+        if (isLightRoot(s)) return `${LIGHT}{${bodyOf(r)}}`;
         return scope(SKIN, s, bodyOf(r));
       });
       lines.push(`${sel}{\n  ${inner.join("\n  ")}\n}`);
@@ -119,7 +124,13 @@ function convert(id, css) {
     // `.dark` alone or light mode loses every layout token. It lands on the
     // skin root, and their light block overrides only the colours on top.
     if (sel === ":root") { lines.push(`${SKIN}{${bodyOf(rule)}}`); continue; }
-    if (sel === '[data-theme="light"]') { lines.push(`${LIGHT}{${bodyOf(rule)}}`); continue; }
+    // Structured writes its light block as `:root[data-theme="light"]` where
+    // Aurora writes the bare attribute. Only the bare form was recognised, so
+    // Structured's fell through to the descendant scoper and came out as
+    // `[data-skin=x] :is(:root[data-theme="light"])` — :root can never be a
+    // descendant of itself, so that rule matched nothing and the skin had no
+    // working light mode at all.
+    if (isLightRoot(sel)) { lines.push(`${LIGHT}{${bodyOf(rule)}}`); continue; }
 
     // Base rules are kept, scoped. Dropping them was wrong: the designs are
     // authored against browser defaults, and this app's own base (15px/1.55 on
@@ -159,13 +170,23 @@ function convert(id, css) {
   // through to the generic scoper — so match on the selector text rather than
   // trying to catch every branch above.
   const corrections = [];
+  const skinRoot = `[data-skin="${id}"]{`;
   for (let i = 0; i < lines.length; i++) {
-    if (!/data-theme=("|\\")?light/.test(lines[i])) continue;
-    const { body, applied } = correctLightPalette(id, lines[i]);
-    if (applied.length) { lines[i] = body; corrections.push(...applied); }
+    const isLight = /data-theme=("|\\")?light/.test(lines[i]);
+    // After the axis inversion the design's dark palette is the bare skin
+    // root; anything carrying data-theme=light is the light override.
+    const isDark = !isLight && lines[i].startsWith(skinRoot) && lines[i].includes("--");
+    if (!isLight && !isDark) continue;
+    const { body, applied } = isLight
+      ? correctPalette(id, lines[i], LIGHT_CONTRAST_FIXES, LIGHT_TOKEN_ADDITIONS)
+      : correctPalette(id, lines[i], DARK_CONTRAST_FIXES, null);
+    if (applied.length) {
+      lines[i] = body;
+      corrections.push(...applied.map((a) => `${isLight ? "light" : "dark"} ${a}`));
+    }
   }
   if (corrections.length) {
-    console.log(`  ${id}: light contrast corrections -> ${corrections.join(", ")}`);
+    console.log(`  ${id}: contrast corrections -> ${corrections.join(", ")}`);
   }
 
   return { css: lines.join("\n"), keyframeNames };
@@ -201,6 +222,19 @@ const LIGHT_TOKEN_ADDITIONS = {
   structured: { "--em-ink": "#FFFFFF" },   // 5.16:1 on #0A7C59
 };
 
+/**
+ * The same treatment for a dark palette. Only Structured needs one: its
+ * --ink3 ran 3.59:1 against the lightest panel it is painted on. Aurora's and
+ * Carbon's dark palettes were measured and already clear.
+ */
+const DARK_CONTRAST_FIXES = {
+  structured: {
+    // worst surface --panel3 #0E3138; lightened rather than darkened, since
+    // dark-mode text gains contrast by moving away from the ground.
+    "--ink3": ["#6B8786", "#7E9998"],   // 3.59:1 -> 4.55:1
+  },
+};
+
 const LIGHT_CONTRAST_FIXES = {
   aurora: {
     // worst surface --pnl3 #E9F1ED
@@ -216,19 +250,19 @@ const LIGHT_CONTRAST_FIXES = {
   },
 };
 
-/** Applies this design's light-mode corrections to one declaration body. */
-function correctLightPalette(id, body) {
-  const fixes = LIGHT_CONTRAST_FIXES[id];
-  if (!fixes) return { body, applied: [] };
+/** Applies one correction table to a single declaration body. */
+function correctPalette(id, body, table, additions) {
+  const fixes = table[id];
+  if (!fixes && !(additions && additions[id])) return { body, applied: [] };
   const applied = [];
   let out = body;
-  for (const [token, [from, to]] of Object.entries(fixes)) {
+  for (const [token, [from, to]] of Object.entries(fixes || {})) {
     const re = new RegExp(`(${token}\\s*:\\s*)${from}\\b`, "i");
     if (!re.test(out)) continue;
     out = out.replace(re, `$1${to}`);
     applied.push(`${token} ${from}->${to}`);
   }
-  for (const [token, value] of Object.entries(LIGHT_TOKEN_ADDITIONS[id] || {})) {
+  for (const [token, value] of Object.entries((additions && additions[id]) || {})) {
     if (out.includes(token + ":")) continue;
     out = out.replace(/\}\s*$/, `${token}:${value};}`);
     applied.push(`+${token} ${value}`);

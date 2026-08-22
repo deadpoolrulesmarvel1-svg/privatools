@@ -58,10 +58,84 @@ function interp(value) {
 }
 const hasBinding = (v) => /\{\{/.test(v);
 
+export /**
+ * HTML/SVG attribute names React expects in camelCase.
+ *
+ * Only `class` and `for` were mapped, so every hyphenated SVG presentation
+ * attribute reached React as an unknown prop and was dropped — the ported
+ * icons rendered at the UA default stroke instead of the design's, and
+ * `readonly` inputs were quietly editable. `data-*` and `aria-*` are correct
+ * hyphenated and must not be touched.
+ */
+const ATTR_MAP = {
+  class: "className", for: "htmlFor",
+  readonly: "readOnly", maxlength: "maxLength", minlength: "minLength",
+  tabindex: "tabIndex", autocomplete: "autoComplete", autofocus: "autoFocus",
+  spellcheck: "spellCheck", contenteditable: "contentEditable",
+  colspan: "colSpan", rowspan: "rowSpan", srcset: "srcSet",
+  crossorigin: "crossOrigin", novalidate: "noValidate", enctype: "encType",
+  inputmode: "inputMode", datetime: "dateTime", usemap: "useMap",
+  "accept-charset": "acceptCharset", "http-equiv": "httpEquiv",
+  // SVG presentation attributes
+  "stroke-width": "strokeWidth", "stroke-linejoin": "strokeLinejoin",
+  "stroke-linecap": "strokeLinecap", "stroke-miterlimit": "strokeMiterlimit",
+  "stroke-dasharray": "strokeDasharray", "stroke-dashoffset": "strokeDashoffset",
+  "stroke-opacity": "strokeOpacity", "fill-rule": "fillRule",
+  "fill-opacity": "fillOpacity", "clip-rule": "clipRule", "clip-path": "clipPath",
+  "stop-color": "stopColor", "stop-opacity": "stopOpacity",
+  "text-anchor": "textAnchor", "dominant-baseline": "dominantBaseline",
+  "vector-effect": "vectorEffect", "shape-rendering": "shapeRendering",
+  "paint-order": "paintOrder", "mix-blend-mode": "mixBlendMode",
+  "font-size": "fontSize", "font-family": "fontFamily",
+  "font-weight": "fontWeight", "letter-spacing": "letterSpacing",
+};
+
+/**
+ * The designs express interaction states as attributes — `style-hover`,
+ * `style-active`, `style-focus` — which their own runtime applies. React has
+ * no such concept, so these were reaching the DOM as unknown props and being
+ * dropped: 59 elements across the three ports had no hover or press feedback
+ * at all, and the focus styles were discarded outright.
+ *
+ * None of the values carry bindings and no element that has one also has a
+ * `class`, so each becomes a generated class plus a real CSS rule.
+ */
+const INTERACTION = {
+  "style-hover": ":hover",
+  "style-active": ":active",
+  "style-focus": ":focus-visible",
+};
+let interactionRules = [];
+let interactionSeq = 0;
+
+/**
+ * The collected rules, scoped to one skin. Call after convert().
+ *
+ * Every declaration is marked !important. The designs carry their base styles
+ * in a `style` attribute, and an inline declaration outranks any stylesheet
+ * rule no matter how specific — without this the hover rules parse, match, and
+ * lose to the element's own inline border/background.
+ */
+export function interactionCss(prefix) {
+  const important = (css) => css
+    .split(";")
+    .map((d) => d.trim())
+    .filter(Boolean)
+    .map((d) => (/!important$/.test(d) ? d : `${d} !important`))
+    .join(";");
+  return interactionRules
+    .map(({ cls, pseudo, css }) => `[data-skin="${prefix}"] .${cls}${pseudo}{${important(css)}}`)
+    .join("\n");
+}
+
 function attrToJsx(name, value) {
-  if (name === "style-focus" || name.startsWith("hint-")) return null;
-  if (name === "class") name = "className";
-  if (name === "for") name = "htmlFor";
+  if (name.startsWith("hint-")) return null;
+  if (Object.prototype.hasOwnProperty.call(ATTR_MAP, name)) name = ATTR_MAP[name];
+  else if (name.includes("-") && !/^(data|aria)-/.test(name)) {
+    // Surface anything hyphenated that is not a namespaced attribute, rather
+    // than letting React drop it silently the way stroke-width was dropped.
+    console.warn(`  unmapped hyphenated attribute: ${name}`);
+  }
   if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
     const ev = "on" + name.slice(2, 3).toUpperCase() + name.slice(3);
     const m = value.match(/^\{\{\s*([^}]+?)\s*\}\}$/);
@@ -80,20 +154,29 @@ function attrToJsx(name, value) {
 
 function parseAttrs(raw) {
   const out = [];
+  const interactions = [];
   const re = /([\w:-]+)\s*=\s*"([^"]*)"|([\w:-]+)(?=[\s/>])/g;
   let m;
   while ((m = re.exec(raw))) {
     if (m[1] !== undefined) {
+      if (INTERACTION[m[1]]) { interactions.push([INTERACTION[m[1]], m[2]]); continue; }
       const a = attrToJsx(m[1], m[2]);
       if (a) out.push(a);
     } else if (m[3]) {
       out.push(`${m[3]}={true}`);
     }
   }
+  if (interactions.length) {
+    const cls = `dc-i${++interactionSeq}`;
+    for (const [pseudo, css] of interactions) interactionRules.push({ cls, pseudo, css });
+    out.push(`className=${JSON.stringify(cls)}`);
+  }
   return out;
 }
 
 export function convert(html, iconRe = DEFAULT_ICON_RE) {
+  interactionRules = [];
+  interactionSeq = 0;
   const tok = /<!--[\s\S]*?-->|<\/([\w-]+)\s*>|<([\w-]+)((?:\s+[\w:-]+\s*=\s*"[^"]*"|\s+[\w:-]+)*)\s*(\/?)>/g;
   let out = "", last = 0, m;
   const stack = [];
