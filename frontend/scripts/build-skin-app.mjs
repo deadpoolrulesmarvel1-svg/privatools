@@ -14,7 +14,7 @@
  * these designs lives in an inline style attribute, and a hand-rewrite is
  * exactly where that fidelity would be lost.
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -48,6 +48,28 @@ function build(id) {
   if (helmetEnd !== -1) body = body.slice(helmetEnd + "</helmet>".length);
   const end = body.indexOf('<script type="text/x-dc"');
   let markup = end === -1 ? body : body.slice(0, end);
+
+  // ── extension seam ──────────────────────────────────────────────────────
+  // Features this app has that the imported design never had a surface for —
+  // accounts, API keys, BYOK, translate, signatures. They cannot be hand-edited
+  // into the generated component: the next regeneration would erase them. So
+  // they live in src/skins/extensions/<id>.html, written in the design's own
+  // dialect, and are spliced in here among the design's own route blocks.
+  //
+  // The matching src/skins/extensions/<id>.tsx subclasses the generated
+  // component and supplies the bindings this markup reads.
+  const extensionFile = resolve(HERE, `../src/skins/extensions/${id}.html`);
+  if (existsSync(extensionFile)) {
+    const extra = readFileSync(extensionFile, "utf8");
+    // Insert after the design's last route block rather than at the end of
+    // <main>: Structured closes with a <footer>, and appending there would put
+    // our routes below it.
+    const mainClose = markup.lastIndexOf("</main>");
+    const lastRoute = markup.lastIndexOf("</sc-if>", mainClose === -1 ? undefined : mainClose);
+    const at = lastRoute === -1 ? (mainClose === -1 ? markup.length : mainClose) : lastRoute + "</sc-if>".length;
+    markup = markup.slice(0, at) + "\n" + extra + "\n" + markup.slice(at);
+    console.log(`  extensions: spliced ${extra.length.toLocaleString()} chars`);
+  }
   // <x-dc> (and <body>/<html>) wrap the whole document and open above this
   // slice, so their closing tags arrive orphaned. JSX has no tolerance for
   // those; HTML parsers simply ignore them.

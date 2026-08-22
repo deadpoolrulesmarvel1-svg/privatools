@@ -11,8 +11,14 @@ import { SkinDock } from "@/components/SkinDock";
  * of our shell but a swap of the whole surface. Each is code-split; only the
  * active one is ever fetched.
  */
+/**
+ * Each entry loads that skin's *extension* where one exists — a subclass of the
+ * generated component that adds the surfaces the imported design never had
+ * (accounts, API keys, and the rest of the feature manifest). Skins without an
+ * extension yet fall back to the generated component directly.
+ */
 const APPS: Record<Exclude<SkinId, "signature">, React.LazyExoticComponent<React.ComponentType>> = {
-    aurora: lazy(() => import("./aurora/SkinApp")),
+    aurora: lazy(() => import("./extensions/aurora")),
     carbon: lazy(() => import("./carbon/SkinApp")),
     structured: lazy(() => import("./structured/SkinApp")),
 };

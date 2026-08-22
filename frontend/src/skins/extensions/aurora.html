@@ -1,0 +1,76 @@
+<!-- Account and API keys — Obsidian Aurora.
+     Written in the design's own dialect and using its own variables, so the
+     generator converts it exactly as it converts the imported markup and the
+     result sits inside the theme rather than on top of it. -->
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.02em;margin:0">{{ acctTitle }}</h1>
+  <div style="font-size:13.5px;color:var(--text2);margin-top:5px">{{ acctLede }}</div>
+
+  <sc-if value="{{ acctSignedOut }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <form onSubmit="{{ acctSubmit }}" style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px">
+        <button type="button" onClick="{{ acctShowSignIn }}" style="flex:1;height:34px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;border:1px solid {{ acctSignInBd }};background:{{ acctSignInBg }};color:{{ acctSignInFg }}">Sign in</button>
+        <button type="button" onClick="{{ acctShowSignUp }}" style="flex:1;height:34px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;border:1px solid {{ acctSignUpBd }};background:{{ acctSignUpBg }};color:{{ acctSignUpFg }}">Create account</button>
+      </div>
+
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)">Email
+        <input type="email" value="{{ acctEmail }}" onInput="{{ acctSetEmail }}" autoComplete="email" required="{{ true }}"
+               style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)">Password
+        <input type="password" value="{{ acctPassword }}" onInput="{{ acctSetPassword }}" autoComplete="{{ acctPwAutocomplete }}" required="{{ true }}"
+               style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <div style="display:{{ acctHintD }};font-size:11.5px;color:var(--text3)">At least 10 characters. Length is what makes a password strong.</div>
+      <div role="alert" style="display:{{ acctErrD }};font-size:12px;color:var(--co)">{{ acctError }}</div>
+
+      <button type="submit" disabled="{{ acctBusy }}" style="height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C;opacity:{{ acctBusyOpacity }}">{{ acctSubmitLabel }}</button>
+    </form>
+
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">You do not need an account</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:8px;line-height:1.6">Every one of the tools works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:10px;line-height:1.6">We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ acctSignedIn }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">API keys</div>
+        <button type="button" onClick="{{ acctNewKey }}" style="height:32px;padding:0 12px;border-radius:9px;border:none;cursor:pointer;background:var(--em);color:#04120C;font-size:12.5px;font-weight:600">New key</button>
+      </div>
+
+      <div style="display:{{ acctNewKeyD }};margin-top:12px;border:1px solid var(--em);border-radius:11px;background:var(--emsoft);padding:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--em)">Copy this now — it is not shown again</div>
+        <code style="display:block;margin-top:7px;font-size:12.5px;word-break:break-all;color:var(--text)">{{ acctNewKeyValue }}</code>
+      </div>
+
+      <div style="display:{{ acctNoKeysD }};font-size:12.5px;color:var(--text2);margin-top:12px">No keys yet. Create one to start using the API.</div>
+
+      <sc-for list="{{ acctKeys }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:{{ k.labelColor }}">{{ k.label }}</div>
+            <div style="font-size:11.5px;color:var(--text3);margin-top:2px">{{ k.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ k.revoke }}" disabled="{{ k.revoked }}" style="display:{{ k.revokeD }};height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px">Revoke</button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Signed in</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:6px;word-break:break-all">{{ acctEmailShown }}</div>
+      <button type="button" onClick="{{ acctSignOut }}" style="margin-top:14px;width:100%;height:36px;border-radius:9px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text);font-size:12.5px;font-weight:600">Sign out</button>
+      <button type="button" onClick="{{ acctDelete }}" style="margin-top:8px;width:100%;height:36px;border-radius:9px;cursor:pointer;border:1px solid var(--co);background:transparent;color:var(--co);font-size:12.5px;font-weight:600">{{ acctDeleteLabel }}</button>
+      <div style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Deleting removes your email, your password hash and every key. It cannot be undone.</div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
