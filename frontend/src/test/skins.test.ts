@@ -244,6 +244,29 @@ describe("catalogue adapters", () => {
         expect(STRUCTURED_CATALOGUE.meta.declaredTotal).toBe(CATALOGUE_COUNTS.total);
     });
 
+    it("keep the count out of user-visible copy in the shells", () => {
+        // The skins read their counts from the registry; the house shell has to
+        // as well, or the two disagree the first time a tool is added. This
+        // caught a literal "Search 219 tools" in SiteHeader that every other
+        // surface was already deriving.
+        const shells = ["../components/SiteHeader.tsx", "../components/SiteFooter.tsx",
+                        "../components/shells/StandardShell.tsx"];
+        const offenders: string[] = [];
+        for (const rel of shells) {
+            const src = readFileSync(resolve(__dirname, rel), "utf8");
+            for (const line of src.split("\n")) {
+                // Comments explain the history and may name the numbers.
+                const code = line.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+                if (code.startsWith("*") || code.startsWith("//")) continue;
+                // A three-digit number inside rendered text or a string literal.
+                if (/(>[^<>{]*|["`][^"`]*)\b(2[0-9]{2}|1[0-9]{2})\s+(free\s+)?tools?\b/.test(code)) {
+                    offenders.push(`${rel}: ${code.slice(0, 80)}`);
+                }
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+
     it("never reintroduce the invented 221 / 107 / 114 figures", () => {
         const counts = [
             CATALOGUE_COUNTS.total, CATALOGUE_COUNTS.pdf, CATALOGUE_COUNTS.nonPdf,

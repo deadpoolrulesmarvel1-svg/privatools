@@ -18,6 +18,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Command, Github, Keyboard, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tools } from "@/data/tools";
+import { nonPdfTools } from "@/data/non-pdf-tools";
+
+/* Derived, not written down. The one number that was a literal here drifted
+   from the registry once already — the site advertised 221 when it had 219 —
+   and every other surface reads it from the registry for exactly that reason. */
+const TOOL_TOTAL = tools.length + nonPdfTools.length;
 import { useTheme } from "@/hooks/useTheme";
 import { CATEGORY_NAV } from "@/lib/nav";
 import { SkinSwitcher } from "./shells/SkinSwitcher";
@@ -74,7 +81,7 @@ export function SiteHeader({
                         aria-label="Search tools"
                     >
                         <Search size={15} className="shrink-0" />
-                        <span className="flex-1 text-left truncate">Search 219 tools, or paste a file…</span>
+                        <span className="flex-1 text-left truncate">Search {TOOL_TOTAL} tools, or paste a file…</span>
                         <kbd className="hidden md:inline-flex items-center gap-0.5 font-mono text-[11px] text-muted-foreground px-1.5 py-0.5 rounded border border-border bg-background">
                             <Command size={10} />K
                         </kbd>
