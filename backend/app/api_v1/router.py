@@ -70,7 +70,21 @@ async def attach_quota_headers(request: Request, call_next):
     """
     response = await call_next(request)
     state = getattr(request.state, "v1_quota", None)
-    if state is not None:
-        for name, value in quota.headers(state).items():
-            response.headers[name] = value
+    if state is None:
+        return response
+
+    # 422 is FastAPI rejecting the request during validation, which happens
+    # before the handler body runs — so nothing was computed and the charge
+    # taken up front should go back. Every other status is left alone: a 4xx
+    # the handler itself raised may well have done work first, and guessing
+    # which did would be worse than charging for it.
+    if response.status_code == 422:
+        key_id = getattr(request.state, "v1_key_id", None)
+        units = getattr(request.state, "v1_charged_units", 0)
+        size = getattr(request.state, "v1_charged_bytes", 0)
+        if key_id:
+            state = quota.refund(key_id, units, size)
+
+    for name, value in quota.headers(state).items():
+        response.headers[name] = value
     return response

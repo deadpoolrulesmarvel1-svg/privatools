@@ -151,3 +151,45 @@ def test_quota_rows_are_keyed_by_key_id_not_the_raw_key(api_key):
         rows = [dict(r) for r in conn.execute("SELECT * FROM api_quota")]
     assert rows and rows[0]["key_id"] == record.key_id
     assert all(raw not in str(v) for row in rows for v in row.values())
+
+
+def test_a_bearer_token_is_accepted_as_well_as_the_header(client, api_key):
+    """`Authorization: Bearer <key>` is what most clients send by default.
+
+    The documented header stays X-API-Key; this only means a caller that
+    reaches for the conventional one is not turned away.
+    """
+    raw, _ = api_key
+    for headers in ({"X-API-Key": raw}, {"Authorization": f"Bearer {raw}"}):
+        res = client.get("/api/v1/whoami", headers=headers)
+        assert res.status_code == 200, headers
+        assert res.json()["key_id"]
+
+
+def test_a_bearer_token_of_another_scheme_is_not_a_key(client, api_key):
+    raw, _ = api_key
+    res = client.get("/api/v1/whoami", headers={"Authorization": f"Basic {raw}"})
+    assert res.status_code == 401
+    assert res.json()["code"] == "missing_api_key"
+
+
+def test_a_request_rejected_in_validation_costs_nothing(client, api_key):
+    """Quota is charged before the handler so an over-quota call never starts.
+
+    The cost of that ordering is that a request FastAPI rejects during
+    validation has already been charged. Someone integrating for the first
+    time makes a run of those while they work out the shape of the call, and
+    they should not pay for a typo.
+    """
+    raw, record = api_key
+    before = client.get("/api/v1/usage", headers={"X-API-Key": raw}).json()["units"]["used"]
+
+    for _ in range(3):
+        res = client.post("/api/v1/compress", headers={"X-API-Key": raw},
+                          files={"wrong_field": ("in.pdf", b"%PDF-1.4\n", "application/pdf")})
+        assert res.status_code == 422
+        # The reply still reports the standing, and it must not have moved.
+        assert res.headers["X-RateLimit-Remaining"]
+
+    after = client.get("/api/v1/usage", headers={"X-API-Key": raw}).json()["units"]["used"]
+    assert after == before, f"three rejected requests cost {after - before} units"

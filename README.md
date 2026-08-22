@@ -187,6 +187,34 @@ The public pipeline API starts with the safe automation subset
 - Run a PDF pipeline: `POST /api/pipeline` with `file` and JSON `steps`
 - Optional auth: set `PRIVATOOLS_API_KEYS` and send `X-API-Key`
 
+### Accounts and `/api/v1`
+
+An account exists only to hold API keys — the tools themselves never ask for
+one. Sign up at `/account`, create a key, and call the versioned API:
+
+```
+curl -X POST https://privatools.me/api/v1/compress \
+  -H "X-API-Key: pk_…" \
+  -F files=@in.pdf -F level=recommended -o out.pdf
+```
+
+`Authorization: Bearer pk_…` works too, for clients that default to it.
+
+- `GET /api/v1/whoami` — confirm a key works
+- `GET /api/v1/usage` — what today's quota looks like without spending any
+- Free tier: 500 cost units and 250 MB per key per day, reset daily.
+  Every reply carries `X-RateLimit-Limit`, `-Remaining` and `-Reset`, so a
+  client never has to call `/usage` to find out it is nearly out.
+- Over quota is a `429` with `Retry-After`.
+- Errors carry a machine-readable `code` beside the human `message`, so a
+  client can branch without matching on prose.
+
+Unlike the unversioned `/api/*` routes above, v1 always requires a key: it
+meters real compute, and an open metered endpoint is a free compute farm.
+
+Recovery matters here because there is no password-reset email — signup hands
+you a one-time recovery code, and that code is the only way back in.
+
 Developer clients live under `packages/`:
 
 - CLI: `npx --no-install privatools --help`

@@ -21,22 +21,40 @@ from ..auth import accounts
 from . import quota
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+# `Authorization: Bearer <key>` is what most HTTP clients, SDK generators and
+# API explorers reach for by default, so accept it as well as the documented
+# header. Same key, same lookup — only where it was read differs.
+bearer_header = APIKeyHeader(name="Authorization", auto_error=False)
+
+
+def _from_bearer(value: str | None) -> str | None:
+    if not value:
+        return None
+    scheme, _, token = value.partition(" ")
+    if scheme.lower() != "bearer":
+        return None
+    return token.strip() or None
 
 
 def _error(status: int, code: str, detail: str, headers: dict | None = None) -> HTTPException:
     return HTTPException(status_code=status, detail={"code": code, "message": detail}, headers=headers)
 
 
-async def require_v1_key(api_key: str | None = Security(api_key_header)) -> accounts.KeyRecord:
+async def require_v1_key(
+    api_key: str | None = Security(api_key_header),
+    authorization: str | None = Security(bearer_header),
+) -> accounts.KeyRecord:
     """Resolve a user-issued API key, or refuse.
 
     Unlike the legacy dependency there is no open path: an unauthenticated call
     to v1 is always a 401.
     """
+    api_key = api_key or _from_bearer(authorization)
     if not api_key:
         raise _error(401, "missing_api_key",
-                     "Send your key in the X-API-Key header. Create one at /account.",
-                     {"WWW-Authenticate": "ApiKey"})
+                     "Send your key in the X-API-Key header, or as "
+                     "`Authorization: Bearer <key>`. Create one at /account.",
+                     {"WWW-Authenticate": "Bearer"})
 
     record = accounts.resolve_key(api_key)
     if record is None:
@@ -69,8 +87,10 @@ async def enforce_quota(
             {**quota.headers(state), "Retry-After": str(state.retry_after)},
         )
 
-    # Read by the response middleware so every v1 reply reports the standing.
+    # Read by the response middleware so every v1 reply reports the standing,
+    # and so a request rejected before the handler can hand its charge back.
     request.state.v1_key_id = key.key_id
     request.state.v1_quota = state
     request.state.v1_charged_bytes = size
+    request.state.v1_charged_units = units
     return key

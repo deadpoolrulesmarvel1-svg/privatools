@@ -161,6 +161,30 @@ def reconcile_bytes(key_id: str, actual: int, charged: int) -> None:
         )
 
 
+def refund(key_id: str, units: int, size_bytes: int = 0) -> QuotaState:
+    """Give back a charge for a request that never reached the handler.
+
+    Quota is consumed before work starts, which is what stops an over-quota
+    call from beginning at all. The cost of that ordering is that a request
+    rejected during validation has already been charged — and someone
+    integrating for the first time makes a run of those while they work out
+    the shape of the call. They should not pay for a typo.
+
+    Only ever called for a rejection that happened before any compute, so the
+    charge being returned is always one nothing was spent on.
+    """
+    if units <= 0 and size_bytes <= 0:
+        return peek(key_id)
+    _ensure_schema()
+    with store.write() as conn:
+        conn.execute(
+            "UPDATE api_quota SET units = MAX(0, units - ?), bytes = MAX(0, bytes - ?)"
+            " WHERE key_id = ? AND day = ?",
+            (units, size_bytes, key_id, _today()),
+        )
+    return peek(key_id)
+
+
 def headers(state: QuotaState) -> dict[str, str]:
     """`X-RateLimit-*` describing the key's standing."""
     return {
