@@ -19,8 +19,8 @@ import { SkinDock } from "@/components/SkinDock";
  */
 const APPS: Record<Exclude<SkinId, "signature">, React.LazyExoticComponent<React.ComponentType>> = {
     aurora: lazy(() => import("./extensions/aurora")),
-    carbon: lazy(() => import("./carbon/SkinApp")),
-    structured: lazy(() => import("./structured/SkinApp")),
+    carbon: lazy(() => import("./extensions/carbon")),
+    structured: lazy(() => import("./extensions/structured")),
 };
 
 export function SkinAppHost() {

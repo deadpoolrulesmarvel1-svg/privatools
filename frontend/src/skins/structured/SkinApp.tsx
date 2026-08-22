@@ -4459,6 +4459,80 @@ Component.prototype.render = function render() {
       </div>
 
             </>)}
+
+
+            {Boolean(v.isAccount) && (<>
+        
+      <div style={css("max-width:1000px;margin:0 auto;padding:20px 24px 0;animation:slidein 200ms ease both")}>
+      <h1 style={css("font-size:clamp(21px,3.6vw,26px);font-weight:600;letter-spacing:-.02em")}>{v.acctTitle}</h1>
+      <p style={css("margin-top:3px;font-size:12.5px;color:var(--ink3)")}>{v.acctLede}</p>
+
+                {Boolean(v.acctSignedOut) && (<>
+            
+      <div style={css("display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;align-items:flex-start")}>
+      <form onSubmit={v.acctSubmit} style={css("flex:2 1 380px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;display:grid;gap:11px")}>
+      <div style={css("display:flex;gap:7px")}>
+      <button type="button" onClick={v.acctShowSignIn} style={css(`flex:1;height:34px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;border:1px solid ${v.acctSignInBd};background:${v.acctSignInBg};color:${v.acctSignInFg}`)}>Sign in</button>
+      <button type="button" onClick={v.acctShowSignUp} style={css(`flex:1;height:34px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;border:1px solid ${v.acctSignUpBd};background:${v.acctSignUpBg};color:${v.acctSignUpFg}`)}>Create account</button>
+      </div>
+      <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Email
+              <input type="email" value={v.acctEmail} onInput={v.acctSetEmail} autoComplete="email" required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+      </label>
+      <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Password
+              <input type="password" value={v.acctPassword} onInput={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
+      </label>
+      <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--ink3)`)}>At least 10 characters. Length is what makes a password strong.</div>
+      <div role="alert" style={css(`display:${v.acctErrD};font-size:12px;color:var(--coral)`)}>{v.acctError}</div>
+      <button type="submit" disabled={v.acctBusy} style={css(`height:38px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:var(--em);color:var(--bg);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
+      </form>
+      <section style={css("flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
+      <h2 style={css("font-size:14px;font-weight:500")}>You do not need an account</h2>
+      <p style={css("margin-top:7px;font-size:12.5px;line-height:1.6;color:var(--ink2)")}>Every tool works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</p>
+      <p style={css("margin-top:9px;font-size:12.5px;line-height:1.6;color:var(--ink2)")}>We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</p>
+      </section>
+      </div>
+
+                </>)}
+
+                {Boolean(v.acctSignedIn) && (<>
+            
+      <div style={css("display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;align-items:flex-start")}>
+      <section style={css("flex:2 1 380px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
+      <div style={css("display:flex;align-items:center;justify-content:space-between;gap:10px")}>
+      <h2 style={css("font-size:14px;font-weight:500")}>API keys</h2>
+      <button type="button" onClick={v.acctNewKey} style={css("height:30px;padding:0 11px;border-radius:8px;border:none;cursor:pointer;background:var(--em);color:var(--bg);font-size:12.5px;font-weight:500")}>New key</button>
+      </div>
+      <div style={css(`display:${v.acctNewKeyD};margin-top:11px;padding:11px;border:1px solid var(--emLine);border-radius:11px;background:var(--emSoft)`)}>
+      <div style={css("font-size:11.5px;font-weight:600;color:var(--em)")}>Copy this now — it is not shown again</div>
+      <code style={css("display:block;margin-top:6px;font-family:'Geist Mono',monospace;font-size:12px;word-break:break-all;color:var(--ink)")}>{v.acctNewKeyValue}</code>
+      </div>
+      <div style={css(`display:${v.acctNoKeysD};margin-top:11px;font-size:12.5px;color:var(--ink2)`)}>No keys yet. Create one to start using the API.</div>
+
+                      {(v.acctKeys ?? []).map((k, kI) => (
+                  
+      <div style={css("display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid var(--line)")}>
+      <div style={css("flex:1;min-width:0")}>
+      <div style={css(`font-size:13px;color:${k.labelColor}`)}>{k.label}</div>
+      <div style={css("font-size:11px;color:var(--ink3)")}>{k.meta}</div>
+      </div>
+      <button type="button" onClick={k.revoke} disabled={k.revoked} style={css(`display:${k.revokeD};height:28px;padding:0 10px;border-radius:7px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--coral);font-size:12px`)}>Revoke</button>
+      </div>
+
+                      ))}
+      </section>
+      <section style={css("flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
+      <h2 style={css("font-size:14px;font-weight:500")}>Signed in</h2>
+      <div style={css("margin-top:5px;font-size:12.5px;color:var(--ink2);word-break:break-all")}>{v.acctEmailShown}</div>
+      <button type="button" onClick={v.acctSignOut} style={css("margin-top:12px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--ink);font-size:12.5px")}>Sign out</button>
+      <button type="button" onClick={v.acctDelete} style={css("margin-top:7px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--coral);background:transparent;color:var(--coral);font-size:12.5px")}>{v.acctDeleteLabel}</button>
+      <p style={css("margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--ink3)")}>Deleting removes your email, your password hash and every key. It cannot be undone.</p>
+      </section>
+      </div>
+
+                </>)}
+      </div>
+
+            </>)}
       <footer style={css("max-width:1180px;margin:32px auto 0;padding:18px 24px 8px;border-top:1px solid var(--line)")}>
       <div style={css("display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start")}>
       <div style={css("flex:1 1 220px")}>

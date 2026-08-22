@@ -78,8 +78,8 @@ describe("skin registry", () => {
 describe("skin token contract", () => {
     for (const id of IMPORTED) {
         for (const [mode, selector] of [
-            ["light", `[data-skin="${id}"]`],
-            ["dark", `[data-skin="${id}"].dark`],
+            ["dark", `[data-skin="${id}"]`],
+            ["light", `[data-skin="${id}"][data-theme="light"]`],
         ] as const) {
             it(`${id} · ${mode} defines every core, category and shell token`, () => {
                 const t = tokensFor(selector);
@@ -98,7 +98,7 @@ describe("skin token contract", () => {
             });
         }
 
-        it(`${id} declares its own type pairing and radius on the light block`, () => {
+        it(`${id} declares its own type pairing and radius on its base block`, () => {
             const t = tokensFor(`[data-skin="${id}"]`);
             expect(t["font-display"]).toBeTruthy();
             expect(t["font-sans"]).toBeTruthy();
@@ -153,8 +153,8 @@ const PAIRS: [string, string, number][] = [
 describe("skin contrast (WCAG 2.2)", () => {
     for (const id of IMPORTED) {
         for (const [mode, selector] of [
-            ["light", `[data-skin="${id}"]`],
-            ["dark", `[data-skin="${id}"].dark`],
+            ["dark", `[data-skin="${id}"]`],
+            ["light", `[data-skin="${id}"][data-theme="light"]`],
         ] as const) {
             it(`${id} · ${mode} clears every target pair`, () => {
                 const t = tokensFor(selector);

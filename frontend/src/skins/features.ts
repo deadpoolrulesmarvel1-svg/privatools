@@ -103,8 +103,8 @@ export function missingFrom(skin: string): Feature[] {
 export const EXTENSION_SURFACES: Record<string, string[]> = {
     signature: [],
     aurora: ["account", "api-keys"],
-    carbon: [],
-    structured: [],
+    carbon: ["account", "api-keys"],
+    structured: ["account", "api-keys"],
 };
 
 /**
@@ -119,8 +119,8 @@ export const EXTENSION_SURFACES: Record<string, string[]> = {
 export const PENDING: Record<string, string[]> = {
     signature: ["vault", "byok", "translate", "signatures", "account", "api-keys", "status", "support"],
     aurora: ["vault", "byok", "translate", "signatures", "about", "security", "terms"],
-    carbon: ["byok", "translate", "signatures", "account", "api-keys"],
-    structured: ["vault", "byok", "translate", "signatures", "account", "api-keys"],
+    carbon: ["byok", "translate", "signatures"],
+    structured: ["vault", "byok", "translate", "signatures"],
 };
 
 /** Everything a skin can reach today. */

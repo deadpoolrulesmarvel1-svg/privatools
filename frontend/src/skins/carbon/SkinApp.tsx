@@ -4933,6 +4933,83 @@ Component.prototype.render = function render() {
       </div>
 
               </>)}
+
+
+              {Boolean(v.isAccount) && (<>
+          
+      <div style={css("max-width:1180px;margin:0 auto;padding:22px clamp(16px,3vw,34px) 0")}>
+      <h1 style={css("margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em")}>{v.acctTitle}</h1>
+      <p style={css("margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)")}>{v.acctLede}</p>
+
+                  {Boolean(v.acctSignedOut) && (<>
+              
+      <div style={css("display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px")}>
+      <form onSubmit={v.acctSubmit} style={css("display:grid;gap:13px;padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)")}>
+      <div style={css("display:flex;gap:8px")}>
+      <button type="button" onClick={v.acctShowSignIn} style={css(`flex:1;height:36px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;border:1px solid ${v.acctSignInBd};background:${v.acctSignInBg};color:${v.acctSignInFg}`)}>Sign in</button>
+      <button type="button" onClick={v.acctShowSignUp} style={css(`flex:1;height:36px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;border:1px solid ${v.acctSignUpBd};background:${v.acctSignUpBg};color:${v.acctSignUpFg}`)}>Create account</button>
+      </div>
+      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Email
+              <input type="email" value={v.acctEmail} onInput={v.acctSetEmail} autoComplete="email" required={v.true} style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
+      </label>
+      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Password
+              <input type="password" value={v.acctPassword} onInput={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
+      </label>
+      <div style={css(`display:${v.acctHintD};font-size:12px;color:var(--pt-txt3,#6B8085)`)}>At least 10 characters. Length is what makes a password strong.</div>
+      <div role="alert" style={css(`display:${v.acctErrD};font-size:12.5px;color:var(--pt-coral,#FF7A6B)`)}>{v.acctError}</div>
+      <button type="submit" disabled={v.acctBusy} style={css(`height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
+      </form>
+      <div style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)")}>
+      <div style={css("display:flex;align-items:center;gap:9px")}>
+      <span className="material-symbols-rounded" style={css("font-size:19px;color:var(--pt-aqua,#4FE1DE)")}>{ICON.person_off}</span>
+      <div style={css("font-size:14.5px;font-weight:700")}>You do not need an account</div>
+      </div>
+      <p style={css("margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--pt-txt2,#9FB3B8)")}>Every tool works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</p>
+      <p style={css("margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--pt-txt2,#9FB3B8)")}>We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</p>
+      </div>
+      </div>
+
+                  </>)}
+
+                  {Boolean(v.acctSignedIn) && (<>
+              
+      <div style={css("display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px")}>
+      <div style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)")}>
+      <div style={css("display:flex;align-items:center;justify-content:space-between;gap:10px")}>
+      <div style={css("font-size:14.5px;font-weight:700")}>API keys</div>
+      <button type="button" onClick={v.acctNewKey} style={css("height:34px;padding:0 13px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B)")}>New key</button>
+      </div>
+      <div style={css(`display:${v.acctNewKeyD};margin-top:13px;padding:13px;border-radius:12px;border:1px solid var(--pt-edge,rgba(79,225,222,.32));background:var(--pt-aquaBg,rgba(79,225,222,.12))`)}>
+      <div style={css("font-size:12.5px;font-weight:700;color:var(--pt-aqua,#4FE1DE)")}>Copy this now — it is not shown again</div>
+      <code style={css("display:block;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;word-break:break-all;color:var(--pt-txt,#E8F1F2)")}>{v.acctNewKeyValue}</code>
+      </div>
+      <div style={css(`display:${v.acctNoKeysD};margin-top:13px;font-size:13px;color:var(--pt-txt2,#9FB3B8)`)}>No keys yet. Create one to start using the API.</div>
+
+                        {(v.acctKeys ?? []).map((k, kI) => (
+                    
+      <div style={css("display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))")}>
+      <div style={css("flex:1;min-width:0")}>
+      <div style={css(`font-size:13.5px;font-weight:600;color:${k.labelColor}`)}>{k.label}</div>
+      <div style={css("font-size:12px;color:var(--pt-txt3,#6B8085);margin-top:2px")}>{k.meta}</div>
+      </div>
+      <button type="button" onClick={k.revoke} disabled={k.revoked} style={css(`display:${k.revokeD};height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px`)}>Revoke</button>
+      </div>
+
+                        ))}
+      </div>
+      <div style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)")}>
+      <div style={css("font-size:14.5px;font-weight:700")}>Signed in</div>
+      <div style={css("margin-top:6px;font-size:13px;color:var(--pt-txt2,#9FB3B8);word-break:break-all")}>{v.acctEmailShown}</div>
+      <button type="button" onClick={v.acctSignOut} style={css("margin-top:14px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt,#E8F1F2);font-size:13px;font-weight:600")}>Sign out</button>
+      <button type="button" onClick={v.acctDelete} style={css("margin-top:8px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-coral,#FF7A6B);background:transparent;color:var(--pt-coral,#FF7A6B);font-size:13px;font-weight:600")}>{v.acctDeleteLabel}</button>
+      <p style={css("margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)")}>Deleting removes your email, your password hash and every key. It cannot be undone.</p>
+      </div>
+      </div>
+
+                  </>)}
+      </div>
+
+              </>)}
       </div>
       </main>
       <nav aria-label="Primary mobile" style={css(`${v.bottomNavStyle}`)}>

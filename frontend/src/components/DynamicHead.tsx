@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useSkin } from "@/hooks/useSkin";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { blogPosts } from "@/data/blog";
@@ -191,8 +192,15 @@ const authorSchema = {
  */
 export function DynamicHead() {
     const { pathname } = useLocation();
+    const { skin } = useSkin();
 
     useEffect(() => {
+        // A ported design owns the whole screen, including its own routing and
+        // its own document titles. Ours would overwrite them with the title for
+        // whatever React Router path happens to be underneath — which for a
+        // hash-routed skin is always "/".
+        if (skin !== "signature") return;
+
         const tool = toolMap[pathname];
         const url = `${BASE_URL}${pathname === "/" ? "" : pathname}`;
 
@@ -493,7 +501,7 @@ export function DynamicHead() {
                 removeJsonLd();
             }
         }
-    }, [pathname]);
+    }, [pathname, skin]);
 
     return null;
 }

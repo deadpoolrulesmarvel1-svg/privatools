@@ -132,9 +132,15 @@ const parts = [
 
 for (const [id, skin] of Object.entries(SKINS)) {
   parts.push(`/* ══ ${skin.label} ═══════════════════════════════════════════ */`);
-  parts.push(block(`[data-skin="${id}"]`, skin, "light", { fonts: true }));
+  // Axis must match skin-native.css, which follows each imported design: the
+  // ported themes set `data-theme` on <html> themselves and never touch the
+  // app's `.dark` class. Keying these off `.dark` meant the dark block never
+  // applied inside a ported skin, so every component of ours rendered there
+  // took light-mode token values on a dark ground — invisible headings, and
+  // worse once the real tool UIs move in.
+  parts.push(block(`[data-skin="${id}"]`, skin, "dark", { fonts: true }));
   parts.push("");
-  parts.push(block(`[data-skin="${id}"].dark`, skin, "dark", { fonts: false }));
+  parts.push(block(`[data-skin="${id}"][data-theme="light"]`, skin, "light", { fonts: false }));
   parts.push("");
 }
 
