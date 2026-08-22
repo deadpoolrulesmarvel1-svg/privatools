@@ -12,6 +12,7 @@
  * plain localStorage, complete with a "do not enter real passwords" notice —
  * that notice is not reproduced here, because it would no longer be true.
  */
+import { mergeNavItem } from "./navInject";
 import { vaultApi, describeEntry, initialVaultState } from "./vaultLogic";
 
 export function withVault(Base, config) {
@@ -113,7 +114,7 @@ export function withVault(Base, config) {
             });
             const nav = config.injectNav
                 ? config.injectNav(v, item)
-                : { [config.navKey]: [...(v[config.navKey] ?? []), item] };
+                : { [config.navKey]: mergeNavItem(v[config.navKey] ?? [], item) };
 
             return {
                 ...v,

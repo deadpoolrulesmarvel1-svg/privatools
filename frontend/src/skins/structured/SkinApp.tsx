@@ -4579,6 +4579,50 @@ Component.prototype.render = function render() {
       </div>
 
             </>)}
+
+
+            {Boolean(v.isRealTool) && (<>
+        
+      <div style={css("max-width:1000px;margin:0 auto;padding:20px 24px 0;animation:slidein 200ms ease both")}>
+      <nav aria-label="Breadcrumb" style={css("display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);margin-bottom:12px")}>
+      <a href="/" onClick={v.rtHome} style={css("color:var(--ink2)")}>Home</a>
+      <span className="ms" style={css("font-size:13px")}>{ICON.chevron_right}</span>
+      <a href="/tools" onClick={v.rtTools} style={css("color:var(--ink2)")}>All Tools</a>
+      <span className="ms" style={css("font-size:13px")}>{ICON.chevron_right}</span>
+      <span style={css("color:var(--ink)")}>{v.realToolName}</span>
+      </nav>
+      <h1 style={css("font-size:clamp(21px,3.6vw,26px);font-weight:600;letter-spacing:-.02em")}>{v.realToolName}</h1>
+      <p style={css("margin-top:3px;font-size:12.5px;color:var(--ink3)")}>{v.realToolDesc}</p>
+      <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-top:11px")}>
+
+                  {(v.rtChips ?? []).map((c, cI) => (
+              
+      <span style={css(`display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:${c.fg};border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:${c.bg}`)}>
+      <span className="ms" style={css("font-size:14px")}>{ICON[c.icon]}</span>{c.label}</span>
+
+                  ))}
+      </div>
+      <section style={css("margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
+          {v.realToolUI}
+        </section>
+      <div style={css(`display:${v.rtRelatedD};margin-top:16px`)}>
+      <h2 style={css("font-size:14px;font-weight:500;margin-bottom:9px")}>Related tools</h2>
+      <div style={css("display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px")}>
+
+                    {(v.rtRelated ?? []).map((r, rI) => (
+                
+      <button type="button" onClick={r.go} style={css("text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;color:var(--ink)")}>
+      <span className="ms" style={css("font-size:18px;color:var(--em)")}>{ICON[r.icon]}</span>
+      <div style={css("font-size:13px;margin-top:7px")}>{r.name}</div>
+      <div style={css("font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.45")}>{r.desc}</div>
+      </button>
+
+                    ))}
+      </div>
+      </div>
+      </div>
+
+            </>)}
       <footer style={css("max-width:1180px;margin:32px auto 0;padding:18px 24px 8px;border-top:1px solid var(--line)")}>
       <div style={css("display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start")}>
       <div style={css("flex:1 1 220px")}>

@@ -120,3 +120,45 @@
   </div>
 </div>
 </sc-if>
+
+<!-- Tool page — Carbon Glass chrome, real tool UI. Its own tool route
+     simulates the run and stands down; this keeps the design's glass panels,
+     breadcrumb and chips around the component that actually works. -->
+<sc-if value="{{ isRealTool }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1180px;margin:0 auto;padding:20px clamp(16px,3vw,34px) 0">
+  <nav aria-label="Breadcrumb" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--pt-txt3,#6B8085);margin-bottom:18px">
+    <a href="#/" onClick="{{ rtHome }}" style="border-bottom:none;color:var(--pt-txt2,#9FB3B8)">Home</a>
+    <span class="material-symbols-rounded" style="font-size:14px">chevron_right</span>
+    <a href="#/tools" onClick="{{ rtTools }}" style="border-bottom:none;color:var(--pt-txt2,#9FB3B8)">All tools</a>
+    <span class="material-symbols-rounded" style="font-size:14px">chevron_right</span>
+    <span style="color:var(--pt-txt,#E8F1F2);font-weight:600">{{ realToolName }}</span>
+  </nav>
+
+  <h1 style="margin:0;font-size:clamp(28px,3.5vw,44px);font-weight:800;letter-spacing:-.03em">{{ realToolName }}</h1>
+  <p style="margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)">{{ realToolDesc }}</p>
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+    <sc-for list="{{ rtChips }}" as="c" hint-placeholder-count="4">
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:{{ c.fg }};border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:20px;padding:5px 11px;background:{{ c.bg }}">
+        <span class="material-symbols-rounded" style="font-size:15px">{{ c.icon }}</span>{{ c.label }}</span>
+    </sc-for>
+  </div>
+
+  <div style="margin-top:20px;padding:20px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)">
+    {{ realToolUI }}
+  </div>
+
+  <div style="display:{{ rtRelatedD }};margin-top:20px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:11px">Related tools</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+      <sc-for list="{{ rtRelated }}" as="r" hint-placeholder-count="4">
+        <button type="button" onClick="{{ r.go }}" style="text-align:left;padding:15px;border-radius:14px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);cursor:pointer;color:var(--pt-txt,#E8F1F2)">
+          <span class="material-symbols-rounded" style="font-size:19px;color:var(--pt-aqua,#4FE1DE)">{{ r.icon }}</span>
+          <div style="font-size:13.5px;font-weight:700;margin-top:8px">{{ r.name }}</div>
+          <div style="font-size:12px;color:var(--pt-txt2,#9FB3B8);margin-top:3px;line-height:1.45">{{ r.desc }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>

@@ -5010,6 +5010,50 @@ Component.prototype.render = function render() {
       </div>
 
               </>)}
+
+
+              {Boolean(v.isRealTool) && (<>
+          
+      <div style={css("max-width:1180px;margin:0 auto;padding:20px clamp(16px,3vw,34px) 0")}>
+      <nav aria-label="Breadcrumb" style={css("display:flex;align-items:center;gap:8px;font-size:12px;color:var(--pt-txt3,#6B8085);margin-bottom:18px")}>
+      <a href="#/" onClick={v.rtHome} style={css("border-bottom:none;color:var(--pt-txt2,#9FB3B8)")}>Home</a>
+      <span className="material-symbols-rounded" style={css("font-size:14px")}>{ICON.chevron_right}</span>
+      <a href="#/tools" onClick={v.rtTools} style={css("border-bottom:none;color:var(--pt-txt2,#9FB3B8)")}>All tools</a>
+      <span className="material-symbols-rounded" style={css("font-size:14px")}>{ICON.chevron_right}</span>
+      <span style={css("color:var(--pt-txt,#E8F1F2);font-weight:600")}>{v.realToolName}</span>
+      </nav>
+      <h1 style={css("margin:0;font-size:clamp(28px,3.5vw,44px);font-weight:800;letter-spacing:-.03em")}>{v.realToolName}</h1>
+      <p style={css("margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)")}>{v.realToolDesc}</p>
+      <div style={css("display:flex;flex-wrap:wrap;gap:8px;margin-top:14px")}>
+
+                    {(v.rtChips ?? []).map((c, cI) => (
+                
+      <span style={css(`display:inline-flex;align-items:center;gap:6px;font-size:12px;color:${c.fg};border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:20px;padding:5px 11px;background:${c.bg}`)}>
+      <span className="material-symbols-rounded" style={css("font-size:15px")}>{ICON[c.icon]}</span>{c.label}</span>
+
+                    ))}
+      </div>
+      <div style={css("margin-top:20px;padding:20px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)")}>
+          {v.realToolUI}
+        </div>
+      <div style={css(`display:${v.rtRelatedD};margin-top:20px`)}>
+      <div style={css("font-size:15px;font-weight:700;margin-bottom:11px")}>Related tools</div>
+      <div style={css("display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px")}>
+
+                      {(v.rtRelated ?? []).map((r, rI) => (
+                  
+      <button type="button" onClick={r.go} style={css("text-align:left;padding:15px;border-radius:14px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);cursor:pointer;color:var(--pt-txt,#E8F1F2)")}>
+      <span className="material-symbols-rounded" style={css("font-size:19px;color:var(--pt-aqua,#4FE1DE)")}>{ICON[r.icon]}</span>
+      <div style={css("font-size:13.5px;font-weight:700;margin-top:8px")}>{r.name}</div>
+      <div style={css("font-size:12px;color:var(--pt-txt2,#9FB3B8);margin-top:3px;line-height:1.45")}>{r.desc}</div>
+      </button>
+
+                      ))}
+      </div>
+      </div>
+      </div>
+
+              </>)}
       </div>
       </main>
       <nav aria-label="Primary mobile" style={css(`${v.bottomNavStyle}`)}>

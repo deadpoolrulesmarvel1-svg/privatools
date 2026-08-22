@@ -12,6 +12,7 @@
  * from the design source, so a subclass is the only thing that survives.
  * `renderVals()` is extended, never replaced.
  */
+import { mergeNavItem } from "./navInject";
 import {
     accountApi, describeKey, defaultKeyLabel, initialAccountState,
 } from "./accountLogic";
@@ -151,7 +152,7 @@ export function withAccounts(Base, config) {
 
             const nav = config.injectNav
                 ? config.injectNav(v, item)
-                : { [config.navKey]: [...(v[config.navKey] ?? []), item] };
+                : { [config.navKey]: mergeNavItem(v[config.navKey] ?? [], item) };
 
             return {
                 ...v,

@@ -278,7 +278,7 @@ function ToolLoadingCard() {
   );
 }
 
-function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
+export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
     case "merge-pdf": return <LazyMergeUI />;
     case "split-pdf": return <LazySplitUI />;

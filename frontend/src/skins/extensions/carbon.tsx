@@ -14,6 +14,8 @@ import Base from "../carbon/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
 import { withRealCatalogue } from "../withRealCatalogue";
+import { withRealTools } from "../withRealTools";
+import { mergeNavItem } from "../navInject";
 
 const PALETTE = {
     accent: "var(--pt-aqua,#4FE1DE)", accentSoft: "var(--pt-aquaBg,rgba(79,225,222,.12))",
@@ -37,7 +39,7 @@ const injectNav = (v, item) => {
     const groups = (v.navGroups ?? []).map((g) => ({ ...g }));
     const space = groups.find((g) => /your space/i.test(g.label ?? ""));
     if (space) {
-        space.items = [...(space.items ?? []), item];
+        space.items = mergeNavItem(space.items ?? [], item);
         return { navGroups: groups };
     }
     return { navGroups: [...groups, { label: "Account", show: true, rule: false, items: [item] }] };
@@ -50,7 +52,25 @@ const at = (hash, suppressFlags) => ({
     ...(suppressFlags ? { suppressFlags } : {}),
 });
 
-export default withVault(
+const REAL_TOOLS = {
+    // Carbon keeps the active slug in `state.tool` and routes at #/tool/<slug>.
+    slugOf: (state) => (state.route === "tool" ? state.tool : ""),
+    suppressFlags: ["isTool"],
+    icon: "build",
+    go: (route) => { location.hash = "#/" + route; },
+    goTool: (slug) => { location.hash = "#/tool/" + slug; },
+    chips: (tool) => [
+        { label: tool.clientOnly ? "Runs in your browser" : "Server required",
+          icon: tool.clientOnly ? "devices" : "cloud",
+          fg: tool.clientOnly ? "var(--pt-aqua,#4FE1DE)" : "var(--pt-amber,#F0B45E)",
+          bg: tool.clientOnly ? "var(--pt-aquaBg,rgba(79,225,222,.12))" : "var(--pt-amberBg,rgba(240,180,94,.13))" },
+        { label: "500 MB per file", icon: "straighten", fg: "var(--pt-txt2,#9FB3B8)", bg: "transparent" },
+        { label: "No retention", icon: "delete_forever", fg: "var(--pt-txt2,#9FB3B8)", bg: "transparent" },
+        { label: "Free, no account", icon: "toll", fg: "var(--pt-txt2,#9FB3B8)", bg: "transparent" },
+    ],
+};
+
+export default withRealTools(withVault(
     withAccounts(withRealCatalogue(Base), at("#/account")),
     at("#/vault", ["is404", "isVault"]),
-);
+), REAL_TOOLS);

@@ -14,6 +14,7 @@ import Base from "../structured/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
 import { withRealCatalogue } from "../withRealCatalogue";
+import { withRealTools } from "../withRealTools";
 import { STRUCTURED_CATALOGUE } from "../catalogue";
 
 // This design reads `window.PRIVATOOLS_CATALOGUE` and falls back to its own
@@ -82,7 +83,32 @@ function withFixedRouting(Base) {
     };
 }
 
-export default withVault(
+const REAL_TOOLS = {
+    // Structured routes at /tool/<slug>; parsePath puts the slug in `param`,
+    // and the component mirrors it onto `slug`.
+    slugOf: (state) => (state.route === "tool" ? (state.param || state.slug || "") : ""),
+    suppressFlags: ["isTool", "is404", "isHome"],
+    icon: "build",
+    go: (route) => {
+        history.pushState({}, "", "/" + route);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+    },
+    goTool: (slug) => {
+        history.pushState({}, "", "/tool/" + slug);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+    },
+    chips: (tool) => [
+        { label: tool.clientOnly ? "Runs in your browser" : "Server required",
+          icon: tool.clientOnly ? "devices" : "cloud",
+          fg: tool.clientOnly ? "var(--em)" : "var(--amber)",
+          bg: tool.clientOnly ? "var(--emSoft)" : "var(--amberSoft)" },
+        { label: "500 MB per file", icon: "straighten", fg: "var(--ink2)", bg: "transparent" },
+        { label: "No retention", icon: "delete_forever", fg: "var(--ink2)", bg: "transparent" },
+        { label: "Free, no account", icon: "toll", fg: "var(--ink2)", bg: "transparent" },
+    ],
+};
+
+export default withRealTools(withVault(
     withAccounts(withRealCatalogue(withFixedRouting(Base)), at("/account")),
     at("/my-stuff/vault", ["isVault", "isStuff"]),
-);
+), REAL_TOOLS);

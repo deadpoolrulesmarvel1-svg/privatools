@@ -121,3 +121,54 @@
   </div>
 </div>
 </sc-if>
+
+<!-- Tool page — Obsidian Aurora chrome, real tool UI.
+     The design's own tool route is suppressed in favour of this: its run panel
+     simulates processing, and this renders the same component the house design
+     uses, which actually talks to the backend. Everything around it — the
+     breadcrumb, the display headline, the trust chips, the related rail — is
+     the design's own language. -->
+<sc-if value="{{ isRealTool }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <nav aria-label="Breadcrumb" style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);margin-bottom:14px">
+    <a href="#/" onClick="{{ rtHome }}" style="color:var(--text2)">Home</a>
+    <span style="font-family:'Material Symbols Rounded';font-size:14px">chevron_right</span>
+    <a href="#/tools" onClick="{{ rtTools }}" style="color:var(--text2)">All tools</a>
+    <span style="font-family:'Material Symbols Rounded';font-size:14px">chevron_right</span>
+    <span style="color:var(--text)">{{ realToolName }}</span>
+  </nav>
+
+  <div style="display:flex;align-items:flex-start;gap:16px;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--pnl);box-shadow:var(--shadow-sm)">
+    <span style="width:52px;height:52px;flex:0 0 52px;border-radius:14px;background:var(--emsoft);display:flex;align-items:center;justify-content:center">
+      <span style="font-family:'Material Symbols Rounded';font-size:26px;color:var(--em);font-variation-settings:'wght' 300">{{ rtIcon }}</span>
+    </span>
+    <div style="min-width:0;flex:1">
+      <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.025em;margin:0">{{ realToolName }}</h1>
+      <div style="font-size:13.5px;color:var(--text2);margin-top:5px">{{ realToolDesc }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">
+        <sc-for list="{{ rtChips }}" as="c" hint-placeholder-count="4">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:{{ c.fg }};border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:{{ c.bg }}">
+            <span style="font-family:'Material Symbols Rounded';font-size:14px">{{ c.icon }}</span>{{ c.label }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--pnl)">
+    {{ realToolUI }}
+  </div>
+
+  <div style="display:{{ rtRelatedD }};margin-top:16px">
+    <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600;margin-bottom:10px">Related tools</div>
+    <div style="display:grid;grid-template-columns:var(--c4);gap:var(--gap)">
+      <sc-for list="{{ rtRelated }}" as="r" hint-placeholder-count="4">
+        <button type="button" onClick="{{ r.go }}" style="text-align:left;padding:13px;border:1px solid var(--line);border-radius:13px;background:var(--pnl2);cursor:pointer;color:var(--text)">
+          <span style="font-family:'Material Symbols Rounded';font-size:19px;color:var(--em);font-variation-settings:'wght' 300">{{ r.icon }}</span>
+          <div style="font-size:13px;font-weight:600;margin-top:8px;font-family:Sora,sans-serif">{{ r.name }}</div>
+          <div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.45">{{ r.desc }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>

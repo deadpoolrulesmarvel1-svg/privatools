@@ -117,3 +117,44 @@
   </div>
 </div>
 </sc-if>
+
+<!-- Tool page — Structured Privacy OS chrome, real tool UI. Flat and dense, as
+     the rest of this design is; its own simulated run panel stands down. -->
+<sc-if value="{{ isRealTool }}">
+<div style="max-width:1000px;margin:0 auto;padding:20px 24px 0;animation:slidein 200ms ease both">
+  <nav aria-label="Breadcrumb" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);margin-bottom:12px">
+    <a href="/" onClick="{{ rtHome }}" style="color:var(--ink2)">Home</a>
+    <span class="ms" style="font-size:13px">chevron_right</span>
+    <a href="/tools" onClick="{{ rtTools }}" style="color:var(--ink2)">All Tools</a>
+    <span class="ms" style="font-size:13px">chevron_right</span>
+    <span style="color:var(--ink)">{{ realToolName }}</span>
+  </nav>
+
+  <h1 style="font-size:clamp(21px,3.6vw,26px);font-weight:600;letter-spacing:-.02em">{{ realToolName }}</h1>
+  <p style="margin-top:3px;font-size:12.5px;color:var(--ink3)">{{ realToolDesc }}</p>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:11px">
+    <sc-for list="{{ rtChips }}" as="c">
+      <span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:{{ c.fg }};border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:{{ c.bg }}">
+        <span class="ms" style="font-size:14px">{{ c.icon }}</span>{{ c.label }}</span>
+    </sc-for>
+  </div>
+
+  <section style="margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px">
+    {{ realToolUI }}
+  </section>
+
+  <div style="display:{{ rtRelatedD }};margin-top:16px">
+    <h2 style="font-size:14px;font-weight:500;margin-bottom:9px">Related tools</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      <sc-for list="{{ rtRelated }}" as="r">
+        <button type="button" onClick="{{ r.go }}" style="text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;color:var(--ink)">
+          <span class="ms" style="font-size:18px;color:var(--em)">{{ r.icon }}</span>
+          <div style="font-size:13px;margin-top:7px">{{ r.name }}</div>
+          <div style="font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.45">{{ r.desc }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>

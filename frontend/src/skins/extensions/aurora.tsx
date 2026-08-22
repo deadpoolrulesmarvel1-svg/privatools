@@ -12,6 +12,7 @@ import Base from "../aurora/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
 import { withRealCatalogue } from "../withRealCatalogue";
+import { withRealTools } from "../withRealTools";
 import { AURORA_CATALOGUE, CATALOGUE_COUNTS } from "../catalogue";
 
 const PALETTE = {
@@ -35,7 +36,26 @@ const at = (hash) => ({
     palette: PALETTE,
 });
 
-export default withVault(
+const REAL_TOOLS = {
+    // Aurora routes tools at #/tool/<slug>; its own `isTool` block is the
+    // simulated one and stands down.
+    slugOf: (state) => (state.route === "tool" ? state.param : ""),
+    suppressFlags: ["isTool"],
+    icon: "build",
+    go: (route) => { location.hash = "#/" + route; },
+    goTool: (slug) => { location.hash = "#/tool/" + slug; },
+    chips: (tool) => [
+        { label: tool.clientOnly ? "Runs in your browser" : "Server required",
+          icon: tool.clientOnly ? "devices" : "cloud",
+          fg: tool.clientOnly ? "var(--em)" : "var(--am)",
+          bg: tool.clientOnly ? "var(--emsoft)" : "var(--amsoft)" },
+        { label: "500 MB per file", icon: "straighten", fg: "var(--text2)", bg: "transparent" },
+        { label: "No retention", icon: "delete_forever", fg: "var(--text2)", bg: "transparent" },
+        { label: "Free, no account", icon: "payments", fg: "var(--text2)", bg: "transparent" },
+    ],
+};
+
+export default withRealTools(withVault(
     withAccounts(
         withRealCatalogue(Base, {
             records: AURORA_CATALOGUE,
@@ -50,4 +70,4 @@ export default withVault(
         at("#/account"),
     ),
     at("#/vault"),
-);
+), REAL_TOOLS);

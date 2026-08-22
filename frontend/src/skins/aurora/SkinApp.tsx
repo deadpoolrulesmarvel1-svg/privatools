@@ -4931,6 +4931,57 @@ Component.prototype.render = function render() {
 
             </>)}
 
+
+            {Boolean(v.isRealTool) && (<>
+        
+      <div style={css("animation:rise .24s ease both")}>
+      <nav aria-label="Breadcrumb" style={css("display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);margin-bottom:14px")}>
+      <a href="#/" onClick={v.rtHome} style={css("color:var(--text2)")}>Home</a>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:14px")}>{ICON.chevron_right}</span>
+      <a href="#/tools" onClick={v.rtTools} style={css("color:var(--text2)")}>All tools</a>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:14px")}>{ICON.chevron_right}</span>
+      <span style={css("color:var(--text)")}>{v.realToolName}</span>
+      </nav>
+      <div style={css("display:flex;align-items:flex-start;gap:16px;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--pnl);box-shadow:var(--shadow-sm)")}>
+      <span style={css("width:52px;height:52px;flex:0 0 52px;border-radius:14px;background:var(--emsoft);display:flex;align-items:center;justify-content:center")}>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:26px;color:var(--em);font-variation-settings:'wght' 300")}>{ICON[v.rtIcon]}</span>
+      </span>
+      <div style={css("min-width:0;flex:1")}>
+      <h1 style={css("font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.025em;margin:0")}>{v.realToolName}</h1>
+      <div style={css("font-size:13.5px;color:var(--text2);margin-top:5px")}>{v.realToolDesc}</div>
+      <div style={css("display:flex;flex-wrap:wrap;gap:7px;margin-top:12px")}>
+
+                      {(v.rtChips ?? []).map((c, cI) => (
+                  
+      <span style={css(`display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:${c.fg};border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:${c.bg}`)}>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:14px")}>{ICON[c.icon]}</span>{c.label}</span>
+
+                      ))}
+      </div>
+      </div>
+      </div>
+      <div style={css("margin-top:16px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--pnl)")}>
+          {v.realToolUI}
+        </div>
+      <div style={css(`display:${v.rtRelatedD};margin-top:16px`)}>
+      <div style={css("font-family:Sora,sans-serif;font-size:14px;font-weight:600;margin-bottom:10px")}>Related tools</div>
+      <div style={css("display:grid;grid-template-columns:var(--c4);gap:var(--gap)")}>
+
+                    {(v.rtRelated ?? []).map((r, rI) => (
+                
+      <button type="button" onClick={r.go} style={css("text-align:left;padding:13px;border:1px solid var(--line);border-radius:13px;background:var(--pnl2);cursor:pointer;color:var(--text)")}>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:19px;color:var(--em);font-variation-settings:'wght' 300")}>{ICON[r.icon]}</span>
+      <div style={css("font-size:13px;font-weight:600;margin-top:8px;font-family:Sora,sans-serif")}>{r.name}</div>
+      <div style={css("font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.45")}>{r.desc}</div>
+      </button>
+
+                    ))}
+      </div>
+      </div>
+      </div>
+
+            </>)}
+
       </div>
       </main>
       <nav aria-label="Mobile" style={css("display:var(--mnav-d);position:fixed;bottom:0;left:0;right:0;height:64px;padding-bottom:env(safe-area-inset-bottom);background:var(--bg1);border-top:1px solid var(--line);z-index:40")}>
