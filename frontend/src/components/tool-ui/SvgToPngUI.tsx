@@ -130,8 +130,8 @@ export function SvgToPngUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Output scale</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Output scale</span>
                             {outW !== null && outH !== null && (
                                 <span className="text-accent tabular-nums">{outW}×{outH} px</span>
                             )}
@@ -153,7 +153,7 @@ export function SvgToPngUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[20px] font-bold tracking-[-0.02em]", active ? "text-accent" : "text-foreground")}>{s.label}</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">
+                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">
                                             {w && h ? `${w}×${h}` : s.desc}
                                         </p>
                                     </button>

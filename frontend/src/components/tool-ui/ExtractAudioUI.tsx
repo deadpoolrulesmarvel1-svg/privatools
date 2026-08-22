@@ -88,8 +88,8 @@ export function ExtractAudioUI() {
                 <>
                     {objectUrl && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Preview · original video
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Preview · original video
                             </div>
                             <div className="bg-black/95">
                                 <video src={objectUrl} controls playsInline className="w-full max-h-[40vh]" aria-label={`Preview ${file.name}`} />
@@ -97,8 +97,8 @@ export function ExtractAudioUI() {
                         </div>
                     )}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Output format
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Output format
                         </div>
                         <div className="p-3 grid grid-cols-3 sm:grid-cols-5 gap-2" role="group" aria-label="Audio format">
                             {formats.map(f => {
@@ -109,7 +109,7 @@ export function ExtractAudioUI() {
                                         onClick={() => setFormat(f)}
                                         aria-pressed={active}
                                         className={cn(
-                                            "rounded-lg border py-2.5 px-2 font-mono text-[11px] tracking-[0.10em] uppercase transition-colors",
+                                            "font-medium rounded-lg border py-2.5 px-2 text-[12px] transition-colors",
                                             active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                         )}
                                     >

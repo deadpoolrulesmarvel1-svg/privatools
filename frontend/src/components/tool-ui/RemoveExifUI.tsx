@@ -143,7 +143,7 @@ export function RemoveExifUI() {
                     <DatabaseZap size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more images" : "Select images to scrub"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPEG · PNG · WebP · TIFF · multi-file batch</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPEG · PNG · WebP · TIFF · multi-file batch</p>
             </div>
 
             {files.length > 0 && (
@@ -161,21 +161,21 @@ export function RemoveExifUI() {
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                            <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{f.size}</span>
-                                            {!probed && <span className="font-mono text-[10px] tracking-wider uppercase text-muted-foreground/60">scanning…</span>}
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
+                                            {!probed && <span className="font-medium text-[11px] tracking-wider text-muted-foreground/60">scanning…</span>}
                                             {probed?.hasExif && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
                                             )}
                                             {probed?.hasXmp && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300">XMP</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">XMP</span>
                                             )}
                                             {probed?.hasGps && (
-                                                <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-destructive/15 text-destructive">
+                                                <span className="font-medium inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-destructive/15 text-destructive">
                                                     <MapPin size={9} /> GPS
                                                 </span>
                                             )}
                                             {clean && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-accent/15 text-accent">Clean</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-accent/15 text-accent">Clean</span>
                                             )}
                                         </div>
                                     </div>
@@ -188,8 +188,8 @@ export function RemoveExifUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Will be removed
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Will be removed
                         </div>
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
                             {STRIPPED.map(s => (

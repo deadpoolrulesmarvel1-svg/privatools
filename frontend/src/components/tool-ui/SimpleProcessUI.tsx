@@ -95,7 +95,7 @@ export function SimpleProcessUI({
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">{outputName}</span>
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                             Downloaded · {resultBlob ? formatFileSize(resultBlob.size) : ""}
                         </p>
                         <div className="mt-5 flex flex-wrap gap-2">
@@ -145,7 +145,7 @@ export function SimpleProcessUI({
                         <DropIcon size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{dropTitle}</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{dropSubtitle}</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">{dropSubtitle}</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
@@ -154,7 +154,7 @@ export function SimpleProcessUI({
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     {state !== "processing" && (
                         <button

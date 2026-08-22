@@ -470,12 +470,12 @@ export default function BatchPage() {
             <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-accent">§ Batch</span>
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""}</span>
-                        {doneCount > 0 && <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{doneCount} done</span>}
-                        {errorCount > 0 && <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-destructive">{errorCount} failed</span>}
+                        <span className="font-medium text-[11px] text-accent">Batch</span>
+                        <span className="font-medium text-[11px] text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""}</span>
+                        {doneCount > 0 && <span className="font-medium text-[11px] text-accent">{doneCount} done</span>}
+                        {errorCount > 0 && <span className="font-medium text-[11px] text-destructive">{errorCount} failed</span>}
                         {etaSeconds > 0 && (
-                            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/85">
+                            <span className="font-medium text-[11px] text-muted-foreground/85">
                                 · ~{etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left
                             </span>
                         )}
@@ -556,11 +556,11 @@ export default function BatchPage() {
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <History size={11} className="text-accent" />
-                                <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">Recent batches · {history.length}</span>
+                                <span className="text-[11px] font-semibold text-muted-foreground">Recent batches · {history.length}</span>
                             </div>
                             <button
                                 onClick={clearHistory}
-                                className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-destructive transition-colors"
+                                className="font-medium text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                             >
                                 Clear
                             </button>
@@ -622,11 +622,11 @@ export default function BatchPage() {
                             </span>
                             <div className="flex-1 min-w-0">
                                 <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">{selectedTool.name}</p>
-                                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                                <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                                     Accepts {selectedTool.accepts || "any"} · outputs {selectedTool.outputLabel}
                                 </p>
                             </div>
-                            <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+                            <span className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
                                 {pickerOpen ? "Hide tools" : "Change tool"}
                                 {pickerOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                             </span>
@@ -683,8 +683,8 @@ export default function BatchPage() {
                                                 if (groupTools.length === 0) return null;
                                                 return (
                                                     <div key={group.id}>
-                                                        <p className="px-1 mb-1.5 font-mono text-[9.5px] font-medium tracking-[0.10em] uppercase text-muted-foreground/85">
-                                                            <span className="text-accent">§</span> {group.label} · {groupTools.length}
+                                                        <p className="px-1 mb-1.5 text-[9.5px] font-medium text-muted-foreground/85">
+                                                            {group.label} · {groupTools.length}
                                                         </p>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                                                             {groupTools.map(t => (
@@ -706,8 +706,8 @@ export default function BatchPage() {
                                         </div>
                                     )}
                                 </div>
-                                <p className="mt-3 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85">
-                                    <span className="text-accent">§</span> {batchableTools.length} tools support batching — drag a folder onto the dropzone, every file goes through the chosen tool
+                                <p className="font-medium mt-3 text-[11px] text-muted-foreground/85">
+                                    {batchableTools.length} tools support batching — drag a folder onto the dropzone, every file goes through the chosen tool
                                 </p>
                             </div>
                         )}
@@ -751,7 +751,7 @@ export default function BatchPage() {
                             <div className="flex items-center gap-3 mb-3 px-1 flex-wrap">
                                 <div className="flex items-baseline gap-2">
                                     <Layers size={11} className="text-accent" />
-                                    <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+                                    <span className="text-[11px] font-semibold text-muted-foreground">
                                         Queue
                                     </span>
                                     <span className="font-mono text-[10px] text-muted-foreground/80">
@@ -773,7 +773,7 @@ export default function BatchPage() {
                                                 <span className="inline-block h-3 w-3 rounded-full bg-card translate-x-0.5 peer-checked:translate-x-3.5 transition-transform" />
                                             </span>
                                             <Zap size={10} className={cn("transition-colors", parallel ? "text-accent" : "text-muted-foreground/60")} />
-                                            <span className={cn("font-mono text-[10px] tracking-[0.08em] uppercase", parallel ? "text-accent" : "text-muted-foreground")}>
+                                            <span className={cn("font-medium text-[11px]", parallel ? "text-accent" : "text-muted-foreground")}>
                                                 Parallel
                                             </span>
                                         </label>
@@ -781,7 +781,7 @@ export default function BatchPage() {
                                     {errorCount > 0 && !processing && (
                                         <button
                                             onClick={retryAllFailures}
-                                            className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-destructive hover:underline"
+                                            className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:underline"
                                         >
                                             <RotateCw size={10} /> Retry {errorCount} failure{errorCount !== 1 ? "s" : ""}
                                         </button>
@@ -789,7 +789,7 @@ export default function BatchPage() {
                                     {doneCount > 0 && !processing && (
                                         <button
                                             onClick={removeDone}
-                                            className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                            className="font-medium inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                                             title="Remove done files from queue"
                                         >
                                             <Trash2 size={10} /> Clear done
@@ -799,7 +799,7 @@ export default function BatchPage() {
                                         <button
                                             onClick={() => setHideDone(v => !v)}
                                             className={cn(
-                                                "inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase transition-colors",
+                                                "font-medium inline-flex items-center gap-1 text-[11px] transition-colors",
                                                 hideDone ? "text-accent" : "text-muted-foreground hover:text-foreground"
                                             )}
                                             title={hideDone ? "Show finished files" : "Hide finished files"}
@@ -874,7 +874,7 @@ function Dropzone({
             <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em] mb-1">
                 Drop files here, or click to browse
             </p>
-            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+            <p className="font-medium text-[11.5px] text-muted-foreground">
                 Accepts {accepts || "any"} — many files OK
             </p>
         </button>
@@ -992,10 +992,10 @@ function FileRow({
             </span>
             {/* Status label / actions */}
             <div className="flex items-center gap-1.5 shrink-0">
-                {f.status === "pending"    && <span className="font-mono text-[10px] tracking-wider uppercase text-muted-foreground/85 px-2 h-6 inline-flex items-center rounded bg-paper-2/60 border border-border">Pending</span>}
+                {f.status === "pending"    && <span className="font-medium text-[11px] tracking-wider text-muted-foreground/85 px-2 h-6 inline-flex items-center rounded bg-paper-2/60 border border-border">Pending</span>}
                 {f.status === "processing" && <Loader2 size={13} className="text-accent animate-spin" />}
                 {f.status === "done" && f.resultUrl && (
-                    <a href={f.resultUrl} download={f.downloadName || f.file.name} className="inline-flex items-center gap-1 font-mono text-[10.5px] tracking-wider uppercase text-accent hover:underline">
+                    <a href={f.resultUrl} download={f.downloadName || f.file.name} className="font-medium inline-flex items-center gap-1 text-[11.5px] tracking-wider text-accent hover:underline">
                         <Download size={10} /> Download
                     </a>
                 )}
@@ -1005,7 +1005,7 @@ function FileRow({
                         {!processing && (
                             <button
                                 onClick={() => onRetry(index)}
-                                className="inline-flex items-center gap-1 font-mono text-[10.5px] tracking-wider uppercase text-destructive hover:underline"
+                                className="font-medium inline-flex items-center gap-1 text-[11.5px] tracking-wider text-destructive hover:underline"
                                 title="Retry this file"
                             >
                                 <RotateCw size={10} /> Retry
@@ -1014,7 +1014,7 @@ function FileRow({
                         {f.errorReport && !processing && (
                             <button
                                 onClick={() => navigator.clipboard.writeText(f.errorReport || "").catch(() => {})}
-                                className="hidden sm:inline-flex items-center gap-1 font-mono text-[10.5px] tracking-wider uppercase text-muted-foreground hover:text-destructive hover:underline"
+                                className="font-medium hidden sm:inline-flex items-center gap-1 text-[11.5px] tracking-wider text-muted-foreground hover:text-destructive hover:underline"
                                 title="Copy request report"
                             >
                                 Copy report

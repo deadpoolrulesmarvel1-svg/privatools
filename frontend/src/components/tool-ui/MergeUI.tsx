@@ -139,7 +139,7 @@ export function MergeUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             {files.length} PDFs <span className="italic text-accent">merged</span>.
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                             {outputName} · downloaded
                         </p>
                         <button
@@ -185,7 +185,7 @@ export function MergeUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length === 0 ? "Add PDFs to merge" : "Add more PDFs"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Drag &amp; drop, or click — as many files as you need
                 </p>
             </div>
@@ -220,11 +220,11 @@ export function MergeUI() {
             {files.length > 0 && (
                 <>
                     <div className="flex items-center justify-between px-1 flex-wrap gap-1">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Sequence — {files.length} file{files.length !== 1 ? "s" : ""} ·{" "}
+                        <span className="font-medium text-[11.5px] text-muted-foreground">
+                            Sequence — {files.length} file{files.length !== 1 ? "s" : ""} ·{" "}
                             <span className="text-foreground/85 tabular-nums">{formatFileSize(files.reduce((s, f) => s + f.file.size, 0))}</span>
                         </span>
-                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85">
+                        <span className="font-medium text-[11px] text-muted-foreground/85">
                             Drag to reorder · leave pages blank for all
                         </span>
                     </div>
@@ -267,7 +267,7 @@ export function MergeUI() {
                                 </div>
                                 {/* Pages */}
                                 <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                                    <label htmlFor={`pages-${f.id}`} className="font-mono text-[9.5px] tracking-[0.08em] uppercase text-muted-foreground">Pages</label>
+                                    <label htmlFor={`pages-${f.id}`} className="font-medium text-[9.5px] text-muted-foreground">Pages</label>
                                     <input
                                         id={`pages-${f.id}`}
                                         type="text"
@@ -323,7 +323,7 @@ export function MergeUI() {
                             <Download size={14} className="text-accent" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-accent">Output preview</p>
+                            <p className="font-medium text-[11.5px] text-accent">Output preview</p>
                             <p className="font-mono text-[13px] text-foreground mt-0.5 truncate">{outputName}</p>
                         </div>
                         <ArrowRight size={14} className="text-accent shrink-0" />
@@ -347,7 +347,7 @@ export function MergeUI() {
                             <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                         {!allRangesValid && (
-                            <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-destructive">
+                            <span className="font-medium text-[11.5px] text-destructive">
                                 Invalid page range on one or more files
                             </span>
                         )}
@@ -361,7 +361,7 @@ export function MergeUI() {
                         <button
                             type="button"
                             onClick={() => setFiles([])}
-                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
+                            className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
                         >
                             Clear all
                         </button>

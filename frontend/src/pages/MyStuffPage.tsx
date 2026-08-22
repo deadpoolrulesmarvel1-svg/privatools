@@ -54,7 +54,7 @@ function Row({
   return (
     <div className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.10em] text-accent">
+        <div className="text-[11px] font-semibold text-accent">
           {label}
         </div>
         <div className="mt-0.5 text-sm text-foreground">{detail}</div>
@@ -132,7 +132,7 @@ export default function MyStuffPage() {
           <HardDrive className="h-6 w-6 text-accent" aria-hidden="true" />
           My Stuff
         </h1>
-        <p className="font-mono text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+        <p className="font-medium text-[12px] text-muted-foreground">
           Stored on this device only
         </p>
       </header>

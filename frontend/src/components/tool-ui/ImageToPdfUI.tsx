@@ -161,7 +161,7 @@ export function ImageToPdfUI({
                     <ImageIcon size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? `Add more ${nounLabel}s` : `Select ${nounLabel}s to bind into a PDF`}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{formatsLabel}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">{formatsLabel}</p>
             </div>
 
             {/* Try with sample — JPEG fallback. Hidden if the wrapper restricts
@@ -185,8 +185,8 @@ export function ImageToPdfUI({
 
             {files.length > 0 && (
                 <>
-                    <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Page order — drag or use arrows</span>
+                    <div className="font-medium flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Page order — drag or use arrows</span>
                         <span>{files.length} {nounLabel}{files.length > 1 ? "s" : ""} → {files.length} page{files.length > 1 ? "s" : ""}</span>
                     </div>
                     <div className="space-y-2">
@@ -213,7 +213,7 @@ export function ImageToPdfUI({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <div className="flex items-center gap-0.5">
                                     <button
@@ -239,8 +239,8 @@ export function ImageToPdfUI({
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Page size
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Page size
                         </div>
                         <div className="p-3 grid grid-cols-3 gap-2">
                             {sizes.map(s => {
@@ -255,7 +255,7 @@ export function ImageToPdfUI({
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{s.label}</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">{s.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">{s.desc}</p>
                                     </button>
                                 );
                             })}

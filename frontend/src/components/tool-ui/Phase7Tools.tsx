@@ -79,7 +79,7 @@ export function VideoSpeedUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop a video here"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{file.size}</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{file.size}</p>}
             </div>
             {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
             {file && state !== "processing" && (
@@ -147,7 +147,7 @@ export function AudioTrimUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an audio file"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -235,7 +235,7 @@ export function ImagePaletteUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div>
                 <div className="flex items-center justify-between mb-2">
@@ -257,8 +257,8 @@ export function ImagePaletteUI() {
             {status === "processing" && <Button disabled><Loader2 size={14} className="animate-spin mr-1.5" />Analyzing…</Button>}
             {palette && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Dominant colors · {palette.length}</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Dominant colors · {palette.length}</span>
                         <Palette size={11} className="text-accent" />
                     </div>
                     {/* Click-to-copy swatch row */}
@@ -276,7 +276,7 @@ export function ImagePaletteUI() {
                                     style={{ background: p.hex, flexGrow: p.percentage || 1 }}
                                 >
                                     <span className={cn(
-                                        "absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-[0.06em] uppercase transition-opacity",
+                                        "font-medium absolute inset-0 flex items-center justify-center text-[11px] transition-opacity",
                                         isCopied ? "opacity-100 bg-black/40 text-white" : "opacity-0 group-hover:opacity-100 bg-black/30 text-white"
                                     )}>
                                         {isCopied ? <><Check size={11} className="mr-1" /> Copied</> : p.hex}
@@ -300,9 +300,9 @@ export function ImagePaletteUI() {
                                 <div className="h-8 w-8 rounded-md shrink-0 border border-border" style={{ background: p.hex }} />
                                 <div className="flex-1 min-w-0">
                                     <p className="font-mono text-[13px] text-foreground">{p.hex}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground">rgb({p.rgb.join(", ")}) · {p.percentage}%</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground">rgb({p.rgb.join(", ")}) · {p.percentage}%</p>
                                 </div>
-                                <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground inline-flex items-center gap-1">
+                                <span className="font-medium text-[11px] text-muted-foreground inline-flex items-center gap-1">
                                     {copiedHex === p.hex ? <><Check size={11} className="text-accent" /> Copied</> : <><Copy size={11} /> Copy</>}
                                 </span>
                             </button>
@@ -357,7 +357,7 @@ export function PixelateImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
                 <div>
@@ -458,7 +458,7 @@ export function RotateImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
 
             <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
@@ -569,7 +569,7 @@ export function FlipImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
 
             <div className="rounded-xl border border-border bg-card/40 p-5">

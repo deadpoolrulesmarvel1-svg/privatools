@@ -52,7 +52,7 @@ function DownloadButton({ value, filename, label = "Download" }: { value: string
 function ClientOnlyNote({ children }: { children: string }) {
   return (
     <div className="rounded-lg border border-accent/30 bg-accent/[0.05] px-3 py-2 text-[12.5px] leading-snug text-foreground">
-      <span className="font-mono text-[10px] font-medium uppercase tracking-[0.10em] text-accent">Browser-only</span>
+      <span className="text-[11px] font-medium text-accent">Browser-only</span>
       <span className="mx-2 text-muted-foreground">/</span>
       {children}
     </div>
@@ -62,7 +62,7 @@ function ClientOnlyNote({ children }: { children: string }) {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block space-y-2">
-      <span className="font-mono text-[10.5px] font-medium uppercase tracking-[0.10em] text-muted-foreground">{label}</span>
+      <span className="text-[11.5px] font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );
@@ -404,12 +404,12 @@ export function CronParserUI() {
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className={cn("rounded-2xl border p-4", statusClass(result.level))}>
-          <p className="mb-2 font-mono text-[10.5px] uppercase tracking-[0.10em]">Meaning</p>
+          <p className="font-medium mb-2 text-[11.5px]">Meaning</p>
           <ul className="space-y-1 text-[13px]">{result.summary.map(item => <li key={item}>{item}</li>)}</ul>
         </div>
         <div className="rounded-2xl border border-border bg-card/60 p-4">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Next runs</p>
+            <p className="font-medium text-[11.5px] text-muted-foreground">Next runs</p>
             <CopyButton value={result.output} />
           </div>
           <OutputBox value={result.output} minHeight="min-h-[128px]" />
@@ -426,7 +426,7 @@ export function SqlFormatterUI() {
     <SplitTool
       note="Formats SQL text in the browser with keyword line breaks and readable clause grouping."
       left={<Field label="SQL input"><TextArea value={input} onChange={setInput} /></Field>}
-      right={<><div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Formatted SQL</span><CopyButton value={output} /></div><OutputBox value={output} /></>}
+      right={<><div className="mb-2 flex items-center justify-between"><span className="font-medium text-[11.5px] text-muted-foreground">Formatted SQL</span><CopyButton value={output} /></div><OutputBox value={output} /></>}
     />
   );
 }
@@ -438,7 +438,7 @@ export function GraphqlFormatterUI() {
     <SplitTool
       note="Pretty-prints GraphQL queries, mutations, fragments, and selection sets without sending them anywhere."
       left={<Field label="GraphQL input"><TextArea value={input} onChange={setInput} /></Field>}
-      right={<><div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Formatted GraphQL</span><CopyButton value={output} /></div><OutputBox value={output} /></>}
+      right={<><div className="mb-2 flex items-center justify-between"><span className="font-medium text-[11.5px] text-muted-foreground">Formatted GraphQL</span><CopyButton value={output} /></div><OutputBox value={output} /></>}
     />
   );
 }
@@ -466,7 +466,7 @@ export function YamlTomlConverterUI() {
       <SplitTool
         note="Comments and advanced anchors are intentionally ignored; the output is meant for common app config."
         left={<Field label={mode === "yaml-to-toml" ? "YAML input" : "TOML input"}><TextArea value={input} onChange={setInput} /></Field>}
-        right={<><div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Converted config</span><CopyButton value={converted} /></div><OutputBox value={converted} /></>}
+        right={<><div className="mb-2 flex items-center justify-between"><span className="font-medium text-[11.5px] text-muted-foreground">Converted config</span><CopyButton value={converted} /></div><OutputBox value={converted} /></>}
       />
     </div>
   );
@@ -493,7 +493,7 @@ export function GitignoreGeneratorUI() {
       <ClientOnlyNote>Generates a ready-to-save .gitignore from bundled templates. No external template API is called.</ClientOnlyNote>
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-2xl border border-border bg-card/60 p-4">
-          <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Templates</p>
+          <p className="font-medium mb-3 text-[11.5px] text-muted-foreground">Templates</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {Object.keys(GITIGNORE_TEMPLATES).map(name => (
               <label key={name} className={cn("flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-[13px]", selected.includes(name) ? "border-accent/50 bg-accent/[0.07]" : "border-border hover:bg-secondary/50")}>
@@ -505,7 +505,7 @@ export function GitignoreGeneratorUI() {
         </div>
         <div className="rounded-2xl border border-border bg-card/60 p-4">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">.gitignore</span>
+            <span className="font-medium text-[11.5px] text-muted-foreground">.gitignore</span>
             <div className="flex gap-2"><CopyButton value={output} /><DownloadButton value={output} filename=".gitignore" /></div>
           </div>
           <OutputBox value={output} />
@@ -549,7 +549,7 @@ export function SemverBumperUI() {
         {rows.map(([kind, value]) => (
           <div key={kind} className="rounded-2xl border border-border bg-card/60 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">{kind}</span>
+              <span className="font-medium text-[11.5px] text-muted-foreground">{kind}</span>
               <CopyButton value={value} />
             </div>
             <p className="font-mono text-[22px] text-foreground">{value}</p>
@@ -594,7 +594,7 @@ export function EnvValidatorUI() {
     <SplitTool
       note="Checks .env syntax, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets locally."
       left={<Field label=".env input"><TextArea value={input} onChange={setInput} /></Field>}
-      right={<><div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Validation report</span><CopyButton value={report} /></div><div className="space-y-2">{issues.map(item => <div key={item.text} className={cn("rounded-lg border px-3 py-2 text-[13px]", statusClass(item.level))}>{item.text}</div>)}</div></>}
+      right={<><div className="mb-2 flex items-center justify-between"><span className="font-medium text-[11.5px] text-muted-foreground">Validation report</span><CopyButton value={report} /></div><div className="space-y-2">{issues.map(item => <div key={item.text} className={cn("rounded-lg border px-3 py-2 text-[13px]", statusClass(item.level))}>{item.text}</div>)}</div></>}
     />
   );
 }
@@ -629,11 +629,11 @@ export function JsonCsvSchemaUI() {
         </div>
         <div className="space-y-4">
           <div className="rounded-2xl border border-border bg-card/60 p-4">
-            <div className="mb-2 flex items-center justify-between"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">Inferred schema</span><CopyButton value={result.schema} /></div>
+            <div className="mb-2 flex items-center justify-between"><span className="font-medium text-[11.5px] text-muted-foreground">Inferred schema</span><CopyButton value={result.schema} /></div>
             <OutputBox value={result.error || result.schema} minHeight="min-h-[140px]" />
           </div>
           <div className="rounded-2xl border border-border bg-card/60 p-4">
-            <div className="mb-2 flex items-center justify-between gap-2"><span className="font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">CSV output</span><div className="flex gap-2"><CopyButton value={result.csv} /><DownloadButton value={result.csv} filename="data.csv" /></div></div>
+            <div className="mb-2 flex items-center justify-between gap-2"><span className="font-medium text-[11.5px] text-muted-foreground">CSV output</span><div className="flex gap-2"><CopyButton value={result.csv} /><DownloadButton value={result.csv} filename="data.csv" /></div></div>
             <OutputBox value={result.csv} minHeight="min-h-[160px]" />
           </div>
         </div>

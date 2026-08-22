@@ -235,7 +235,7 @@ export function WatermarkUI() {
                             </h2>
                             {isMulti && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {doneFiles.length > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                    {doneFiles.length > 1 ? "ZIP downloaded" : "PDF downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -295,7 +295,7 @@ export function WatermarkUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length ? "Add more PDFs" : "Select PDFs to watermark"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Drag &amp; drop · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -313,12 +313,12 @@ export function WatermarkUI() {
                     {/* Settings + preview */}
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Settings
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Settings
                             </div>
                             <div className="p-5 space-y-4">
                                 <div>
-                                    <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Watermark type</label>
+                                    <label className="font-medium text-[11.5px] text-muted-foreground">Watermark type</label>
                                     <div role="tablist" aria-label="Watermark type" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5 mt-1.5 ml-3">
                                         {(["text", "image"] as const).map((m) => {
                                             const active = mode === m;
@@ -343,7 +343,7 @@ export function WatermarkUI() {
                                 {mode === "text" ? (
                                     <>
                                         <div>
-                                            <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Watermark text</label>
+                                            <label className="font-medium text-[11.5px] text-muted-foreground">Watermark text</label>
                                             <input
                                                 value={text}
                                                 onChange={(e) => setText(e.target.value)}
@@ -354,7 +354,7 @@ export function WatermarkUI() {
                                         </div>
                                         <div>
                                             <div className="flex items-center justify-between mb-1.5">
-                                                <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Font size</label>
+                                                <label className="font-medium text-[11.5px] text-muted-foreground">Font size</label>
                                                 <span className="font-mono text-[12px] text-accent tabular-nums">{fontSize}px</span>
                                             </div>
                                             <input
@@ -367,7 +367,7 @@ export function WatermarkUI() {
                                     </>
                                 ) : (
                                     <div>
-                                        <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Watermark image</label>
+                                        <label className="font-medium text-[11.5px] text-muted-foreground">Watermark image</label>
                                         <input
                                             ref={watermarkInputRef}
                                             type="file"
@@ -394,7 +394,7 @@ export function WatermarkUI() {
                                         />
                                         <div className="mt-3">
                                             <div className="flex items-center justify-between mb-1.5">
-                                                <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Scale</label>
+                                                <label className="font-medium text-[11.5px] text-muted-foreground">Scale</label>
                                                 <span className="font-mono text-[12px] text-accent tabular-nums">{Math.round(imageScale * 100)}%</span>
                                             </div>
                                             <input
@@ -409,7 +409,7 @@ export function WatermarkUI() {
 
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">
-                                        <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Opacity</label>
+                                        <label className="font-medium text-[11.5px] text-muted-foreground">Opacity</label>
                                         <span className="font-mono text-[12px] text-accent tabular-nums">{Math.round(opacity * 100)}%</span>
                                     </div>
                                     <input
@@ -421,7 +421,7 @@ export function WatermarkUI() {
                                 </div>
 
                                 <div>
-                                    <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Position</label>
+                                    <label className="font-medium text-[11.5px] text-muted-foreground">Position</label>
                                     <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                                         {positions.map((p) => {
                                             const active = position === p.id;
@@ -456,7 +456,7 @@ export function WatermarkUI() {
                             <button
                                 type="button"
                                 onClick={copyErrorToClipboard}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
                                 aria-label="Copy error details to clipboard"
                                 title="Copy error details for a bug report"
                             >
@@ -478,14 +478,14 @@ export function WatermarkUI() {
                         </button>
                         {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {mode === "image" && !watermarkImage && (
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground flex items-center gap-1">
+                            <p className="font-medium text-[11.5px] text-muted-foreground flex items-center gap-1">
                                 <ImageIcon size={11} /> Pick a PNG/JPG/WebP first
                             </p>
                         )}
                         <button
                             type="button"
                             onClick={resetConfig}
-                            className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                             title="Restore default settings"
                         >
                             <Undo2 size={10} /> Reset to defaults
@@ -493,8 +493,8 @@ export function WatermarkUI() {
                     </div>
 
                     {state === "processing" && (
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground/85">
-                            <span className="text-accent">§</span> {files.filter(f => f.status === "done").length} of {files.length} done
+                        <p className="font-medium text-[11.5px] text-muted-foreground/85">
+                            {files.filter(f => f.status === "done").length} of {files.length} done
                         </p>
                     )}
                 </>
@@ -516,14 +516,14 @@ function FileQueueList({
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> {files.length} file{files.length === 1 ? "" : "s"} · {formatFileSize(totalSize)}
+                <span className="font-medium text-[11.5px] text-muted-foreground">
+                    {files.length} file{files.length === 1 ? "" : "s"} · {formatFileSize(totalSize)}
                 </span>
                 {!busy && (
                     <button
                         type="button"
                         onClick={onClearAll}
-                        className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground hover:text-destructive transition-colors"
+                        className="font-medium text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                     >
                         Clear all
                     </button>
@@ -569,10 +569,10 @@ function FileQueueList({
 }
 
 function StatusBadge({ status }: { status: Status }) {
-    if (status === "queued") return <span className="font-mono text-[9.5px] tracking-[0.08em] uppercase text-muted-foreground/85">Queued</span>;
-    if (status === "running") return <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-accent"><Loader2 size={10} className="animate-spin" /> Running</span>;
-    if (status === "done") return <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-accent"><CheckCircle2 size={10} /> Done</span>;
-    return <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-destructive"><AlertCircle size={10} /> Failed</span>;
+    if (status === "queued") return <span className="font-medium text-[9.5px] text-muted-foreground/85">Queued</span>;
+    if (status === "running") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><Loader2 size={10} className="animate-spin" /> Running</span>;
+    if (status === "done") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><CheckCircle2 size={10} /> Done</span>;
+    return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-destructive"><AlertCircle size={10} /> Failed</span>;
 }
 
 /** Mini visual preview pane — approximates the watermark on a stylised page. */
@@ -602,8 +602,8 @@ function PreviewPane({
 
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-3 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span className="text-accent">§</span> Preview
+            <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                Preview
             </div>
             <div className="p-3 flex items-center justify-center bg-paper-2/30">
                 <div className="relative aspect-[3/4] w-full max-w-[180px] bg-paper border border-border rounded-md shadow-sm overflow-hidden">
@@ -630,7 +630,7 @@ function PreviewPane({
                     )}
                 </div>
             </div>
-            <p className="px-3 pb-2 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85 text-center">approximate placement</p>
+            <p className="font-medium px-3 pb-2 text-[11px] text-muted-foreground/85 text-center">approximate placement</p>
         </div>
     );
 }

@@ -89,7 +89,7 @@ export function CropUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -141,7 +141,7 @@ export function CropUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs to crop"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Multi-file OK · same margins applied to all · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -159,8 +159,8 @@ export function CropUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Crop margins</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Crop margins</span>
                             <span>1 pt = 1/72 inch</span>
                         </div>
                         <div className="p-5 grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 items-center">
@@ -172,7 +172,7 @@ export function CropUI() {
                                     { label: "Right",  value: right,  set: setRight },
                                 ].map(m => (
                                     <div key={m.label} className="space-y-1">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{m.label}</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">{m.label}</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
@@ -213,7 +213,7 @@ export function CropUI() {
                         <button
                             type="button"
                             onClick={() => { setTop("50"); setBottom("50"); setLeft("30"); setRight("30"); }}
-                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
+                            className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
                         >
                             Reset to defaults
                         </button>

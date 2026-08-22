@@ -99,8 +99,8 @@ export function HeicToJpgUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Output quality</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Output quality</span>
                             <span className="text-accent">{quality}%</span>
                         </div>
                         <div className="p-3 grid grid-cols-3 gap-2">
@@ -118,7 +118,7 @@ export function HeicToJpgUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{q.label}</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{q.desc} · {q.value}%</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">{q.desc} · {q.value}%</p>
                                     </button>
                                 );
                             })}

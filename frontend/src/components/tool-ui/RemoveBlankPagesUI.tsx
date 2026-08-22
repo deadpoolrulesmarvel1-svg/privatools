@@ -91,8 +91,8 @@ export function RemoveBlankPagesUI() {
             />
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Detection sensitivity</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Detection sensitivity</span>
                     <span className="text-accent">{sensitivity}%</span>
                 </div>
                 <div className="p-4 space-y-3">
@@ -106,7 +106,7 @@ export function RemoveBlankPagesUI() {
                         className="w-full accent-accent"
                         aria-label="Blank-page detection sensitivity"
                     />
-                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85">
                         <span>50 — strict (only truly blank)</span>
                         <span>100 — loose (drops faint scans)</span>
                     </div>

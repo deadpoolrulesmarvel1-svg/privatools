@@ -100,8 +100,8 @@ export function NupUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Pages per sheet
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Pages per sheet
                         </div>
                         <div className="p-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
                             {opts.map(o => {
@@ -148,8 +148,8 @@ export function NupUI() {
                     {/* Orientation toggle — only meaningful for 2-up */}
                     {pps === 2 && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> 2-up orientation
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                2-up orientation
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-2">
                                 {([
@@ -183,7 +183,7 @@ export function NupUI() {
                                             </div>
                                             <div className="min-w-0">
                                                 <p className={cn("font-display text-[13px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{o.label}</p>
-                                                <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85 mt-0.5">{o.hint}</p>
+                                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">{o.hint}</p>
                                             </div>
                                         </button>
                                     );

@@ -88,7 +88,7 @@ export function QrReaderUI() {
                     <QrCode size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{file ? "Change image" : "Upload image with QR / barcode"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPG · PNG · WebP · BMP</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPG · PNG · WebP · BMP</p>
             </div>
 
             {preview && (
@@ -116,7 +116,7 @@ export function QrReaderUI() {
                                 }}
                                 aria-hidden="true"
                             >
-                                <span className="absolute -top-4 left-0 font-mono text-[9px] tracking-wider uppercase rounded bg-accent text-background px-1">
+                                <span className="font-medium absolute -top-4 left-0 text-[10.5px] tracking-wider rounded bg-accent text-background px-1">
                                     #{i + 1}
                                 </span>
                             </div>
@@ -144,14 +144,14 @@ export function QrReaderUI() {
 
             {codes.length > 0 && (
                 <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
-                    <div className="px-4 py-2 border-b border-accent/20 bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Decoded ({codes.length})
+                    <div className="font-medium px-4 py-2 border-b border-accent/20 bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Decoded ({codes.length})
                     </div>
                     <div className="divide-y divide-border">
                         {codes.map((c, i) => (
                             <div key={i} className="flex items-start gap-3 px-4 py-3">
                                 <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                                <span className="h-5 px-2 inline-flex items-center font-mono text-[9.5px] tracking-wider uppercase rounded bg-accent/15 text-accent shrink-0 mt-0.5">
+                                <span className="font-medium h-5 px-2 inline-flex items-center text-[9.5px] tracking-wider rounded bg-accent/15 text-accent shrink-0 mt-0.5">
                                     {c.type}
                                 </span>
                                 <p className="flex-1 min-w-0 text-[13px] text-foreground break-all">{c.data}</p>

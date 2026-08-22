@@ -99,7 +99,7 @@ export function HighlightUI() {
                             </h2>
                             {query && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> Query: <span className="text-foreground">"{query}"</span>
+                                    Query: <span className="text-foreground">"{query}"</span>
                                     {proc.failedCount > 0 && <> · <span className="text-destructive">{proc.failedCount} failed</span></>}
                                 </p>
                             )}
@@ -158,7 +158,7 @@ export function HighlightUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs to highlight"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Multi-file OK · same query applied to all · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -176,8 +176,8 @@ export function HighlightUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Search
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Search
                 </div>
                 <div className="p-4 space-y-4">
                     <div className="relative">
@@ -190,7 +190,7 @@ export function HighlightUI() {
                         />
                     </div>
                     <div>
-                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Color</label>
+                        <label className="font-medium text-[11px] text-muted-foreground">Color</label>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {COLORS.map(c => (
                                 <button
@@ -237,7 +237,7 @@ export function HighlightUI() {
                     <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                 )}
                 {proc.entries.length > 0 && !query.trim() && (
-                    <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85 inline-flex items-center gap-1">
+                    <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
                         <AlertCircle size={11} /> Enter a query
                     </span>
                 )}

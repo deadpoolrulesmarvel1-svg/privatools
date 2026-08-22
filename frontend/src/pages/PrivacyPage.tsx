@@ -5,7 +5,7 @@
  *   - Sticky right-side TOC (desktop) + collapsible TOC (mobile)
  *   - Reading-progress bar at top
  *   - Hash-link anchors on every section
- *   - § markers, mono dateline, corner-marked "short version" highlight
+ *   - markers, mono dateline, corner-marked "short version" highlight
  *
  * Highlighted clauses (privacy-relevant) get an accent panel with corner marks.
  * Last-updated timestamp links to the git history for diff transparency.
@@ -88,10 +88,10 @@ function AnalyticsOptOutPanel() {
       <div className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">
+            <span className="text-[11px] text-accent font-semibold">
               Analytics control
             </span>
-            <span className="rounded-full border border-border bg-paper-2/60 px-2 py-0.5 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+            <span className="font-medium rounded-full border border-border bg-paper-2/60 px-2 py-0.5 text-[11px] text-muted-foreground">
               {preference.effectiveDisabled ? "Analytics paused" : "Anonymous analytics allowed"}
             </span>
           </div>
@@ -129,7 +129,7 @@ function AnalyticsOptOutPanel() {
               )}
             />
           </span>
-          <span className="font-mono text-[10px] tracking-[0.08em] uppercase">
+          <span className="font-medium text-[11px]">
             Local opt-out
           </span>
         </button>
@@ -261,13 +261,13 @@ export default function PrivacyPage() {
             <nav className="mb-8 flex items-center justify-between flex-wrap gap-3" aria-label="Document navigation">
               <Link
                 to="/about"
-                className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent transition-colors"
+                className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
               >
                 <ArrowLeft size={12} /> About
               </Link>
               <button
                 onClick={copyLink}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
+                className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
               >
                 {copied ? <><Check size={11} className="text-accent" /> Copied</> : <><Link2 size={11} /> Copy link</>}
               </button>
@@ -276,7 +276,7 @@ export default function PrivacyPage() {
             {/* ── Header ── */}
             <header className="mb-8">
               <div className="flex flex-wrap gap-2 mb-5 items-center">
-                <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">
+                <span className="font-medium inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] text-[9.5px] text-accent">
                   <Shield size={10} /> Legal · Privacy
                 </span>
               </div>
@@ -293,7 +293,7 @@ export default function PrivacyPage() {
                 pageview telemetry we collect. Written plainly, with no dark patterns.
               </p>
 
-              <div className="mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+              <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                 <span className="text-foreground">PrivaTools</span>
                 <span className="text-muted-foreground/40">·</span>
                 <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
@@ -317,7 +317,7 @@ export default function PrivacyPage() {
                   <CornerMarks />
                   <div className="flex items-center gap-2 mb-3">
                     <Shield size={13} className="text-accent" />
-                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">§ The short version</span>
+                    <span className="text-[11px] text-accent font-semibold">The short version</span>
                   </div>
                   <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
                     <strong className="font-semibold">Your files are private.</strong> Server-side tools use isolated temporary
@@ -479,13 +479,13 @@ export default function PrivacyPage() {
 
             {/* ── Companion docs row ── */}
             <aside className="mt-12 pt-8 border-t border-border">
-              <p className="section-mark mb-5">§ Related</p>
+              <p className="section-mark mb-5">Related</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                   to="/security"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§01</span>
+                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">01</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Security</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Vulnerability reporting, threat model, and subprocessors.</p>
@@ -495,7 +495,7 @@ export default function PrivacyPage() {
                   to="/terms"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§02</span>
+                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">02</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Terms of Service</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">The legal terms for using PrivaTools.</p>
@@ -505,7 +505,7 @@ export default function PrivacyPage() {
                   href="mailto:hello@privatools.me"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§03</span>
+                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">03</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
                       <Mail size={12} /> Email us
@@ -522,7 +522,7 @@ export default function PrivacyPage() {
           <aside className="hidden lg:block">
             <div className="sticky top-8">
               <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1.5"><List size={10} className="text-accent" /> Contents</span>
                   <span className="text-accent tabular-nums">{Math.round(progress)}%</span>
                 </div>
@@ -544,7 +544,7 @@ export default function PrivacyPage() {
                             {isActive && (
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded bg-accent" aria-hidden="true" />
                             )}
-                            {s.flag && <span className="text-accent mr-1" aria-hidden="true">§</span>}
+                            {s.flag && <span className="inline-block w-1 h-1 rounded-full bg-accent mr-1.5 align-middle" aria-hidden="true" />}
                             {s.title}
                           </button>
                         </li>
@@ -552,7 +552,7 @@ export default function PrivacyPage() {
                     })}
                   </ul>
                 </nav>
-                <div className="px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                <div className="font-medium px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 text-[11px] text-muted-foreground">
                   <a
                     href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                     target="_blank"
@@ -570,9 +570,9 @@ export default function PrivacyPage() {
 
         {/* Mobile TOC — appears below header on narrow viewports */}
         <details className="lg:hidden mt-6 rounded-xl border border-border bg-card overflow-hidden">
-          <summary className="px-4 py-3 list-none cursor-pointer flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:bg-secondary/40 transition-colors">
+          <summary className="font-medium px-4 py-3 list-none cursor-pointer flex items-center gap-2 text-[11.5px] text-muted-foreground hover:bg-secondary/40 transition-colors">
             <List size={12} className="text-accent" />
-            <span><span className="text-accent">§</span> Table of contents</span>
+            <span>Table of contents</span>
             <span className="ml-auto font-mono text-[10px] tracking-wider text-accent">{SECTIONS.length}</span>
           </summary>
           <ul className="px-4 pb-3 space-y-1.5">

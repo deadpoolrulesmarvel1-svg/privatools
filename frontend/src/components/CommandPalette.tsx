@@ -547,8 +547,8 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                 <div className="rounded-2xl border border-border-strong bg-paper shadow-[0_30px_60px_-20px_rgba(20,15,5,0.35)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] overflow-hidden">
 
                     {/* Header dateline */}
-                    <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Command palette</span>
+                    <div className="font-medium px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Command palette</span>
                         <span>{pastedFile
                             ? `${activeResults.length} compatible`
                             : query.trim()
@@ -606,7 +606,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             </div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-[13.5px] font-semibold text-foreground truncate">{pastedFile.name || "Clipboard file"}</p>
-                                <p className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                                <p className="font-medium text-[11px] text-muted-foreground">
                                     {activeResults.length} compatible tool{activeResults.length !== 1 ? "s" : ""}
                                 </p>
                             </div>
@@ -631,9 +631,8 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                     >
                         {!pastedFile && !query.trim() && history.length > 0 && (
                             <div className="flex items-center gap-1.5 px-3 pt-2 pb-1.5">
-                                <span className="text-accent font-mono text-[10px]">§</span>
                                 <Clock size={10} className="text-muted-foreground" />
-                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent</span>
+                                <span className="text-[9.5px] font-semibold text-muted-foreground">Recent</span>
                             </div>
                         )}
 
@@ -650,15 +649,13 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                                     <div key={tool.slug}>
                                         {startActions && (
                                             <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
-                                                <span className="text-accent font-mono text-[10px]">§</span>
                                                 <Zap size={10} className="text-muted-foreground" />
-                                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Go to</span>
+                                                <span className="text-[9.5px] font-semibold text-muted-foreground">Go to</span>
                                             </div>
                                         )}
                                         {startTools && (
                                             <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
-                                                <span className="text-accent font-mono text-[10px]">§</span>
-                                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">All tools</span>
+                                                <span className="text-[9.5px] font-semibold text-muted-foreground">All tools</span>
                                             </div>
                                         )}
                                         <button
@@ -685,7 +682,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                                                 <p className="text-[11.5px] text-muted-foreground truncate leading-snug">{tool.description}</p>
                                             </div>
                                             <span className={cn(
-                                                "hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold tracking-[0.10em] uppercase shrink-0",
+                                                "hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-semibold shrink-0",
                                                 tool.isAction
                                                     ? "text-accent bg-accent/10 border border-accent/30"
                                                     : "text-muted-foreground bg-secondary border border-border"
@@ -709,13 +706,13 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                                     {pastedFile ? "No compatible tools found." : `No tools match “${query}”.`}
                                 </p>
                                 {!pastedFile && (
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-2">
                                         Try “merge”, “compress”, “redact”, or “qr”
                                     </p>
                                 )}
                                 <button
                                     onClick={() => { setPastedFile(null); setQuery(""); inputRef.current?.focus(); }}
-                                    className="mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-border-strong font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                    className="font-medium mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-border-strong text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     Clear search
                                 </button>
@@ -724,7 +721,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                     </div>
 
                     {/* Footer hint */}
-                    <div className="px-5 py-2.5 border-t border-border bg-paper-2/40 flex items-center gap-4 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+                    <div className="font-medium px-5 py-2.5 border-t border-border bg-paper-2/40 flex items-center gap-4 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                             <kbd className="font-mono bg-secondary border border-border rounded px-1.5 py-0.5">↑↓</kbd> navigate
                         </span>
@@ -735,7 +732,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             <kbd className="font-mono bg-secondary border border-border rounded px-1.5 py-0.5">esc</kbd> close
                         </span>
                         <span className="ml-auto hidden sm:inline">
-                            <span className="text-accent">§</span> Private search — never leaves your browser
+                            Private search — never leaves your browser
                         </span>
                     </div>
                 </div>

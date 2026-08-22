@@ -299,8 +299,8 @@ export function ESignUI() {
                 <>
                     {/* Signature builder */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Signature
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Signature
                         </div>
                         <div className="p-3 space-y-3">
                             {savedSig && (
@@ -308,20 +308,20 @@ export function ESignUI() {
                                     <div className="h-9 w-16 rounded border border-border bg-card flex items-center justify-center overflow-hidden shrink-0">
                                         <img src={savedSig} alt="Saved signature preview" className="max-h-9 max-w-full object-contain" />
                                     </div>
-                                    <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground flex-1 min-w-0">
-                                        <span className="text-accent">§</span> <span className="text-foreground">Saved signature</span>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground flex-1 min-w-0">
+                                        <span className="text-foreground">Saved signature</span>
                                     </p>
                                     <button
                                         type="button"
                                         onClick={applySavedSig}
-                                        className="h-7 px-2.5 rounded text-accent hover:bg-accent/10 font-mono text-[10.5px] uppercase tracking-wider"
+                                        className="font-medium h-7 px-2.5 rounded text-accent hover:bg-accent/10 text-[11.5px] tracking-wider"
                                     >
                                         Use
                                     </button>
                                     <button
                                         type="button"
                                         onClick={forgetSavedSig}
-                                        className="h-7 px-2 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] uppercase tracking-wider"
+                                        className="font-medium h-7 px-2 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11px] tracking-wider"
                                         aria-label="Forget saved signature"
                                     >
                                         Forget
@@ -363,15 +363,15 @@ export function ESignUI() {
                                         />
                                         {!hasDrawn && (
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                <p className="font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground/60">Draw signature here</p>
+                                                <p className="font-medium text-[12px] text-muted-foreground/60">Draw signature here</p>
                                             </div>
                                         )}
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                            <span className="text-accent">§</span> Mouse, trackpad, or touch
+                                        <p className="font-medium text-[11px] text-muted-foreground/85">
+                                            Mouse, trackpad, or touch
                                         </p>
-                                        <button onClick={clearCanvas} className="font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:opacity-80">Clear</button>
+                                        <button onClick={clearCanvas} className="font-medium text-[11px] text-accent hover:opacity-80">Clear</button>
                                     </div>
                                 </div>
                             )}
@@ -399,7 +399,7 @@ export function ESignUI() {
                                                     typedFont === f.value ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
                                                 )}
                                             >
-                                                <p className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground truncate">{f.label}</p>
+                                                <p className="font-medium text-[10.5px] text-muted-foreground truncate">{f.label}</p>
                                                 <p
                                                     className="text-[20px] italic leading-tight text-foreground truncate"
                                                     style={{ font: f.css, fontSize: 20 }}
@@ -426,7 +426,7 @@ export function ESignUI() {
                                 <div className="space-y-2 animate-fade-in">
                                     <label className="relative flex flex-col items-center gap-2 rounded-md border border-dashed border-border-strong bg-paper-2/30 px-4 py-6 cursor-pointer hover:border-accent/55 hover:bg-accent/[0.04] transition-colors">
                                         <ImageIcon size={18} className="text-muted-foreground" />
-                                        <span className="font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                                        <span className="font-medium text-[12px] text-muted-foreground">
                                             {sigImage ? "Replace signature" : "Upload signature image"}
                                         </span>
                                         <input type="file" accept=".png,.jpg,.jpeg,.webp" className="hidden" onChange={handleSigUpload} />
@@ -443,8 +443,8 @@ export function ESignUI() {
 
                     {/* Placement */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Placement
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Placement
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_180px] gap-5 p-4 items-center">
                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -456,7 +456,7 @@ export function ESignUI() {
                                     { label: "H",    val: sigHeight,  set: setSigHeight,  min: 20, max: 200 },
                                 ] as const).map(c => (
                                     <div key={c.label}>
-                                        <label className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                        <label className="font-medium text-[9.5px] text-muted-foreground">{c.label}</label>
                                         <input
                                             type="number" inputMode="numeric" min={c.min} max={c.max} value={c.val}
                                             onChange={e => c.set(+e.target.value || c.min)}
@@ -499,7 +499,7 @@ export function ESignUI() {
                                 <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                             )}
                         </div>
-                        <label className="inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground cursor-pointer select-none">
+                        <label className="font-medium inline-flex items-center gap-2 text-[11.5px] text-muted-foreground cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={rememberSig}

@@ -87,8 +87,8 @@ export function AttachmentUI() {
         ref: React.RefObject<HTMLInputElement>; drag: boolean; setDrag: (b: boolean) => void; accept: string; idx: 1 | 2;
     }) => (
         <div>
-            <div className="flex items-center justify-between mb-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span><span className="text-accent">§{String(idx).padStart(2, "0")}</span> {label}</span>
+            <div className="font-medium flex items-center justify-between mb-1.5 text-[11.5px] text-muted-foreground">
+                <span><span className="text-accent">{String(idx).padStart(2, "0")}</span> {label}</span>
                 <span className="text-muted-foreground/60">{hint}</span>
             </div>
             {!file ? (
@@ -117,7 +117,7 @@ export function AttachmentUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button onClick={() => setFile(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                         <X size={13} />
@@ -137,8 +137,8 @@ export function AttachmentUI() {
             {/* Pre-embed preview — shown once both files are picked */}
             {pdfFile && attachFile && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Attachment manifest</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Attachment manifest</span>
                         <span>{formatFileSize(pdfFile.size + attachFile.size)} total</span>
                     </div>
                     <div className="p-3 space-y-1.5">
@@ -147,7 +147,7 @@ export function AttachmentUI() {
                             <span className="font-mono text-[11px] text-muted-foreground/85 truncate flex-1">{attachFile.name}</span>
                             <span className="font-mono text-[10.5px] text-muted-foreground shrink-0">{formatFileSize(attachFile.size)}</span>
                         </div>
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/75 pl-5">
+                        <p className="font-medium text-[11px] text-muted-foreground/75 pl-5">
                             Will embed inside <span className="text-accent">{pdfFile.name}</span> as a downloadable annex
                         </p>
                     </div>

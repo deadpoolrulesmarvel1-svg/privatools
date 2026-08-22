@@ -219,7 +219,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
   return (
     <div className="border-t border-border pt-5 -mx-4 sm:mx-0 overflow-hidden">
       <div className="flex items-baseline gap-2 mb-3 px-4 sm:px-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
+        <p className="text-[11px] font-semibold text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
         <span className="text-[11px] font-mono text-muted-foreground/80">{categoryTools.length}</span>
       </div>
       <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-4 sm:px-0">
@@ -422,8 +422,7 @@ export default function ToolPage() {
       <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
         <div className="min-w-0 flex-1">
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
-            <span className="text-accent">§</span>
+          <nav aria-label="Breadcrumb" className="font-medium text-[11px] text-muted-foreground mb-3 flex items-center gap-2">
             <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
             <span className="opacity-50">/</span>
             <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors">{meta.label}</Link>
@@ -525,7 +524,6 @@ export default function ToolPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 lg:gap-12 mt-12">
           <div>
             <div className="flex items-baseline gap-3 mb-5">
-              <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
               <h2 className="font-display text-[22px] font-semibold text-foreground tracking-[-0.02em]">How it works</h2>
               <span className="flex-1 h-px bg-border ml-2" />
             </div>
@@ -536,7 +534,7 @@ export default function ToolPage() {
                 { step: "03", title: "Download",  desc: "Result ready immediately — no waiting, no email." },
               ].map(s => (
                 <div key={s.step} className="rounded-xl border border-border bg-card p-5">
-                  <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-3">{s.step}</div>
+                  <div className="font-medium text-[11.5px] text-accent mb-3">{s.step}</div>
                   <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.015em] mb-1.5">{s.title}</p>
                   <p className="text-[13px] text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
@@ -546,8 +544,8 @@ export default function ToolPage() {
 
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                <span className="text-accent">§</span> Related
+              <h3 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                Related
               </h3>
               <div className="space-y-0.5">
                 {relatedTools.map(t => {
@@ -569,7 +567,7 @@ export default function ToolPage() {
                 <span className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">Open source</span>
               </div>
               <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-3">Free forever, MIT licensed. Audit, fork, or self-host.</p>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.06em] uppercase font-medium text-accent">
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-accent">
                 View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </span>
             </a>
@@ -586,8 +584,8 @@ export default function ToolPage() {
               if (posts.length === 0) return null;
               return (
                 <div className="rounded-xl border border-border bg-card p-5">
-                  <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                    <span className="text-accent">§</span> Related articles
+                  <h3 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                    Related articles
                   </h3>
                   <div className="space-y-0.5">
                     {posts.map(post => (

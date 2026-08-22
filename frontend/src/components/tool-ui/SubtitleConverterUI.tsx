@@ -131,7 +131,7 @@ export function SubtitleConverterUI() {
                 <ShieldCheck size={16} className="text-accent shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                     <p className="text-[13px] text-foreground leading-snug">
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium mr-1.5">§ 100% in-browser</span>
+                        <span className="text-[11px] text-accent font-medium mr-1.5"> 100% in-browser</span>
                         Parsing happens in JavaScript — subtitles never touch a server.
                     </p>
                 </div>
@@ -139,7 +139,7 @@ export function SubtitleConverterUI() {
                     <button
                         type="button"
                         onClick={loadSample}
-                        className="shrink-0 inline-flex items-center gap-1 px-2 h-7 rounded-md border border-accent/40 bg-accent/[0.08] font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:bg-accent/[0.12] transition-colors"
+                        className="font-medium shrink-0 inline-flex items-center gap-1 px-2 h-7 rounded-md border border-accent/40 bg-accent/[0.08] text-[11px] text-accent hover:bg-accent/[0.12] transition-colors"
                     >
                         <Sparkles size={11} /> Try sample
                     </button>
@@ -165,7 +165,7 @@ export function SubtitleConverterUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a subtitle file</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">.srt · .vtt · .ass</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">.srt · .vtt · .ass</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
@@ -174,7 +174,7 @@ export function SubtitleConverterUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                             {formatFileSize(file.size)}{result.ok && ` · ${result.count} cues`}
                         </p>
                     </div>
@@ -185,8 +185,8 @@ export function SubtitleConverterUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Convert to
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Convert to
                 </div>
                 <div className="p-3 grid grid-cols-2 gap-2">
                     {(["vtt", "srt"] as Target[]).map(t => {
@@ -203,7 +203,7 @@ export function SubtitleConverterUI() {
                                 <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>
                                     {t === "vtt" ? "WebVTT" : "SubRip"}
                                 </p>
-                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">.{t}</p>
+                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">.{t}</p>
                             </button>
                         );
                     })}

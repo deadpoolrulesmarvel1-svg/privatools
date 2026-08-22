@@ -107,15 +107,15 @@ export function PdfaValidatorUI() {
                                         : <ShieldAlert size={22} className="text-copper" strokeWidth={1.75} />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className={cn("font-mono text-[10.5px] tracking-[0.10em] uppercase mb-1.5", result.valid ? "text-accent" : "text-copper")}>
-                                        § Validation
+                                    <p className={cn("font-medium text-[11.5px] mb-1.5", result.valid ? "text-accent" : "text-copper")}>
+                                        Validation
                                     </p>
                                     <h3 className="font-display text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">
                                         {result.valid ? "PDF/A indicators look good" : "Potential PDF/A issues"}
                                     </h3>
                                     {result.standard && (
                                         <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                            <span className="text-accent">§</span> Marker: <span className="text-foreground">{result.standard}</span>
+                                            Marker: <span className="text-foreground">{result.standard}</span>
                                         </p>
                                     )}
                                 </div>
@@ -125,8 +125,8 @@ export function PdfaValidatorUI() {
 
                     {result.errors?.length > 0 && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span><span className="text-accent">§</span> Notes ({result.errors.length})</span>
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                                <span>Notes ({result.errors.length})</span>
                                 <span className="text-muted-foreground/70 hidden sm:inline">Click for explanation</span>
                             </div>
                             <div className="divide-y divide-border">
@@ -154,7 +154,7 @@ export function PdfaValidatorUI() {
                                             </button>
                                             {explanation && isOpen && (
                                                 <div className="mt-2 ml-6 rounded-md border border-accent/20 bg-accent/[0.04] px-3 py-2 text-[12px] text-foreground animate-fade-in">
-                                                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent mr-1.5">§ what it means</span>
+                                                    <span className="font-medium text-[11px] text-accent mr-1.5">what it means</span>
                                                     {explanation}
                                                 </div>
                                             )}
@@ -165,8 +165,8 @@ export function PdfaValidatorUI() {
                         </div>
                     )}
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/70">
-                        <span className="text-accent">§</span> Heuristic check only — not a full ISO PDF/A validator.
+                    <p className="font-medium text-[11px] text-muted-foreground/70">
+                        Heuristic check only — not a full ISO PDF/A validator.
                     </p>
 
                     <button

@@ -111,12 +111,12 @@ export function BatesRemoveUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> What the stamps look like <span className="text-muted-foreground/60">— optional</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    What the stamps look like <span className="text-muted-foreground/60">— optional</span>
                 </div>
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label htmlFor="rm-prefix" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Prefix</label>
+                        <label htmlFor="rm-prefix" className="font-medium text-[11px] text-muted-foreground">Prefix</label>
                         <input
                             id="rm-prefix" value={prefix} onChange={e => setPrefix(e.target.value)}
                             placeholder="DOC-" maxLength={32}
@@ -124,7 +124,7 @@ export function BatesRemoveUI() {
                         />
                     </div>
                     <div>
-                        <label htmlFor="rm-suffix" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Suffix</label>
+                        <label htmlFor="rm-suffix" className="font-medium text-[11px] text-muted-foreground">Suffix</label>
                         <input
                             id="rm-suffix" value={suffix} onChange={e => setSuffix(e.target.value)}
                             placeholder="-CONF" maxLength={32}
@@ -132,7 +132,7 @@ export function BatesRemoveUI() {
                         />
                     </div>
                     <div>
-                        <label htmlFor="rm-digits" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Digits</label>
+                        <label htmlFor="rm-digits" className="font-medium text-[11px] text-muted-foreground">Digits</label>
                         <input
                             id="rm-digits" type="number" inputMode="numeric" value={digits} min={1} max={10}
                             onChange={e => setDigits(Math.max(1, Math.min(10, parseInt(e.target.value) || 6)))}

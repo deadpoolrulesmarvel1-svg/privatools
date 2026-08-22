@@ -112,7 +112,7 @@ export function SplitByTextUI() {
                         <Scissors size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop a PDF to split by text</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Cuts before every page containing the search term</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Cuts before every page containing the search term</p>
                 </div>
             ) : (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3 flex items-center gap-3">
@@ -121,7 +121,7 @@ export function SplitByTextUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button
                         type="button"
@@ -135,8 +135,8 @@ export function SplitByTextUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Search term
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Search term
                 </div>
                 <div className="p-4 space-y-3">
                     <input

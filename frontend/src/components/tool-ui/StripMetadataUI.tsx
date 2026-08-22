@@ -84,8 +84,8 @@ export function StripMetadataUI() {
 
             {/* Per-file receipt — shows what was stripped from each PDF */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Privacy receipt</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Privacy receipt</span>
                     <span>{files.length} file{files.length !== 1 && "s"}</span>
                 </div>
                 <div className="divide-y divide-border">
@@ -131,7 +131,7 @@ export function StripMetadataUI() {
                     <DatabaseZap size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select PDFs to scrub"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Author · timestamps · GPS · software · XMP · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Author · timestamps · GPS · software · XMP · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
             {files.length > 0 && (
@@ -145,7 +145,7 @@ export function StripMetadataUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <button onClick={() => removeFile(f.id)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
@@ -155,8 +155,8 @@ export function StripMetadataUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Will be removed
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Will be removed
                         </div>
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
                             {STRIPPED.map(s => (

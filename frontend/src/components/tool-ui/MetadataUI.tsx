@@ -65,14 +65,14 @@ export function MetadataUI() {
     if (state === "done" && mode === "read" && meta) return (
         <div className="space-y-4 animate-fade-up">
             <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
-                <div className="px-5 py-3 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase">
-                    <span className="text-accent"><span>§</span> Lab report — metadata</span>
+                <div className="font-medium px-5 py-3 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between text-[11.5px]">
+                    <span className="text-accent">Lab report — metadata</span>
                     <span className="text-muted-foreground">{Object.keys(meta).length} fields</span>
                 </div>
                 <div className="p-5 space-y-2">
                     {Object.entries(meta).map(([k, v]) => (
                         <div key={k} className="grid grid-cols-[140px_1fr] gap-3 py-2 border-b border-border/40 last:border-0">
-                            <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{k.replace(/_/g, " ")}</span>
+                            <span className="font-medium text-[11.5px] text-muted-foreground">{k.replace(/_/g, " ")}</span>
                             <span className="text-[13.5px] text-foreground break-all">{String(v) || <span className="text-muted-foreground/50">—</span>}</span>
                         </div>
                     ))}
@@ -153,8 +153,8 @@ export function MetadataUI() {
 
                     {mode === "write" && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span><span className="text-accent">§</span> Document properties</span>
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                                <span>Document properties</span>
                                 {meta && <span className="text-muted-foreground/70">Current → new</span>}
                             </div>
                             <div className="p-4 space-y-3">
@@ -168,9 +168,9 @@ export function MetadataUI() {
                                     return (
                                         <div key={c.label}>
                                             <div className="flex items-center justify-between mb-1">
-                                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                <label className="font-medium text-[11px] text-muted-foreground">{c.label}</label>
                                                 {changed && (
-                                                    <span className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">§ edited</span>
+                                                    <span className="font-medium text-[9.5px] text-accent">edited</span>
                                                 )}
                                             </div>
                                             {meta && c.current && changed && (

@@ -67,7 +67,7 @@ export function PdfToWordUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "DOCX downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "DOCX downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -119,7 +119,7 @@ export function PdfToWordUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to convert"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Outputs editable Word documents · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -136,8 +136,8 @@ export function PdfToWordUI() {
                         busy={phase === "processing"}
                     />
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Tip — scanned PDFs need OCR first. Try <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> if text doesn't transfer.
+                    <p className="font-medium text-[11px] text-muted-foreground/85">
+                        Tip — scanned PDFs need OCR first. Try <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> if text doesn't transfer.
                     </p>
                     <div className="flex items-center gap-3">
                         <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">

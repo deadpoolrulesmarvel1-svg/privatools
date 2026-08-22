@@ -402,8 +402,7 @@ export default function NonPdfToolPage() {
       {/* Workspace header */}
       <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
         <div className="min-w-0 flex-1">
-          <nav aria-label="Breadcrumb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
-            <span className="text-accent">§</span>
+          <nav aria-label="Breadcrumb" className="font-medium text-[11px] text-muted-foreground mb-3 flex items-center gap-2">
             <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
             <span className="opacity-50">/</span>
             <span>{meta.label}</span>
@@ -482,7 +481,6 @@ export default function NonPdfToolPage() {
 
             <div className="mt-10 mb-4">
               <div className="flex items-baseline gap-3 mb-5">
-                <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                 <h2 className="font-display text-[20px] font-semibold text-foreground tracking-[-0.02em]">How it works</h2>
                 <span className="flex-1 h-px bg-border ml-2" />
               </div>
@@ -524,7 +522,7 @@ export default function NonPdfToolPage() {
                   ];
                 })().map((s, idx) => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-5">
-                    <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-3">{String(idx + 1).padStart(2, "0")}</div>
+                    <div className="font-medium text-[11.5px] text-accent mb-3">{String(idx + 1).padStart(2, "0")}</div>
                     <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.015em] mb-1.5">{s.title}</p>
                     <p className="text-[13px] text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
@@ -536,8 +534,8 @@ export default function NonPdfToolPage() {
           <div className="space-y-4">
             {relatedTools.length > 0 && (
               <div className="rounded-xl border border-border bg-card p-5">
-                <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                  <span className="text-accent">§</span> Related tools
+                <h2 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                  Related tools
                 </h2>
                 <div className="space-y-0.5">
                   {relatedTools.map(t => {
@@ -558,8 +556,8 @@ export default function NonPdfToolPage() {
               if (posts.length === 0) return null;
               return (
                 <div className="rounded-xl border border-border bg-card p-5">
-                  <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                    <span className="text-accent">§</span> Related articles
+                  <h2 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                    Related articles
                   </h2>
                   <div className="space-y-0.5">
                     {posts.map(p => (
@@ -579,7 +577,7 @@ export default function NonPdfToolPage() {
                 <span className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">Open source</span>
               </div>
               <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-3">Free forever, MIT licensed. Audit, fork, or self-host.</p>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.06em] uppercase font-medium text-accent">
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-accent">
                 View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </span>
             </a>
@@ -587,7 +585,7 @@ export default function NonPdfToolPage() {
             <div className="rounded-xl border border-accent/30 bg-accent/[0.05] p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Lock size={13} className="text-accent" />
-                <span className="font-mono text-[10.5px] font-semibold tracking-[0.10em] uppercase text-accent">Private</span>
+                <span className="text-[11.5px] font-semibold text-accent">Private</span>
               </div>
               <p className="text-[12.5px] text-foreground leading-relaxed">
                 <span className="font-medium">Your files stay private.</span>{" "}

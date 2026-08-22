@@ -133,7 +133,7 @@ export function UnlockUI() {
                     <LockOpen size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select protected PDFs"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
             {files.length > 0 && (
@@ -147,7 +147,7 @@ export function UnlockUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <button onClick={() => removeFile(f.id)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
@@ -159,8 +159,8 @@ export function UnlockUI() {
                     <VaultTrialBanner state={trial} />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Document password
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Document password
                         </div>
                         <div className="p-4 space-y-2">
                             <div className="relative">
@@ -183,8 +183,8 @@ export function UnlockUI() {
                                     {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                <span className="text-accent">§</span> {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
+                            <p className="font-medium text-[11px] text-muted-foreground/85">
+                                {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
                             </p>
                         </div>
                     </div>

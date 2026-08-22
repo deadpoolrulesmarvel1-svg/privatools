@@ -15,12 +15,15 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        heading: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        body:    ["Inter", "system-ui", "sans-serif"],
-        sans:    ["Inter", "system-ui", "sans-serif"],
-        mono:    ["JetBrains Mono", "Menlo", "monospace"],
-        serif:   ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
+        // One family, two roles. `display` and `heading` stay as aliases so the
+        // ~200 components already using font-display keep working; they now
+        // resolve to Geist at a heavier weight rather than a serif.
+        display: ["Geist", "system-ui", "sans-serif"],
+        heading: ["Geist", "system-ui", "sans-serif"],
+        body:    ["Geist", "system-ui", "sans-serif"],
+        sans:    ["Geist", "system-ui", "sans-serif"],
+        mono:    ["Geist Mono", "SF Mono", "Menlo", "monospace"],
+        serif:   ["Geist", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -52,6 +55,10 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
           soft: "hsl(var(--accent-soft))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          soft: "hsl(var(--success-soft))",
         },
         copper: {
           DEFAULT: "hsl(var(--copper))",

@@ -101,8 +101,8 @@ export function CompressVideoUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> CRF (constant rate factor)</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>CRF (constant rate factor)</span>
                             <span className="text-accent normal-case tracking-normal">{qualityLabel}{sizeHint !== null && ` · ≈ ${formatBytes(sizeHint)}`}</span>
                         </div>
                         <div className="p-4">
@@ -111,9 +111,9 @@ export function CompressVideoUI() {
                                 className="w-full accent-accent"
                                 aria-label="Quality" aria-valuetext={`CRF ${quality} — ${qualityLabel}`} />
                             <div className="flex justify-between items-center mt-2">
-                                <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85">Higher quality (18)</span>
+                                <span className="font-medium text-[11px] text-muted-foreground/85">Higher quality (18)</span>
                                 <span className="font-mono text-[13px] tabular-nums text-accent">CRF {quality}</span>
-                                <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85">Smaller file (40)</span>
+                                <span className="font-medium text-[11px] text-muted-foreground/85">Smaller file (40)</span>
                             </div>
                         </div>
                     </div>

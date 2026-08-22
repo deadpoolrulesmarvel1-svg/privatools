@@ -71,17 +71,17 @@ export function BackgroundRemoverUI() {
             <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
                 <div className="relative px-4 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between">
                     <CornerMarks />
-                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                    <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
                         <CheckCircle2 size={12} />
                         Background removed
                     </div>
-                    <button onClick={reset} className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+                    <button onClick={reset} className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
                         Process another
                     </button>
                 </div>
                 <div className="p-5 space-y-3">
-                    <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Drag the slider to compare
+                    <p className="font-medium text-[11.5px] text-muted-foreground">
+                        Drag the slider to compare
                     </p>
                     <BeforeAfterSlider
                         before={previewSrc || ""}
@@ -130,7 +130,7 @@ export function BackgroundRemoverUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {file ? "Replace image" : "Drop image to remove background"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     JPEG · PNG · WebP — AI runs on the server (your file is deleted after)
                 </p>
             </div>
@@ -138,15 +138,15 @@ export function BackgroundRemoverUI() {
             {/* Preview before processing */}
             {previewSrc && file && (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Source · {file.name}</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Source · {file.name}</span>
                         <span>{formatFileSize(file.size)}</span>
                     </div>
                     <div className="p-4 flex items-center justify-center bg-paper-2/30">
                         <img src={previewSrc} alt="Preview" className="max-h-60 rounded-md object-contain" />
                     </div>
                     <div className="px-3 py-2 border-t border-border bg-paper-2/40 flex justify-end">
-                        <button onClick={reset} className="inline-flex items-center gap-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+                        <button onClick={reset} className="font-medium inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
                             <X size={11} /> Remove
                         </button>
                     </div>
@@ -222,8 +222,8 @@ function BeforeAfterSlider({
                 >
                     <span className="font-mono text-[9.5px] tracking-wider">↔</span>
                 </div>
-                <span className="absolute top-2 left-2 font-mono text-[9.5px] tracking-wider uppercase rounded bg-background/85 text-foreground px-1.5 h-5 inline-flex items-center">Before</span>
-                <span className="absolute top-2 right-2 font-mono text-[9.5px] tracking-wider uppercase rounded bg-accent/85 text-background px-1.5 h-5 inline-flex items-center">After</span>
+                <span className="font-medium absolute top-2 left-2 text-[9.5px] tracking-wider rounded bg-background/85 text-foreground px-1.5 h-5 inline-flex items-center">Before</span>
+                <span className="font-medium absolute top-2 right-2 text-[9.5px] tracking-wider rounded bg-accent/85 text-background px-1.5 h-5 inline-flex items-center">After</span>
             </div>
             <input
                 type="range"

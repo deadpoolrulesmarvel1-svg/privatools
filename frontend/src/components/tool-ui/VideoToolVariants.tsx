@@ -224,7 +224,7 @@ export function AddSubtitlesUI() {
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 Subtitled <span className="italic text-accent">MP4</span> ready
                             </h2>
-                            <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                            <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                                 Downloaded as {buildOutputFilename(video?.name, "subtitled", "mp4")}
                             </p>
                             <button

@@ -60,7 +60,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
                     )}
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button
                         type="button"
@@ -107,7 +107,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
                 <Upload size={20} className="text-accent" strokeWidth={1.75} />
             </div>
             <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{label || "Drop file here"}</p>
-            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{hint || "Drag & drop or click to browse"}</p>
+            <p className="font-medium text-[11.5px] text-muted-foreground">{hint || "Drag & drop or click to browse"}</p>
         </div>
     );
 }
@@ -148,7 +148,7 @@ export function ProcessingBar({ progress, label, className }: ProgressBarProps) 
     const labelText = label || "Processing…";
     return (
         <div className={cn("space-y-1.5", className)}>
-            <div className="flex justify-between items-center font-mono text-[10.5px] tracking-[0.08em] uppercase">
+            <div className="font-medium flex justify-between items-center text-[11.5px]">
                 <span className="text-muted-foreground">{labelText}</span>
                 {!isIndeterminate && <span className="text-accent font-medium tabular-nums">{Math.round(progress)}%</span>}
             </div>

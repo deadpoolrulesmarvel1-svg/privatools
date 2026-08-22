@@ -126,7 +126,7 @@ export function ImageOcrUI() {
                         <ScanText size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop an image to OCR</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPG · PNG · WebP · BMP · TIFF · 13 languages</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">JPG · PNG · WebP · BMP · TIFF · 13 languages</p>
                 </div>
             ) : (
                 <div className="rounded-xl border border-accent/30 bg-card overflow-hidden">
@@ -134,7 +134,7 @@ export function ImageOcrUI() {
                     <div className="flex items-center gap-3 px-4 py-3 border-t border-border">
                         <div className="flex-1 min-w-0">
                             <p className="text-[14px] font-medium text-foreground truncate">{imgFile.file.name}</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                                 {(imgFile.file.size / 1024).toFixed(0)} KB
                             </p>
                         </div>
@@ -147,7 +147,7 @@ export function ImageOcrUI() {
 
             {/* Language */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Languages size={11} /> Language</span>
                     <span className="text-accent">{LANGUAGES.find(l => l.code === lang)?.label}</span>
                 </div>
@@ -173,9 +173,9 @@ export function ImageOcrUI() {
             {/* Result */}
             {result && (
                 <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-accent/20 bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                    <div className="font-medium flex items-center justify-between px-4 py-2 border-b border-accent/20 bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         <span className="flex items-center gap-1.5">
-                            <span className="text-accent">§</span> Extracted text
+                            Extracted text
                             <span className="text-muted-foreground/60">({result.characters} chars)</span>
                         </span>
                         <div className="flex items-center gap-1">

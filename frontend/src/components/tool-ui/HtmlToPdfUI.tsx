@@ -121,8 +121,8 @@ export function HtmlToPdfUI() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> {mode === "url" ? "Web page URL" : "HTML content"}</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>{mode === "url" ? "Web page URL" : "HTML content"}</span>
                     {htmlSize && <span className="text-muted-foreground/70">{htmlSize}</span>}
                 </div>
                 <div className="p-4">
@@ -147,8 +147,8 @@ export function HtmlToPdfUI() {
                     )}
                 </div>
                 {mode === "url" && url.trim() && (
-                    <div className="px-4 pb-3 font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Output: <span className="text-foreground">{getOutputName()}</span>
+                    <div className="font-medium px-4 pb-3 text-[11px] text-muted-foreground/85">
+                        Output: <span className="text-foreground">{getOutputName()}</span>
                     </div>
                 )}
             </div>

@@ -102,13 +102,13 @@ export function CreateZipUI() {
                     <Archive size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more files" : "Drop files to zip"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Any file types · multiple allowed</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Any file types · multiple allowed</p>
             </div>
 
             {files.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Manifest ({files.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Manifest ({files.length})</span>
                         <button onClick={() => ref.current?.click()} className="inline-flex items-center gap-1 text-accent hover:opacity-80">
                             <Plus size={11} /> Add more
                         </button>
@@ -119,7 +119,7 @@ export function CreateZipUI() {
                                 <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <FileText size={13} className="text-muted-foreground shrink-0" />
                                 <span className="text-[13px] text-foreground flex-1 truncate">{f.name}</span>
-                                <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground">{f.size}</span>
+                                <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
                                 <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} aria-label={`Remove ${f.name}`} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60">
                                     <X size={12} />
                                 </button>
@@ -131,8 +131,8 @@ export function CreateZipUI() {
 
             {files.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Compression</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Compression</span>
                         <span className="text-accent normal-case tracking-normal">{compressionLabel} · level {compression}</span>
                     </div>
                     <div className="p-4">
@@ -144,15 +144,15 @@ export function CreateZipUI() {
                             aria-label="ZIP compression level"
                             aria-valuetext={`Level ${compression} — ${compressionLabel}`}
                         />
-                        <div className="flex justify-between font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85 mt-2">
+                        <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-2">
                             <span>Store (0)</span><span>Balanced (6)</span><span>Maximum (9)</span>
                         </div>
                     </div>
                 </div>
             )}
 
-            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                <span className="text-accent">§</span> {files.length > 0 && `${formatFileSize(totalBytes)} uncompressed · `}Standard ZIP archive · password-encrypted output not yet supported
+            <p className="font-medium text-[11px] text-muted-foreground/85">
+                {files.length > 0 && `${formatFileSize(totalBytes)} uncompressed · `}Standard ZIP archive · password-encrypted output not yet supported
             </p>
 
             {error && (

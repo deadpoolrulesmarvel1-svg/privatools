@@ -65,7 +65,7 @@ export function PdfToExcelUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "XLSX downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "XLSX downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export function PdfToExcelUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to convert"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Extracts tables into Excel · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -134,8 +134,8 @@ export function PdfToExcelUI() {
                         busy={phase === "processing"}
                     />
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Works best when tables have clear borders. Scanned PDFs need <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
+                    <p className="font-medium text-[11px] text-muted-foreground/85">
+                        Works best when tables have clear borders. Scanned PDFs need <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
                     </p>
                     <div className="flex items-center gap-3">
                         <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">

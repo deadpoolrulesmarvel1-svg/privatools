@@ -240,7 +240,7 @@ export function CompressUI() {
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 {targetMissed && (
                                     <span className="block font-mono text-[11px] tracking-[0.04em] text-copper mt-1.5">
-                                        § Couldn&apos;t reach {targetMb} MB — this is the smallest we could make it
+                                        Couldn&apos;t reach {targetMb} MB — this is the smallest we could make it
                                     </span>
                                 )}
                                 {files.length === 1 && compressedSize > 0 ? (
@@ -253,7 +253,7 @@ export function CompressUI() {
                             {files.length === 1 && compressedSize > 0 && (
                                 <div className="mt-4 space-y-2.5 max-w-md">
                                     <div>
-                                        <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.06em] uppercase mb-1">
+                                        <div className="font-medium flex items-center justify-between text-[11.5px] mb-1">
                                             <span className="text-muted-foreground">Original</span>
                                             <span className="text-muted-foreground tabular-nums">{files[0].size}</span>
                                         </div>
@@ -262,7 +262,7 @@ export function CompressUI() {
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.06em] uppercase mb-1">
+                                        <div className="font-medium flex items-center justify-between text-[11.5px] mb-1">
                                             <span className="text-accent">Compressed</span>
                                             <span className="text-accent tabular-nums font-semibold">{formatFileSize(compressedSize)}</span>
                                         </div>
@@ -333,7 +333,7 @@ export function CompressUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length ? "Add more PDFs" : "Select PDFs to compress"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-1">
+                <p className="font-medium text-[11.5px] text-muted-foreground mt-1">
                     Drag &amp; drop or click · Multi-file OK · Max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -384,9 +384,9 @@ export function CompressUI() {
 
                     {/* Level picker */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1.5">
-                                <span className="text-accent">§</span> Compression level
+                                Compression level
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <button
@@ -442,7 +442,7 @@ export function CompressUI() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-baseline justify-between gap-2">
                                                 <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">
-                                                    <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent mr-1.5">{String(idx + 1).padStart(2, "0")}</span>
+                                                    <span className="font-medium text-[11.5px] text-accent mr-1.5">{String(idx + 1).padStart(2, "0")}</span>
                                                     {l.label}
                                                 </p>
                                                 <span className={cn("font-mono text-[11px] tracking-wide tabular-nums", active ? "text-accent font-semibold" : "text-muted-foreground")}>
@@ -459,7 +459,7 @@ export function CompressUI() {
                         {/* Target size */}
                         {level === "target" && (
                             <div className="border-t border-border bg-paper-2/30 p-4 animate-fade-in">
-                                <label htmlFor="target-mb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                                <label htmlFor="target-mb" className="font-medium text-[11px] text-muted-foreground">
                                     Target size
                                 </label>
                                 <div className="mt-1.5 flex items-center gap-2">
@@ -504,7 +504,7 @@ export function CompressUI() {
                             <div className="border-t border-border bg-paper-2/30 p-4 space-y-4 animate-fade-in">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label htmlFor="jpeg-q" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">JPEG quality</label>
+                                        <label htmlFor="jpeg-q" className="font-medium text-[11px] text-muted-foreground">JPEG quality</label>
                                         <span className="font-mono text-[11px] text-accent">{customQuality}</span>
                                     </div>
                                     <input
@@ -514,14 +514,14 @@ export function CompressUI() {
                                         onChange={e => setCustomQuality(parseInt(e.target.value, 10))}
                                         className="w-full accent-accent"
                                     />
-                                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-1">
                                         <span>15 — tiny, lossy</span>
                                         <span>95 — pristine</span>
                                     </div>
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label htmlFor="max-dim" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Max image dimension (px)</label>
+                                        <label htmlFor="max-dim" className="font-medium text-[11px] text-muted-foreground">Max image dimension (px)</label>
                                         <span className="font-mono text-[11px] text-accent">{customMaxDim}</span>
                                     </div>
                                     <input
@@ -531,7 +531,7 @@ export function CompressUI() {
                                         onChange={e => setCustomMaxDim(parseInt(e.target.value, 10))}
                                         className="w-full accent-accent"
                                     />
-                                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-1">
                                         <span>300 — heavily downsampled</span>
                                         <span>4000 — preserve detail</span>
                                     </div>
@@ -544,7 +544,7 @@ export function CompressUI() {
                     {retryNote && state === "processing" && (
                         <div className="flex items-center gap-2 rounded-lg border border-copper/30 bg-copper-soft/30 px-3 py-2 text-[12.5px] text-foreground">
                             <Loader2 size={12} className="animate-spin text-copper" />
-                            <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-copper">{retryNote}</span>
+                            <span className="font-medium text-[11.5px] text-copper">{retryNote}</span>
                         </div>
                     )}
 
@@ -556,7 +556,7 @@ export function CompressUI() {
                             <button
                                 type="button"
                                 onClick={copyErrorToClipboard}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
                                 aria-label="Copy error details to clipboard"
                                 title="Copy error details for a bug report"
                             >
@@ -581,7 +581,7 @@ export function CompressUI() {
                         <button
                             type="button"
                             onClick={resetConfig}
-                            className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                             title="Restore default settings"
                         >
                             <Undo2 size={10} /> Reset to defaults

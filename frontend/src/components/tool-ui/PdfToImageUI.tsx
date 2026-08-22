@@ -99,7 +99,7 @@ export function PdfToImageUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "Outer ZIP with per-PDF ZIPs inside" : "ZIP downloaded"}
+                                    {proc.doneCount > 1 ? "Outer ZIP with per-PDF ZIPs inside" : "ZIP downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -151,7 +151,7 @@ export function PdfToImageUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to rasterize"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Each page → image · zipped output · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -169,8 +169,8 @@ export function PdfToImageUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Output format
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Output format
                         </div>
                         <div className="p-3 grid grid-cols-2 gap-2">
                             {formats.map(f => {
@@ -179,7 +179,7 @@ export function PdfToImageUI() {
                                     <button key={f.id} onClick={() => setFormat(f.id)}
                                         className={cn("rounded-lg border p-3 text-left transition-colors", active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40")}>
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{f.label}</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">{f.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">{f.desc}</p>
                                     </button>
                                 );
                             })}
@@ -187,8 +187,8 @@ export function PdfToImageUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Resolution</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Resolution</span>
                             <span className="text-accent">{dpi} dpi</span>
                         </div>
                         <div className="p-3 grid grid-cols-3 gap-2">
@@ -196,14 +196,14 @@ export function PdfToImageUI() {
                                 const active = dpi === d;
                                 return (
                                     <button key={d} onClick={() => setDpi(d)}
-                                        className={cn("rounded-lg border py-2.5 font-mono text-[12px] tracking-[0.06em] uppercase transition-colors", active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40")}>
+                                        className={cn("font-medium rounded-lg border py-2.5 text-[12px] transition-colors", active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40")}>
                                         {d} dpi
                                     </button>
                                 );
                             })}
                         </div>
-                        <p className="px-4 pb-3 font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 flex items-center justify-between">
-                            <span><span className="text-accent">§</span> {dpi <= 72 ? "Screen · fast" : dpi <= 150 ? "Balanced" : "Print · larger files"}</span>
+                        <p className="font-medium px-4 pb-3 text-[11px] text-muted-foreground/85 flex items-center justify-between">
+                            <span>{dpi <= 72 ? "Screen · fast" : dpi <= 150 ? "Balanced" : "Print · larger files"}</span>
                             {totalBytes > 0 && <span className="text-muted-foreground/70">Est. ~ {formatFileSize(estTotal)} total</span>}
                         </p>
                     </div>

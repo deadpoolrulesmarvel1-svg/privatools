@@ -48,8 +48,8 @@ export function ResultHandoff({ blob, filename, fromSlug }: Props) {
 
     return (
         <div className="mt-5 rounded-xl border border-border bg-card/60 overflow-hidden">
-            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span className="text-accent">§</span> Do more with this file
+            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                Do more with this file
             </div>
             <div className="divide-y divide-border">
                 {steps.map(step => (

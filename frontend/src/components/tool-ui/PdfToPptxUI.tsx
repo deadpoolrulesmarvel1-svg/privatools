@@ -65,7 +65,7 @@ export function PdfToPptxUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PPTX downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PPTX downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export function PdfToPptxUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to convert"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Each page → one slide · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>

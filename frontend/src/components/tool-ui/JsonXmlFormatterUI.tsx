@@ -124,7 +124,7 @@ export function JsonXmlFormatterUI() {
                                 aria-selected={active}
                                 onClick={() => { setMode(m); setOutput(""); setError(null); }}
                                 className={cn(
-                                    "inline-flex items-center h-8 px-3.5 font-mono text-[11px] tracking-[0.10em] uppercase font-medium rounded transition-colors",
+                                    "inline-flex items-center h-8 px-3.5 text-[12px] font-medium rounded transition-colors",
                                     active
                                         ? "bg-card text-foreground shadow-sm border border-border"
                                         : "text-muted-foreground hover:text-foreground"
@@ -139,7 +139,7 @@ export function JsonXmlFormatterUI() {
                 {(error || output) && (
                     <span
                         className={cn(
-                            "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border font-mono text-[10.5px] tracking-[0.08em] uppercase",
+                            "font-medium inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border text-[11.5px]",
                             error
                                 ? "border-destructive/30 bg-destructive/[0.06] text-destructive"
                                 : "border-accent/30 bg-accent/[0.06] text-accent"
@@ -213,7 +213,7 @@ export function JsonXmlFormatterUI() {
                         <button
                             onClick={copy}
                             className={cn(
-                                "inline-flex items-center gap-1 px-2 py-1 rounded font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors",
+                                "font-medium inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors",
                                 copied && "animate-copy-flash"
                             )}
                         >
@@ -242,8 +242,8 @@ function CodeEditor({
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
-                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> {label}
+                <span className="font-medium text-[11.5px] text-muted-foreground">
+                    {label}
                 </span>
                 {rightAction || (value && <span className="font-mono text-[10.5px] text-muted-foreground/85">{lines} line{lines !== 1 ? "s" : ""}</span>)}
             </div>

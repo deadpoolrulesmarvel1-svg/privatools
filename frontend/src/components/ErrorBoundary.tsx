@@ -150,8 +150,8 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertCircle size={20} strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground mb-2">
-                <span className="text-accent">§</span> {scope === "app" ? "App error" : "Tool error"}
+              <p className="font-medium text-[11px] text-muted-foreground mb-2">
+                {scope === "app" ? "App error" : "Tool error"}
               </p>
               <h2
                 className="font-display font-bold text-foreground text-[24px] sm:text-[28px] tracking-tight leading-tight"
@@ -187,12 +187,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {isDev && (
             <details className="mt-6 rounded-lg border border-border bg-paper-2/40 p-4 text-[12px] text-muted-foreground">
-              <summary className="cursor-pointer font-mono text-[11px] tracking-[0.06em] uppercase text-foreground/80">
+              <summary className="font-medium cursor-pointer text-[12px] text-foreground/80">
                 Developer details
               </summary>
               <div className="mt-3 space-y-3">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                  <p className="font-medium text-[11px] text-muted-foreground mb-1">
                     Message
                   </p>
                   <pre className="whitespace-pre-wrap break-words font-mono text-[12px] text-foreground">
@@ -201,7 +201,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
                 {this.state.info?.componentStack && (
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                    <p className="font-medium text-[11px] text-muted-foreground mb-1">
                       Component stack
                     </p>
                     <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground/90 max-h-64 overflow-auto">

@@ -79,8 +79,8 @@ export function DeletePagesUI() {
                 hint="Use range syntax like 1,3-5,9"
             />
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Pages to delete
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Pages to delete
                 </div>
                 <div className="p-4">
                     <input
@@ -97,10 +97,10 @@ export function DeletePagesUI() {
                         )}
                     />
                     {rangeErr ? (
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive mt-2">{rangeErr}</p>
+                        <p className="font-medium text-[11px] text-destructive mt-2">{rangeErr}</p>
                     ) : (
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                            <span className="text-accent">§</span> Syntax — comma-separated · "1-3" = range · "1,3-5,9" = mixed
+                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                            Syntax — comma-separated · "1-3" = range · "1,3-5,9" = mixed
                         </p>
                     )}
                 </div>

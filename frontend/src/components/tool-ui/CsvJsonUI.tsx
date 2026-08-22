@@ -117,14 +117,14 @@ export function CsvJsonUI() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> {mode === "csv-to-json" ? "CSV input" : "JSON input"}</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>{mode === "csv-to-json" ? "CSV input" : "JSON input"}</span>
                     <div className="flex items-center gap-2 normal-case tracking-normal">
                         {!input && (
                             <button
                                 type="button"
                                 onClick={loadSample}
-                                className="inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors"
+                                className="font-medium inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11px] transition-colors"
                             >
                                 <Sparkles size={10} /> Try sample
                             </button>
@@ -148,7 +148,7 @@ export function CsvJsonUI() {
                 />
                 {mode === "csv-to-json" && input && (
                     <div className="px-3 py-2 border-t border-border bg-paper-2/30 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground mr-1">Delimiter</span>
+                        <span className="font-medium text-[11px] text-muted-foreground mr-1">Delimiter</span>
                         {([",", ";", "\t", "|"] as const).map(d => {
                             const active = delim === d;
                             return (
@@ -157,7 +157,7 @@ export function CsvJsonUI() {
                                     type="button"
                                     onClick={() => setDelimOverride(d)}
                                     className={cn(
-                                        "inline-flex items-center h-6 px-2 font-mono text-[10.5px] tracking-[0.06em] uppercase border rounded transition-colors",
+                                        "font-medium inline-flex items-center h-6 px-2 text-[11.5px] border rounded transition-colors",
                                         active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground"
                                     )}
                                 >
@@ -181,8 +181,8 @@ export function CsvJsonUI() {
 
             {output && !error && (
                 <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-in">
-                    <div className="px-4 py-2 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> {mode === "csv-to-json" ? "JSON output" : "CSV output"}</span>
+                    <div className="font-medium px-4 py-2 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>{mode === "csv-to-json" ? "JSON output" : "CSV output"}</span>
                         <div className="flex items-center gap-1">
                             <button onClick={copy} className={cn("h-6 px-2 rounded inline-flex items-center gap-1 transition-colors text-muted-foreground hover:text-accent hover:bg-accent/[0.06]", copied && "animate-copy-flash")}>
                                 {copied ? <><Check size={10} className="text-accent" /> Copied</> : <><Copy size={10} /> Copy</>}

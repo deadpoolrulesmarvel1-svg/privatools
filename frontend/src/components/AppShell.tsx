@@ -11,7 +11,7 @@
  *   │          │                                      ││
  *   │          │                                      ││
  *   ├──────────┴──────────────────────────────────────┤│
- *   │ StatusBar (28px) — § · MIT · PRIVATE · ⌘K       │
+ *   │ StatusBar (28px) — MIT · PRIVATE · ⌘K       │
  *   └──────────────────────────────────────────────────┘
  *
  * The sidebar is the navigation — top bar is brand and quick actions
@@ -150,8 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         {/* Topbar workshop dateline (hidden on small screens) */}
-        <span className="hidden md:inline-flex items-center gap-2 ml-3 font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground/85">
-          <span className="text-accent">§</span>
+        <span className="font-medium hidden md:inline-flex items-center gap-2 ml-3 text-[11px] text-muted-foreground/85">
           A workshop for private file work
         </span>
 
@@ -225,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Sidebar collapsed={sidebarCollapsed} />
             </Suspense>
             <div className="border-t border-border px-2 py-2 flex items-center justify-between">
-              <span className={cn("inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85 px-2", sidebarCollapsed && "hidden")}>
+              <span className={cn("font-medium inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/85 px-2", sidebarCollapsed && "hidden")}>
                 <Lock size={10} className="text-accent" /> Private
               </span>
               <button
@@ -257,9 +256,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="lg:hidden fixed top-11 bottom-0 left-0 z-50 w-72 max-w-[82vw] flex flex-col border-r border-border animate-slide-in-left shadow-2xl"
               style={{ background: "hsl(var(--background))" }}
             >
-              {/* Slim drawer header — close affordance + § brand line */}
+              {/* Slim drawer header — close affordance + brand line */}
               <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground/85">
+                <span className="font-medium inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/85">
                   <Lock size={10} className="text-accent" /> Menu
                 </span>
                 <button

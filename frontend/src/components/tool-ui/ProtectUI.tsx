@@ -192,7 +192,7 @@ export function ProtectUI() {
                     <LockKeyhole size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select PDFs to protect"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Multiple files · password + permissions · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · password + permissions · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
             {files.length > 0 && (
@@ -206,7 +206,7 @@ export function ProtectUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <button onClick={() => removeFile(f.id)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
@@ -217,8 +217,8 @@ export function ProtectUI() {
 
                     {/* Password panel */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Password</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Password</span>
                             <span className={cn(
                                 strength.tone === "danger" && "text-destructive",
                                 strength.tone === "warn" && "text-copper",
@@ -290,13 +290,13 @@ export function ProtectUI() {
                                 })}
                             </div>
                             {justGenerated && (
-                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-accent animate-fade-in">
-                                    <span>§</span> Strong password generated · save it somewhere safe
+                                <p className="font-medium text-[11px] text-accent animate-fade-in">
+                                    Strong password generated · save it somewhere safe
                                 </p>
                             )}
                             {!justGenerated && files.length > 1 && (
-                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                    <span className="text-accent">§</span> Same password applied to all {files.length} files
+                                <p className="font-medium text-[11px] text-muted-foreground/85">
+                                    Same password applied to all {files.length} files
                                 </p>
                             )}
                         </div>
@@ -304,8 +304,8 @@ export function ProtectUI() {
 
                     {/* Permissions */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Permissions
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Permissions
                         </div>
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {([
@@ -330,7 +330,7 @@ export function ProtectUI() {
                                             {p.checked && <Shield size={9} strokeWidth={2.5} />}
                                         </span>
                                     </div>
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{p.desc}</p>
+                                    <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">{p.desc}</p>
                                 </button>
                             ))}
                         </div>

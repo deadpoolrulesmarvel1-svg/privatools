@@ -17,110 +17,65 @@
  */
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Geist';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/geist-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Geist';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/geist-latin-500-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Geist';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-600-normal.woff2') format('woff2');
+  src: url('/fonts/geist-latin-600-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Geist';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-700-normal.woff2') format('woff2');
+  src: url('/fonts/geist-latin-700-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin-800-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 900;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin-900-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Inter';
+  font-family: 'Geist Mono';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/geist-mono-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Geist Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/geist-mono-latin-500-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Geist Mono';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/inter-latin-600-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/inter-latin-700-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/geist-mono-latin-600-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
@@ -130,113 +85,135 @@
 
 @layer base {
   :root {
-    --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
-    --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    /* Geist for everything, Geist Mono for anything countable. This product is
+       full of numerals — 219 tools, page counts, MB, scores — and tabular
+       figures are what make a tools site read as engineered rather than
+       decorated. */
+    --font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-sans:    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'Geist Mono', 'SF Mono', Menlo, monospace;
 
-    /* ── Light — warm paper + deep ink ─────────────────────────────── */
-    --background: 40 36% 96%;            /* #FAF7F0 warm paper */
-    --foreground: 30 18% 8%;             /* #16140E deep ink */
+    /* ── Light — white ground, ink CTAs ────────────────────────────────
+       White because all nine server-side competitors use it: it reads fast
+       and clinical, and it is the only ground on which an uploaded document
+       preview looks like itself. The cream this replaces is the single most
+       common AI-design tell there is. */
+    --background: 0 0% 100%;
+    --foreground: 216 19% 5%;            /* #0B0D10 — off-black, never #000 */
 
-    --paper:      40 36% 96%;            /* base */
-    --paper-2:    38 28% 92%;            /* #ECE5D3 slightly tinted second surface */
-    --paper-3:    36 22% 88%;            /* #DFD7C2 */
+    --paper:      0 0% 100%;
+    --paper-2:    220 20% 97%;           /* #F6F7FA */
+    --paper-3:    220 18% 94%;           /* #EDEFF3 */
 
     --card: 0 0% 100%;
-    --card-foreground: 30 18% 8%;
-    --card-tint: 40 30% 94%;
+    --card-foreground: 216 19% 5%;
+    --card-tint: 210 20% 98%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 30 18% 8%;
+    --popover-foreground: 216 19% 5%;
 
-    --primary: 30 18% 8%;                /* deep ink primary CTA */
-    --primary-foreground: 40 36% 96%;
+    /* Ink CTA. Every rival ships a coloured primary — five blue, two orange,
+       one red. Black is the unclaimed position and reads more considered than
+       any of them. */
+    --primary: 216 19% 5%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 38 24% 90%;             /* warm putty */
-    --secondary-foreground: 30 18% 8%;
+    --secondary: 216 20% 95%;
+    --secondary-foreground: 216 19% 5%;
 
-    --muted: 38 22% 92%;
-    --muted-foreground: 30 8% 32%;       /* #534F46 — sufficient contrast */
+    --muted: 220 18% 96%;
+    --muted-foreground: 216 11% 40%;     /* #5B6472 — AA on white */
 
-    /* Signal green — accessible on warm paper, WCAG AA */
-    --accent: 152 82% 30%;               /* #0E8A56 darkened for AA on cream */
-    --accent-foreground: 40 36% 96%;
-    --accent-soft: 152 60% 92%;          /* tinted pill background */
+    /* One accent, reserved for state: active, selected, links, progress.
+       Not used for primary actions — that's the ink. */
+    --accent: 221 100% 52%;              /* #0B57FF */
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 221 100% 96%;
 
-    /* Copper, used for "industry first" — restrained */
-    --copper: 19 75% 35%;                /* #9F4D1B */
-    --copper-soft: 19 60% 90%;
+    /* Semantic warning. Kept under the historical `copper` name so the ~40
+       components already using text-copper / bg-copper-soft keep working and
+       now carry a correct semantic meaning instead of a second brand colour. */
+    --copper: 32 92% 34%;                /* #A85B08 — AA on white */
+    --copper-soft: 36 96% 94%;
 
-    --destructive: 0 70% 38%;
+    --success: 152 68% 28%;
+    --success-soft: 152 55% 94%;
+
+    --destructive: 0 72% 42%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 36 18% 80%;                /* #CFC7B3 warm hairline */
-    --border-strong: 36 16% 64%;         /* #A89F89 stronger rule */
-    --input: 36 18% 80%;
-    --ring: 152 82% 30%;
+    /* Borders carry the accent hue at low saturation rather than neutral grey —
+       lifted from Foxit, whose rules are the brand navy at 12%. It is the
+       cheapest way to make a UI feel like one system. */
+    --border: 221 22% 90%;
+    --border-strong: 221 16% 74%;
+    --input: 221 22% 90%;
+    --ring: 221 100% 52%;
 
-    --radius: 0.625rem;                  /* 10px — a touch larger than v0 */
+    --radius: 0.625rem;
 
-    /* Sidebar tokens preserved for shadcn compat */
-    --sidebar-background: 40 36% 96%;
-    --sidebar-foreground: 30 18% 8%;
-    --sidebar-primary: 30 18% 8%;
-    --sidebar-primary-foreground: 40 36% 96%;
-    --sidebar-accent: 38 24% 90%;
-    --sidebar-accent-foreground: 30 18% 8%;
-    --sidebar-border: 36 18% 80%;
-    --sidebar-ring: 152 82% 30%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 216 19% 5%;
+    --sidebar-primary: 216 19% 5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 97%;
+    --sidebar-accent-foreground: 216 19% 5%;
+    --sidebar-border: 221 22% 90%;
+    --sidebar-ring: 221 100% 52%;
   }
 
   .dark {
-    /* ── Dark — bone on near-black, warm undertone ─────────────────── */
-    --background: 30 8% 6%;              /* #100F0C — warm near-black */
-    --foreground: 40 22% 90%;            /* #EDE6D2 bone */
+    /* ── Dark — cool near-black, same system inverted ──────────────── */
+    --background: 220 14% 5%;            /* #0A0C0F */
+    --foreground: 217 20% 93%;           /* #E9ECF1 */
 
-    --paper:   30 8% 6%;
-    --paper-2: 30 7% 9%;                 /* #181714 second surface */
-    --paper-3: 30 6% 13%;                /* #21201D */
+    --paper:   220 14% 5%;
+    --paper-2: 220 13% 8%;               /* #11141A */
+    --paper-3: 220 12% 12%;              /* #1A1E25 */
 
-    --card: 30 7% 8%;                    /* #161512 */
-    --card-foreground: 40 22% 90%;
-    --card-tint: 30 6% 11%;
+    --card: 220 13% 7%;
+    --card-foreground: 217 20% 93%;
+    --card-tint: 220 12% 10%;
 
-    --popover: 30 7% 8%;
-    --popover-foreground: 40 22% 90%;
+    --popover: 220 13% 7%;
+    --popover-foreground: 217 20% 93%;
 
-    --primary: 40 22% 90%;               /* bone primary on dark = inverted */
-    --primary-foreground: 30 8% 6%;
+    /* Inverted: on dark the ink CTA becomes a light one. */
+    --primary: 217 20% 93%;
+    --primary-foreground: 220 14% 5%;
 
-    --secondary: 30 6% 13%;
-    --secondary-foreground: 40 18% 78%;
+    --secondary: 220 12% 13%;
+    --secondary-foreground: 217 16% 82%;
 
-    --muted: 30 6% 12%;
-    --muted-foreground: 38 12% 68%;      /* #A8A293 readable on near-black */
+    --muted: 220 12% 12%;
+    --muted-foreground: 217 12% 66%;     /* #9AA2B0 — AA on near-black */
 
-    /* Signal green — pops on dark */
-    --accent: 152 76% 48%;               /* #28C886 vibrant */
-    --accent-foreground: 30 8% 6%;
-    --accent-soft: 152 50% 16%;
+    --accent: 221 100% 66%;              /* #5285FF — lifted for dark ground */
+    --accent-foreground: 220 14% 5%;
+    --accent-soft: 221 60% 16%;
 
-    --copper: 22 80% 60%;                /* #E48543 vivid */
-    --copper-soft: 22 30% 18%;
+    --copper: 36 92% 62%;                /* #F3A63F */
+    --copper-soft: 32 40% 15%;
 
-    --destructive: 0 70% 55%;
+    --success: 152 60% 52%;
+    --success-soft: 152 40% 14%;
+
+    --destructive: 0 70% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 6% 18%;                 /* #2F2D29 */
-    --border-strong: 30 6% 28%;          /* #4A4742 */
-    --input: 30 6% 18%;
-    --ring: 152 76% 48%;
+    --border: 220 10% 17%;
+    --border-strong: 220 9% 30%;
+    --input: 220 10% 17%;
+    --ring: 221 100% 66%;
 
-    --sidebar-background: 30 8% 6%;
-    --sidebar-foreground: 40 22% 90%;
-    --sidebar-primary: 40 22% 90%;
-    --sidebar-primary-foreground: 30 8% 6%;
-    --sidebar-accent: 30 6% 13%;
-    --sidebar-accent-foreground: 40 22% 90%;
-    --sidebar-border: 30 6% 18%;
-    --sidebar-ring: 152 76% 48%;
+    --sidebar-background: 220 14% 5%;
+    --sidebar-foreground: 217 20% 93%;
+    --sidebar-primary: 217 20% 93%;
+    --sidebar-primary-foreground: 220 14% 5%;
+    --sidebar-accent: 220 12% 13%;
+    --sidebar-accent-foreground: 217 20% 93%;
+    --sidebar-border: 220 10% 17%;
+    --sidebar-ring: 221 100% 66%;
   }
 }
 
@@ -300,15 +277,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
   color: hsl(var(--muted-foreground));
   font-weight: 500;
 }
 .section-mark::before {
-  content: "§";
+  content: "";
   font-family: var(--font-display);
   font-style: italic;
   font-size: 14px;
@@ -334,21 +310,17 @@
   padding: 0 0.625rem;
   background: hsl(var(--paper-2));
   color: hsl(var(--muted-foreground));
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   border-radius: 6px;
   border: 1px solid hsl(var(--border));
 }
 
 .category-tag {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: hsl(var(--muted-foreground));
 }
 
@@ -844,6 +816,11 @@
 .animate-corner-extend > .corner-mark:nth-child(2) { animation-delay: 0.10s; }
 .animate-corner-extend > .corner-mark:nth-child(3) { animation-delay: 0.15s; }
 .animate-corner-extend > .corner-mark:nth-child(4) { animation-delay: 0.20s; }
+
+/* Corner brackets are the last of the technical-drawing motif. Hidden here
+   rather than deleted from 96 components: the JSX stays valid, the marks stop
+   rendering, and reverting is one line. */
+.corner-mark { display: none !important; }
 
 /* ── Dropzone interaction — corner marks gently extend on hover ── */
 .corner-mark { transition: transform 0.25s ease-out, opacity 0.25s ease-out; }

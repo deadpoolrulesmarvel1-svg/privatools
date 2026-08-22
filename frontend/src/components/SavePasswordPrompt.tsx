@@ -28,7 +28,7 @@ export function SavePasswordPrompt({
 
   if (saved) {
     return (
-      <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-accent">
+      <p className="font-medium flex items-center gap-1.5 text-[11px] text-accent">
         <Check size={12} aria-hidden="true" />
         Saved to this device —{" "}
         <a href="/my-stuff" className="underline underline-offset-2">
@@ -50,7 +50,7 @@ export function SavePasswordPrompt({
 
   return (
     <div className="rounded-lg border border-border bg-paper-2/40 p-3">
-      <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.10em] text-muted-foreground">
+      <p className="font-medium flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <KeyRound size={12} className="text-accent" aria-hidden="true" />
         Save this password for next time?
       </p>
@@ -78,8 +78,8 @@ export function SavePasswordPrompt({
         </button>
       </div>
       {error && <p className="mt-1.5 text-[12px] text-destructive">{error}</p>}
-      <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-muted-foreground/85">
-        <span className="text-accent">§</span> Encrypted, stored on this device only. Don&apos;t
+      <p className="font-medium mt-1.5 text-[11px] text-muted-foreground/85">
+        Encrypted, stored on this device only. Don&apos;t
         put the password in the name.
       </p>
     </div>

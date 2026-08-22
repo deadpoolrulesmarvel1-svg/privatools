@@ -1,7 +1,7 @@
 /**
  * AboutPage — privacy manifesto for PrivaTools.
  *
- * Workshop styling: Fraunces hero, § section markers, signal-green stat tiles,
+ * Workshop styling: Fraunces hero, section markers, signal-green stat tiles,
  * corner-marked guarantee cards, release ledger. Plus:
  *   - File-lifecycle visualization (drop → vault → trash, with animated arrows)
  *   - Live "files deleted" ticker (counts up in real time, no network calls)
@@ -146,10 +146,10 @@ export default function AboutPage() {
         <header className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 items-center animate-fade-up">
           <div>
             <div className="flex items-center gap-3 mb-5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-accent/[0.05] font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+              <span className="font-medium inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-accent/[0.05] text-[11.5px] text-accent">
                 <Shield size={11} /> Privacy Manifesto
               </span>
-              <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">v1.5.0 · MIT</span>
+              <span className="font-medium text-[11.5px] text-muted-foreground">v1.5.0 · MIT</span>
               <LiveTicker />
             </div>
             <h1 className="font-display font-bold text-foreground tracking-[-0.025em] leading-[1.02] text-5xl sm:text-7xl"
@@ -190,7 +190,7 @@ export default function AboutPage() {
                      style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                     {s.value}
                   </p>
-                  <p className="mt-1.5 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{s.label}</p>
+                  <p className="font-medium mt-1.5 text-[9.5px] text-muted-foreground">{s.label}</p>
                 </div>
               );
             })}
@@ -199,7 +199,7 @@ export default function AboutPage() {
 
         {/* ── File lifecycle visualization ── */}
         <section className="animate-fade-up">
-          <p className="section-mark mb-2">§ 01 · File lifecycle</p>
+          <p className="section-mark mb-2"> 01 · File lifecycle</p>
           <h2 className="font-display text-[32px] sm:text-[36px] font-bold text-foreground tracking-[-0.025em] leading-tight"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             What happens to your file
@@ -212,7 +212,7 @@ export default function AboutPage() {
 
         {/* ── How we handle your files (3 guarantees) ── */}
         <section className="animate-fade-up">
-          <p className="section-mark mb-2">§ 02 · Architecture</p>
+          <p className="section-mark mb-2"> 02 · Architecture</p>
           <h2 className="font-display text-[32px] sm:text-[36px] font-bold text-foreground tracking-[-0.025em] leading-tight"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             Three guarantees, auditable in source
@@ -227,7 +227,7 @@ export default function AboutPage() {
               return (
                 <div key={step.step} className="relative rounded-2xl border border-border bg-card p-6 overflow-hidden hover:border-accent/40 transition-colors group flex flex-col">
                   <CornerMarks />
-                  <span className="absolute right-4 top-3 font-display font-bold text-[58px] text-accent/[0.08] leading-none select-none">§{step.step}</span>
+                  <span className="absolute right-4 top-3 font-display font-bold text-[58px] text-accent/[0.08] leading-none select-none">{step.step}</span>
                   <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center">
                     <Icon size={18} className="text-accent" />
                   </div>
@@ -237,7 +237,7 @@ export default function AboutPage() {
                   <a
                     href={`${REPO_URL}/blob/main/${step.src.path}`}
                     target="_blank" rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-accent transition-colors w-fit"
+                    className="font-medium mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-accent transition-colors w-fit"
                   >
                     <FileText size={11} /> View on GitHub · {step.src.label}
                     <ExternalLink size={9} className="opacity-70" />
@@ -281,7 +281,7 @@ export default function AboutPage() {
                       className="group/tool flex flex-col items-start gap-1 px-3 py-2.5 rounded-lg border border-border bg-card hover:border-accent/55 hover:bg-accent/[0.04] transition-colors"
                     >
                       <span className="font-display text-[13px] font-semibold text-foreground tracking-[-0.015em] group-hover/tool:text-accent transition-colors leading-tight">{t.name}</span>
-                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.10em] uppercase text-accent">
+                      <span className="font-medium inline-flex items-center gap-1 text-[10.5px] text-accent">
                         <Cpu size={9} /> {t.badge}
                       </span>
                     </Link>
@@ -294,7 +294,7 @@ export default function AboutPage() {
 
         {/* ── What we don't do ── */}
         <section className="animate-fade-up">
-          <p className="section-mark mb-2">§ 03 · Promises</p>
+          <p className="section-mark mb-2"> 03 · Promises</p>
           <h2 className="font-display text-[32px] sm:text-[36px] font-bold text-foreground tracking-[-0.025em] leading-tight"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             What we <span className="italic text-accent">don't</span> do
@@ -329,8 +329,8 @@ export default function AboutPage() {
 
         {/* ── By the numbers — workshop receipt ── */}
         <section className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-up">
-          <div className="px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-            <span><span className="text-accent">§</span> 04 · By the numbers</span>
+          <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+            <span>04 · By the numbers</span>
             <span>Updated daily</span>
           </div>
           <div className="p-7 sm:p-9 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-7">
@@ -349,7 +349,7 @@ export default function AboutPage() {
                    style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                   {s.value}
                 </p>
-                <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{s.label}</p>
+                <p className="font-medium text-[11px] text-muted-foreground">{s.label}</p>
               </div>
             ))}
           </div>
@@ -407,7 +407,7 @@ export default function AboutPage() {
 
         {/* ── FAQ accordion ── */}
         <section className="animate-fade-up" id="faq">
-          <p className="section-mark mb-2">§ 05 · FAQ</p>
+          <p className="section-mark mb-2"> 05 · FAQ</p>
           <h2 className="font-display text-[32px] sm:text-[36px] font-bold text-foreground tracking-[-0.025em] leading-tight"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
             Questions we get a lot
@@ -421,9 +421,9 @@ export default function AboutPage() {
               <a
                 key={item.slug}
                 href={`#faq-${item.slug}`}
-                className="inline-flex items-center h-7 px-2.5 rounded-full border border-border bg-card font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:border-accent/55 hover:text-accent hover:bg-accent/[0.04] transition-colors"
+                className="font-medium inline-flex items-center h-7 px-2.5 rounded-full border border-border bg-card text-[11px] text-muted-foreground hover:border-accent/55 hover:text-accent hover:bg-accent/[0.04] transition-colors"
               >
-                §{String(i + 1).padStart(2, "0")} · {item.q.split(" ").slice(0, 3).join(" ")}
+                {String(i + 1).padStart(2, "0")} · {item.q.split(" ").slice(0, 3).join(" ")}
               </a>
             ))}
           </nav>
@@ -431,7 +431,7 @@ export default function AboutPage() {
             {FAQ.map((item, i) => (
               <details key={item.slug} id={`faq-${item.slug}`} className="group scroll-mt-24">
                 <summary className="px-5 py-4 flex items-center gap-4 cursor-pointer list-none hover:bg-accent/[0.04] transition-colors">
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0">§{String(i + 1).padStart(2, "0")}</span>
+                  <span className="font-medium text-[11px] text-accent/70 shrink-0">{String(i + 1).padStart(2, "0")}</span>
                   <span className="flex-1 font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">{item.q}</span>
                   <ChevronDown size={14} className="text-muted-foreground shrink-0 transition-transform group-open:rotate-180" />
                 </summary>
@@ -447,7 +447,7 @@ export default function AboutPage() {
         <section className="animate-fade-up">
           <div className="flex items-end justify-between gap-3 flex-wrap mb-2">
             <div>
-              <p className="section-mark mb-2">§ 06 · Changelog</p>
+              <p className="section-mark mb-2"> 06 · Changelog</p>
               <h2 className="font-display text-[32px] sm:text-[36px] font-bold text-foreground tracking-[-0.025em] leading-tight"
                   style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                 Recent releases
@@ -456,7 +456,7 @@ export default function AboutPage() {
             <a
               href={`${REPO_URL}/releases`}
               target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.08em] uppercase text-muted-foreground hover:text-accent transition-colors"
+              className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
             >
               All releases on GitHub <ExternalLink size={11} />
             </a>
@@ -483,7 +483,7 @@ export default function AboutPage() {
                       {r.v}
                       <ExternalLink size={10} className="opacity-0 group-hover:opacity-70 transition-opacity" />
                     </p>
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground mt-0.5">{r.date}</p>
+                    <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{r.date}</p>
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">{r.title}</h3>
@@ -519,7 +519,7 @@ export default function AboutPage() {
                      style={{ fontVariationSettings: '"opsz" 144, "SOFT" 0, "wght" 500' }}>
                     Taiyeba &amp; team
                   </p>
-                  <p className="mt-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                  <p className="font-medium mt-1 text-[11.5px] text-muted-foreground">
                     Maintainers · since 2026
                   </p>
                 </div>
@@ -542,8 +542,8 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="p-7 sm:p-8 space-y-2">
-              <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground mb-3">
-                <span className="text-accent">§</span> Get in touch
+              <p className="font-medium text-[11.5px] text-muted-foreground mb-3">
+                Get in touch
               </p>
               <a href="mailto:hello@privatools.me"
                 className="flex items-center gap-3 rounded-xl border border-border bg-paper-2/30 px-4 py-3 hover:border-accent/45 hover:bg-accent/[0.04] transition-colors group">
@@ -551,7 +551,7 @@ export default function AboutPage() {
                   <Mail size={14} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Email</p>
+                  <p className="font-medium text-[11px] text-muted-foreground">Email</p>
                   <p className="text-[14px] font-medium text-foreground">hello@privatools.me</p>
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
@@ -562,12 +562,12 @@ export default function AboutPage() {
                   <Github size={14} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">GitHub issues</p>
+                  <p className="font-medium text-[11px] text-muted-foreground">GitHub issues</p>
                   <p className="text-[14px] font-medium text-foreground">deadpoolrulesmarvel1-svg/privatools</p>
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>
-              <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10.5px] tracking-[0.06em] uppercase">
+              <div className="font-medium mt-3 flex flex-wrap gap-2 text-[11.5px]">
                 <Link to="/privacy" className="text-accent hover:opacity-80">Privacy Policy</Link>
                 <span className="text-muted-foreground/40">·</span>
                 <Link to="/terms" className="text-accent hover:opacity-80">Terms</Link>
@@ -638,7 +638,7 @@ function LiveTicker() {
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground max-w-[280px]"
+      className="font-medium inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-card text-[11.5px] text-muted-foreground max-w-[280px]"
       title="Animated activity texture — we do not log uploads or file contents"
     >
       <span className="relative flex h-1.5 w-1.5 shrink-0">
@@ -678,8 +678,8 @@ function FileLifecycleDiagram() {
   ];
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-        <span><span className="text-accent">§</span> Lifecycle · 3 stations</span>
+      <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+        <span>Lifecycle · 3 stations</span>
         <span>
           <span className="hidden sm:inline">Sample · <span className="text-accent">invoice-q2.pdf</span> · </span>
           ≈ 500 ms total
@@ -706,8 +706,8 @@ function FileLifecycleDiagram() {
               : [node];
           })}
         </div>
-        <p className="mt-7 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground text-center">
-          <span className="text-accent">§</span> Hover any station for the technical detail · Reproducible with DevTools → Network
+        <p className="font-medium mt-7 text-[11.5px] text-muted-foreground text-center">
+          Hover any station for the technical detail · Reproducible with DevTools → Network
         </p>
       </div>
     </div>
@@ -728,11 +728,11 @@ function FlowStage({ Icon, title, detail, seconds, step, hoverHead, hoverBody }:
       </div>
       <p className="mt-3 font-display text-[18px] font-bold text-foreground tracking-[-0.02em]">{title}</p>
       <p className="mt-1 text-[12px] text-muted-foreground leading-snug">{detail}</p>
-      <p className="mt-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-accent">{seconds}</p>
+      <p className="font-medium mt-3 text-[11.5px] text-accent">{seconds}</p>
 
       {/* Hover-reveal technical detail — keyboard-focusable since the parent has the group class. */}
       <div className="mt-3 pt-3 border-t border-border/60 text-left max-h-0 opacity-0 group-hover:max-h-32 group-hover:opacity-100 group-focus-within:max-h-32 group-focus-within:opacity-100 transition-all duration-300">
-        <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">{hoverHead}</p>
+        <p className="font-medium text-[9.5px] text-accent">{hoverHead}</p>
         <p className="mt-1 text-[11.5px] text-muted-foreground leading-snug">{hoverBody}</p>
       </div>
     </div>
@@ -792,7 +792,7 @@ function SavingsCalculator() {
         <CornerMarks />
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-7 items-center">
           <div>
-            <p className="section-mark mb-2">§ Savings</p>
+            <p className="section-mark mb-2">Savings</p>
             <h2 className="font-display text-[26px] sm:text-[30px] font-bold text-foreground tracking-[-0.025em] leading-tight"
                 style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
               Pick the tools you'd otherwise pay for
@@ -805,23 +805,23 @@ function SavingsCalculator() {
                     style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                 ${annual}
               </span>
-              <span className="font-mono text-[12px] tracking-[0.06em] uppercase text-muted-foreground">/ yr</span>
+              <span className="font-medium text-[12px] text-muted-foreground">/ yr</span>
             </div>
-            <p className="mt-2 font-mono text-[11px] tracking-[0.04em] uppercase text-accent">
-              <span>§</span> ${monthly.toFixed(2)} / month · {selected.size} of {COMPETITOR_PRICING.length} selected
+            <p className="font-medium mt-2 text-[12px] text-accent">
+              ${monthly.toFixed(2)} / month · {selected.size} of {COMPETITOR_PRICING.length} selected
             </p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={selectAll}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-border bg-card font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-accent hover:border-accent/55 transition-colors"
+                className="font-medium inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-border bg-card text-[11px] text-muted-foreground hover:text-accent hover:border-accent/55 transition-colors"
               >
                 Select all
               </button>
               <button
                 type="button"
                 onClick={selectNone}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-border bg-card font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-accent hover:border-accent/55 transition-colors"
+                className="font-medium inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-border bg-card text-[11px] text-muted-foreground hover:text-accent hover:border-accent/55 transition-colors"
               >
                 Clear
               </button>
@@ -829,8 +829,8 @@ function SavingsCalculator() {
           </div>
           <div>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground flex items-center justify-between">
-                <span><span className="text-accent">§</span> Competitor pricing</span>
+              <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Competitor pricing</span>
                 <span>monthly · tap to toggle</span>
               </div>
               <div className="divide-y divide-border">

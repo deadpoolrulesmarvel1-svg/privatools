@@ -173,8 +173,8 @@ export function OnboardingTour() {
                     style={{ background: "hsl(var(--background))" }}
                 >
                     {/* Dateline header */}
-                    <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Welcome · {String(step + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}</span>
+                    <div className="font-medium px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Welcome · {String(step + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}</span>
                         <button
                             onClick={dismiss}
                             aria-label="Close tutorial"
@@ -231,7 +231,7 @@ export function OnboardingTour() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={dismiss}
-                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors px-2"
+                                className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors px-2"
                             >
                                 Skip
                             </button>

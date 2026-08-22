@@ -131,21 +131,21 @@ export function CollageUI() {
                     <LayoutGrid size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? `${files.length} image${files.length !== 1 ? "s" : ""} ready` : "Select images for collage"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPG · PNG · WebP · at least 2 images</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPG · PNG · WebP · at least 2 images</p>
             </div>
 
             {files.length > 0 && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Images ({files.length})
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Images ({files.length})
                         </div>
                         <div className="p-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                             {files.map((f, i) => (
                                 <div key={`${f.name}-${i}`} className="relative group rounded-lg border border-border bg-card overflow-hidden">
                                     <img src={previews[i]} alt={f.name} className="w-full aspect-square object-cover" />
-                                    <span className="absolute top-1 left-1 h-5 px-1.5 inline-flex items-center font-mono text-[9.5px] tracking-wider uppercase rounded bg-background/85 text-accent">
-                                        §{String(i + 1).padStart(2, "0")}
+                                    <span className="font-medium absolute top-1 left-1 h-5 px-1.5 inline-flex items-center text-[9.5px] tracking-wider rounded bg-background/85 text-accent">
+                                        {String(i + 1).padStart(2, "0")}
                                     </span>
                                     <button
                                         onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
@@ -160,14 +160,14 @@ export function CollageUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Layout</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Layout</span>
                             <button
                                 onClick={() => { setAutoColumns(true); setColumns(suggestColumns(files.length)); }}
                                 aria-pressed={autoColumns}
                                 aria-label="Auto-suggest column count"
                                 className={cn(
-                                    "inline-flex items-center gap-1 h-6 px-2 rounded font-mono text-[10px] tracking-[0.08em] uppercase transition-colors",
+                                    "font-medium inline-flex items-center gap-1 h-6 px-2 rounded text-[11px] transition-colors",
                                     autoColumns ? "bg-accent/15 text-accent" : "text-muted-foreground hover:text-accent"
                                 )}
                             >
@@ -176,7 +176,7 @@ export function CollageUI() {
                         </div>
                         <div className="p-4 grid grid-cols-3 gap-3">
                             <div>
-                                <label htmlFor="collage-cols" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Columns</label>
+                                <label htmlFor="collage-cols" className="font-medium text-[11px] text-muted-foreground">Columns</label>
                                 <input
                                     id="collage-cols"
                                     type="number" inputMode="numeric" min={1} max={10} value={columns}
@@ -185,7 +185,7 @@ export function CollageUI() {
                                 />
                             </div>
                             <div>
-                                <label htmlFor="collage-spacing" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Spacing (px)</label>
+                                <label htmlFor="collage-spacing" className="font-medium text-[11px] text-muted-foreground">Spacing (px)</label>
                                 <input
                                     id="collage-spacing"
                                     type="number" inputMode="numeric" min={0} max={50} value={spacing}
@@ -194,7 +194,7 @@ export function CollageUI() {
                                 />
                             </div>
                             <div>
-                                <label htmlFor="collage-bg" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Background</label>
+                                <label htmlFor="collage-bg" className="font-medium text-[11px] text-muted-foreground">Background</label>
                                 <div className="mt-1 flex items-center gap-2 rounded-md border border-border bg-card px-2 py-2">
                                     <input
                                         id="collage-bg"

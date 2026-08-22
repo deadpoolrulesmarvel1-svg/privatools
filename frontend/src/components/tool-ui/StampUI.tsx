@@ -142,8 +142,8 @@ export function StampUI() {
                 <>
                     {/* Stamp gallery */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Stamp text
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Stamp text
                         </div>
                         <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2">
                             {STAMP_PRESETS.map(s => {
@@ -164,7 +164,7 @@ export function StampUI() {
                         </div>
                         {stampType === "custom" && (
                             <div className="border-t border-border p-4 animate-fade-in">
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Custom text</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Custom text</label>
                                 <input
                                     type="text" value={customText} onChange={e => setCustomText(e.target.value)}
                                     placeholder="e.g. REVIEW COPY" maxLength={30}
@@ -176,8 +176,8 @@ export function StampUI() {
 
                     {/* Placement + preview */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Placement</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Placement</span>
                             <span className="text-accent">{opacity}% opacity</span>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-center">
@@ -201,7 +201,7 @@ export function StampUI() {
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Opacity</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">Opacity</label>
                                         <span className="font-mono text-[11px] text-accent">{opacity}%</span>
                                     </div>
                                     <input
@@ -212,7 +212,7 @@ export function StampUI() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Pages</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">Pages</label>
                                     <input
                                         value={pages} onChange={e => setPages(e.target.value)}
                                         placeholder="all · 1,3,5-8"
@@ -230,7 +230,7 @@ export function StampUI() {
                                 </div>
                                 <div
                                     className={cn(
-                                        "absolute inset-0 flex font-display font-extrabold tracking-[0.04em] uppercase pointer-events-none",
+                                        "absolute inset-0 flex font-display font-extrabold pointer-events-none",
                                         position === "top" && "items-start justify-center pt-3",
                                         position === "bottom" && "items-end justify-center pb-3",
                                         position === "center" && "items-center justify-center",

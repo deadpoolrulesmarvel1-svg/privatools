@@ -237,7 +237,7 @@ export function TranslatePdfUI() {
                                     {languageName(source)} → <span className="italic text-accent">{languageName(target)}</span>
                                 </h2>
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
-                                    <span className="text-accent">§</span> {pages.length} page{pages.length === 1 ? "" : "s"} · {words.toLocaleString()} words · translated on your device
+                                    {pages.length} page{pages.length === 1 ? "" : "s"} · {words.toLocaleString()} words · translated on your device
                                 </p>
                                 <div className="mt-5 flex flex-wrap gap-2">
                                     <button onClick={downloadText} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -269,13 +269,13 @@ export function TranslatePdfUI() {
                 )}
 
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Preview
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Preview
                     </div>
                     <div className="max-h-96 overflow-y-auto divide-y divide-border">
                         {pages.map(p => (
                             <div key={p.page} className="px-4 py-3">
-                                <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-1.5">
+                                <p className="font-medium text-[11px] text-muted-foreground mb-1.5">
                                     Page {p.page}
                                 </p>
                                 <p className="text-[13.5px] text-foreground leading-relaxed whitespace-pre-wrap">
@@ -307,12 +307,12 @@ export function TranslatePdfUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Languages
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Languages
                 </div>
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label htmlFor="tr-source" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">From</label>
+                        <label htmlFor="tr-source" className="font-medium text-[11px] text-muted-foreground">From</label>
                         <select
                             id="tr-source" value={source} onChange={e => onSourceChange(e.target.value)}
                             disabled={busy}
@@ -324,7 +324,7 @@ export function TranslatePdfUI() {
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="tr-target" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">To</label>
+                        <label htmlFor="tr-target" className="font-medium text-[11px] text-muted-foreground">To</label>
                         <select
                             id="tr-target" value={target} onChange={e => setTarget(e.target.value)}
                             disabled={busy || targets.length === 0}
@@ -346,7 +346,7 @@ export function TranslatePdfUI() {
 
             {busy && (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.05] p-4 space-y-2 animate-fade-in">
-                    <p className="font-mono text-[11px] tracking-[0.06em] uppercase text-accent">
+                    <p className="font-medium text-[12px] text-accent">
                         {phase === "extracting" && `Reading page ${pageProgress.done} of ${pageProgress.total || "?"}`}
                         {phase === "loading-model" && `Downloading model — ${modelPct}%`}
                         {phase === "translating" && `Translating ${chunkProgress.done} of ${chunkProgress.total}`}

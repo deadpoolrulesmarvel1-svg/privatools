@@ -142,8 +142,8 @@ export function AnnotateUI() {
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Annotations ({annotations.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Annotations ({annotations.length})</span>
                         <button onClick={addAnnotation} className="inline-flex items-center gap-1 text-accent hover:opacity-80 transition-opacity">
                             <Plus size={11} /> Add
                         </button>
@@ -163,8 +163,8 @@ export function AnnotateUI() {
                                         )}
                                     >
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
-                                                §{String(idx + 1).padStart(2, "0")}
+                                            <span className={cn("font-medium text-[11px]", isSel ? "text-accent" : "text-muted-foreground")}>
+                                                {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">{annType?.label}</span>
                                             <span className="h-3 w-3 rounded-sm border border-border" style={{ background: ann.color }} />
@@ -174,7 +174,7 @@ export function AnnotateUI() {
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             <div className="col-span-2 sm:col-span-1">
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Type</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Type</label>
                                                 <select
                                                     value={ann.type}
                                                     onClick={e => e.stopPropagation()}
@@ -189,7 +189,7 @@ export function AnnotateUI() {
                                                 </select>
                                             </div>
                                             <div className="col-span-2 sm:col-span-3">
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Color</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Color</label>
                                                 <div className="mt-0.5 flex items-center gap-1.5 flex-wrap" role="group" aria-label="Color">
                                                     {COLOR_PALETTE.map(c => (
                                                         <button
@@ -222,7 +222,7 @@ export function AnnotateUI() {
                                                 { f: "height", label: "H", min: 1 },
                                             ] as const).map((c, ci) => (
                                                 <div key={c.f}>
-                                                    <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                    <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(ann.id, el); else rowRefs.current.delete(ann.id); } : undefined}
                                                         type="number" inputMode="numeric" min={c.min}
@@ -274,8 +274,8 @@ export function AnnotateUI() {
                                 })}
                                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2 text-center">
-                                <span className="text-accent">§</span> Coords in points
+                            <p className="font-medium text-[11px] text-muted-foreground/85 mt-2 text-center">
+                                Coords in points
                             </p>
                         </div>
                     </div>

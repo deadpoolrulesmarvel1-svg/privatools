@@ -139,7 +139,7 @@ export function TextDiffUI() {
                             role="tab" type="button" aria-selected={view === "unified"}
                             onClick={() => setView("unified")}
                             className={cn(
-                                "inline-flex items-center gap-1 h-7 px-2.5 font-mono text-[10.5px] tracking-[0.08em] uppercase rounded transition-colors",
+                                "font-medium inline-flex items-center gap-1 h-7 px-2.5 text-[11.5px] rounded transition-colors",
                                 view === "unified" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -149,7 +149,7 @@ export function TextDiffUI() {
                             role="tab" type="button" aria-selected={view === "split"}
                             onClick={() => setView("split")}
                             className={cn(
-                                "inline-flex items-center gap-1 h-7 px-2.5 font-mono text-[10.5px] tracking-[0.08em] uppercase rounded transition-colors",
+                                "font-medium inline-flex items-center gap-1 h-7 px-2.5 text-[11.5px] rounded transition-colors",
                                 view === "split" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -161,7 +161,7 @@ export function TextDiffUI() {
                     <button
                         onClick={clear}
                         aria-label="Clear diff"
-                        className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                        className="font-medium ml-auto inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <RotateCcw size={11} /> Clear
                     </button>
@@ -171,8 +171,8 @@ export function TextDiffUI() {
             {/* Diff result */}
             {diff && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center gap-4 font-mono text-[10.5px] tracking-[0.10em] uppercase">
-                        <span className="text-muted-foreground"><span className="text-accent">§</span> Diff</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center gap-4 text-[11.5px]">
+                        <span className="text-muted-foreground">Diff</span>
                         <span className="text-accent inline-flex items-center gap-1">
                             <Plus size={11} /> {stats.added}
                         </span>
@@ -280,8 +280,8 @@ function DiffEditor({
     const lines = value.split("\n").length;
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span><span className="text-accent">§</span> {label}</span>
+            <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                <span>{label}</span>
                 {value && <span>{lines} line{lines !== 1 ? "s" : ""}</span>}
             </div>
             <textarea

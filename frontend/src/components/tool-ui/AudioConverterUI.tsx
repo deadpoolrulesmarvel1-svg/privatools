@@ -104,8 +104,8 @@ export function AudioConverterUI() {
                 <>
                     {objectUrl && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Preview · original audio
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Preview · original audio
                             </div>
                             <div className="p-3">
                                 <audio src={objectUrl} controls className="w-full" aria-label={`Preview ${file.name}`} />
@@ -113,8 +113,8 @@ export function AudioConverterUI() {
                         </div>
                     )}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Output format
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Output format
                         </div>
                         <div className="p-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
                             {FORMATS.map(f => {
@@ -129,7 +129,7 @@ export function AudioConverterUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-bold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{f.label}</p>
-                                        <p className="font-mono text-[9.5px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">{f.desc}</p>
+                                        <p className="font-medium text-[9.5px] text-muted-foreground/85 mt-0.5">{f.desc}</p>
                                     </button>
                                 );
                             })}
@@ -137,8 +137,8 @@ export function AudioConverterUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Bitrate</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Bitrate</span>
                             {isLossless && <span className="text-muted-foreground/50 normal-case tracking-normal">— lossless, bitrate unused</span>}
                         </div>
                         <div className="p-3 grid grid-cols-5 gap-2">
@@ -150,7 +150,7 @@ export function AudioConverterUI() {
                                         onClick={() => setBitrate(b)}
                                         disabled={isLossless}
                                         className={cn(
-                                            "rounded-lg border py-2.5 font-mono text-[11px] tracking-[0.06em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+                                            "font-medium rounded-lg border py-2.5 text-[12px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
                                             active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                         )}
                                     >

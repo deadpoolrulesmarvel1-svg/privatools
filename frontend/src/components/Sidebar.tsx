@@ -333,8 +333,8 @@ function SectionLabel({ label, icon: Icon, count }: { label: string; icon?: type
     return (
         <div className="px-2.5 flex items-center gap-1.5">
             {Icon && <Icon size={10} className="text-muted-foreground/85" />}
-            <span className="font-mono text-[10px] font-medium tracking-[0.12em] uppercase text-muted-foreground/85">
-                <span className="text-accent">§</span> {label}
+            <span className="text-[11px] font-medium text-muted-foreground/85">
+                {label}
             </span>
             {typeof count === "number" && (
                 <span className="ml-auto font-mono text-[10px] text-muted-foreground/70">{count}</span>

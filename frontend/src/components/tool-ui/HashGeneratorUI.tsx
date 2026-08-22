@@ -124,7 +124,7 @@ export function HashGeneratorUI() {
             {mode === "text" ? (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                     <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Input text</span>
+                        <span className="font-medium text-[11.5px] text-muted-foreground">Input text</span>
                         {input && (
                             <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85">{input.length} char{input.length !== 1 ? "s" : ""}</span>
                         )}
@@ -150,7 +150,7 @@ export function HashGeneratorUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                             {(file.size / 1024).toFixed(1)} KB
                         </p>
                     </div>
@@ -169,7 +169,7 @@ export function HashGeneratorUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop any file</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Computed entirely in your browser</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Computed entirely in your browser</p>
                     <input
                         type="file"
                         className="hidden"
@@ -195,18 +195,18 @@ export function HashGeneratorUI() {
             {/* Results */}
             {results.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Digests · all computed in browser
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center gap-2 text-[11.5px] text-muted-foreground">
+                        Digests · all computed in browser
                     </div>
                     <div className="divide-y divide-border">
                         {results.map(r => (
                             <div key={r.algo} className="flex items-start gap-3 p-4">
-                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent w-16 shrink-0 mt-0.5">{r.algo}</span>
+                                <span className="font-medium text-[11px] text-accent w-16 shrink-0 mt-0.5">{r.algo}</span>
                                 <p className="flex-1 font-mono text-[12px] text-foreground break-all leading-relaxed select-all">{r.value}</p>
                                 <button
                                     onClick={() => copy(r.value)}
                                     className={cn(
-                                        "shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10.5px] tracking-[0.06em] uppercase transition-colors",
+                                        "font-medium shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11.5px] transition-colors",
                                         copied === r.value && "animate-copy-flash"
                                     )}
                                 >

@@ -32,28 +32,28 @@ interface Props {
 function StatusBadge({ status, error }: { status: FileEntry["status"]; error?: string }) {
     if (status === "queued") {
         return (
-            <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-muted-foreground/85">
+            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-muted-foreground/85">
                 <Clock size={10} /> Queued
             </span>
         );
     }
     if (status === "running") {
         return (
-            <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-accent">
+            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent">
                 <Loader2 size={10} className="animate-spin" /> Running
             </span>
         );
     }
     if (status === "done") {
         return (
-            <span className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-accent">
+            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent">
                 <CheckCircle2 size={10} /> Done
             </span>
         );
     }
     return (
         <span
-            className="inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.08em] uppercase text-destructive"
+            className="font-medium inline-flex items-center gap-1 text-[9.5px] text-destructive"
             title={error || ""}
         >
             <AlertCircle size={10} /> Failed
@@ -101,8 +101,8 @@ export function MultiFileQueue({
         <div className="space-y-2">
             {/* Header row: count, total size, Clear all */}
             <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> {entries.length} file{entries.length === 1 ? "" : "s"} ·{" "}
+                <span className="font-medium text-[11.5px] text-muted-foreground">
+                    {entries.length} file{entries.length === 1 ? "" : "s"} ·{" "}
                     {formatFileSize(totalSize)}
                     {doneCount > 0 && <> · <span className="text-accent">{doneCount} done</span></>}
                     {failedCount > 0 && <> · <span className="text-destructive">{failedCount} failed</span></>}
@@ -112,7 +112,7 @@ export function MultiFileQueue({
                         <button
                             type="button"
                             onClick={onClearAll}
-                            className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground hover:text-destructive transition-colors"
+                            className="font-medium text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                         >
                             Clear all
                         </button>

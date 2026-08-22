@@ -89,7 +89,7 @@ export default function LandingPage() {
                     <span className="inline-flex items-center gap-1.5">
                       <Check size={11} className="text-accent shrink-0" />
                       <Icon size={11} className="text-accent/80 shrink-0" />
-                      <span className="uppercase tracking-[0.06em]">{s.label}</span>
+                      <span className="">{s.label}</span>
                       <span className="text-muted-foreground/60 normal-case">· {s.sub}</span>
                     </span>
                   );
@@ -112,8 +112,8 @@ export default function LandingPage() {
             <div className="space-y-6">
               {/* By the numbers — derived from the catalog */}
               <div className="editorial-insert p-6">
-                <h2 className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent font-semibold mb-4 inline-flex items-center gap-1.5">
-                  <span aria-hidden="true">§</span> By the numbers
+                <h2 className="text-[11.5px] text-accent font-semibold mb-4 inline-flex items-center gap-1.5">
+                  <span aria-hidden="true"></span> By the numbers
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
                   {[
@@ -124,11 +124,11 @@ export default function LandingPage() {
                   ].map(stat => (
                     <div key={stat.label}>
                       <p className="font-display text-3xl font-bold text-foreground nums-tabular">{stat.num}</p>
-                      <p className="font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground mt-1 uppercase">{stat.label}</p>
+                      <p className="font-medium text-[11.5px] text-muted-foreground mt-1">{stat.label}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 pt-4 border-t border-border font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                <p className="font-medium mt-4 pt-4 border-t border-border text-[11px] text-muted-foreground/85">
                   {PDF_COUNT} PDF · {NONPDF_COUNT} non-PDF
                 </p>
               </div>
@@ -269,7 +269,7 @@ export default function LandingPage() {
           >
             <Github size={14} /> Star on GitHub
           </a>
-          <div className="mt-6 flex items-center justify-center gap-6 font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground uppercase">
+          <div className="font-medium mt-6 flex items-center justify-center gap-6 text-[11.5px] text-muted-foreground">
             <span>MIT License</span>
             <span aria-hidden="true">·</span>
             <span>PRs Welcome</span>

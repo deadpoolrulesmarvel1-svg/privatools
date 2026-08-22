@@ -109,8 +109,8 @@ export function QrCodeUI() {
                 <div className="space-y-4">
                     {/* URL / data input — code-editor styled */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Data</span>
+                        <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Data</span>
                             {data && <span>{data.length} char{data.length !== 1 ? "s" : ""}</span>}
                         </div>
                         <div className="flex items-center gap-2 px-3 py-2">
@@ -127,14 +127,14 @@ export function QrCodeUI() {
 
                     {/* Options panel */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Options
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Options
                         </div>
                         <div className="p-5 space-y-5">
                             {/* Size */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Size</label>
+                                    <label className="font-medium text-[11.5px] text-muted-foreground">Size</label>
                                     <span className="font-mono text-[12px] text-accent tabular-nums">{size}px</span>
                                 </div>
                                 <input
@@ -150,7 +150,7 @@ export function QrCodeUI() {
 
                             {/* Format */}
                             <div>
-                                <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Format</label>
+                                <label className="font-medium text-[11.5px] text-muted-foreground">Format</label>
                                 <div role="tablist" aria-label="Format" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5 mt-1.5 ml-3">
                                     {(["png", "pdf"] as const).map(f => {
                                         const active = format === f;
@@ -161,7 +161,7 @@ export function QrCodeUI() {
                                                 aria-selected={active}
                                                 onClick={() => setFormat(f)}
                                                 className={cn(
-                                                    "inline-flex items-center h-8 px-3 font-mono text-[11px] tracking-[0.10em] uppercase font-medium rounded transition-colors",
+                                                    "inline-flex items-center h-8 px-3 text-[12px] font-medium rounded transition-colors",
                                                     active ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                                                 )}
                                             >
@@ -174,7 +174,7 @@ export function QrCodeUI() {
 
                             {/* Colours */}
                             <div>
-                                <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Colours</label>
+                                <label className="font-medium text-[11.5px] text-muted-foreground">Colours</label>
                                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                                     <div className="flex items-center gap-2 rounded-md border border-border bg-card px-2 py-2">
                                         <input
@@ -184,7 +184,7 @@ export function QrCodeUI() {
                                             className="h-7 w-9 rounded border border-border cursor-pointer"
                                         />
                                         <div className="min-w-0">
-                                            <p className="font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground">FG</p>
+                                            <p className="font-medium text-[9.5px] text-muted-foreground">FG</p>
                                             <p className="font-mono text-[11px] text-foreground truncate">{fgColor.toUpperCase()}</p>
                                         </div>
                                     </div>
@@ -196,7 +196,7 @@ export function QrCodeUI() {
                                             className="h-7 w-9 rounded border border-border cursor-pointer"
                                         />
                                         <div className="min-w-0">
-                                            <p className="font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground">BG</p>
+                                            <p className="font-medium text-[9.5px] text-muted-foreground">BG</p>
                                             <p className="font-mono text-[11px] text-foreground truncate">{bgColor.toUpperCase()}</p>
                                         </div>
                                     </div>
@@ -205,7 +205,7 @@ export function QrCodeUI() {
 
                             {/* Centre logo (optional) */}
                             <div>
-                                <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Centre logo (optional)</label>
+                                <label className="font-medium text-[11.5px] text-muted-foreground">Centre logo (optional)</label>
                                 <input
                                     ref={logoInputRef}
                                     type="file" accept=".png,.jpg,.jpeg,.svg,.webp"
@@ -240,15 +240,15 @@ export function QrCodeUI() {
 
                 {/* Preview placeholder */}
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-3 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Preview
+                    <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Preview
                     </div>
                     <div className="relative aspect-square flex items-center justify-center bg-paper-2/30">
                         <CornerMarks />
                         {data ? (
                             <div className="text-center">
                                 <QrCode size={64} className="mx-auto text-foreground/40" strokeWidth={1.25} />
-                                <p className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground mt-3">
+                                <p className="font-medium text-[11px] text-muted-foreground mt-3">
                                     {size}×{size}px · {format.toUpperCase()}
                                 </p>
                                 <p className="font-mono text-[9.5px] text-muted-foreground/70 mt-1 max-w-[180px] mx-auto truncate">
@@ -258,7 +258,7 @@ export function QrCodeUI() {
                         ) : (
                             <div className="text-center">
                                 <QrCode size={48} className="mx-auto text-muted-foreground/30" strokeWidth={1.25} />
-                                <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground/85 mt-3">
+                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-3">
                                     Enter data to preview
                                 </p>
                             </div>

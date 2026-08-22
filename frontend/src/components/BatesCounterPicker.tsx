@@ -57,15 +57,15 @@ export function BatesCounterPicker({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground flex items-center justify-between">
+      <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground flex items-center justify-between">
         <span>
-          <span className="text-accent">§</span> Matter
+          Matter
         </span>
         {!creating && (
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.10em] text-accent hover:underline"
+            className="inline-flex items-center gap-1 text-[10.5px] text-accent hover:underline"
           >
             <Plus size={11} aria-hidden="true" /> New matter
           </button>
@@ -110,8 +110,8 @@ export function BatesCounterPicker({
         )}
 
         {list.length === 0 && !creating && (
-          <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85">
-            <span className="text-accent">§</span> Create a matter to keep numbering continuous
+          <p className="font-medium text-[11.5px] text-muted-foreground/85">
+            Create a matter to keep numbering continuous
             across documents
           </p>
         )}

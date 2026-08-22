@@ -170,8 +170,8 @@ export function ShapesUI() {
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Shapes ({shapes.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Shapes ({shapes.length})</span>
                         <button onClick={addShape} className="inline-flex items-center gap-1 text-accent hover:opacity-80 transition-opacity">
                             <Plus size={11} /> Add
                         </button>
@@ -191,8 +191,8 @@ export function ShapesUI() {
                                         )}
                                     >
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
-                                                §{String(idx + 1).padStart(2, "0")}
+                                            <span className={cn("font-medium text-[11px]", isSel ? "text-accent" : "text-muted-foreground")}>
+                                                {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">{SHAPE_TYPES.find(t => t.value === s.type)?.label}</span>
                                             <span className="h-3 w-3 rounded-sm border border-border" style={{ background: s.color }} />
@@ -202,7 +202,7 @@ export function ShapesUI() {
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             <div>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Type</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Type</label>
                                                 <select
                                                     value={s.type}
                                                     onClick={e => e.stopPropagation()}
@@ -213,7 +213,7 @@ export function ShapesUI() {
                                                 </select>
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Stroke</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Stroke</label>
                                                 <div className="mt-0.5 flex items-center gap-1.5 flex-wrap" role="group" aria-label="Stroke color">
                                                     {STROKE_PALETTE.map(c => (
                                                         <button
@@ -240,7 +240,7 @@ export function ShapesUI() {
                                             </div>
                                             {!isLineish && (
                                                 <div>
-                                                    <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Fill</label>
+                                                    <label className="font-medium text-[10.5px] text-muted-foreground">Fill</label>
                                                     <input
                                                         type="color" value={s.fill || "#ffffff"}
                                                         onClick={e => e.stopPropagation()}
@@ -250,7 +250,7 @@ export function ShapesUI() {
                                                 </div>
                                             )}
                                             <div>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Pg</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Pg</label>
                                                 <input
                                                     ref={(el) => { if (el) rowRefs.current.set(s.id, el); else rowRefs.current.delete(s.id); }}
                                                     type="number" inputMode="numeric" min={1} value={s.page}
@@ -260,7 +260,7 @@ export function ShapesUI() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">X</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">X</label>
                                                 <input
                                                     type="number" inputMode="numeric" min={0} value={s.x}
                                                     onClick={e => e.stopPropagation()}
@@ -269,7 +269,7 @@ export function ShapesUI() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Y</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Y</label>
                                                 <input
                                                     type="number" inputMode="numeric" min={0} value={s.y}
                                                     onClick={e => e.stopPropagation()}
@@ -280,7 +280,7 @@ export function ShapesUI() {
                                             {isLineish ? (
                                                 <>
                                                     <div>
-                                                        <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">X2</label>
+                                                        <label className="font-medium text-[10.5px] text-muted-foreground">X2</label>
                                                         <input
                                                             type="number" inputMode="numeric" min={0} value={s.x2}
                                                             onClick={e => e.stopPropagation()}
@@ -289,7 +289,7 @@ export function ShapesUI() {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Y2</label>
+                                                        <label className="font-medium text-[10.5px] text-muted-foreground">Y2</label>
                                                         <input
                                                             type="number" inputMode="numeric" min={0} value={s.y2}
                                                             onClick={e => e.stopPropagation()}
@@ -301,7 +301,7 @@ export function ShapesUI() {
                                             ) : (
                                                 <>
                                                     <div>
-                                                        <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">W</label>
+                                                        <label className="font-medium text-[10.5px] text-muted-foreground">W</label>
                                                         <input
                                                             type="number" inputMode="numeric" min={1} value={s.width}
                                                             onClick={e => e.stopPropagation()}
@@ -310,7 +310,7 @@ export function ShapesUI() {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">H</label>
+                                                        <label className="font-medium text-[10.5px] text-muted-foreground">H</label>
                                                         <input
                                                             type="number" inputMode="numeric" min={1} value={s.height}
                                                             onClick={e => e.stopPropagation()}
@@ -321,7 +321,7 @@ export function ShapesUI() {
                                                 </>
                                             )}
                                             <div>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">Stroke W</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">Stroke W</label>
                                                 <input
                                                     type="number" inputMode="numeric" min={0.5} max={10} step={0.5} value={s.stroke_width}
                                                     onClick={e => e.stopPropagation()}
@@ -343,8 +343,8 @@ export function ShapesUI() {
                                 </svg>
                                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2 text-center">
-                                <span className="text-accent">§</span> Coords in points
+                            <p className="font-medium text-[11px] text-muted-foreground/85 mt-2 text-center">
+                                Coords in points
                             </p>
                         </div>
                     </div>

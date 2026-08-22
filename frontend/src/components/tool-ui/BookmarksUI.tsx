@@ -139,7 +139,7 @@ export function BookmarksUI() {
                         <Bookmark size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Select a PDF to bookmark</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Build a table of contents · point to page numbers</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Build a table of contents · point to page numbers</p>
                 </div>
             ) : (
                 <>
@@ -149,7 +149,7 @@ export function BookmarksUI() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
                         <button onClick={() => setFile(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                             <X size={13} />
@@ -157,8 +157,8 @@ export function BookmarksUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Bookmarks</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Bookmarks</span>
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => setMode("rows")}
@@ -225,11 +225,11 @@ export function BookmarksUI() {
                                     )}
                                 />
                                 {jsonValid ? (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                                        <span className="text-accent">§</span> Array of <span className="text-foreground">{`{ title, page }`}</span> objects
+                                    <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                                        Array of <span className="text-foreground">{`{ title, page }`}</span> objects
                                     </p>
                                 ) : (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive mt-2">
+                                    <p className="font-medium text-[11px] text-destructive mt-2">
                                         Invalid JSON — expected an array of <span className="text-foreground">{`{ title: string, page: number }`}</span>
                                     </p>
                                 )}

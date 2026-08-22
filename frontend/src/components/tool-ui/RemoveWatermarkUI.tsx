@@ -137,7 +137,7 @@ export function RemoveWatermarkUI() {
                             watermark{chosen.size !== 1 && "s"} removed
                         </h2>
                         <p className="mt-1 font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
-                            <span className="text-accent">§</span> The rest of the page is untouched
+                            The rest of the page is untouched
                         </p>
                         <button onClick={reset} className="mt-5 inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-4 text-[13px] font-medium hover:bg-secondary/60">
                             <RotateCcw size={12} /> Clean another PDF
@@ -165,7 +165,7 @@ export function RemoveWatermarkUI() {
                 >
                     <Eraser size={22} className="mx-auto text-accent" />
                     <p className="mt-3 font-display text-[19px] font-semibold">Drop a watermarked PDF</p>
-                    <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-muted-foreground">
+                    <p className="font-medium mt-1 text-[11.5px] text-muted-foreground">
                         We show you what we found before removing anything · max {MAX_FILE_SIZE_LABEL}
                     </p>
                     <input ref={inputRef} type="file" accept=".pdf" className="hidden"
@@ -180,7 +180,7 @@ export function RemoveWatermarkUI() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-[14px] font-medium">{file.name}</p>
-                        <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.06em] text-muted-foreground">
+                        <p className="font-medium mt-0.5 text-[11.5px] text-muted-foreground">
                             {formatFileSize(file.size)}
                         </p>
                     </div>
@@ -207,8 +207,8 @@ export function RemoveWatermarkUI() {
 
             {phase !== "detecting" && result && result.candidates.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-border bg-card">
-                    <div className="border-b border-border bg-paper-2/40 px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.10em] text-muted-foreground">
-                        <span className="text-accent">§</span> Found {result.candidates.length} — tick what to remove
+                    <div className="font-medium border-b border-border bg-paper-2/40 px-4 py-2 text-[11.5px] text-muted-foreground">
+                        Found {result.candidates.length} — tick what to remove
                     </div>
                     <div className="divide-y divide-border">
                         {result.candidates.map(c => (
@@ -219,14 +219,14 @@ export function RemoveWatermarkUI() {
                                     <span className="block text-[14px]">{c.label}</span>
                                     <span className="mt-1 flex flex-wrap items-center gap-2">
                                         <span className={cn(
-                                            "rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em]",
+                                            "font-medium rounded px-1.5 py-0.5 text-[11px]",
                                             c.removal === "lossless"
                                                 ? "bg-accent/10 text-accent"
                                                 : "bg-destructive/10 text-destructive",
                                         )}>
                                             {c.removal === "lossless" ? "Lossless" : "Removes overlapping text"}
                                         </span>
-                                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+                                        <span className="font-medium text-[11px] text-muted-foreground">
                                             {Math.round(c.confidence * 100)}% confident
                                         </span>
                                     </span>
@@ -235,7 +235,7 @@ export function RemoveWatermarkUI() {
                         ))}
                     </div>
                     <div className="border-t border-border px-4 py-2.5">
-                        <label className="flex cursor-pointer items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.06em] text-muted-foreground">
+                        <label className="font-medium flex cursor-pointer items-center gap-2 text-[11.5px] text-muted-foreground">
                             <input type="checkbox" checked={autoSelectConfident}
                                 onChange={e => setAutoSelectConfident(e.target.checked)}
                                 className="h-3.5 w-3.5 accent-current text-accent" />

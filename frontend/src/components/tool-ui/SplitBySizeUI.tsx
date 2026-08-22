@@ -69,7 +69,7 @@ export function SplitBySizeUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             Parts up to <span className="italic text-accent">{maxSizeMb} MB</span>
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                             ZIP archive downloaded
                         </p>
                         <button
@@ -96,8 +96,8 @@ export function SplitBySizeUI() {
             />
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Max part size</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Max part size</span>
                     <span className="text-accent">{maxSizeMb} MB</span>
                 </div>
                 <div className="p-4 space-y-3">
@@ -117,7 +117,7 @@ export function SplitBySizeUI() {
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground tracking-wider">MB</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85">Quick</span>
+                        <span className="font-medium text-[11px] text-muted-foreground/85">Quick</span>
                         {PRESETS.map(p => (
                             <button
                                 key={p}

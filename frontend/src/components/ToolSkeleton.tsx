@@ -20,8 +20,8 @@ export function ToolSkeleton() {
       aria-label="Loading tool"
     >
       <div className="mx-auto max-w-3xl space-y-5">
-        <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
-          <span className="text-accent">§</span> Loading tool…
+        <p className="font-medium text-[11px] text-muted-foreground">
+          Loading tool…
         </p>
 
         <div className="space-y-3">

@@ -135,7 +135,7 @@ export function MultiFileUI({
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length === 0 ? `Add ${fileLabel}` : "Add more"}
                 </p>
-                <p className="mt-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium mt-1 text-[11.5px] text-muted-foreground">
                     Drag &amp; drop, or click — multi-select OK
                 </p>
                 <input
@@ -152,11 +152,11 @@ export function MultiFileUI({
             {files.length > 0 && (
                 <>
                     <div className="flex items-center justify-between px-1">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> {files.length} {fileLabel} · {formatFileSize(totalSize)} total
+                        <span className="font-medium text-[11.5px] text-muted-foreground">
+                            {files.length} {fileLabel} · {formatFileSize(totalSize)} total
                         </span>
                         {ordered && (
-                            <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85">
+                            <span className="font-medium text-[11px] text-muted-foreground/85">
                                 Order matters — drag or use ↑↓
                             </span>
                         )}
@@ -225,7 +225,7 @@ export function MultiFileUI({
 
             {/* Action */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     {files.length === 0 ? "No files added" : `${files.length} file${files.length === 1 ? "" : "s"} ready`}
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">

@@ -126,15 +126,15 @@ export function PdfPageCounterUI() {
             {results && (
                 <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
                     <div className="px-5 pt-5 pb-3 flex items-baseline justify-between">
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-accent">Total pages</p>
+                        <p className="text-[11px] font-semibold text-accent">Total pages</p>
                         <p className="text-3xl font-bold tracking-tight text-foreground tabular-nums">{total.toLocaleString()}</p>
                     </div>
                     <div className="border-t border-accent/15">
                         <table className="w-full text-[13px]">
                             <thead className="bg-card/40">
                                 <tr>
-                                    <th className="text-left px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">File</th>
-                                    <th className="text-right px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pages</th>
+                                    <th className="text-left px-5 py-2 text-[11px] font-semibold text-muted-foreground">File</th>
+                                    <th className="text-right px-5 py-2 text-[11px] font-semibold text-muted-foreground">Pages</th>
                                 </tr>
                             </thead>
                             <tbody>

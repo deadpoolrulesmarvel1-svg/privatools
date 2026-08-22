@@ -149,7 +149,7 @@ export default function NotFound() {
 
         {/* Path echo — shows the user the URL the router saw */}
         <p className="font-mono-meta text-[11px] text-muted-foreground/85 break-all max-w-md mx-auto mb-6">
-          <span className="text-accent">§</span> {location.pathname}
+          {location.pathname}
         </p>
 
         <p className="font-serif-body text-base text-muted-foreground max-w-md mx-auto leading-relaxed mb-10">
@@ -185,8 +185,8 @@ export default function NotFound() {
         {/* Suggestions */}
         {sugg.length > 0 && (
           <section className="mt-14 text-left">
-            <p className="font-mono-meta text-[11px] uppercase tracking-widest text-muted-foreground mb-4 text-center">
-              <span className="text-accent">§</span>{" "}
+            <p className="font-mono-meta text-[12px] tracking-widest text-muted-foreground mb-4 text-center">
+              {" "}
               {isFallback ? "Try one of our most popular tools" : "Did you mean"}
             </p>
             <ul className="grid sm:grid-cols-2 gap-2 max-w-xl mx-auto">
@@ -219,7 +219,7 @@ export default function NotFound() {
 
         {/* Report broken link */}
         <div className="mt-12 pt-8 border-t border-border max-w-md mx-auto">
-          <p className="font-mono-meta text-[10.5px] uppercase tracking-widest text-muted-foreground mb-2">
+          <p className="font-mono-meta text-[11.5px] tracking-widest text-muted-foreground mb-2">
             Followed a link here?
           </p>
           <a
@@ -232,7 +232,7 @@ export default function NotFound() {
           </a>
         </div>
 
-        <p className="mt-12 font-mono-meta text-[10px] text-muted-foreground/85 uppercase tracking-widest">
+        <p className="mt-12 font-mono-meta text-[11px] text-muted-foreground/85 tracking-widest">
           PrivaTools · {TOTAL}+ Privacy-First File Tools
         </p>
       </div>

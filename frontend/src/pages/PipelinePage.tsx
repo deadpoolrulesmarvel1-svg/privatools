@@ -522,11 +522,11 @@ export default function PipelinePage() {
                 <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-accent">§ Pipeline</span>
-                            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{steps.length} step{steps.length !== 1 ? "s" : ""}</span>
+                            <span className="font-medium text-[11px] text-accent">Pipeline</span>
+                            <span className="font-medium text-[11px] text-muted-foreground">{steps.length} step{steps.length !== 1 ? "s" : ""}</span>
                             {/* Auto-saved indicator — quiet confidence cue */}
                             {steps.length > 0 && !processing && (
-                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/70" title="Saved locally, restored on reload">
+                                <span className="font-medium text-[11px] text-muted-foreground/70" title="Saved locally, restored on reload">
                                     · auto-saved
                                 </span>
                             )}
@@ -772,7 +772,7 @@ export default function PipelinePage() {
                                                     {step.tool.name}
                                                 </p>
                                                 <p className={cn(
-                                                    "font-mono text-[10.5px] tracking-[0.06em] uppercase truncate",
+                                                    "font-medium text-[11.5px] truncate",
                                                     hasError ? "text-destructive" : "text-muted-foreground"
                                                 )}>
                                                     {isRunning ? "Running…" :
@@ -791,7 +791,7 @@ export default function PipelinePage() {
                                                     {hasError && file && (
                                                         <button
                                                             onClick={() => runPipeline(i)}
-                                                            className="h-7 px-2 inline-flex items-center gap-1 rounded text-[10.5px] font-semibold uppercase tracking-wider text-destructive hover:bg-destructive/10"
+                                                            className="h-7 px-2 inline-flex items-center gap-1 rounded text-[10.5px] font-semibold text-destructive hover:bg-destructive/10"
                                                             title={`Retry from step ${i + 1}`}
                                                         >
                                                             <RotateCw size={10} /> Retry
@@ -912,7 +912,7 @@ export default function PipelinePage() {
                                         <div className="mt-6">
                                             <div className="flex items-center gap-2 mb-2 px-1">
                                                 <Bookmark size={11} className="text-accent" />
-                                                <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">Your saved pipelines</span>
+                                                <span className="text-[11px] font-semibold text-muted-foreground">Your saved pipelines</span>
                                             </div>
                                             <div className="space-y-1.5">
                                                 {savedPipelines.map(sp => (
@@ -982,12 +982,12 @@ export default function PipelinePage() {
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <Bookmark size={11} className="text-accent" fill="currentColor" />
-                                    <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">Saved · {savedPipelines.length}</span>
+                                    <span className="text-[11px] font-semibold text-muted-foreground">Saved · {savedPipelines.length}</span>
                                 </div>
                                 {steps.length > 0 && (
                                     <button
                                         onClick={saveCurrentPipeline}
-                                        className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent hover:underline"
+                                        className="font-medium text-[9.5px] text-accent hover:underline"
                                         title="Save current pipeline"
                                     >
                                         + Save
@@ -1002,7 +1002,7 @@ export default function PipelinePage() {
                                             className="flex-1 text-left px-2 py-1.5 rounded text-[12px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 truncate transition-colors"
                                             title={`${sp.slugs.length} steps`}
                                         >
-                                            <span className="text-accent mr-1.5">§</span>{sp.name}
+                                            <span className="text-accent mr-1.5"></span>{sp.name}
                                         </button>
                                         <button
                                             onClick={() => deleteSavedPipeline(sp.name)}
@@ -1021,7 +1021,7 @@ export default function PipelinePage() {
                     <div className="px-4 pt-4 pb-2">
                         <div className="flex items-center gap-2 mb-3">
                             <Sparkles size={11} className="text-accent" />
-                            <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">Quick recipes</span>
+                            <span className="text-[11px] font-semibold text-muted-foreground">Quick recipes</span>
                         </div>
                         <div className="space-y-1.5">
                             {RECIPES.map(r => (
@@ -1055,7 +1055,7 @@ export default function PipelinePage() {
                     <div className="px-4 pt-4 pb-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Layers size={11} className="text-accent" />
-                            <span className="font-mono text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">All tools · {pipelineTools.length}</span>
+                            <span className="text-[11px] font-semibold text-muted-foreground">All tools · {pipelineTools.length}</span>
                         </div>
                         <div className="relative mb-3">
                             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -1093,8 +1093,8 @@ export default function PipelinePage() {
                                     if (groupTools.length === 0) return null;
                                     return (
                                         <div key={group.id}>
-                                            <p className="px-2 mb-1 font-mono text-[9.5px] font-medium tracking-[0.10em] uppercase text-muted-foreground/85">
-                                                <span className="text-accent">§</span> {group.label} · {groupTools.length}
+                                            <p className="px-2 mb-1 text-[9.5px] font-medium text-muted-foreground/85">
+                                                {group.label} · {groupTools.length}
                                             </p>
                                             <div className="space-y-px">
                                                 {groupTools.map(t => (
@@ -1199,8 +1199,8 @@ function NameDialog({
                     </h2>
 
                     <label className="block mt-5">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> {label}
+                        <span className="font-medium text-[11.5px] text-muted-foreground">
+                            {label}
                         </span>
                         <input
                             ref={inputRef}
@@ -1239,7 +1239,7 @@ function NameDialog({
                         </button>
                     </div>
 
-                    <p className="mt-3 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/70">
+                    <p className="font-medium mt-3 text-[11px] text-muted-foreground/70">
                         ↵ Save · esc Cancel
                     </p>
                 </div>
@@ -1315,7 +1315,7 @@ function FlowNode({
                 <p className={cn("font-display text-[15px] font-semibold tracking-[-0.015em] truncate leading-tight", empty ? "text-muted-foreground italic font-medium" : "text-foreground")}>
                     {title}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5 truncate">{subtitle}</p>
             </div>
         </>
     );

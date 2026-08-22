@@ -110,8 +110,8 @@ export function ImageUpscalerUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Scale factor</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Scale factor</span>
                             {srcDims && <span className="tabular-nums">{srcDims.w}×{srcDims.h} px source</span>}
                         </div>
                         <div className="p-3 grid grid-cols-2 gap-2">
@@ -131,11 +131,11 @@ export function ImageUpscalerUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[28px] font-bold tracking-[-0.02em]", active ? "text-accent" : "text-foreground")}>{s}×</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">
                                             {out ?? (s === 2 ? "Larger image · safe default" : "Maximum detail · may need memory")}
                                         </p>
                                         {eta && (
-                                            <p className="mt-1.5 inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.06em] uppercase text-accent/80">
+                                            <p className="font-medium mt-1.5 inline-flex items-center gap-1 text-[9.5px] text-accent/80">
                                                 <Clock size={9} /> {eta}
                                             </p>
                                         )}
