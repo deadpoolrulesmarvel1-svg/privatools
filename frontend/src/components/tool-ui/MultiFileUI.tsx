@@ -119,7 +119,7 @@ export function MultiFileUI({
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
-                    "relative w-full rounded-2xl border-2 border-dashed py-10 sm:py-12 px-6 text-center transition-colors group",
+                    "dropzone-surface relative w-full rounded-2xl border-2 border-dashed py-10 sm:py-12 px-6 text-center transition-colors group",
                     drag
                         ? "border-accent bg-accent/[0.06]"
                         : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"

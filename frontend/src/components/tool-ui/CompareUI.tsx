@@ -104,7 +104,7 @@ export function CompareUI() {
                         onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                         role="button" tabIndex={0} aria-label={`Upload ${label}`}
                         className={cn(
-                            "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
+                            "dropzone-surface relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
                             drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                         )}
                     >

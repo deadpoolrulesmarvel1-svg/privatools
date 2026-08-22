@@ -15,6 +15,18 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToolSkeleton } from "@/components/ToolSkeleton";
 import { ToolPrivacyBadge } from "@/components/ToolPrivacyBadge";
 
+/** Each tool family carries its own hue through the hero, icon and accents. */
+const CATEGORY_HUE: Record<Category, string> = {
+  organize: "var(--cat-organize)",
+  edit: "var(--cat-edit)",
+  optimize: "var(--cat-optimize)",
+  security: "var(--cat-security)",
+  "to-pdf": "var(--cat-to-pdf)",
+  "from-pdf": "var(--cat-from-pdf)",
+  advanced: "var(--cat-advanced)",
+};
+const hueOf = (c: Category) => `hsl(${CATEGORY_HUE[c] ? `var(--cat-${c})` : "var(--cat-advanced)"})`;
+
 type AnyModule = Record<string, unknown>;
 
 // Preserve the exported component's prop signature through React.lazy so
@@ -419,7 +431,14 @@ export default function ToolPage() {
   return (
     <div className={cn("h-full flex flex-col", cc)}>
       {/* ─── Workspace header — slim, like Pipeline/Batch ───────────── */}
-      <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
+      <header
+        className="relative flex items-start justify-between gap-3 px-5 sm:px-7 py-9 sm:py-12 border-b border-border overflow-hidden"
+        style={{
+          // A soft wash of the tool's own hue rather than a flat grey band.
+          ["--tool-hue" as string]: hueOf(tool.category),
+          background: `linear-gradient(180deg, color-mix(in srgb, ${hueOf(tool.category)} 9%, transparent) 0%, transparent 100%)`,
+        }}
+      >
         <div className="min-w-0 flex-1">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="font-medium text-[11px] text-muted-foreground mb-3 flex items-center gap-2">
@@ -432,8 +451,14 @@ export default function ToolPage() {
 
           <div className="flex items-start gap-4">
             {/* Tool icon */}
-            <span className="hidden sm:inline-flex icon-tile icon-tile-lg shrink-0">
-              <ToolIcon size={22} strokeWidth={1.75} />
+            {/* The category's colour, not a neutral tile. With 219 tools across a
+                dozen families, colour tells you where you are before you read. */}
+            <span
+              className="hidden sm:inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white shadow-[0_10px_26px_-12px_var(--tool-hue)]"
+              style={{ background: "var(--tool-hue)" }}
+              aria-hidden="true"
+            >
+              <ToolIcon size={28} strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -449,7 +474,7 @@ export default function ToolPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                <h1 className="font-display font-extrabold text-foreground text-[38px] sm:text-[52px] tracking-[-0.04em] leading-[1.02] text-balance">
                   {tool.name}
                 </h1>
                 <button
@@ -468,7 +493,7 @@ export default function ToolPage() {
                   <Star size={16} strokeWidth={1.8} fill={favorite ? "currentColor" : "none"} />
                 </button>
               </div>
-              <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
+              <p className="mt-3 text-[16.5px] text-muted-foreground leading-relaxed max-w-[60ch]">
                 {tool.longDescription || tool.description}
               </p>
             </div>

@@ -75,7 +75,7 @@ export function PdfPageCounterUI() {
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
-                    "w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
+                    "dropzone-surface w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border/60 hover:border-accent/55 bg-card/40"
                 )}
             >

@@ -249,7 +249,7 @@ export function GenericUI({
                 tabIndex={0}
                 aria-label={`Upload file for ${toolName}`}
                 className={cn(
-                    "relative cursor-pointer rounded-2xl border-2 border-dashed transition-colors px-6 py-12 sm:py-14 text-center overflow-hidden group",
+                    "dropzone-surface relative cursor-pointer rounded-2xl border-2 border-dashed transition-colors px-6 py-12 sm:py-14 text-center overflow-hidden group",
                     drag
                         ? "border-accent bg-accent/[0.06]"
                         : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"

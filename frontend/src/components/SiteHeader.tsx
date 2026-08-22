@@ -19,26 +19,9 @@ import { Link, useLocation } from "react-router-dom";
 import { Command, Github, Keyboard, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
+import { CATEGORY_NAV } from "@/lib/nav";
 
-export interface NavItem {
-    label: string;
-    href: string;
-    /** Matches the current location so the active tab is unambiguous. */
-    match: (pathname: string, search: string) => boolean;
-}
 
-const startsWith = (p: string) => (pathname: string) => pathname === p || pathname.startsWith(p + "/");
-
-export const CATEGORY_NAV: NavItem[] = [
-    { label: "All tools", href: "/", match: (p, s) => p === "/" && !s.includes("tab=") },
-    { label: "PDF", href: "/?tab=pdf", match: (p, s) => p === "/" && s.includes("tab=pdf") },
-    { label: "Image", href: "/?tab=image", match: (p, s) => p === "/" && s.includes("tab=image") },
-    { label: "Video & audio", href: "/?tab=video-audio", match: (p, s) => p === "/" && s.includes("tab=video-audio") },
-    { label: "Developer", href: "/?tab=developer", match: (p, s) => p === "/" && s.includes("tab=developer") },
-    { label: "Pipeline", href: "/pipeline", match: startsWith("/pipeline") },
-    { label: "Batch", href: "/batch", match: startsWith("/batch") },
-    { label: "Compare", href: "/compare", match: startsWith("/compare") },
-];
 
 interface Props {
     onOpenSearch: () => void;

@@ -163,7 +163,7 @@ export function HashGeneratorUI() {
                     </button>
                 </div>
             ) : (
-                <label className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04] px-6 py-10 cursor-pointer transition-colors group">
+                <label className="dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04] px-6 py-10 cursor-pointer transition-colors group">
                     <CornerMarks />
                     <div className="h-12 w-12 rounded-xl bg-accent/10 border border-accent/30 group-hover:bg-accent/15 flex items-center justify-center transition-colors">
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />

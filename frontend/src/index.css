@@ -35,38 +35,47 @@
 }
 
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-grotesque-latin-800-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/archivo-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/archivo-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-500-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/archivo-latin-600-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-600-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/archivo-latin-700-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-700-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
@@ -94,136 +103,153 @@
 
 @layer base {
   :root {
-    /* Bricolage Grotesque for display, Archivo for everything you read, DM Mono
-       for anything countable. A real pairing rather than one family in three
-       weights — `impeccable` flags both a single-family system and the
-       converged set (Inter, Roboto, Fraunces, Geist, Plus Jakarta, Space
-       Grotesk), which is what the first pass at this used. */
-    --font-display: 'Bricolage Grotesque', 'Archivo', system-ui, sans-serif;
-    --font-sans:    'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Bricolage Grotesque set heavy and large for display — it has genuine
+       character rather than neutrality. Outfit is a friendly geometric sans
+       that stays warm at small sizes. DM Mono only for figures. */
+    --font-display: 'Bricolage Grotesque', 'Outfit', system-ui, sans-serif;
+    --font-sans:    'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono:    'DM Mono', 'SF Mono', Menlo, monospace;
 
-    /* ── Light — white ground, ink CTAs ────────────────────────────────
-       White because all nine server-side competitors use it: it reads fast
-       and clinical, and it is the only ground on which an uploaded document
-       preview looks like itself. The cream this replaces is the single most
-       common AI-design tell there is. */
+    /* ── Light ─────────────────────────────────────────────────────────
+       Colour is used generously here rather than rationed to a single
+       reserved accent. With 219 tools across a dozen categories, a coded
+       palette is information: it tells you where you are before you read
+       anything. */
     --background: 0 0% 100%;
-    --foreground: 216 19% 5%;            /* #0B0D10 — off-black, never #000 */
+    --foreground: 264 22% 8%;            /* #17121C warm near-black */
 
     --paper:      0 0% 100%;
-    --paper-2:    220 20% 97%;           /* #F6F7FA */
-    --paper-3:    220 18% 94%;           /* #EDEFF3 */
+    --paper-2:    266 40% 97%;           /* #F8F5FC faint violet wash */
+    --paper-3:    266 32% 94%;           /* #EFE9F6 */
 
     --card: 0 0% 100%;
-    --card-foreground: 216 19% 5%;
-    --card-tint: 210 20% 98%;
+    --card-foreground: 264 22% 8%;
+    --card-tint: 266 45% 98%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 216 19% 5%;
+    --popover-foreground: 264 22% 8%;
 
-    /* Ink CTA. Every rival ships a coloured primary — five blue, two orange,
-       one red. Black is the unclaimed position and reads more considered than
-       any of them. */
-    --primary: 216 19% 5%;
+    /* Coral primary. Warm, loud and friendly, and nobody in this category owns
+       it — the two orange rivals are muted B2B oranges. */
+    --primary: 11 100% 61%;              /* #FF5A3C */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 216 20% 95%;
-    --secondary-foreground: 216 19% 5%;
+    --secondary: 266 40% 96%;
+    --secondary-foreground: 264 22% 8%;
 
-    --muted: 220 18% 96%;
-    --muted-foreground: 216 11% 40%;     /* #5B6472 — AA on white */
+    --muted: 266 30% 96%;
+    --muted-foreground: 264 10% 42%;     /* #6B6377 — AA on white */
 
-    /* One accent, reserved for state: active, selected, links, progress.
-       Not used for primary actions — that's the ink. */
-    --accent: 221 100% 52%;              /* #0B57FF */
+    --accent: 258 90% 62%;               /* #7C4DFF electric violet */
     --accent-foreground: 0 0% 100%;
-    --accent-soft: 221 100% 96%;
+    --accent-soft: 258 100% 96%;
 
-    /* Semantic warning. Kept under the historical `copper` name so the ~40
-       components already using text-copper / bg-copper-soft keep working and
-       now carry a correct semantic meaning instead of a second brand colour. */
-    --copper: 32 92% 34%;                /* #A85B08 — AA on white */
-    --copper-soft: 36 96% 94%;
+    --copper: 32 95% 44%;                /* warning */
+    --copper-soft: 36 100% 94%;
+    --success: 158 75% 34%;
+    --success-soft: 158 60% 94%;
 
-    --success: 152 68% 28%;
-    --success-soft: 152 55% 94%;
-
-    --destructive: 0 72% 42%;
+    --destructive: 351 85% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders carry the accent hue at low saturation rather than neutral grey —
-       lifted from Foxit, whose rules are the brand navy at 12%. It is the
-       cheapest way to make a UI feel like one system. */
-    --border: 221 22% 90%;
-    --border-strong: 221 16% 74%;
-    --input: 221 22% 90%;
-    --ring: 221 100% 52%;
+    --border: 266 30% 90%;
+    --border-strong: 266 22% 78%;
+    --input: 266 30% 90%;
+    --ring: 258 90% 62%;
 
-    --radius: 0.625rem;
+    /* Chunky. Cards 20px, controls 12px, buttons fully round. */
+    --radius: 1.25rem;
+
+    /* Category hues — a coded system, not decoration. Each tool family gets a
+       colour and keeps it across cards, icons, chips and headers. */
+    --cat-organize: 217 91% 60%;
+    --cat-edit:     258 90% 66%;
+    --cat-optimize: 173 80% 40%;
+    --cat-security: 350 89% 60%;
+    --cat-to-pdf:   160 84% 39%;
+    --cat-from-pdf: 38 92% 50%;
+    --cat-advanced: 239 84% 67%;
+    --cat-image:    330 81% 60%;
+    --cat-video:    25 95% 53%;
+    --cat-developer: 189 94% 43%;
+    --cat-archive:  45 93% 47%;
+    --cat-document: 84 81% 44%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 216 19% 5%;
-    --sidebar-primary: 216 19% 5%;
+    --sidebar-foreground: 264 22% 8%;
+    --sidebar-primary: 11 100% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 97%;
-    --sidebar-accent-foreground: 216 19% 5%;
-    --sidebar-border: 221 22% 90%;
-    --sidebar-ring: 221 100% 52%;
+    --sidebar-accent: 266 40% 96%;
+    --sidebar-accent-foreground: 264 22% 8%;
+    --sidebar-border: 266 30% 90%;
+    --sidebar-ring: 258 90% 62%;
   }
 
   .dark {
-    /* ── Dark — cool near-black, same system inverted ──────────────── */
-    --background: 220 14% 5%;            /* #0A0C0F */
-    --foreground: 217 20% 93%;           /* #E9ECF1 */
+    /* ── Dark — deep plum rather than neutral charcoal, so the colour system
+       still reads as one family at night. ─────────────────────────────── */
+    --background: 264 26% 7%;            /* #130E1A */
+    --foreground: 266 30% 95%;           /* #F2EEF9 */
 
-    --paper:   220 14% 5%;
-    --paper-2: 220 13% 8%;               /* #11141A */
-    --paper-3: 220 12% 12%;              /* #1A1E25 */
+    --paper:   264 26% 7%;
+    --paper-2: 264 24% 11%;              /* #1C1526 */
+    --paper-3: 264 22% 16%;              /* #281F33 */
 
-    --card: 220 13% 7%;
-    --card-foreground: 217 20% 93%;
-    --card-tint: 220 12% 10%;
+    --card: 264 24% 10%;
+    --card-foreground: 266 30% 95%;
+    --card-tint: 264 22% 13%;
 
-    --popover: 220 13% 7%;
-    --popover-foreground: 217 20% 93%;
+    --popover: 264 24% 10%;
+    --popover-foreground: 266 30% 95%;
 
-    /* Inverted: on dark the ink CTA becomes a light one. */
-    --primary: 217 20% 93%;
-    --primary-foreground: 220 14% 5%;
+    --primary: 11 100% 65%;              /* coral stays the primary on dark */
+    --primary-foreground: 264 26% 7%;
 
-    --secondary: 220 12% 13%;
-    --secondary-foreground: 217 16% 82%;
+    --secondary: 264 22% 16%;
+    --secondary-foreground: 266 24% 86%;
 
-    --muted: 220 12% 12%;
-    --muted-foreground: 217 12% 66%;     /* #9AA2B0 — AA on near-black */
+    --muted: 264 22% 15%;
+    --muted-foreground: 266 14% 70%;     /* AA on the plum ground */
 
-    --accent: 221 100% 66%;              /* #5285FF — lifted for dark ground */
-    --accent-foreground: 220 14% 5%;
-    --accent-soft: 221 60% 16%;
+    --accent: 258 100% 74%;
+    --accent-foreground: 264 26% 7%;
+    --accent-soft: 258 50% 20%;
 
-    --copper: 36 92% 62%;                /* #F3A63F */
-    --copper-soft: 32 40% 15%;
+    --copper: 36 96% 64%;
+    --copper-soft: 32 45% 18%;
+    --success: 158 65% 52%;
+    --success-soft: 158 40% 16%;
 
-    --success: 152 60% 52%;
-    --success-soft: 152 40% 14%;
-
-    --destructive: 0 70% 58%;
+    --destructive: 351 90% 64%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 10% 17%;
-    --border-strong: 220 9% 30%;
-    --input: 220 10% 17%;
-    --ring: 221 100% 66%;
+    --border: 264 20% 20%;
+    --border-strong: 264 16% 34%;
+    --input: 264 20% 20%;
+    --ring: 258 100% 74%;
 
-    --sidebar-background: 220 14% 5%;
-    --sidebar-foreground: 217 20% 93%;
-    --sidebar-primary: 217 20% 93%;
-    --sidebar-primary-foreground: 220 14% 5%;
-    --sidebar-accent: 220 12% 13%;
-    --sidebar-accent-foreground: 217 20% 93%;
-    --sidebar-border: 220 10% 17%;
-    --sidebar-ring: 221 100% 66%;
+    /* Lifted so each category still reads on the dark plum. */
+    --cat-organize: 217 95% 68%;
+    --cat-edit:     258 95% 74%;
+    --cat-optimize: 173 75% 52%;
+    --cat-security: 350 92% 68%;
+    --cat-to-pdf:   160 76% 50%;
+    --cat-from-pdf: 38 96% 60%;
+    --cat-advanced: 239 90% 74%;
+    --cat-image:    330 88% 68%;
+    --cat-video:    25 96% 62%;
+    --cat-developer: 189 90% 55%;
+    --cat-archive:  45 96% 58%;
+    --cat-document: 84 76% 55%;
+
+    --sidebar-background: 264 26% 7%;
+    --sidebar-foreground: 266 30% 95%;
+    --sidebar-primary: 11 100% 65%;
+    --sidebar-primary-foreground: 264 26% 7%;
+    --sidebar-accent: 264 22% 16%;
+    --sidebar-accent-foreground: 266 30% 95%;
+    --sidebar-border: 264 20% 20%;
+    --sidebar-ring: 258 100% 74%;
   }
 }
 
@@ -520,26 +546,39 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 44px;
-  padding: 0 1.25rem;
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
+  height: 48px;
+  padding: 0 1.75rem;
+  /* Coral primary, fully rounded. The main action on a consumer tool should
+     look pressable from across the room. */
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
-  border-radius: 8px;
-  transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.20),
-    0 1px 2px 0 hsl(var(--accent) / 0.30);
+  border-radius: 999px;
+  /* Shadow carries the button's own hue rather than generic black — the
+     difference between a button sitting on the page and one lit by it. */
+  box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.35), 0 8px 20px -8px hsl(var(--primary) / 0.55);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.15s ease;
 }
 .btn-accent:hover {
-  filter: brightness(1.05);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.25),
-    0 6px 18px -4px hsl(var(--accent) / 0.45);
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.35), 0 16px 32px -10px hsl(var(--primary) / 0.6);
 }
-.btn-accent:active { transform: translateY(1px); }
+.btn-accent:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 0 hsl(var(--primary) / 0.35), 0 4px 12px -6px hsl(var(--primary) / 0.5);
+}
+.btn-accent:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--background)), 0 0 0 6px hsl(var(--ring) / 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-accent, .btn-accent:hover, .btn-accent:active { transition: none; transform: none; }
+}
 
 /* Secondary outline — same geometry, transparent */
 .btn-secondary-pill {
@@ -826,6 +865,28 @@
 .animate-corner-extend > .corner-mark:nth-child(2) { animation-delay: 0.10s; }
 .animate-corner-extend > .corner-mark:nth-child(3) { animation-delay: 0.15s; }
 .animate-corner-extend > .corner-mark:nth-child(4) { animation-delay: 0.20s; }
+
+/* The drop zone is the product on 219 pages. 56 components had rolled their
+   own with the same Tailwind geometry, so rather than editing 56 files this
+   upgrades all of them at once: softer corners, more room, and a lift on hover
+   so the target feels alive rather than like a fieldset. */
+.dropzone-surface {
+  border-radius: 28px !important;
+  padding-top: 3.5rem !important;
+  padding-bottom: 3.5rem !important;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dropzone-surface:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 16px 44px -24px hsl(var(--primary) / 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dropzone-surface, .dropzone-surface:hover { transition: none; transform: none; }
+}
 
 /* Corner brackets are the last of the technical-drawing motif. Hidden here
    rather than deleted from 96 components: the JSX stays valid, the marks stop

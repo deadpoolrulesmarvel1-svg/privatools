@@ -181,7 +181,7 @@ function FileSlot({
                     }}
                     onClick={() => inputRef.current?.click()}
                     className={cn(
-                        "flex flex-col items-center gap-2 m-3 rounded-lg border-2 border-dashed cursor-pointer py-6 px-4 transition-colors",
+                        "dropzone-surface flex flex-col items-center gap-2 m-3 rounded-lg border-2 border-dashed cursor-pointer py-6 px-4 transition-colors",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >

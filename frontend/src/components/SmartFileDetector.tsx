@@ -74,7 +74,7 @@ export function SmartFileDetector() {
                 onClick={() => inputRef.current?.click()}
                 onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={e => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
-                className="relative group cursor-pointer rounded-2xl border-2 border-dashed border-border/40 hover:border-primary/40 bg-card/30 hover:bg-primary/5 transition-all p-8 text-center overflow-hidden"
+                className="dropzone-surface relative group cursor-pointer rounded-2xl border-2 border-dashed border-border/40 hover:border-primary/40 bg-card/30 hover:bg-primary/5 transition-all p-8 text-center overflow-hidden"
             >
                 {/* Subtle grid background pattern */}
                 <div

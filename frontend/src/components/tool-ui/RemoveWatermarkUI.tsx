@@ -159,7 +159,7 @@ export function RemoveWatermarkUI() {
                     onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
                     role="button" tabIndex={0} aria-label="Upload a PDF"
                     className={cn(
-                        "rounded-2xl border-2 border-dashed p-10 text-center transition-colors cursor-pointer",
+                        "dropzone-surface rounded-2xl border-2 border-dashed p-10 text-center transition-colors cursor-pointer",
                         drag ? "border-accent bg-accent/[0.04]" : "border-border hover:border-accent/40",
                     )}
                 >

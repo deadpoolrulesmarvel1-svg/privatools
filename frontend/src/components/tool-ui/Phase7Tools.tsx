@@ -72,7 +72,7 @@ export function VideoSpeedUI() {
                 </div>
             </div>
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept=".mp4,.mov,.webm,.avi,.mkv" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
                 <CornerMarks />
                 <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-accent/10 border border-accent/30 group-hover:bg-accent/15 transition-colors">
@@ -140,7 +140,7 @@ export function AudioTrimUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept=".mp3,.wav,.aac,.flac,.ogg,.m4a" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
                 <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-accent/10 border border-accent/30 group-hover:bg-accent/15 transition-colors">
@@ -227,7 +227,7 @@ export function ImagePaletteUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif"
                     className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -349,7 +349,7 @@ export function PixelateImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp" className="hidden"
                     onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -450,7 +450,7 @@ export function RotateImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -561,7 +561,7 @@ export function FlipImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />

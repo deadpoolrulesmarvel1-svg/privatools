@@ -256,7 +256,7 @@ export function AddSubtitlesUI() {
             tabIndex={0}
             aria-label={`Upload ${label}`}
             className={cn(
-                "flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-all px-5 py-4",
+                "dropzone-surface flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-all px-5 py-4",
                 drag === slotKey ? "border-accent bg-accent/5" : file ? "border-accent/30 bg-card" : "border-border hover:border-accent/55 hover:bg-secondary/30 bg-secondary/10"
             )}
         >
