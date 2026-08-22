@@ -1225,7 +1225,7 @@ class Component extends React.Component {
       showLimits: limits.map(function (l) { return { t: l }; }),
       badges: [['Local', 'var(--em)'], ['Server', 'var(--amber)'], ['Offline', 'var(--teal)'], ['Ready', 'var(--em)'], ['Best effort', 'var(--amber)'], ['Temporary unavailable', 'var(--coral)']].map(function (b) { return { label: b[0], color: b[1] }; }),
       alerts: [['Information', 'info', 'var(--blue)', 'var(--blueSoft)'], ['Success', 'check_circle', 'var(--em)', 'var(--emSoft)'], ['Warning', 'warning', 'var(--amber)', 'var(--amberSoft)'], ['Error', 'error', 'var(--coral)', 'var(--coralSoft)']].map(function (a) { return { label: a[0], icon: a[1], color: a[2], bg: a[3] }; }),
-      btnStates: [['Primary', 'var(--em)', '#04231A', '1'], ['Hover', 'var(--teal)', '#04231A', '1'], ['Disabled', 'var(--line2)', 'var(--ink3)', '.6']].map(function (b) { return { label: b[0], bg: b[1], fg: b[2], op: b[3] }; }),
+      btnStates: [['Primary', 'var(--em)', 'var(--em-ink,#04231A)', '1'], ['Hover', 'var(--teal)', 'var(--em-ink,#04231A)', '1'], ['Disabled', 'var(--line2)', 'var(--ink3)', '.6']].map(function (b) { return { label: b[0], bg: b[1], fg: b[2], op: b[3] }; }),
       viewports: [[0, 'Window'], [1440, 'Desktop 1440'], [768, 'Tablet 768'], [390, 'Mobile 390'], [360, 'Mobile 360']].map(function (v) {
         var on = (st.forceW || 0) === v[0];
         return { label: v[1], bg: on ? 'var(--emSoft)' : 'var(--panel2)', fg: on ? 'var(--em)' : 'var(--ink2)', bd: on ? 'var(--emLine)' : 'var(--line)', go: function () { self.setViewport(v[0]); } };
@@ -2084,7 +2084,7 @@ Component.prototype.render = function render() {
       <span style={css("display:block;font-size:13px;font-weight:500")}>Install PrivaTools</span>
       <span style={css("display:block;font-size:11px;color:var(--ink3)")}>Works offline as an app. Cached local tools keep working with no connection.</span>
       </span>
-      <button onClick={v.openInstall} style={css("flex:none;height:32px;padding:0 14px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Install</button>
+      <button onClick={v.openInstall} style={css("flex:none;height:32px;padding:0 14px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Install</button>
       </div>
       </div>
       <div style={css("border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:6px")}>
@@ -2198,7 +2198,7 @@ Component.prototype.render = function render() {
       <span className="ms" style={css("font-size:32px;color:var(--ink3)")}>{ICON.search_off}</span>
       <h3 style={css("margin-top:8px;font-size:15px;font-weight:500")}>No tool matches these filters</h3>
       <p style={css("margin-top:5px;font-size:12.5px;color:var(--ink3)")}>We only list tools that exist. Try clearing a filter or searching a different task.</p>
-      <button onClick={v.clearFilters} style={css("margin-top:12px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Clear all filters</button>
+      <button onClick={v.clearFilters} style={css("margin-top:12px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Clear all filters</button>
       </div>
 
                         </>)}
@@ -2654,7 +2654,7 @@ Component.prototype.render = function render() {
                             ))}
       </div>
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)")}>
-      <button onClick={v.runLocal} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:13px;font-weight:500")}>{v.runLabel}</button>
+      <button onClick={v.runLocal} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:13px;font-weight:500")}>{v.runLabel}</button>
 
                             {Boolean(v.canRunServer) && (<>
                         
@@ -2703,7 +2703,7 @@ Component.prototype.render = function render() {
       <span style={css("flex:1")}><span style={css("display:block;font-size:13px;font-weight:500")}>Cancelled</span><span style={css("display:block;margin-top:3px;font-size:12px;color:var(--ink2)")}>Nothing was produced and nothing was kept. Your settings are still here.</span></span>
       </div>
       <div style={css("display:flex;gap:9px;margin-top:13px")}>
-      <button onClick={v.resume} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Back to settings</button>
+      <button onClick={v.resume} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Back to settings</button>
       <button onClick={v.startOver} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Start over</button>
       </div>
 
@@ -2714,7 +2714,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px;border:1px solid var(--emLine);border-radius:11px;background:var(--emSoft)")}>
       <span className="ms" style={css("font-size:26px;color:var(--em)")}>{ICON.task_alt}</span>
       <span style={css("display:block;flex:1;min-width:150px")}><span style={css("display:block;font-size:13.5px;font-weight:500")}>{v.resultName}</span><span style={css("display:block;margin-top:2px;font-size:11.5px;color:var(--ink2)")}>{v.resultSize} · {v.resultSaving}</span></span>
-      <button onClick={v.download} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:13px;font-weight:500")}>Download</button>
+      <button onClick={v.download} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:13px;font-weight:500")}>Download</button>
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;margin-top:13px")}>
       <button onClick={v.startOver} style={css("height:34px;padding:0 13px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--ink2)")}>Start over</button>
@@ -2735,7 +2735,7 @@ Component.prototype.render = function render() {
       <span style={css("flex:1")}><span style={css("display:block;font-size:13px;font-weight:500")}>Something went wrong</span><span style={css("display:block;margin-top:3px;font-size:12px;color:var(--ink2)")}>The file could not be processed. Nothing was stored. You can try again, or try a different setting.</span></span>
       </div>
       <div style={css("display:flex;gap:9px;margin-top:13px")}>
-      <button onClick={v.retry} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Try again</button>
+      <button onClick={v.retry} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Try again</button>
       <button onClick={v.resume} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Change settings</button>
       </div>
 
@@ -2748,7 +2748,7 @@ Component.prototype.render = function render() {
       <span style={css("flex:1")}><span style={css("display:block;font-size:13px;font-weight:500")}>Server temporarily unavailable</span><span style={css("display:block;margin-top:3px;font-size:12px;color:var(--ink2)")}>Our server in Mumbai, India is at capacity and has no failover. Server-backed tools are unavailable right now. Local tools and the rest of the site keep working.</span></span>
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;margin-top:13px")}>
-      <button onClick={v.tryLocal} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Try on this device</button>
+      <button onClick={v.tryLocal} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Try on this device</button>
       <button onClick={v.retry} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Try again</button>
       <button onClick={v.goStatus} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>View status</button>
       </div>
@@ -2904,7 +2904,7 @@ Component.prototype.render = function render() {
       <div role="alert" style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--coral);border-radius:11px;background:var(--coralSoft)")}>
       <span className="ms" style={css("font-size:20px;color:var(--coral)")}>{ICON.error}</span>
       <span style={css("display:block;flex:1;min-width:180px")}><span style={css("display:block;font-size:13px;font-weight:500")}>Step failed — pipeline stopped</span><span style={css("display:block;margin-top:2px;font-size:12px;color:var(--ink2)")}>Last good output from {v.lastGood} is preserved. Later steps are neutral until you choose.</span></span>
-      <button onClick={v.retryStep} style={css("height:32px;padding:0 13px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Retry</button>
+      <button onClick={v.retryStep} style={css("height:32px;padding:0 13px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Retry</button>
       <button onClick={v.skipStep} style={css("height:32px;padding:0 13px;border:1px solid var(--line2);border-radius:8px;font-size:12.5px")}>Skip</button>
       <button onClick={v.stopPipe} style={css("height:32px;padding:0 13px;border:1px solid var(--coral);border-radius:8px;font-size:12.5px;color:var(--coral)")}>Stop pipeline</button>
       </div>
@@ -2922,12 +2922,12 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--emLine);border-radius:11px;background:var(--emSoft)")}>
       <span className="ms" style={css("font-size:20px;color:var(--em)")}>{ICON.task_alt}</span>
       <span style={css("flex:1;min-width:160px;font-size:12.5px")}>Pipeline complete. Result exists only in this tab until you download it.</span>
-      <button onClick={v.download} style={css("height:32px;padding:0 14px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Download result</button>
+      <button onClick={v.download} style={css("height:32px;padding:0 14px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Download result</button>
       </div>
 
                       </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)")}>
-      <button onClick={v.runPipe} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Run pipeline</button>
+      <button onClick={v.runPipe} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Run pipeline</button>
 
                         {Boolean(v.pipeRunning) && (<>
                           <button onClick={v.stopPipe} style={css("height:36px;padding:0 13px;border:1px solid var(--coral);border-radius:9px;font-size:12.5px;color:var(--coral)")}>Stop</button>
@@ -3064,7 +3064,7 @@ Component.prototype.render = function render() {
       <span className="ms" style={css("font-size:30px;color:var(--ink3)")}>{ICON.apps}</span>
       <h3 style={css("margin-top:8px;font-size:14px;font-weight:500")}>Choose a tool first</h3>
       <p style={css("margin-top:4px;font-size:12.5px;color:var(--ink3)")}>A batch runs one tool across every file you add.</p>
-      <button onClick={v.goTools} style={css("margin-top:11px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Browse tools</button>
+      <button onClick={v.goTools} style={css("margin-top:11px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Browse tools</button>
       </div>
 
                   </>)}
@@ -3125,7 +3125,7 @@ Component.prototype.render = function render() {
 
                   </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;padding:14px;border-top:1px solid var(--line)")}>
-      <button onClick={v.runBatchNow} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Run batch</button>
+      <button onClick={v.runBatchNow} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Run batch</button>
 
                     {Boolean(v.batchRunning) && (<>
                       <button onClick={v.stopBatch} style={css("height:36px;padding:0 13px;border:1px solid var(--coral);border-radius:9px;font-size:12.5px;color:var(--coral)")}>Stop batch</button>
@@ -3155,7 +3155,7 @@ Component.prototype.render = function render() {
 
                         ))}
       </ul>
-      <button onClick={v.downloadOk} style={css("margin-top:11px;height:32px;padding:0 12px;border-radius:8px;background:var(--em);color:#04231A;font-size:12px;font-weight:500")}>Download as ZIP</button>
+      <button onClick={v.downloadOk} style={css("margin-top:11px;height:32px;padding:0 12px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12px;font-weight:500")}>Download as ZIP</button>
       </section>
       <section style={css("flex:1 1 280px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px")}>
       <h2 style={css("font-size:14px;font-weight:500;display:flex;align-items:center;gap:7px")}><span className="ms" style={css("font-size:17px;color:var(--coral)")}>{ICON.error}</span>Failed — {v.batchBadCount}</h2>
@@ -3244,7 +3244,7 @@ Component.prototype.render = function render() {
       <span className="ms" style={css("font-size:26px;color:var(--em)")}>{ICON.lock}</span>
       <p style={css("margin-top:6px;font-size:12.5px")}>{v.vaultCount} entries · locked</p>
       <p style={css("margin-top:3px;font-size:11px;color:var(--ink3)")}>Your vault never leaves this device.</p>
-      <button onClick={v.goVault} style={css("margin-top:11px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Open vault</button>
+      <button onClick={v.goVault} style={css("margin-top:11px;height:34px;padding:0 14px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Open vault</button>
       </div>
       <button onClick={v.exportBackup} style={css("display:flex;align-items:center;gap:9px;width:100%;margin-top:11px;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)")}>
       <span className="ms" style={css("font-size:18px;color:var(--teal)")}>{ICON.enhanced_encryption}</span>
@@ -3354,7 +3354,7 @@ Component.prototype.render = function render() {
                       <p style={css("margin-top:9px;font-size:12px;color:var(--ink3)")}>No {v.secretKind} has been created yet.</p>
                     </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:16px")}>
-      <button onClick={v.beginUnlock} style={css("display:flex;align-items:center;gap:7px;height:40px;padding:0 18px;border-radius:9px;background:var(--em);color:#04231A;font-size:13px;font-weight:500")}><span className="ms" style={css("font-size:18px")}>{ICON.lock_open}</span>Unlock vault</button>
+      <button onClick={v.beginUnlock} style={css("display:flex;align-items:center;gap:7px;height:40px;padding:0 18px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:13px;font-weight:500")}><span className="ms" style={css("font-size:18px")}>{ICON.lock_open}</span>Unlock vault</button>
       <button onClick={v.usePin} style={css("display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border:1px solid var(--line2);border-radius:9px;font-size:13px")}><span className="ms" style={css("font-size:18px")}>{ICON.pin}</span>Use PIN</button>
       <button onClick={v.usePassphrase} style={css("display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border:1px solid var(--line2);border-radius:9px;font-size:13px")}><span className="ms" style={css("font-size:18px")}>{ICON.key}</span>Use passphrase</button>
       </div>
@@ -3405,7 +3405,7 @@ Component.prototype.render = function render() {
 
                     </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px")}>
-      <button onClick={v.setupSecret} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Continue</button>
+      <button onClick={v.setupSecret} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Continue</button>
       <button onClick={v.cancelUnlock} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
       </section>
@@ -3444,7 +3444,7 @@ Component.prototype.render = function render() {
 
                     </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px")}>
-      <button onClick={v.confirmSecret} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Create protection</button>
+      <button onClick={v.confirmSecret} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Create protection</button>
       <button onClick={v.restartSetup} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Start again</button>
       </div>
       </section>
@@ -3463,7 +3463,7 @@ Component.prototype.render = function render() {
                       <p role="alert" style={css("margin-top:9px;font-size:12px;color:var(--coral)")}>{v.pinErr}</p>
                     </>)}
       <div style={css("display:flex;gap:9px;justify-content:center;margin-top:14px")}>
-      <button onClick={v.submitPin} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Unlock</button>
+      <button onClick={v.submitPin} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Unlock</button>
       <button onClick={v.usePassphrase} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Use passphrase</button>
       <button onClick={v.cancelUnlock} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
@@ -3488,7 +3488,7 @@ Component.prototype.render = function render() {
                       <p role="alert" style={css("margin-top:9px;font-size:12px;color:var(--coral)")}>{v.passErr}</p>
                     </>)}
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;margin-top:14px")}>
-      <button onClick={v.submitPass} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Unlock</button>
+      <button onClick={v.submitPass} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Unlock</button>
       <button onClick={v.usePin} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Use PIN</button>
       <button onClick={v.cancelUnlock} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
@@ -3501,7 +3501,7 @@ Component.prototype.render = function render() {
       <section style={css("margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;animation:rise 240ms ease both")}>
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px")}>
       <h2 style={css("flex:1;min-width:120px;font-size:14px;font-weight:500")}>{v.vaultCount} passwords</h2>
-      <button onClick={v.addPassword} style={css("height:32px;padding:0 12px;border-radius:8px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Add password</button>
+      <button onClick={v.addPassword} style={css("height:32px;padding:0 12px;border-radius:8px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Add password</button>
       </div>
       <ul>
 
@@ -3539,7 +3539,7 @@ Component.prototype.render = function render() {
       <label style={css("display:block")}><span style={css("display:block;font-size:11px;color:var(--ink3);margin-bottom:5px")}>Password</span><input value={v.dPw} onChange={v.onDPw} aria-label="Password" style={css("width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px;font-family:'Geist Mono',ui-monospace,monospace")} /></label>
       </div>
       <div style={css("display:flex;gap:9px;margin-top:13px")}>
-      <button onClick={v.saveEntry} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Save on this device</button>
+      <button onClick={v.saveEntry} style={css("height:36px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Save on this device</button>
       <button onClick={v.cancelEntry} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
       </section>
@@ -3704,7 +3704,7 @@ Component.prototype.render = function render() {
       <h2 style={css("margin-top:9px;font-size:15px;font-weight:500")}>Verified comparison data pending</h2>
       <p style={css("margin-top:6px;font-size:12.5px;color:var(--ink2);line-height:1.6;max-width:60ch;margin-left:auto;margin-right:auto")}>{v.cPendingNote}</p>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px")}>
-      <button onClick={v.goCompare} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Back to comparison hub</button>
+      <button onClick={v.goCompare} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Back to comparison hub</button>
       <button onClick={v.goSupport} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Submit evidence</button>
       </div>
       </section>
@@ -3825,7 +3825,7 @@ Component.prototype.render = function render() {
       <h1 style={css("margin-top:9px;font-size:20px;font-weight:600")}>Article not found</h1>
       <p style={css("margin-top:5px;font-size:12.5px;color:var(--ink2)")}>No article is published at <span style={css("font-family:'Geist Mono',ui-monospace,monospace;color:var(--ink)")}>/blog/{v.postSlugRaw}</span>. Nine of the fifteen planned articles are still unpublished.</p>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px")}>
-      <button onClick={v.goBlog} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>All articles</button>
+      <button onClick={v.goBlog} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>All articles</button>
       <button onClick={v.openPalette} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Search</button>
       <button onClick={v.reportLink} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Report a broken link</button>
       </div>
@@ -4068,7 +4068,7 @@ Component.prototype.render = function render() {
                       </button>
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;padding-top:13px;border-top:1px solid var(--line)")}>
-      <button onClick={v.submit} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:#04231A;font-size:13px;font-weight:500")}>Send report</button>
+      <button onClick={v.submit} style={css("height:38px;padding:0 16px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:13px;font-weight:500")}>Send report</button>
       <button onClick={v.simulateError} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Preview error state</button>
       <button onClick={v.simulateOffline} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Preview offline state</button>
       </div>
@@ -4242,7 +4242,7 @@ Component.prototype.render = function render() {
       </ul>
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:16px")}>
-      <button onClick={v.goHome} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Home</button>
+      <button onClick={v.goHome} style={css("height:36px;padding:0 14px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Home</button>
       <button onClick={v.goTools} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2);white-space:nowrap")}>All Tools</button>
       <button onClick={v.reportLink} style={css("height:36px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2);white-space:nowrap")}>Report a broken link</button>
       </div>
@@ -4807,7 +4807,7 @@ Component.prototype.render = function render() {
                       </>)}
       </div>
       <div style={css("display:flex;gap:9px;margin-top:15px")}>
-      <button onClick={v.runBackup} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500;white-space:nowrap")}>Prepare export</button>
+      <button onClick={v.runBackup} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500;white-space:nowrap")}>Prepare export</button>
       <button onClick={v.closeDialog} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
 
@@ -4829,7 +4829,7 @@ Component.prototype.render = function render() {
       <span style={css("display:block;font-size:12.5px;line-height:1.5")}>Export ready. Passwords included, cloud tokens excluded. The file exists only in this tab until you save it.</span>
       </div>
       <div style={css("display:flex;gap:9px;margin-top:13px")}>
-      <button onClick={v.closeDialog} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Done</button>
+      <button onClick={v.closeDialog} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Done</button>
       </div>
 
                   </>)}
@@ -4841,7 +4841,7 @@ Component.prototype.render = function render() {
       <span style={css("display:block;font-size:12.5px;line-height:1.5")}>Export failed. Use at least ten characters and make both fields match. Nothing was written.</span>
       </div>
       <div style={css("display:flex;gap:9px;margin-top:13px")}>
-      <button onClick={v.retryBackup} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:#04231A;font-size:12.5px;font-weight:500")}>Try again</button>
+      <button onClick={v.retryBackup} style={css("height:38px;padding:0 15px;border-radius:9px;background:var(--em);color:var(--em-ink,#04231A);font-size:12.5px;font-weight:500")}>Try again</button>
       <button onClick={v.closeDialog} style={css("height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--ink2)")}>Cancel</button>
       </div>
 

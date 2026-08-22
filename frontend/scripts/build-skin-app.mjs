@@ -145,6 +145,93 @@ function makeLookupsTotal(logic) {
   return { logic: out, count };
 }
 
+/**
+ * Lets a saved theme preference outrank the design's own default prop.
+ *
+ * `Component.defaultProps` carries a `theme` from the .dc.html props schema —
+ * a preview default, meaningful only when the visitor has never chosen. The
+ * design's init reads it first:
+ *
+ *     if (p.theme) this.applyTheme(p.theme, true);
+ *     else if (saved) this.applyTheme(saved, true);
+ *
+ * Since the prop always has a value, the `saved` branch is dead, and
+ * `applyTheme` then writes the prop back over the stored choice. A visitor who
+ * switched to light got dark again on every reload, permanently. Swapping the
+ * order restores the intended precedence: the person's own choice, then the
+ * design's default, then the hard-coded fallback.
+ */
+function honourSavedTheme(logic) {
+  let count = 0;
+  const out = logic.replace(
+    /if \(p\.theme\) (this\.applyTheme\(p\.theme, true\);)\s*\n(\s*)else if \(saved\) (this\.applyTheme\(saved, true\);)/g,
+    (_m, applyProp, indent, applySaved) => {
+      count++;
+      return `if (saved) ${applySaved}\n${indent}else if (p.theme) ${applyProp}`;
+    },
+  );
+  return { logic: out, count };
+}
+
+/**
+ * Lets the label on the accent button follow the theme.
+ *
+ * Both designs hard-code a near-black label on their accent fill —
+ * `background:var(--em);color:#03120C`. That was right in the dark palette,
+ * where --em is a bright mint. Once --em is darkened enough for its *other*
+ * role (body text on a light surface, which needs 4.5:1), the dark label lands
+ * at 3.67:1 on its own button. No single green satisfies both roles — text on
+ * a light ground wants dark, a dark label on a fill wants light — so the label
+ * is what has to move.
+ *
+ * `--em-ink` is defined only in the light block (see extract-native-css.mjs);
+ * dark mode falls through to the literal the design already shipped, so the
+ * original stays byte-identical there.
+ */
+const ACCENT_INK = {
+  // Aurora uses two near-identical near-blacks; the extension markup spliced in
+  // above reaches for the second one, so both have to be covered.
+  aurora: ["#03120C", "#04120C"],
+  structured: ["#04231A"],
+};
+
+/**
+ * The same substitution for colours the logic computes rather than the markup
+ * declaring. Aurora picks the run-button foreground and its switch knobs with
+ * ternaries — `running ? 'var(--text2)' : '#03120C'` — so the literal never
+ * appears next to a `color:` for the markup pass to find. Every one of these
+ * is the ink that sits on the accent fill, which is the role --em-ink names.
+ */
+function adaptAccentInkLogic(id, logic) {
+  const literals = ACCENT_INK[id];
+  if (!literals) return { logic, count: 0 };
+  let count = 0;
+  let out = logic;
+  for (const literal of literals) {
+    out = out.replace(new RegExp(`'${literal}'`, "gi"), () => {
+      count++;
+      return `'var(--em-ink,${literal})'`;
+    });
+  }
+  return { logic: out, count };
+}
+
+function adaptAccentInk(id, jsx) {
+  const literals = ACCENT_INK[id];
+  if (!literals) return { jsx, count: 0 };
+  let count = 0;
+  let out = jsx;
+  for (const literal of literals) {
+    // `background:` as well as `color:` — the showcase's switch knob is the
+    // same ink, drawn as a dot on the accent track rather than as a label.
+    out = out.replace(new RegExp(`(color|background):${literal}\\b`, "gi"), (_m, prop) => {
+      count++;
+      return `${prop}:var(--em-ink,${literal})`;
+    });
+  }
+  return { jsx: out, count };
+}
+
 function build(id) {
   const { label } = SKINS[id];
   const file = `${DESIGNS}/${id}.dc.html`;
@@ -168,6 +255,14 @@ function build(id) {
   const lookups = makeLookupsTotal(logic);
   logic = lookups.logic;
   if (lookups.count) console.log(`  lookups: ${lookups.count} inline record lookup(s) made total`);
+
+  const themePref = honourSavedTheme(logic);
+  logic = themePref.logic;
+  if (themePref.count) console.log(`  theme: saved preference now outranks the design's default prop`);
+
+  const inkLogic = adaptAccentInkLogic(id, logic);
+  logic = inkLogic.logic;
+  if (inkLogic.count) console.log(`  accent ink: ${inkLogic.count} computed colour(s) now follow the theme`);
 
   // ── markup ─────────────────────────────────────────────────────────────
   // The <helmet> block opens before </style> and closes after it, so slicing
@@ -213,9 +308,13 @@ function build(id) {
   const iconRe = ["material[\\s-]symbols", ...iconClasses.map((c) => `class="[^"]*\\b${c}\\b`)].join("|");
   console.log(`  icon marker: /${iconRe}/i`);
 
-  const jsx = execFileSync("node", [resolve(HERE, "dc-to-jsx-file.mjs"), `/tmp/skinport-${id}.html`, iconRe], {
+  let jsx = execFileSync("node", [resolve(HERE, "dc-to-jsx-file.mjs"), `/tmp/skinport-${id}.html`, iconRe], {
     encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
   });
+
+  const ink = adaptAccentInk(id, jsx);
+  jsx = ink.jsx;
+  if (ink.count) console.log(`  accent ink: ${ink.count} button label(s) now follow the theme`);
 
   // Each design declares its props with defaults in the runtime's data-props
   // blob. Those defaults are part of the design (opening route, motion level,

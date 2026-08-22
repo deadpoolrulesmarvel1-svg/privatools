@@ -44,16 +44,16 @@
   --bg0:#F5F8F6; --bg1:#EAF3EF; --bg2:#FFFFFF;
   --pnl:#FFFFFF; --pnl2:#F4F8F6; --pnl3:#E9F1ED; --pnlq:rgba(9,40,45,.03);
   --line:rgba(9,40,45,.12); --line2:rgba(9,40,45,.24);
-  --text:#0A1A1F; --text2:#47605C; --text3:#617A76;
-  --em:#0B8C5F; --emd:#0B6E4B; --emsoft:rgba(11,140,95,.10);
-  --tl:#0C807C; --tlsoft:rgba(12,128,124,.10);
+  --text:#0A1A1F; --text2:#47605C; --text3:#5A716D;
+  --em:#0A7C54; --emd:#0B6E4B; --emsoft:rgba(11,140,95,.10);
+  --tl:#0B7975; --tlsoft:rgba(12,128,124,.10);
   --vi:#5347D0; --visoft:rgba(83,71,208,.10);
   --am:#8A5D00; --amsoft:rgba(138,93,0,.10);
   --co:#BF3A30; --cosoft:rgba(191,58,48,.09);
   --shadow:0 16px 44px -24px rgba(10,40,45,.32);
   --shadow-sm:0 6px 16px -10px rgba(10,40,45,.3);
   --aurora-o:.55; --grain-o:.18;
-}
+--em-ink:#FFFFFF;}
 @media (max-width:1279px){
   [data-skin="aurora"]{ --rail-w:78px; --raillbl-d:none; --px:26px; --py:26px; --h1:44px; --h2:28px; --hero-h:330px;
     --c3:repeat(2,minmax(0,1fr)); --c4:repeat(2,minmax(0,1fr)); --c6:repeat(3,minmax(0,1fr)); --maxw:100%;
@@ -117,12 +117,12 @@
 [data-skin="structured"] :is(:root[data-theme="light"]){
 --bg:#F7FAF8;--bg2:#EDF5F1;--panel:#FFFFFF;--panel2:#F3F7F5;--panel3:#EAF2EE;
 --line:rgba(16,54,50,.13);--line2:rgba(16,54,50,.22);
---ink:#14211F;--ink2:#4D6360;--ink3:#7A908D;
---em:#0B8F66;--teal:#0C8279;--blue:#2F63C7;--violet:#6A4FC7;--amber:#96620F;--coral:#BE4438;
+--ink:#14211F;--ink2:#4D6360;--ink3:#5E716E;
+--em:#0A7C59;--teal:#0B7A72;--blue:#2F63C7;--violet:#6A4FC7;--amber:#96620F;--coral:#BE4438;
 --emSoft:rgba(11,143,102,.08);--emLine:rgba(11,143,102,.3);
 --amberSoft:rgba(150,98,15,.09);--coralSoft:rgba(190,68,56,.09);--blueSoft:rgba(47,99,199,.09);
 --shadow:0 1px 2px rgba(16,54,50,.07);--wave:.75;
-}
+--em-ink:#FFFFFF;}
 [data-skin="structured"] *{box-sizing:border-box}
 [data-skin="structured"] :is(body,body){margin:0;padding:0;background:var(--bg)}
 [data-skin="structured"] :is(body){color:var(--ink);font-family:Geist,"Geist Fallback",-apple-system,"Segoe UI",Helvetica,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;font-size:14px;line-height:1.5}

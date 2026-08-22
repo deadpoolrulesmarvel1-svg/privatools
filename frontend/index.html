@@ -83,6 +83,23 @@
             d.classList.add(t);
             d.classList.remove(t === 'dark' ? 'light' : 'dark');
           }
+          /* The ported designs run on `data-theme` and each keeps its own key.
+             They apply it in componentDidMount, which is after first paint, so
+             without this a visitor who chose light saw the dark palette flash
+             on every load. Resolve it here instead. */
+          if (skin === 'aurora' || skin === 'carbon' || skin === 'structured') {
+            var pref = null;
+            if (skin === 'aurora') pref = window.localStorage.getItem('pt-theme');
+            else if (skin === 'carbon') pref = window.localStorage.getItem('pt.theme');
+            else {
+              var raw = window.localStorage.getItem('privatools.local.v1');
+              if (raw) pref = (JSON.parse(raw) || {}).theme;
+            }
+            if (pref === 'system') {
+              pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            }
+            if (pref === 'dark' || pref === 'light') d.setAttribute('data-theme', pref);
+          }
         } catch (e) { /* private mode — fall through to defaults */ }
       })();
     </script>

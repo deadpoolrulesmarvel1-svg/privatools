@@ -153,7 +153,87 @@ function convert(id, css) {
     `${SKIN} :is(button,input,select,textarea,optgroup){font:revert;font-family:inherit}`,
   );
 
+  // Contrast corrections land on whatever block carries the light palette.
+  // Each design scopes that block differently — Aurora emits a bare
+  // `[data-theme="light"]`, Structured a `:root[data-theme="light"]` that falls
+  // through to the generic scoper — so match on the selector text rather than
+  // trying to catch every branch above.
+  const corrections = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/data-theme=("|\\")?light/.test(lines[i])) continue;
+    const { body, applied } = correctLightPalette(id, lines[i]);
+    if (applied.length) { lines[i] = body; corrections.push(...applied); }
+  }
+  if (corrections.length) {
+    console.log(`  ${id}: light contrast corrections -> ${corrections.join(", ")}`);
+  }
+
   return { css: lines.join("\n"), keyframeNames };
+}
+
+/**
+ * Hue-preserving contrast corrections for the designs' own light palettes.
+ *
+ * `skin-palettes.mjs` fixes the *shared* tokens (--primary, --muted-foreground
+ * and the rest). But each imported design also ships its own token set — Aurora
+ * paints from --text3/--em/--tl, Structured from --ink3/--em/--teal — and its
+ * native CSS uses those everywhere. Those never went through a contrast pass,
+ * so light mode shipped secondary text between 2.97:1 and 4.31:1 against the
+ * surfaces the same palette defines.
+ *
+ * Each replacement keeps the original hue and saturation and lowers only
+ * lightness, until the colour clears 4.5:1 against the *darkest* surface that
+ * design paints text on — so it holds on every panel, not just on white. The
+ * measured before/after is recorded next to each entry.
+ *
+ * Dark mode needs none of these; it was already clear.
+ */
+/**
+ * Tokens added to the light block only.
+ *
+ * `--em-ink` is the label colour on the accent fill. The designs hard-code a
+ * near-black there, which works against the dark palette's bright mint but not
+ * against the darkened light-mode --em. Defining it only here means dark mode
+ * still falls through to the design's own literal, byte for byte.
+ */
+const LIGHT_TOKEN_ADDITIONS = {
+  aurora:     { "--em-ink": "#FFFFFF" },   // 5.22:1 on #0A7C54
+  structured: { "--em-ink": "#FFFFFF" },   // 5.16:1 on #0A7C59
+};
+
+const LIGHT_CONTRAST_FIXES = {
+  aurora: {
+    // worst surface --pnl3 #E9F1ED
+    "--text3": ["#617A76", "#5A716D"],   // 4.01:1 -> 4.55:1
+    "--em":    ["#0B8C5F", "#0A7C54"],   // 3.71:1 -> 4.55:1
+    "--tl":    ["#0C807C", "#0B7975"],   // 4.16:1 -> 4.55:1
+  },
+  structured: {
+    // worst surface --panel3 #EAF2EE
+    "--ink3":  ["#7A908D", "#5E716E"],   // 2.97:1 -> 4.55:1
+    "--em":    ["#0B8F66", "#0A7C59"],   // 3.59:1 -> 4.55:1
+    "--teal":  ["#0C8279", "#0B7A72"],   // 4.11:1 -> 4.55:1
+  },
+};
+
+/** Applies this design's light-mode corrections to one declaration body. */
+function correctLightPalette(id, body) {
+  const fixes = LIGHT_CONTRAST_FIXES[id];
+  if (!fixes) return { body, applied: [] };
+  const applied = [];
+  let out = body;
+  for (const [token, [from, to]] of Object.entries(fixes)) {
+    const re = new RegExp(`(${token}\\s*:\\s*)${from}\\b`, "i");
+    if (!re.test(out)) continue;
+    out = out.replace(re, `$1${to}`);
+    applied.push(`${token} ${from}->${to}`);
+  }
+  for (const [token, value] of Object.entries(LIGHT_TOKEN_ADDITIONS[id] || {})) {
+    if (out.includes(token + ":")) continue;
+    out = out.replace(/\}\s*$/, `${token}:${value};}`);
+    applied.push(`+${token} ${value}`);
+  }
+  return { body: out, applied };
 }
 
 const parts = [

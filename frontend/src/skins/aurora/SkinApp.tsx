@@ -76,8 +76,8 @@ class Component extends React.Component {
     }
     try {
       const saved = localStorage.getItem('pt-theme');
-      if (p.theme) this.applyTheme(p.theme, true);
-      else if (saved) this.applyTheme(saved, true);
+      if (saved) this.applyTheme(saved, true);
+      else if (p.theme) this.applyTheme(p.theme, true);
       else this.applyTheme('dark', true);
     } catch (e) { this.applyTheme(p.theme || 'dark', true); }
     if (p.startRoute && p.startRoute !== 'home' && !window.location.hash) {
@@ -904,7 +904,7 @@ class Component extends React.Component {
       plRun: this.plStart,
       plRunDisabled: running,
       plRunBg: running ? 'var(--pnl2)' : 'linear-gradient(180deg,var(--em),var(--emd))',
-      plRunFg: running ? 'var(--text2)' : '#03120C',
+      plRunFg: running ? 'var(--text2)' : 'var(--em-ink,#03120C)',
       plRunCursor: running ? 'progress' : 'pointer',
       plRunOpacity: running ? '.7' : '1',
       plSourceIcon: st.plFile ? 'description' : 'upload',
@@ -936,7 +936,7 @@ class Component extends React.Component {
           statusD: sm ? 'flex' : 'none',
           statusIcon: sm ? sm[0] : '', statusText: sm ? sm[1] : '', statusColor: sm ? sm[2] : 'var(--text3)',
           swBg: s.enabled ? 'var(--em)' : 'var(--pnl3)',
-          swDot: s.enabled ? '#03120C' : 'var(--text3)',
+          swDot: s.enabled ? 'var(--em-ink,#03120C)' : 'var(--text3)',
           swX: s.enabled ? '18px' : '2px',
           toggleAria: (s.enabled ? 'Disable ' : 'Enable ') + s.name,
           connD: i < steps.length - 1 ? 'flex' : 'none',
@@ -1076,7 +1076,7 @@ class Component extends React.Component {
       bRunLabel: st.bRunning ? 'Cancel run' : (st.bDone ? 'Run again' : 'Run batch'),
       bRunIcon: st.bRunning ? 'stop_circle' : 'play_arrow',
       bRunBg: st.bRunning ? 'var(--pnl2)' : 'linear-gradient(180deg,var(--em),var(--emd))',
-      bRunFg: st.bRunning ? 'var(--text)' : '#03120C',
+      bRunFg: st.bRunning ? 'var(--text)' : 'var(--em-ink,#03120C)',
       bRunOpacity: '1',
       bDownloadOk: () => this.toast(ok.length + ' successful results downloaded as ZIP', 'folder_zip'),
       bDownloadDisabled: ok.length === 0,
@@ -1304,7 +1304,7 @@ class Component extends React.Component {
         const a = active.indexOf(k) >= 0;
         return { label, icon, active: a,
           bg: a ? 'var(--emsoft)' : 'var(--pnl2)', fg: a ? 'var(--text)' : 'var(--text2)', bd: a ? 'var(--line2)' : 'var(--line)',
-          swBg: a ? 'var(--em)' : 'var(--pnl3)', swDot: a ? '#03120C' : 'var(--text3)', swX: a ? '18px' : '2px',
+          swBg: a ? 'var(--em)' : 'var(--pnl3)', swDot: a ? 'var(--em-ink,#03120C)' : 'var(--text3)', swX: a ? '18px' : '2px',
           onClick: () => this.setState(s => {
             const cur = s.cmpPriorities || ['privacy', 'price', 'filesize', 'offline'];
             return { cmpPriorities: cur.indexOf(k) >= 0 ? cur.filter(x => x !== k) : cur.concat([k]) };
@@ -1322,7 +1322,7 @@ class Component extends React.Component {
           name, sub: isUs ? 'Local-first' : (this.competitors.filter(c => c[0] === name)[0] || ['', ''])[1],
           bg: isUs ? 'var(--emsoft)' : 'transparent',
           markBg: isUs ? 'linear-gradient(145deg,var(--tl),var(--em))' : 'var(--pnl3)',
-          markColor: isUs ? '#04120C' : 'var(--text3)',
+          markColor: isUs ? 'var(--em-ink,#04120C)' : 'var(--text3)',
           markIcon: isUs ? 'shield' : 'description',
           cells,
           labelled: shown.map((k, i) => Object.assign({ label: this.priorityDefs.filter(p => p[0] === k)[0][1] }, cells[i]))
@@ -2047,7 +2047,7 @@ Component.prototype.render = function render() {
       <nav aria-label="Primary" style={css("display:var(--rail-d);flex-direction:column;width:var(--rail-w);flex:0 0 var(--rail-w);border-right:1px solid var(--line);background:var(--bg1);position:sticky;top:0;height:100vh;padding:20px 12px 14px;gap:4px;z-index:20")}>
       <a href="#home" onClick={v.goHome} style={css("display:flex;align-items:center;gap:10px;padding:6px 8px 18px;color:var(--text)")}>
       <span style={css("width:28px;height:28px;border-radius:8px;background:linear-gradient(145deg,var(--tl),var(--em) 60%,var(--vi));display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px -4px var(--em)")}>
-      <span style={css("font-family:'Material Symbols Rounded';font-size:17px;color:#04120C;font-variation-settings:'wght' 500")}>{ICON.shield}</span>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:17px;color:var(--em-ink,#04120C);font-variation-settings:'wght' 500")}>{ICON.shield}</span>
       </span>
       <span style={css("display:var(--raillbl-d);font-family:Sora,sans-serif;font-weight:600;font-size:17px;letter-spacing:-.2px")}>PrivaTools</span>
       </a>
@@ -2103,7 +2103,7 @@ Component.prototype.render = function render() {
       </button>
       <a href="#home" onClick={v.goHome} style={css("display:flex;align-items:center;gap:8px;color:var(--text)")}>
       <span style={css("width:24px;height:24px;border-radius:7px;background:linear-gradient(145deg,var(--tl),var(--em) 60%,var(--vi));display:flex;align-items:center;justify-content:center")}>
-      <span style={css("font-family:'Material Symbols Rounded';font-size:14px;color:#04120C")}>{ICON.shield}</span>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:14px;color:var(--em-ink,#04120C)")}>{ICON.shield}</span>
       </span>
       <span style={css("font-family:Sora,sans-serif;font-weight:600;font-size:15px")}>PrivaTools</span>
       </a>
@@ -2142,7 +2142,7 @@ Component.prototype.render = function render() {
                         ))}
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:10px")}>
-      <button type="button" onClick={v.openPalette} style={css("display:flex;align-items:center;gap:9px;height:46px;padding:0 18px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;box-shadow:0 10px 28px -12px var(--em)")}>
+      <button type="button" onClick={v.openPalette} style={css("display:flex;align-items:center;gap:9px;height:46px;padding:0 18px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;box-shadow:0 10px 28px -12px var(--em)")}>
       <span style={css("font-family:'Material Symbols Rounded';font-size:19px")}>{ICON.search}</span>Search 200+ tools
                   <span style={css("font-size:11px;opacity:.7;border:1px solid rgba(0,0,0,.25);border-radius:5px;padding:1px 5px")}>⌘K</span>
       </button>
@@ -2173,7 +2173,7 @@ Component.prototype.render = function render() {
       <div style={css("font-family:Sora,sans-serif;font-size:19px;font-weight:600")}>Drop a file or choose a tool</div>
       <div style={css("font-size:13px;color:var(--text2)")}>{v.dropSub}</div>
       <div style={css("display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:6px")}>
-      <button type="button" onClick={v.chooseFile} style={css("height:42px;padding:0 18px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13.5px;cursor:pointer")}>Choose file</button>
+      <button type="button" onClick={v.chooseFile} style={css("height:42px;padding:0 18px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13.5px;cursor:pointer")}>Choose file</button>
       <button type="button" onClick={v.toggleSources} aria-expanded={v.sourcesOpen} style={css("height:42px;padding:0 15px;border-radius:11px;border:1px solid var(--line2);background:var(--pnl2);color:var(--text);font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:7px")}>Choose a source
                 <span style={css("font-family:'Material Symbols Rounded';font-size:18px")}>{ICON.expand_more}</span></button>
       </div>
@@ -2580,7 +2580,7 @@ Component.prototype.render = function render() {
       <span style={css(`font-family:'Material Symbols Rounded';font-size:18px;color:${r.checkC}`)}>{ICON[r.check]}</span></button>
 
                   ))}
-      <button type="button" onClick={v.closeMobFilters} style={css("width:100%;min-height:48px;margin-top:14px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:14px;cursor:pointer")}>Apply filters</button>
+      <button type="button" onClick={v.closeMobFilters} style={css("width:100%;min-height:48px;margin-top:14px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:14px;cursor:pointer")}>Apply filters</button>
       </div>
       </div>
 
@@ -2700,7 +2700,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:12.5px;color:var(--text2);margin-top:4px")}>Enter the password to continue. It stays on this device and can be saved to your Vault.</div>
       <div style={css("display:flex;gap:8px;margin-top:12px;flex-wrap:wrap")}>
       <input type="password" value={v.pwValue} onChange={v.onPw} placeholder="File password" aria-label="File password" style={css("flex:1;min-width:160px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--pnl);color:var(--text);padding:0 12px;font-size:13.5px")} />
-      <button type="button" onClick={v.submitPw} style={css("height:40px;padding:0 15px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>Unlock</button>
+      <button type="button" onClick={v.submitPw} style={css("height:40px;padding:0 15px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>Unlock</button>
       </div>
       <label style={css("display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text2);margin-top:10px;cursor:pointer")}>
       <input type="checkbox" checked={v.savePw} onChange={v.toggleSavePw} style={css("width:16px;height:16px;accent-color:var(--em)")} />Save to Vault on this device</label>
@@ -2847,7 +2847,7 @@ Component.prototype.render = function render() {
                           ))}
       </div>
       <div style={css("display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px")}>
-      <button type="button" onClick={v.runTool} style={css("display:flex;align-items:center;gap:9px;height:46px;min-height:46px;padding:0 20px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;box-shadow:0 10px 26px -14px var(--em)")}>
+      <button type="button" onClick={v.runTool} style={css("display:flex;align-items:center;gap:9px;height:46px;min-height:46px;padding:0 20px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;box-shadow:0 10px 26px -14px var(--em)")}>
                     {v.tool.name}<span style={css("font-family:'Material Symbols Rounded';font-size:19px")}>{ICON.arrow_forward}</span></button>
       <button type="button" onClick={v.queueTool} style={css("height:46px;min-height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line2);background:var(--pnl2);color:var(--text);font-size:13.5px;cursor:pointer")}>Add more files</button>
       <a href="#batch" onClick={v.goBatch} style={css("font-size:12.5px")}>Run this on many files in Batch</a>
@@ -2862,7 +2862,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:13.5px;color:var(--text2)")}>Waiting to start…</div>
       <div style={css("font-size:12px;color:var(--text3);margin-top:4px")}>You can add more files while this one waits.</div>
       <div style={css("display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap")}>
-      <button type="button" onClick={v.startQueued} style={css("height:40px;min-height:40px;padding:0 15px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>Start now</button>
+      <button type="button" onClick={v.startQueued} style={css("height:40px;min-height:40px;padding:0 15px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>Start now</button>
       <button type="button" onClick={v.queueTool} style={css("height:40px;min-height:40px;padding:0 15px;border-radius:11px;border:1px solid var(--line);background:var(--pnl);color:var(--text);font-size:13px;cursor:pointer")}>Add more files</button>
       </div>
       </div>
@@ -2934,7 +2934,7 @@ Component.prototype.render = function render() {
       <span style={css(`font-family:'Material Symbols Rounded';font-size:20px;color:${v.tool.color}`)}>{ICON[v.fileIcon]}</span>
       <span style={css("flex:1;min-width:0")}><span style={css("display:block;font-size:13.5px;font-weight:600")}>{v.resultName}</span>
       <span style={css("display:block;font-size:11.5px;color:var(--em)")}>{v.resultDelta}</span></span>
-      <button type="button" onClick={v.download} style={css("height:40px;min-height:40px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>Download</button>
+      <button type="button" onClick={v.download} style={css("height:40px;min-height:40px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>Download</button>
       </div>
       <div style={css("font-size:11px;letter-spacing:.1em;color:var(--text3);font-weight:600;margin:14px 0 8px")}>SAVE BACK TO</div>
       <div style={css("display:flex;gap:7px;flex-wrap:wrap")}>
@@ -3128,7 +3128,7 @@ Component.prototype.render = function render() {
       <span style={css("flex:1;min-width:180px")}>
       <span style={css("display:block;font-size:13.5px;font-weight:600")}>{v.plCompleteTitle}</span>
       <span style={css("display:block;font-size:12px;color:var(--text3);margin-top:2px")}>Result exists only in this tab. Download it or save it back before you close.</span></span>
-      <button type="button" onClick={v.plDownload} style={css("height:40px;min-height:40px;padding:0 15px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>Download result</button>
+      <button type="button" onClick={v.plDownload} style={css("height:40px;min-height:40px;padding:0 15px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>Download result</button>
       <button type="button" onClick={v.plReset} style={css("height:40px;min-height:40px;padding:0 14px;border-radius:11px;border:1px solid var(--line);background:transparent;color:var(--text2);font-size:13px;cursor:pointer")}>Run again</button>
       </div>
 
@@ -3568,7 +3568,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:13px;color:var(--text2);margin-top:6px;max-width:420px;margin-left:auto;margin-right:auto")}>Passwords for locked files, stored on this device. No files are kept here — the Vault is not a document manager.</div>
       <div style={css("display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap")}>
       <input type="password" value={v.vaultInput} onChange={v.onVaultInput} placeholder={v.vaultPlaceholder} aria-label="Vault unlock" style={css(`display:${v.vaultInputD};width:200px;height:44px;border-radius:11px;border:1px solid var(--line);background:var(--pnl2);color:var(--text);padding:0 12px;font-size:13.5px`)} />
-      <button type="button" onClick={v.vaultUnlock} style={css("height:44px;min-height:44px;padding:0 18px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap")}>{v.vaultCtaLabel}</button>
+      <button type="button" onClick={v.vaultUnlock} style={css("height:44px;min-height:44px;padding:0 18px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap")}>{v.vaultCtaLabel}</button>
       </div>
       <div style={css(`display:${v.vaultErrD};align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--co)`)} role="alert">
       <span style={css("font-family:'Material Symbols Rounded';font-size:16px")}>{ICON.error}</span>{v.vaultErr}</div>
@@ -3691,7 +3691,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:11.5px;color:var(--am);margin-top:12px;line-height:1.5")}>Prototype note: this flow does not perform real encryption. No file is produced and nothing leaves this tab.</div>
       <div style={css("display:flex;gap:8px;justify-content:flex-end;margin-top:16px")}>
       <button type="button" onClick={v.bkClose} style={css("height:42px;min-height:42px;padding:0 15px;border-radius:11px;border:1px solid var(--line);background:transparent;color:var(--text2);font-size:13px;cursor:pointer")}>Cancel</button>
-      <button type="button" onClick={v.bkCreate} style={css("height:42px;min-height:42px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap")}>Create backup</button>
+      <button type="button" onClick={v.bkCreate} style={css("height:42px;min-height:42px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap")}>Create backup</button>
       </div>
       </div>
 
@@ -3898,7 +3898,7 @@ Component.prototype.render = function render() {
       <div style={css("border:1px solid var(--line2);border-radius:16px;background:var(--pnl);padding:16px")}>
       <div style={css("display:flex;align-items:center;gap:9px")}>
       <span style={css("width:28px;height:28px;border-radius:9px;background:linear-gradient(145deg,var(--tl),var(--em));display:flex;align-items:center;justify-content:center")}>
-      <span style={css("font-family:'Material Symbols Rounded';font-size:16px;color:#04120C")}>{ICON.shield}</span></span>
+      <span style={css("font-family:'Material Symbols Rounded';font-size:16px;color:var(--em-ink,#04120C)")}>{ICON.shield}</span></span>
       <div style={css("font-family:Sora,sans-serif;font-size:16px;font-weight:600")}>What PrivaTools does better</div>
       </div>
       <div style={css("display:flex;flex-direction:column;gap:8px;margin-top:12px")}>
@@ -4023,7 +4023,7 @@ Component.prototype.render = function render() {
       <span style={css("font-family:'Material Symbols Rounded';font-size:30px;color:var(--am)")}>{ICON.find_in_page}</span>
       <div style={css("font-family:Sora,sans-serif;font-size:20px;font-weight:600;margin-top:10px")}>That article isn’t here</div>
       <div style={css("font-size:13.5px;color:var(--text2);margin-top:6px")}>The link may be old or mistyped. Nothing was lost — here is the index.</div>
-      <button type="button" onClick={v.goBlog} style={css("height:42px;min-height:42px;margin-top:16px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13.5px;cursor:pointer")}>All articles</button>
+      <button type="button" onClick={v.goBlog} style={css("height:42px;min-height:42px;margin-top:16px;padding:0 16px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13.5px;cursor:pointer")}>All articles</button>
       </div>
 
                 </>)}
@@ -4290,7 +4290,7 @@ Component.prototype.render = function render() {
       <span style={css("font-size:12px;color:var(--text2);line-height:1.5")}>We store your message and any attachment only as long as it takes to resolve the issue. No product analytics, no tracking pixels, no marketing use.</span>
       </div>
       <div style={css("display:flex;gap:9px;flex-wrap:wrap;align-items:center")}>
-      <button type="button" onClick={v.formSubmit} style={css("display:flex;align-items:center;gap:8px;height:46px;min-height:46px;padding:0 18px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:14px;cursor:pointer")}>{v.formCta}
+      <button type="button" onClick={v.formSubmit} style={css("display:flex;align-items:center;gap:8px;height:46px;min-height:46px;padding:0 18px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:14px;cursor:pointer")}>{v.formCta}
                     <span style={css("font-family:'Material Symbols Rounded';font-size:18px")}>{ICON[v.formCtaIcon]}</span></button>
       <button type="button" onClick={v.formSimOffline} style={css(`display:${v.demoD};align-items:center;height:46px;min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text3);font-size:12.5px;cursor:pointer`)}>Demo: offline</button>
       <button type="button" onClick={v.formSimError} style={css(`display:${v.demoD};align-items:center;height:46px;min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text3);font-size:12.5px;cursor:pointer`)}>Demo: send error</button>
@@ -4470,7 +4470,7 @@ Component.prototype.render = function render() {
       <h1 style={css("font-family:Sora,sans-serif;font-size:var(--h1);font-weight:600;letter-spacing:-.03em;margin:14px 0 0")}>This page isn’t here</h1>
       <div style={css("font-size:14.5px;color:var(--text2);margin-top:8px;max-width:60ch")}>Nothing was lost and no file was touched. The tool you wanted may have been renamed — try one of these, or search the whole catalogue.</div>
       <div style={css("display:flex;gap:9px;flex-wrap:wrap;margin-top:18px")}>
-      <button type="button" onClick={v.openPalette} style={css("display:flex;align-items:center;gap:8px;height:44px;min-height:44px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13.5px;cursor:pointer")}>
+      <button type="button" onClick={v.openPalette} style={css("display:flex;align-items:center;gap:8px;height:44px;min-height:44px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13.5px;cursor:pointer")}>
       <span style={css("font-family:'Material Symbols Rounded';font-size:18px")}>{ICON.search}</span>Search tools</button>
       <button type="button" onClick={v.goHome} style={css("height:44px;min-height:44px;padding:0 15px;border-radius:12px;border:1px solid var(--line2);background:var(--pnl);color:var(--text);font-size:13.5px;cursor:pointer")}>Home</button>
       <button type="button" onClick={v.goTools} style={css("height:44px;min-height:44px;padding:0 15px;border-radius:12px;border:1px solid var(--line2);background:var(--pnl);color:var(--text);font-size:13.5px;cursor:pointer")}>All tools</button>
@@ -4521,7 +4521,7 @@ Component.prototype.render = function render() {
       <div style={css("border:1px solid var(--line);border-radius:16px;background:var(--pnl);padding:15px")}>
       <div style={css("font-size:10.5px;letter-spacing:.13em;color:var(--text3);font-weight:600")}>BUTTONS</div>
       <div style={css("display:flex;flex-direction:column;gap:8px;margin-top:11px")}>
-      <button type="button" style={css("height:40px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>Primary</button>
+      <button type="button" style={css("height:40px;border-radius:11px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>Primary</button>
       <button type="button" style={css("height:40px;border-radius:11px;border:1px solid var(--line2);background:var(--pnl2);color:var(--text);font-size:13px;cursor:pointer")}>Secondary</button>
       <button type="button" style={css("height:40px;border-radius:11px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:13px;cursor:pointer")}>Ghost</button>
       <button type="button" style={css("height:40px;border-radius:11px;border:1px solid var(--co);background:var(--cosoft);color:var(--co);font-size:13px;cursor:pointer")}>Destructive</button>
@@ -4544,7 +4544,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:10.5px;letter-spacing:.13em;color:var(--text3);font-weight:600")}>TOGGLES, CHIPS, BADGES</div>
       <div style={css("display:flex;align-items:center;gap:10px;margin-top:11px")}>
       <span style={css("width:38px;height:21px;border-radius:20px;background:var(--em);position:relative;display:inline-block")}>
-      <span style={css("position:absolute;top:2px;left:19px;width:15px;height:15px;border-radius:50%;background:#03120C")}></span></span>
+      <span style={css("position:absolute;top:2px;left:19px;width:15px;height:15px;border-radius:50%;background:var(--em-ink,#03120C)")}></span></span>
       <span style={css("font-size:12.5px;color:var(--text2)")}>Toggle on</span>
       </div>
       <div style={css("display:flex;align-items:center;gap:10px;margin-top:8px")}>
@@ -4639,7 +4639,7 @@ Component.prototype.render = function render() {
       </div>
       </div>
       <div style={css("display:flex;gap:7px;margin-top:12px")}>
-      <button type="button" onClick={s.onShow} style={css("height:36px;min-height:36px;padding:0 13px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:12.5px;cursor:pointer")}>{s.cta}</button>
+      <button type="button" onClick={s.onShow} style={css("height:36px;min-height:36px;padding:0 13px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:12.5px;cursor:pointer")}>{s.cta}</button>
       <button type="button" style={css("height:36px;min-height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text3);font-size:12.5px;cursor:pointer")}>{s.dismiss}</button>
       </div>
       </div>
@@ -4835,7 +4835,7 @@ Component.prototype.render = function render() {
       </label>
       <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--text3)`)}>At least 10 characters. Length is what makes a password strong.</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12px;color:var(--co)`)}>{v.acctError}</div>
-      <button type="submit" disabled={v.acctBusy} style={css(`height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C;opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
+      <button type="submit" disabled={v.acctBusy} style={css(`height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:var(--em-ink,#04120C);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
       </form>
       <div style={css("border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px")}>
       <div style={css("font-family:Sora,sans-serif;font-size:14px;font-weight:600")}>You do not need an account</div>
@@ -4852,7 +4852,7 @@ Component.prototype.render = function render() {
       <div style={css("border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px")}>
       <div style={css("display:flex;align-items:center;justify-content:space-between;gap:10px")}>
       <div style={css("font-family:Sora,sans-serif;font-size:14px;font-weight:600")}>API keys</div>
-      <button type="button" onClick={v.acctNewKey} style={css("height:32px;padding:0 12px;border-radius:9px;border:none;cursor:pointer;background:var(--em);color:#04120C;font-size:12.5px;font-weight:600")}>New key</button>
+      <button type="button" onClick={v.acctNewKey} style={css("height:32px;padding:0 12px;border-radius:9px;border:none;cursor:pointer;background:var(--em);color:var(--em-ink,#04120C);font-size:12.5px;font-weight:600")}>New key</button>
       </div>
       <div style={css(`display:${v.acctNewKeyD};margin-top:12px;border:1px solid var(--em);border-radius:11px;background:var(--emsoft);padding:12px`)}>
       <div style={css("font-size:12px;font-weight:600;color:var(--em)")}>Copy this now — it is not shown again</div>
@@ -4923,7 +4923,7 @@ Component.prototype.render = function render() {
               <input type="password" value={v.vltPassword} onInput={v.vltSetPassword} autoComplete="off" style={css("padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px")} />
       </label>
       <div role="alert" style={css(`display:${v.vltErrD};margin-top:8px;font-size:12px;color:var(--co)`)}>{v.vltError}</div>
-      <button type="submit" disabled={v.vltBusy} style={css(`margin-top:11px;width:100%;opacity:${v.vltBusyOpacity};height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C`)}>{v.vltAddLabel}</button>
+      <button type="submit" disabled={v.vltBusy} style={css(`margin-top:11px;width:100%;opacity:${v.vltBusyOpacity};height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:var(--em-ink,#04120C)`)}>{v.vltAddLabel}</button>
       <p style={css("font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5")}>Encrypted with a key this browser generated and cannot export. That means it never leaves this device — and it cannot sync to another one. Clearing site data erases it.</p>
       </form>
       </div>
@@ -5071,7 +5071,7 @@ Component.prototype.render = function render() {
       <div style={css("font-size:14px;font-weight:600;font-family:Sora,sans-serif")}>{v.sheetTitle}</div>
       <div style={css("font-size:12.5px;color:var(--text2);margin-top:4px;line-height:1.45")}>{v.sheetBody}</div>
       <div style={css("display:flex;gap:8px;margin-top:12px")}>
-      <button type="button" onClick={v.sheetPrimary} style={css("height:38px;min-height:38px;padding:0 15px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:#03120C;font-weight:600;font-size:13px;cursor:pointer")}>{v.sheetCta}</button>
+      <button type="button" onClick={v.sheetPrimary} style={css("height:38px;min-height:38px;padding:0 15px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:13px;cursor:pointer")}>{v.sheetCta}</button>
       <button type="button" onClick={v.closeSheet} style={css("height:38px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text2);font-size:13px;cursor:pointer")}>{v.sheetDismiss}</button>
       </div>
       </div>
