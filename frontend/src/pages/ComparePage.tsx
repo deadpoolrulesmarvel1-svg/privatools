@@ -380,7 +380,7 @@ export default function ComparePage() {
         </header>
 
         {/* ── Quick stats ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-up">
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-up stagger-in">
           {[
             { label: "Pricing",    value: comp.pricing || "—",    Icon: DollarSign },
             { label: "Free tier",  value: comp.freeLimit || "—",  Icon: Zap },
@@ -434,7 +434,7 @@ export default function ComparePage() {
             <Scale size={11} className="text-accent" />
             <span>Honest tradeoff</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border stagger-in">
             <div className="p-6 sm:p-7">
               <p className="font-medium text-[11px] text-accent mb-2 inline-flex items-center gap-1.5">
                 <Trophy size={11} /> PrivaTools wins for
@@ -641,7 +641,7 @@ function DirectoryView() {
         </header>
 
         {/* ── At-a-glance stat row — last tile is the savings calc ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-up stagger-1">
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-up stagger-1 stagger-in">
           {[
             { icon: DollarSign, label: "Truly free",     value: "No quotas" },
             { icon: Lock,       label: "Open source",    value: "MIT licensed" },
@@ -671,9 +671,8 @@ function DirectoryView() {
                 If you bought everyone below
               </h2>
               <div className="mt-5 flex items-baseline gap-2">
-                <span className="font-display font-bold text-foreground text-6xl sm:text-7xl tracking-[-0.04em] leading-none"
-                      style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                  ${annualSavingsAll}
+                <span className="font-display font-extrabold text-foreground text-6xl sm:text-7xl tracking-[-0.05em] leading-none tabular-nums">
+                  ${annualSavingsAll.toLocaleString()}
                 </span>
                 <span className="font-medium text-[12px] text-muted-foreground">/ yr</span>
               </div>
@@ -816,7 +815,7 @@ function DirectoryView() {
             Pick a comparison
           </h2>
           <p className="text-[14px] text-muted-foreground mt-2 mb-6">Each page is a full feature-by-feature breakdown plus pricing, free-tier limits, and our honest verdict.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {sorted.map(([key, c], i) => {
               const wins = privatoolsWinsVs(c);
               const monthly = MONTHLY_PRICING[key] || 0;
@@ -928,7 +927,7 @@ function DirectoryView() {
                   </a>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-in">
                 {[
                   { icon: Lock,  title: "True privacy",     desc: "Files processed in an isolated container and deleted immediately. No 2-hour retention." },
                   { icon: Heart, title: "Actually free",    desc: "No \"2 tasks/day\" limits, no premium upsells, no watermarks, no account ever required." },

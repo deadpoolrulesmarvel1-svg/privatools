@@ -174,7 +174,7 @@ export default function AboutPage() {
           </div>
 
           {/* Stat grid — corner-marked ledger tiles */}
-          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-1">
+          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-1 stagger-in">
             {[
               { value: `${TOTAL}+`, label: "Free tools",    icon: Zap },
               { value: "0",         label: "Files stored",   icon: FileCheck },
@@ -300,7 +300,7 @@ export default function AboutPage() {
             What we <span className="italic text-accent">don't</span> do
           </h2>
           <p className="text-[14px] text-muted-foreground mt-2 mb-6">For every line below, the implementation is in the public source.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-in">
             {[
               { icon: EyeOff, title: "Read your files",        desc: "No content telemetry, no AI training on uploads, no inspection." },
               { icon: Users,  title: "Require accounts",        desc: "No email gate, no sign-up flow, no \"premium\" pop-up." },
@@ -356,7 +356,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Open source + Self-host ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up stagger-in">
           {[
             {
               Icon: Sparkles,

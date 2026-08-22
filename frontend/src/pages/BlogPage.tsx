@@ -385,7 +385,7 @@ export default function BlogPage() {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-in">
                 {moreLikeFeatured.map((p, i) => (
                   <Link
                     key={p.slug}
@@ -408,7 +408,7 @@ export default function BlogPage() {
 
         {/* ── Article grid ── */}
         {filteredRest.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {filteredRest.map((post, i) => {
               const cat = categoryFor(post);
               const Icon = cat.icon;

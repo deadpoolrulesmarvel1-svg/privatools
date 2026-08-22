@@ -115,7 +115,7 @@ export default function LandingPage() {
                 <h2 className="text-[11.5px] text-accent font-semibold mb-4 inline-flex items-center gap-1.5">
                   <span aria-hidden="true"></span> By the numbers
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 stagger-in">
                   {[
                     { num: `${TOTAL}`,           label: "Tools" },
                     { num: "0",                  label: "Data collected" },
@@ -176,7 +176,7 @@ export default function LandingPage() {
               Start With the Tools Everyone Uses
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {featured.map((tool, i) => {
               const m = categoryMeta[tool.category];
               const Icon = tool.icon;
@@ -230,7 +230,7 @@ export default function LandingPage() {
               Built Different, by Design
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {features.map((f, i) => {
               const FIcon = f.icon;
               return (

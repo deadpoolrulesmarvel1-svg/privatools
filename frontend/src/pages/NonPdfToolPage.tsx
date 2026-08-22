@@ -8,6 +8,7 @@ import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock
 import { useHistory } from "@/hooks/useHistory";
 import { useFavorites } from "@/hooks/useFavorites";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
+import { ToolFaq } from "@/components/ToolFaq";
 import { ToolIllustration } from "@/components/ToolIllustration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToolSkeleton } from "@/components/ToolSkeleton";
@@ -400,7 +401,13 @@ export default function NonPdfToolPage() {
   return (
     <div className={cn("h-full flex flex-col", `cat-${tool.category}`)}>
       {/* Workspace header */}
-      <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
+      <header
+        className="relative flex items-start justify-between gap-3 px-5 sm:px-7 py-9 sm:py-12 border-b border-border overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(180deg, color-mix(in srgb, hsl(var(--tile)) 9%, transparent) 0%, transparent 100%)",
+        }}
+      >
         <div className="min-w-0 flex-1">
           <nav aria-label="Breadcrumb" className="font-medium text-[11px] text-muted-foreground mb-3 flex items-center gap-2">
             <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
@@ -410,8 +417,12 @@ export default function NonPdfToolPage() {
             <span className="text-foreground">{tool.name}</span>
           </nav>
           <div className="flex items-start gap-4">
-            <span className="hidden sm:inline-flex icon-tile icon-tile-lg shrink-0">
-              <ToolIcon size={22} strokeWidth={1.75} />
+            <span
+              className="hidden sm:inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white"
+              style={{ background: "hsl(var(--tile))", boxShadow: "0 10px 26px -12px hsl(var(--tile))" }}
+              aria-hidden="true"
+            >
+              <ToolIcon size={28} strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -427,7 +438,7 @@ export default function NonPdfToolPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                <h1 className="font-display font-extrabold text-foreground text-[38px] sm:text-[52px] tracking-[-0.04em] leading-[1.02] text-balance">
                   {tool.name}
                 </h1>
                 <button
@@ -446,7 +457,7 @@ export default function NonPdfToolPage() {
                   <Star size={16} strokeWidth={1.8} fill={favorite ? "currentColor" : "none"} />
                 </button>
               </div>
-              <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
+              <p className="mt-3 text-[16.5px] text-muted-foreground leading-relaxed max-w-[60ch]">
                 {tool.longDescription || tool.description}
               </p>
             </div>
@@ -594,6 +605,10 @@ export default function NonPdfToolPage() {
             </div>
           </div>
         </div>
+
+        {/* 112 of the 113 non-PDF tools already had FAQ copy written for
+            crawlers; this is the first time a visitor sees it. */}
+        <ToolFaq slug={tool.slug} toolName={tool.name} />
        </div>
       </div>
     </div>
