@@ -103,153 +103,193 @@
 
 @layer base {
   :root {
-    /* Bricolage Grotesque set heavy and large for display — it has genuine
-       character rather than neutrality. Outfit is a friendly geometric sans
-       that stays warm at small sizes. DM Mono only for figures. */
     --font-display: 'Bricolage Grotesque', 'Outfit', system-ui, sans-serif;
     --font-sans:    'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono:    'DM Mono', 'SF Mono', Menlo, monospace;
 
     /* ── Light ─────────────────────────────────────────────────────────
-       Colour is used generously here rather than rationed to a single
-       reserved accent. With 219 tools across a dozen categories, a coded
-       palette is information: it tells you where you are before you read
-       anything. */
+       Teal primary with an amber highlight: a warm/cool complementary duo
+       that reads cheerful rather than corporate. Teal is unclaimed as a
+       primary here — Foxit uses it only as a tertiary — while five rivals
+       share blue and two share orange. */
     --background: 0 0% 100%;
-    --foreground: 264 22% 8%;            /* #17121C warm near-black */
+    --foreground: 195 42% 8%;            /* #0C1D22 teal-leaning near-black */
 
     --paper:      0 0% 100%;
-    --paper-2:    266 40% 97%;           /* #F8F5FC faint violet wash */
-    --paper-3:    266 32% 94%;           /* #EFE9F6 */
+    --paper-2:    186 44% 97%;           /* #F3FAFB */
+    --paper-3:    186 36% 93%;           /* #E4F2F4 */
 
     --card: 0 0% 100%;
-    --card-foreground: 264 22% 8%;
-    --card-tint: 266 45% 98%;
+    --card-foreground: 195 42% 8%;
+    --card-tint: 186 50% 98%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 264 22% 8%;
+    --popover-foreground: 195 42% 8%;
 
-    /* Coral primary. Warm, loud and friendly, and nobody in this category owns
-       it — the two orange rivals are muted B2B oranges. */
-    --primary: 11 100% 61%;              /* #FF5A3C */
+    --primary: 175 100% 33%;             /* #00A896 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 266 40% 96%;
-    --secondary-foreground: 264 22% 8%;
+    --secondary: 186 40% 95%;
+    --secondary-foreground: 195 42% 8%;
 
-    --muted: 266 30% 96%;
-    --muted-foreground: 264 10% 42%;     /* #6B6377 — AA on white */
+    --muted: 186 30% 96%;
+    --muted-foreground: 196 14% 38%;     /* #536B70 — AA on white */
 
-    --accent: 258 90% 62%;               /* #7C4DFF electric violet */
-    --accent-foreground: 0 0% 100%;
-    --accent-soft: 258 100% 96%;
+    /* Energy, not another button colour: highlights, badges, "new". */
+    --accent: 36 100% 50%;               /* #FFA000 */
+    --accent-foreground: 195 42% 8%;
+    --accent-soft: 40 100% 94%;
 
-    --copper: 32 95% 44%;                /* warning */
-    --copper-soft: 36 100% 94%;
-    --success: 158 75% 34%;
+    --copper: 28 92% 42%;                /* warning */
+    --copper-soft: 32 100% 94%;
+    --success: 158 80% 30%;
     --success-soft: 158 60% 94%;
 
-    --destructive: 351 85% 50%;
+    --destructive: 356 78% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 266 30% 90%;
-    --border-strong: 266 22% 78%;
-    --input: 266 30% 90%;
-    --ring: 258 90% 62%;
+    --border: 190 26% 89%;
+    --border-strong: 192 18% 74%;
+    --input: 190 26% 89%;
+    --ring: 175 100% 33%;
 
-    /* Chunky. Cards 20px, controls 12px, buttons fully round. */
     --radius: 1.25rem;
 
-    /* Category hues — a coded system, not decoration. Each tool family gets a
-       colour and keeps it across cards, icons, chips and headers. */
-    --cat-organize: 217 91% 60%;
-    --cat-edit:     258 90% 66%;
-    --cat-optimize: 173 80% 40%;
-    --cat-security: 350 89% 60%;
-    --cat-to-pdf:   160 84% 39%;
-    --cat-from-pdf: 38 92% 50%;
-    --cat-advanced: 239 84% 67%;
-    --cat-image:    330 81% 60%;
-    --cat-video:    25 95% 53%;
-    --cat-developer: 189 94% 43%;
-    --cat-archive:  45 93% 47%;
-    --cat-document: 84 81% 44%;
+    /* Twelve families, all at the same saturation and lightness so they read
+       as one wheel rather than a dozen unrelated defaults. Only the hue moves. */
+    --cat-organize:  210 72% 48%;
+    --cat-edit:      265 72% 48%;
+    --cat-optimize:  175 72% 38%;
+    --cat-security:  350 72% 50%;
+    --cat-to-pdf:    150 72% 36%;
+    --cat-from-pdf:   32 82% 46%;
+    --cat-advanced:  240 72% 56%;
+    --cat-image:     320 72% 50%;
+    --cat-video:      12 78% 50%;
+    --cat-developer: 190 78% 40%;
+    --cat-archive:    45 82% 44%;
+    --cat-document:   95 62% 36%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 264 22% 8%;
-    --sidebar-primary: 11 100% 61%;
+    --sidebar-foreground: 195 42% 8%;
+    --sidebar-primary: 175 100% 33%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 266 40% 96%;
-    --sidebar-accent-foreground: 264 22% 8%;
-    --sidebar-border: 266 30% 90%;
-    --sidebar-ring: 258 90% 62%;
+    --sidebar-accent: 186 40% 95%;
+    --sidebar-accent-foreground: 195 42% 8%;
+    --sidebar-border: 190 26% 89%;
+    --sidebar-ring: 175 100% 33%;
   }
 
+  /* ── Dark ──────────────────────────────────────────────────────────
+     Everything that is not the ground lives here, so the three variants
+     differ only in surface and elevation. That is what makes them
+     comparable: the colour system on top is identical. */
   .dark {
-    /* ── Dark — deep plum rather than neutral charcoal, so the colour system
-       still reads as one family at night. ─────────────────────────────── */
-    --background: 264 26% 7%;            /* #130E1A */
-    --foreground: 266 30% 95%;           /* #F2EEF9 */
+    --foreground: 186 30% 95%;
+    --card-foreground: 186 30% 95%;
+    --popover-foreground: 186 30% 95%;
 
-    --paper:   264 26% 7%;
-    --paper-2: 264 24% 11%;              /* #1C1526 */
-    --paper-3: 264 22% 16%;              /* #281F33 */
+    --primary: 175 75% 47%;              /* lifted so it holds on a dark ground */
+    --primary-foreground: 195 45% 6%;
 
-    --card: 264 24% 10%;
-    --card-foreground: 266 30% 95%;
-    --card-tint: 264 22% 13%;
+    --accent: 40 100% 58%;
+    --accent-foreground: 195 45% 6%;
+    --accent-soft: 36 60% 16%;
 
-    --popover: 264 24% 10%;
-    --popover-foreground: 266 30% 95%;
+    --copper: 32 96% 62%;
+    --copper-soft: 28 45% 16%;
+    --success: 158 62% 48%;
+    --success-soft: 158 40% 14%;
 
-    --primary: 11 100% 65%;              /* coral stays the primary on dark */
-    --primary-foreground: 264 26% 7%;
-
-    --secondary: 264 22% 16%;
-    --secondary-foreground: 266 24% 86%;
-
-    --muted: 264 22% 15%;
-    --muted-foreground: 266 14% 70%;     /* AA on the plum ground */
-
-    --accent: 258 100% 74%;
-    --accent-foreground: 264 26% 7%;
-    --accent-soft: 258 50% 20%;
-
-    --copper: 36 96% 64%;
-    --copper-soft: 32 45% 18%;
-    --success: 158 65% 52%;
-    --success-soft: 158 40% 16%;
-
-    --destructive: 351 90% 64%;
+    --destructive: 356 85% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 264 20% 20%;
-    --border-strong: 264 16% 34%;
-    --input: 264 20% 20%;
-    --ring: 258 100% 74%;
+    --ring: 175 75% 47%;
+    --sidebar-primary: 175 75% 47%;
+    --sidebar-primary-foreground: 195 45% 6%;
 
-    /* Lifted so each category still reads on the dark plum. */
-    --cat-organize: 217 95% 68%;
-    --cat-edit:     258 95% 74%;
-    --cat-optimize: 173 75% 52%;
-    --cat-security: 350 92% 68%;
-    --cat-to-pdf:   160 76% 50%;
-    --cat-from-pdf: 38 96% 60%;
-    --cat-advanced: 239 90% 74%;
-    --cat-image:    330 88% 68%;
-    --cat-video:    25 96% 62%;
-    --cat-developer: 189 90% 55%;
-    --cat-archive:  45 96% 58%;
-    --cat-document: 84 76% 55%;
+    /* Same wheel, lifted for legibility on dark. */
+    --cat-organize:  210 88% 66%;
+    --cat-edit:      265 88% 72%;
+    --cat-optimize:  175 70% 50%;
+    --cat-security:  350 88% 68%;
+    --cat-to-pdf:    150 62% 48%;
+    --cat-from-pdf:   32 92% 58%;
+    --cat-advanced:  240 90% 74%;
+    --cat-image:     320 85% 68%;
+    --cat-video:      12 90% 64%;
+    --cat-developer: 190 80% 54%;
+    --cat-archive:    45 92% 58%;
+    --cat-document:   95 60% 52%;
+  }
 
-    --sidebar-background: 264 26% 7%;
-    --sidebar-foreground: 266 30% 95%;
-    --sidebar-primary: 11 100% 65%;
-    --sidebar-primary-foreground: 264 26% 7%;
-    --sidebar-accent: 264 22% 16%;
-    --sidebar-accent-foreground: 266 30% 95%;
-    --sidebar-border: 264 20% 20%;
-    --sidebar-ring: 258 100% 74%;
+  /* Variant A — Midnight. True black, maximum contrast, colour punches. */
+  .dark[data-dark="midnight"] {
+    --background: 0 0% 2.5%;
+    --paper:      0 0% 2.5%;
+    --paper-2:    0 0% 6%;
+    --paper-3:    0 0% 10%;
+    --card:       0 0% 5%;
+    --card-tint:  0 0% 8%;
+    --popover:    0 0% 5%;
+    --secondary:  0 0% 12%;
+    --secondary-foreground: 0 0% 88%;
+    --muted:      0 0% 10%;
+    --muted-foreground: 0 0% 66%;
+    --border:     0 0% 15%;
+    --border-strong: 0 0% 28%;
+    --input:      0 0% 15%;
+    --sidebar-background: 0 0% 2.5%;
+    --sidebar-foreground: 186 30% 95%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 186 30% 95%;
+    --sidebar-border: 0 0% 15%;
+  }
+
+  /* Variant B — Carbon. Neutral charcoal, no hue, pure elevation steps. */
+  .dark[data-dark="carbon"] {
+    --background: 220 7% 8%;
+    --paper:      220 7% 8%;
+    --paper-2:    220 7% 11%;
+    --paper-3:    220 6% 15%;
+    --card:       220 7% 10%;
+    --card-tint:  220 6% 13%;
+    --popover:    220 7% 10%;
+    --secondary:  220 6% 16%;
+    --secondary-foreground: 220 10% 86%;
+    --muted:      220 6% 14%;
+    --muted-foreground: 220 8% 68%;
+    --border:     220 6% 19%;
+    --border-strong: 220 6% 32%;
+    --input:      220 6% 19%;
+    --sidebar-background: 220 7% 8%;
+    --sidebar-foreground: 186 30% 95%;
+    --sidebar-accent: 220 6% 16%;
+    --sidebar-accent-foreground: 186 30% 95%;
+    --sidebar-border: 220 6% 19%;
+  }
+
+  /* Variant C — Ink. Deep navy: tinted, but nowhere near purple. */
+  .dark[data-dark="ink"] {
+    --background: 213 44% 7%;
+    --paper:      213 44% 7%;
+    --paper-2:    213 40% 11%;
+    --paper-3:    213 34% 16%;
+    --card:       213 42% 9%;
+    --card-tint:  213 36% 13%;
+    --popover:    213 42% 9%;
+    --secondary:  213 32% 17%;
+    --secondary-foreground: 210 24% 86%;
+    --muted:      213 32% 15%;
+    --muted-foreground: 210 16% 68%;
+    --border:     213 28% 20%;
+    --border-strong: 213 22% 34%;
+    --input:      213 28% 20%;
+    --sidebar-background: 213 44% 7%;
+    --sidebar-foreground: 186 30% 95%;
+    --sidebar-accent: 213 32% 17%;
+    --sidebar-accent-foreground: 186 30% 95%;
+    --sidebar-border: 213 28% 20%;
   }
 }
 

@@ -16,9 +16,9 @@
  * 219 it would be disqualifying.
  */
 import { Link, useLocation } from "react-router-dom";
-import { Command, Github, Keyboard, Menu, Moon, Search, Sun, X } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
+import { Command, Github, Keyboard, Menu, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeMenu } from "./ThemeMenu";
 import { CATEGORY_NAV } from "@/lib/nav";
 
 
@@ -34,7 +34,6 @@ interface Props {
 export function SiteHeader({
     onOpenSearch, onOpenShortcuts, mobileOpen, onToggleMobile, mobileTriggerRef,
 }: Props) {
-    const { theme, toggleTheme } = useTheme();
     const { pathname, search } = useLocation();
 
     const iconBtn =
@@ -87,14 +86,7 @@ export function SiteHeader({
                     <button onClick={onOpenShortcuts} className={cn(iconBtn, "hidden md:inline-flex")} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
                         <Keyboard size={17} />
                     </button>
-                    <button
-                        onClick={toggleTheme}
-                        className={iconBtn}
-                        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                    >
-                        {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-                    </button>
+                    <ThemeMenu />
                     <a
                         href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                         target="_blank"
