@@ -1707,3 +1707,24 @@ button.btn-accent:focus-visible {
   .text-foreground\/40,
   .text-foreground\/50 { color: hsl(var(--foreground) / 0.95) !important; }
 }
+
+/* ── Reduced motion: the backstop ─────────────────────────────────── */
+/* The blocks above disable animation selector by selector, which means every
+   new keyframe has to remember to add itself — and several did not: the
+   recovered hover transforms in skin-interactions.css, and the ported designs'
+   own keyframes, were still moving for someone who asked the OS not to.
+   This catches everything, including whatever gets added next.
+
+   0.01ms rather than `none` on purpose: the animation and transition still
+   run, so anything waiting on animationend or transitionend still fires and
+   nothing gets stuck half-shown. It is simply over before it is seen. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

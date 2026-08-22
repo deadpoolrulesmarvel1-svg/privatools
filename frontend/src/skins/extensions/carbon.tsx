@@ -10,6 +10,7 @@
  * The real one replaces it at the same route — `isVault` is suppressed so the
  * simulated surface does not render underneath.
  */
+import type React from "react";
 import Base from "../carbon/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
@@ -70,7 +71,15 @@ const REAL_TOOLS = {
     ],
 };
 
-export default withRealTools(withVault(
+/**
+ * The mixin chain is written in plain JS under `@ts-nocheck`, so `Base` is
+ * untyped and the class it returns comes out as a bare object type rather than
+ * a React component. Naming the type here is what the consumer needs — the
+ * value really is a component; only the annotation was lost on the way out.
+ */
+const Skin: React.ComponentType = withRealTools(withVault(
     withAccounts(withRealCatalogue(Base), at("#/account")),
     at("#/vault", ["is404", "isVault"]),
 ), REAL_TOOLS);
+
+export default Skin;

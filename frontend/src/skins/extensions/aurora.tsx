@@ -8,6 +8,7 @@
  * markup is the sibling `aurora.html`, spliced into the generated component at
  * build time.
  */
+import type React from "react";
 import Base from "../aurora/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
@@ -55,7 +56,13 @@ const REAL_TOOLS = {
     ],
 };
 
-export default withRealTools(withVault(
+/**
+ * The mixin chain is written in plain JS under `@ts-nocheck`, so `Base` is
+ * untyped and the class it returns comes out as a bare object type rather than
+ * a React component. Naming the type here is what the consumer needs — the
+ * value really is a component; only the annotation was lost on the way out.
+ */
+const Skin: React.ComponentType = withRealTools(withVault(
     withAccounts(
         withRealCatalogue(Base, {
             records: AURORA_CATALOGUE,
@@ -71,3 +78,5 @@ export default withRealTools(withVault(
     ),
     at("#/vault"),
 ), REAL_TOOLS);
+
+export default Skin;
