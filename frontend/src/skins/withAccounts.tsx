@@ -65,17 +65,52 @@ export function withAccounts(Base, config) {
         _acctSubmit = (event) => {
             if (event && event.preventDefault) event.preventDefault();
             const { mode, email, password } = this.state.acct;
+            // One form, three modes. Recover takes a different endpoint and a
+            // different field, so it branches here rather than duplicating the
+            // whole form in each design's markup.
+            if (mode === "recover") return this._acctRecover(null);
             this._setAcct({ busy: true, error: "" });
             const request = mode === "signup"
                 ? accountApi.register(email, password)
                 : accountApi.login(email, password);
             request
-                .then(({ user }) => {
-                    this._setAcct({ user, busy: false, password: "", error: "" });
+                .then((res) => {
+                    // Signup answers with the recovery code, and it is answered
+                    // exactly once. There is no reset email, so dropping it here
+                    // — which is what this used to do — left the account with no
+                    // way back in at all.
+                    this._setAcct({
+                        user: res.user, busy: false, password: "", error: "",
+                        recoveryCode: res.recovery_code ?? "", recoverySaved: false,
+                    });
                     this._loadKeys();
                 })
                 .catch((err) => this._setAcct({ busy: false, error: err.message }));
         };
+
+        /** Reset a password with the code issued at signup. */
+        _acctRecover = (event) => {
+            if (event && event.preventDefault) event.preventDefault();
+            const { email, recoveryInput, password } = this.state.acct;
+            this._setAcct({ busy: true, error: "" });
+            accountApi.recover(email, recoveryInput, password)
+                .then(({ recovery_code }) => this._setAcct({
+                    busy: false, password: "", recoveryInput: "", error: "",
+                    mode: "signin", recoveryCode: recovery_code, recoverySaved: false,
+                }))
+                .catch((err) => this._setAcct({ busy: false, error: err.message }));
+        };
+
+        _acctCopyRecovery = () => {
+            const code = this.state.acct.recoveryCode;
+            if (!code || !navigator.clipboard) return;
+            navigator.clipboard.writeText(code)
+                .then(() => this._setAcct({ recoverySaved: true }))
+                .catch(() => { /* the code is on screen either way */ });
+        };
+
+        /** Dismiss the panel. Only reachable once the code has been shown. */
+        _acctAckRecovery = () => this._setAcct({ recoveryCode: "", recoverySaved: true });
 
         _acctNewKey = () => {
             const { keys } = this.state.acct;
@@ -167,7 +202,9 @@ export function withAccounts(Base, config) {
                     : {}),
 
                 isAccount: active,
-                acctTitle: signedIn ? "Account" : (a.mode === "signup" ? "Create an account" : "Sign in"),
+                acctTitle: signedIn ? "Account" : (
+                    a.mode === "signup" ? "Create an account"
+                        : a.mode === "recover" ? "Reset your password" : "Sign in"),
                 acctLede: signedIn
                     ? "Manage the API keys issued to this account."
                     : "Only needed for the developer API. Every tool works without one.",
@@ -182,8 +219,11 @@ export function withAccounts(Base, config) {
                 acctSubmit: this._acctSubmit,
                 acctBusy: a.busy,
                 acctBusyOpacity: a.busy ? ".6" : "1",
-                acctSubmitLabel: a.busy ? "Working…" : (a.mode === "signup" ? "Create account" : "Sign in"),
-                acctPwAutocomplete: a.mode === "signup" ? "new-password" : "current-password",
+                acctSubmitLabel: a.busy ? "Working…" : (
+                    a.mode === "signup" ? "Create account"
+                        : a.mode === "recover" ? "Reset password" : "Sign in"),
+                acctPasswordLabel: a.mode === "recover" ? "New password" : "Password",
+                acctPwAutocomplete: a.mode === "signin" ? "current-password" : "new-password",
                 acctHintD: a.mode === "signup" ? "block" : "none",
                 acctError: a.error,
                 acctErrD: a.error ? "block" : "none",
@@ -201,6 +241,25 @@ export function withAccounts(Base, config) {
                 acctSignOut: this._acctSignOut,
                 acctDelete: this._acctDelete,
                 acctDeleteLabel: a.confirmingDelete ? "Press again to delete for good" : "Delete account",
+
+                // The code is shown once, and the panel deliberately stands in
+                // front of everything else until it is acknowledged — a code
+                // scrolled past is an account that will eventually be lost.
+                acctRecoveryCode: a.recoveryCode,
+                acctRecoveryD: a.recoveryCode ? "block" : "none",
+                acctBodyD: a.recoveryCode ? "none" : "block",
+                acctCopyRecovery: this._acctCopyRecovery,
+                acctCopyLabel: a.recoverySaved ? "Copied" : "Copy",
+                acctAckRecovery: this._acctAckRecovery,
+                acctRecoveryNudgeD: a.recoverySaved ? "none" : "block",
+
+                acctRecoverD: a.mode === "recover" ? "block" : "none",
+                acctCredsD: a.mode === "recover" ? "none" : "block",
+                acctRecoveryInput: a.recoveryInput,
+                acctSetRecoveryInput: (e) => this._setAcct({ recoveryInput: e.target.value, error: "" }),
+                acctRecoverSubmit: this._acctRecover,
+                acctShowRecover: () => this._setAcct({ mode: "recover", error: "" }),
+                acctRecoverLabel: a.busy ? "Working…" : "Reset password",
 
                 acctNewKey: this._acctNewKey,
                 acctNewKeyValue: a.freshKey,

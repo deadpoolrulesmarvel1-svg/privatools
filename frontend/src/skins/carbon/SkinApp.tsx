@@ -4896,6 +4896,17 @@ Component.prototype.render = function render() {
       <h1 style={css("margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em")}>{v.acctTitle}</h1>
       <p style={css("margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)")}>{v.acctLede}</p>
 
+      <div style={css(`display:${v.acctRecoveryD};border:1px solid var(--pt-edge,rgba(79,225,222,.34));border-radius:14px;background:var(--pt-aquaBg,rgba(15,156,151,.11));padding:18px;margin-top:18px`)}>
+      <div style={css("font-size:15px;font-weight:600")}>Save your recovery code</div>
+      <div style={css("font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:6px;line-height:1.6")}>This is shown once and is the only way back into your account. We send no email, so there is no reset link to fall back on.</div>
+      <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px")}>
+      <code style={css("border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:10px;background:var(--pt-solid,#0B141A);padding:9px 12px;font-family:ui-monospace,monospace;font-size:14px;letter-spacing:.1em")}>{v.acctRecoveryCode}</code>
+      <button type="button" onClick={v.acctCopyRecovery} style={css("height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600")}>{v.acctCopyLabel}</button>
+      </div>
+      <button type="button" onClick={v.acctAckRecovery} style={css("margin-top:14px;height:40px;padding:0 16px;border-radius:11px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B)")}>I have saved it</button>
+      <div style={css(`display:${v.acctRecoveryNudgeD};font-size:11.5px;color:var(--pt-txt3,#6B8085);margin-top:8px`)}>Write it down or put it in a password manager before continuing.</div>
+      </div>
+
                   {Boolean(v.acctSignedOut) && (<>
               
       <div style={css("display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px")}>
@@ -4907,11 +4918,17 @@ Component.prototype.render = function render() {
       <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Email
               <input type="email" value={v.acctEmail} onChange={v.acctSetEmail} autoComplete="email" required={v.true} style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
       </label>
-      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Password
+      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>{v.acctPasswordLabel}
               <input type="password" value={v.acctPassword} onChange={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
       </label>
+      <div style={css(`display:${v.acctRecoverD}`)}>
+      <label style={css("display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Recovery code
+                <input type="text" value={v.acctRecoveryInput} onChange={v.acctSetRecoveryInput} autoComplete="one-time-code" style={css("padding:11px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px;font-family:ui-monospace,monospace")} />
+      </label>
+      </div>
       <div style={css(`display:${v.acctHintD};font-size:12px;color:var(--pt-txt3,#6B8085)`)}>At least 10 characters. Length is what makes a password strong.</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12.5px;color:var(--pt-coral,#FF7A6B)`)}>{v.acctError}</div>
+      <button type="button" onClick={v.acctShowRecover} style={css("align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:var(--pt-txt2,#9FB3B8);text-decoration:underline")}>Forgotten your password? Use your recovery code</button>
       <button type="submit" disabled={v.acctBusy} style={css(`height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
       </form>
       <div style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)")}>

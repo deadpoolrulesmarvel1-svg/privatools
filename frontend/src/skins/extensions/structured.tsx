@@ -46,7 +46,12 @@ const at = (path, extraFlags = []) => ({
         history.pushState({}, "", path);
         window.dispatchEvent(new PopStateEvent("popstate"));
     },
-    isActive: () => typeof location !== "undefined" && location.pathname === path,
+    // Structured's own router answers to both a path and a hash, and its nav
+    // pushes the path form. Match either, so a hash URL — the shape the other
+    // two skins use, and the one someone is most likely to paste — does not
+    // land on the 404.
+    isActive: () => typeof location !== "undefined"
+        && (location.pathname === path || location.hash === `#${path}`),
     suppressFlags: ["is404", "isHome", ...extraFlags],
     navKey: "navMain",
     navItem,

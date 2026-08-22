@@ -4469,6 +4469,17 @@ Component.prototype.render = function render() {
       <h1 style={css("font-size:clamp(21px,3.6vw,26px);font-weight:600;letter-spacing:-.02em")}>{v.acctTitle}</h1>
       <p style={css("margin-top:3px;font-size:12.5px;color:var(--ink3)")}>{v.acctLede}</p>
 
+      <div style={css(`display:${v.acctRecoveryD};border:1px solid var(--emLine);border-radius:12px;background:var(--emSoft);padding:16px;margin-top:16px`)}>
+      <div style={css("font-size:14.5px;font-weight:600")}>Save your recovery code</div>
+      <div style={css("font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.6")}>This is shown once and is the only way back into your account. We send no email, so there is no reset link to fall back on.</div>
+      <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px")}>
+      <code style={css("border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 11px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13.5px;letter-spacing:.1em")}>{v.acctRecoveryCode}</code>
+      <button type="button" onClick={v.acctCopyRecovery} style={css("height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:500")}>{v.acctCopyLabel}</button>
+      </div>
+      <button type="button" onClick={v.acctAckRecovery} style={css("margin-top:13px;height:36px;padding:0 15px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:500;background:var(--em);color:var(--em-ink,#04231A)")}>I have saved it</button>
+      <div style={css(`display:${v.acctRecoveryNudgeD};font-size:11.5px;color:var(--ink3);margin-top:8px`)}>Write it down or put it in a password manager before continuing.</div>
+      </div>
+
                 {Boolean(v.acctSignedOut) && (<>
             
       <div style={css("display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;align-items:flex-start")}>
@@ -4480,11 +4491,17 @@ Component.prototype.render = function render() {
       <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Email
               <input type="email" value={v.acctEmail} onChange={v.acctSetEmail} autoComplete="email" required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
-      <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>Password
+      <label style={css("display:grid;gap:4px;font-size:11.5px;color:var(--ink3)")}>{v.acctPasswordLabel}
               <input type="password" value={v.acctPassword} onChange={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:13px")} />
       </label>
+      <div style={css(`display:${v.acctRecoverD}`)}>
+      <label style={css("display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink2)")}>Recovery code
+                <input type="text" value={v.acctRecoveryInput} onChange={v.acctSetRecoveryInput} autoComplete="one-time-code" style={css("padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:13px;min-height:44px;font-family:'Geist Mono',ui-monospace,monospace")} />
+      </label>
+      </div>
       <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--ink3)`)}>At least 10 characters. Length is what makes a password strong.</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12px;color:var(--coral)`)}>{v.acctError}</div>
+      <button type="button" onClick={v.acctShowRecover} style={css("align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:11.5px;color:var(--ink2);text-decoration:underline")}>Forgotten your password? Use your recovery code</button>
       <button type="submit" disabled={v.acctBusy} style={css(`height:38px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:var(--em);color:var(--bg);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
       </form>
       <section style={css("flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px")}>
