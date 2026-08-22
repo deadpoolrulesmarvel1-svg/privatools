@@ -1150,21 +1150,28 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Scoped to this design. A ported skin (src/skins/) brings the scrollbar
+   treatment its own source had, and ours interfered with it in a way that
+   showed up as layout: `scrollbar-color` flips Chromium to overlay scrollbars,
+   and `*::-webkit-scrollbar` forces classic ones — either way the viewport
+   reserved a different gutter than the original design did, and every route
+   came out 10px wide or narrow. */
+
 /* Firefox — thin, muted thumb. */
-* { scrollbar-width: thin; scrollbar-color: hsl(var(--border-strong)) transparent; }
+:root:not([data-skin]) * { scrollbar-width: thin; scrollbar-color: hsl(var(--border-strong)) transparent; }
 
 /* WebKit/Blink — slim, rounded, accent on hover. */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb {
+:root:not([data-skin]) *::-webkit-scrollbar { width: 10px; height: 10px; }
+:root:not([data-skin]) *::-webkit-scrollbar-track { background: transparent; }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb {
   background: hsl(var(--border-strong));
   border-radius: 999px;
   border: 2px solid hsl(var(--background));
   transition: background 0.18s ease;
 }
-*::-webkit-scrollbar-thumb:hover  { background: hsl(var(--accent) / 0.55); }
-*::-webkit-scrollbar-thumb:active { background: hsl(var(--accent) / 0.70); }
-*::-webkit-scrollbar-corner       { background: transparent; }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb:hover  { background: hsl(var(--accent) / 0.55); }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb:active { background: hsl(var(--accent) / 0.70); }
+:root:not([data-skin]) *::-webkit-scrollbar-corner       { background: transparent; }
 
 ::selection { background: hsl(var(--accent) / 0.25); color: hsl(var(--foreground)); }
 

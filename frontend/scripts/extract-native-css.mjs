@@ -34,6 +34,35 @@ const SOURCES = ["aurora", "structured", "carbon"].map((id) => ({
   file: `${DESIGNS_DIR}/${id}.dc.html`,
 }));
 
+
+/**
+ * Scope a selector under a skin.
+ *
+ * Pseudo-ELEMENTS cannot appear inside :is() — `:is(::selection)` and
+ * `:is(::-webkit-scrollbar)` are invalid, and a browser drops the whole rule.
+ * That is not a cosmetic loss: Carbon styles the document scrollbar to 10px,
+ * and without it the page falls back to overlay scrollbars and every route
+ * measures 10px wider than the original.
+ *
+ * So the pseudo-element is split off, :is() wraps only the real selector, and
+ * a rule with no base (a bare `::selection`) is emitted twice — once for the
+ * root element itself, once for its descendants.
+ */
+function scope(skin, selector, body) {
+  return selector
+    .split(",")
+    .map((one) => {
+      const s = one.trim();
+      const at = s.indexOf("::");
+      if (at === -1) return `${skin} :is(${s}){${body}}`;
+      const base = s.slice(0, at).trim();
+      const pseudo = s.slice(at);
+      if (!base) return `${skin}${pseudo},${skin} *${pseudo}{${body}}`;
+      return `${skin} :is(${base})${pseudo}{${body}}`;
+    })
+    .join("\n");
+}
+
 /** Split a stylesheet into top-level chunks, respecting nested braces. */
 function topLevelRules(css) {
   const out = [];
@@ -79,7 +108,7 @@ function convert(id, css) {
         // system — it must apply to both modes, so it scopes to the skin root.
         if (s === ":root") return `${SKIN}{${bodyOf(r)}}`;
         if (s === '[data-theme="light"]') return `${LIGHT}{${bodyOf(r)}}`;
-        return `${SKIN} :is(${s}){${bodyOf(r)}}`;
+        return scope(SKIN, s, bodyOf(r));
       });
       lines.push(`${sel}{\n  ${inner.join("\n  ")}\n}`);
       continue;
@@ -102,7 +131,7 @@ function convert(id, css) {
       continue;
     }
 
-    lines.push(`${SKIN} :is(${sel}){${bodyOf(rule)}}`);
+    lines.push(scope(SKIN, sel, bodyOf(rule)));
   }
 
   // Roll this app's base typography back to the UA stylesheet inside the skin,
