@@ -181,10 +181,7 @@
     --sidebar-ring: 175 100% 33%;
   }
 
-  /* ── Dark ──────────────────────────────────────────────────────────
-     Everything that is not the ground lives here, so the three variants
-     differ only in surface and elevation. That is what makes them
-     comparable: the colour system on top is identical. */
+  /* ── Dark — true black ─────────────────────────────────────────── */
   .dark {
     --foreground: 186 30% 95%;
     --card-foreground: 186 30% 95%;
@@ -210,6 +207,29 @@
     --sidebar-primary: 175 75% 47%;
     --sidebar-primary-foreground: 195 45% 6%;
 
+    /* True black, with elevation carried by lightness alone. Neutral on
+       purpose: it is what makes the category hues punch. */
+    --background: 0 0% 2.5%;
+    --paper:      0 0% 2.5%;
+    --paper-2:    0 0% 6%;
+    --paper-3:    0 0% 10%;
+    --card:       0 0% 5%;
+    --card-tint:  0 0% 8%;
+    --popover:    0 0% 5%;
+    --secondary:  0 0% 12%;
+    --secondary-foreground: 0 0% 88%;
+    --muted:      0 0% 10%;
+    --muted-foreground: 0 0% 66%;
+    --border:     0 0% 15%;
+    --border-strong: 0 0% 28%;
+    --input:      0 0% 15%;
+
+    --sidebar-background: 0 0% 2.5%;
+    --sidebar-foreground: 186 30% 95%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 186 30% 95%;
+    --sidebar-border: 0 0% 15%;
+
     /* Same wheel, lifted for legibility on dark. */
     --cat-organize:  210 88% 66%;
     --cat-edit:      265 88% 72%;
@@ -225,74 +245,7 @@
     --cat-document:   95 60% 52%;
   }
 
-  /* Variant A — Midnight. True black, maximum contrast, colour punches. */
-  .dark[data-dark="midnight"] {
-    --background: 0 0% 2.5%;
-    --paper:      0 0% 2.5%;
-    --paper-2:    0 0% 6%;
-    --paper-3:    0 0% 10%;
-    --card:       0 0% 5%;
-    --card-tint:  0 0% 8%;
-    --popover:    0 0% 5%;
-    --secondary:  0 0% 12%;
-    --secondary-foreground: 0 0% 88%;
-    --muted:      0 0% 10%;
-    --muted-foreground: 0 0% 66%;
-    --border:     0 0% 15%;
-    --border-strong: 0 0% 28%;
-    --input:      0 0% 15%;
-    --sidebar-background: 0 0% 2.5%;
-    --sidebar-foreground: 186 30% 95%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 186 30% 95%;
-    --sidebar-border: 0 0% 15%;
-  }
 
-  /* Variant B — Carbon. Neutral charcoal, no hue, pure elevation steps. */
-  .dark[data-dark="carbon"] {
-    --background: 220 7% 8%;
-    --paper:      220 7% 8%;
-    --paper-2:    220 7% 11%;
-    --paper-3:    220 6% 15%;
-    --card:       220 7% 10%;
-    --card-tint:  220 6% 13%;
-    --popover:    220 7% 10%;
-    --secondary:  220 6% 16%;
-    --secondary-foreground: 220 10% 86%;
-    --muted:      220 6% 14%;
-    --muted-foreground: 220 8% 68%;
-    --border:     220 6% 19%;
-    --border-strong: 220 6% 32%;
-    --input:      220 6% 19%;
-    --sidebar-background: 220 7% 8%;
-    --sidebar-foreground: 186 30% 95%;
-    --sidebar-accent: 220 6% 16%;
-    --sidebar-accent-foreground: 186 30% 95%;
-    --sidebar-border: 220 6% 19%;
-  }
-
-  /* Variant C — Ink. Deep navy: tinted, but nowhere near purple. */
-  .dark[data-dark="ink"] {
-    --background: 213 44% 7%;
-    --paper:      213 44% 7%;
-    --paper-2:    213 40% 11%;
-    --paper-3:    213 34% 16%;
-    --card:       213 42% 9%;
-    --card-tint:  213 36% 13%;
-    --popover:    213 42% 9%;
-    --secondary:  213 32% 17%;
-    --secondary-foreground: 210 24% 86%;
-    --muted:      213 32% 15%;
-    --muted-foreground: 210 16% 68%;
-    --border:     213 28% 20%;
-    --border-strong: 213 22% 34%;
-    --input:      213 28% 20%;
-    --sidebar-background: 213 44% 7%;
-    --sidebar-foreground: 186 30% 95%;
-    --sidebar-accent: 213 32% 17%;
-    --sidebar-accent-foreground: 186 30% 95%;
-    --sidebar-border: 213 28% 20%;
-  }
 }
 
 @layer base {

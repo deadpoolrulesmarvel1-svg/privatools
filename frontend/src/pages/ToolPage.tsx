@@ -10,6 +10,7 @@ import { useHistory } from "@/hooks/useHistory";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
+import { ToolFaq } from "@/components/ToolFaq";
 import { ToolIllustration } from "@/components/ToolIllustration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToolSkeleton } from "@/components/ToolSkeleton";
@@ -625,6 +626,11 @@ export default function ToolPage() {
             })()}
           </div>
         </div>
+
+        {/* The objection-answering FAQ every incumbent ships. The content
+            already existed for crawlers; this is the first time a person
+            sees it. */}
+        <ToolFaq slug={tool.slug} toolName={tool.name} />
        </div>
       </section>
     </div>
