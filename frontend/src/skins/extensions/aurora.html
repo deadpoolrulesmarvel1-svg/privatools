@@ -74,3 +74,50 @@
   </sc-if>
 </div>
 </sc-if>
+
+<!-- Vault — real AES-GCM under a non-extractable device key (lib/localStore).
+     Not the simulated vault the imported design shipped, so the "protection is
+     simulated, do not enter real passwords" notice is deliberately absent. -->
+<sc-if value="{{ isVaultReal }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.02em;margin:0">Vault</h1>
+  <div style="font-size:13.5px;color:var(--text2);margin-top:5px">Passwords for locked documents, encrypted on this device. {{ vltCount }} stored.</div>
+
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Stored passwords</div>
+
+      <div style="display:{{ vltEmptyD }};font-size:12.5px;color:var(--text2);margin-top:10px">Nothing stored yet. Add a password below and PrivaTools will try it automatically when you open a locked file.</div>
+      <div role="status" style="display:{{ vltUnreadableD }};margin-top:10px;font-size:12px;color:var(--co)">{{ vltUnreadable }}</div>
+
+      <sc-for list="{{ vltEntries }}" as="e" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:{{ e.labelColor }}">{{ e.label }}</div>
+            <div style="font-family:ui-monospace,monospace;font-size:12.5px">{{ e.secret }}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ e.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ e.reveal }}" aria-label="{{ e.revealLabel }}" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text2);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ e.revealIcon }}</span></button>
+          <button type="button" onClick="{{ e.copy }}" aria-label="Copy password" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text2);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ 'content_copy' }}</span></button>
+          <button type="button" onClick="{{ e.remove }}" aria-label="Delete password" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ 'delete' }}</span></button>
+        </div>
+      </sc-for>
+
+      <button type="button" onClick="{{ vltClear }}" style="display:{{ vltClearD }};margin-top:14px;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px">{{ vltClearLabel }}</button>
+    </div>
+
+    <form onSubmit="{{ vltAdd }}" style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Add a password</div>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2);margin-top:11px">Name
+        <input type="text" value="{{ vltLabel }}" onInput="{{ vltSetLabel }}" placeholder="e.g. Bank statements" style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2);margin-top:9px">Password
+        <input type="password" value="{{ vltPassword }}" onInput="{{ vltSetPassword }}" autoComplete="off" style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <div role="alert" style="display:{{ vltErrD }};margin-top:8px;font-size:12px;color:var(--co)">{{ vltError }}</div>
+      <button type="submit" disabled="{{ vltBusy }}" style="margin-top:11px;width:100%;opacity:{{ vltBusyOpacity }};height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C">{{ vltAddLabel }}</button>
+      <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Encrypted with a key this browser generated and cannot export. That means it never leaves this device — and it cannot sync to another one. Clearing site data erases it.</p>
+    </form>
+  </div>
+</div>
+</sc-if>

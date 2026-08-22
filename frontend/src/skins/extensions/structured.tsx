@@ -3,36 +3,45 @@
 /**
  * Structured Privacy OS — extension.
  *
- * Structured routes on `location.pathname` rather than the hash, so navigation
- * goes through history.pushState and the mixin's popstate listener brings the
- * component back round.
+ * Structured routes on `location.pathname`, so navigation goes through
+ * history.pushState and the mixins' popstate listener brings the component back
+ * round. Its route table treats "/" as a prefix pattern, so an unmatched path
+ * resolves to `home` rather than 404 — both flags have to be suppressed.
+ *
+ * Its own vault is simulated; the real one replaces it at the same route.
  */
 import Base from "../structured/SkinApp";
 import { withAccounts } from "../withAccounts";
+import { withVault } from "../withVault";
 
-const ROUTE = "/account";
+const PALETTE = {
+    accent: "var(--em)", accentSoft: "var(--emSoft)", line: "var(--line)",
+    text: "var(--ink)", dim: "var(--ink2)", faint: "var(--ink3)",
+};
 
-export default withAccounts(Base, {
+const navItem = ({ label, icon, onClick, active }) => ({
+    label, icon, go: onClick,
+    cur: active ? "page" : undefined,
+    fw: active ? "600" : "400",
+    fg: active ? "var(--ink)" : "var(--ink2)",
+    bg: active ? "var(--emSoft)" : "transparent",
+    bd: active ? "var(--emLine)" : "transparent",
+    ic: active ? "var(--em)" : "var(--ink3)",
+});
+
+const at = (path, extraFlags = []) => ({
     navigate: () => {
-        history.pushState({}, "", ROUTE);
+        history.pushState({}, "", path);
         window.dispatchEvent(new PopStateEvent("popstate"));
     },
-    isActive: () => typeof location !== "undefined" && location.pathname === ROUTE,
-    // "/" is a prefix pattern in this design's route table, so an unknown
-    // path lands on `home` rather than 404.
-    suppressFlags: ["is404", "isHome"],
+    isActive: () => typeof location !== "undefined" && location.pathname === path,
+    suppressFlags: ["is404", "isHome", ...extraFlags],
     navKey: "navMain",
-    navItem: ({ label, icon, onClick, active }) => ({
-        label, icon, go: onClick,
-        cur: active ? "page" : undefined,
-        fw: active ? "600" : "400",
-        fg: active ? "var(--ink)" : "var(--ink2)",
-        bg: active ? "var(--emSoft)" : "transparent",
-        bd: active ? "var(--emLine)" : "transparent",
-        ic: active ? "var(--em)" : "var(--ink3)",
-    }),
-    palette: {
-        accent: "var(--em)", accentSoft: "var(--emSoft)", line: "var(--line)",
-        text: "var(--ink)", dim: "var(--ink2)", faint: "var(--ink3)",
-    },
+    navItem,
+    palette: PALETTE,
 });
+
+export default withVault(
+    withAccounts(Base, at("/account")),
+    at("/my-stuff/vault", ["isVault", "isStuff"]),
+);

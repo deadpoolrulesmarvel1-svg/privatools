@@ -5010,6 +5010,51 @@ Component.prototype.render = function render() {
       </div>
 
               </>)}
+
+
+              {Boolean(v.isVaultReal) && (<>
+          
+      <div style={css("max-width:1180px;margin:0 auto;padding:22px clamp(16px,3vw,34px) 0")}>
+      <h1 style={css("margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em")}>Vault</h1>
+      <div style={css("margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)")}>Passwords for locked documents, encrypted on this device. {v.vltCount} stored.</div>
+      <div style={css("display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px")}>
+      <div style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)")}>
+      <div style={css("font-size:14.5px;font-weight:700")}>Stored passwords</div>
+      <div style={css(`display:${v.vltEmptyD};font-size:12.5px;color:var(--pt-txt2);margin-top:10px`)}>Nothing stored yet. Add a password below and PrivaTools will try it automatically when you open a locked file.</div>
+      <div role="status" style={css(`display:${v.vltUnreadableD};margin-top:10px;font-size:12px;color:var(--pt-coral)`)}>{v.vltUnreadable}</div>
+
+                      {(v.vltEntries ?? []).map((e, eI) => (
+                  
+      <div style={css("display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))")}>
+      <div style={css("flex:1;min-width:0")}>
+      <div style={css(`font-size:13px;font-weight:600;color:${e.labelColor}`)}>{e.label}</div>
+      <div style={css("font-family:'IBM Plex Mono',monospace;font-size:12.5px")}>{e.secret}</div>
+      <div style={css("font-size:11px;color:var(--pt-txt3);margin-top:2px")}>{e.meta}</div>
+      </div>
+      <button type="button" onClick={e.reveal} aria-label={e.revealLabel} style={css("height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt2,#9FB3B8);font-size:12.5px")}><span className="material-symbols-rounded" style={css("font-size:18px;")}>{ICON[e.revealIcon]}</span></button>
+      <button type="button" onClick={e.copy} aria-label="Copy password" style={css("height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt2,#9FB3B8);font-size:12.5px")}><span className="material-symbols-rounded" style={css("font-size:18px;")}>{ICON['content_copy']}</span></button>
+      <button type="button" onClick={e.remove} aria-label="Delete password" style={css("height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px")}><span className="material-symbols-rounded" style={css("font-size:18px;")}>{ICON['delete']}</span></button>
+      </div>
+
+                      ))}
+      <button type="button" onClick={v.vltClear} style={css(`display:${v.vltClearD};margin-top:14px;height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px`)}>{v.vltClearLabel}</button>
+      </div>
+      <form onSubmit={v.vltAdd} style={css("padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)")}>
+      <div style={css("font-size:14.5px;font-weight:700")}>Add a password</div>
+      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:11px")}>Name
+              <input type="text" value={v.vltLabel} onInput={v.vltSetLabel} placeholder="e.g. Bank statements" style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
+      </label>
+      <label style={css("display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:9px")}>Password
+              <input type="password" value={v.vltPassword} onInput={v.vltSetPassword} autoComplete="off" style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
+      </label>
+      <div role="alert" style={css(`display:${v.vltErrD};margin-top:8px;font-size:12px;color:var(--pt-coral)`)}>{v.vltError}</div>
+      <button type="submit" disabled={v.vltBusy} style={css(`margin-top:11px;width:100%;opacity:${v.vltBusyOpacity};height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B)`)}>{v.vltAddLabel}</button>
+      <p style={css("margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)")}>Encrypted with a key this browser generated and cannot export. That means it never leaves this device — and it cannot sync to another one. Clearing site data erases it.</p>
+      </form>
+      </div>
+      </div>
+
+              </>)}
       </div>
       </main>
       <nav aria-label="Primary mobile" style={css(`${v.bottomNavStyle}`)}>
