@@ -224,7 +224,7 @@ export function MergeUI() {
                             Sequence — {files.length} file{files.length !== 1 ? "s" : ""} ·{" "}
                             <span className="text-foreground/85 tabular-nums">{formatFileSize(files.reduce((s, f) => s + f.file.size, 0))}</span>
                         </span>
-                        <span className="font-medium text-[11px] text-muted-foreground/85">
+                        <span className="font-medium text-[11px] text-muted-foreground">
                             Drag to reorder · leave pages blank for all
                         </span>
                     </div>
@@ -249,11 +249,11 @@ export function MergeUI() {
                                 )}
                             >
                                 {/* Drag handle */}
-                                <span className="hidden sm:inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground/80 hover:text-foreground hover:bg-secondary/60 cursor-grab active:cursor-grabbing shrink-0">
+                                <span className="hidden sm:inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-grab active:cursor-grabbing shrink-0">
                                     <GripVertical size={13} />
                                 </span>
                                 {/* Sequence number */}
-                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-7 text-center">
+                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7 text-center">
                                     {String(i + 1).padStart(2, "0")}
                                 </span>
                                 {/* Icon */}
@@ -278,7 +278,7 @@ export function MergeUI() {
                                         spellCheck={false}
                                         aria-invalid={!isValidPageRange(f.pages)}
                                         className={cn(
-                                            "w-20 h-7 px-2 rounded-md border bg-paper-2/50 font-mono text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 transition-colors",
+                                            "w-20 h-7 px-2 rounded-md border bg-paper-2/50 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-colors",
                                             isValidPageRange(f.pages)
                                                 ? "border-border focus:border-accent focus:ring-accent/20"
                                                 : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
@@ -344,7 +344,7 @@ export function MergeUI() {
                                     : <><Download size={13} /> Merge {files.length} PDFs</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                         {!allRangesValid && (
                             <span className="font-medium text-[11.5px] text-destructive">

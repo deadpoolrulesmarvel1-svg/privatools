@@ -240,7 +240,7 @@ export function AnnotateUI() {
                                                 onClick={e => e.stopPropagation()}
                                                 onChange={e => update(ann.id, "text", e.target.value)}
                                                 placeholder="Note text…"
-                                                className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                                className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                             />
                                         )}
                                     </div>
@@ -272,9 +272,9 @@ export function AnnotateUI() {
                                         />
                                     );
                                 })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
-                            <p className="font-medium text-[11px] text-muted-foreground/85 mt-2 text-center">
+                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
                                 Coords in points
                             </p>
                         </div>
@@ -294,7 +294,7 @@ export function AnnotateUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Annotating…</> : <><Highlighter size={13} /> Apply {annotations.length} annotation{annotations.length !== 1 && "s"}</>}
                     </button>
                     {status !== "processing" && annotations.length > 0 && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

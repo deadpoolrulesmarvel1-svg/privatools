@@ -101,7 +101,7 @@ export function TransparentBackgroundUI() {
                                     aria-label="White threshold"
                                     className="w-full accent-foreground"
                                 />
-                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">
+                                <p className="font-medium text-[11px] text-muted-foreground mt-1">
                                     Higher → only bright whites removed · Lower → also clears light backgrounds
                                 </p>
                             </div>
@@ -117,7 +117,7 @@ export function TransparentBackgroundUI() {
                                     aria-label="Render DPI"
                                     className="w-full accent-foreground"
                                 />
-                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">
+                                <p className="font-medium text-[11px] text-muted-foreground mt-1">
                                     Rasterizes pages — higher DPI = sharper but larger file
                                 </p>
                             </div>
@@ -134,7 +134,7 @@ export function TransparentBackgroundUI() {
                         <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : <><Eraser size={13} /> Remove background <Download size={13} /></>}
                         </button>
-                        {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

@@ -226,9 +226,9 @@ export default function SecurityPage() {
 
               <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                 <span className="text-foreground">PrivaTools</span>
-                <span className="text-muted-foreground/40">/</span>
+                <span className="text-muted-foreground">/</span>
                 <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
-                <span className="text-muted-foreground/40">/</span>
+                <span className="text-muted-foreground">/</span>
                 <a
                   href={GIT_HISTORY_URL}
                   target="_blank"
@@ -400,7 +400,7 @@ Policy: https://privatools.me/security`}</code></pre>
                   to="/privacy"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">01</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">01</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Privacy Policy</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">File handling, telemetry, and subprocessors.</p>
@@ -410,7 +410,7 @@ Policy: https://privatools.me/security`}</code></pre>
                   href="/.well-known/security.txt"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">02</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">02</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
                       <FileText size={12} /> security.txt
@@ -422,7 +422,7 @@ Policy: https://privatools.me/security`}</code></pre>
                   href="mailto:hello@privatools.me"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">03</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">03</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
                       <Mail size={12} /> Report

@@ -275,13 +275,13 @@ export function FormCreatorUI() {
                                     {(f.type === "text" || hasOptions) && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             <div>
-                                                <label className="font-medium text-[9.5px] text-muted-foreground">Default value <span className="normal-case text-muted-foreground/60">(pre-fills)</span></label>
+                                                <label className="font-medium text-[9.5px] text-muted-foreground">Default value <span className="normal-case text-muted-foreground">(pre-fills)</span></label>
                                                 <input
                                                     value={f.value}
                                                     onClick={e => e.stopPropagation()}
                                                     onChange={e => updateField(f.id, { value: e.target.value })}
                                                     placeholder={hasOptions ? "Match one of the options" : "Optional"}
-                                                    className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-2 py-1 text-[12.5px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+                                                    className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-2 py-1 text-[12.5px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
                                                 />
                                             </div>
                                             {hasOptions && (
@@ -316,7 +316,7 @@ export function FormCreatorUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Building form…</> : <><FormInput size={13} /> Generate fillable PDF</>}
                     </button>
                     {canSubmit && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

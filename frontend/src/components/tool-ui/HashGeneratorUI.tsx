@@ -126,7 +126,7 @@ export function HashGeneratorUI() {
                     <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
                         <span className="font-medium text-[11.5px] text-muted-foreground">Input text</span>
                         {input && (
-                            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85">{input.length} char{input.length !== 1 ? "s" : ""}</span>
+                            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground">{input.length} char{input.length !== 1 ? "s" : ""}</span>
                         )}
                     </div>
                     <textarea
@@ -140,7 +140,7 @@ export function HashGeneratorUI() {
                             }
                         }}
                         spellCheck={false}
-                        className="block w-full font-mono text-[13px] leading-relaxed h-36 resize-none bg-transparent px-3 py-3 outline-none placeholder:text-muted-foreground/60"
+                        className="block w-full font-mono text-[13px] leading-relaxed h-36 resize-none bg-transparent px-3 py-3 outline-none placeholder:text-muted-foreground"
                     />
                 </div>
             ) : file ? (
@@ -188,7 +188,7 @@ export function HashGeneratorUI() {
                     <Hash size={13} /> {computing ? <><Loader2 size={13} className="animate-spin" /> Hashing…</> : "Generate hashes"}
                 </button>
                 {((mode === "text" && input.trim()) || (mode === "file" && file)) && !computing && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
 

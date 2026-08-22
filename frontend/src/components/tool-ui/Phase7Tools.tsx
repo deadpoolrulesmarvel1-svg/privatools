@@ -86,7 +86,7 @@ export function VideoSpeedUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Change speed</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -166,7 +166,7 @@ export function AudioTrimUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Trim audio</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -250,7 +250,7 @@ export function ImagePaletteUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Extract palette</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -396,7 +396,7 @@ export function PixelateImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Apply {mode}</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -508,7 +508,7 @@ export function RotateImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className=""><RotateCw size={14} className="mr-1.5" />Rotate image</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -608,7 +608,7 @@ export function FlipImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">{direction === "horizontal" ? <FlipHorizontal size={14} className="mr-1.5" /> : <FlipVertical size={14} className="mr-1.5" />}Flip image</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}

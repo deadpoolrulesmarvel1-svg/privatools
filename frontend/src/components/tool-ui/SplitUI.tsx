@@ -196,7 +196,7 @@ export function SplitUI() {
                                             </p>
                                             <p className="text-[12.5px] text-muted-foreground mt-0.5 leading-snug">{m.desc}</p>
                                             {m.example && active && (
-                                                <p className="mt-2 font-mono text-[11px] text-muted-foreground/85">
+                                                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
                                                     e.g.&nbsp;<span className="text-foreground">{m.example}</span>
                                                 </p>
                                             )}
@@ -216,7 +216,7 @@ export function SplitUI() {
                                     spellCheck={false}
                                     aria-invalid={!isValidPageRange(pages)}
                                     className={cn(
-                                        "mt-1.5 w-full rounded-md border bg-card px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 transition-colors",
+                                        "mt-1.5 w-full rounded-md border bg-card px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                                         isValidPageRange(pages)
                                             ? "border-border focus:border-accent focus:ring-accent/20"
                                             : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
@@ -226,7 +226,7 @@ export function SplitUI() {
                                 {rangeErr ? (
                                     <p className="font-medium text-[11px] text-destructive mt-2">{rangeErr}</p>
                                 ) : (
-                                    <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
                                         Syntax — comma-separated ranges · "end" = last page · "-4" = first 4 · "9-" = page 9 to end
                                     </p>
                                 )}
@@ -268,7 +268,7 @@ export function SplitUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                                 : <><Download size={13} /> Split PDF</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                     </div>
                 </>
             )}

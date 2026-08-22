@@ -227,7 +227,7 @@ export function RotateUI() {
                                         spellCheck={false}
                                         aria-invalid={!isValidPageRange(pages)}
                                         className={cn(
-                                            "w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                                            "w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                                             isValidPageRange(pages)
                                                 ? "border-border focus:border-accent focus:ring-accent/20"
                                                 : "border-destructive/60 focus:border-destructive focus:ring-destructive/20",
@@ -236,7 +236,7 @@ export function RotateUI() {
                                     {rangeErr ? (
                                         <p className="font-medium text-[11px] text-destructive">{rangeErr}</p>
                                     ) : (
-                                        <p className="font-medium text-[11px] text-muted-foreground/85">
+                                        <p className="font-medium text-[11px] text-muted-foreground">
                                             Comma-separated · ranges with hyphen
                                             {proc.entries.length > 1 && <> · same range across all PDFs</>}
                                         </p>
@@ -252,9 +252,9 @@ export function RotateUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Rotating… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><RotateCw size={13} /> Rotate {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"} {angle}°</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {!rangeOk && (
-                            <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Fix the page range
                             </span>
                         )}

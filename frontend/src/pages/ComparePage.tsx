@@ -364,10 +364,10 @@ export default function ComparePage() {
           </span>
           <h1 className="font-display font-bold text-foreground tracking-[-0.025em] leading-tight text-3xl sm:text-5xl"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-            PrivaTools <span className="text-muted-foreground/60">vs</span> <span className="italic text-accent">{comp.name}</span>
+            PrivaTools <span className="text-muted-foreground">vs</span> <span className="italic text-accent">{comp.name}</span>
           </h1>
           {/* Competitor tagline + pricing snapshot — gives the hero specificity instead of a generic byline. */}
-          <p className="font-display italic text-[15px] sm:text-[17px] text-muted-foreground/85 max-w-xl mx-auto mt-3 leading-relaxed">
+          <p className="font-display italic text-[15px] sm:text-[17px] text-muted-foreground max-w-xl mx-auto mt-3 leading-relaxed">
             "{comp.tagline}"
           </p>
           <p className="comparison-summary font-display text-[15px] sm:text-[17px] text-muted-foreground max-w-2xl mx-auto mt-4 leading-relaxed">
@@ -633,7 +633,7 @@ function DirectoryView() {
           </div>
           <h1 className="font-display font-bold text-foreground tracking-[-0.025em] leading-[1.05] text-4xl sm:text-6xl"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-            PrivaTools <span className="text-muted-foreground/60">vs</span> <span className="italic text-accent">everyone</span> else.
+            PrivaTools <span className="text-muted-foreground">vs</span> <span className="italic text-accent">everyone</span> else.
           </h1>
           <p className="font-display text-[16px] sm:text-[18px] text-muted-foreground mt-5 leading-relaxed">
             Direct, no-spin comparisons against every major PDF and file tool. We tell you when a competitor wins — and which ones charge for features we give away free.
@@ -828,7 +828,7 @@ function DirectoryView() {
                 >
                   <div className="flex items-start justify-between mb-3 gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[11px] text-accent/70 mb-1">{String(i + 1).padStart(2, "0")}</p>
+                      <p className="font-medium text-[11px] text-accent mb-1">{String(i + 1).padStart(2, "0")}</p>
                       <h3 className="font-display text-[19px] font-bold text-foreground tracking-[-0.02em] group-hover:text-accent transition-colors leading-tight">
                         vs {c.name}
                       </h3>
@@ -846,7 +846,7 @@ function DirectoryView() {
                     <div className="flex items-center gap-2">
                       <DollarSign size={11} className="text-muted-foreground shrink-0" />
                       <span className="text-foreground">{c.pricing || "Paid"}</span>
-                      {monthly > 0 && <span className="text-muted-foreground/60 ml-auto">= ${Math.round(monthly * 12)}/yr</span>}
+                      {monthly > 0 && <span className="text-muted-foreground ml-auto">= ${Math.round(monthly * 12)}/yr</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       <Zap size={11} className="text-muted-foreground shrink-0" />

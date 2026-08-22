@@ -151,7 +151,7 @@ export function OverlayUI() {
                 >
                     {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : <><Layers size={13} /> {mode === "stamp" ? "Apply stamp" : "Overlay PDFs"}</>}
                 </button>
-                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );
@@ -170,7 +170,7 @@ function FileSlot({
         <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
                 <span className="font-medium text-[11.5px] text-muted-foreground">{label}</span>
-                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/85">{hint}</span>
+                <span className="font-mono text-[10px] tracking-wider text-muted-foreground">{hint}</span>
             </div>
             {!file ? (
                 <div

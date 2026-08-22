@@ -168,6 +168,56 @@ describe("skin contrast (WCAG 2.2)", () => {
     }
 });
 
+/* The default skin owns `:root` / `.dark` in index.css rather than a
+ * [data-skin] block, so the loop above never saw it — and it shipped a
+ * primary at 2.96:1 behind white button labels on every page. Same pairs,
+ * same bar, read from the stylesheet the app actually loads.
+ */
+function indexTokensFor(selector: string): Record<string, string> {
+    // `:root` and `.dark` sit inside `@layer base { … }`, so match the
+    // selector's own braces by counting rather than with `[^}]*`.
+    const at = INDEX_CSS.indexOf(`${selector} {`);
+    if (at === -1) throw new Error(`no ${selector} block in index.css`);
+    const open = INDEX_CSS.indexOf("{", at);
+    let depth = 0, close = open;
+    for (let i = open; i < INDEX_CSS.length; i++) {
+        if (INDEX_CSS[i] === "{") depth++;
+        else if (INDEX_CSS[i] === "}" && --depth === 0) { close = i; break; }
+    }
+    const out: Record<string, string> = {};
+    // Strip comments before splitting: index.css annotates tokens inline, and
+    // a `;` inside one of those comments would otherwise cut a declaration in
+    // half and silently drop the token that follows it.
+    const body = INDEX_CSS.slice(open + 1, close).replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const line of body.split(";")) {
+        const kv = line.match(/^\s*--([a-zA-Z0-9-]+)\s*:\s*(.+)$/);
+        if (kv) out[kv[1]] = kv[2].trim();
+    }
+    return out;
+}
+
+describe("signature contrast (WCAG 2.2)", () => {
+    for (const [mode, selector] of [["light", ":root"], ["dark", ".dark"]] as const) {
+        it(`signature · ${mode} clears every target pair`, () => {
+            const base = indexTokensFor(":root");
+            // `.dark` only redefines what changes; the rest inherits from :root.
+            const t = mode === "dark" ? { ...base, ...indexTokensFor(".dark") } : base;
+            const failures = PAIRS
+                .map(([fg, bg, min]) => ({ fg, bg, min, ratio: contrast(t[fg], t[bg]) }))
+                .filter((r) => r.ratio < r.min)
+                .map((r) => `${r.fg} on ${r.bg}: ${r.ratio.toFixed(2)}:1 (min ${r.min})`);
+            expect(failures).toEqual([]);
+        });
+    }
+
+    it("keeps white button labels legible on the primary fill", () => {
+        // The specific regression: --primary was 175 100% 33% (#00A896), which
+        // put .btn-accent's white label at 2.96:1 on every call to action.
+        const t = indexTokensFor(":root");
+        expect(contrast(t["primary-foreground"], t["primary"])).toBeGreaterThanOrEqual(4.5);
+    });
+});
+
 /* ── Catalogue adapters ────────────────────────────────────────────────
  * The ported designs render from these instead of their own sample data.
  * The counts must come from the registry, never from a literal — the whole

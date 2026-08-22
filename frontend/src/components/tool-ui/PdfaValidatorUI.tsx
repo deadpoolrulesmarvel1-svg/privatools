@@ -127,7 +127,7 @@ export function PdfaValidatorUI() {
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
                             <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                                 <span>Notes ({result.errors.length})</span>
-                                <span className="text-muted-foreground/70 hidden sm:inline">Click for explanation</span>
+                                <span className="text-muted-foreground hidden sm:inline">Click for explanation</span>
                             </div>
                             <div className="divide-y divide-border">
                                 {result.errors.map((e, i) => {
@@ -165,7 +165,7 @@ export function PdfaValidatorUI() {
                         </div>
                     )}
 
-                    <p className="font-medium text-[11px] text-muted-foreground/70">
+                    <p className="font-medium text-[11px] text-muted-foreground">
                         Heuristic check only — not a full ISO PDF/A validator.
                     </p>
 
@@ -183,7 +183,7 @@ export function PdfaValidatorUI() {
                     <button onClick={process} disabled={!file || status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Validating…</> : <><Search size={13} /> Validate PDF/A</>}
                     </button>
-                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

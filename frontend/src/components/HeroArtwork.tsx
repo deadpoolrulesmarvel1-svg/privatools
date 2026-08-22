@@ -68,7 +68,7 @@ export function HeroArtwork() {
             </div>
 
             {/* Editorial caption underneath */}
-            <figcaption className="font-medium mt-4 text-center text-[11.5px] text-muted-foreground/85">
+            <figcaption className="font-medium mt-4 text-center text-[11.5px] text-muted-foreground">
                 <span className="text-accent">Fig. 01</span>
                 <span className="mx-2 opacity-50">—</span>
                 One file, four tools, isolated processing

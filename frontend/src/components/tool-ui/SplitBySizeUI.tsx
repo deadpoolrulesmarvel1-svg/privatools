@@ -117,7 +117,7 @@ export function SplitBySizeUI() {
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground tracking-wider">MB</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-medium text-[11px] text-muted-foreground/85">Quick</span>
+                        <span className="font-medium text-[11px] text-muted-foreground">Quick</span>
                         {PRESETS.map(p => (
                             <button
                                 key={p}
@@ -152,7 +152,7 @@ export function SplitBySizeUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                         : <><Maximize2 size={13} /> Split by size</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

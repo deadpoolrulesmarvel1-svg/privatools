@@ -178,7 +178,7 @@ export function BookmarksUI() {
                             <div className="p-3 space-y-2 animate-fade-in">
                                 {marks.map((m, i) => (
                                     <div key={i} className="flex items-center gap-2 group">
-                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         <input
                                             value={m.title}
                                             onChange={e => updateMark(i, { title: e.target.value })}
@@ -186,7 +186,7 @@ export function BookmarksUI() {
                                             className="flex-1 min-w-0 rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                         />
                                         <div className="flex items-center gap-1 shrink-0">
-                                            <span className="font-mono text-[9.5px] tracking-wider text-muted-foreground/70">p.</span>
+                                            <span className="font-mono text-[9.5px] tracking-wider text-muted-foreground">p.</span>
                                             <input
                                                 type="number" min={1} max={99999} value={m.page}
                                                 onChange={e => updateMark(i, { page: Math.max(1, Math.min(99999, parseInt(e.target.value) || 1)) })}
@@ -225,7 +225,7 @@ export function BookmarksUI() {
                                     )}
                                 />
                                 {jsonValid ? (
-                                    <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
                                         Array of <span className="text-foreground">{`{ title, page }`}</span> objects
                                     </p>
                                 ) : (
@@ -247,7 +247,7 @@ export function BookmarksUI() {
                         <button type="button" onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Writing…</> : <><Bookmark size={13} /> Add bookmarks</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                     </div>
                 </>
             )}

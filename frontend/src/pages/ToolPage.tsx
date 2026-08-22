@@ -233,7 +233,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
     <div className="border-t border-border pt-5 -mx-4 sm:mx-0 overflow-hidden">
       <div className="flex items-baseline gap-2 mb-3 px-4 sm:px-0">
         <p className="text-[11px] font-semibold text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
-        <span className="text-[11px] font-mono text-muted-foreground/80">{categoryTools.length}</span>
+        <span className="text-[11px] font-mono text-muted-foreground">{categoryTools.length}</span>
       </div>
       <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-4 sm:px-0">
         {categoryTools.map(t => {

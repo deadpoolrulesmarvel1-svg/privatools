@@ -170,7 +170,7 @@ export function ShortcutsHelp() {
                     <div className="px-3 pb-3 space-y-1">
                         {GROUPS.map(group => (
                             <div key={group.title} className="rounded-lg overflow-hidden">
-                                <p className="px-3 py-2 text-[11px] font-medium text-muted-foreground/85">
+                                <p className="px-3 py-2 text-[11px] font-medium text-muted-foreground">
                                     {group.title}
                                 </p>
                                 <ul className="px-1">
@@ -183,7 +183,7 @@ export function ShortcutsHelp() {
                                                         <kbd className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded border border-border bg-paper-2/60 font-mono text-[11px] font-medium text-foreground">
                                                             {k}
                                                         </kbd>
-                                                        {i < s.keys.length - 1 && <span className="text-muted-foreground/70 font-mono text-[10px]">+</span>}
+                                                        {i < s.keys.length - 1 && <span className="text-muted-foreground font-mono text-[10px]">+</span>}
                                                     </span>
                                                 ))}
                                             </span>

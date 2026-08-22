@@ -456,7 +456,7 @@ export function WatermarkUI() {
                             <button
                                 type="button"
                                 onClick={copyErrorToClipboard}
-                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
                                 aria-label="Copy error details to clipboard"
                                 title="Copy error details for a bug report"
                             >
@@ -476,7 +476,7 @@ export function WatermarkUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Watermarking…</>
                                 : <><Droplets size={13} /> Watermark {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {mode === "image" && !watermarkImage && (
                             <p className="font-medium text-[11.5px] text-muted-foreground flex items-center gap-1">
                                 <ImageIcon size={11} /> Pick a PNG/JPG/WebP first
@@ -493,7 +493,7 @@ export function WatermarkUI() {
                     </div>
 
                     {state === "processing" && (
-                        <p className="font-medium text-[11.5px] text-muted-foreground/85">
+                        <p className="font-medium text-[11.5px] text-muted-foreground">
                             {files.filter(f => f.status === "done").length} of {files.length} done
                         </p>
                     )}
@@ -538,7 +538,7 @@ function FileQueueList({
                             f.status === "failed" && "bg-destructive/[0.04]",
                         )}
                     >
-                        <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-6 text-center">
+                        <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-6 text-center">
                             {String(i + 1).padStart(2, "0")}
                         </span>
                         <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
@@ -569,7 +569,7 @@ function FileQueueList({
 }
 
 function StatusBadge({ status }: { status: Status }) {
-    if (status === "queued") return <span className="font-medium text-[9.5px] text-muted-foreground/85">Queued</span>;
+    if (status === "queued") return <span className="font-medium text-[9.5px] text-muted-foreground">Queued</span>;
     if (status === "running") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><Loader2 size={10} className="animate-spin" /> Running</span>;
     if (status === "done") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><CheckCircle2 size={10} /> Done</span>;
     return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-destructive"><AlertCircle size={10} /> Failed</span>;
@@ -630,7 +630,7 @@ function PreviewPane({
                     )}
                 </div>
             </div>
-            <p className="font-medium px-3 pb-2 text-[11px] text-muted-foreground/85 text-center">approximate placement</p>
+            <p className="font-medium px-3 pb-2 text-[11px] text-muted-foreground text-center">approximate placement</p>
         </div>
     );
 }

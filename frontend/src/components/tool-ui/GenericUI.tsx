@@ -302,7 +302,7 @@ export function GenericUI({
                             </button>
                             <button
                                 onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError || error, `${toolName} (${slug})`)).catch(() => {})}
-                                className="font-medium text-[12px] tracking-wider text-destructive/80 hover:underline"
+                                className="font-medium text-[12px] tracking-wider text-destructive hover:underline"
                             >
                                 Copy report
                             </button>
@@ -375,7 +375,7 @@ export function GenericUI({
                             >
                                 Clear
                             </button>
-                            <span className="font-medium ml-auto flex items-center gap-3 text-[11.5px] text-muted-foreground/85">
+                            <span className="font-medium ml-auto flex items-center gap-3 text-[11.5px] text-muted-foreground">
                                 {timeEstimate && <span className="flex items-center gap-1"><Clock size={10} /> {timeEstimate}</span>}
                                 <kbd className="hidden sm:inline-flex items-center gap-0.5 bg-secondary border border-border rounded px-1.5 py-0.5 text-[10px]">⌘ ↵</kbd>
                             </span>
@@ -429,7 +429,7 @@ function StepTimeline({ stepIndex, processing }: { stepIndex: number; processing
                             </div>
                             <span className={cn(
                                 "font-medium text-[9.5px]",
-                                isDone || isCurrent ? "text-foreground" : "text-muted-foreground/85"
+                                isDone || isCurrent ? "text-foreground" : "text-muted-foreground"
                             )}>
                                 {step.label}
                             </span>

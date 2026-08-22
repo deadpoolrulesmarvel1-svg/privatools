@@ -227,13 +227,13 @@ export default function AboutPage() {
               return (
                 <div key={step.step} className="relative rounded-2xl border border-border bg-card p-6 overflow-hidden hover:border-accent/40 transition-colors group flex flex-col">
                   <CornerMarks />
-                  <span className="absolute right-4 top-3 font-display font-bold text-[58px] text-accent/[0.08] leading-none select-none">{step.step}</span>
+                  <span aria-hidden="true" className="absolute right-4 top-3 font-display font-bold text-[58px] text-accent/[0.08] leading-none select-none">{step.step}</span>
                   <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center">
                     <Icon size={18} className="text-accent" />
                   </div>
                   <h3 className="mt-4 font-display text-[19px] font-bold text-foreground tracking-[-0.02em]">{step.title}</h3>
                   <p className="mt-2 text-[13.5px] text-muted-foreground leading-relaxed relative">{step.desc}</p>
-                  <code className="mt-4 block font-mono text-[10.5px] tracking-[-0.01em] text-accent/85 bg-paper-2/50 border border-border rounded px-2 py-1.5 truncate">{step.code}</code>
+                  <code className="mt-4 block font-mono text-[10.5px] tracking-[-0.01em] text-accent bg-paper-2/50 border border-border rounded px-2 py-1.5 truncate">{step.code}</code>
                   <a
                     href={`${REPO_URL}/blob/main/${step.src.path}`}
                     target="_blank" rel="noreferrer"
@@ -431,7 +431,7 @@ export default function AboutPage() {
             {FAQ.map((item, i) => (
               <details key={item.slug} id={`faq-${item.slug}`} className="group scroll-mt-24">
                 <summary className="px-5 py-4 flex items-center gap-4 cursor-pointer list-none hover:bg-accent/[0.04] transition-colors">
-                  <span className="font-medium text-[11px] text-accent/70 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0">{String(i + 1).padStart(2, "0")}</span>
                   <span className="flex-1 font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">{item.q}</span>
                   <ChevronDown size={14} className="text-muted-foreground shrink-0 transition-transform group-open:rotate-180" />
                 </summary>
@@ -534,7 +534,7 @@ export default function AboutPage() {
                   Author: <a href={`${REPO_URL}/commits?author=deadpoolrulesmarvel1-svg`} target="_blank" rel="noreferrer" className="text-accent hover:underline">deadpoolrulesmarvel1-svg</a>
                 </p>
                 <p>
-                  <span className="text-accent/80">license:</span> MIT · <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer" className="text-accent hover:underline">LICENSE</a>
+                  <span className="text-accent">license:</span> MIT · <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer" className="text-accent hover:underline">LICENSE</a>
                 </p>
               </div>
               <p className="mt-4 text-[13px] text-muted-foreground leading-relaxed">
@@ -569,11 +569,11 @@ export default function AboutPage() {
               </a>
               <div className="font-medium mt-3 flex flex-wrap gap-2 text-[11.5px]">
                 <Link to="/privacy" className="text-accent hover:opacity-80">Privacy Policy</Link>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <Link to="/terms" className="text-accent hover:opacity-80">Terms</Link>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <Link to="/blog" className="text-accent hover:opacity-80">Blog</Link>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <Link to="/compare" className="text-accent hover:opacity-80">Compare</Link>
               </div>
             </div>

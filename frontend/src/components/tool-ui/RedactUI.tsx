@@ -148,7 +148,7 @@ export function RedactUI() {
                                         </div>
                                     )}
                                 </div>
-                                <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80">
+                                <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground">
                                     Across {report.pages.length} page{report.pages.length === 1 ? "" : "s"} · not saved anywhere — copy it now if you need it
                                 </p>
                             </div>
@@ -273,7 +273,7 @@ export function RedactUI() {
                                 );
                             })}
                             {activeSet && (
-                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80 pt-1">
+                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground pt-1">
                                     {activeSet.citation} — the code is stamped inside each box
                                 </p>
                             )}
@@ -303,9 +303,9 @@ export function RedactUI() {
                                         />
                                     );
                                 })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
-                            <p className="font-medium text-[11px] text-muted-foreground/85 mt-2 text-center">
+                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
                                 Permanent · not reversible
                             </p>
                         </div>
@@ -325,7 +325,7 @@ export function RedactUI() {
                         {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Redacting…</> : <><EyeOff size={13} /> Redact {boxes.length} region{boxes.length !== 1 && "s"}</>}
                     </button>
                     {state !== "processing" && boxes.length > 0 && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

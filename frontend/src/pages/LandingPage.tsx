@@ -90,7 +90,7 @@ export default function LandingPage() {
                       <Check size={11} className="text-accent shrink-0" />
                       <Icon size={11} className="text-accent/80 shrink-0" />
                       <span className="">{s.label}</span>
-                      <span className="text-muted-foreground/60 normal-case">· {s.sub}</span>
+                      <span className="text-muted-foreground normal-case">· {s.sub}</span>
                     </span>
                   );
                   return (
@@ -128,7 +128,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <p className="font-medium mt-4 pt-4 border-t border-border text-[11px] text-muted-foreground/85">
+                <p className="font-medium mt-4 pt-4 border-t border-border text-[11px] text-muted-foreground">
                   {PDF_COUNT} PDF · {NONPDF_COUNT} non-PDF
                 </p>
               </div>
@@ -213,7 +213,7 @@ export default function LandingPage() {
           <div className="text-center mt-8">
             <Link
               to="/"
-              className="font-sans-ui text-sm font-semibold text-accent hover:text-accent/80 transition-colors inline-flex items-center gap-1"
+              className="font-sans-ui text-sm font-semibold text-accent hover:text-accent transition-colors inline-flex items-center gap-1"
             >
               View all {TOTAL}+ tools <ArrowRight size={14} />
             </Link>

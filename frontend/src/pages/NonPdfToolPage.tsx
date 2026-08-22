@@ -118,7 +118,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
   }, [currentSlug]);
   return (
     <div className="mb-6 -mx-4 sm:mx-0 overflow-hidden">
-      <p className="font-mono-meta text-[10px] text-muted-foreground/80 mb-2 px-4 sm:px-0">{meta.label} — {categoryTools.length} tools</p>
+      <p className="font-mono-meta text-[10px] text-muted-foreground mb-2 px-4 sm:px-0">{meta.label} — {categoryTools.length} tools</p>
       <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 px-4 sm:px-0">
         {categoryTools.map(t => {
           const TIcon = t.icon;
@@ -127,7 +127,7 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
             <Link key={t.slug} to={`/tools/${t.slug}`} data-active={isActive}
               className={cn(
                 "flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-[12px] font-sans-ui font-medium transition-all shrink-0 border-b-2",
-                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground/80 hover:text-foreground hover:border-foreground/20"
+                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-foreground/20"
               )}>
               <TIcon size={12} strokeWidth={1.75} />
               {t.name}

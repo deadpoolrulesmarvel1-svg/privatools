@@ -202,7 +202,7 @@ export function ResizeUI() {
                                         />
                                     </div>
                                 </div>
-                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                                <p className="font-medium text-[11px] text-muted-foreground mt-2">
                                     Min 72 pt (1 inch) · Max 14400 pt (200 in)
                                 </p>
                             </div>
@@ -215,9 +215,9 @@ export function ResizeUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Resizing… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Download size={13} /> Resize {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {pageSize === "custom" && !customValid && (
-                            <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Width/height out of range
                             </span>
                         )}

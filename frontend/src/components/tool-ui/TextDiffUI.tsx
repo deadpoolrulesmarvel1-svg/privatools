@@ -113,7 +113,7 @@ export function TextDiffUI() {
                     <GitCompare size={13} /> Compare
                 </button>
                 {(textA || textB) && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
                 <button
                     onClick={swap}
@@ -193,16 +193,16 @@ export function TextDiffUI() {
                                         line.type === "same"    && "border-transparent",
                                     )}
                                 >
-                                    <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground/70 text-right select-none border-r border-border tabular-nums">
+                                    <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground text-right select-none border-r border-border tabular-nums">
                                         {line.lineA ?? ""}
                                     </div>
-                                    <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground/70 text-right select-none border-r border-border tabular-nums">
+                                    <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground text-right select-none border-r border-border tabular-nums">
                                         {line.lineB ?? ""}
                                     </div>
                                     <div className={cn(
                                         "w-5 shrink-0 py-1 select-none text-center font-bold",
                                         line.type === "added"   ? "text-accent" :
-                                        line.type === "removed" ? "text-destructive" : "text-muted-foreground/50"
+                                        line.type === "removed" ? "text-destructive" : "text-muted-foreground"
                                     )}>
                                         {line.type === "added" ? "+" : line.type === "removed" ? "−" : "·"}
                                     </div>
@@ -231,7 +231,7 @@ export function TextDiffUI() {
                                             line.type === "same" && "border-transparent",
                                         )}
                                     >
-                                        <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground/70 text-right select-none border-r border-border tabular-nums">
+                                        <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground text-right select-none border-r border-border tabular-nums">
                                             {line.lineA ?? ""}
                                         </div>
                                         <div className="flex-1 px-2 py-1 whitespace-pre-wrap break-all text-foreground">
@@ -251,7 +251,7 @@ export function TextDiffUI() {
                                             line.type === "same" && "border-transparent",
                                         )}
                                     >
-                                        <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground/70 text-right select-none border-r border-border tabular-nums">
+                                        <div className="w-9 shrink-0 px-1 py-1 text-muted-foreground text-right select-none border-r border-border tabular-nums">
                                             {line.lineB ?? ""}
                                         </div>
                                         <div className="flex-1 px-2 py-1 whitespace-pre-wrap break-all text-foreground">
@@ -290,7 +290,7 @@ function DiffEditor({
                 onKeyDown={onSubmit}
                 placeholder={placeholder}
                 spellCheck={false}
-                className="block w-full font-mono text-[13px] leading-relaxed h-44 resize-none bg-transparent px-3 py-3 outline-none placeholder:text-muted-foreground/50"
+                className="block w-full font-mono text-[13px] leading-relaxed h-44 resize-none bg-transparent px-3 py-3 outline-none placeholder:text-muted-foreground"
             />
         </div>
     );

@@ -144,7 +144,7 @@ export function SplitByTextUI() {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         placeholder='e.g. "Invoice #", "Chapter", "Statement of"'
-                        className="block w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                        className="block w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                     />
                     <label className="flex items-center gap-2 text-[13px] text-foreground cursor-pointer select-none">
                         <input
@@ -175,7 +175,7 @@ export function SplitByTextUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                         : <><Download size={13} /> Split PDF</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

@@ -186,7 +186,7 @@ export function HighlightUI() {
                             type="text" value={query} onChange={e => setQuery(e.target.value)}
                             placeholder='e.g. "confidential"'
                             maxLength={500}
-                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
                     <div>
@@ -234,10 +234,10 @@ export function HighlightUI() {
                         : <><Highlighter size={13} /> Highlight {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "every match"}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                 )}
                 {proc.entries.length > 0 && !query.trim() && (
-                    <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
+                    <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                         <AlertCircle size={11} /> Enter a query
                     </span>
                 )}

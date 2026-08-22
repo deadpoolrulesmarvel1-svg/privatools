@@ -475,7 +475,7 @@ export default function BatchPage() {
                         {doneCount > 0 && <span className="font-medium text-[11px] text-accent">{doneCount} done</span>}
                         {errorCount > 0 && <span className="font-medium text-[11px] text-destructive">{errorCount} failed</span>}
                         {etaSeconds > 0 && (
-                            <span className="font-medium text-[11px] text-muted-foreground/85">
+                            <span className="font-medium text-[11px] text-muted-foreground">
                                 · ~{etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left
                             </span>
                         )}
@@ -595,7 +595,7 @@ export default function BatchPage() {
                                             <p className="font-mono text-[10px] text-muted-foreground truncate">
                                                 {h.done}/{h.total} done
                                                 {h.failed > 0 && <span className="text-destructive"> · {h.failed} failed</span>}
-                                                <span className="text-muted-foreground/70"> · {timeAgo(h.timestamp)}</span>
+                                                <span className="text-muted-foreground"> · {timeAgo(h.timestamp)}</span>
                                             </p>
                                         </div>
                                     </button>
@@ -636,7 +636,7 @@ export default function BatchPage() {
                                 <div className="relative mb-3">
                                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                     <input
-                                        className="w-full h-9 pl-7 pr-7 rounded-md border border-border bg-card text-[13px] text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                        className="w-full h-9 pl-7 pr-7 rounded-md border border-border bg-card text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                                         placeholder={`Filter ${batchableTools.length} batchable tools…`}
                                         value={toolSearch}
                                         onChange={e => setToolSearch(e.target.value)}
@@ -683,7 +683,7 @@ export default function BatchPage() {
                                                 if (groupTools.length === 0) return null;
                                                 return (
                                                     <div key={group.id}>
-                                                        <p className="px-1 mb-1.5 text-[9.5px] font-medium text-muted-foreground/85">
+                                                        <p className="px-1 mb-1.5 text-[9.5px] font-medium text-muted-foreground">
                                                             {group.label} · {groupTools.length}
                                                         </p>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
@@ -706,7 +706,7 @@ export default function BatchPage() {
                                         </div>
                                     )}
                                 </div>
-                                <p className="font-medium mt-3 text-[11px] text-muted-foreground/85">
+                                <p className="font-medium mt-3 text-[11px] text-muted-foreground">
                                     {batchableTools.length} tools support batching — drag a folder onto the dropzone, every file goes through the chosen tool
                                 </p>
                             </div>
@@ -754,7 +754,7 @@ export default function BatchPage() {
                                     <span className="text-[11px] font-semibold text-muted-foreground">
                                         Queue
                                     </span>
-                                    <span className="font-mono text-[10px] text-muted-foreground/80">
+                                    <span className="font-mono text-[10px] text-muted-foreground">
                                         {(totalIn / 1024).toFixed(0)} KB in
                                         {totalOut > 0 && ` · ${(totalOut / 1024).toFixed(0)} KB out (${totalOut < totalIn ? "−" : "+"}${totalIn > 0 ? Math.abs(Math.round(((totalIn - totalOut) / totalIn) * 100)) : 0}%)`}
                                     </span>
@@ -953,7 +953,7 @@ function FileRow({
             f.status === "error"      && "bg-destructive/[0.04]",
         )}>
             {/* Index */}
-            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-7">
+            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7">
                 {String(index + 1).padStart(2, "0")}
             </span>
             {/* Status dot */}
@@ -971,28 +971,28 @@ function FileRow({
                 {f.error && <p className="text-[11px] text-destructive truncate mt-0.5" title={f.error}>{f.error}</p>}
             </div>
             {/* Size info */}
-            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 hidden sm:inline shrink-0 tabular-nums">
+            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground hidden sm:inline shrink-0 tabular-nums">
                 {(f.file.size / 1024).toFixed(0)} KB
                 {f.resultSize && (
                     <>
                         <span className="mx-1.5 opacity-50">→</span>
                         <span className={cn("text-accent")}>{(f.resultSize / 1024).toFixed(0)} KB</span>
                         {deltaPct !== 0 && (
-                            <span className={cn("ml-1.5", deltaPct > 0 ? "text-accent" : "text-muted-foreground/85")}>
+                            <span className={cn("ml-1.5", deltaPct > 0 ? "text-accent" : "text-muted-foreground")}>
                                 ({deltaPct > 0 ? "−" : "+"}{Math.abs(deltaPct)}%)
                             </span>
                         )}
                     </>
                 )}
                 {f.durationMs && f.status === "done" && (
-                    <span className="ml-1.5 text-muted-foreground/60">
+                    <span className="ml-1.5 text-muted-foreground">
                         · {f.durationMs < 1000 ? `${f.durationMs}ms` : `${(f.durationMs / 1000).toFixed(1)}s`}
                     </span>
                 )}
             </span>
             {/* Status label / actions */}
             <div className="flex items-center gap-1.5 shrink-0">
-                {f.status === "pending"    && <span className="font-medium text-[11px] tracking-wider text-muted-foreground/85 px-2 h-6 inline-flex items-center rounded bg-paper-2/60 border border-border">Pending</span>}
+                {f.status === "pending"    && <span className="font-medium text-[11px] tracking-wider text-muted-foreground px-2 h-6 inline-flex items-center rounded bg-paper-2/60 border border-border">Pending</span>}
                 {f.status === "processing" && <Loader2 size={13} className="text-accent animate-spin" />}
                 {f.status === "done" && f.resultUrl && (
                     <a href={f.resultUrl} download={f.downloadName || f.file.name} className="font-medium inline-flex items-center gap-1 text-[11.5px] tracking-wider text-accent hover:underline">

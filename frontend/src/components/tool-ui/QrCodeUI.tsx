@@ -119,7 +119,7 @@ export function QrCodeUI() {
                                 value={data}
                                 onChange={e => setData(e.target.value)}
                                 placeholder="https://example.com  or  any text"
-                                className="flex-1 bg-transparent outline-none font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50"
+                                className="flex-1 bg-transparent outline-none font-mono text-[14px] text-foreground placeholder:text-muted-foreground"
                                 spellCheck={false}
                             />
                         </div>
@@ -143,7 +143,7 @@ export function QrCodeUI() {
                                     aria-label={`QR code size: ${size} pixels`}
                                     className="w-full accent-[hsl(var(--accent))]"
                                 />
-                                <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground/85">
+                                <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground">
                                     <span>100</span><span>400</span><span>800</span><span>1200</span>
                                 </div>
                             </div>
@@ -251,14 +251,14 @@ export function QrCodeUI() {
                                 <p className="font-medium text-[11px] text-muted-foreground mt-3">
                                     {size}×{size}px · {format.toUpperCase()}
                                 </p>
-                                <p className="font-mono text-[9.5px] text-muted-foreground/70 mt-1 max-w-[180px] mx-auto truncate">
+                                <p className="font-mono text-[9.5px] text-muted-foreground mt-1 max-w-[180px] mx-auto truncate">
                                     {data}
                                 </p>
                             </div>
                         ) : (
                             <div className="text-center">
                                 <QrCode size={48} className="mx-auto text-muted-foreground/30" strokeWidth={1.25} />
-                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-3">
+                                <p className="font-medium text-[11px] text-muted-foreground mt-3">
                                     Enter data to preview
                                 </p>
                             </div>
@@ -284,7 +284,7 @@ export function QrCodeUI() {
                         : <><Download size={13} /> Generate QR code</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

@@ -140,7 +140,7 @@ export function PdfToPptxUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Converting… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Download size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "to PowerPoint"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

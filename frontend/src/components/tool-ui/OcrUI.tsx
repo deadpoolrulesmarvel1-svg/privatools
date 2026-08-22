@@ -263,7 +263,7 @@ export function OcrUI() {
                 </div>
               </div>
 
-              <p className="font-medium text-[11.5px] text-muted-foreground/85">
+              <p className="font-medium text-[11.5px] text-muted-foreground">
                 ≈0.5s per page · higher DPI is slower but more accurate on blurry scans
               </p>
             </div>
@@ -282,7 +282,7 @@ export function OcrUI() {
                 : <>Run OCR</>}
             </button>
             {canProcess && (
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
             )}
           </div>
         </>

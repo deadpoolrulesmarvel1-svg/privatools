@@ -131,7 +131,7 @@ export function QrReaderUI() {
                         {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Scanning…</> : <><QrCode size={13} /> Scan for codes</>}
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -150,7 +150,7 @@ export function QrReaderUI() {
                     <div className="divide-y divide-border">
                         {codes.map((c, i) => (
                             <div key={i} className="flex items-start gap-3 px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <span className="font-medium h-5 px-2 inline-flex items-center text-[9.5px] tracking-wider rounded bg-accent/15 text-accent shrink-0 mt-0.5">
                                     {c.type}
                                 </span>

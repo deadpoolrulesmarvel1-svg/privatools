@@ -200,7 +200,7 @@ export function ProtectUI() {
                     <div className="space-y-2">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                     <FileText size={15} className="text-accent" />
                                 </div>
@@ -223,7 +223,7 @@ export function ProtectUI() {
                                 strength.tone === "danger" && "text-destructive",
                                 strength.tone === "warn" && "text-copper",
                                 strength.tone === "accent" && "text-accent",
-                                strength.tone === "muted" && "text-muted-foreground/60",
+                                strength.tone === "muted" && "text-muted-foreground",
                             )}>{strength.level}</span>
                         </div>
                         <div className="p-4 space-y-3">
@@ -234,7 +234,7 @@ export function ProtectUI() {
                                     value={password} onChange={e => setPassword(e.target.value)}
                                     placeholder="Choose a strong password"
                                     autoComplete="new-password"
-                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-20 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-20 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 />
                                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
                                     <button
@@ -295,7 +295,7 @@ export function ProtectUI() {
                                 </p>
                             )}
                             {!justGenerated && files.length > 1 && (
-                                <p className="font-medium text-[11px] text-muted-foreground/85">
+                                <p className="font-medium text-[11px] text-muted-foreground">
                                     Same password applied to all {files.length} files
                                 </p>
                             )}
@@ -330,7 +330,7 @@ export function ProtectUI() {
                                             {p.checked && <Shield size={9} strokeWidth={2.5} />}
                                         </span>
                                     </div>
-                                    <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">{p.desc}</p>
+                                    <p className="font-medium text-[11px] text-muted-foreground mt-1">{p.desc}</p>
                                 </button>
                             ))}
                         </div>
@@ -346,7 +346,7 @@ export function ProtectUI() {
                         <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Protecting…</> : <><LockKeyhole size={13} /> Protect {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

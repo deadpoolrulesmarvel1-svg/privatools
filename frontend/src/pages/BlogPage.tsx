@@ -229,7 +229,7 @@ export default function BlogPage() {
                     {filtered.length} {filtered.length === 1 ? "match" : "matches"}
                   </span>
                 )}
-                <kbd className="hidden sm:inline-flex h-5 items-center px-1.5 rounded border border-border bg-paper-2/60 text-[9.5px] tracking-[0.06em] text-muted-foreground/80">/</kbd>
+                <kbd className="hidden sm:inline-flex h-5 items-center px-1.5 rounded border border-border bg-paper-2/60 text-[9.5px] tracking-[0.06em] text-muted-foreground">/</kbd>
               </span>
             </div>
             <div className="relative">
@@ -240,7 +240,7 @@ export default function BlogPage() {
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search across titles, descriptions, and tags…"
                 aria-label="Search articles"
-                className="w-full pl-10 pr-10 py-3 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                className="w-full pl-10 pr-10 py-3 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none"
               />
               {query && (
                 <button
@@ -392,7 +392,7 @@ export default function BlogPage() {
                     to={`/blog/${p.slug}`}
                     className="group rounded-xl border border-border bg-card p-3.5 hover:border-accent/45 hover:bg-accent/[0.03] transition-colors"
                   >
-                    <p className="font-medium text-[9.5px] text-accent/70 mb-1">{String(i + 1).padStart(2, "0")}</p>
+                    <p className="font-medium text-[9.5px] text-accent mb-1">{String(i + 1).padStart(2, "0")}</p>
                     <p className="font-display text-[13px] font-semibold text-foreground leading-snug tracking-[-0.015em] line-clamp-3 group-hover:text-accent transition-colors">
                       {p.title}
                     </p>
@@ -441,7 +441,7 @@ export default function BlogPage() {
                     </div>
                   </div>
                   <div className="flex items-start gap-2 mb-2">
-                    <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-1">{String(idx).padStart(2, "0")}</span>
+                    <span className="font-medium text-[11px] text-accent shrink-0 mt-1">{String(idx).padStart(2, "0")}</span>
                     <h3 className="font-display text-[17px] font-bold text-foreground leading-snug tracking-[-0.02em] group-hover:text-foreground/95 transition-colors">
                       {highlight(post.title, q)}
                     </h3>
@@ -469,7 +469,7 @@ export default function BlogPage() {
             )}
             {suggestions.length > 0 && (
               <div className="mt-6">
-                <p className="font-medium text-[11px] text-muted-foreground/80 mb-2">Try one of these instead</p>
+                <p className="font-medium text-[11px] text-muted-foreground mb-2">Try one of these instead</p>
                 <div className="inline-flex flex-wrap justify-center gap-2">
                   {suggestions.map(s => (
                     <button
@@ -525,7 +525,7 @@ export default function BlogPage() {
                     )}
                   >
                     <span>{tag}</span>
-                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground/70">{count}</span>
+                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{count}</span>
                   </button>
                 );
               })}

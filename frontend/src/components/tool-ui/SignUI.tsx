@@ -228,7 +228,7 @@ export function SignUI() {
                                 />
                                 {!sigData && !sigFile && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <p className="font-medium text-[12px] text-muted-foreground/60">Draw signature here</p>
+                                        <p className="font-medium text-[12px] text-muted-foreground">Draw signature here</p>
                                     </div>
                                 )}
                             </div>
@@ -293,7 +293,7 @@ export function SignUI() {
                                 >
                                     <span className="absolute inset-0 flex items-center justify-center font-display italic text-accent text-[7px]">sign</span>
                                 </div>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page {page}</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page {page}</span>
                             </div>
                         </div>
                     </div>
@@ -309,7 +309,7 @@ export function SignUI() {
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Signing…</> : <><PenTool size={13} /> Sign PDF</>}
                         </button>
                         {state !== "processing" && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                         )}
                     </div>
                 </>

@@ -131,11 +131,11 @@ export function ImageUpscalerUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[28px] font-bold tracking-[-0.02em]", active ? "text-accent" : "text-foreground")}>{s}×</p>
-                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-1">
                                             {out ?? (s === 2 ? "Larger image · safe default" : "Maximum detail · may need memory")}
                                         </p>
                                         {eta && (
-                                            <p className="font-medium mt-1.5 inline-flex items-center gap-1 text-[9.5px] text-accent/80">
+                                            <p className="font-medium mt-1.5 inline-flex items-center gap-1 text-[9.5px] text-accent">
                                                 <Clock size={9} /> {eta}
                                             </p>
                                         )}
@@ -156,7 +156,7 @@ export function ImageUpscalerUI() {
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Upscaling…</> : <><Scaling size={13} /> Upscale {scale}×</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

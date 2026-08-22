@@ -94,7 +94,7 @@ export function PdfToTextUI() {
                         <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
                             <s.icon size={13} className="mx-auto mb-1 text-muted-foreground" />
                             <p className="font-display text-[19px] font-bold tracking-[-0.02em] text-foreground">{s.value.toLocaleString()}</p>
-                            <p className="font-medium text-[11px] text-muted-foreground/85">{s.label}</p>
+                            <p className="font-medium text-[11px] text-muted-foreground">{s.label}</p>
                         </div>
                     ))}
                 </div>
@@ -153,7 +153,7 @@ export function PdfToTextUI() {
                     <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                         {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : <><ScanText size={13} /> Extract text</>}
                     </button>
-                    {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

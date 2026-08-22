@@ -536,17 +536,17 @@ export default function BlogPostPage() {
               {/* Dateline */}
               <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                 <span className="text-foreground">{post.author || "PrivaTools"}</span>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1.5">
                   <Calendar size={11} /> <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
                 </span>
                 {post.updatedAt && post.updatedAt !== post.publishedAt && (
                   <>
-                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">·</span>
                     <span>Updated <time dateTime={post.updatedAt} className="text-accent">{formatDate(post.updatedAt)}</time></span>
                   </>
                 )}
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock size={11} /> {post.readTime}
                 </span>
@@ -670,7 +670,7 @@ export default function BlogPostPage() {
                         to={t.href}
                         className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                       >
-                        <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-0.5">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">{String(i + 1).padStart(2, "0")}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">{t.name}</p>
                           <p className="text-[12.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{t.description}</p>
@@ -695,7 +695,7 @@ export default function BlogPostPage() {
                         to={`/blog/${p.slug}`}
                         className="flex items-start gap-3 px-5 py-4 hover:bg-accent/[0.04] transition-colors group"
                       >
-                        <span className="font-medium text-[11px] text-accent/70 shrink-0 mt-1">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="font-medium text-[11px] text-accent shrink-0 mt-1">{String(i + 1).padStart(2, "0")}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors leading-snug">
                             {p.title}
@@ -704,7 +704,7 @@ export default function BlogPostPage() {
                             <Clock size={10} /> {p.readTime}
                             {/* Surface up to 2 shared tags so the relevance signal is visible. */}
                             {p.tags.filter(t => post.tags.includes(t)).slice(0, 2).map(t => (
-                              <span key={t} className="text-accent/80">· {t}</span>
+                              <span key={t} className="text-accent">· {t}</span>
                             ))}
                           </p>
                         </div>
@@ -747,7 +747,7 @@ export default function BlogPostPage() {
                                 isActive
                                   ? "text-accent font-medium bg-accent/[0.06]"
                                   : t.level === 3
-                                    ? "text-muted-foreground/85 hover:text-foreground hover:bg-secondary/40"
+                                    ? "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                               )}
                             >

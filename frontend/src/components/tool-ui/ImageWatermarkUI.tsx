@@ -217,7 +217,7 @@ export function ImageWatermarkUI() {
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                            Position {proc.entries.length > 1 && <span className="text-muted-foreground/60 normal-case ml-2">— applied to every image</span>}
+                            Position {proc.entries.length > 1 && <span className="text-muted-foreground normal-case ml-2">— applied to every image</span>}
                         </div>
                         <div className="p-3 grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 items-center">
                             <div className="grid grid-cols-3 gap-2">
@@ -255,9 +255,9 @@ export function ImageWatermarkUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Applying… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Droplets size={13} /> Watermark {proc.entries.length > 1 ? `${proc.entries.length} images` : "image"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {proc.entries.length > 0 && !text.trim() && (
-                            <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Enter watermark text
                             </span>
                         )}

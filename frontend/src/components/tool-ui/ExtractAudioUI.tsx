@@ -129,7 +129,7 @@ export function ExtractAudioUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : <><Music size={13} /> Extract audio as {format.toUpperCase()}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

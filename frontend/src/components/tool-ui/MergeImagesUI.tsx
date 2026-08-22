@@ -144,7 +144,7 @@ export function MergeImagesUI() {
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span>Images ({files.length})</span>
-                            {files.length > 1 && <span className="text-muted-foreground/70">drag to reorder</span>}
+                            {files.length > 1 && <span className="text-muted-foreground">drag to reorder</span>}
                         </div>
                         <div className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {files.map((f, i) => (
@@ -206,7 +206,7 @@ export function MergeImagesUI() {
                                         <d.Icon size={18} className={active ? "text-accent" : "text-muted-foreground"} />
                                         <div>
                                             <p className={cn("font-display text-[13.5px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{d.label}</p>
-                                            <p className="font-medium text-[11px] text-muted-foreground/85">{d.desc}</p>
+                                            <p className="font-medium text-[11px] text-muted-foreground">{d.desc}</p>
                                         </div>
                                     </button>
                                 );
@@ -225,7 +225,7 @@ export function MergeImagesUI() {
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Merging…</> : <><Combine size={13} /> Merge {files.length} images</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

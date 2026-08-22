@@ -112,7 +112,7 @@ export function VideoToGifUI() {
                                     onChange={e => setFps(parseInt(e.target.value))}
                                     aria-label={`Frames per second: ${fps}`}
                                     className="mt-2 w-full accent-accent" />
-                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground/85 mt-1">
+                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground mt-1">
                                     <span>Choppy (1)</span>
                                     <span>Smooth (30)</span>
                                 </div>
@@ -126,7 +126,7 @@ export function VideoToGifUI() {
                                     onChange={e => setWidth(parseInt(e.target.value))}
                                     aria-label={`GIF width: ${width} pixels`}
                                     className="mt-2 w-full accent-accent" />
-                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground/85 mt-1">
+                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground mt-1">
                                     <span>Tiny</span>
                                     <span>HD</span>
                                 </div>
@@ -143,7 +143,7 @@ export function VideoToGifUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rendering…</> : <><Film size={13} /> Convert to GIF</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

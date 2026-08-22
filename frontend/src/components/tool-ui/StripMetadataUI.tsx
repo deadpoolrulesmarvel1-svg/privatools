@@ -92,10 +92,10 @@ export function StripMetadataUI() {
                     {files.map((f, i) => (
                         <div key={f.id} className="px-4 py-3">
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <FileText size={13} className="text-accent shrink-0" />
                                 <p className="text-[13px] font-medium text-foreground truncate flex-1 min-w-0">{f.name}</p>
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/85 shrink-0">{f.size}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground shrink-0">{f.size}</span>
                             </div>
                             <div className="ml-10 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
                                 {STRIPPED.map(s => (
@@ -139,7 +139,7 @@ export function StripMetadataUI() {
                     <div className="space-y-2">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                     <FileText size={15} className="text-accent" />
                                 </div>
@@ -178,7 +178,7 @@ export function StripMetadataUI() {
                         <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stripping…</> : <><DatabaseZap size={13} /> Strip {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

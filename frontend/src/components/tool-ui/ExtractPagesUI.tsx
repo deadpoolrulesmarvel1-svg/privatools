@@ -93,7 +93,7 @@ export function ExtractPagesUI() {
                         spellCheck={false}
                         aria-invalid={!rangeValid}
                         className={cn(
-                            "block w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                            "block w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                             rangeValid
                                 ? "border-border focus:border-accent focus:ring-accent/20"
                                 : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
@@ -102,7 +102,7 @@ export function ExtractPagesUI() {
                     {rangeErr ? (
                         <p className="font-medium text-[11px] text-destructive mt-2">{rangeErr}</p>
                     ) : (
-                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-2">
+                        <p className="font-medium text-[11px] text-muted-foreground mt-2">
                             Syntax — comma-separated · "1-3" = range · "1,3-5,9" = mixed
                         </p>
                     )}
@@ -117,7 +117,7 @@ export function ExtractPagesUI() {
                 <button type="button" onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : <><Download size={13} /> Extract pages</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

@@ -116,7 +116,7 @@ export function FillFormUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">{filledCount || fields.length}</span> of {fields.length} field{fields.length !== 1 && "s"} filled
                         </h2>
-                        <p className="font-medium text-[11.5px] text-muted-foreground/85 mt-1">
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-1">
                             Open the downloaded PDF to confirm your entries
                         </p>
                         <div className="mt-5 flex flex-wrap gap-2">
@@ -164,19 +164,19 @@ export function FillFormUI() {
                         <input
                             value={query} onChange={e => setQuery(e.target.value)}
                             placeholder="Filter…"
-                            className="h-6 pl-6 pr-2 rounded border border-border bg-paper-2 text-[11px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent w-32"
+                            className="h-6 pl-6 pr-2 rounded border border-border bg-paper-2 text-[11px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent w-32"
                         />
                     </div>
                 </div>
                 <div className="p-3 space-y-1.5 max-h-[60vh] overflow-y-auto">
                     {filtered.length === 0 && (
-                        <p className="text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No matching fields</p>
+                        <p className="text-[11px] tracking-wider text-muted-foreground text-center py-6">No matching fields</p>
                     )}
                     {filtered.map((field, i) => {
                         const tone = TYPE_CHIP_TONE[field.type] || TYPE_CHIP_TONE.text;
                         return (
                             <div key={field.name} className="grid grid-cols-1 sm:grid-cols-[24px_1fr_2fr] gap-2 items-center py-1.5">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 text-right hidden sm:inline">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground text-right hidden sm:inline">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <p className="text-[13px] font-medium text-foreground truncate">{field.name}</p>
                                     <span className={cn("font-medium h-4 px-1.5 inline-flex items-center text-[9.5px] tracking-wider rounded shrink-0", tone)}>
@@ -221,7 +221,7 @@ export function FillFormUI() {
                                             value={values[field.name] || ""}
                                             onChange={e => updateValue(field.name, e.target.value)}
                                             placeholder={`Enter ${field.name}`}
-                                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                         />
                                     )}
                                 </div>
@@ -242,7 +242,7 @@ export function FillFormUI() {
                     {state === "submitting" ? <><Loader2 size={13} className="animate-spin" /> Filling…</> : <><Download size={13} /> Fill &amp; download</>}
                 </button>
                 {state !== "submitting" && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                 )}
             </div>
         </div>

@@ -176,7 +176,7 @@ export function ImageOcrUI() {
                     <div className="font-medium flex items-center justify-between px-4 py-2 border-b border-accent/20 bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                             Extracted text
-                            <span className="text-muted-foreground/60">({result.characters} chars)</span>
+                            <span className="text-muted-foreground">({result.characters} chars)</span>
                         </span>
                         <div className="flex items-center gap-1">
                             <button onClick={copyText} aria-label="Copy extracted text" className={cn("h-7 px-2 rounded inline-flex items-center gap-1 transition-colors text-muted-foreground hover:text-accent hover:bg-accent/[0.06]", copied && "animate-copy-flash")}>
@@ -209,7 +209,7 @@ export function ImageOcrUI() {
                             : <><ScanText size={13} /> Extract text</>}
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}

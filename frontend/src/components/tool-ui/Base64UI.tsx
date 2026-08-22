@@ -167,7 +167,7 @@ export function Base64UI() {
                         onChange={e => setInput(e.target.value)}
                         placeholder={mode === "encode" ? "Enter text to encode…" : "Paste a Base64 string…"}
                         spellCheck={false}
-                        className="block w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                        className="block w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                     />
                 </div>
 
@@ -189,7 +189,7 @@ export function Base64UI() {
                         )}
                     </div>
                     <pre className="w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground overflow-auto break-all whitespace-pre-wrap">
-                        {output || <span className="text-muted-foreground/50 italic font-display">Output appears here…</span>}
+                        {output || <span className="text-muted-foreground italic font-display">Output appears here…</span>}
                     </pre>
                 </div>
             </div>

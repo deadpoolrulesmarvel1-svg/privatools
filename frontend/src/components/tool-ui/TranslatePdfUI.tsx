@@ -253,7 +253,7 @@ export function TranslatePdfUI() {
                                         <RotateCcw size={12} /> Translate another
                                     </button>
                                 </div>
-                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80 mt-3">
+                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground mt-3">
                                     Text and copy stay on your device. &ldquo;Save as PDF&rdquo; sends the translated
                                     text — never the original file — to be rendered, then deletes it.
                                 </p>

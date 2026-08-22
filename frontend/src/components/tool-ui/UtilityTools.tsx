@@ -151,7 +151,7 @@ export function PasswordGeneratorUI() {
                     <div className="divide-y divide-border">
                         {bulk.map((p, i) => (
                             <div key={i} className="flex items-center gap-3 px-4 py-2">
-                                <span className="font-medium text-[11px] text-muted-foreground/60 w-5">{i + 1}</span>
+                                <span className="font-medium text-[11px] text-muted-foreground w-5">{i + 1}</span>
                                 <p className="font-mono text-[13px] text-foreground flex-1 break-all select-all">{p}</p>
                                 <CopyButton value={p} />
                             </div>
@@ -179,7 +179,7 @@ export function PasswordGeneratorUI() {
                             onChange={e => setLength(parseInt(e.target.value, 10))}
                             className="w-full accent-[hsl(var(--accent))]"
                         />
-                        <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground/85">
+                        <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground">
                             <span>04</span><span>16</span><span>32</span><span>64</span>
                         </div>
                     </div>
@@ -219,7 +219,7 @@ export function PasswordGeneratorUI() {
                                         className="sr-only"
                                     />
                                     <span className="flex-1 text-[13px] text-foreground">{opt.label}</span>
-                                    <span className="font-mono text-[10.5px] text-muted-foreground/85">{opt.hint}</span>
+                                    <span className="font-mono text-[10.5px] text-muted-foreground">{opt.hint}</span>
                                 </label>
                             ))}
                         </div>
@@ -615,7 +615,7 @@ export function WordCounterUI() {
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste or type text here…"
-                    className="block w-full h-[40vh] px-4 py-3 bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                    className="block w-full h-[40vh] px-4 py-3 bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground resize-none outline-none"
                 />
             </div>
         </div>
@@ -717,7 +717,7 @@ export function ColorConverterUI() {
                                     { label: "B", value: rgb.b },
                                 ].map(c => (
                                     <div key={c.label}>
-                                        <p className="font-medium text-[11px] text-muted-foreground/85">{c.label}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground">{c.label}</p>
                                         <p className="font-mono text-[14px] text-foreground mt-0.5 tabular-nums">{c.value}</p>
                                     </div>
                                 ))}
@@ -840,7 +840,7 @@ export function UrlEncoderUI() {
                         onChange={e => setInput(e.target.value)}
                         placeholder={mode === "jwt" ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…" : "Paste text here…"}
                         spellCheck={false}
-                        className="block w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                        className="block w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                     />
                 </div>
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -849,7 +849,7 @@ export function UrlEncoderUI() {
                         <CopyButton value={output} />
                     </div>
                     <pre className="w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground/90 overflow-auto whitespace-pre-wrap break-all">
-                        {output || <span className="text-muted-foreground/50 italic">Output appears here…</span>}
+                        {output || <span className="text-muted-foreground italic">Output appears here…</span>}
                     </pre>
                 </div>
             </div>
@@ -922,7 +922,7 @@ export function JwtDecoderUI() {
                     onChange={e => setToken(e.target.value)}
                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…"
                     spellCheck={false}
-                    className="block w-full h-28 p-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none break-all"
+                    className="block w-full h-28 p-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none break-all"
                 />
             </div>
             {decoded && "error" in decoded && (
@@ -1041,7 +1041,7 @@ export function RegexTesterUI() {
                         value={pattern}
                         onChange={e => setPattern(e.target.value)}
                         placeholder={String.raw`\d{3}-\d{3}-\d{4}`}
-                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/50"
+                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
                         spellCheck={false}
                     />
                     <span className="text-muted-foreground select-none">/</span>
@@ -1049,7 +1049,7 @@ export function RegexTesterUI() {
                         value={flags}
                         onChange={e => setFlags(e.target.value.toLowerCase().replace(/[^gimsuy]/g, ""))}
                         placeholder="gim"
-                        className="w-16 bg-transparent outline-none text-accent placeholder:text-muted-foreground/40"
+                        className="w-16 bg-transparent outline-none text-accent placeholder:text-muted-foreground"
                         spellCheck={false}
                         aria-label="Flags"
                     />
@@ -1081,7 +1081,7 @@ export function RegexTesterUI() {
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste the text to test against…"
-                    className="block w-full h-40 px-3 py-3 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 bg-transparent outline-none resize-none"
+                    className="block w-full h-40 px-3 py-3 font-mono text-[13px] text-foreground placeholder:text-muted-foreground bg-transparent outline-none resize-none"
                     spellCheck={false}
                 />
             </div>
@@ -1126,7 +1126,7 @@ export function RegexTesterUI() {
                                         <span className="text-muted-foreground shrink-0">@{m.index}</span>
                                         <span className="text-foreground break-all">"{m.match}"</span>
                                         {m.groups.length > 0 && (
-                                            <span className="text-muted-foreground/85 break-all"> · groups: [{m.groups.map(g => JSON.stringify(g)).join(", ")}]</span>
+                                            <span className="text-muted-foreground break-all"> · groups: [{m.groups.map(g => JSON.stringify(g)).join(", ")}]</span>
                                         )}
                                     </div>
                                 ))}
@@ -1184,7 +1184,7 @@ export function TimestampConverterUI() {
                     onChange={e => setInput(e.target.value)}
                     placeholder="1704067200 or 2024-01-01T00:00:00Z"
                     spellCheck={false}
-                    className="block w-full px-3 py-3 bg-transparent font-mono text-[15px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                    className="block w-full px-3 py-3 bg-transparent font-mono text-[15px] text-foreground placeholder:text-muted-foreground outline-none"
                 />
             </div>
 
@@ -1523,7 +1523,7 @@ export function CaseConverterUI() {
                     onChange={e => setInput(e.target.value)}
                     spellCheck={false}
                     placeholder="Type or paste any string…"
-                    className="block w-full h-24 px-3 py-3 bg-transparent font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                    className="block w-full h-24 px-3 py-3 bg-transparent font-mono text-[14px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                 />
             </div>
 

@@ -78,7 +78,7 @@ export function SavePasswordPrompt({
         </button>
       </div>
       {error && <p className="mt-1.5 text-[12px] text-destructive">{error}</p>}
-      <p className="font-medium mt-1.5 text-[11px] text-muted-foreground/85">
+      <p className="font-medium mt-1.5 text-[11px] text-muted-foreground">
         Encrypted, stored on this device only. Don&apos;t
         put the password in the name.
       </p>

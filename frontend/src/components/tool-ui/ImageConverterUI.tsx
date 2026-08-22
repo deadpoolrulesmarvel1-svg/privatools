@@ -168,7 +168,7 @@ export function ImageConverterUI() {
                             aria-label="Output quality"
                             className="w-full h-2 accent-[hsl(var(--accent))] touch-manipulation"
                         />
-                        <div className="font-medium mt-1 flex justify-between text-[9.5px] text-muted-foreground/85">
+                        <div className="font-medium mt-1 flex justify-between text-[9.5px] text-muted-foreground">
                             <span>← smaller</span><span>balanced</span><span>sharper →</span>
                         </div>
                     </div>
@@ -196,7 +196,7 @@ export function ImageConverterUI() {
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Converting…</> : <><Download size={13} /> Convert to {target.toUpperCase()}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

@@ -154,7 +154,7 @@ export function RemoveExifUI() {
                             const clean = probed && !probed.hasExif && !probed.hasXmp && !probed.hasGps;
                             return (
                                 <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                    <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                    <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                     <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                         <ImageIcon size={15} className="text-accent" />
                                     </div>
@@ -162,7 +162,7 @@ export function RemoveExifUI() {
                                         <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
-                                            {!probed && <span className="font-medium text-[11px] tracking-wider text-muted-foreground/60">scanning…</span>}
+                                            {!probed && <span className="font-medium text-[11px] tracking-wider text-muted-foreground">scanning…</span>}
                                             {probed?.hasExif && (
                                                 <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
                                             )}
@@ -212,7 +212,7 @@ export function RemoveExifUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stripping…</> : <><DatabaseZap size={13} /> Remove EXIF from {files.length > 1 ? `${files.length} images` : "image"}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

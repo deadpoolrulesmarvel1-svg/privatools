@@ -392,7 +392,7 @@ export function CompressUI() {
                                         <button
                                             type="button"
                                             aria-label="What do these levels do?"
-                                            className="inline-flex items-center justify-center h-4 w-4 rounded-full text-muted-foreground/70 hover:text-foreground transition-colors"
+                                            className="inline-flex items-center justify-center h-4 w-4 rounded-full text-muted-foreground hover:text-foreground transition-colors"
                                         >
                                             <Info size={11} aria-hidden="true" />
                                         </button>
@@ -514,7 +514,7 @@ export function CompressUI() {
                                         onChange={e => setCustomQuality(parseInt(e.target.value, 10))}
                                         className="w-full accent-accent"
                                     />
-                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-1">
+                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground mt-1">
                                         <span>15 — tiny, lossy</span>
                                         <span>95 — pristine</span>
                                     </div>
@@ -531,7 +531,7 @@ export function CompressUI() {
                                         onChange={e => setCustomMaxDim(parseInt(e.target.value, 10))}
                                         className="w-full accent-accent"
                                     />
-                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-1">
+                                    <div className="font-medium flex justify-between text-[11px] text-muted-foreground mt-1">
                                         <span>300 — heavily downsampled</span>
                                         <span>4000 — preserve detail</span>
                                     </div>
@@ -556,7 +556,7 @@ export function CompressUI() {
                             <button
                                 type="button"
                                 onClick={copyErrorToClipboard}
-                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
                                 aria-label="Copy error details to clipboard"
                                 title="Copy error details for a bug report"
                             >
@@ -577,7 +577,7 @@ export function CompressUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Compressing…</>
                                 : <><Minimize2 size={13} /> Compress {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         <button
                             type="button"
                             onClick={resetConfig}

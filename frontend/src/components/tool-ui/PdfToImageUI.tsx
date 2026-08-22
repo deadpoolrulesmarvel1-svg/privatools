@@ -179,7 +179,7 @@ export function PdfToImageUI() {
                                     <button key={f.id} onClick={() => setFormat(f.id)}
                                         className={cn("rounded-lg border p-3 text-left transition-colors", active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40")}>
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{f.label}</p>
-                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">{f.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{f.desc}</p>
                                     </button>
                                 );
                             })}
@@ -202,9 +202,9 @@ export function PdfToImageUI() {
                                 );
                             })}
                         </div>
-                        <p className="font-medium px-4 pb-3 text-[11px] text-muted-foreground/85 flex items-center justify-between">
+                        <p className="font-medium px-4 pb-3 text-[11px] text-muted-foreground flex items-center justify-between">
                             <span>{dpi <= 72 ? "Screen · fast" : dpi <= 150 ? "Balanced" : "Print · larger files"}</span>
-                            {totalBytes > 0 && <span className="text-muted-foreground/70">Est. ~ {formatFileSize(estTotal)} total</span>}
+                            {totalBytes > 0 && <span className="text-muted-foreground">Est. ~ {formatFileSize(estTotal)} total</span>}
                         </p>
                     </div>
 
@@ -214,7 +214,7 @@ export function PdfToImageUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Rasterizing… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><ImageIcon size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : `to ${format.toUpperCase()}`}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

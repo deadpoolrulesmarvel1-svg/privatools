@@ -156,7 +156,7 @@ export function MultiFileUI({
                             {files.length} {fileLabel} · {formatFileSize(totalSize)} total
                         </span>
                         {ordered && (
-                            <span className="font-medium text-[11px] text-muted-foreground/85">
+                            <span className="font-medium text-[11px] text-muted-foreground">
                                 Order matters — drag or use ↑↓
                             </span>
                         )}
@@ -165,11 +165,11 @@ export function MultiFileUI({
                         {files.map((f, i) => (
                             <div key={f.id} className="group flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-secondary/30 transition-colors">
                                 {ordered && (
-                                    <span className="text-muted-foreground/85 hidden sm:inline-flex items-center justify-center h-7 w-7 coarse:h-11 coarse:w-11 rounded">
+                                    <span className="text-muted-foreground hidden sm:inline-flex items-center justify-center h-7 w-7 coarse:h-11 coarse:w-11 rounded">
                                         <GripVertical size={14} />
                                     </span>
                                 )}
-                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-7 text-center">
+                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7 text-center">
                                     {String(i + 1).padStart(2, "0")}
                                 </span>
                                 <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
@@ -243,7 +243,7 @@ export function MultiFileUI({
                         )}
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             </div>

@@ -172,7 +172,7 @@ export function BarcodeGeneratorUI() {
                                     {t.value === "qr" ? <QrCode size={11} className="text-accent" /> : <Hash size={11} className="text-muted-foreground" />}
                                     <p className={cn("font-display text-[13px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{t.label}</p>
                                 </div>
-                                <p className="font-medium text-[9.5px] text-muted-foreground/85 mt-1">{t.desc}</p>
+                                <p className="font-medium text-[9.5px] text-muted-foreground mt-1">{t.desc}</p>
                             </button>
                         );
                     })}
@@ -190,7 +190,7 @@ export function BarcodeGeneratorUI() {
                         aria-label={`Barcode data for ${BARCODE_TYPES.find(t => t.value === barcodeType)?.label}`}
                         aria-invalid={!!validationError && data.length > 0}
                         className={cn(
-                            "w-full rounded-md border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                            "w-full rounded-md border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                             validationError && data.length > 0
                                 ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
                                 : "border-border focus:border-accent focus:ring-accent/20"
@@ -198,7 +198,7 @@ export function BarcodeGeneratorUI() {
                     />
                     <p className={cn(
                         "font-medium text-[11px]",
-                        validationError && data.length > 0 ? "text-destructive" : "text-muted-foreground/85"
+                        validationError && data.length > 0 ? "text-destructive" : "text-muted-foreground"
                     )}>
                         <span className={validationError && data.length > 0 ? "text-destructive" : "text-accent"}></span>{" "}
                         {validationError && data.length > 0 ? validationError : hint(barcodeType)}
@@ -221,7 +221,7 @@ export function BarcodeGeneratorUI() {
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rendering…</> : <><Sparkles size={13} /> Generate {BARCODE_TYPES.find(t => t.value === barcodeType)?.label}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

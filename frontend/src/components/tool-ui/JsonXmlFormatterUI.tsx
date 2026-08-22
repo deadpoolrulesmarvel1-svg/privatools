@@ -176,7 +176,7 @@ export function JsonXmlFormatterUI() {
                         <Braces size={13} /> Format &amp; validate
                     </button>
                     {input.trim() && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             </div>
@@ -245,11 +245,11 @@ function CodeEditor({
                 <span className="font-medium text-[11.5px] text-muted-foreground">
                     {label}
                 </span>
-                {rightAction || (value && <span className="font-mono text-[10.5px] text-muted-foreground/85">{lines} line{lines !== 1 ? "s" : ""}</span>)}
+                {rightAction || (value && <span className="font-mono text-[10.5px] text-muted-foreground">{lines} line{lines !== 1 ? "s" : ""}</span>)}
             </div>
             <div className="flex font-mono text-[13px]">
                 {/* Gutter */}
-                <div className="select-none bg-paper-2/30 border-r border-border py-3 px-2 text-right text-muted-foreground/60 leading-relaxed">
+                <div className="select-none bg-paper-2/30 border-r border-border py-3 px-2 text-right text-muted-foreground leading-relaxed">
                     {lineNos.map(n => (
                         <div key={n} className="w-7 tabular-nums">{n}</div>
                     ))}
@@ -267,7 +267,7 @@ function CodeEditor({
                     readOnly={readOnly}
                     spellCheck={false}
                     className={cn(
-                        "flex-1 py-3 px-3 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 leading-relaxed resize-none min-h-[170px]",
+                        "flex-1 py-3 px-3 bg-transparent outline-none text-foreground placeholder:text-muted-foreground leading-relaxed resize-none min-h-[170px]",
                         readOnly && "cursor-default"
                     )}
                     style={{ overflow: "auto" }}

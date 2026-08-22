@@ -141,7 +141,7 @@ export function UnlockUI() {
                     <div className="space-y-2">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                     <FileText size={15} className="text-accent" />
                                 </div>
@@ -171,7 +171,7 @@ export function UnlockUI() {
                                     placeholder="Enter the existing password"
                                     autoFocus
                                     autoComplete="current-password"
-                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 />
                                 <button
                                     type="button"
@@ -183,7 +183,7 @@ export function UnlockUI() {
                                     {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>
                             </div>
-                            <p className="font-medium text-[11px] text-muted-foreground/85">
+                            <p className="font-medium text-[11px] text-muted-foreground">
                                 {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
                             </p>
                         </div>
@@ -199,7 +199,7 @@ export function UnlockUI() {
                         <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Unlocking…</> : <><LockOpen size={13} /> Unlock {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

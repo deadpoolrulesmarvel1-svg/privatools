@@ -363,12 +363,12 @@ export function ESignUI() {
                                         />
                                         {!hasDrawn && (
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                <p className="font-medium text-[12px] text-muted-foreground/60">Draw signature here</p>
+                                                <p className="font-medium text-[12px] text-muted-foreground">Draw signature here</p>
                                             </div>
                                         )}
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-medium text-[11px] text-muted-foreground/85">
+                                        <p className="font-medium text-[11px] text-muted-foreground">
                                             Mouse, trackpad, or touch
                                         </p>
                                         <button onClick={clearCanvas} className="font-medium text-[11px] text-accent hover:opacity-80">Clear</button>
@@ -383,7 +383,7 @@ export function ESignUI() {
                                         placeholder="Type your name…"
                                         autoFocus
                                         maxLength={60}
-                                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                     {/* Font picker */}
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5" role="radiogroup" aria-label="Signature font">
@@ -479,7 +479,7 @@ export function ESignUI() {
                                 >
                                     <span className="font-display italic text-accent text-[7px]">sign</span>
                                 </div>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page {pageNumber}</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page {pageNumber}</span>
                             </div>
                         </div>
                     </div>
@@ -496,7 +496,7 @@ export function ESignUI() {
                                 {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Signing…</> : <><PenTool size={13} /> Apply e-signature</>}
                             </button>
                             {status !== "processing" && (
-                                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                             )}
                         </div>
                         <label className="font-medium inline-flex items-center gap-2 text-[11.5px] text-muted-foreground cursor-pointer select-none">

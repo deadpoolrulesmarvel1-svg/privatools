@@ -144,7 +144,7 @@ export function CsvJsonUI() {
                         ? "name,age,email\nAlice,30,alice@example.com"
                         : '[{"name":"Alice","age":30}]'}
                     spellCheck={false}
-                    className="w-full h-44 bg-paper-2/30 px-4 py-3 font-mono text-[12.5px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 resize-y outline-none"
+                    className="w-full h-44 bg-paper-2/30 px-4 py-3 font-mono text-[12.5px] leading-relaxed text-foreground placeholder:text-muted-foreground resize-y outline-none"
                 />
                 {mode === "csv-to-json" && input && (
                     <div className="px-3 py-2 border-t border-border bg-paper-2/30 flex items-center gap-1.5 flex-wrap">

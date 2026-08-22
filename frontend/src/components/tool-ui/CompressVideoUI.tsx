@@ -111,9 +111,9 @@ export function CompressVideoUI() {
                                 className="w-full accent-accent"
                                 aria-label="Quality" aria-valuetext={`CRF ${quality} — ${qualityLabel}`} />
                             <div className="flex justify-between items-center mt-2">
-                                <span className="font-medium text-[11px] text-muted-foreground/85">Higher quality (18)</span>
+                                <span className="font-medium text-[11px] text-muted-foreground">Higher quality (18)</span>
                                 <span className="font-mono text-[13px] tabular-nums text-accent">CRF {quality}</span>
-                                <span className="font-medium text-[11px] text-muted-foreground/85">Smaller file (40)</span>
+                                <span className="font-medium text-[11px] text-muted-foreground">Smaller file (40)</span>
                             </div>
                         </div>
                     </div>
@@ -127,7 +127,7 @@ export function CompressVideoUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Compressing…</> : <><Video size={13} /> Compress video</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

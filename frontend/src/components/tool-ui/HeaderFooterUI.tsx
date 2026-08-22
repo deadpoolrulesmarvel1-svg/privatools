@@ -171,7 +171,7 @@ export function HeaderFooterUI() {
                                     <input
                                         value={headerText} onChange={e => setHeaderText(e.target.value)}
                                         placeholder="e.g. Company Report 2026"
-                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -179,7 +179,7 @@ export function HeaderFooterUI() {
                                     <input
                                         value={footerText} onChange={e => setFooterText(e.target.value)}
                                         placeholder="e.g. Confidential — page {n}"
-                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -197,13 +197,13 @@ export function HeaderFooterUI() {
                             </div>
                             <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[180px] overflow-hidden">
                                 <div className="absolute inset-x-2 top-2 text-center truncate text-foreground/85" style={{ fontSize: `${Math.max(6, fontSize / 1.6)}px` }}>
-                                    {headerText || <span className="text-muted-foreground/40">—</span>}
+                                    {headerText || <span className="text-muted-foreground">—</span>}
                                 </div>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="font-mono text-[8.5px] tracking-wider text-muted-foreground/40">page</span>
+                                    <span className="font-mono text-[8.5px] tracking-wider text-muted-foreground">page</span>
                                 </div>
                                 <div className="absolute inset-x-2 bottom-2 text-center truncate text-foreground/85" style={{ fontSize: `${Math.max(6, fontSize / 1.6)}px` }}>
-                                    {footerText || <span className="text-muted-foreground/40">—</span>}
+                                    {footerText || <span className="text-muted-foreground">—</span>}
                                 </div>
                             </div>
                         </div>
@@ -215,9 +215,9 @@ export function HeaderFooterUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Applying… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Heading size={13} /> Apply to {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {!hasText && proc.entries.length > 0 && (
-                            <span className="font-medium text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Enter at least one band
                             </span>
                         )}

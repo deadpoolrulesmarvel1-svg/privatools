@@ -325,7 +325,7 @@ export function AccessibilityCheckUI() {
                                                         <ChevronRight
                                                             size={12}
                                                             className={cn(
-                                                                "shrink-0 mt-1 transition-transform text-muted-foreground/60",
+                                                                "shrink-0 mt-1 transition-transform text-muted-foreground",
                                                                 isOpen && "rotate-90 text-accent",
                                                             )}
                                                         />
@@ -354,7 +354,7 @@ export function AccessibilityCheckUI() {
                         ))}
                     </div>
 
-                    <p className="font-medium text-[11px] text-muted-foreground/70">
+                    <p className="font-medium text-[11px] text-muted-foreground">
                         Automated checks only — the manual items need a human to confirm.
                     </p>
 
@@ -376,7 +376,7 @@ export function AccessibilityCheckUI() {
                             ? <><Loader2 size={13} className="animate-spin" /> Checking…</>
                             : <><Accessibility size={13} /> Check accessibility</>}
                     </button>
-                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

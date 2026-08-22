@@ -570,7 +570,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                             aria-controls="command-palette-results"
                             aria-autocomplete="list"
                             aria-activedescendant={activeResults[selected] ? `cmdk-opt-${activeResults[selected].slug}` : undefined}
-                            className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/85"
+                            className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground"
                             placeholder={`Search ${allTools.length} tools or jump to a page…`}
                             value={query}
                             onChange={e => { setPastedFile(null); setQuery(e.target.value); setSelected(0); }}
@@ -693,7 +693,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
                                                 size={12}
                                                 className={cn(
                                                     "shrink-0 transition-all",
-                                                    i === selected ? "text-accent opacity-100 translate-x-0" : "text-muted-foreground/40 opacity-0 -translate-x-1"
+                                                    i === selected ? "text-accent opacity-100 translate-x-0" : "text-muted-foreground opacity-0 -translate-x-1"
                                                 )}
                                             />
                                         </button>

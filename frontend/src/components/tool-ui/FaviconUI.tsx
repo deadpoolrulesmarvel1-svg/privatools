@@ -167,16 +167,16 @@ export function FaviconUI() {
                                             />
                                         )}
                                         <p className={cn("font-mono text-[10.5px] tracking-[0.04em] font-semibold", active ? "text-accent" : "text-foreground")}>{s.label}</p>
-                                        <p className="font-medium text-[10.5px] text-muted-foreground/85">{s.desc}</p>
+                                        <p className="font-medium text-[10.5px] text-muted-foreground">{s.desc}</p>
                                     </button>
                                 );
                             })}
                         </div>
                         <div className="px-3 pb-3 flex flex-wrap gap-2">
                             <button onClick={() => setSelectedSizes([16, 32, 48, 180])} aria-label="Select web essentials sizes" className="font-medium text-[11px] text-accent hover:opacity-80">Web essentials</button>
-                            <span className="text-muted-foreground/40">·</span>
+                            <span className="text-muted-foreground">·</span>
                             <button onClick={() => setSelectedSizes(SIZES.map(s => s.value))} aria-label="Select all sizes" className="font-medium text-[11px] text-accent hover:opacity-80">All</button>
-                            <span className="text-muted-foreground/40">·</span>
+                            <span className="text-muted-foreground">·</span>
                             <button onClick={() => setSelectedSizes([])} aria-label="Clear selection" className="font-medium text-[11px] text-muted-foreground hover:text-foreground">Clear</button>
                         </div>
                     </div>
@@ -192,7 +192,7 @@ export function FaviconUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Generating…</> : <><Sparkles size={13} /> Generate {selectedSizes.length} favicon{selectedSizes.length !== 1 && "s"}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

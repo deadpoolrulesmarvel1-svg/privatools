@@ -204,7 +204,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     <p className="font-medium text-[11px] text-muted-foreground mb-1">
                       Component stack
                     </p>
-                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground/90 max-h-64 overflow-auto">
+                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground max-h-64 overflow-auto">
                       {this.state.info.componentStack}
                     </pre>
                   </div>

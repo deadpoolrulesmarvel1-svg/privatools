@@ -341,9 +341,9 @@ export function ShapesUI() {
                                 <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="absolute inset-0 w-full h-full">
                                     {shapes.map(s => renderShapePreview(s, selected === s.id))}
                                 </svg>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
-                            <p className="font-medium text-[11px] text-muted-foreground/85 mt-2 text-center">
+                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
                                 Coords in points
                             </p>
                         </div>
@@ -363,7 +363,7 @@ export function ShapesUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Drawing…</> : <><Shapes size={13} /> Add {shapes.length} shape{shapes.length !== 1 && "s"}</>}
                     </button>
                     {status !== "processing" && shapes.length > 0 && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

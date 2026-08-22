@@ -73,7 +73,7 @@ export function MetadataUI() {
                     {Object.entries(meta).map(([k, v]) => (
                         <div key={k} className="grid grid-cols-[140px_1fr] gap-3 py-2 border-b border-border/40 last:border-0">
                             <span className="font-medium text-[11.5px] text-muted-foreground">{k.replace(/_/g, " ")}</span>
-                            <span className="text-[13.5px] text-foreground break-all">{String(v) || <span className="text-muted-foreground/50">—</span>}</span>
+                            <span className="text-[13.5px] text-foreground break-all">{String(v) || <span className="text-muted-foreground">—</span>}</span>
                         </div>
                     ))}
                 </div>
@@ -155,7 +155,7 @@ export function MetadataUI() {
                         <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
                             <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                                 <span>Document properties</span>
-                                {meta && <span className="text-muted-foreground/70">Current → new</span>}
+                                {meta && <span className="text-muted-foreground">Current → new</span>}
                             </div>
                             <div className="p-4 space-y-3">
                                 {([
@@ -174,7 +174,7 @@ export function MetadataUI() {
                                                 )}
                                             </div>
                                             {meta && c.current && changed && (
-                                                <div className="flex items-center gap-2 mb-1 font-mono text-[11px] text-muted-foreground/85 break-all">
+                                                <div className="flex items-center gap-2 mb-1 font-mono text-[11px] text-muted-foreground break-all">
                                                     <span className="line-through opacity-70">{c.current}</span>
                                                     <ArrowRight size={10} className="shrink-0 text-accent" />
                                                 </div>
@@ -184,7 +184,7 @@ export function MetadataUI() {
                                                 placeholder={c.placeholder}
                                                 aria-label={`${c.label} metadata field`}
                                                 className={cn(
-                                                    "w-full rounded-md border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-accent/20 transition-colors",
+                                                    "w-full rounded-md border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/20 transition-colors",
                                                     changed ? "border-accent/60 focus:border-accent" : "border-border focus:border-accent"
                                                 )}
                                             />
@@ -207,7 +207,7 @@ export function MetadataUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Processing…</>
                                 : mode === "read" ? <><FileSearch size={13} /> Read metadata</> : <><Pencil size={13} /> Update metadata</>}
                         </button>
-                        {state !== "processing" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {state !== "processing" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

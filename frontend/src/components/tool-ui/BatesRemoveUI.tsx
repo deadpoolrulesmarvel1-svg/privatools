@@ -112,7 +112,7 @@ export function BatesRemoveUI() {
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    What the stamps look like <span className="text-muted-foreground/60">— optional</span>
+                    What the stamps look like <span className="text-muted-foreground">— optional</span>
                 </div>
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
@@ -120,7 +120,7 @@ export function BatesRemoveUI() {
                         <input
                             id="rm-prefix" value={prefix} onChange={e => setPrefix(e.target.value)}
                             placeholder="DOC-" maxLength={32}
-                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
                     <div>
@@ -128,7 +128,7 @@ export function BatesRemoveUI() {
                         <input
                             id="rm-suffix" value={suffix} onChange={e => setSuffix(e.target.value)}
                             placeholder="-CONF" maxLength={32}
-                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
                     <div>
@@ -153,7 +153,7 @@ export function BatesRemoveUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Removing…</>
                         : <><Eraser size={13} /> Remove Bates numbers</>}
                 </button>
-                {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

@@ -116,7 +116,7 @@ export function CreateZipUI() {
                     <div className="divide-y divide-border">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <FileText size={13} className="text-muted-foreground shrink-0" />
                                 <span className="text-[13px] text-foreground flex-1 truncate">{f.name}</span>
                                 <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
@@ -144,14 +144,14 @@ export function CreateZipUI() {
                             aria-label="ZIP compression level"
                             aria-valuetext={`Level ${compression} — ${compressionLabel}`}
                         />
-                        <div className="font-medium flex justify-between text-[11px] text-muted-foreground/85 mt-2">
+                        <div className="font-medium flex justify-between text-[11px] text-muted-foreground mt-2">
                             <span>Store (0)</span><span>Balanced (6)</span><span>Maximum (9)</span>
                         </div>
                     </div>
                 </div>
             )}
 
-            <p className="font-medium text-[11px] text-muted-foreground/85">
+            <p className="font-medium text-[11px] text-muted-foreground">
                 {files.length > 0 && `${formatFileSize(totalBytes)} uncompressed · `}Standard ZIP archive · password-encrypted output not yet supported
             </p>
 
@@ -166,7 +166,7 @@ export function CreateZipUI() {
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Sealing…</> : <><Archive size={13} /> Create ZIP ({files.length} {files.length === 1 ? "file" : "files"})</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

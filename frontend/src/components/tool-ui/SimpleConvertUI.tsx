@@ -99,7 +99,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">{label}</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                     <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFile(null)}>Clear</Button>
                 </div>

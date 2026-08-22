@@ -294,7 +294,7 @@ export default function Index() {
                     <section className="mb-10 animate-fade-up stagger-1">
                         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                             <span className="section-mark reveal-underline">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
-                            <span className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground/85">
+                            <span className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                                 <ShieldCheck size={11} className="text-accent" />
                                 Private by default
                             </span>
@@ -332,7 +332,7 @@ export default function Index() {
                             >
                                 <Search size={17} className="text-muted-foreground shrink-0 group-hover:text-accent transition-colors" />
                                 <span className="flex-1 text-[14px] sm:text-[15px] text-muted-foreground truncate">
-                                    Search {TOOL_TOTAL} tools <span className="hidden sm:inline text-muted-foreground/70">— try "compress", "redact", "JWT"…</span>
+                                    Search {TOOL_TOTAL} tools <span className="hidden sm:inline text-muted-foreground">— try "compress", "redact", "JWT"…</span>
                                 </span>
                                 <kbd className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md border border-border bg-secondary/60 font-mono text-[11px] text-muted-foreground shrink-0">
                                     <Command size={11} />K
@@ -343,7 +343,7 @@ export default function Index() {
                                 <span className="flex-1 text-[13.5px] sm:text-[14px] text-muted-foreground">
                                     or drop any file <span className="hidden sm:inline opacity-70">anywhere on this page</span>
                                 </span>
-                                <span className="font-medium text-[11.5px] text-muted-foreground/85">↓</span>
+                                <span className="font-medium text-[11.5px] text-muted-foreground">↓</span>
                                 <input
                                     type="file"
                                     className="sr-only"
@@ -490,14 +490,14 @@ export default function Index() {
                                             <span className="icon-tile">
                                                 <Icon size={18} strokeWidth={1.75} />
                                             </span>
-                                            <span className="font-medium text-[11.5px] text-muted-foreground/85">
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">
                                                 {String(s.count).padStart(2, "0")} tools
                                             </span>
                                         </div>
                                         <p className="font-display text-[19px] sm:text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">{s.label}</p>
-                                        <p className="mt-0.5 text-[11.5px] sm:text-[12px] text-muted-foreground/85 leading-snug italic">{s.blurb}</p>
+                                        <p className="mt-0.5 text-[11.5px] sm:text-[12px] text-muted-foreground leading-snug italic">{s.blurb}</p>
                                         <p className="mt-2 text-[12px] sm:text-[12.5px] text-muted-foreground leading-snug line-clamp-1">{s.example}</p>
-                                        <p className="font-medium mt-3 text-[11.5px] text-muted-foreground/85 inline-flex items-center gap-1 group-hover:text-accent transition-colors">
+                                        <p className="font-medium mt-3 text-[11.5px] text-muted-foreground inline-flex items-center gap-1 group-hover:text-accent transition-colors">
                                             Open suite <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
                                         </p>
                                     </Link>
@@ -526,7 +526,7 @@ export default function Index() {
                                     >
                                         <div className="flex items-start justify-between gap-4 mb-2">
                                             <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] leading-tight">{p.title}</p>
-                                            <span className="font-medium text-[11.5px] text-muted-foreground/85 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                            <span className="font-medium text-[11.5px] text-muted-foreground shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         </div>
                                         <p className="text-[12.5px] text-muted-foreground leading-snug mb-2.5">{p.description}</p>
                                         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -540,7 +540,9 @@ export default function Index() {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <span className="font-medium text-[11px] text-muted-foreground/0 group-hover:text-accent transition-colors inline-flex items-center gap-1 shrink-0">
+                                            {/* Decorative reinforcement — the card is already a link named
+                                                after the pipeline, so this repeats nothing a screen reader needs. */}
+                                            <span aria-hidden="true" className="font-medium text-[11px] text-muted-foreground/0 group-hover:text-accent group-focus-within:text-accent [@media(hover:none)]:text-accent transition-colors inline-flex items-center gap-1 shrink-0">
                                                 Build <ArrowRight size={10} />
                                             </span>
                                         </div>
@@ -591,7 +593,7 @@ export default function Index() {
                             {/* Desktop / tablet — 3-column table */}
                             <div className="hidden sm:grid grid-cols-[1.1fr_1fr_1fr] text-[13px]">
                                 <div className="p-5 border-r border-border">
-                                    <p className="text-[11px] text-muted-foreground/85 font-medium mb-4">Feature</p>
+                                    <p className="text-[11px] text-muted-foreground font-medium mb-4">Feature</p>
                                     <ul className="space-y-3 text-foreground/90">
                                         <li>Files uploaded to a 3rd party</li>
                                         <li>Account / sign-up</li>
@@ -602,7 +604,7 @@ export default function Index() {
                                     </ul>
                                 </div>
                                 <div className="p-5 border-r border-border bg-paper-2/50">
-                                    <p className="text-[11px] text-muted-foreground/85 font-medium mb-4">iLovePDF / Smallpdf</p>
+                                    <p className="text-[11px] text-muted-foreground font-medium mb-4">iLovePDF / Smallpdf</p>
                                     <ul className="space-y-3 text-muted-foreground">
                                         <li className="line-through decoration-muted-foreground/60">Their server</li>
                                         <li className="line-through decoration-muted-foreground/60">After free quota</li>
@@ -636,7 +638,7 @@ export default function Index() {
                                     { feature: "Pipeline / chaining",           them: "Not offered",      us: "Industry first" },
                                 ].map(row => (
                                     <div key={row.feature} className="px-4 py-3">
-                                        <p className="font-medium text-[11px] text-muted-foreground/85 mb-1.5">{row.feature}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mb-1.5">{row.feature}</p>
                                         <div className="flex items-center justify-between gap-3">
                                             <span className="text-muted-foreground line-through decoration-muted-foreground/60 text-[12.5px]">{row.them}</span>
                                             <span className="text-foreground font-medium text-[12.5px] text-right">{row.us}</span>

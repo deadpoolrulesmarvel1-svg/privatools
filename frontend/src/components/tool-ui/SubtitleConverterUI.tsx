@@ -203,7 +203,7 @@ export function SubtitleConverterUI() {
                                 <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>
                                     {t === "vtt" ? "WebVTT" : "SubRip"}
                                 </p>
-                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">.{t}</p>
+                                <p className="font-medium text-[11px] text-muted-foreground mt-0.5">.{t}</p>
                             </button>
                         );
                     })}
@@ -218,7 +218,7 @@ export function SubtitleConverterUI() {
 
             <button onClick={handleDownload} disabled={!result.ok} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                 <Download size={13} /> Download .{target}
-                {result.ok && <span className="font-mono text-[11px] tracking-wider text-accent/70 ml-1">({result.count} cues)</span>}
+                {result.ok && <span className="font-mono text-[11px] tracking-wider text-accent ml-1">({result.count} cues)</span>}
             </button>
         </div>
     );

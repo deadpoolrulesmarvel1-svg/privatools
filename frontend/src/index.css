@@ -126,7 +126,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 195 42% 8%;
 
-    --primary: 175 100% 33%;             /* #00A896 */
+    --primary: 175 100% 26%;             /* #00857A — 4.55:1 with white; 33% was 2.96:1 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 186 40% 95%;
@@ -152,7 +152,7 @@
     --border: 190 26% 89%;
     --border-strong: 192 18% 74%;
     --input: 190 26% 89%;
-    --ring: 175 100% 33%;
+    --ring: 175 100% 26%;
 
     --radius: 1.25rem;
 
@@ -1192,6 +1192,20 @@ button.btn-accent:focus-visible {
   outline: 2px solid hsl(var(--foreground));
   outline-offset: 3px;
 }
+/* ── Hover-revealed row actions ───────────────────────────────────── */
+/* List rows hide their delete/reorder buttons behind `group-hover:opacity-100`.
+   Hover is the one interaction a keyboard has no access to, so those buttons
+   stayed at opacity:0 while still being focusable — a keyboard user could tab
+   to "remove" and never see which row it belonged to. Touch has no hover
+   either, so the same controls were unreachable on a phone.
+
+   Hooking Tailwind's own generated class fixes every occurrence at once, and
+   keeps future ones correct without anyone remembering this rule. */
+.group:focus-within .group-hover\:opacity-100 { opacity: 1; }
+@media (hover: none) {
+  .group .group-hover\:opacity-100 { opacity: 1; }
+}
+
 /* High-contrast environment — bump the ring to 3px and use foreground for
    maximum delta against any backdrop. */
 @media (prefers-contrast: more) {

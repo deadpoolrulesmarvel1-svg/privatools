@@ -86,7 +86,7 @@ function TextArea({
       rows={rows}
       spellCheck={false}
       placeholder={placeholder}
-      className="w-full resize-y rounded-lg border border-border bg-card p-3 font-mono text-[13px] leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/65 focus:border-accent"
+      className="w-full resize-y rounded-lg border border-border bg-card p-3 font-mono text-[13px] leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
     />
   );
 }

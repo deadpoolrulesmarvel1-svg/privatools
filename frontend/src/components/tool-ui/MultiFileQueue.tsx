@@ -32,7 +32,7 @@ interface Props {
 function StatusBadge({ status, error }: { status: FileEntry["status"]; error?: string }) {
     if (status === "queued") {
         return (
-            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-muted-foreground/85">
+            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-muted-foreground">
                 <Clock size={10} /> Queued
             </span>
         );
@@ -159,7 +159,7 @@ export function MultiFileQueue({
                             {reorderable && (
                                 <span
                                     className={cn(
-                                        "hidden sm:inline-flex items-center justify-center h-7 w-5 text-muted-foreground/60",
+                                        "hidden sm:inline-flex items-center justify-center h-7 w-5 text-muted-foreground",
                                         busy ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing hover:text-foreground",
                                     )}
                                     aria-hidden="true"
@@ -167,7 +167,7 @@ export function MultiFileQueue({
                                     <GripVertical size={13} />
                                 </span>
                             )}
-                            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-6 text-center">
+                            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-6 text-center">
                                 {String(i + 1).padStart(2, "0")}
                             </span>
                             <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">

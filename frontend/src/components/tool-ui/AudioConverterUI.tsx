@@ -129,7 +129,7 @@ export function AudioConverterUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-bold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{f.label}</p>
-                                        <p className="font-medium text-[9.5px] text-muted-foreground/85 mt-0.5">{f.desc}</p>
+                                        <p className="font-medium text-[9.5px] text-muted-foreground mt-0.5">{f.desc}</p>
                                     </button>
                                 );
                             })}
@@ -139,7 +139,7 @@ export function AudioConverterUI() {
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span>Bitrate</span>
-                            {isLossless && <span className="text-muted-foreground/50 normal-case tracking-normal">— lossless, bitrate unused</span>}
+                            {isLossless && <span className="text-muted-foreground normal-case tracking-normal">— lossless, bitrate unused</span>}
                         </div>
                         <div className="p-3 grid grid-cols-5 gap-2">
                             {BITRATES.map(b => {
@@ -172,7 +172,7 @@ export function AudioConverterUI() {
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Converting…</> : <><Download size={13} /> Convert to {format.toUpperCase()}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

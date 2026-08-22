@@ -216,7 +216,7 @@ export function StampUI() {
                                     <input
                                         value={pages} onChange={e => setPages(e.target.value)}
                                         placeholder="all · 1,3,5-8"
-                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                 </div>
                             </div>
@@ -250,7 +250,7 @@ export function StampUI() {
                                         {displayText}
                                     </span>
                                 </div>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/50">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
                         </div>
                     </div>
@@ -270,7 +270,7 @@ export function StampUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stamping…</> : <><Stamp size={13} /> Apply stamp</>}
                         </button>
                         {status !== "processing" && !(stampType === "custom" && !customText.trim()) && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                         )}
                     </div>
                 </>

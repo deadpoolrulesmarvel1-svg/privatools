@@ -183,7 +183,7 @@ export function NupUI() {
                                             </div>
                                             <div className="min-w-0">
                                                 <p className={cn("font-display text-[13px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{o.label}</p>
-                                                <p className="font-medium text-[11px] text-muted-foreground/85 mt-0.5">{o.hint}</p>
+                                                <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{o.hint}</p>
                                             </div>
                                         </button>
                                     );
@@ -202,7 +202,7 @@ export function NupUI() {
                         <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Composing…</> : <><Layout size={13} /> Create {pps}-up layout</>}
                         </button>
-                        {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

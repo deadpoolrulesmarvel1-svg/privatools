@@ -110,7 +110,7 @@ export function BatesCounterPicker({
         )}
 
         {list.length === 0 && !creating && (
-          <p className="font-medium text-[11.5px] text-muted-foreground/85">
+          <p className="font-medium text-[11.5px] text-muted-foreground">
             Create a matter to keep numbering continuous
             across documents
           </p>

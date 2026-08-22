@@ -136,7 +136,7 @@ export function PdfToWordUI() {
                         busy={phase === "processing"}
                     />
 
-                    <p className="font-medium text-[11px] text-muted-foreground/85">
+                    <p className="font-medium text-[11px] text-muted-foreground">
                         Tip — scanned PDFs need OCR first. Try <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> if text doesn't transfer.
                     </p>
                     <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export function PdfToWordUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Converting… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Download size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "to Word"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

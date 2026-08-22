@@ -526,7 +526,7 @@ export default function PipelinePage() {
                             <span className="font-medium text-[11px] text-muted-foreground">{steps.length} step{steps.length !== 1 ? "s" : ""}</span>
                             {/* Auto-saved indicator — quiet confidence cue */}
                             {steps.length > 0 && !processing && (
-                                <span className="font-medium text-[11px] text-muted-foreground/70" title="Saved locally, restored on reload">
+                                <span className="font-medium text-[11px] text-muted-foreground" title="Saved locally, restored on reload">
                                     · auto-saved
                                 </span>
                             )}
@@ -642,7 +642,7 @@ export default function PipelinePage() {
                                 )}
                                 <button
                                     onClick={() => { setError(null); setErrorReport(null); }}
-                                    className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                    className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded text-destructive hover:text-destructive hover:bg-destructive/10"
                                     aria-label="Dismiss"
                                 >
                                     <X size={12} />
@@ -748,7 +748,7 @@ export default function PipelinePage() {
                                             {!processing && (
                                                 <GripVertical
                                                     size={13}
-                                                    className="hidden lg:block text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 -ml-1.5 transition-colors"
+                                                    className="hidden lg:block text-muted-foreground group-hover:text-muted-foreground shrink-0 -ml-1.5 transition-colors"
                                                     aria-hidden="true"
                                                 />
                                             )}
@@ -895,7 +895,7 @@ export default function PipelinePage() {
                                                         if (!t) return null;
                                                         return (
                                                             <span key={s} className="inline-flex items-center">
-                                                                <span className="font-mono text-[10px] text-muted-foreground/85 bg-paper-2 px-1.5 py-0.5 rounded">
+                                                                <span className="font-mono text-[10px] text-muted-foreground bg-paper-2 px-1.5 py-0.5 rounded">
                                                                     {t.name}
                                                                 </span>
                                                                 {sidx < r.slugs.length - 1 && <ArrowRight size={9} className="text-muted-foreground/50 mx-1" />}
@@ -1038,7 +1038,7 @@ export default function PipelinePage() {
                                             if (!t) return null;
                                             return (
                                                 <span key={s} className="inline-flex items-center">
-                                                    <span className="font-mono text-[10px] text-muted-foreground/85 bg-paper-2 px-1.5 py-0.5 rounded">
+                                                    <span className="font-mono text-[10px] text-muted-foreground bg-paper-2 px-1.5 py-0.5 rounded">
                                                         {t.name}
                                                     </span>
                                                     {idx < r.slugs.length - 1 && <ArrowRight size={9} className="text-muted-foreground/50 mx-1" />}
@@ -1060,7 +1060,7 @@ export default function PipelinePage() {
                         <div className="relative mb-3">
                             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <input
-                                className="w-full h-8 pl-7 pr-7 rounded-md border border-border bg-card text-[12.5px] text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                className="w-full h-8 pl-7 pr-7 rounded-md border border-border bg-card text-[12.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 placeholder={`Filter ${pipelineTools.length}…`}
                                 value={paletteSearch}
                                 onChange={e => setPaletteSearch(e.target.value)}
@@ -1093,7 +1093,7 @@ export default function PipelinePage() {
                                     if (groupTools.length === 0) return null;
                                     return (
                                         <div key={group.id}>
-                                            <p className="px-2 mb-1 text-[9.5px] font-medium text-muted-foreground/85">
+                                            <p className="px-2 mb-1 text-[9.5px] font-medium text-muted-foreground">
                                                 {group.label} · {groupTools.length}
                                             </p>
                                             <div className="space-y-px">
@@ -1215,7 +1215,7 @@ function NameDialog({
                                     submit();
                                 }
                             }}
-                            className="mt-1.5 w-full rounded-md border border-border bg-card px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="mt-1.5 w-full rounded-md border border-border bg-card px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                             placeholder="Untitled pipeline"
                             aria-label={label}
                         />
@@ -1239,7 +1239,7 @@ function NameDialog({
                         </button>
                     </div>
 
-                    <p className="font-medium mt-3 text-[11px] text-muted-foreground/70">
+                    <p className="font-medium mt-3 text-[11px] text-muted-foreground">
                         ↵ Save · esc Cancel
                     </p>
                 </div>
@@ -1387,7 +1387,7 @@ function PaletteToolButton({
             <span className="flex-1 text-left truncate">{tool.name}</span>
             <Plus
                 size={11}
-                className="text-muted-foreground/40 group-hover:text-accent transition-all group-hover:rotate-90 duration-200"
+                className="text-muted-foreground group-hover:text-accent transition-all group-hover:rotate-90 duration-200"
             />
         </button>
     );

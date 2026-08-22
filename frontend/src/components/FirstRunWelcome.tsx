@@ -162,7 +162,7 @@ export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
                 </div>
 
                 {/* Privacy line — small reassurance + dismiss hint */}
-                <div className="font-medium mt-5 pt-4 border-t border-border/70 flex items-center gap-2 text-[11.5px] text-muted-foreground/85">
+                <div className="font-medium mt-5 pt-4 border-t border-border/70 flex items-center gap-2 text-[11.5px] text-muted-foreground">
                     <ShieldCheck size={11} className="text-accent" /> Temporary isolated processing · Self-host with one Docker command
                 </div>
             </div>

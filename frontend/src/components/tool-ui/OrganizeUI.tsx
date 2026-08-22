@@ -260,7 +260,7 @@ export function OrganizeUI() {
                                     {/* Footer */}
                                     <div className="flex items-center justify-between px-2 py-1.5 bg-card">
                                         <span className="font-medium text-[11px] text-muted-foreground">
-                                            <span className="text-muted-foreground/70">orig</span>&nbsp;p{String(pageNum).padStart(2, "0")}
+                                            <span className="text-muted-foreground">orig</span>&nbsp;p{String(pageNum).padStart(2, "0")}
                                         </span>
                                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
@@ -305,7 +305,7 @@ export function OrganizeUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Organizing…</>
                                 : <><Download size={13} /> Apply &amp; download</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         <button
                             type="button"
                             onClick={undo}

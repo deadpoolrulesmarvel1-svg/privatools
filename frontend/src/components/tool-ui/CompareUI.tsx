@@ -93,7 +93,7 @@ export function CompareUI() {
             <div>
                 <div className="font-medium flex items-center justify-between mb-1.5 text-[11.5px] text-muted-foreground">
                     <span><span className="text-accent">{String(idx).padStart(2, "0")}</span> {label}</span>
-                    <span className="text-muted-foreground/60">{hint}</span>
+                    <span className="text-muted-foreground">{hint}</span>
                 </div>
                 {!file ? (
                     <div
@@ -174,7 +174,7 @@ export function CompareUI() {
                     </div>
                     <div className="p-3 max-h-[420px] overflow-auto">
                         {textResult.diff.length === 0 ? (
-                            <p className="text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No textual differences found</p>
+                            <p className="text-[11px] tracking-wider text-muted-foreground text-center py-6">No textual differences found</p>
                         ) : (
                             <pre className="font-mono text-[12px] leading-relaxed text-foreground whitespace-pre-wrap">
                                 {textResult.diff.slice(0, 200).map((l, i) => {
@@ -192,7 +192,7 @@ export function CompareUI() {
                                     );
                                 })}
                                 {textResult.diff.length > 200 && (
-                                    <div className="font-medium px-2 mt-2 pt-2 border-t border-border/60 text-muted-foreground/85 text-[11.5px]">
+                                    <div className="font-medium px-2 mt-2 pt-2 border-t border-border/60 text-muted-foreground text-[11.5px]">
                                         showing first 200 of {textResult.diff.length} diff lines
                                     </div>
                                 )}
@@ -230,7 +230,7 @@ export function CompareUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{m.label}</p>
-                                        <p className="font-medium text-[11px] text-muted-foreground/85 mt-1">{m.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-1">{m.desc}</p>
                                     </button>
                                 );
                             })}
@@ -260,7 +260,7 @@ export function CompareUI() {
                 <button onClick={process} disabled={state === "processing" || !file1 || !file2} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Comparing…</> : <><GitCompare size={13} /> Compare PDFs</>}
                 </button>
-                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

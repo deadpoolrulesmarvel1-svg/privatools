@@ -70,7 +70,7 @@ export function ResultHandoff({ blob, filename, fromSlug }: Props) {
                     </button>
                 ))}
             </div>
-            <p className="px-4 py-1.5 border-t border-border text-[10px] tracking-[0.04em] text-muted-foreground/80">
+            <p className="px-4 py-1.5 border-t border-border text-[10px] tracking-[0.04em] text-muted-foreground">
                 Carried over on your device — nothing is re-uploaded
             </p>
         </div>
