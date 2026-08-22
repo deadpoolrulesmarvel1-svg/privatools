@@ -178,6 +178,17 @@ async def recover(request: Request, response: Response, body: RecoveryRequest):
     same message as a wrong address, so this cannot be used to test which
     addresses are registered.
     """
+    # Same per-account lockout as /auth/login. Without it this endpoint was the
+    # way around that limit: it recorded failures but never read them back, so
+    # an address locked out of login could still be guessed at here.
+    locked = accounts.login_locked_until(body.email)
+    if locked:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed attempts. Try again shortly.",
+            headers={"Retry-After": str(max(1, int((locked - _utcnow()).total_seconds())))},
+        )
+
     try:
         accounts.validate_password(body.new_password)
     except accounts.AccountError as exc:

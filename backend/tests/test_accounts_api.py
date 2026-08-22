@@ -222,6 +222,28 @@ def test_repeated_failures_lock_the_account_briefly(client):
     assert "Retry-After" in res.headers
 
 
+def test_the_lockout_also_covers_the_recovery_endpoint(client):
+    """/auth/recover used to record failures without ever reading them back.
+
+    That made it the way around the per-account lockout: an address locked out
+    of /auth/login could still be guessed at here, one recovery code per
+    request, for as long as the attacker cared to keep going.
+    """
+    from backend.app.auth import accounts as acc
+    _register(client)
+    client.post("/api/auth/logout")
+    for _ in range(acc.MAX_FAILURES):
+        client.post("/api/auth/login", json={**CREDS, "password": "wrong-password-here"})
+
+    res = client.post("/api/auth/recover", json={
+        "email": CREDS["email"],
+        "recovery_code": "AAAAA-BBBBB-CCCCC-DDDDD",
+        "new_password": "another-long-enough-password",
+    })
+    assert res.status_code == 429
+    assert "Retry-After" in res.headers
+
+
 def test_a_successful_login_clears_the_failure_count(client):
     from backend.app.auth import accounts as acc
     _register(client)

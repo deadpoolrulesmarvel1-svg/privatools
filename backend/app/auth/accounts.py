@@ -159,6 +159,9 @@ def create_user(email: str, password: str) -> User:
     return user
 
 
+_LOGIN_UPDATE_COLUMNS = frozenset({"last_login_at", "password_hash"})
+
+
 def authenticate(email: str, password: str) -> User | None:
     """Return the user when the credentials match, else ``None``.
 
@@ -188,6 +191,11 @@ def authenticate(email: str, password: str) -> User | None:
         updates.append(("password_hash", passwords.hash_password(password)))
     with store.write() as conn:
         for column, value in updates:
+            # The only SQL in this module that interpolates an identifier
+            # rather than binding it. Both names are literals a few lines up,
+            # so this is a guard against a future caller, not a live hole.
+            if column not in _LOGIN_UPDATE_COLUMNS:
+                raise AccountError(f"refusing to update unexpected column {column!r}")
             conn.execute(f"UPDATE users SET {column} = ? WHERE id = ?", (value, row["id"]))
     return _row_to_user(row)
 
