@@ -167,3 +167,60 @@ describe("skin contrast (WCAG 2.2)", () => {
         }
     }
 });
+
+/* ── Catalogue adapters ────────────────────────────────────────────────
+ * The ported designs render from these instead of their own sample data.
+ * The counts must come from the registry, never from a literal — the whole
+ * 221/107/114 problem was a number written down once and never rechecked.
+ */
+
+import { AURORA_CATALOGUE, CARBON_REGISTRY, STRUCTURED_CATALOGUE, CATALOGUE_COUNTS } from "@/skins/catalogue";
+import { tools } from "@/data/tools";
+import { nonPdfTools } from "@/data/non-pdf-tools";
+
+describe("catalogue adapters", () => {
+    it("carry every tool in the registry, in every shape", () => {
+        const expected = tools.length + nonPdfTools.length;
+        expect(AURORA_CATALOGUE).toHaveLength(expected);
+        expect(CARBON_REGISTRY.records).toHaveLength(expected);
+        expect(STRUCTURED_CATALOGUE.records).toHaveLength(expected);
+    });
+
+    it("derive their counts from the registry rather than a literal", () => {
+        expect(CATALOGUE_COUNTS.pdf).toBe(tools.length);
+        expect(CATALOGUE_COUNTS.nonPdf).toBe(nonPdfTools.length);
+        expect(CATALOGUE_COUNTS.total).toBe(tools.length + nonPdfTools.length);
+        expect(CARBON_REGISTRY.planned.total).toBe(CATALOGUE_COUNTS.total);
+        expect(STRUCTURED_CATALOGUE.meta.declaredTotal).toBe(CATALOGUE_COUNTS.total);
+    });
+
+    it("never reintroduce the invented 221 / 107 / 114 figures", () => {
+        const counts = [
+            CATALOGUE_COUNTS.total, CATALOGUE_COUNTS.pdf, CATALOGUE_COUNTS.nonPdf,
+            CARBON_REGISTRY.planned.total, CARBON_REGISTRY.planned.pdf, CARBON_REGISTRY.planned.nonPdf,
+            STRUCTURED_CATALOGUE.meta.declaredTotal, STRUCTURED_CATALOGUE.meta.declaredPdf,
+            STRUCTURED_CATALOGUE.meta.declaredNonPdf,
+        ];
+        expect(counts).not.toContain(221);
+        expect(counts).not.toContain(107);
+        expect(counts).not.toContain(114);
+    });
+
+    it("give every record a family the design can actually render", () => {
+        // An unknown family is not ignored by these designs — they look up icons
+        // and colours by that exact string and throw on a miss.
+        const AURORA = new Set(["PDF", "Images", "Video", "Audio", "Archives", "Documents", "Security", "Automate"]);
+        const CARBON = new Set(["PDF", "Images", "Video", "Audio", "Archives", "Documents & Data", "Security & Privacy", "Automate"]);
+        const STRUCTURED = new Set(["PDF", "Images", "Video", "Audio", "Archives", "Documents & Data"]);
+
+        expect(AURORA_CATALOGUE.filter(r => !AURORA.has(r.fam)).map(r => r.fam)).toEqual([]);
+        expect(CARBON_REGISTRY.records.filter(r => !CARBON.has(r.family)).map(r => r.family)).toEqual([]);
+        expect(STRUCTURED_CATALOGUE.records.filter(r => !STRUCTURED.has(r.family)).map(r => r.family)).toEqual([]);
+    });
+
+    it("states a processing mode for every record, taken from clientOnly", () => {
+        for (const r of AURORA_CATALOGUE) expect(["local", "server"]).toContain(r.runs);
+        for (const r of CARBON_REGISTRY.records) expect(["local", "server"]).toContain(r.mode);
+        for (const r of STRUCTURED_CATALOGUE.records) expect(["local", "server"]).toContain(r.mode);
+    });
+});

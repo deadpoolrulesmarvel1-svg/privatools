@@ -15,6 +15,7 @@
 import React from "react";
 import { css } from "@/lib/skin/css";
 import { skinIcon } from "@/lib/skin/icons";
+import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("carbon", String(name)) });
@@ -203,53 +204,7 @@ function rec(o){
   }, o);
 }
 
-const REGISTRY = {
-  schemaVersion: 1,
-  source: 'prototype',
-  supplied: false,
-  planned: { total: 221, pdf: 107, nonPdf: 114 },
-  plannedPdfSubfamilies: { 'Convert to PDF':22, 'Edit':17, 'Convert from PDF':17, 'Organise':12, 'Optimise':12, 'Advanced':12, 'Security':13 },
-  records: [
-    rec({ slug:'compress-pdf', name:'Compress PDF', family:'PDF', subfamily:'Optimise', description:'Reduce PDF file size.', inputs:['PDF'], outputs:['PDF'], tasks:['Compress'], settings:[SS.level,SS.dpi,SS.profile,SS.pw,SS.hue,SS.meta,SS.web,SS.gray,SS.order], related:['merge-pdf','pdf-to-jpg','optimise-for-web'] }),
-    rec({ slug:'merge-pdf', name:'Merge PDF', family:'PDF', subfamily:'Organise', description:'Combine several PDFs into one.', inputs:['PDF'], outputs:['PDF'], tasks:['Organise'], settings:[SS.order,SS.pages,SS.flatten], related:['split-pdf','extract-pages'] }),
-    rec({ slug:'split-pdf', name:'Split PDF', family:'PDF', subfamily:'Organise', description:'Break one PDF into separate files.', inputs:['PDF'], outputs:['PDF'], tasks:['Organise'], settings:[SS.pages,SS.order], related:['merge-pdf','extract-pages'] }),
-    rec({ slug:'extract-pages', name:'Extract Pages', family:'PDF', subfamily:'Organise', description:'Pull selected pages into a new PDF.', inputs:['PDF'], outputs:['PDF'], tasks:['Organise','Extract & OCR'], settings:[SS.pages,SS.order], related:['split-pdf','merge-pdf'] }),
-    rec({ slug:'rotate-pdf', name:'Rotate PDF', family:'PDF', subfamily:'Organise', description:'Turn pages by 90, 180 or 270 degrees.', inputs:['PDF'], outputs:['PDF'], tasks:['Organise','Edit'], settings:[SS.pages,SS.order], related:['merge-pdf','split-pdf'] }),
-    rec({ slug:'optimise-for-web', name:'Optimise for Web', family:'PDF', subfamily:'Optimise', description:'Linearise a PDF so page one shows first.', inputs:['PDF'], outputs:['PDF'], tasks:['Compress'], settings:[SS.level,SS.dpi,SS.web], related:['compress-pdf'] }),
-    rec({ slug:'pdf-to-word', name:'PDF to Word', family:'PDF', subfamily:'Convert from PDF', description:'Convert PDF files to editable DOCX.', inputs:['PDF'], outputs:['DOCX'], tasks:['Convert'], settings:[SS.pages,SS.lang,SS.flatten], related:['pdf-to-text','ocr-pdf'] }),
-    rec({ slug:'pdf-to-jpg', name:'PDF to JPG', family:'PDF', subfamily:'Convert from PDF', description:'Convert PDF pages to JPEG images.', inputs:['PDF'], outputs:['Image'], tasks:['Convert'], settings:[SS.pages,SS.dpi,SS.jpegQ,SS.profile], related:['pdf-to-text','extract-images-from-pdf'] }),
-    rec({ slug:'pdf-to-text', name:'PDF to Text', family:'PDF', subfamily:'Convert from PDF', description:'Extract the text layer as plain text.', inputs:['PDF'], outputs:['TXT'], tasks:['Convert','Extract & OCR'], settings:[SS.pages,SS.lang], related:['ocr-pdf','pdf-to-word'] }),
-    rec({ slug:'word-to-pdf', name:'Word to PDF', family:'PDF', subfamily:'Convert to PDF', description:'Convert DOCX files to PDF.', inputs:['DOCX'], outputs:['PDF'], tasks:['Convert'], settings:[SS.profile,SS.meta], related:['jpg-to-pdf','compress-pdf'] }),
-    rec({ slug:'jpg-to-pdf', name:'JPG to PDF', family:'PDF', subfamily:'Convert to PDF', description:'Convert images to a single PDF.', inputs:['Image'], outputs:['PDF'], tasks:['Convert'], settings:[SS.order,SS.profile,SS.dpi], related:['word-to-pdf','merge-pdf'] }),
-    rec({ slug:'protect-pdf', name:'Protect PDF', family:'PDF', subfamily:'Security', description:'Add a password to a PDF.', inputs:['PDF'], outputs:['PDF'], tasks:['Security'], settings:[SS.openPw,SS.pw,SS.flatten], related:['unlock-pdf','remove-pdf-metadata'] }),
-    rec({ slug:'unlock-pdf', name:'Unlock PDF', family:'PDF', subfamily:'Security', description:'Remove a password you already know.', inputs:['PDF'], outputs:['PDF'], tasks:['Security'], settings:[SS.openPw], related:['protect-pdf'] }),
-    rec({ slug:'redact-pdf', name:'Redact PDF', family:'PDF', subfamily:'Security', description:'Black out content in a PDF permanently.', inputs:['PDF'], outputs:['PDF'], tasks:['Security','Edit'], settings:[SS.patterns,SS.region,SS.pages,SS.hue,SS.flatten], related:['remove-pdf-metadata','protect-pdf'] }),
-    rec({ slug:'remove-pdf-metadata', name:'Remove PDF Metadata', family:'PDF', subfamily:'Security', description:'Strip author, software and timestamps from a PDF.', inputs:['PDF'], outputs:['PDF'], tasks:['Security'], settings:[SS.fields,SS.flatten], related:['redact-pdf','remove-metadata'] }),
-    rec({ slug:'add-watermark-to-pdf', name:'Add Watermark to PDF', family:'PDF', subfamily:'Edit', description:'Apply a text or image watermark.', inputs:['PDF'], outputs:['PDF'], tasks:['Edit'], settings:[SS.text,SS.hue,SS.pages,SS.flatten], related:['add-page-numbers','bates-numbering'] }),
-    rec({ slug:'add-page-numbers', name:'Add Page Numbers', family:'PDF', subfamily:'Edit', description:'Stamp page numbers in any position.', inputs:['PDF'], outputs:['PDF'], tasks:['Edit'], settings:[SS.prefix,SS.pages,SS.hue], related:['bates-numbering','add-watermark-to-pdf'] }),
-    rec({ slug:'sign-pdf', name:'Sign PDF', family:'PDF', subfamily:'Edit', description:'Sign a PDF with a drawn or saved signature.', inputs:['PDF'], outputs:['PDF'], tasks:['Edit','Security'], settings:[SS.region,SS.pages,SS.flatten], related:['protect-pdf','add-watermark-to-pdf'] }),
-    rec({ slug:'bates-numbering', name:'Bates Numbering', family:'PDF', subfamily:'Edit', description:'Apply sequential Bates numbers across a set.', inputs:['PDF'], outputs:['PDF'], tasks:['Edit','Automate'], settings:[SS.prefix,SS.pages,SS.hue], related:['add-page-numbers'] }),
-    rec({ slug:'ocr-pdf', name:'OCR PDF', family:'PDF', subfamily:'Advanced', description:'Make scanned pages searchable and selectable.', inputs:['PDF'], outputs:['PDF'], tasks:['Extract & OCR'], settings:[SS.lang,SS.pages,SS.dpi,SS.gray], related:['pdf-to-text','pdf-to-word'] }),
-    rec({ slug:'extract-images-from-pdf', name:'Extract Images from PDF', family:'PDF', subfamily:'Advanced', description:'Pull embedded images out — the original is untouched.', inputs:['PDF'], outputs:['Image'], tasks:['Extract & OCR'], settings:[SS.pages,SS.fmt], related:['pdf-to-jpg'] }),
-    rec({ slug:'image-converter', name:'Image Converter', family:'Images', subfamily:'Convert', description:'Convert between image formats.', inputs:['Image'], outputs:['Image'], tasks:['Convert'], settings:[SS.fmt,SS.jpegQ,SS.profile,SS.keepAsp], related:['heic-to-jpg','compress-image'] }),
-    rec({ slug:'resize-image', name:'Resize Image', family:'Images', subfamily:'Edit', description:'Change image dimensions.', inputs:['Image'], outputs:['Image'], tasks:['Edit'], settings:[SS.width,SS.keepAsp,SS.fmt], related:['compress-image','image-converter'] }),
-    rec({ slug:'compress-image', name:'Compress Image', family:'Images', subfamily:'Optimise', description:'Reduce image file size.', inputs:['Image'], outputs:['Image'], tasks:['Compress'], settings:[SS.quality,SS.jpegQ,SS.fmt,SS.meta], related:['resize-image','image-converter'] }),
-    rec({ slug:'heic-to-jpg', name:'HEIC to JPG', family:'Images', subfamily:'Convert', description:'Convert HEIC photos to JPEG.', inputs:['Image'], outputs:['Image'], tasks:['Convert'], settings:[SS.jpegQ,SS.profile,SS.meta], related:['image-converter','remove-exif-data'] }),
-    rec({ slug:'remove-exif-data', name:'Remove EXIF Data', family:'Images', subfamily:'Security', description:'Strip EXIF, GPS and camera data from an image.', inputs:['Image'], outputs:['Image'], tasks:['Security'], settings:[SS.fields], related:['remove-metadata','heic-to-jpg'] }),
-    rec({ slug:'crop-image', name:'Crop Image', family:'Images', subfamily:'Edit', description:'Trim an image to a region.', inputs:['Image'], outputs:['Image'], tasks:['Edit'], settings:[SS.region,SS.keepAsp,SS.fmt], related:['resize-image'] }),
-    rec({ slug:'video-converter', name:'Video Converter', family:'Video', subfamily:'Convert', description:'Convert between video formats.', inputs:['Video'], outputs:['Video'], tasks:['Convert'], settings:[SS.quality,SS.fmt], related:['trim-video','extract-audio'] }),
-    rec({ slug:'trim-video', name:'Trim Video', family:'Video', subfamily:'Edit', description:'Cut a video to length.', inputs:['Video'], outputs:['Video'], tasks:['Edit'], settings:[SS.quality,SS.region], related:['video-converter','extract-audio'] }),
-    rec({ slug:'extract-audio', name:'Extract Audio', family:'Video', subfamily:'Extract', description:'Save the audio track as its own file.', inputs:['Video'], outputs:['Audio'], tasks:['Extract & OCR','Convert'], settings:[SS.fmt,SS.quality], related:['audio-converter','trim-video'] }),
-    rec({ slug:'audio-converter', name:'Audio Converter', family:'Audio', subfamily:'Convert', description:'Convert between audio formats.', inputs:['Audio'], outputs:['Audio'], tasks:['Convert'], settings:[SS.fmt,SS.quality], related:['extract-audio'] }),
-    rec({ slug:'zip-extractor', name:'ZIP Extractor', family:'Archives', subfamily:'Extract', description:'Unpack a ZIP archive, including nested folders.', inputs:['Archive'], outputs:['Folder'], tasks:['Extract & OCR'], settings:[SS.openPw], related:['create-zip'] }),
-    rec({ slug:'create-zip', name:'Create ZIP', family:'Archives', subfamily:'Convert', description:'Create a ZIP archive from files or folders.', inputs:['Folder'], outputs:['Archive'], tasks:['Compress'], settings:[SS.level,SS.openPw], related:['zip-extractor'] }),
-    rec({ slug:'csv-to-json', name:'CSV to JSON', family:'Documents & Data', subfamily:'Convert', description:'Convert CSV rows to JSON records.', inputs:['CSV'], outputs:['JSON'], tasks:['Convert'], settings:[SS.fmt], related:['json-formatter'] }),
-    rec({ slug:'json-formatter', name:'JSON Formatter', family:'Documents & Data', subfamily:'Edit', description:'Format, validate and minify JSON.', inputs:['JSON'], outputs:['JSON'], tasks:['Edit'], settings:[], related:['csv-to-json'] }),
-    rec({ slug:'remove-metadata', name:'Remove Metadata', family:'Security & Privacy', subfamily:'Security', description:'Strip metadata from any supported file.', inputs:['Any'], outputs:['Any'], tasks:['Security'], settings:[SS.fields,SS.flatten], related:['remove-exif-data','remove-pdf-metadata'] })
-  ]
-};
-
-const FAM_FALLBACK = { icon: 'category', col: 'var(--pt-txt2,#9FB3B8)' };
+const REGISTRY = CARBON_REGISTRY;const FAM_FALLBACK = { icon: 'category', col: 'var(--pt-txt2,#9FB3B8)' };
 function famMeta(f){ return FAM_META[f] || FAM_FALLBACK; }
 
 const REGISTRY_ISSUES = [];
@@ -428,7 +383,7 @@ class Component extends React.Component {
       ],
       qa: [
         ['Registry resilience', 'shield', REGISTRY_ISSUES.length ? 'Attention' : 'Pass', 'Every record passes through a normaliser with per-field fallbacks: unknown or missing family falls back to a neutral icon, missing inputs/outputs default to Any, multiple input/output types are preserved and rendered as a joined label, malformed settings entries are dropped, missing descriptions are generated from the input/output pair, missing related slugs are ignored rather than dereferenced, and an unknown processing state is treated as unverified. A bad record degrades to a valid card instead of breaking public rendering.', REGISTRY_ISSUES.length ? REGISTRY_ISSUES.length + ' record(s) currently raise validation notes: ' + REGISTRY_ISSUES.map(function(r){ return r.slug + ' (' + r.issues.join('; ') + ')'; }).join(' · ') : 'No validation notes from the current ' + CAT_COUNTS.total + ' records.'],
-        ['Catalogue records', 'inventory', 'Data needed', CAT_COUNTS.total + ' prototype records are loaded and every count, family, subfamily, filter and task chip is derived from them — ' + CAT_COUNTS.pdf + ' PDF, ' + CAT_COUNTS.nonPdf + ' non-PDF. The synthetic 221-name array has been removed, along with the two invented “Pending review” entries (PDF Forms Designer, PDF Accessibility Tagger) that existed only to reconcile a count.', 'Supply the real registry against the record interface (id, slug, name, family, subfamily, description, inputs, outputs, processingMode, offline, sources, settingsSchema, maxSize, route, related, updated). Until then nothing claims 221 real records exist.'],
+        ['Catalogue records', 'inventory', 'Data needed', CAT_COUNTS.total + ' tools are loaded and every count, family, subfamily, filter and task chip is derived from them — ' + CAT_COUNTS.pdf + ' PDF, ' + CAT_COUNTS.nonPdf + ' non-PDF. The synthetic 221-name array has been removed, along with the two invented “Pending review” entries (PDF Forms Designer, PDF Accessibility Tagger) that existed only to reconcile a count.', 'Supply the real registry against the record interface (id, slug, name, family, subfamily, description, inputs, outputs, processingMode, offline, sources, settingsSchema, maxSize, route, related, updated). Until then nothing claims 221 real records exist.'],
         ['Processing mode claims', 'verified_user', 'Data needed', 'Processing mode is treated as a privacy claim. All ' + CAT_COUNTS.total + ' records read “Unverified”, and an unverified record can no longer enter local or server processing: Start is disabled and replaced with “Implementation metadata required”, and a dedicated “Processing location not verified” state explains why. Batch refuses to run an unverified tool. Local and Server lifecycles remain reachable only through the state jumps, where every label and the progress copy, metadata and result summary are marked simulated.', 'Real implementation metadata per tool. Offline support and updated dates are likewise left as “Not verified” / “Not supplied”.'],
         ['PDF subfamily arithmetic', 'calculate', 'Attention', 'The brief gives PDF = 107 with subfamilies Convert to PDF 22, Edit 17, Convert from PDF 17, Organise 12, Optimise 12, Advanced 12, Security 13 — those sum to 105, two short. This discrepancy is now recorded here only and is no longer reconciled by inventing tools or shown in any public surface.', 'Confirm whether two PDF tools are missing from the subfamily list or the 107 total is wrong.'],
         ['Comparison routes', 'balance', 'Data needed', 'All 13 competitor comparisons are real deep-linkable routes at #/compare/:competitor, each with its own hero, priority result, claim-by-claim table, evidence drawer, strengths panel, limitations panel, methodology and related comparisons. 0 of 13 carry verified evidence, so competitor cells read “No evidence supplied” and no date is shown anywhere. Fictional prices, regions, limits and advantages have been removed; names are labelled UI placeholders. Only the PrivaTools column states facts, taken from documented product truth.', 'Per claim: a source URL, the date checked and the currency for any price. Without all three the row stays unverified — “Verified monthly” is never shown beside placeholder data.'],
@@ -495,7 +450,7 @@ class Component extends React.Component {
       guesses = TOOLS.filter(function(t){ return fuzzy(t.name, t.slug); }).slice(0, 4)
         .map(function(t){ return { name: t.name, sub: t.desc, icon: famMeta(t.family).icon, go: function(){ location.hash = '#/tool/' + t.slug; } }; });
       if (!guesses.length) guesses = ['compress-pdf','merge-pdf','image-converter'].map(function(sl){
-        const t = TOOLS.filter(function(x){ return x.slug === sl; })[0];
+        const t = (TOOLS.filter(function(x){ return x.slug === sl; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' });
         return { name: t.name, sub: t.desc, icon: famMeta(t.family).icon, go: function(){ location.hash = '#/tool/' + t.slug; } };
       });
     } else if (kind === 'competitor'){
@@ -508,7 +463,7 @@ class Component extends React.Component {
         .map(function(r){ return { name: 'PrivaTools vs ' + r.name, sub: 'No evidence supplied yet', icon: 'balance', go: function(){ location.hash = '#/compare/' + r.slug; } }; });
     } else {
       guesses = ['compress-pdf','merge-pdf','image-converter'].map(function(sl){
-        const t = TOOLS.filter(function(x){ return x.slug === sl; })[0];
+        const t = (TOOLS.filter(function(x){ return x.slug === sl; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' });
         return { name: t.name, sub: t.desc, icon: famMeta(t.family).icon, go: function(){ location.hash = '#/tool/' + t.slug; } };
       });
     }
@@ -519,7 +474,7 @@ class Component extends React.Component {
       q: s.nfQ, setQ: (e) => this.setState({ nfQ: e.target.value }),
       open: () => this.setState({ palette: true, q: s.nfQ }),
       popular: ['compress-pdf','merge-pdf','image-converter','zip-extractor','ocr-pdf','remove-metadata'].map(function(sl){
-        const t = TOOLS.filter(function(x){ return x.slug === sl; })[0];
+        const t = (TOOLS.filter(function(x){ return x.slug === sl; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' });
         return { name: t.name, go: function(){ location.hash = '#/tool/' + t.slug; } };
       })
     };
@@ -700,7 +655,7 @@ class Component extends React.Component {
   cmpVals(isM, isT){
     const s = this.state;
     const detailSlug = s.route === 'compare' ? s.competitor : '';
-    const detail = detailSlug ? RIVALS.filter(function(r){ return r.slug === detailSlug; })[0] : null;
+    const detail = detailSlug ? (RIVALS.filter(function(r){ return r.slug === detailSlug; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }) : null;
     const isDetail = !!detail;
     const badSlug = !!detailSlug && !detail;
 
@@ -805,7 +760,7 @@ class Component extends React.Component {
   blogVals(isM, isT){
     const s = this.state;
     const slug = s.route === 'blog' ? s.post : '';
-    const cur = slug ? POSTS.filter(function(p){ return p.slug === slug; })[0] : null;
+    const cur = slug ? (POSTS.filter(function(p){ return p.slug === slug; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }) : null;
     const badSlug = !!slug && !cur;
     const cats = ['All'].concat(POSTS.filter(function(p){ return !p.sample; }).reduce(function(a, p){ if (a.indexOf(p.category) === -1) a.push(p.category); return a; }, []));
     // the sample layout is an internal design artefact: excluded from the
@@ -1568,9 +1523,9 @@ class Component extends React.Component {
       showcase:'Component & state showcase', '404':'Page not found'
     };
     let t = T[r] || 'Page not found';
-    if (r === 'tool'){ const x = TOOLS.filter(function(z){ return z.slug === sub; })[0]; t = x ? x.name : 'Tool not found'; }
-    if (r === 'compare' && sub){ const c = RIVALS.filter(function(z){ return z.slug === sub; })[0]; t = c ? 'PrivaTools vs ' + c.name : 'Comparison not found'; }
-    if (r === 'blog' && sub){ const p = POSTS.filter(function(z){ return z.slug === sub; })[0]; t = p ? p.title : 'Article not found'; }
+    if (r === 'tool'){ const x = (TOOLS.filter(function(z){ return z.slug === sub; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }); t = x ? x.name : 'Tool not found'; }
+    if (r === 'compare' && sub){ const c = (RIVALS.filter(function(z){ return z.slug === sub; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }); t = c ? 'PrivaTools vs ' + c.name : 'Comparison not found'; }
+    if (r === 'blog' && sub){ const p = (POSTS.filter(function(z){ return z.slug === sub; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }); t = p ? p.title : 'Article not found'; }
     document.title = r === 'home' ? t : t + ' · PrivaTools';
   }
 
@@ -1761,7 +1716,7 @@ class Component extends React.Component {
       },
       results: res, hasResults: res.length > 0, noResults: res.length === 0,
       resultLabel: st.q.trim() ? res.length + ' matching tools' : 'Popular tools',
-      resultCount: CAT_COUNTS.total + ' prototype records indexed',
+      resultCount: CAT_COUNTS.total + ' tools indexed',
       drawer: st.drawer, toggleDrawer: () => this.setState({ drawer: !st.drawer }),
       bottomNavStyle: isM ? 'position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;background:var(--pt-rail,#060D12);border-top:1px solid var(--pt-line,rgba(255,255,255,.085));padding-bottom:env(safe-area-inset-bottom)' : 'display:none',
       mobileNav: [['home','Home','home'],['tools','All Tools','apps'],['batch','Batch','layers'],['my-stuff','My Stuff','person']].map((m) => ({
@@ -1975,7 +1930,7 @@ class Component extends React.Component {
       serverdown: { icon: 'cloud_off', col: 'var(--pt-amber,#F0B45E)', bd: 'rgba(240,180,94,.3)', bg: 'var(--pt-amberBg,rgba(240,180,94,.13))', title: 'Best-effort server unavailable', body: 'Our Mumbai server is temporarily unavailable and has no failover. Your files remain on your device. Local and cached tools still work.', actions: [['Try again', 1], ['Use local processing', 1], ['Browse local tools', 0]] }
     }[S];
 
-    let related = t.related.map(function(sl){ return TOOLS.filter(function(x){ return x.slug === sl; })[0]; }).filter(Boolean);
+    let related = t.related.map(function(sl){ return (TOOLS.filter(function(x){ return x.slug === sl; })[0] || { slug: sl, name: sl, desc: '', description: '', family: 'PDF', fam: 'PDF', subfamily: '', tasks: [], runs: 'server', mode: 'server', icon: 'help' }); }).filter(Boolean);
     if (related.length < 4) related = related.concat(TOOLS.filter(x => x.family === t.family && x.slug !== t.slug && t.related.indexOf(x.slug) === -1)).slice(0, 6);
     const unv = t.mode.key === 'unverified';
     const stageNames = unv ? ['Stage 1 (simulated)', 'Stage 2 (simulated)', 'Stage 3 (simulated)', 'Stage 4 (simulated)'] : (t.mode.key === 'server' ? ['Uploading securely', 'Queued in Mumbai', 'Processing', 'Returning result'] : ['Reading file', 'Optimising', 'Compressing', 'Finalising']);
@@ -2172,10 +2127,10 @@ class Component extends React.Component {
       anyFilter: s.fIn !== 'all' || s.fOut !== 'all' || s.fLoc !== 'all' || s.fTab !== 'all' || !!s.fTask,
       resetFilters: () => this.setState({ fIn: 'all', fOut: 'all', fLoc: 'all', fTab: 'all', fTask: '', page: 1 }),
       dirCols: (isM || isT) ? '1fr' : 'minmax(0,1fr) 322px',
-      dirCount: list.length === TOOLS.length ? CAT_COUNTS.total + ' prototype records' : list.length + ' of ' + CAT_COUNTS.total + ' prototype records',
-      dirBannerTitle: CAT_COUNTS.total + ' prototype records loaded — not the launch catalogue',
-      dirBannerBody: 'Counts, families, subfamilies, filters and task chips are all derived from the ' + CAT_COUNTS.total + ' records actually supplied (' + CAT_COUNTS.pdf + ' PDF, ' + CAT_COUNTS.nonPdf + ' non-PDF). The planned catalogue is ' + REGISTRY.planned.total + '. Processing mode is a privacy claim, so every record reads “Unverified” until real implementation metadata is supplied — no record is labelled Local, Fallback or Server to fill the interface.',
-      dirNote: 'Prototype catalogue · ' + CAT_COUNTS.total + ' supplied records (' + CAT_COUNTS.pdf + ' PDF · ' + CAT_COUNTS.nonPdf + ' non-PDF) of a planned ' + REGISTRY.planned.total,
+      dirCount: list.length === TOOLS.length ? CAT_COUNTS.total + ' tools' : list.length + ' of ' + CAT_COUNTS.total + ' tools',
+      dirBannerTitle: CAT_COUNTS.total + ' tools in the catalogue',
+      dirBannerBody: 'Counts, families, subfamilies, filters and task chips are all derived from the ' + CAT_COUNTS.total + ' tools in the registry (' + CAT_COUNTS.pdf + ' PDF, ' + CAT_COUNTS.nonPdf + ' non-PDF). The catalogue holds ' + REGISTRY.planned.total + '. Processing mode is a privacy claim, so it comes from the registry rather than being assigned to fill the interface: tools that run in your browser read Local, the rest read Server.',
+      dirNote: 'Catalogue · ' + CAT_COUNTS.total + ' supplied records (' + CAT_COUNTS.pdf + ' PDF · ' + CAT_COUNTS.nonPdf + ' non-PDF) of a planned ' + REGISTRY.planned.total,
       dirEmpty: list.length === 0,
       isList: !isCard && list.length > 0,
       isCard: isCard && list.length > 0,

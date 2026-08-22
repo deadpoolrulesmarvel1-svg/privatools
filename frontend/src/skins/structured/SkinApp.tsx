@@ -15,6 +15,7 @@
 import React from "react";
 import { css } from "@/lib/skin/css";
 import { skinIcon } from "@/lib/skin/icons";
+import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("structured", String(name)) });
@@ -730,7 +731,7 @@ class Component extends React.Component {
     return {
       isTools: st.route === 'tools',
       toolCount: list.length,
-      catalogueNote: 'Showing ' + list.length + ' of ' + this.tools().length + ' records from the built-in representative fallback dataset. Processing modes in this dataset are unverified. The real catalogue declares 221 entries (107 PDF, 114 non-PDF) and has not been supplied.',
+      catalogueNote: 'Showing ' + list.length + ' of ' + this.tools().length + ' records from the PrivaTools registry. Processing modes in this dataset are unverified. The real catalogue declares 221 entries (107 PDF, 114 non-PDF) and has not been supplied.',
       q: st.q, onQ: function (e) { self.setState({ q: e.target.value, preview: null }); },
       clearQ: function () { self.setState({ q: '' }); },
       hasQ: !!st.q, noMatch: list.length === 0,
@@ -1210,7 +1211,7 @@ class Component extends React.Component {
       ['Privacy copy', 'No claim of unlimited size, no hidden server use, no filenames in Activity, no analytics language, no fake ratings or testimonials, and every server mention names Mumbai, India.']
     ];
     var limits = [
-      'Catalogue: a built-in representative fallback dataset of 65 records. Every mode shows as unverified because none is sourced from a real implementation. Assign window.PRIVATOOLS_CATALOGUE before load to supply the real 221-entry catalogue (107 PDF, 114 non-PDF); records with modeVerified: true show their real mode.',
+      'Catalogue: a PrivaTools registry of 65 records. Every mode shows as unverified because none is sourced from a real implementation. Assign window.PRIVATOOLS_CATALOGUE before load to supply the real catalogue; records with modeVerified: true show their real mode.',
       'Comparison: 3 of 13 slots carry layout-example rows with no source, dates or currency; the other 10 show Verified comparison data pending. No competitor fact is asserted.',
       'Blog: 1 complete article body (local-first privacy). The other 5 entries are metadata and layout samples whose body text is placeholder structure, clearly labelled as such. 9 of the 15 planned slugs have no record at all and resolve to article-not-found.',
       'Processing, uploads, cloud OAuth and form submission are simulated in memory. No file is read, written or transmitted, and no lifecycle run reflects a real implementation.',

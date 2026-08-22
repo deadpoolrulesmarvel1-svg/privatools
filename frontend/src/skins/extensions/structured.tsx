@@ -13,6 +13,16 @@
 import Base from "../structured/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
+import { withRealCatalogue } from "../withRealCatalogue";
+import { STRUCTURED_CATALOGUE } from "../catalogue";
+
+// This design reads `window.PRIVATOOLS_CATALOGUE` and falls back to its own
+// sample records when it is absent — its documented seam for supplying the real
+// catalogue. Assigned at module scope so it is in place before the component
+// constructs and reads it.
+if (typeof window !== "undefined") {
+    (window as unknown as { PRIVATOOLS_CATALOGUE: unknown }).PRIVATOOLS_CATALOGUE = STRUCTURED_CATALOGUE;
+}
 
 const PALETTE = {
     accent: "var(--em)", accentSoft: "var(--emSoft)", line: "var(--line)",
@@ -42,6 +52,6 @@ const at = (path, extraFlags = []) => ({
 });
 
 export default withVault(
-    withAccounts(Base, at("/account")),
+    withAccounts(withRealCatalogue(Base), at("/account")),
     at("/my-stuff/vault", ["isVault", "isStuff"]),
 );

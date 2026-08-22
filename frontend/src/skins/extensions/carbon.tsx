@@ -13,6 +13,7 @@
 import Base from "../carbon/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
+import { withRealCatalogue } from "../withRealCatalogue";
 
 const PALETTE = {
     accent: "var(--pt-aqua,#4FE1DE)", accentSoft: "var(--pt-aquaBg,rgba(79,225,222,.12))",
@@ -50,6 +51,6 @@ const at = (hash, suppressFlags) => ({
 });
 
 export default withVault(
-    withAccounts(Base, at("#/account")),
+    withAccounts(withRealCatalogue(Base), at("#/account")),
     at("#/vault", ["is404", "isVault"]),
 );

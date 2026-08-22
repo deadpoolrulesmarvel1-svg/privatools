@@ -11,6 +11,8 @@
 import Base from "../aurora/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
+import { withRealCatalogue } from "../withRealCatalogue";
+import { AURORA_CATALOGUE, CATALOGUE_COUNTS } from "../catalogue";
 
 const PALETTE = {
     accent: "var(--em)", accentSoft: "var(--emsoft)", line: "var(--line)",
@@ -34,6 +36,18 @@ const at = (hash) => ({
 });
 
 export default withVault(
-    withAccounts(Base, at("#/account")),
+    withAccounts(
+        withRealCatalogue(Base, {
+            records: AURORA_CATALOGUE,
+            meta: {
+                label: "PrivaTools registry",
+                registryLoaded: true,
+                verifiedTotal: CATALOGUE_COUNTS.total,
+                verifiedPdf: CATALOGUE_COUNTS.pdf,
+                verifiedNonPdf: CATALOGUE_COUNTS.nonPdf,
+            },
+        }),
+        at("#/account"),
+    ),
     at("#/vault"),
 );

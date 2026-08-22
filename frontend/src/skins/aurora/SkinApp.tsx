@@ -15,6 +15,7 @@
 import React from "react";
 import { css } from "@/lib/skin/css";
 import { skinIcon } from "@/lib/skin/icons";
+import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("aurora", String(name)) });
@@ -36,77 +37,9 @@ class Component extends React.Component {
   counts = { total: 221, pdf: 107, nonpdf: 114,
     pdfSub: [['Convert to PDF',22],['Edit',17],['Convert from PDF',17],['Organise',12],['Optimise',12],['Advanced',12],['Security',13]] };
 
-  catalogueMeta = { label: 'representative prototype catalogue', registryLoaded: false, verifiedTotal: 221, verifiedPdf: 107, verifiedNonPdf: 114, subfamilySum: 105 };
+  catalogueMeta = { label: 'PrivaTools registry', registryLoaded: false, verifiedTotal: 221, verifiedPdf: 107, verifiedNonPdf: 114, subfamilySum: 105 };
   plannedArticles = 15;
-  catalogue = (() => {
-    const T = (slug,name,fam,runs,desc,icon,tasks,syn,pop) =>
-      ({slug,name,fam,runs,desc,icon,tasks,syn:syn||'',popular:!!pop});
-    return [
-      T('compress-pdf','Compress PDF','PDF','local','Reduce PDF file size while keeping great quality.','picture_as_pdf',['Compress'],'shrink smaller size make smaller email',1),
-      T('merge-pdf','Merge PDF','PDF','local','Combine multiple PDFs into one file.','picture_as_pdf',['Organise'],'join combine append',1),
-      T('split-pdf','Split PDF','PDF','local','Split one PDF into separate documents.','content_cut',['Organise'],'divide separate cut'),
-      T('rotate-pdf','Rotate PDF','PDF','local','Fix page orientation and save.','rotate_right',['Edit'],'turn sideways upright'),
-      T('pdf-to-jpg','Convert to JPG','PDF','local','Turn PDF pages into JPG or PNG images.','image',['Convert'],'export image picture',1),
-      T('jpg-to-pdf','Images to PDF','PDF','local','Combine images into a single PDF.','picture_as_pdf',['Convert'],'photo scan to pdf'),
-      T('pdf-to-word','PDF to Word','PDF','fallback','Convert a PDF into an editable DOCX.','description',['Convert'],'docx editable text',1),
-      T('word-to-pdf','Word to PDF','PDF','fallback','Convert DOCX files into PDF.','picture_as_pdf',['Convert'],'docx export'),
-      T('excel-to-pdf','Excel to PDF','PDF','fallback','Convert spreadsheets into PDF.','table',['Convert'],'xlsx sheet'),
-      T('ocr-pdf','OCR','PDF','local','Make scanned pages searchable and selectable.','document_scanner',['Extract'],'scan text recognise searchable',1),
-      T('redact-pdf','Redact','PDF','local','Permanently remove sensitive content.','ink_eraser',['Security'],'black out hide censor',1),
-      T('protect-pdf','Protect PDF','PDF','local','Add a password and set permissions.','lock',['Security'],'password encrypt lock',1),
-      T('unlock-pdf','Unlock PDF','PDF','local','Remove a password you own.','lock_open',['Security'],'decrypt remove password'),
-      T('sign-pdf','Sign PDF','PDF','local','Place a signature, initials or date.','draw',['Edit'],'signature esign'),
-      T('watermark-pdf','Watermark PDF','PDF','local','Add text or image watermarks.','branding_watermark',['Edit'],'stamp brand'),
-      T('bates-number','Bates numbering','PDF','local','Apply sequential legal numbering.','format_list_numbered',['Advanced'],'legal stamp counter'),
-      T('page-numbers','Add page numbers','PDF','local','Number pages with custom formats.','looks_one',['Edit'],'folio'),
-      T('organise-pdf','Organise pages','PDF','local','Reorder, rotate and delete pages.','dashboard_customize',['Organise'],'rearrange thumbnails',1),
-      T('extract-pages','Extract pages','PDF','local','Pull out the pages you need.','file_copy',['Organise'],'take out select pages',1),
-      T('flatten-pdf','Flatten PDF','PDF','local','Flatten forms and annotations.','layers_clear',['Advanced'],'merge layers forms'),
-      T('pdf-a','PDF/A archive','PDF','fallback','Convert to an archival PDF/A profile.','inventory_2',['Advanced'],'long term archive'),
-      T('repair-pdf','Repair PDF','PDF','fallback','Recover a damaged document.','build',['Advanced'],'fix broken corrupt'),
-      T('compress-image','Compress image','Images','local','Shrink JPG, PNG and WebP files.','compress',['Compress'],'smaller optimise',1),
-      T('convert-image','Image converter','Images','local','Convert images to JPG, PNG, WebP and more.','swap_horiz',['Convert'],'change format heic',1),
-      T('crop-image','Crop image','Images','local','Crop to the perfect size or ratio.','crop',['Edit'],'trim frame'),
-      T('resize-image','Resize image','Images','local','Change dimensions without losing quality.','photo_size_select_large',['Edit'],'scale dimensions'),
-      T('remove-bg','Remove background','Images','fallback','Cut out the subject cleanly.','auto_fix_high',['Edit'],'cutout transparent',1),
-      T('image-to-text','Image to text','Images','local','Read text out of a photo or screenshot.','document_scanner',['Extract'],'ocr photo'),
-      T('remove-metadata','Remove metadata','Images','local','Strip EXIF, GPS and camera data.','privacy_tip',['Security'],'exif gps privacy',1),
-      T('upscale-image','Upscale image','Images','server','Increase resolution with detail recovery.','zoom_out_map',['Edit'],'enlarge enhance'),
-      T('svg-to-png','SVG to PNG','Images','local','Rasterise vectors at any size.','image',['Convert'],'vector export'),
-      T('favicon','Favicon generator','Images','local','Build every icon size you need.','star',['Convert'],'icons app'),
-      T('convert-video','Video converter','Video','fallback','Convert to MP4, WebM, MOV and more.','movie',['Convert'],'transcode format',1),
-      T('compress-video','Compress video','Video','fallback','Reduce video size for sharing.','compress',['Compress'],'smaller upload'),
-      T('trim-video','Trim video','Video','local','Cut the start, end or middle.','content_cut',['Edit'],'clip shorten'),
-      T('video-to-gif','Video to GIF','Video','local','Make a looping GIF from a clip.','gif',['Convert'],'animation loop'),
-      T('extract-audio','Extract audio','Video','local','Save the sound as MP3 or WAV.','music_note',['Extract'],'rip sound'),
-      T('mute-video','Remove audio','Video','local','Strip the audio track.','volume_off',['Edit'],'silence mute'),
-      T('convert-audio','Audio converter','Audio','local','Convert to MP3, WAV, AAC and more.','music_note',['Convert'],'format transcode',1),
-      T('compress-audio','Compress audio','Audio','local','Reduce audio size with clean quality.','compress',['Compress'],'bitrate smaller'),
-      T('trim-audio','Trim audio','Audio','local','Cut a clip out of a recording.','content_cut',['Edit'],'clip cut'),
-      T('merge-audio','Merge audio','Audio','local','Join tracks into one file.','playlist_add',['Organise'],'join combine'),
-      T('transcribe','Transcribe audio','Audio','server','Turn speech into a text transcript.','record_voice_over',['Extract'],'speech to text'),
-      T('create-zip','Create ZIP','Archives','local','Create ZIP archives in seconds.','folder_zip',['Organise'],'compress bundle',1),
-      T('extract-zip','ZIP extractor','Archives','local','Open ZIP, RAR, 7z and TAR archives.','unarchive',['Extract'],'unzip open extract',1),
-      T('split-archive','Split archive','Archives','local','Break a big archive into parts.','call_split',['Organise'],'volumes parts'),
-      T('encrypt-archive','Encrypt archive','Archives','local','Password-protect an archive with AES-256.','enhanced_encryption',['Security'],'password protect'),
-      T('csv-to-excel','CSV to Excel','Documents','local','Convert delimited data to XLSX.','table',['Convert'],'spreadsheet data'),
-      T('excel-to-csv','Excel to CSV','Documents','local','Export sheets to clean CSV.','table_view',['Convert'],'data export'),
-      T('json-formatter','JSON formatter','Documents','local','Format, validate and minify JSON.','data_object',['Edit'],'pretty print validate'),
-      T('markdown-to-pdf','Markdown to PDF','Documents','local','Publish notes as a clean PDF.','picture_as_pdf',['Convert'],'md docs'),
-      T('epub-convert','EPUB converter','Documents','fallback','Convert ebooks between formats.','menu_book',['Convert'],'mobi kindle'),
-      T('subtitle-convert','Subtitle converter','Documents','local','Convert SRT, VTT and ASS files.','subtitles',['Convert'],'captions srt'),
-      T('encrypt-file','Encrypt file','Security','local','Encrypt any file with strong AES-256.','enhanced_encryption',['Security'],'password protect aes',1),
-      T('decrypt-file','Decrypt file','Security','local','Open a file you encrypted here.','no_encryption',['Security'],'unlock open'),
-      T('hash-file','File checksum','Security','local','Verify integrity with SHA-256.','fingerprint',['Security'],'hash verify sha'),
-      T('shred-metadata','Strip document metadata','Security','local','Remove authors, comments and history.','privacy_tip',['Security'],'clean author'),
-      T('password-generator','Password generator','Security','local','Create strong passwords locally.','password',['Security'],'random secure'),
-      T('qr-code','QR code','Security','local','Generate a QR code offline.','qr_code_2',['Convert'],'barcode share'),
-      T('watch-folder','Folder automation','Automate','local','Apply a saved pipeline to a folder.','rule',['Automate'],'watch rules auto'),
-      T('rename-batch','Batch rename','Automate','local','Rename many files with patterns.','drive_file_rename_outline',['Automate'],'pattern bulk')
-    ];
-  })();
-
-  families = ['PDF','Images','Video','Audio','Archives','Documents','Security','Automate'];
+  catalogue = AURORA_CATALOGUE;families = ['PDF','Images','Video','Audio','Archives','Documents','Security','Automate'];
   taskFilters = ['Convert','Compress','Edit','Organise','Extract','Security','Automate'];
   famIcon = { PDF:'picture_as_pdf', Images:'image', Video:'movie', Audio:'music_note', Archives:'folder_zip', Documents:'description', Security:'shield', Automate:'rule' };
 
@@ -559,7 +492,7 @@ class Component extends React.Component {
       openMobFilters: () => this.setState({ mobFiltersOpen: true }),
       closeMobFilters: () => this.setState({ mobFiltersOpen: false }),
       resultsTitle: (st.fam && st.fam !== 'All' ? st.fam + ' tools' : 'All tools') + (st.task ? ' · ' + st.task : ''),
-      resultsMeta: list.length + ' of ' + this.catalogue.length + ' representative records shown',
+      resultsMeta: list.length + ' of ' + this.catalogue.length + ' tools shown',
       sampleNote: this.registryStats().registryLoaded ? this.registryStats().loaded + ' registry records loaded' : this.registryStats().loaded + ' of an owner-declared 221 — registry not yet supplied',
       noMatch: list.length === 0,
       fallbackSuggestions: this.catalogue.filter(t => t.popular).slice(0, 4).map(t => ({ name: t.name, onClick: () => this.go('tool', t.slug) })),
@@ -1774,7 +1707,7 @@ class Component extends React.Component {
       scReport: tab === 'report',
       repCatalogue: (() => { const r = this.registryStats(); return [
         ['Catalogue records loaded', r.loaded + ' of an owner-declared 221', r.registryLoaded ? 'Registry supplied' : 'Representative prototype catalogue'],
-        ['PDF records loaded', r.pdf + ' of an owner-declared 107 PDF tools', 'Awaiting registry'],
+        ['PDF records loaded', r.pdf + ' of the PDF tools in the registry', 'Awaiting registry'],
         ['Processing mode verified', r.modeVerified + ' of ' + r.loaded + ' records', 'Representative records are marked unverified — no local, fallback or server claim is made, and no public simulation runs'],
         ['PDF subfamily totals', '22+17+17+12+12+12+13 = 105', 'Discrepancy vs the declared 107 PDF total — unresolved, not reconciled by invention'],
         ['Articles loaded', this.posts.length + ' of ' + this.plannedArticles + ' planned launch articles', 'Renders all supplied articles with no UI change'],
@@ -1909,7 +1842,7 @@ class Component extends React.Component {
           '“200+ free file tools” in marketing copy; the owner-declared 221 / 107 / 114 counts appear only where internal counts are shown, labelled as declared rather than verified.']]
       ].map(([name, icon, verdict, color, bullet, notes]) => ({ name, icon, verdict, color, bullet, notes })),
       limitations: [
-        'Catalogue: ' + this.registryStats().loaded + ' records are loaded from the representative prototype catalogue. The registry interface accepts the real 221-record set; nothing is invented to fill the gap.',
+        'Catalogue: ' + this.registryStats().loaded + ' records are loaded from the PrivaTools registry. The registry interface accepts the real 221-record set; nothing is invented to fill the gap.',
         'Processing mode: 0 of the loaded records carry a sourced processing mode, so every record reads “Mode not verified”. Public tool pages will not run a local or server simulation until a mode is supplied; the lifecycle previews sit in this showcase and are labelled design simulations.',
         'PDF subfamily totals sum to 105 against an owner-declared PDF total of 107. The discrepancy is flagged, not reconciled by inventing tools or categories.',
         'Competitor facts: none supplied. Every competitor cell reads “Awaiting evidence”; the generator that manufactured plausible values has been removed.',
