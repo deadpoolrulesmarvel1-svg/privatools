@@ -101,3 +101,41 @@ describe("outstanding work", () => {
         console.log(`  parity gaps —  ${summary}`);
     });
 });
+
+/**
+ * Parity of *capability*, not just of route.
+ *
+ * The manifest above tracks surfaces — "does this skin have an account page".
+ * That passed for months while all three ported skins had an account page that
+ * threw the recovery code away, which is the only way back into an account
+ * when there is no reset email. A surface can exist and still be missing the
+ * thing that makes it worth having, so the parts that matter are named here.
+ */
+describe("account capability parity", () => {
+    const IMPORTED = SKINS.filter((s) => s !== "signature");
+
+    // Each is a binding the markup must reference for the capability to exist.
+    const REQUIRED = [
+        ["shows the recovery code at signup", "acctRecoveryCode"],
+        ["lets the visitor copy it", "acctCopyRecovery"],
+        ["makes them acknowledge it", "acctAckRecovery"],
+        ["offers a way to redeem one", "acctShowRecover"],
+        ["takes the code as input", "acctRecoveryInput"],
+    ];
+
+    for (const skin of IMPORTED) {
+        const file = resolve(__dirname, `../skins/extensions/${skin}.html`);
+        for (const [what, binding] of REQUIRED) {
+            it(`${skin} ${what}`, () => {
+                expect(existsSync(file)).toBe(true);
+                expect(readFileSync(file, "utf8")).toContain(binding);
+            });
+        }
+    }
+
+    it("the mixin keeps the code the register call returns", () => {
+        // `_acctSubmit` used to destructure `{ user }` and drop recovery_code.
+        const src = readFileSync(resolve(__dirname, "../skins/withAccounts.tsx"), "utf8");
+        expect(src).toContain("recovery_code");
+    });
+});
