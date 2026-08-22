@@ -578,7 +578,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "header-footer":    "Upload a PDF, type header and/or footer text, and download a copy with that text added to every page.",
     "bates-numbering":  "Upload a PDF (or batch), set a prefix and digit count, and download a copy with sequential Bates numbers stamped on every page — the legal-discovery standard.",
     "redact-pdf":       "Upload a PDF, draw black-out rectangles over the areas to hide, and download the redacted file — content is burnt in, not just overlaid.",
-    "smart-redact":     "Upload a PDF and let AI find and redact emails, phone numbers, SSNs, names, etc. — all detection happens in your browser via BERT-NER.",
+    "smart-redact":     "Upload a PDF and let AI find and redact emails, phone numbers, SSNs, names, etc. — pattern detection always runs in your browser, and name detection runs locally via BERT-NER or, optionally, through your own AI key.",
     "strip-metadata":   "Upload a PDF and download a metadata-clean copy — title, author, keywords, software, timestamps, and XMP packets all wiped.",
     "metadata":         "Upload a PDF and edit title, author, subject, and keywords — download the updated copy.",
     "fill-form":        "Upload a fillable PDF form, set values for each field, and download the completed copy. No Acrobat required.",
@@ -886,7 +886,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly, so the document is not uploaded anywhere. Optionally use your own OpenAI, Anthropic or Gemini key for a stronger model; the text then goes straight from your browser to that provider and still never through our servers."),
-    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER detects names, emails, phone numbers, addresses, and SSNs in your browser before the backend permanently applies approved redactions."),
+    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free. Emails, phone numbers, SSNs and card numbers are always found in your browser by pattern matching. Names and addresses are found by a local BERT-NER model, or optionally by your own AI key — and anything the pattern pass already found is masked before any text is sent. You review every suggestion before the backend permanently applies the approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
     "pdf-to-rtf":      ("PDF to RTF",         "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text."),
