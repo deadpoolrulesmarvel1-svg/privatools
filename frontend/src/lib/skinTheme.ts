@@ -57,6 +57,58 @@ export function resolveTheme(choice: ThemeChoice): "light" | "dark" {
 }
 
 /**
+ * Drive the design's own theme control, if it has one in the DOM.
+ *
+ * Setting `data-theme` and the storage key is enough to survive a reload — the
+ * pre-paint script in index.html reads them — but not enough to repaint now.
+ * Aurora's palette is token-driven and follows the attribute immediately;
+ * Carbon and Structured hold the theme in their own component state and paint
+ * from that, so the attribute alone changes nothing on screen and the click
+ * looks like it did nothing.
+ *
+ * Their own controls are still in the DOM at every width — they are hidden
+ * inside a collapsed sidebar, not unmounted — so driving them keeps the
+ * design's state and ours in agreement, which is the part that reloading
+ * cannot do without throwing away whatever the user was in the middle of.
+ *
+ * Returns whether it found one; the caller has already written the preference
+ * either way.
+ */
+function driveNativeControl(choice: ThemeChoice): boolean {
+    const wanted = { system: ["system", "auto"], light: ["light"], dark: ["dark"] }[choice];
+
+    // Carbon exposes a <select>.
+    for (const select of Array.from(document.querySelectorAll("select"))) {
+        const options = Array.from(select.options).map((o) => o.value.toLowerCase());
+        if (!wanted.some((w) => options.includes(w))) continue;
+        // Only a theme select — one carrying every theme value, not merely one.
+        if (!["light", "dark"].every((v) => options.includes(v))) continue;
+        const value = wanted.find((w) => options.includes(w));
+        if (!value || select.value === value) return true;
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+    }
+
+    // Aurora ("Light theme") and Structured ("Light") use buttons.
+    const labelFor = (el: Element) =>
+        (el.getAttribute("aria-label") || el.textContent || "").trim().toLowerCase();
+    for (const button of Array.from(document.querySelectorAll("button"))) {
+        const label = labelFor(button);
+        const isThemeButton = wanted.some(
+            (w) => label === w || label === `${w} theme` || label === `use ${w} theme`,
+        );
+        if (!isThemeButton) continue;
+        // Never the dock's own row — that is what called this.
+        if (button.closest('[role="group"][aria-label="Light or dark"]')) continue;
+        (button as HTMLButtonElement).click();
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Persist the choice and paint it.
  *
  * Both halves matter and for different reasons: the write is what survives a
@@ -86,7 +138,12 @@ export function setThemeChoice(skin: SkinId, choice: ThemeChoice): void {
         // The house design runs on a class, not the attribute.
         root.classList.toggle("dark", resolved === "dark");
         root.classList.toggle("light", resolved === "light");
-    } else {
-        root.setAttribute("data-theme", resolved);
+        return;
     }
+
+    root.setAttribute("data-theme", resolved);
+    // Aurora repaints from the attribute; Carbon and Structured do not, so ask
+    // their own controls. Without this the preference is stored, the page does
+    // not change, and the only way to see it is a reload nobody knows to do.
+    driveNativeControl(choice);
 }
