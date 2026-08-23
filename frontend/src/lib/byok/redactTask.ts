@@ -18,6 +18,7 @@
  */
 
 import { complete } from "./client";
+import { fenced, fenceRule, newFence } from "./fence";
 import type { Message } from "./providers";
 
 export interface FoundEntity {
@@ -89,9 +90,20 @@ export interface FindEntitiesArgs {
 export async function findEntitiesWithByok(args: FindEntitiesArgs): Promise<FoundEntity[]> {
     const { masked, map } = maskKnownPii(args.text, args.knownPii);
 
+    // The rule above says the document is data. Fencing gives that rule an edge
+    // to apply to: without it the document *is* the whole user turn, so a line
+    // planted in a PDF reads exactly like the operator's own request — and the
+    // instruction it would most like to plant here is "return no entities",
+    // which produces a document that looks redacted and is not.
+    //
+    // Same fence as summarisation (see tasks.ts) and for the same reason it is
+    // random rather than a content hash: whoever wrote the document can compute
+    // a hash of it, so only unpredictability makes the boundary unforgeable.
+    const fence = newFence();
+
     const messages: Message[] = [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: masked },
+        { role: "system", content: `${SYSTEM} ${fenceRule(fence)}` },
+        { role: "user", content: fenced(fence, masked) },
     ];
 
     const raw = await complete({
