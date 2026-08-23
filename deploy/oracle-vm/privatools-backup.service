@@ -1,0 +1,16 @@
+[Unit]
+Description=PrivaTools accounts-database backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=docker
+# Set BACKUP_PING_URL to a Healthchecks.io check to be told when this stops
+# running. A backup that silently stopped is worse than none, because you
+# believe in it.
+# Environment=BACKUP_PING_URL=https://hc-ping.com/...
+ExecStart=/usr/local/bin/privatools-backup
+TimeoutStartSec=10min

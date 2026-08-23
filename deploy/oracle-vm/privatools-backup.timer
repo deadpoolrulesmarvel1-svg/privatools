@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the PrivaTools accounts backup nightly
+
+[Timer]
+OnCalendar=*-*-* 03:17:00
+# Not on the hour: the box runs seven projects and the portfolio backup already
+# takes 19:30. Persistent so a backup missed while the VM was down runs on the
+# next boot rather than being skipped for the day.
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
