@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Palette, X } from "lucide-react";
+import { Check, Monitor, Moon, Palette, Sun, X } from "lucide-react";
 import { useSkin } from "@/hooks/useSkin";
 import { SKIN_LIST } from "@/lib/skins";
+import { readThemeChoice, setThemeChoice, type ThemeChoice } from "@/lib/skinTheme";
 
 /**
  * Floating theme picker for the ported design themes.
@@ -15,9 +16,66 @@ import { SKIN_LIST } from "@/lib/skins";
  * Its own styling is self-contained and does not read the skin's variables, so
  * it looks the same in all three and cannot be restyled by a design's CSS.
  */
+/**
+ * Carbon and Structured shipped with no light/dark control of their own, so
+ * choosing light in those designs was impossible — not unsupported, just
+ * unreachable. Putting it here covers every design at once, including any
+ * added later, and cannot be restyled by a design's CSS.
+ */
+/**
+ * How far to lift the dock so it clears a design's bottom bar.
+ *
+ * All three ported designs grow a fixed tab bar on narrow viewports, and the
+ * dock sat on top of it — a 34px puck covering a navigation item, which is a
+ * worse trade than it sounds because the bar is the only navigation at that
+ * width. Measured rather than hardcoded: the three bars are different heights,
+ * and one of them is not there at all on desktop.
+ */
+function useBottomBarClearance(): number {
+    const [clearance, setClearance] = useState(0);
+
+    useEffect(() => {
+        const measure = () => {
+            let tallest = 0;
+            for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
+                if (getComputedStyle(el).position !== "fixed") continue;
+                const r = el.getBoundingClientRect();
+                const pinnedToBottom = Math.abs(r.bottom - window.innerHeight) < 4;
+                const fullWidth = r.width > window.innerWidth * 0.8;
+                // Ignore the dock itself, and anything too small to be a bar.
+                if (pinnedToBottom && fullWidth && r.height > 40 && r.height < 160) {
+                    tallest = Math.max(tallest, r.height);
+                }
+            }
+            setClearance(tallest ? Math.round(tallest) + 10 : 0);
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        // The bars appear and disappear with route and width, so re-measure
+        // when the tree changes rather than only on resize.
+        const mo = new MutationObserver(measure);
+        mo.observe(document.body, { childList: true, subtree: true });
+        return () => { window.removeEventListener("resize", measure); mo.disconnect(); };
+    }, []);
+
+    return clearance;
+}
+
+const THEME_CHOICES: ReadonlyArray<{ id: ThemeChoice; label: string; Icon: typeof Sun }> = [
+    { id: "system", label: "Auto", Icon: Monitor },
+    { id: "light", label: "Light", Icon: Sun },
+    { id: "dark", label: "Dark", Icon: Moon },
+];
+
 export function SkinDock() {
     const { skin, setSkin } = useSkin();
     const [open, setOpen] = useState(false);
+    const [theme, setTheme] = useState<ThemeChoice>(() => readThemeChoice(skin));
+    const bottomClearance = useBottomBarClearance();
+
+    // The preference is per design, so re-read it when the design changes —
+    // otherwise the row shows the previous skin's choice.
+    useEffect(() => { setTheme(readThemeChoice(skin)); }, [skin]);
     const ref = useRef<HTMLDivElement>(null);
     const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -41,14 +99,14 @@ export function SkinDock() {
         <div
             ref={ref}
             style={{
-                position: "fixed", right: 14, bottom: 14, zIndex: 2147483000,
+                position: "fixed", right: 14, bottom: 14 + bottomClearance, zIndex: 2147483000,
                 fontFamily: "system-ui, -apple-system, sans-serif", colorScheme: "dark",
             }}
         >
             {open && (
                 <div
                     role="menu"
-                    aria-label="Design theme"
+                    aria-label="Appearance"
                     style={{
                         position: "absolute", right: 0, bottom: 42, width: 268,
                         background: "#12161a", color: "#e9eef0",
@@ -58,7 +116,7 @@ export function SkinDock() {
                 >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 6px" }}>
                         <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", opacity: .6 }}>
-                            Design theme
+                            Appearance
                         </span>
                         <button
                             onClick={() => { setOpen(false); btnRef.current?.focus(); }}
@@ -67,6 +125,39 @@ export function SkinDock() {
                         >
                             <X size={13} />
                         </button>
+                    </div>
+                    <div
+                        role="group"
+                        aria-label="Light or dark"
+                        style={{ display: "flex", gap: 4, padding: "0 6px 8px" }}
+                    >
+                        {THEME_CHOICES.map(({ id, label, Icon }) => {
+                            const on = theme === id;
+                            return (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    aria-pressed={on}
+                                    onClick={() => { setThemeChoice(skin, id); setTheme(id); }}
+                                    title={label}
+                                    style={{
+                                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                                        gap: 5, minHeight: 30, borderRadius: 7, cursor: "pointer",
+                                        fontSize: 11, color: "inherit",
+                                        background: on ? "rgba(255,255,255,.13)" : "transparent",
+                                        border: "1px solid rgba(255,255,255,.10)",
+                                    }}
+                                >
+                                    <Icon size={12} aria-hidden="true" />
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div style={{ padding: "0 6px 6px" }}>
+                        <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", opacity: .6 }}>
+                            Design
+                        </span>
                     </div>
                     {SKIN_LIST.map((s) => {
                         const selected = s.id === skin;

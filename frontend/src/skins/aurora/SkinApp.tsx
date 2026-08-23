@@ -1497,7 +1497,7 @@ class Component extends React.Component {
           bullets: ['Encrypted in transit for every server request', 'Isolated per-request processing, then immediate deletion', 'Password Vault encrypted on your device, with device-only, PIN or passphrase protection', 'AES-256 for file and archive encryption tools'] },
         { id: 'location', h: 'Where server processing happens', paras: ['Best effort in Mumbai, India, primarily on Oracle infrastructure. There is no failover; capacity exhaustion shows as temporary unavailability rather than a queue that never clears.'], bullets: [] },
         { id: 'disclosure', h: 'Responsible disclosure', paras: ['Report a vulnerability privately and we will confirm receipt, keep you updated and credit you if you want that. Please do not test against other people’s files.'],
-          bullets: ['security@privatools.io', 'Include steps to reproduce and the affected tool or URL', 'We aim to acknowledge within 1–2 business days'] },
+          bullets: ['security@privatools.me', 'Include steps to reproduce and the affected tool or URL', 'We aim to acknowledge within 1–2 business days'] },
         { id: 'reviews', h: 'Independent review', paras: ['Independent security review of the local processing path is planned before the first stable release.'], bullets: [] }
       ] },
     terms: { title: 'Terms of use', updated: 'August 2026',
@@ -1615,12 +1615,12 @@ class Component extends React.Component {
       formBannerTitle: banner === 'offline' ? 'You are offline — the report is saved on this device' : 'We couldn’t send that report',
       formBannerBody: banner === 'offline'
         ? 'Your draft stays here until you reconnect. Nothing has been sent, and no file left your device.'
-        : 'The send failed on our side. Your draft is intact — try again, or email support@privatools.io.',
+        : 'The send failed on our side. Your draft is intact — try again, or email support@privatools.me.',
       formBannerCta: banner === 'offline' ? 'Retry when online' : 'Try again',
       formRetry: () => { this.setState({ formBanner: null }); this.toast('Retrying…', 'sync', 'var(--tl)'); },
       contactRows: [
-        { label: 'Support email', value: 'support@privatools.io', note: 'We aim to respond within 1–2 business days.' },
-        { label: 'Security vulnerabilities', value: 'security@privatools.io', note: 'Private disclosure, acknowledged quickly.' },
+        { label: 'Support email', value: 'support@privatools.me', note: 'We aim to respond within 1–2 business days.' },
+        { label: 'Security vulnerabilities', value: 'security@privatools.me', note: 'Private disclosure, acknowledged quickly.' },
         { label: 'Public issue tracker', value: 'github.com/privatools/support', note: 'Known issues and current work.' }
       ],
       supportTips: [
@@ -2143,7 +2143,7 @@ Component.prototype.render = function render() {
       </div>
       <div style={css("display:flex;flex-wrap:wrap;gap:10px")}>
       <button type="button" onClick={v.openPalette} style={css("display:flex;align-items:center;gap:9px;height:46px;padding:0 18px;border-radius:12px;border:none;background:linear-gradient(180deg,var(--em),var(--emd));color:var(--em-ink,#03120C);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;box-shadow:0 10px 28px -12px var(--em)")}>
-      <span style={css("font-family:'Material Symbols Rounded';font-size:19px")}>{ICON.search}</span>Search 200+ tools
+      <span style={css("font-family:'Material Symbols Rounded';font-size:19px")}>{ICON.search}</span>{v.searchToolsLabel}
                   <span style={css("font-size:11px;opacity:.7;border:1px solid rgba(0,0,0,.25);border-radius:5px;padding:1px 5px")}>⌘K</span>
       </button>
       <button type="button" onClick={v.goTools} style={css("display:flex;align-items:center;gap:8px;height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line2);background:var(--pnlq);color:var(--text);font-weight:500;font-size:14px;cursor:pointer")}>Browse all tools
@@ -2447,7 +2447,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--pnl)")}>
       <div style={css("display:flex;align-items:center;gap:8px;flex:1;min-width:180px;height:38px;padding:0 11px;border:1px solid var(--line);border-radius:10px;background:var(--pnl2)")}>
       <span style={css("font-family:'Material Symbols Rounded';font-size:17px;color:var(--text3)")}>{ICON.search}</span>
-      <input value={v.toolsQ} onChange={v.onToolsQ} placeholder="Search 200+ tools" aria-label="Search tools" style={css("flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px")} />
+      <input value={v.toolsQ} onChange={v.onToolsQ} placeholder="{v.searchToolsLabel}" aria-label="Search tools" style={css("flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px")} />
       </div>
       <select value={v.inType} onChange={v.onInType} aria-label="Input type" style={css("height:38px;border-radius:10px;border:1px solid var(--line);background:var(--pnl2);color:var(--text2);font-size:13px;padding:0 9px")}>
 

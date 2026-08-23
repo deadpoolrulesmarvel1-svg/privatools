@@ -20,6 +20,8 @@ import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("carbon", String(name)) });
 
+import { TOOL_TOTAL, PDF_COUNT, NON_PDF_COUNT } from "@/skins/counts";
+
 const PAL = {
   dark: {
     bg:'#04080B', bg2:'#071016', bg3:'#0D171D', rail:'#060D12', solid:'#0B141A',
@@ -470,7 +472,7 @@ class Component extends React.Component {
 
     return {
       title: title, body: body, guessLabel: guessLabel, guesses: guesses,
-      url: 'privatools.io/' + (kind === 'tool' ? 'tool/' + slug : (kind === 'competitor' ? 'compare/' + slug : ((location.hash || '#/404').replace(/^#\/?/, '') || '404'))),
+      url: 'privatools.me/' + (kind === 'tool' ? 'tool/' + slug : (kind === 'competitor' ? 'compare/' + slug : ((location.hash || '#/404').replace(/^#\/?/, '') || '404'))),
       q: s.nfQ, setQ: (e) => this.setState({ nfQ: e.target.value }),
       open: () => this.setState({ palette: true, q: s.nfQ }),
       popular: ['compress-pdf','merge-pdf','image-converter','zip-extractor','ocr-pdf','remove-metadata'].map(function(sl){
@@ -485,7 +487,7 @@ class Component extends React.Component {
     return {
       entries: [
         ['Apr 28, 2025', 'Policy', 'Comparison data verified', 'All 13 comparison pages re-checked against public documentation. Figures we could not verify are now labelled illustrative rather than shown as fact.'],
-        ['Apr 22, 2025', 'Tools', 'Catalogue at 221 tools', '107 PDF and 114 non-PDF tools. Two PDF tools are awaiting subfamily assignment and appear under Pending review in the directory.'],
+        ['Apr 22, 2025', 'Tools', 'Catalogue at ' + TOOL_TOTAL + ' tools', '' + PDF_COUNT + ' PDF and ' + NON_PDF_COUNT + ' non-PDF tools.'],
         ['Apr 15, 2025', 'Fix', 'Pipeline failure handling', 'A failing step now always preserves the previous step’s output and offers Retry or Skip, including when the failure happens on the last step.'],
         ['Apr 8, 2025', 'Policy', 'Processor disclosures per tool', 'Tools that depend on an external engine now name the processor and its region at the input, before you choose a file.']
       ].map((e) => ({ date: e[0], tag: e[1], col: TAG[e[1]][0], bg: TAG[e[1]][1], title: e[2], body: e[3] }))
@@ -495,7 +497,7 @@ class Component extends React.Component {
   policyVals(cur, isM, isT){
     const P = {
       privacy: { title: 'Privacy Policy', lede: 'What happens to your files, what we keep, and for how long. Written to be checkable rather than reassuring.', s: [
-        ['scope','Scope', ['This policy covers privatools.io, the installable PWA and every one of the 221 tools. PrivaTools is permanently free and owner-funded: there is no account, no paid tier, no advertising and no product analytics.'], []],
+        ['scope','Scope', ['This policy covers privatools.me, the installable PWA and every one of the ' + TOOL_TOTAL + ' tools. PrivaTools is permanently free and owner-funded: there is no account, no paid tier, no advertising and no product analytics.'], []],
         ['files','Your files', ['Processing happens on your device whenever possible. Local tools read the file in your browser; the file is never transmitted. Each tool discloses its processing mode at the input, before you select a file.','When local processing cannot complete, a disclosed server fallback may be used. Server processing runs on best-effort infrastructure in Mumbai, India with no failover.'], [
           ['devices','Local','Processing on your device. No transmission, works offline once cached.','var(--pt-ok,#26C8BA)'],
           ['cloud_sync','Local + server fallback','Local first. If it cannot complete, the disclosed Mumbai server is used.','var(--pt-amber,#F0B45E)'],
@@ -516,7 +518,7 @@ class Component extends React.Component {
           ['visibility','Transparent processing','We disclose when and how servers are used, per tool.','var(--pt-aquaTxt,#4FE1DE)'],
           ['delete_forever','Immediate deletion','Temporary server copies are deleted after the response.','var(--pt-aquaTxt,#4FE1DE)']
         ]],
-        ['disclosure','Responsible disclosure', ['Report vulnerabilities to security@privatools.io. Please include reproduction steps and give us reasonable time to fix before publishing. We will confirm receipt and keep you updated.'], []],
+        ['disclosure','Responsible disclosure', ['Report vulnerabilities to security@privatools.me. Please include reproduction steps and give us reasonable time to fix before publishing. We will confirm receipt and keep you updated.'], []],
         ['logs2','Log policy', ['Security logs are content-free: routine events 24 hours, suspicious events 7 days, confirmed incidents 30 days. No filenames, contents or personal data are recorded.'], []],
         ['scope2','Out of scope', ['Reports produced solely by automated scanners without a demonstrated impact, and issues in third-party services we do not control, are out of scope — though we still want to hear about them.'], []]
       ] },
@@ -553,7 +555,7 @@ class Component extends React.Component {
         ]],
         ['alts','Alternatives to drag', ['Anything reorderable by drag — pipeline steps, page thumbnails, comparison priorities — has an equivalent button or numeric control.'], []],
         ['gaps','Known gaps', ['Region selection inside image tools currently needs a pointer; a keyboard path is in progress. Complex comparison tables are wide on small screens and switch to labelled cards instead.'], []],
-        ['contact','Tell us', ['Accessibility problems go to support@privatools.io and are treated as bugs, not feature requests.'], []]
+        ['contact','Tell us', ['Accessibility problems go to support@privatools.me and are treated as bugs, not feature requests.'], []]
       ] }
     };
     const p = P[cur] || P.privacy;
@@ -587,10 +589,10 @@ class Component extends React.Component {
     return {
       cols: (isM || isT) ? '1fr' : 'minmax(0,1fr) minmax(0,1.15fr)',
       channels: [
-        { icon: 'mail', k: 'Email support', v: 'support@privatools.io' },
+        { icon: 'mail', k: 'Email support', v: 'support@privatools.me' },
         { icon: 'flag', k: 'In-app issue form', v: 'Send feedback or report an issue' },
         { icon: 'code', k: 'Public issue tracker', v: 'github.com/privatools/privatools' },
-        { icon: 'security', k: 'Security vulnerability', v: 'security@privatools.io' },
+        { icon: 'security', k: 'Security vulnerability', v: 'security@privatools.me' },
         { icon: 'link_off', k: 'Broken link reporting', v: 'Use the form beside this list' }
       ],
       showForm: s.spState === 'form' || s.spState === 'error',
@@ -748,7 +750,7 @@ class Component extends React.Component {
       evidence: (drawerRival && drawerRival.self
         ? PRIORITIES.map(function(p){
             const c = OWN_CLAIMS[p.key];
-            return Object.assign({ k: p.key, v: c.v + ' — ' + c.sub, src: 'privatools.io/privacy · own documented policy' }, stFor(true));
+            return Object.assign({ k: p.key, v: c.v + ' — ' + c.sub, src: 'privatools.me/privacy · own documented policy' }, stFor(true));
           })
         : PRIORITIES.map(function(p){
             return Object.assign({ k: p.key, v: 'Not supplied. This row will state the claim, the source URL, the date it was checked and the currency for any price.', src: 'source: — · checked: — · currency: —' }, stFor(false));
@@ -2261,7 +2263,7 @@ Component.prototype.render = function render() {
       </div>
       <button onClick={v.openPalette} style={css(`${v.searchBtnStyle}`)} className="dc-i3">
       <span className="material-symbols-rounded" style={css("font-size:18px;color:var(--pt-txt3,#6B8085)")}>{ICON.search}</span>
-      <span style={css(`${v.searchLabelStyle}`)}>Search 200+ tools or type a command…</span>
+      <span style={css(`${v.searchLabelStyle}`)}>{v.searchToolsLabel} or type a command…</span>
       <span style={css(`${v.kbdStyle}`)}>⌘K</span>
       </button>
       <div style={css("display:flex;align-items:center;gap:8px;flex:none")}>
@@ -4548,7 +4550,7 @@ Component.prototype.render = function render() {
                   
       <div style={css("display:grid;gap:13px")}>
       <label style={css("display:grid;gap:6px")}><span style={css("font-size:12px;font-weight:700")}>Page URL <span style={css("color:var(--pt-coral,#FF7A6B)")}>*</span></span>
-      <input value={v.sp.url} onChange={v.sp.setUrl} placeholder="privatools.io/tool/…" aria-invalid={v.sp.urlBad} style={css(`${v.sp.urlStyle}`)} />
+      <input value={v.sp.url} onChange={v.sp.setUrl} placeholder="privatools.me/tool/…" aria-invalid={v.sp.urlBad} style={css(`${v.sp.urlStyle}`)} />
 
                             {Boolean(v.sp.urlError) && (<>
                               <span style={css("font-size:11.5px;color:var(--pt-coral,#FF7A6B);font-weight:600")}>Enter the address of the page that is broken.</span>
