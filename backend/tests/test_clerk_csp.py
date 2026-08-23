@@ -27,6 +27,8 @@ import re
 import pytest
 
 FAPI_HOST = "climbing-reindeer-9195.clerk.accounts.dev"
+IMG_HOST = "https://img.clerk.com"
+TURNSTILE_HOST = "https://challenges.cloudflare.com"
 
 
 def _pk(host: str = FAPI_HOST) -> str:
@@ -51,15 +53,22 @@ def _directive(policy: str, name: str) -> str:
     return m.group(1) if m else ""
 
 
-def _sources(policy: str, name: str) -> list[str]:
-    """A directive as its source tokens.
+def _sources(policy: str, name: str) -> set[str]:
+    """A directive as the exact set of source tokens it lists.
 
-    Membership rather than substring on purpose: `"https://img.clerk.com" in
-    directive` is also satisfied by `https://img.clerk.com.evil.com`, which is
-    exactly the sort of thing these tests exist to catch. CodeQL flags the
-    substring form as incomplete URL sanitization and it is right to.
+    A set, and compared by difference below, rather than
+    `"https://img.clerk.com" in directive`. That substring form is also
+    satisfied by `https://img.clerk.com.evil.com` — an assertion that cannot
+    tell the origin it means from one merely prefixed by it, in a file whose
+    entire job is checking which origins a page may reach. CodeQL flags it as
+    incomplete URL sanitization and is right to.
     """
-    return _directive(policy, name).split()
+    return set(_directive(policy, name).split())
+
+
+def _missing(policy: str, name: str, required: set[str]) -> set[str]:
+    """Which of `required` the directive does not list. Empty means all present."""
+    return required - _sources(policy, name)
 
 
 ACCOUNT_PATHS = ["/account", "/account/keys", "/account/"]
@@ -69,10 +78,11 @@ NON_ACCOUNT_PATHS = ["/", "/tool/merge-pdf", "/tool/summarize-pdf", "/about", "/
 @pytest.mark.parametrize("path", ACCOUNT_PATHS)
 def test_account_pages_can_reach_clerk(path: str, csp):
     policy = csp(path, "n0nce", "")
-    assert f"https://{FAPI_HOST}" in _sources(policy, "script-src")
-    assert f"https://{FAPI_HOST}" in _sources(policy, "connect-src")
-    assert "https://img.clerk.com" in _sources(policy, "img-src")
-    assert "https://challenges.cloudflare.com" in _sources(policy, "frame-src"), (
+    fapi = f"https://{FAPI_HOST}"
+    assert not _missing(policy, "script-src", {fapi})
+    assert not _missing(policy, "connect-src", {fapi})
+    assert not _missing(policy, "img-src", {IMG_HOST})
+    assert not _missing(policy, "frame-src", {TURNSTILE_HOST}), (
         "Clerk's bot check renders a Cloudflare Turnstile iframe; without "
         "frame-src it falls back to default-src 'self' and the check is blocked."
     )
