@@ -1265,7 +1265,7 @@ class Component extends React.Component {
         ['popular', 'boolean', 'Optional. Surfaces on Home'],
         ['options', 'array', 'Optional per-tool control schema']
       ].map(function (r) { return { field: r[0], type: r[1], note: r[2] }; }),
-      footerLinks: [['about', 'About'], ['privacy', 'Privacy'], ['security', 'Security'], ['terms', 'Terms'], ['acceptable-use', 'Acceptable use'], ['processors', 'Processors'], ['accessibility', 'Accessibility'], ['support', 'Support'], ['status', 'Status'], ['atlas', 'PWA & errors'], ['404', '404'], ['showcase', 'Components (dev)']].map(function (l) {
+      footerLinks: [['about', 'About'], ['privacy', 'Privacy'], ['security', 'Security'], ['terms', 'Terms'], ['acceptable-use', 'Acceptable use'], ['processors', 'Processors'], ['accessibility', 'Accessibility'], ['support', 'Support'], ['status', 'Status']].map(function (l) {
         return { label: l[1], go: function () { self.go(l[0]); } };
       })
     };

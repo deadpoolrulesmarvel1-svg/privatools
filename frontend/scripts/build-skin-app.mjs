@@ -126,6 +126,12 @@ const LOGIC_BINDINGS = [
   // keeps the design's icons and colours.
   [/var catDef = \[\[[\s\S]*?\]\];/,
    "var catDef = STRUCTURED_CATEGORIES.map(function (c) { return c.slice(); });"],
+  // Structured's footer shipped three of its own design-review routes:
+  // ['atlas','PWA & errors'], ['404','404'] and ['showcase','Components (dev)'].
+  // The last is labelled "(dev)" in the product's own footer, which is the
+  // design telling you it was never meant to be there. A visitor clicking it
+  // lands in a component gallery.
+  [/,\s*\['atlas', 'PWA & errors'\], \['404', '404'\], \['showcase', 'Components \(dev\)'\]/g, ""],
   // Meta description. "200+" understates a real 219.
   [/200\+ tools, 500 MB per file/g, "' + TOOL_TOTAL + ' tools, 500 MB per file"],
   // The invented 221 / 107 / 114 that CLAUDE.md calls out by name — the site
