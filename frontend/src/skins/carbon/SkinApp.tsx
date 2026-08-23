@@ -399,7 +399,7 @@ class Component extends React.Component {
         ['Contrast', 'contrast', 'Pass', 'Body text clears 12:1 in both modes and secondary text clears 4.5:1. Every translucent panel sits on an opaque matte layer, so blur never sits behind dense text. Aqua darkens to #0B7C79 for text on pearl and stays #4FE1DE for decorative edges only.', ''],
         ['Reduced motion', 'motion_photos_off', 'Pass', 'prefers-reduced-motion and the Ambient motion tweak both collapse animations to near-zero and shorten transitions, removing hero float, pointer parallax, edge sweeps, pipe flow and animated reordering while keeping immediate state feedback.', ''],
         ['Responsive & overflow', 'devices', 'Implemented; visual verification pending', 'Breakpoint logic implemented for 360×800, 390×844, 768×1024, 1440×900 and 1920×1080. Dialogs cap at 86–88vh and scroll internally; the evidence drawer is min(100%,430px); mobile drawer, bottom nav and drawer padding respect env(safe-area-inset-bottom); wide tables scroll in their own container on tablet and become labelled cards on mobile; touch targets are 44px or larger; the compact tablet rail keeps title tooltips.', 'Only sizes actually captured and inspected in the exported gallery may be marked Verified. Anything not in that gallery stays at implemented-only.'],
-        ['Privacy copy compliance', 'shield', 'Pass', 'Public copy says “200+ free file tools”; exact figures appear only where they are true, as supplied-record counts. Server copy always names Mumbai, India and best effort with no failover. “No document retention” and “result exists only in this tab” appear at input, progress and result. Log retention reads 24h / 7d / 30d. No fabricated ratings, votes, testimonials or competitor claims anywhere.', '']
+        ['Privacy copy compliance', 'shield', 'Pass', 'Public copy says “' + TOOL_TOTAL + ' free file tools”; exact figures appear only where they are true, as supplied-record counts. Server copy always names Mumbai, India and best effort with no failover. “No document retention” and “result exists only in this tab” appear at input, progress and result. Log retention reads 24h / 7d / 30d. No fabricated ratings, votes, testimonials or competitor claims anywhere.', '']
       ].map((q) => {
         const tone = q[2] === 'Pass' ? 'ok' : (q[2] === 'Simulated' ? 'aqua' : 'warn');
         const C = { ok: ['var(--pt-ok,#26C8BA)', 'var(--pt-okBg,rgba(38,200,186,.14))', 'var(--pt-line,rgba(255,255,255,.085))'],
@@ -2486,7 +2486,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px")}>
       <div>
       <h1 style={css("margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em")}>All tools</h1>
-      <p style={css("margin:7px 0 0;font-size:13.5px;color:var(--pt-txt2,#9FB3B8)")}>200+ free file tools. Every tool discloses where it runs and supports files up to 500 MB.</p>
+      <p style={css("margin:7px 0 0;font-size:13.5px;color:var(--pt-txt2,#9FB3B8)")}>{v.toolTotalFreeLabel}. Every tool discloses where it runs and supports files up to 500 MB.</p>
       </div>
       <div style={css("display:flex;gap:7px;align-items:center")}>
 

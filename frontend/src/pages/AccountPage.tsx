@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SocialSignIn } from "@/components/account/SocialSignIn";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     strengthOf, type AccountState, ACCOUNT_COPY,
@@ -123,15 +124,18 @@ export default function AccountPage() {
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
     return (
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-            <h1 className="font-display text-[30px] font-bold tracking-[-0.025em]">
-                {s.user ? "Account" : s.mode === "signup" ? "Create an account" : "Sign in"}
-            </h1>
-            <p className="mt-1.5 text-[14px] text-muted-foreground">
-                {s.user
-                    ? "Manage the API keys issued to this account."
-                    : "Only needed for the developer API. Every tool works without one."}
-            </p>
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+            {/* Signed out, the card carries its own heading — repeating it here
+                gave the page two titles saying the same word, with the form
+                marooned below both. Signed in, this is the page title. */}
+            {s.user && (
+                <>
+                    <h1 className="font-display text-[30px] font-bold tracking-[-0.025em]">Account</h1>
+                    <p className="mt-1.5 text-[14px] text-muted-foreground">
+                        Manage the API keys issued to this account.
+                    </p>
+                </>
+            )}
 
             {s.recoveryCode && (
                 <RecoveryPanel
@@ -144,33 +148,50 @@ export default function AccountPage() {
             )}
 
             {!s.user && !s.recoveryCode && (
-                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start">
-                    <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 grid gap-3">
-                        <div className="flex gap-2" role="tablist" aria-label="Account action">
-                            {([["signin", "Sign in"], ["signup", "Create account"]] as const).map(([m, label]) => (
-                                <button
-                                    key={m} type="button" role="tab" aria-selected={s.mode === m}
-                                    onClick={() => patch({ mode: m, error: "" })}
-                                    className={cn(
-                                        "flex-1 h-9 rounded-lg text-[13px] font-medium border transition-colors",
-                                        s.mode === m
-                                            ? "border-primary bg-primary/10 text-primary"
-                                            : "border-border text-muted-foreground hover:text-foreground",
-                                    )}
-                                >
-                                    {label}
-                                </button>
-                            ))}
+                /*
+                 * A single centred column rather than a form beside an
+                 * explainer. The two-column version left the card marooned
+                 * top-left with the page's whole lower half empty, and put a
+                 * three-paragraph wall of grey text next to the only thing
+                 * anyone came here to do.
+                 *
+                 * The reassurance still matters — this is a product whose pitch
+                 * is that you do not need an account — so it stays, underneath,
+                 * as three scannable lines instead of prose.
+                 */
+                <div className="mx-auto w-full max-w-[26rem]">
+                    <form
+                        onSubmit={submit}
+                        className="grid gap-3.5 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.18)]"
+                    >
+                        {/* The mode switch is a question, not two equal buttons.
+                            A segmented control implies a choice between peers;
+                            most people arriving here already have an account. */}
+                        <div className="flex items-baseline justify-between gap-3">
+                            <h2 className="font-display text-[19px] font-semibold tracking-[-0.015em]">
+                                {s.mode === "signup" ? "Create an account" : "Sign in"}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => patch({ mode: s.mode === "signup" ? "signin" : "signup", error: "", needsEmailCode: false })}
+                                className="text-[12.5px] font-medium text-primary underline-offset-4 hover:underline"
+                            >
+                                {s.mode === "signup" ? "Sign in instead" : "Create one"}
+                            </button>
                         </div>
 
-                        <label className="grid gap-1.5 text-[12px] text-muted-foreground">
+                        {!s.needsEmailCode && s.mode !== "recover" && (
+                            <SocialSignIn mode={s.mode === "signup" ? "signup" : "signin"} />
+                        )}
+
+                        <label className="grid gap-1.5 text-[12px] font-medium text-muted-foreground">
                             Email
-                            <input type="email" required autoComplete="email" autoFocus className={field}
+                            <input type="email" required autoComplete="email" className={field}
                                    value={s.email} onChange={e => patch({ email: e.target.value, error: "" })} />
                         </label>
 
                         {(s.mode === "recover" || s.needsEmailCode) && (
-                            <label className="grid gap-1.5 text-[12px] text-muted-foreground">
+                            <label className="grid gap-1.5 text-[12px] font-medium text-muted-foreground">
                                 {s.needsEmailCode ? "Code we emailed you" : "Recovery code"}
                                 <input
                                     type="text" required autoComplete="one-time-code"
@@ -184,7 +205,7 @@ export default function AccountPage() {
                             </label>
                         )}
 
-                        <label className="grid gap-1.5 text-[12px] text-muted-foreground">
+                        <label className="grid gap-1.5 text-[12px] font-medium text-muted-foreground">
                             {s.mode === "recover" ? "New password" : "Password"}
                             <span className="relative block">
                                 <input
@@ -208,8 +229,9 @@ export default function AccountPage() {
                         {s.error && <p role="alert" className="text-[12.5px] text-destructive">{s.error}</p>}
 
                         <button type="submit" disabled={s.busy}
-                                className="h-10 rounded-lg bg-primary text-primary-foreground text-[13.5px] font-semibold disabled:opacity-60">
+                                className="h-11 rounded-lg bg-primary text-primary-foreground text-[13.5px] font-semibold disabled:opacity-60">
                             {s.busy ? "Working…"
+                                : s.needsEmailCode ? "Verify email"
                                 : s.mode === "signup" ? "Create account"
                                 : s.mode === "recover" ? "Reset password"
                                 : "Sign in"}
@@ -218,29 +240,30 @@ export default function AccountPage() {
                         <button
                             type="button"
                             onClick={() => patch({ mode: s.mode === "recover" ? "signin" : "recover", error: "" })}
-                            className="text-[12px] text-muted-foreground hover:text-foreground underline underline-offset-2 justify-self-start"
+                            className="text-[12px] text-muted-foreground hover:text-foreground underline underline-offset-2 justify-self-center"
                         >
                             {s.mode === "recover" ? "Back to sign in" : "Forgotten your password?"}
                         </button>
                     </form>
 
-                    <aside className="rounded-2xl border border-border bg-secondary/40 p-5">
-                        <h2 className="font-display text-[15px] font-semibold flex items-center gap-2">
-                            <ShieldCheck size={16} className="text-primary" aria-hidden="true" />
-                            You do not need an account
-                        </h2>
-                        <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-                            Every tool works without signing in, and nothing on a tool page asks you to.
-                            An account exists for one thing: issuing API keys for the developer API.
-                        </p>
-                        <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-                            {ACCOUNT_COPY.storage}
-                        </p>
-                        <p className="mt-2.5 flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
-                            <LifeBuoy size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-                            <span>{ACCOUNT_COPY.recovery}</span>
-                        </p>
-                    </aside>
+                    <ul className="mt-5 grid gap-2.5">
+                        {[
+                            [ShieldCheck, "You do not need one", "Every tool works signed out, and no tool page asks."],
+                            [KeyRound, "An account does one thing", "It issues API keys for the developer API."],
+                            [LifeBuoy, ACCOUNT_COPY.storageHeading, ACCOUNT_COPY.storage],
+                        ].map(([Icon, title, body]) => {
+                            const I = Icon as typeof ShieldCheck;
+                            return (
+                                <li key={title as string} className="flex gap-2.5">
+                                    <I size={15} className="mt-[3px] shrink-0 text-primary" aria-hidden="true" />
+                                    <span className="text-[12.5px] leading-relaxed text-muted-foreground">
+                                        <strong className="font-medium text-foreground">{title as string}</strong>{" "}
+                                        {body as string}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 </div>
             )}
 

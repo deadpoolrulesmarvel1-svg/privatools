@@ -142,6 +142,17 @@ const LOGIC_BINDINGS = [
   [/107 PDF and 114 non-PDF tools\. Two PDF tools are awaiting subfamily assignment and appear under Pending review in the directory\./g,
    "' + PDF_COUNT + ' PDF and ' + NON_PDF_COUNT + ' non-PDF tools."],
   [/every one of the 221 tools/g, "every one of the ' + TOOL_TOTAL + ' tools"],
+  // The audit rows and meta blocks still asserted the invented figures as the
+  // product's own public claim — Aurora describing a "launch catalogue" of 221,
+  // Structured declaring them in its catalogue meta, both quoting "200+ free
+  // file tools" as the marketing copy. All of it is derivable.
+  [/221 working tools · 107 PDF · 114 non-PDF/g,
+   "' + TOOL_TOTAL + ' tools · ' + PDF_COUNT + ' PDF · ' + NON_PDF_COUNT + ' non-PDF"],
+  [/221 working tools — 107 PDF and 114 non-PDF/g,
+   "' + TOOL_TOTAL + ' tools — ' + PDF_COUNT + ' PDF and ' + NON_PDF_COUNT + ' non-PDF"],
+  [/declaredTotal: 221, declaredPdf: 107, declaredNonPdf: 114/g,
+   "declaredTotal: TOOL_TOTAL, declaredPdf: PDF_COUNT, declaredNonPdf: NON_PDF_COUNT"],
+  [/200\+ free file tools/g, "' + TOOL_TOTAL + ' free file tools"],
 ];
 
 /**
@@ -350,6 +361,10 @@ const LABEL_BINDINGS = [
   // panel. DOMAIN_FIXES only sees the logic, so it is repeated here rather
   // than left as the one survivor of twelve.
   [/privatools\.io/g, "privatools.me"],
+  // "200+ free file tools" — the same understatement with two extra words in
+  // it, which is exactly why the first pattern walked past it. Matching the
+  // shape rather than one phrasing this time.
+  [/\b200\+ free file tools\b/g, "{v.toolTotalFreeLabel}"],
 ];
 
 function bindLabels(jsx) {

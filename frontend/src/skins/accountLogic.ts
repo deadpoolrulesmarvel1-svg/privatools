@@ -13,7 +13,7 @@
  */
 
 import { isClerkEnabled } from "@/lib/clerk/instance";
-import { clerkAccountApi } from "@/lib/clerk/accountApi";
+import { clerkAccountApi, SOCIAL_PROVIDERS, type SocialProvider } from "@/lib/clerk/accountApi";
 
 export interface ApiKey {
     key_id: string;
@@ -62,23 +62,33 @@ export interface Strength {
  */
 export const ACCOUNT_COPY = isClerkEnabled()
     ? {
+        storageHeading: "Clerk holds the sign-in.",
         storage:
-            "Sign-in is handled by Clerk, our authentication provider. They hold your "
-            + "email address and password; we never see the password. Deleting your "
-            + "account removes it there and every API key here, immediately.",
+            "They keep your email and password; we never see the password. "
+            + "Deleting your account removes both, and every key here, immediately.",
         recovery:
             "Forgotten your password? Clerk emails you a reset link. Your files are "
             + "never involved — an account only ever issues API keys.",
     }
     : {
+        storageHeading: "We store an email and a hash.",
         storage:
-            "We store your email address and a scrypt hash of your password — never the "
-            + "password itself. Deleting your account removes both immediately, along "
-            + "with every key.",
+            "A scrypt hash of your password, never the password itself. "
+            + "Deleting your account removes both, and every key, immediately.",
         recovery:
             "We send no email — not even a reset link. Instead you get a recovery code "
             + "at signup. It is the only way back in, so keep it somewhere safe.",
     };
+
+/**
+ * Social providers to offer, or empty when this deployment has no Clerk.
+ *
+ * Empty is the meaningful case: local auth has no way to authenticate against
+ * Google, so the buttons must not be rendered at all rather than rendered and
+ * throwing.
+ */
+export const SOCIAL_SIGN_IN = isClerkEnabled() ? SOCIAL_PROVIDERS : [];
+export type { SocialProvider };
 
 export const MIN_PASSWORD_LENGTH = isClerkEnabled() ? 15 : 10;
 
@@ -255,6 +265,7 @@ export type AccountApi = Omit<typeof localAccountApi, "register"> & {
         | { status: "needs_email_code"; user: null; recovery_code: string }
     >;
     verifyEmailCode(code: string): Promise<{ user: AccountUser }>;
+    signInWithSocial(provider: SocialProvider): Promise<void>;
     startPasswordReset(email: string): Promise<{ ok: true }>;
     finishPasswordReset(code: string, newPassword: string): Promise<{ ok: true }>;
 };
@@ -268,6 +279,7 @@ const localOnlyStubs = {
     verifyEmailCode: () => notWithLocalAuth("Email verification"),
     startPasswordReset: () => notWithLocalAuth("Password reset by email"),
     finishPasswordReset: () => notWithLocalAuth("Password reset by email"),
+    signInWithSocial: () => notWithLocalAuth("Signing in with Google, GitHub or Apple"),
 };
 
 export const accountApi = new Proxy({} as AccountApi, {

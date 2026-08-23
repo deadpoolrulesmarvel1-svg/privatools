@@ -20,7 +20,7 @@ import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("structured", String(name)) });
 
-import { STRUCTURED_CATEGORIES, TOOL_TOTAL } from "@/skins/counts";
+import { STRUCTURED_CATEGORIES, TOOL_TOTAL, PDF_COUNT, NON_PDF_COUNT } from "@/skins/counts";
 
 const FAMS = {
   'PDF': ['picture_as_pdf', 'var(--coral)', 'var(--coralSoft)'],
@@ -164,7 +164,7 @@ class Component extends React.Component {
     var ext = (typeof window !== 'undefined' && window.PRIVATOOLS_CATALOGUE) || null;
     if (ext && ext.records && ext.records.length) return ext;
     return {
-      meta: { declaredTotal: 221, declaredPdf: 107, declaredNonPdf: 114, publicCopy: '200+ free file tools', dataset: 'representative', note: 'Built-in fallback records.' },
+      meta: { declaredTotal: TOOL_TOTAL, declaredPdf: PDF_COUNT, declaredNonPdf: NON_PDF_COUNT, publicCopy: '' + TOOL_TOTAL + ' free file tools', dataset: 'representative', note: 'Built-in fallback records.' },
       records: RAW.map(function (r) {
         return { slug: r[0], name: r[1], purpose: r[2], family: r[3], subfamily: r[4], task: r[5], mode: r[6], input: r[7], output: r[8], popular: !!r[9] };
       })
@@ -250,7 +250,7 @@ class Component extends React.Component {
   titleFor(route, param) {
     var base = ' — PrivaTools';
     var map = {
-      home: 'Work with files. Keep them private.', tools: 'All Tools — 200+ free file tools', pipeline: 'Pipeline',
+      home: 'Work with files. Keep them private.', tools: 'All Tools — ' + TOOL_TOTAL + ' free file tools', pipeline: 'Pipeline',
       batch: 'Batch', mystuff: 'My Stuff', vault: 'Vault', compare: 'Compare file tools', blog: 'Blog',
       about: 'About', privacy: 'Privacy Policy', security: 'Security Policy', terms: 'Terms of Service',
       'acceptable-use': 'Acceptable Use Policy', processors: 'Processors', accessibility: 'Accessibility',
@@ -265,7 +265,7 @@ class Component extends React.Component {
   describeFor(route) {
     var d = {
       home: 'Free, local-first file tools. ' + TOOL_TOTAL + ' tools, 500 MB per file, no account, no analytics, no document retention.',
-      tools: 'Browse 200+ free file tools by family, task, input, output and processing mode.',
+      tools: 'Browse ' + TOOL_TOTAL + ' free file tools by family, task, input, output and processing mode.',
       compare: 'Compare file tools on the priorities that matter to you. No universal winner.',
       status: 'Live status for the website, local tools and best-effort server processing in Mumbai, India.'
     };
@@ -1895,7 +1895,7 @@ Component.prototype.render = function render() {
       <div style={css("flex:1 1 260px;min-width:0")}>
       <h1 style={css("font-size:clamp(30px,5.6vw,44px);line-height:1.05;font-weight:600;letter-spacing:-.03em")}>PrivaTools</h1>
       <p style={css("margin-top:8px;font-size:clamp(16px,2.6vw,19px);color:var(--ink2)")}>Work with files. Keep them <span style={css("color:var(--em);font-weight:500")}>private.</span></p>
-      <p style={css("margin-top:10px;font-size:13px;color:var(--ink3);max-width:52ch;text-wrap:pretty")}>200+ free file tools. Local-first in your browser, with disclosed server fallback. No account, no monetisation, no analytics.</p>
+      <p style={css("margin-top:10px;font-size:13px;color:var(--ink3);max-width:52ch;text-wrap:pretty")}>{v.toolTotalFreeLabel}. Local-first in your browser, with disclosed server fallback. No account, no monetisation, no analytics.</p>
       </div>
       <div id="cubeMark" style={css("width:clamp(92px,18vw,150px);height:clamp(74px,14vw,120px);flex:0 0 auto;transition:transform 220ms ease")}>
       <svg viewBox="0 0 160 130" aria-hidden="true" style={css("width:100%;height:100%")}>
@@ -2140,7 +2140,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px")}>
       <div style={css("flex:1;min-width:200px")}>
       <h1 style={css("font-size:clamp(21px,3.6vw,26px);font-weight:600;letter-spacing:-.02em")}>All Tools</h1>
-      <p style={css("margin-top:3px;font-size:12.5px;color:var(--ink3)")}>200+ free file tools · {v.toolCount} shown</p>
+      <p style={css("margin-top:3px;font-size:12.5px;color:var(--ink3)")}>{v.toolTotalFreeLabel} · {v.toolCount} shown</p>
       </div>
       <div style={css("display:flex;align-items:center;gap:8px")}>
       <div style={css("display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);min-width:220px")}>
@@ -4666,7 +4666,7 @@ Component.prototype.render = function render() {
       <svg viewBox="0 0 40 40" aria-hidden="true" style={css("width:20px;height:20px")}><g fill="none" stroke="var(--em)" strokeWidth="1.8" strokeLinejoin="round"><path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z"></path><path d="M6 13 L20 21 L34 13"></path><path d="M20 21 L20 35"></path></g></svg>
                     PrivaTools
                   </span>
-      <p style={css("margin-top:6px;font-size:11.5px;color:var(--ink3);max-width:34ch;line-height:1.5")}>Free forever, owner-funded, built by an individual in India. 200+ free file tools, local-first, 500 MB per file.</p>
+      <p style={css("margin-top:6px;font-size:11.5px;color:var(--ink3);max-width:34ch;line-height:1.5")}>Free forever, owner-funded, built by an individual in India. {v.toolTotalFreeLabel}, local-first, 500 MB per file.</p>
       </div>
       <nav aria-label="Footer" style={css("flex:2 1 320px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center")}>
 

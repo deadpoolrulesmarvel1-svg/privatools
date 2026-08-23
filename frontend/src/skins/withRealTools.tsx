@@ -49,6 +49,7 @@ export function withRealTools(Base, config) {
                 nonPdfToolCount: NON_PDF_COUNT,
                 searchToolsLabel: `Search ${TOOL_TOTAL} tools`,
                 seeAllToolsLabel: `See all ${TOOL_TOTAL} tools`,
+                toolTotalFreeLabel: `${TOOL_TOTAL} free file tools`,
             };
 
             const slug = config.slugOf(this.state, v);

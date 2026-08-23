@@ -20,6 +20,8 @@ import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("aurora", String(name)) });
 
+import { TOOL_TOTAL, PDF_COUNT, NON_PDF_COUNT } from "@/skins/counts";
+
 class Component extends React.Component {
   state = {
     theme: 'dark', themePref: 'dark',
@@ -513,7 +515,7 @@ class Component extends React.Component {
           onClick: () => this.go('tool', t.slug)
         };
       }),
-      countsLine: 'Owner-declared launch catalogue: 221 working tools · 107 PDF · 114 non-PDF, not verified by this prototype. Marketing copy says “200+ free file tools”. This prototype has ' + this.registryStats().loaded + ' records loaded.',
+      countsLine: 'Owner-declared launch catalogue: ' + TOOL_TOTAL + ' tools · ' + PDF_COUNT + ' PDF · ' + NON_PDF_COUNT + ' non-PDF, not verified by this prototype. Marketing copy says “' + TOOL_TOTAL + ' free file tools”. This prototype has ' + this.registryStats().loaded + ' records loaded.',
       pdfSub: this.counts.pdfSub.map(([label, n]) => ({ label, n }))
     };
   }
@@ -1405,7 +1407,7 @@ class Component extends React.Component {
       blocks: [
         ['p','Every comparison claim carries a source and a date. Once a month we recheck them and publish what changed.'],
         ['h','This month'],
-        ['p','Catalogue counts declared at 221 working tools — 107 PDF and 114 non-PDF, pending registry verification. Competitor rows stay empty until verified sources are attached.']
+        ['p','Catalogue counts declared at ' + TOOL_TOTAL + ' tools — ' + PDF_COUNT + ' PDF and ' + NON_PDF_COUNT + ' non-PDF, pending registry verification. Competitor rows stay empty until verified sources are attached.']
       ] },
     { slug: 'redaction-done-right', cat: 'How-to', title: 'Redaction that actually removes text', date: '18 Jul 2026', read: '6 min read',
       excerpt: 'Drawing a black box is not redaction. Here is what to do instead.',
@@ -1839,7 +1841,7 @@ class Component extends React.Component {
         ['Content rules','fact_check','Checked','var(--em)','check',[
           'No Lorem Ipsum, invented ratings, vote counts or testimonials anywhere.',
           'Filenames appear only in active processing and the live batch queue — never in persistent activity or My Stuff.',
-          '“200+ free file tools” in marketing copy; the owner-declared 221 / 107 / 114 counts appear only where internal counts are shown, labelled as declared rather than verified.']]
+          '“' + TOOL_TOTAL + ' free file tools” in marketing copy; the owner-declared 221 / 107 / 114 counts appear only where internal counts are shown, labelled as declared rather than verified.']]
       ].map(([name, icon, verdict, color, bullet, notes]) => ({ name, icon, verdict, color, bullet, notes })),
       limitations: [
         'Catalogue: ' + this.registryStats().loaded + ' records are loaded from the PrivaTools registry. The registry interface accepts the real 221-record set; nothing is invented to fill the gap.',
