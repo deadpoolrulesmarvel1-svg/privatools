@@ -205,12 +205,17 @@ _WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 # use BYOK has no business being able to reach an AI provider, and scoping means
 # a bug on an unrelated page cannot exfiltrate to one. A global allowlist would
 # hand every one of the 200+ tool pages an egress route it never needs.
-# Only Summarize PDF ships a key entry point (ByokPanel). Smart Redact rides
-# _WASM_EVAL_PATHS above for its in-browser BERT-NER and never calls a
-# provider — its own page copy promises "all detection happens in your
-# browser", so handing it egress to eight AI vendors contradicts the claim.
-# test_byok_csp derives this set from the frontend so it cannot drift open.
-_BYOK_PATHS = {"/tool/summarize-pdf"}
+# Both pages ship a key entry point. Smart Redact regained one when BYOK was
+# wired into it: it still runs BERT-NER in the tab by default — that is the
+# no-key path and what _WASM_EVAL_PATHS above is for — but with a key it sends
+# document text to the chosen provider, so it needs the egress.
+#
+# This entry was removed earlier the same day, correctly, because at that point
+# Smart Redact imported nothing from lib/byok and the CSP was handing it eight
+# AI vendors it never called. test_byok_csp derives this set by walking
+# ToolPage's lazy imports, so it demanded the entry back the moment the feature
+# landed rather than leaving the calls to fail as a mystery network fault.
+_BYOK_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
 # which would give away the guarantee this product is built on, so adding a
