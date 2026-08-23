@@ -121,7 +121,7 @@ export function BackendStatusBanner() {
         <span className="inline-flex items-center justify-center h-6 w-6 rounded shrink-0">
           <WifiOff size={12} className="text-copper" />
         </span>
-        <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-copper font-medium shrink-0">
+        <span className="text-[11.5px] text-copper font-medium shrink-0">
           You're offline
         </span>
         <span className="opacity-50 hidden sm:inline">—</span>
@@ -133,7 +133,7 @@ export function BackendStatusBanner() {
             <Link
               key={t.slug}
               to={`/tools/${t.slug}`}
-              className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-accent hover:underline"
+              className="font-medium text-[11.5px] text-accent hover:underline"
             >
               {t.label}
             </Link>
@@ -161,7 +161,7 @@ export function BackendStatusBanner() {
         <span className="inline-flex items-center justify-center h-6 w-6 rounded shrink-0">
           <AlertTriangle size={12} className="text-copper" />
         </span>
-        <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-copper font-medium shrink-0">
+        <span className="text-[11.5px] text-copper font-medium shrink-0">
           Backend offline
         </span>
         <span className="opacity-50 hidden sm:inline">—</span>
@@ -171,7 +171,7 @@ export function BackendStatusBanner() {
         <button
           onClick={checkHealth}
           disabled={checking}
-          className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-foreground hover:text-accent transition-colors disabled:opacity-50"
+          className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-foreground hover:text-accent transition-colors disabled:opacity-50"
           aria-label={checking ? "Checking backend status" : "Retry backend connection"}
         >
           <RefreshCcw size={10} className={checking ? "animate-spin" : ""} />
@@ -199,7 +199,7 @@ export function BackendStatusBanner() {
         <span className="inline-flex items-center justify-center h-6 w-6 rounded shrink-0">
           <Zap size={12} className="text-copper" />
         </span>
-        <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-copper font-medium shrink-0">
+        <span className="text-[11.5px] text-copper font-medium shrink-0">
           Server slow
         </span>
         <span className="opacity-50 hidden sm:inline">—</span>

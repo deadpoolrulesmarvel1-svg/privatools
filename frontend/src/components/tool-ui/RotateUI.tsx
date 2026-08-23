@@ -88,7 +88,7 @@ export function RotateUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -128,7 +128,7 @@ export function RotateUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -140,7 +140,7 @@ export function RotateUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs to rotate"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Multi-file OK · same angle applied to all · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -158,8 +158,8 @@ export function RotateUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Rotation angle
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Rotation angle
                         </div>
                         <div className="p-3 grid grid-cols-3 gap-2">
                             {angles.map((a, idx) => {
@@ -181,7 +181,7 @@ export function RotateUI() {
                                         </div>
                                         <div className="text-center">
                                             <div className="flex items-center justify-center gap-1">
-                                                <span className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                                <span className="font-medium text-[9.5px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
                                                 <p className="font-display text-[13px] font-semibold text-foreground tracking-[-0.015em]">{a.label}</p>
                                             </div>
                                             <p className="text-[10.5px] text-muted-foreground mt-0.5">{a.desc}</p>
@@ -193,8 +193,8 @@ export function RotateUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Apply to
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Apply to
                         </div>
                         <div className="p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-2">
@@ -227,17 +227,17 @@ export function RotateUI() {
                                         spellCheck={false}
                                         aria-invalid={!isValidPageRange(pages)}
                                         className={cn(
-                                            "w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                                            "w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                                             isValidPageRange(pages)
                                                 ? "border-border focus:border-accent focus:ring-accent/20"
                                                 : "border-destructive/60 focus:border-destructive focus:ring-destructive/20",
                                         )}
                                     />
                                     {rangeErr ? (
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive">{rangeErr}</p>
+                                        <p className="font-medium text-[11px] text-destructive">{rangeErr}</p>
                                     ) : (
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                            <span className="text-accent">§</span> Comma-separated · ranges with hyphen
+                                        <p className="font-medium text-[11px] text-muted-foreground">
+                                            Comma-separated · ranges with hyphen
                                             {proc.entries.length > 1 && <> · same range across all PDFs</>}
                                         </p>
                                     )}
@@ -252,9 +252,9 @@ export function RotateUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Rotating… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><RotateCw size={13} /> Rotate {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"} {angle}°</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {!rangeOk && (
-                            <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Fix the page range
                             </span>
                         )}

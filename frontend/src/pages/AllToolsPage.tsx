@@ -38,7 +38,7 @@ export default function AllToolsPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <nav className="mb-4 text-sm text-muted-foreground" aria-label="Breadcrumb">
-        <Link to="/" className="hover:text-foreground">PrivaTools</Link>
+        <Link to="/" className="inline-flex items-center min-h-[24px] hover:text-foreground">PrivaTools</Link>
         <span className="mx-1.5" aria-hidden="true">›</span>
         <span className="text-foreground">All Tools</span>
       </nav>

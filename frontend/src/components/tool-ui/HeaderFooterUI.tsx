@@ -88,7 +88,7 @@ export function HeaderFooterUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ export function HeaderFooterUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -143,7 +143,7 @@ export function HeaderFooterUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs for header & footer"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Multi-file OK · same bands applied to all · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -161,30 +161,30 @@ export function HeaderFooterUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Text bands
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Text bands
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-5 p-5 items-center">
                             <div className="space-y-3">
                                 <div>
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Header</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">Header</label>
                                     <input
                                         value={headerText} onChange={e => setHeaderText(e.target.value)}
                                         placeholder="e.g. Company Report 2026"
-                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                 </div>
                                 <div>
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Footer</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">Footer</label>
                                     <input
                                         value={footerText} onChange={e => setFooterText(e.target.value)}
                                         placeholder="e.g. Confidential — page {n}"
-                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                        className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Font size</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">Font size</label>
                                         <span className="font-mono text-[11px] text-accent">{fontSize} pt</span>
                                     </div>
                                     <input
@@ -197,13 +197,13 @@ export function HeaderFooterUI() {
                             </div>
                             <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[180px] overflow-hidden">
                                 <div className="absolute inset-x-2 top-2 text-center truncate text-foreground/85" style={{ fontSize: `${Math.max(6, fontSize / 1.6)}px` }}>
-                                    {headerText || <span className="text-muted-foreground/40">—</span>}
+                                    {headerText || <span className="text-muted-foreground">—</span>}
                                 </div>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="font-mono text-[8.5px] tracking-wider text-muted-foreground/40">page</span>
+                                    <span className="font-mono text-[8.5px] tracking-wider text-muted-foreground">page</span>
                                 </div>
                                 <div className="absolute inset-x-2 bottom-2 text-center truncate text-foreground/85" style={{ fontSize: `${Math.max(6, fontSize / 1.6)}px` }}>
-                                    {footerText || <span className="text-muted-foreground/40">—</span>}
+                                    {footerText || <span className="text-muted-foreground">—</span>}
                                 </div>
                             </div>
                         </div>
@@ -215,16 +215,16 @@ export function HeaderFooterUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Applying… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Heading size={13} /> Apply to {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {!hasText && proc.entries.length > 0 && (
-                            <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Enter at least one band
                             </span>
                         )}
                         <button
                             type="button"
                             onClick={resetConfig}
-                            className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                             title="Restore default settings"
                         >
                             <Undo2 size={10} /> Reset to defaults

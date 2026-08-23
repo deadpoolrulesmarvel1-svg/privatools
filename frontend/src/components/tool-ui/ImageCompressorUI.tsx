@@ -116,7 +116,7 @@ export function ImageCompressorUI() {
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); }}
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-10 sm:py-12 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-10 sm:py-12 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
@@ -129,14 +129,14 @@ export function ImageCompressorUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop images here</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPEG · PNG · WebP — multi-file OK</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPEG · PNG · WebP — multi-file OK</p>
             </label>
 
             {/* Image grid */}
             {files.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> {files.length} image{files.length !== 1 ? "s" : ""}</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>{files.length} image{files.length !== 1 ? "s" : ""}</span>
                         <span>{(totalSize / 1024).toFixed(0)} KB total</span>
                     </div>
                     <div className="p-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
@@ -170,12 +170,12 @@ export function ImageCompressorUI() {
 
             {/* Quality */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Quality
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Quality
                 </div>
                 <div className="p-5">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">JPEG quality</span>
+                        <span className="font-medium text-[11.5px] text-muted-foreground">JPEG quality</span>
                         <span className="font-mono text-[16px] text-accent tabular-nums font-medium">{quality}%</span>
                     </div>
                     <input
@@ -184,7 +184,7 @@ export function ImageCompressorUI() {
                         className="w-full accent-[hsl(var(--accent))]"
                         aria-label="JPEG quality"
                     />
-                    <div className="mt-1 flex justify-between font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground/85">
+                    <div className="font-medium mt-1 flex justify-between text-[9.5px] text-muted-foreground">
                         <span>← smaller</span><span>balanced</span><span>sharper →</span>
                     </div>
 
@@ -192,15 +192,15 @@ export function ImageCompressorUI() {
                     {totalSize > 0 && (
                         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                             <div className="rounded-lg border border-border bg-paper-2/40 p-3">
-                                <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Before</p>
+                                <p className="font-medium text-[9.5px] text-muted-foreground">Before</p>
                                 <p className="font-mono text-[15px] text-foreground tabular-nums mt-1">{(totalSize / 1024).toFixed(0)} KB</p>
                             </div>
                             <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-3">
-                                <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">After (est.)</p>
+                                <p className="font-medium text-[9.5px] text-accent">After (est.)</p>
                                 <p className="font-mono text-[15px] text-accent tabular-nums mt-1">{(estimatedOut / 1024).toFixed(0)} KB</p>
                             </div>
                             <div className="rounded-lg border border-border bg-paper-2/40 p-3">
-                                <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Saved</p>
+                                <p className="font-medium text-[9.5px] text-muted-foreground">Saved</p>
                                 <p className="font-mono text-[15px] text-foreground tabular-nums mt-1">−{savingsPct}%</p>
                             </div>
                         </div>
@@ -225,7 +225,7 @@ export function ImageCompressorUI() {
                         : <><Download size={13} /> Compress {files.length || ""} image{files.length !== 1 ? "s" : ""}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

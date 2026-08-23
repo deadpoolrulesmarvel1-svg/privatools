@@ -111,28 +111,28 @@ export function BatesRemoveUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> What the stamps look like <span className="text-muted-foreground/60">— optional</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    What the stamps look like <span className="text-muted-foreground">— optional</span>
                 </div>
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label htmlFor="rm-prefix" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Prefix</label>
+                        <label htmlFor="rm-prefix" className="font-medium text-[11px] text-muted-foreground">Prefix</label>
                         <input
                             id="rm-prefix" value={prefix} onChange={e => setPrefix(e.target.value)}
                             placeholder="DOC-" maxLength={32}
-                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
                     <div>
-                        <label htmlFor="rm-suffix" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Suffix</label>
+                        <label htmlFor="rm-suffix" className="font-medium text-[11px] text-muted-foreground">Suffix</label>
                         <input
                             id="rm-suffix" value={suffix} onChange={e => setSuffix(e.target.value)}
                             placeholder="-CONF" maxLength={32}
-                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
                     <div>
-                        <label htmlFor="rm-digits" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Digits</label>
+                        <label htmlFor="rm-digits" className="font-medium text-[11px] text-muted-foreground">Digits</label>
                         <input
                             id="rm-digits" type="number" inputMode="numeric" value={digits} min={1} max={10}
                             onChange={e => setDigits(Math.max(1, Math.min(10, parseInt(e.target.value) || 6)))}
@@ -153,7 +153,7 @@ export function BatesRemoveUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Removing…</>
                         : <><Eraser size={13} /> Remove Bates numbers</>}
                 </button>
-                {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

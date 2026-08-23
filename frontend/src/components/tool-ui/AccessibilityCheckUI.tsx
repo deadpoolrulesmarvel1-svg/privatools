@@ -208,10 +208,10 @@ export function AccessibilityCheckUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className={cn(
-                                        "font-mono text-[10.5px] tracking-[0.10em] uppercase mb-1.5",
+                                        "font-medium text-[11.5px] mb-1.5",
                                         scoreTone === "accent" ? "text-accent" : scoreTone === "copper" ? "text-copper" : "text-destructive",
                                     )}>
-                                        § Accessibility report
+                                        Accessibility report
                                     </p>
                                     <h3 className="font-display text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">
                                         {report.summary.verdict}
@@ -229,7 +229,7 @@ export function AccessibilityCheckUI() {
                                     )}>
                                         {report.summary.score}
                                     </div>
-                                    <div className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mt-1">
+                                    <div className="font-medium text-[11px] text-muted-foreground mt-1">
                                         / 100
                                     </div>
                                 </div>
@@ -267,7 +267,7 @@ export function AccessibilityCheckUI() {
                                     disabled={n === 0}
                                     aria-pressed={active}
                                     className={cn(
-                                        "inline-flex items-center gap-1.5 h-8 px-3 rounded-md border font-mono text-[11px] tracking-[0.04em] uppercase transition-colors",
+                                        "font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12px] transition-colors",
                                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
                                         active ? "border-accent/40 bg-accent/10 text-foreground"
                                             : "border-border bg-card text-muted-foreground hover:bg-secondary/60",
@@ -286,8 +286,8 @@ export function AccessibilityCheckUI() {
                     <div className="space-y-3">
                         {grouped.map(([category, checks]) => (
                             <div key={category} className="rounded-xl border border-border bg-card overflow-hidden">
-                                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                    <span><span className="text-accent">§</span> {category}</span>
+                                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                                    <span>{category}</span>
                                     <span className="tabular-nums">{checks.length}</span>
                                 </div>
                                 <div className="divide-y divide-border">
@@ -313,7 +313,7 @@ export function AccessibilityCheckUI() {
                                                     <span className="flex-1 min-w-0">
                                                         <span className="flex items-baseline gap-2 flex-wrap">
                                                             <span className="text-[13px] font-medium text-foreground">{c.title}</span>
-                                                            <span className={cn("font-mono text-[10px] tracking-[0.08em] uppercase", meta.tone)}>
+                                                            <span className={cn("font-medium text-[11px]", meta.tone)}>
                                                                 {meta.label}
                                                             </span>
                                                         </span>
@@ -325,7 +325,7 @@ export function AccessibilityCheckUI() {
                                                         <ChevronRight
                                                             size={12}
                                                             className={cn(
-                                                                "shrink-0 mt-1 transition-transform text-muted-foreground/60",
+                                                                "shrink-0 mt-1 transition-transform text-muted-foreground",
                                                                 isOpen && "rotate-90 text-accent",
                                                             )}
                                                         />
@@ -335,7 +335,7 @@ export function AccessibilityCheckUI() {
                                                     <div className="mt-2 ml-6 rounded-md border border-accent/20 bg-accent/[0.04] px-3 py-2 animate-fade-in">
                                                         {c.howToFix && (
                                                             <p className="text-[12px] text-foreground">
-                                                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent mr-1.5">§ how to fix</span>
+                                                                <span className="font-medium text-[11px] text-accent mr-1.5">how to fix</span>
                                                                 {c.howToFix}
                                                             </p>
                                                         )}
@@ -354,8 +354,8 @@ export function AccessibilityCheckUI() {
                         ))}
                     </div>
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/70">
-                        <span className="text-accent">§</span> Automated checks only — the manual items need a human to confirm.
+                    <p className="font-medium text-[11px] text-muted-foreground">
+                        Automated checks only — the manual items need a human to confirm.
                     </p>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -376,7 +376,7 @@ export function AccessibilityCheckUI() {
                             ? <><Loader2 size={13} className="animate-spin" /> Checking…</>
                             : <><Accessibility size={13} /> Check accessibility</>}
                     </button>
-                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

@@ -83,7 +83,7 @@ export function AlternateMixUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">Pages interleaved</span>
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">{outputName}</p>
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">{outputName}</p>
                         <div className="mt-5 flex flex-wrap gap-2">
                             <button onClick={() => resultBlob && downloadBlob(resultBlob, outputName)} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
                                 <Download size={13} /> Download again
@@ -106,8 +106,8 @@ export function AlternateMixUI() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Mix mode
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Mix mode
                 </div>
                 <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {MODES.map((m, idx) => {
@@ -129,7 +129,7 @@ export function AlternateMixUI() {
                                 </div>
                                 <div>
                                     <div className="flex items-baseline gap-1.5">
-                                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                        <span className="font-medium text-[11px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
                                         <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{m.label}</p>
                                     </div>
                                     <p className="font-mono text-[10.5px] tracking-wider text-muted-foreground mt-0.5">{m.desc}</p>
@@ -150,7 +150,7 @@ export function AlternateMixUI() {
                 <button onClick={process} disabled={!file1 || !file2 || state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Mixing…</> : <><Shuffle size={13} /> Mix PDFs</>}
                 </button>
-                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );
@@ -167,8 +167,8 @@ function FileSlot({
     const [drag, setDrag] = useState(false);
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-3 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span className="text-accent">§</span> File {label}
+            <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                File {label}
             </div>
             {!file ? (
                 <div
@@ -181,7 +181,7 @@ function FileSlot({
                     }}
                     onClick={() => inputRef.current?.click()}
                     className={cn(
-                        "flex flex-col items-center gap-2 m-3 rounded-lg border-2 border-dashed cursor-pointer py-6 px-4 transition-colors",
+                        "dropzone-surface flex flex-col items-center gap-2 m-3 rounded-lg border-2 border-dashed cursor-pointer py-6 px-4 transition-colors",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >

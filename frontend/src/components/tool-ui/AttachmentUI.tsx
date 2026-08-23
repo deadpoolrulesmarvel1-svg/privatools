@@ -87,9 +87,9 @@ export function AttachmentUI() {
         ref: React.RefObject<HTMLInputElement>; drag: boolean; setDrag: (b: boolean) => void; accept: string; idx: 1 | 2;
     }) => (
         <div>
-            <div className="flex items-center justify-between mb-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                <span><span className="text-accent">§{String(idx).padStart(2, "0")}</span> {label}</span>
-                <span className="text-muted-foreground/60">{hint}</span>
+            <div className="font-medium flex items-center justify-between mb-1.5 text-[11.5px] text-muted-foreground">
+                <span><span className="text-accent">{String(idx).padStart(2, "0")}</span> {label}</span>
+                <span className="text-muted-foreground">{hint}</span>
             </div>
             {!file ? (
                 <div
@@ -100,7 +100,7 @@ export function AttachmentUI() {
                     role="button" tabIndex={0}
                     onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -117,7 +117,7 @@ export function AttachmentUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button onClick={() => setFile(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                         <X size={13} />
@@ -137,17 +137,17 @@ export function AttachmentUI() {
             {/* Pre-embed preview — shown once both files are picked */}
             {pdfFile && attachFile && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Attachment manifest</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Attachment manifest</span>
                         <span>{formatFileSize(pdfFile.size + attachFile.size)} total</span>
                     </div>
                     <div className="p-3 space-y-1.5">
                         <div className="flex items-center gap-2 text-[12.5px] text-foreground">
                             <Paperclip size={11} className="text-accent shrink-0" />
-                            <span className="font-mono text-[11px] text-muted-foreground/85 truncate flex-1">{attachFile.name}</span>
+                            <span className="font-mono text-[11px] text-muted-foreground truncate flex-1">{attachFile.name}</span>
                             <span className="font-mono text-[10.5px] text-muted-foreground shrink-0">{formatFileSize(attachFile.size)}</span>
                         </div>
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/75 pl-5">
+                        <p className="font-medium text-[11px] text-muted-foreground pl-5">
                             Will embed inside <span className="text-accent">{pdfFile.name}</span> as a downloadable annex
                         </p>
                     </div>
@@ -164,7 +164,7 @@ export function AttachmentUI() {
                 <button onClick={process} disabled={!pdfFile || !attachFile || status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Embedding…</> : <><Paperclip size={13} /> Embed attachment</>}
                 </button>
-                {pdfFile && attachFile && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {pdfFile && attachFile && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

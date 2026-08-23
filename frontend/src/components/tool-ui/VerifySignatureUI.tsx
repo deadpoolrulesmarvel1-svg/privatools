@@ -100,15 +100,15 @@ export function VerifySignatureUI() {
                                             <Icon size={22} className={t.iconColor} strokeWidth={1.75} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={cn("font-mono text-[10.5px] tracking-[0.10em] uppercase mb-1.5", t.label)}>
-                                                § Verification result
+                                            <p className={cn("font-medium text-[11.5px] mb-1.5", t.label)}>
+                                                Verification result
                                             </p>
                                             <h3 className="font-display text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">
                                                 {meta.title}
                                             </h3>
                                             <p className="text-[13px] text-muted-foreground mt-1">{meta.sub}</p>
-                                            <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                                                <span className={t.label}>§</span> {result.signatures?.length || 0} signature field{(result.signatures?.length || 0) !== 1 && "s"} inspected
+                                            <p className="font-medium text-[11.5px] text-muted-foreground mt-2">
+                                                <span className={t.label}></span> {result.signatures?.length || 0} signature field{(result.signatures?.length || 0) !== 1 && "s"} inspected
                                             </p>
                                         </div>
                                     </div>
@@ -120,13 +120,13 @@ export function VerifySignatureUI() {
                     {/* Signer rows */}
                     {result.signatures?.length > 0 && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Signers
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Signers
                             </div>
                             <div className="divide-y divide-border">
                                 {result.signatures.map((s, i) => (
                                     <div key={i} className="px-4 py-3 flex items-center gap-3">
-                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         <div className={cn(
                                             "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
                                             s.valid ? "bg-accent/12 border border-accent/30" : "bg-copper/15 border border-copper/35"
@@ -138,7 +138,7 @@ export function VerifySignatureUI() {
                                             <p className="font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground mt-0.5">{s.date || "Date unknown"}</p>
                                         </div>
                                         <span className={cn(
-                                            "font-mono text-[9.5px] tracking-[0.10em] uppercase px-2 py-0.5 rounded",
+                                            "font-medium text-[9.5px] px-2 py-0.5 rounded",
                                             s.valid ? "bg-accent/15 text-accent" : "bg-copper/15 text-copper"
                                         )}>
                                             {s.valid ? "Valid" : "Invalid"}
@@ -149,8 +149,8 @@ export function VerifySignatureUI() {
                         </div>
                     )}
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/70">
-                        <span className="text-accent">§</span> Field-level inspection. Full PKI trust-chain validation not yet — verify high-stakes signatures through your viewer of record.
+                    <p className="font-medium text-[11px] text-muted-foreground">
+                        Field-level inspection. Full PKI trust-chain validation not yet — verify high-stakes signatures through your viewer of record.
                     </p>
 
                     <button
@@ -174,7 +174,7 @@ export function VerifySignatureUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Inspecting…</> : <><Search size={13} /> Verify signatures</>}
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}

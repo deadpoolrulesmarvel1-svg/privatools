@@ -91,9 +91,9 @@ export function CompareUI() {
         const [drag, setDrag] = useState(false);
         return (
             <div>
-                <div className="flex items-center justify-between mb-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§{String(idx).padStart(2, "0")}</span> {label}</span>
-                    <span className="text-muted-foreground/60">{hint}</span>
+                <div className="font-medium flex items-center justify-between mb-1.5 text-[11.5px] text-muted-foreground">
+                    <span><span className="text-accent">{String(idx).padStart(2, "0")}</span> {label}</span>
+                    <span className="text-muted-foreground">{hint}</span>
                 </div>
                 {!file ? (
                     <div
@@ -104,7 +104,7 @@ export function CompareUI() {
                         onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                         role="button" tabIndex={0} aria-label={`Upload ${label}`}
                         className={cn(
-                            "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
+                            "dropzone-surface relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors py-8 text-center group",
                             drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                         )}
                     >
@@ -121,7 +121,7 @@ export function CompareUI() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-medium text-foreground truncate">{file.name}</p>
-                            <p className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
+                            <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
                         <button onClick={() => set(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                             <X size={13} />
@@ -168,13 +168,13 @@ export function CompareUI() {
 
             {mode === "text" && textResult && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Text diff</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Text diff</span>
                         <span>p.{textResult.page_count_1} vs p.{textResult.page_count_2}</span>
                     </div>
                     <div className="p-3 max-h-[420px] overflow-auto">
                         {textResult.diff.length === 0 ? (
-                            <p className="font-mono text-[11px] tracking-wider text-muted-foreground/70 text-center py-6">No textual differences found</p>
+                            <p className="text-[11px] tracking-wider text-muted-foreground text-center py-6">No textual differences found</p>
                         ) : (
                             <pre className="font-mono text-[12px] leading-relaxed text-foreground whitespace-pre-wrap">
                                 {textResult.diff.slice(0, 200).map((l, i) => {
@@ -192,8 +192,8 @@ export function CompareUI() {
                                     );
                                 })}
                                 {textResult.diff.length > 200 && (
-                                    <div className="px-2 mt-2 pt-2 border-t border-border/60 text-muted-foreground/85 font-mono text-[10.5px] tracking-[0.04em] uppercase">
-                                        § showing first 200 of {textResult.diff.length} diff lines
+                                    <div className="font-medium px-2 mt-2 pt-2 border-t border-border/60 text-muted-foreground text-[11.5px]">
+                                        showing first 200 of {textResult.diff.length} diff lines
                                     </div>
                                 )}
                             </pre>
@@ -213,8 +213,8 @@ export function CompareUI() {
 
             {(file1 || file2) && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Comparison mode
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Comparison mode
                     </div>
                     <div className="p-3 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
@@ -230,14 +230,14 @@ export function CompareUI() {
                                         )}
                                     >
                                         <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{m.label}</p>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{m.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-1">{m.desc}</p>
                                     </button>
                                 );
                             })}
                         </div>
                         {mode === "visual" && (
                             <div className="flex items-center gap-3 animate-fade-in">
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Highlight</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Highlight</label>
                                 <input
                                     type="color" value={highlight}
                                     onChange={e => setHighlight(e.target.value)}
@@ -260,7 +260,7 @@ export function CompareUI() {
                 <button onClick={process} disabled={state === "processing" || !file1 || !file2} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Comparing…</> : <><GitCompare size={13} /> Compare PDFs</>}
                 </button>
-                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {file1 && file2 && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

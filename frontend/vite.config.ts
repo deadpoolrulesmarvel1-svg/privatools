@@ -167,7 +167,9 @@ export default defineConfig({
     hmr: { overlay: false },
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        // Override when the backend runs somewhere else, e.g.
+        //   VITE_DEV_API_TARGET=http://localhost:8001 npm run dev
+        target: process.env.VITE_DEV_API_TARGET || "http://localhost:8000",
         changeOrigin: true,
       },
     },

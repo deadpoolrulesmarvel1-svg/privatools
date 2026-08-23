@@ -5,7 +5,7 @@
 **Every file task, done privately.**
 
 214 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
-Zero uploads to third parties. No accounts. No watermarks. No premium tier.
+Zero uploads to third parties. No account needed. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
@@ -187,6 +187,34 @@ The public pipeline API starts with the safe automation subset
 - Run a PDF pipeline: `POST /api/pipeline` with `file` and JSON `steps`
 - Optional auth: set `PRIVATOOLS_API_KEYS` and send `X-API-Key`
 
+### Accounts and `/api/v1`
+
+An account exists only to hold API keys — the tools themselves never ask for
+one. Sign up at `/account`, create a key, and call the versioned API:
+
+```
+curl -X POST https://privatools.me/api/v1/compress \
+  -H "X-API-Key: pk_…" \
+  -F files=@in.pdf -F level=recommended -o out.pdf
+```
+
+`Authorization: Bearer pk_…` works too, for clients that default to it.
+
+- `GET /api/v1/whoami` — confirm a key works
+- `GET /api/v1/usage` — what today's quota looks like without spending any
+- Free tier: 500 cost units and 250 MB per key per day, reset daily.
+  Every reply carries `X-RateLimit-Limit`, `-Remaining` and `-Reset`, so a
+  client never has to call `/usage` to find out it is nearly out.
+- Over quota is a `429` with `Retry-After`.
+- Errors carry a machine-readable `code` beside the human `message`, so a
+  client can branch without matching on prose.
+
+Unlike the unversioned `/api/*` routes above, v1 always requires a key: it
+meters real compute, and an open metered endpoint is a free compute farm.
+
+Recovery matters here because there is no password-reset email — signup hands
+you a one-time recovery code, and that code is the only way back in.
+
 Developer clients live under `packages/`:
 
 - CLI: `npx --no-install privatools --help`
@@ -331,7 +359,7 @@ Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO en
 
 - ✅ Files processed in an **isolated Docker container**, unlinked from disk immediately after the response
 - ✅ Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) **run entirely in your browser** — no upload at all
-- ✅ **No accounts, no sign-ups, no email, no payment**
+- ✅ **No account, sign-up, email or payment needed to use any tool**
 - ✅ **No watermarks, no daily quota, no premium tier**
 - ✅ **500 MB upload limit per file**, unlimited files per day
 - ✅ AI runs via WebAssembly **in your browser** — no third-party AI APIs

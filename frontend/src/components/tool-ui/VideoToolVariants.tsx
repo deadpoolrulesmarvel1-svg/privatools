@@ -31,7 +31,7 @@ export function VideoToPdfUI() {
                     <span>1 — single page</span>
                     <span>60 — frame-by-frame</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground/80 mt-2">
+                <p className="text-[11px] text-muted-foreground mt-2">
                     Frames are sampled evenly across the clip — 12 is a good default for a 1-minute video.
                 </p>
             </div>
@@ -142,7 +142,7 @@ export function VideoThumbnailUI() {
                     onChange={e => setTs(parseFloat(e.target.value) || 0)}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-accent"
                 />
-                <p className="text-[11px] text-muted-foreground/80 mt-2">
+                <p className="text-[11px] text-muted-foreground mt-2">
                     Pick the moment in the video — set to 1.0 to skip the very first frame which is often a fade-in.
                 </p>
             </div>
@@ -224,7 +224,7 @@ export function AddSubtitlesUI() {
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 Subtitled <span className="italic text-accent">MP4</span> ready
                             </h2>
-                            <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                            <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                                 Downloaded as {buildOutputFilename(video?.name, "subtitled", "mp4")}
                             </p>
                             <button
@@ -256,7 +256,7 @@ export function AddSubtitlesUI() {
             tabIndex={0}
             aria-label={`Upload ${label}`}
             className={cn(
-                "flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-all px-5 py-4",
+                "dropzone-surface flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-all px-5 py-4",
                 drag === slotKey ? "border-accent bg-accent/5" : file ? "border-accent/30 bg-card" : "border-border hover:border-accent/55 hover:bg-secondary/30 bg-secondary/10"
             )}
         >
@@ -304,7 +304,7 @@ export function AddSubtitlesUI() {
                         : <><Play size={14} className="mr-1.5" />Burn subtitles into video</>}
                 </Button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

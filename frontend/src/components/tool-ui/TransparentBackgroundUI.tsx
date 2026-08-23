@@ -85,13 +85,13 @@ export function TransparentBackgroundUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Options
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Options
                         </div>
                         <div className="p-5 space-y-5">
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label htmlFor="threshold-range" className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">White threshold</label>
+                                    <label htmlFor="threshold-range" className="font-medium text-[11.5px] text-muted-foreground">White threshold</label>
                                     <span className="font-mono text-[11px] text-accent">{threshold}</span>
                                 </div>
                                 <input
@@ -101,13 +101,13 @@ export function TransparentBackgroundUI() {
                                     aria-label="White threshold"
                                     className="w-full accent-foreground"
                                 />
-                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
-                                    <span className="text-accent">§</span> Higher → only bright whites removed · Lower → also clears light backgrounds
+                                <p className="font-medium text-[11px] text-muted-foreground mt-1">
+                                    Higher → only bright whites removed · Lower → also clears light backgrounds
                                 </p>
                             </div>
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label htmlFor="dpi-range" className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Render DPI</label>
+                                    <label htmlFor="dpi-range" className="font-medium text-[11.5px] text-muted-foreground">Render DPI</label>
                                     <span className="font-mono text-[11px] text-accent">{dpi}</span>
                                 </div>
                                 <input
@@ -117,8 +117,8 @@ export function TransparentBackgroundUI() {
                                     aria-label="Render DPI"
                                     className="w-full accent-foreground"
                                 />
-                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
-                                    <span className="text-accent">§</span> Rasterizes pages — higher DPI = sharper but larger file
+                                <p className="font-medium text-[11px] text-muted-foreground mt-1">
+                                    Rasterizes pages — higher DPI = sharper but larger file
                                 </p>
                             </div>
                         </div>
@@ -134,7 +134,7 @@ export function TransparentBackgroundUI() {
                         <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : <><Eraser size={13} /> Remove background <Download size={13} /></>}
                         </button>
-                        {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

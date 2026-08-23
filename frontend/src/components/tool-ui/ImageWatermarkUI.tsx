@@ -106,7 +106,7 @@ export function ImageWatermarkUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "image downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "image downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -149,7 +149,7 @@ export function ImageWatermarkUI() {
                 tabIndex={0}
                 aria-label="Upload images"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -161,7 +161,7 @@ export function ImageWatermarkUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more images" : "Drop images to watermark"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     JPG · PNG · WebP · BMP · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -177,12 +177,12 @@ export function ImageWatermarkUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Watermark
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Watermark
                         </div>
                         <div className="p-4 space-y-3">
                             <div>
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Text</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Text</label>
                                 <input
                                     value={text} onChange={e => setText(e.target.value)}
                                     placeholder="WATERMARK"
@@ -193,7 +193,7 @@ export function ImageWatermarkUI() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Opacity</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">Opacity</label>
                                         <span className="font-mono text-[11px] text-accent">{opacityPct}%</span>
                                     </div>
                                     <input type="range" min={10} max={255} value={opacity}
@@ -203,7 +203,7 @@ export function ImageWatermarkUI() {
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Font size</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">Font size</label>
                                         <span className="font-mono text-[11px] text-accent">{fontSize} px</span>
                                     </div>
                                     <input type="range" min={12} max={120} value={fontSize}
@@ -216,8 +216,8 @@ export function ImageWatermarkUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Position {proc.entries.length > 1 && <span className="text-muted-foreground/60 normal-case ml-2">— applied to every image</span>}
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Position {proc.entries.length > 1 && <span className="text-muted-foreground normal-case ml-2">— applied to every image</span>}
                         </div>
                         <div className="p-3 grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 items-center">
                             <div className="grid grid-cols-3 gap-2">
@@ -230,7 +230,7 @@ export function ImageWatermarkUI() {
                                             aria-pressed={active}
                                             aria-label={`Watermark position ${p.label}`}
                                             className={cn(
-                                                "min-h-[44px] rounded-lg border py-2.5 px-2 font-mono text-[11px] tracking-[0.06em] uppercase transition-colors",
+                                                "font-medium min-h-[44px] rounded-lg border py-2.5 px-2 text-[12px] transition-colors",
                                                 active ? "border-accent bg-accent/[0.08] text-foreground" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40",
                                             )}
                                         >
@@ -255,9 +255,9 @@ export function ImageWatermarkUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Applying… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Droplets size={13} /> Watermark {proc.entries.length > 1 ? `${proc.entries.length} images` : "image"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         {proc.entries.length > 0 && !text.trim() && (
-                            <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85 inline-flex items-center gap-1">
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
                                 <AlertCircle size={11} /> Enter watermark text
                             </span>
                         )}

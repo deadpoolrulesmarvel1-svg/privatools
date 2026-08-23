@@ -284,10 +284,10 @@ export function SummarizePdfUI() {
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">
-                            {engine === "byok" ? "§ Your own key" : "§ Browser AI"}
+                        <span className="text-[11px] text-accent font-medium">
+                            {engine === "byok" ? "Your own key" : "Browser AI"}
                         </span>
-                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <span className="font-medium text-[11px] text-muted-foreground">
                             {engine === "byok"
                                 ? `${providerById(byok.provider)?.label ?? "no provider selected"} · your account`
                                 : "distilbart-cnn-6-6 · ~250 MB · cached"}
@@ -328,7 +328,7 @@ export function SummarizePdfUI() {
                     tabIndex={0}
                     aria-label="Upload PDF to summarize"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag
                             ? "border-accent bg-accent/[0.06]"
                             : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -343,7 +343,7 @@ export function SummarizePdfUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a PDF to summarize</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Best on text PDFs · OCR first if it's a scan</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Best on text PDFs · OCR first if it's a scan</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
@@ -352,7 +352,7 @@ export function SummarizePdfUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     {stage === "idle" && (
                         <button
@@ -369,8 +369,8 @@ export function SummarizePdfUI() {
             {/* Engine: on-device model vs the user's own API key */}
             {file && stage === "idle" && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Which model
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Which model
                     </div>
                     <div className="p-3 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -414,7 +414,7 @@ export function SummarizePdfUI() {
                                 />
                                 {byok.ready && (
                                     <label className="block">
-                                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                                        <span className="font-medium text-[11px] text-muted-foreground">
                                             Model (optional)
                                         </span>
                                         <input
@@ -435,8 +435,8 @@ export function SummarizePdfUI() {
             {/* Length selector */}
             {file && stage === "idle" && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Summary length
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Summary length
                     </div>
                     <div className="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {(Object.keys(LENGTH_PARAMS) as Length[]).map((l, idx) => (
@@ -453,7 +453,7 @@ export function SummarizePdfUI() {
                                 )}
                             >
                                 <div className="flex items-baseline gap-2 mb-1">
-                                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                    <span className="font-medium text-[11px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
                                     <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{LENGTH_PARAMS[l].label}</p>
                                 </div>
                                 <p className="text-[11.5px] text-muted-foreground leading-snug">{LENGTH_PARAMS[l].desc}</p>
@@ -474,7 +474,7 @@ export function SummarizePdfUI() {
                                 {stage === "loading-model" && <>Loading AI model</>}
                                 {stage === "summarizing" && <>Summarizing chunks</>}
                             </p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                                 {stage === "extracting" && <>Page {progress.pages}{progress.totalPages ? ` of ${progress.totalPages}` : ""}</>}
                                 {stage === "loading-model" && <>{progress.modelPercent}% · one-time download, cached</>}
                                 {stage === "summarizing" && <>Chunk {progress.chunks} of {progress.totalChunks}</>}
@@ -482,7 +482,7 @@ export function SummarizePdfUI() {
                         </div>
                         <button
                             onClick={cancel}
-                            className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>
@@ -516,7 +516,7 @@ export function SummarizePdfUI() {
                     </button>
                     <button
                         onClick={() => { setFile(null); setSummary(""); setError(null); }}
-                        className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                        className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                     >
                         Clear
                     </button>
@@ -527,20 +527,20 @@ export function SummarizePdfUI() {
             {stage === "done" && summary && (
                 <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-paper-2/40">
-                        <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                        <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
                             <CheckCircle2 size={12} />
                             Summary ready
                         </div>
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={copy}
-                                className="inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                className="font-medium inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <Copy size={10} /> Copy
                             </button>
                             <button
                                 onClick={download}
-                                className="inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                className="font-medium inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <Download size={10} /> .txt
                             </button>
@@ -557,7 +557,7 @@ export function SummarizePdfUI() {
                     <div className="px-4 py-2 border-t border-border bg-paper-2/30 flex">
                         <button
                             onClick={() => { setFile(null); setSummary(""); setStage("idle"); }}
-                            className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Summarize another PDF
                         </button>

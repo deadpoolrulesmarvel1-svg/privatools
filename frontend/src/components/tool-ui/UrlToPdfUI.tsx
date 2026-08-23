@@ -79,7 +79,7 @@ export function UrlToPdfUI() {
                             <h2 className="font-display text-[22px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 <span className="italic text-accent break-all">{url.trim()}</span>
                             </h2>
-                            <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground mt-1 flex items-center gap-1">
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-1 flex items-center gap-1">
                                 <ExternalLink size={10} /> Rendered to PDF
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -100,8 +100,8 @@ export function UrlToPdfUI() {
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Webpage URL
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Webpage URL
                 </div>
                 <div className="p-4">
                     <div className="relative">
@@ -114,11 +114,11 @@ export function UrlToPdfUI() {
                             aria-label="Webpage URL"
                             spellCheck={false}
                             autoComplete="url"
-                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     </div>
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                        <span className="text-accent">§</span> Full URL with https:// — page rendered & flattened to PDF
+                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
+                        Full URL with https:// — page rendered & flattened to PDF
                     </p>
                 </div>
             </div>
@@ -130,8 +130,8 @@ export function UrlToPdfUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card p-4">
-                <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                    <span className="text-accent">§</span> Note — WeasyPrint renders server-side. Best for content-heavy pages; JS-rendered SPAs may not capture fully.
+                <p className="font-medium text-[11.5px] text-muted-foreground">
+                    Note — WeasyPrint renders server-side. Best for content-heavy pages; JS-rendered SPAs may not capture fully.
                 </p>
             </div>
 
@@ -139,7 +139,7 @@ export function UrlToPdfUI() {
                 <button onClick={convert} disabled={!url.trim() || status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Capturing…</> : <><Globe size={13} /> Convert to PDF</>}
                 </button>
-                {url.trim() && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {url.trim() && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

@@ -13,7 +13,7 @@
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts.">
     <meta name="author" content="PrivaTools" />
-    <meta name="theme-color" content="#0a0b0c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#060606" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta property="og:title" content="PrivaTools — Free, Open-Source Privacy-First File Tools">
@@ -36,41 +36,84 @@
       #prepaint-brand {
         position: fixed;
         z-index: 95;
-        top: 12px;
-        left: 56px;
+        top: 18px;
+        left: 16px;
         pointer-events: none;
-        font-family: Fraunces, Georgia, "Times New Roman", serif;
-        font-size: 19px;
+        font-family: "Bricolage Grotesque", Archivo, system-ui, sans-serif;
+        font-size: 20px;
         line-height: 1;
         font-weight: 700;
         letter-spacing: -0.03em;
-        color: hsl(var(--foreground, 30 18% 8%));
+        color: hsl(var(--foreground, 216 19% 5%));
       }
-      #prepaint-brand em {
-        color: hsl(var(--accent, 152 82% 30%));
-        font-style: italic;
+      #prepaint-brand em { font-style: normal; }
+      /* The prepaint brand exists only to paint something before hydration. It is
+         position:fixed, so it cannot track a centred max-width header across all
+         viewports — matching it by hand drifts and shows up as a doubled logo.
+         AppShell sets .app-ready on mount and it retires. */
+      .app-ready #prepaint-brand { display: none; }
+      /* Without this a dark-mode visitor gets a white flash before hydration. */
+      @media (prefers-color-scheme: dark) {
+        #prepaint-brand { color: #e9ecf1; }
+        #prepaint-shell { background: #060606; color: #eef5f6; }
+        #prepaint-shell header { border-bottom-color: #262626; }
       }
-      @media (min-width: 1024px) {
-        #prepaint-brand { left: 16px; }
+      @media (min-width: 640px) {
+        #prepaint-brand { left: 24px; }
       }
       @media (max-width: 1023px) and (pointer: coarse) {
         #prepaint-brand { left: 68px; }
       }
     </style>
 
-  </head>
+      <script>
+      /* Pre-paint theme + skin. Runs before <body> renders so a stored choice
+         never flashes the default palette first. Mirrors lib/skins.ts:
+         `signature` owns :root and therefore carries no data-skin attribute. */
+      (function () {
+        try {
+          var d = document.documentElement;
+          var skin = window.localStorage.getItem('privatools_skin');
+          if (skin && skin !== 'signature' &&
+              ['aurora', 'carbon', 'structured'].indexOf(skin) !== -1) {
+            d.setAttribute('data-skin', skin);
+          }
+          var t = window.localStorage.getItem('privatools_theme');
+          if (t === 'dark' || t === 'light') {
+            d.classList.add(t);
+            d.classList.remove(t === 'dark' ? 'light' : 'dark');
+          }
+          /* The ported designs run on `data-theme` and each keeps its own key.
+             They apply it in componentDidMount, which is after first paint, so
+             without this a visitor who chose light saw the dark palette flash
+             on every load. Resolve it here instead. */
+          if (skin === 'aurora' || skin === 'carbon' || skin === 'structured') {
+            var pref = null;
+            if (skin === 'aurora') pref = window.localStorage.getItem('pt-theme');
+            else if (skin === 'carbon') pref = window.localStorage.getItem('pt.theme');
+            else {
+              var raw = window.localStorage.getItem('privatools.local.v1');
+              if (raw) pref = (JSON.parse(raw) || {}).theme;
+            }
+            if (pref === 'system') {
+              pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            }
+            if (pref === 'dark' || pref === 'light') d.setAttribute('data-theme', pref);
+          }
+        } catch (e) { /* private mode — fall through to defaults */ }
+      })();
+    </script>
+</head>
   <body>
     <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
-         Once React mounts, AppShell provides its own (duplicate but harmless) skip
-         link with identical target, so the keyboard shortcut still works after
-         hydration. -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
+         AppShell renders its own once React mounts and removes this one by id;
+         leaving both would make a keyboard user Tab past the same affordance
+         twice. -->
+    <a id="prepaint-skip" href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
     <div id="prepaint-brand" aria-hidden="true">Priva<em>tools</em></div>
     <div id="root">
-      <div style="min-height:100vh;background:#0b0b0c;color:#ede8da;font-family:Georgia,'Times New Roman',serif">
-        <header style="height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid rgba(237,232,218,.14)">
-          <span style="font-size:19px;font-weight:700;letter-spacing:0">Privatools</span>
-        </header>
+      <div id="prepaint-shell" style="min-height:100vh;background:#ffffff;color:#0b0d10;font-family:Archivo,system-ui,sans-serif">
+        <header style="height:56px;border-bottom:1px solid #e4e8ef"></header>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

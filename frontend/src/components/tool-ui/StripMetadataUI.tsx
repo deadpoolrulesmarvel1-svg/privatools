@@ -84,18 +84,18 @@ export function StripMetadataUI() {
 
             {/* Per-file receipt — shows what was stripped from each PDF */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Privacy receipt</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Privacy receipt</span>
                     <span>{files.length} file{files.length !== 1 && "s"}</span>
                 </div>
                 <div className="divide-y divide-border">
                     {files.map((f, i) => (
                         <div key={f.id} className="px-4 py-3">
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <FileText size={13} className="text-accent shrink-0" />
                                 <p className="text-[13px] font-medium text-foreground truncate flex-1 min-w-0">{f.name}</p>
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/85 shrink-0">{f.size}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground shrink-0">{f.size}</span>
                             </div>
                             <div className="ml-10 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
                                 {STRIPPED.map(s => (
@@ -121,7 +121,7 @@ export function StripMetadataUI() {
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button" tabIndex={0} aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
@@ -131,7 +131,7 @@ export function StripMetadataUI() {
                     <DatabaseZap size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select PDFs to scrub"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Author · timestamps · GPS · software · XMP · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Author · timestamps · GPS · software · XMP · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
             {files.length > 0 && (
@@ -139,13 +139,13 @@ export function StripMetadataUI() {
                     <div className="space-y-2">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                     <FileText size={15} className="text-accent" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <button onClick={() => removeFile(f.id)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
@@ -155,8 +155,8 @@ export function StripMetadataUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Will be removed
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Will be removed
                         </div>
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
                             {STRIPPED.map(s => (
@@ -178,7 +178,7 @@ export function StripMetadataUI() {
                         <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stripping…</> : <><DatabaseZap size={13} /> Strip {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

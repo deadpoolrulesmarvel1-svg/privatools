@@ -25,6 +25,20 @@ BACKEND_HELPER_POST_ENDPOINTS = {
     "/remove-watermark/detect",
 }
 
+# Account and API-key endpoints. These are not file tools and never appear in
+# the tool registry — they exist so a developer can sign in and manage keys.
+# Listed separately from the helper set above so it stays obvious that the tool
+# catalog is not supposed to grow an "auth" entry.
+BACKEND_ACCOUNT_POST_ENDPOINTS = {
+    "/auth/register",
+    "/auth/login",
+    "/auth/logout",
+    "/auth/recover",
+    "/auth/recovery-code",
+    "/auth/password",
+    "/keys",
+}
+
 # Make `backend.app.main` importable for the live-app checks below.
 sys.path.insert(0, str(ROOT))
 
@@ -128,7 +142,11 @@ def test_every_public_backend_tool_endpoint_is_listed_in_frontend_catalog():
         for slug, client_only in tools
         if not client_only
     }
-    backend_public_tool_endpoints = _parse_backend_post_endpoints() - BACKEND_HELPER_POST_ENDPOINTS
+    backend_public_tool_endpoints = (
+        _parse_backend_post_endpoints()
+        - BACKEND_HELPER_POST_ENDPOINTS
+        - BACKEND_ACCOUNT_POST_ENDPOINTS
+    )
 
     missing_from_catalog = sorted(backend_public_tool_endpoints - frontend_endpoints)
 

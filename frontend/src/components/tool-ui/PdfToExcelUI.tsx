@@ -65,7 +65,7 @@ export function PdfToExcelUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "XLSX downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "XLSX downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -105,7 +105,7 @@ export function PdfToExcelUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -117,7 +117,7 @@ export function PdfToExcelUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to convert"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Extracts tables into Excel · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -134,8 +134,8 @@ export function PdfToExcelUI() {
                         busy={phase === "processing"}
                     />
 
-                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Works best when tables have clear borders. Scanned PDFs need <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
+                    <p className="font-medium text-[11px] text-muted-foreground">
+                        Works best when tables have clear borders. Scanned PDFs need <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR</a> first.
                     </p>
                     <div className="flex items-center gap-3">
                         <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
@@ -143,7 +143,7 @@ export function PdfToExcelUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Converting… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><Download size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "to Excel"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

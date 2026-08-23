@@ -31,7 +31,7 @@ export function HeroArtwork() {
                 <CornerMarks />
 
                 {/* Header */}
-                <div className="flex items-center justify-between mb-5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-muted-foreground">
+                <div className="font-medium flex items-center justify-between mb-5 text-[11.5px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">
                         <span className="h-1.5 w-1.5 rounded-full bg-accent animate-[pulse_2s_ease-in-out_infinite]" />
                         Pipeline · Live
@@ -55,12 +55,12 @@ export function HeroArtwork() {
 
                 {/* Output indicator */}
                 <div className="mt-5 flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.08em] uppercase text-muted-foreground">
+                    <div className="font-medium flex items-center gap-2 text-[11.5px] text-muted-foreground">
                         <FileText size={11} />
                         <span>input.pdf</span>
                     </div>
                     <div className="flex-1 mx-3 h-px bg-border border-t border-dashed" />
-                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.08em] uppercase text-accent">
+                    <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
                         <span>signed.pdf</span>
                         <CheckCheck size={11} />
                     </div>
@@ -68,7 +68,7 @@ export function HeroArtwork() {
             </div>
 
             {/* Editorial caption underneath */}
-            <figcaption className="mt-4 text-center font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
+            <figcaption className="font-medium mt-4 text-center text-[11.5px] text-muted-foreground">
                 <span className="text-accent">Fig. 01</span>
                 <span className="mx-2 opacity-50">—</span>
                 One file, four tools, isolated processing
@@ -121,7 +121,7 @@ function Node({
             >
                 <Icon size={20} className="text-foreground/80" strokeWidth={1.75} />
             </div>
-            <div className="mt-2 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">
+            <div className="font-medium mt-2 text-[9.5px] text-muted-foreground">
                 <span className="text-accent">0{index + 1}</span>
                 <span className="mx-1 opacity-50">·</span>
                 {label}

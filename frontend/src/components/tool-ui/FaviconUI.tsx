@@ -91,7 +91,7 @@ export function FaviconUI() {
                             <span className="italic text-accent">{selectedSizes.length}</span> size{selectedSizes.length !== 1 && "s"} packed
                         </h2>
                         <p className="font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground mt-1">
-                            <span className="text-accent">§</span> {selectedSizes.map(s => `${s}×${s}`).join(" · ")}
+                            {selectedSizes.map(s => `${s}×${s}`).join(" · ")}
                         </p>
                         <div className="mt-5 flex flex-wrap gap-2">
                             <button onClick={() => resultBlob && file && downloadBlob(resultBlob, buildOutputFilename(file?.name, "favicon", "ico"))} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -126,7 +126,7 @@ export function FaviconUI() {
                     <img src={previewSrc} alt="Preview" className="h-16 w-16 rounded-lg object-contain border border-border bg-paper-2/40" />
                     <div>
                         <p className="text-[14px] font-medium text-foreground">Source image</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground mt-0.5">Will be resized to selected sizes</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">Will be resized to selected sizes</p>
                     </div>
                 </div>
             )}
@@ -134,8 +134,8 @@ export function FaviconUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Output sizes</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Output sizes</span>
                             <span className="text-accent">{selectedSizes.length} selected</span>
                         </div>
                         <div className="p-3 grid grid-cols-4 gap-2">
@@ -167,17 +167,17 @@ export function FaviconUI() {
                                             />
                                         )}
                                         <p className={cn("font-mono text-[10.5px] tracking-[0.04em] font-semibold", active ? "text-accent" : "text-foreground")}>{s.label}</p>
-                                        <p className="font-mono text-[9px] tracking-[0.04em] uppercase text-muted-foreground/85">{s.desc}</p>
+                                        <p className="font-medium text-[10.5px] text-muted-foreground">{s.desc}</p>
                                     </button>
                                 );
                             })}
                         </div>
                         <div className="px-3 pb-3 flex flex-wrap gap-2">
-                            <button onClick={() => setSelectedSizes([16, 32, 48, 180])} aria-label="Select web essentials sizes" className="font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:opacity-80">Web essentials</button>
-                            <span className="text-muted-foreground/40">·</span>
-                            <button onClick={() => setSelectedSizes(SIZES.map(s => s.value))} aria-label="Select all sizes" className="font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:opacity-80">All</button>
-                            <span className="text-muted-foreground/40">·</span>
-                            <button onClick={() => setSelectedSizes([])} aria-label="Clear selection" className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground">Clear</button>
+                            <button onClick={() => setSelectedSizes([16, 32, 48, 180])} aria-label="Select web essentials sizes" className="font-medium text-[11px] text-accent hover:opacity-80">Web essentials</button>
+                            <span className="text-muted-foreground">·</span>
+                            <button onClick={() => setSelectedSizes(SIZES.map(s => s.value))} aria-label="Select all sizes" className="font-medium text-[11px] text-accent hover:opacity-80">All</button>
+                            <span className="text-muted-foreground">·</span>
+                            <button onClick={() => setSelectedSizes([])} aria-label="Clear selection" className="font-medium text-[11px] text-muted-foreground hover:text-foreground">Clear</button>
                         </div>
                     </div>
 
@@ -192,7 +192,7 @@ export function FaviconUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Generating…</> : <><Sparkles size={13} /> Generate {selectedSizes.length} favicon{selectedSizes.length !== 1 && "s"}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

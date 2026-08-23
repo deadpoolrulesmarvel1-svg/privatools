@@ -50,3 +50,22 @@ class TestApiKeyAuth:
         with pytest.raises(HTTPException) as ei:
             _call("kéy-with-ünicode-✓")
         assert ei.value.status_code == 401
+
+
+def test_issuing_a_user_key_does_not_close_the_unversioned_surface(client, tmp_path):
+    """The site's own frontend calls /api/*; those routes stay open.
+
+    An earlier version gated them on "has any user issued a key yet", which
+    meant the first developer account 401'd the public pipeline endpoint for
+    every visitor. Metering and fail-closed behaviour live on /api/v1.
+    """
+    from backend.app import store
+    from backend.app.auth import accounts
+
+    store.reset_for_tests(tmp_path)
+    user = accounts.create_user("gate@example.com", "a-long-enough-password")
+    accounts.issue_api_key(user.id, "any key at all")
+
+    assert client.get("/api/health").status_code == 200
+    # v1 is unaffected — it refuses without a key either way.
+    assert client.get("/api/v1/whoami").status_code == 401

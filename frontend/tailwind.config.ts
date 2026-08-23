@@ -14,13 +14,15 @@ export default {
       },
     },
     extend: {
+      // Resolved through the token layer so a skin can swap the whole pairing.
+      // The fallbacks live in the --font-* declarations (index.css / skins.css).
       fontFamily: {
-        display: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        heading: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        body:    ["Inter", "system-ui", "sans-serif"],
-        sans:    ["Inter", "system-ui", "sans-serif"],
-        mono:    ["JetBrains Mono", "Menlo", "monospace"],
-        serif:   ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
+        display: ["var(--font-display)"],
+        heading: ["var(--font-display)"],
+        serif:   ["var(--font-display)"],
+        body:    ["var(--font-sans)"],
+        sans:    ["var(--font-sans)"],
+        mono:    ["var(--font-mono)"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -50,8 +52,27 @@ export default {
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
+          bright: "hsl(var(--accent-bright))",
           foreground: "hsl(var(--accent-foreground))",
           soft: "hsl(var(--accent-soft))",
+        },
+        cat: {
+          organize:  "hsl(var(--cat-organize))",
+          edit:      "hsl(var(--cat-edit))",
+          optimize:  "hsl(var(--cat-optimize))",
+          security:  "hsl(var(--cat-security))",
+          "to-pdf":  "hsl(var(--cat-to-pdf))",
+          "from-pdf": "hsl(var(--cat-from-pdf))",
+          advanced:  "hsl(var(--cat-advanced))",
+          image:     "hsl(var(--cat-image))",
+          video:     "hsl(var(--cat-video))",
+          developer: "hsl(var(--cat-developer))",
+          archive:   "hsl(var(--cat-archive))",
+          document:  "hsl(var(--cat-document))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          soft: "hsl(var(--success-soft))",
         },
         copper: {
           DEFAULT: "hsl(var(--copper))",
@@ -78,9 +99,11 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        // Properly graduated rather than three near-identical values: soft on
+        // containers, tighter on the controls inside them.
+        lg: "var(--radius)",                 /* 20px — cards, panels */
+        md: "calc(var(--radius) - 0.375rem)", /* 14px — inputs, buttons */
+        sm: "calc(var(--radius) - 0.625rem)", /* 10px — chips, small tags */
       },
       keyframes: {
         "accordion-down": {

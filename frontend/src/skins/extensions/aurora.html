@@ -1,0 +1,215 @@
+<!-- Account and API keys — Obsidian Aurora.
+     Written in the design's own dialect and using its own variables, so the
+     generator converts it exactly as it converts the imported markup and the
+     result sits inside the theme rather than on top of it. -->
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.02em;margin:0">{{ acctTitle }}</h1>
+  <div style="font-size:13.5px;color:var(--text2);margin-top:5px">{{ acctLede }}</div>
+
+  <!-- Shown once, and standing in front of everything else until acknowledged.
+       There is no reset email, so a code the visitor scrolls past is an account
+       they will eventually lose. -->
+  <div style="display:{{ acctRecoveryD }};border:1px solid var(--em);border-radius:14px;background:var(--emsoft);padding:18px;margin-top:18px">
+    <div style="font-family:Sora,sans-serif;font-size:15px;font-weight:600">Save your recovery code</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-top:6px;line-height:1.6">This is shown once and is the only way back into your account. We send no email, so there is no reset link to fall back on.</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px">
+      <code style="border:1px solid var(--line);border-radius:10px;background:var(--pnl);padding:9px 12px;font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;letter-spacing:.1em">{{ acctRecoveryCode }}</code>
+      <button type="button" onClick="{{ acctCopyRecovery }}" style="height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600">{{ acctCopyLabel }}</button>
+      <button type="button" onClick="{{ acctDownloadRecovery }}" style="height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600">Download</button>
+    </div>
+    <button type="button" onClick="{{ acctAckRecovery }}" style="margin-top:14px;height:38px;padding:0 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:var(--em-ink,#04120C)">I have saved it</button>
+    <div style="display:{{ acctRecoveryNudgeD }};font-size:11.5px;color:var(--text3);margin-top:8px">Write it down or put it in a password manager before continuing.</div>
+  </div>
+
+  <sc-if value="{{ acctSignedOut }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <form onSubmit="{{ acctSubmit }}" style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px">
+        <button type="button" onClick="{{ acctShowSignIn }}" style="flex:1;height:34px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;border:1px solid {{ acctSignInBd }};background:{{ acctSignInBg }};color:{{ acctSignInFg }}">Sign in</button>
+        <button type="button" onClick="{{ acctShowSignUp }}" style="flex:1;height:34px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;border:1px solid {{ acctSignUpBd }};background:{{ acctSignUpBg }};color:{{ acctSignUpFg }}">Create account</button>
+      </div>
+
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)">Email
+        <input type="email" value="{{ acctEmail }}" onInput="{{ acctSetEmail }}" autoComplete="email" required="{{ true }}"
+               style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)">{{ acctPasswordLabel }}
+        <input type="password" value="{{ acctPassword }}" onInput="{{ acctSetPassword }}" autoComplete="{{ acctPwAutocomplete }}" required="{{ true }}"
+               style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <div style="display:{{ acctRecoverD }}">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)">Recovery code
+          <input type="text" value="{{ acctRecoveryInput }}" onInput="{{ acctSetRecoveryInput }}" autoComplete="one-time-code"
+                 style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px;font-family:'Geist Mono',ui-monospace,monospace" />
+        </label>
+      </div>
+      <div style="display:{{ acctHintD }};font-size:11.5px;color:var(--text3)">At least 10 characters. Length is what makes a password strong.</div>
+      <div role="alert" style="display:{{ acctErrD }};font-size:12px;color:var(--co)">{{ acctError }}</div>
+
+      <button type="button" onClick="{{ acctShowRecover }}" style="align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:11.5px;color:var(--text2);text-decoration:underline">Forgotten your password? Use your recovery code</button>
+      <button type="submit" disabled="{{ acctBusy }}" style="height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C;opacity:{{ acctBusyOpacity }}">{{ acctSubmitLabel }}</button>
+    </form>
+
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">You do not need an account</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:8px;line-height:1.6">Every one of the tools works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:10px;line-height:1.6">We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ acctSignedIn }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">API keys</div>
+        <button type="button" onClick="{{ acctNewKey }}" style="height:32px;padding:0 12px;border-radius:9px;border:none;cursor:pointer;background:var(--em);color:#04120C;font-size:12.5px;font-weight:600">New key</button>
+      </div>
+
+      <div style="display:{{ acctNewKeyD }};margin-top:12px;border:1px solid var(--em);border-radius:11px;background:var(--emsoft);padding:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--em)">Copy this now — it is not shown again</div>
+        <code style="display:block;margin-top:7px;font-size:12.5px;word-break:break-all;color:var(--text)">{{ acctNewKeyValue }}</code>
+      </div>
+
+      <div style="display:{{ acctNoKeysD }};font-size:12.5px;color:var(--text2);margin-top:12px">No keys yet. Create one to start using the API.</div>
+
+      <sc-for list="{{ acctKeys }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:{{ k.labelColor }}">{{ k.label }}</div>
+            <div style="font-size:11.5px;color:var(--text3);margin-top:2px">{{ k.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ k.revoke }}" disabled="{{ k.revoked }}" style="display:{{ k.revokeD }};height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px">Revoke</button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Signed in</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:6px;word-break:break-all">{{ acctEmailShown }}</div>
+      <button type="button" onClick="{{ acctSignOut }}" style="margin-top:14px;width:100%;height:36px;border-radius:9px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text);font-size:12.5px;font-weight:600">Sign out</button>
+      <!-- Replacing a mislaid code needs the password, not just the session: a
+           stolen cookie would otherwise mint a code the thief keeps, one that
+           outlives the owner noticing and changing their password. -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Recovery code</div>
+        <div style="font-size:11.5px;color:var(--text2);margin-top:4px;line-height:1.5">Lost the one from signup? Generate a replacement. The old code stops working.</div>
+        <button type="button" onClick="{{ acctToggleRotate }}" style="display:{{ acctRotateOpenD }};margin-top:9px;width:100%;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600">Generate a new code</button>
+        <form onSubmit="{{ acctRotateSubmit }}" style="display:{{ acctRotateFormD }};margin-top:9px">
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--text2)">Confirm your password
+            <input type="password" value="{{ acctRotatePassword }}" onInput="{{ acctSetRotatePassword }}" autoComplete="current-password" required="{{ true }}"
+                   style="padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+          </label>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <button type="submit" disabled="{{ acctBusy }}" style="flex:1;height:36px;border-radius:10px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--em);color:var(--em-ink,#04120C);opacity:{{ acctBusyOpacity }}">{{ acctRotateLabel }}</button>
+            <button type="button" onClick="{{ acctToggleRotate }}" style="height:36px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:12.5px">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <button type="button" onClick="{{ acctDelete }}" style="margin-top:8px;width:100%;height:36px;border-radius:9px;cursor:pointer;border:1px solid var(--co);background:transparent;color:var(--co);font-size:12.5px;font-weight:600">{{ acctDeleteLabel }}</button>
+      <div style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Deleting removes your email, your password hash and every key. It cannot be undone.</div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- Vault — real AES-GCM under a non-extractable device key (lib/localStore).
+     Not the simulated vault the imported design shipped, so the "protection is
+     simulated, do not enter real passwords" notice is deliberately absent. -->
+<sc-if value="{{ isVaultReal }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.02em;margin:0">Vault</h1>
+  <div style="font-size:13.5px;color:var(--text2);margin-top:5px">Passwords for locked documents, encrypted on this device. {{ vltCount }} stored.</div>
+
+  <div style="display:grid;grid-template-columns:var(--tool-cols);gap:var(--gap);margin-top:18px;align-items:start">
+    <div style="border:1px solid var(--line);border-radius:14px;background:var(--pnl);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Stored passwords</div>
+
+      <div style="display:{{ vltEmptyD }};font-size:12.5px;color:var(--text2);margin-top:10px">Nothing stored yet. Add a password below and PrivaTools will try it automatically when you open a locked file.</div>
+      <div role="status" style="display:{{ vltUnreadableD }};margin-top:10px;font-size:12px;color:var(--co)">{{ vltUnreadable }}</div>
+
+      <sc-for list="{{ vltEntries }}" as="e" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:{{ e.labelColor }}">{{ e.label }}</div>
+            <div style="font-family:ui-monospace,monospace;font-size:12.5px">{{ e.secret }}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ e.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ e.reveal }}" aria-label="{{ e.revealLabel }}" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text2);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ e.revealIcon }}</span></button>
+          <button type="button" onClick="{{ e.copy }}" aria-label="Copy password" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text2);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ 'content_copy' }}</span></button>
+          <button type="button" onClick="{{ e.remove }}" aria-label="Delete password" style="height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px"><span style="font-family:'Material Symbols Rounded';font-size:17px;">{{ 'delete' }}</span></button>
+        </div>
+      </sc-for>
+
+      <button type="button" onClick="{{ vltClear }}" style="display:{{ vltClearD }};margin-top:14px;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--co);font-size:12px">{{ vltClearLabel }}</button>
+    </div>
+
+    <form onSubmit="{{ vltAdd }}" style="border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px">
+      <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600">Add a password</div>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2);margin-top:11px">Name
+        <input type="text" value="{{ vltLabel }}" onInput="{{ vltSetLabel }}" placeholder="e.g. Bank statements" style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2);margin-top:9px">Password
+        <input type="password" value="{{ vltPassword }}" onInput="{{ vltSetPassword }}" autoComplete="off" style="padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px" />
+      </label>
+      <div role="alert" style="display:{{ vltErrD }};margin-top:8px;font-size:12px;color:var(--co)">{{ vltError }}</div>
+      <button type="submit" disabled="{{ vltBusy }}" style="margin-top:11px;width:100%;opacity:{{ vltBusyOpacity }};height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:#04120C">{{ vltAddLabel }}</button>
+      <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Encrypted with a key this browser generated and cannot export. That means it never leaves this device — and it cannot sync to another one. Clearing site data erases it.</p>
+    </form>
+  </div>
+</div>
+</sc-if>
+
+<!-- Tool page — Obsidian Aurora chrome, real tool UI.
+     The design's own tool route is suppressed in favour of this: its run panel
+     simulates processing, and this renders the same component the house design
+     uses, which actually talks to the backend. Everything around it — the
+     breadcrumb, the display headline, the trust chips, the related rail — is
+     the design's own language. -->
+<sc-if value="{{ isRealTool }}" hint-placeholder-val="{{ false }}">
+<div style="animation:rise .24s ease both">
+  <nav aria-label="Breadcrumb" style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);margin-bottom:14px">
+    <a href="#/" onClick="{{ rtHome }}" style="color:var(--text2)">Home</a>
+    <span style="font-family:'Material Symbols Rounded';font-size:14px">chevron_right</span>
+    <a href="#/tools" onClick="{{ rtTools }}" style="color:var(--text2)">All tools</a>
+    <span style="font-family:'Material Symbols Rounded';font-size:14px">chevron_right</span>
+    <span style="color:var(--text)">{{ realToolName }}</span>
+  </nav>
+
+  <div style="display:flex;align-items:flex-start;gap:16px;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--pnl);box-shadow:var(--shadow-sm)">
+    <span style="width:52px;height:52px;flex:0 0 52px;border-radius:14px;background:var(--emsoft);display:flex;align-items:center;justify-content:center">
+      <span style="font-family:'Material Symbols Rounded';font-size:26px;color:var(--em);font-variation-settings:'wght' 300">{{ rtIcon }}</span>
+    </span>
+    <div style="min-width:0;flex:1">
+      <h1 style="font-family:Sora,sans-serif;font-size:var(--h2);font-weight:600;letter-spacing:-.025em;margin:0">{{ realToolName }}</h1>
+      <div style="font-size:13.5px;color:var(--text2);margin-top:5px">{{ realToolDesc }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">
+        <sc-for list="{{ rtChips }}" as="c" hint-placeholder-count="4">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:{{ c.fg }};border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:{{ c.bg }}">
+            <span style="font-family:'Material Symbols Rounded';font-size:14px">{{ c.icon }}</span>{{ c.label }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--pnl)">
+    {{ realToolUI }}
+  </div>
+
+  <div style="display:{{ rtRelatedD }};margin-top:16px">
+    <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:600;margin-bottom:10px">Related tools</div>
+    <div style="display:grid;grid-template-columns:var(--c4);gap:var(--gap)">
+      <sc-for list="{{ rtRelated }}" as="r" hint-placeholder-count="4">
+        <button type="button" onClick="{{ r.go }}" style="text-align:left;padding:13px;border:1px solid var(--line);border-radius:13px;background:var(--pnl2);cursor:pointer;color:var(--text)">
+          <span style="font-family:'Material Symbols Rounded';font-size:19px;color:var(--em);font-variation-settings:'wght' 300">{{ r.icon }}</span>
+          <div style="font-size:13px;font-weight:600;margin-top:8px;font-family:Sora,sans-serif">{{ r.name }}</div>
+          <div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.45">{{ r.desc }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>

@@ -6,7 +6,7 @@
  *     1.5px tall, glow strong enough to read against any background)
  *   - Floating right-side TOC auto-extracted from the article's h2/h3 tags,
  *     with active section highlighting + estimated minutes remaining
- *   - Hash-link anchors on every heading (§ marker visible on hover, clicking
+ *   - Hash-link anchors on every heading (marker visible on hover, clicking
  *     a heading copies the deep link to clipboard with a toast)
  *   - Scroll-to-top button that fades in after 800px
  *   - Share menu — copy link, X/Twitter, LinkedIn (Web Share API if available)
@@ -17,7 +17,7 @@
  *   - All images lazy-loaded and decoded async
  *
  * Workshop styling: mono dateline, accent TL;DR with corner marks,
- * §-numbered related-tool cards.
+ * -numbered related-tool cards.
  *
  * Critical constraints:
  *   - Every hook (useMemo/useRef/useState/useLayoutEffect/useEffect) must run
@@ -369,7 +369,7 @@ export default function BlogPostPage() {
         btn.setAttribute("aria-label", "Copy code");
         btn.className =
           "code-copy-btn absolute top-2 right-2 inline-flex items-center gap-1 h-6 px-2 rounded border border-border bg-card/90 backdrop-blur " +
-          "font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45 transition-colors opacity-0";
+          "font-medium text-[11px] text-muted-foreground hover:text-accent hover:border-accent/45 transition-colors opacity-0";
         btn.textContent = "Copy";
 
         // Show on hover/focus of the pre.
@@ -447,7 +447,7 @@ export default function BlogPostPage() {
             <nav className="mb-8 flex items-center justify-between flex-wrap gap-3 print:hidden">
               <Link
                 to="/blog"
-                className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent transition-colors"
+                className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
               >
                 <ArrowLeft size={12} /> All articles
               </Link>
@@ -456,7 +456,7 @@ export default function BlogPostPage() {
                 <button
                   onClick={() => window.print()}
                   aria-label="Print article"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
+                  className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
                 >
                   <Printer size={11} /> Print
                 </button>
@@ -470,7 +470,7 @@ export default function BlogPostPage() {
                     }}
                     aria-haspopup="menu"
                     aria-expanded={shareOpen}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
+                    className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
                   >
                     <Share2 size={11} /> Share
                   </button>
@@ -517,7 +517,7 @@ export default function BlogPostPage() {
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent"
+                    className="font-medium inline-flex items-center h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] text-[9.5px] text-accent"
                   >
                     {tag}
                   </span>
@@ -534,19 +534,19 @@ export default function BlogPostPage() {
               </p>
 
               {/* Dateline */}
-              <div className="mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+              <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                 <span className="text-foreground">{post.author || "PrivaTools"}</span>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1.5">
                   <Calendar size={11} /> <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
                 </span>
                 {post.updatedAt && post.updatedAt !== post.publishedAt && (
                   <>
-                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">·</span>
                     <span>Updated <time dateTime={post.updatedAt} className="text-accent">{formatDate(post.updatedAt)}</time></span>
                   </>
                 )}
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock size={11} /> {post.readTime}
                 </span>
@@ -561,12 +561,12 @@ export default function BlogPostPage() {
                   <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
                     <div className="flex items-center gap-2">
                       <Sparkles size={13} className="text-accent" />
-                      <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">§ TL;DR</span>
+                      <span className="text-[11px] text-accent font-semibold">TL;DR</span>
                     </div>
                     <button
                       onClick={() => setTldrExpanded(v => !v)}
                       aria-expanded={tldrExpanded}
-                      className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent transition-colors print:hidden"
+                      className="font-medium inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-accent transition-colors print:hidden"
                     >
                       {tldrExpanded ? "Collapse" : "Read full"}
                       <ChevronDown size={11} className={cn("transition-transform", tldrExpanded && "rotate-180")} />
@@ -595,9 +595,9 @@ export default function BlogPostPage() {
             {/* Mobile TOC — appears above article body on narrow viewports */}
             {tocItems.length > 0 && (
               <details className="lg:hidden mb-8 rounded-xl border border-border bg-card overflow-hidden group print:hidden">
-                <summary className="px-4 py-3 list-none cursor-pointer flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:bg-secondary/40 transition-colors">
+                <summary className="font-medium px-4 py-3 list-none cursor-pointer flex items-center gap-2 text-[11.5px] text-muted-foreground hover:bg-secondary/40 transition-colors">
                   <List size={12} className="text-accent" />
-                  <span><span className="text-accent">§</span> Table of contents</span>
+                  <span>Table of contents</span>
                   <span className="ml-auto font-mono text-[10px] tracking-wider text-accent">{tocItems.length}</span>
                 </summary>
                 <ul className="px-4 pb-3 space-y-1.5">
@@ -639,7 +639,7 @@ export default function BlogPostPage() {
               <div
                 role="status"
                 aria-live="polite"
-                className="fixed bottom-24 right-6 z-40 inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-accent/45 bg-card font-mono text-[11px] tracking-[0.06em] uppercase text-accent shadow-lg animate-fade-in print:hidden"
+                className="font-medium fixed bottom-24 right-6 z-40 inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-accent/45 bg-card text-[12px] text-accent shadow-lg animate-fade-in print:hidden"
               >
                 <Check size={11} /> Heading link copied
               </div>
@@ -651,11 +651,11 @@ export default function BlogPostPage() {
                 <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Wrench size={13} className="text-accent" />
-                    <h2 className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent font-semibold">§ Tools mentioned</h2>
+                    <h2 className="text-[11.5px] text-accent font-semibold">Tools mentioned</h2>
                   </div>
                   <Link
                     to="/"
-                    className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent inline-flex items-center gap-1.5 transition-colors print:hidden"
+                    className="font-medium text-[11.5px] text-muted-foreground hover:text-accent inline-flex items-center gap-1.5 transition-colors print:hidden"
                   >
                     Browse all tools <ArrowRight size={11} />
                   </Link>
@@ -670,7 +670,7 @@ export default function BlogPostPage() {
                         to={t.href}
                         className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                       >
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§{String(i + 1).padStart(2, "0")}</span>
+                        <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">{String(i + 1).padStart(2, "0")}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">{t.name}</p>
                           <p className="text-[12.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{t.description}</p>
@@ -686,7 +686,7 @@ export default function BlogPostPage() {
             {/* ── More articles — most relevant by tag overlap, recency tie-break ── */}
             {others.length > 0 && (
               <aside className="mt-16 pt-8 border-t border-border">
-                <p className="section-mark mb-5">§ More like this</p>
+                <p className="section-mark mb-5">More like this</p>
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                   <div className="divide-y divide-border">
                     {others.map((p, i) => (
@@ -695,16 +695,16 @@ export default function BlogPostPage() {
                         to={`/blog/${p.slug}`}
                         className="flex items-start gap-3 px-5 py-4 hover:bg-accent/[0.04] transition-colors group"
                       >
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-1">§{String(i + 1).padStart(2, "0")}</span>
+                        <span className="font-medium text-[11px] text-accent shrink-0 mt-1">{String(i + 1).padStart(2, "0")}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors leading-snug">
                             {p.title}
                           </p>
-                          <p className="mt-1 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground inline-flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1.5 flex-wrap">
                             <Clock size={10} /> {p.readTime}
                             {/* Surface up to 2 shared tags so the relevance signal is visible. */}
                             {p.tags.filter(t => post.tags.includes(t)).slice(0, 2).map(t => (
-                              <span key={t} className="text-accent/80">· {t}</span>
+                              <span key={t} className="text-accent">· {t}</span>
                             ))}
                           </p>
                         </div>
@@ -722,7 +722,7 @@ export default function BlogPostPage() {
             <aside className="hidden lg:block print:hidden">
               <div className="sticky top-8">
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                  <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                  <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span className="flex items-center gap-1.5"><List size={10} className="text-accent" /> Contents</span>
                     <span className="text-accent tabular-nums">{Math.round(progress)}%</span>
                   </div>
@@ -747,7 +747,7 @@ export default function BlogPostPage() {
                                 isActive
                                   ? "text-accent font-medium bg-accent/[0.06]"
                                   : t.level === 3
-                                    ? "text-muted-foreground/85 hover:text-foreground hover:bg-secondary/40"
+                                    ? "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                               )}
                             >
@@ -760,7 +760,7 @@ export default function BlogPostPage() {
                   </nav>
                   {/* Footer — minutes-remaining estimate. Tiny touch that
                       tells the reader how much runway is left. */}
-                  <div className="px-4 py-2 border-t border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                  <div className="font-medium px-4 py-2 border-t border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5"><Clock size={10} className="text-accent/70" /> {minutesLeft} min left</span>
                     <button
                       onClick={scrollToTop}

@@ -20,7 +20,7 @@ const FACTS = [
     "0 files uploaded to a third party",
     "Local AI via WebAssembly",
     "Files deleted within seconds of response",
-    "No accounts, no ad pixels",
+    "No account needed, no ad pixels",
     "MIT licensed — every line public",
     "Self-hostable in one Docker command",
     "Anonymized pageview analytics only",
@@ -57,7 +57,7 @@ function StatusBarInner() {
     return (
         <footer
             role="contentinfo"
-            className="relative z-30 hidden lg:flex flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md items-center justify-between px-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground"
+            className="font-medium relative z-30 hidden lg:flex flex-shrink-0 h-7 border-t border-border bg-paper-2/70 backdrop-blur-md items-center justify-between px-3 text-[11.5px] text-muted-foreground"
         >
             <div className="flex items-center gap-3 min-w-0">
                 <span className="inline-flex items-center gap-1.5 shrink-0" title="Browser-only where possible; isolated backend processing when needed">
@@ -75,7 +75,7 @@ function StatusBarInner() {
 
             <div className="hidden sm:flex items-center gap-3 shrink-0">
                 <span title={`${TOOL_TOTAL} privacy-first tools, browser-side or isolated backend`}>
-                    <span className="text-accent">§</span> {TOOL_TOTAL} tools live
+                    {TOOL_TOTAL} tools live
                 </span>
                 <span className="opacity-40">—</span>
                 <a

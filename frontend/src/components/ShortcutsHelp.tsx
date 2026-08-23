@@ -2,7 +2,7 @@
  * Press `?` anywhere on the site (when not focused on a text input) to open
  * a small overlay listing the global keyboard shortcuts.
  *
- * Workshop aesthetic: § dateline header, Fraunces title, mono kbd chips,
+ * Workshop aesthetic: dateline header, Fraunces title, mono kbd chips,
  * paper-2 row hover.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -139,8 +139,8 @@ export function ShortcutsHelp() {
                     style={{ background: "hsl(var(--background))" }}
                 >
                     {/* Dateline header */}
-                    <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Keyboard reference</span>
+                    <div className="font-medium px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Keyboard reference</span>
                         <button
                             ref={closeBtnRef}
                             onClick={close}
@@ -170,8 +170,8 @@ export function ShortcutsHelp() {
                     <div className="px-3 pb-3 space-y-1">
                         {GROUPS.map(group => (
                             <div key={group.title} className="rounded-lg overflow-hidden">
-                                <p className="px-3 py-2 font-mono text-[10px] font-medium tracking-[0.12em] uppercase text-muted-foreground/85">
-                                    <span className="text-accent">§</span> {group.title}
+                                <p className="px-3 py-2 text-[11px] font-medium text-muted-foreground">
+                                    {group.title}
                                 </p>
                                 <ul className="px-1">
                                     {group.items.map(s => (
@@ -183,7 +183,7 @@ export function ShortcutsHelp() {
                                                         <kbd className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded border border-border bg-paper-2/60 font-mono text-[11px] font-medium text-foreground">
                                                             {k}
                                                         </kbd>
-                                                        {i < s.keys.length - 1 && <span className="text-muted-foreground/70 font-mono text-[10px]">+</span>}
+                                                        {i < s.keys.length - 1 && <span className="text-muted-foreground font-mono text-[10px]">+</span>}
                                                     </span>
                                                 ))}
                                             </span>
@@ -195,7 +195,7 @@ export function ShortcutsHelp() {
                     </div>
 
                     {/* Footer */}
-                    <div className="px-6 py-3 border-t border-border bg-paper-2/30 flex items-center gap-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    <div className="font-medium px-6 py-3 border-t border-border bg-paper-2/30 flex items-center gap-2 text-[11.5px] text-muted-foreground">
                         <Command size={11} className="text-accent" />
                         <span>Press <kbd className="px-1 rounded bg-card border border-border text-foreground">?</kbd> anywhere to toggle</span>
                     </div>

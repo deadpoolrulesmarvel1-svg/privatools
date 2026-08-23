@@ -126,7 +126,7 @@ export function SplitUI() {
                     tabIndex={0}
                     aria-label="Upload file"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag
                             ? "border-accent bg-accent/[0.06]"
                             : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -141,7 +141,7 @@ export function SplitUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Select a PDF to split</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Drag &amp; drop or click to browse</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Drag &amp; drop or click to browse</p>
                 </div>
             ) : (
                 <>
@@ -152,7 +152,7 @@ export function SplitUI() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
                         <button
                             onClick={() => setFile(null)}
@@ -165,7 +165,7 @@ export function SplitUI() {
 
                     {/* Mode picker */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2.5 border-b border-border bg-paper-2/40 flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <div className="font-medium px-4 py-2.5 border-b border-border bg-paper-2/40 flex items-center gap-2 text-[11.5px] text-muted-foreground">
                             <ScissorsLineDashed size={11} className="text-accent" />
                             Split mode
                         </div>
@@ -191,12 +191,12 @@ export function SplitUI() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] leading-tight">
-                                                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent mr-1.5">{String(idx + 1).padStart(2, "0")}</span>
+                                                <span className="font-medium text-[11.5px] text-accent mr-1.5">{String(idx + 1).padStart(2, "0")}</span>
                                                 {m.label}
                                             </p>
                                             <p className="text-[12.5px] text-muted-foreground mt-0.5 leading-snug">{m.desc}</p>
                                             {m.example && active && (
-                                                <p className="mt-2 font-mono text-[11px] text-muted-foreground/85">
+                                                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
                                                     e.g.&nbsp;<span className="text-foreground">{m.example}</span>
                                                 </p>
                                             )}
@@ -209,14 +209,14 @@ export function SplitUI() {
                         {/* Inline option inputs */}
                         {mode === "pages" && (
                             <div className="border-t border-border p-4 bg-paper-2/30">
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Page ranges</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Page ranges</label>
                                 <input
                                     value={pages}
                                     onChange={e => setPages(e.target.value)}
                                     spellCheck={false}
                                     aria-invalid={!isValidPageRange(pages)}
                                     className={cn(
-                                        "mt-1.5 w-full rounded-md border bg-card px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 transition-colors",
+                                        "mt-1.5 w-full rounded-md border bg-card px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                                         isValidPageRange(pages)
                                             ? "border-border focus:border-accent focus:ring-accent/20"
                                             : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
@@ -224,17 +224,17 @@ export function SplitUI() {
                                     placeholder="1-3, 5, 7-end, -4, 9-"
                                 />
                                 {rangeErr ? (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive mt-2">{rangeErr}</p>
+                                    <p className="font-medium text-[11px] text-destructive mt-2">{rangeErr}</p>
                                 ) : (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                                        <span className="text-accent">§</span> Syntax — comma-separated ranges · "end" = last page · "-4" = first 4 · "9-" = page 9 to end
+                                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
+                                        Syntax — comma-separated ranges · "end" = last page · "-4" = first 4 · "9-" = page 9 to end
                                     </p>
                                 )}
                             </div>
                         )}
                         {mode === "every_n" && (
                             <div className="border-t border-border p-4 bg-paper-2/30">
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Pages per chunk</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Pages per chunk</label>
                                 <input
                                     type="number"
                                     inputMode="numeric"
@@ -268,7 +268,7 @@ export function SplitUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                                 : <><Download size={13} /> Split PDF</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                     </div>
                 </>
             )}

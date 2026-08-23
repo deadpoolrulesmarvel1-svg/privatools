@@ -65,6 +65,7 @@ from .routes import (
     analytics,
     accessibility,
 )
+from .routes import accounts as accounts_routes
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
 
@@ -97,6 +98,16 @@ async def _cleanup_task():
         try:
             await asyncio.sleep(_JANITOR_INTERVAL)
             cleanup_old_files(_JANITOR_MAX_AGE)
+            # Expired sessions were being written and never removed — the
+            # purge existed but nothing called it, so the table only grew.
+            try:
+                from .auth.accounts import purge_expired_sessions
+
+                removed = purge_expired_sessions()
+                if removed:
+                    logger.info("janitor: purged %d expired session(s)", removed)
+            except Exception:
+                logger.exception("janitor: session purge failed")
             # Heartbeat so memory growth + request saturation are visible in the
             # log stream without any external metrics system (research O5/O6).
             logger.info(
@@ -113,6 +124,15 @@ async def _cleanup_task():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
+    # Durable state (accounts, API keys) lives on its own volume, separate from
+    # TEMP_DIR — the janitor sweeps that one. Creating the schema here means a
+    # fresh deploy is ready before the first request.
+    try:
+        from .store import init as init_store
+
+        init_store()
+    except Exception:
+        logger.exception("lifespan: durable store unavailable; accounts disabled")
     # Runs after uvicorn has set up its own loggers, so this sticks: route
     # uvicorn's error/startup lines through our JSON handler (research O3).
     route_uvicorn_logging()
@@ -183,7 +203,12 @@ _WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 # use BYOK has no business being able to reach an AI provider, and scoping means
 # a bug on an unrelated page cannot exfiltrate to one. A global allowlist would
 # hand every one of the 200+ tool pages an egress route it never needs.
-_BYOK_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+# Only Summarize PDF ships a key entry point (ByokPanel). Smart Redact rides
+# _WASM_EVAL_PATHS above for its in-browser BERT-NER and never calls a
+# provider — its own page copy promises "all detection happens in your
+# browser", so handing it egress to eight AI vendors contradicts the claim.
+# test_byok_csp derives this set from the frontend so it cannot drift open.
+_BYOK_PATHS = {"/tool/summarize-pdf"}
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
 # which would give away the guarantee this product is built on, so adding a
@@ -630,9 +655,89 @@ app.include_router(transparency.router, prefix="/api")
 app.include_router(remove_watermark.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
+app.include_router(accounts_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
 
 # Sitemap + OG image
+
+# ── /api/v1 ────────────────────────────────────────────────────────────
+# The same routers, mounted again behind auth and quota. One handler serves
+# both surfaces, so a fix reaches both and they cannot drift. The
+# unversioned /api/* routes stay open and unmetered — the site's own
+# frontend calls them — and are documented as unstable.
+from .api_v1 import router as api_v1  # noqa: E402
+
+app.middleware("http")(api_v1.attach_quota_headers)
+api_v1.mount(app, [
+    merge.router,
+    split.router,
+    compress.router,
+    pdf_to_image.router,
+    image_to_pdf.router,
+    rotate.router,
+    protect.router,
+    unlock.router,
+    watermark.router,
+    pdf_to_word.router,
+    page_numbers.router,
+    ocr.router,
+    office_to_pdf.router,
+    metadata.router,
+    extract_pages.router,
+    delete_pages.router,
+    pdf_to_text.router,
+    pdf_to_excel.router,
+    pdf_to_pptx.router,
+    strip_metadata.router,
+    delete_annotations.router,
+    repair.router,
+    crop.router,
+    resize.router,
+    flatten.router,
+    header_footer.router,
+    bates_numbering.router,
+    grayscale.router,
+    bookmarks.router,
+    pdf_to_pdfa.router,
+    extract_images.router,
+    organize_pages.router,
+    alternate_mix.router,
+    split_bookmarks.router,
+    split_by_size.router,
+    nup.router,
+    overlay.router,
+    fill_form.router,
+    compare.router,
+    deskew.router,
+    sign.router,
+    redact.router,
+    html_to_pdf.router,
+    edit_pdf.router,
+    qr_code.router,
+    remove_blank_pages.router,
+    auto_crop.router,
+    invert_colors.router,
+    pdf_security.router,
+    pdf_extra.router,
+    non_pdf_tools.router,
+    image_ocr.router,
+    phase1_tools.router,
+    phase2_tools.router,
+    phase3_tools.router,
+    phase4_tools.router,
+    phase5_tools.router,
+    phase6_tools.router,
+    reverse_pdf.router,
+    booklet.router,
+    new_tools.router,
+    phase7_tools.router,
+    v12_tools.router,
+    transparency.router,
+    remove_watermark.router,
+    developer.router,
+    accessibility.router,
+])
+
 app.include_router(sitemap.router)
 app.include_router(og_image.router)
 

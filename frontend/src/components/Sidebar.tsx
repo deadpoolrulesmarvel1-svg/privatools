@@ -193,7 +193,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
                                 aria-hidden="true"
                                 className={cn(
                                     "transition-transform group-hover:scale-110",
-                                    active ? "text-accent" : "text-muted-foreground/85 group-hover:text-foreground"
+                                    active ? "text-accent" : "text-muted-foreground group-hover:text-foreground"
                                 )}
                             />
                             <span className="flex-1 truncate">{n.label}</span>
@@ -253,11 +253,11 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
                                 >
                                     <ChevronRight
                                         size={12}
-                                        className={cn("text-muted-foreground/85 transition-transform shrink-0", isOpen && "rotate-90")}
+                                        className={cn("text-muted-foreground transition-transform shrink-0", isOpen && "rotate-90")}
                                     />
                                     <Icon size={13} strokeWidth={1.75} style={{ color: "hsl(var(--tile))" }} className="shrink-0" />
                                     <span className="flex-1 text-left truncate">{suite.label}</span>
-                                    <span className="font-mono text-[10px] text-muted-foreground/70">{count}</span>
+                                    <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
                                 </button>
 
                                 {isOpen && suite.pdfCategories && (
@@ -278,7 +278,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
                                                         />
                                                         <span className="font-mono text-[9.5px] tracking-[0.10em] text-accent">{cat.no}</span>
                                                         <span className="flex-1 text-left truncate">{cat.label}</span>
-                                                        <span className="font-mono text-[10px] text-muted-foreground/70">{catTools.length}</span>
+                                                        <span className="font-mono text-[10px] text-muted-foreground">{catTools.length}</span>
                                                     </button>
                                                     {isCatOpen && (
                                                         <div className="ml-3 pl-2.5 border-l border-border space-y-px mb-1">
@@ -333,11 +333,11 @@ function SectionLabel({ label, icon: Icon, count }: { label: string; icon?: type
     return (
         <div className="px-2.5 flex items-center gap-1.5">
             {Icon && <Icon size={10} className="text-muted-foreground/85" />}
-            <span className="font-mono text-[10px] font-medium tracking-[0.12em] uppercase text-muted-foreground/85">
-                <span className="text-accent">§</span> {label}
+            <span className="text-[11px] font-medium text-muted-foreground">
+                {label}
             </span>
             {typeof count === "number" && (
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground/70">{count}</span>
+                <span className="ml-auto font-mono text-[10px] text-muted-foreground">{count}</span>
             )}
         </div>
     );
@@ -370,7 +370,7 @@ const SidebarToolLink = memo(function SidebarToolLink({
                 catClass,
                 active
                     ? "bg-secondary text-foreground"
-                    : "text-muted-foreground/90 hover:text-foreground hover:bg-secondary/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             )}
         >
             <Icon size={12} strokeWidth={1.75} style={{ color: "hsl(var(--tile, var(--accent)))" }} className="shrink-0" aria-hidden="true" />

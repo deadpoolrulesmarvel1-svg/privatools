@@ -94,7 +94,7 @@ export function PdfToTextUI() {
                         <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
                             <s.icon size={13} className="mx-auto mb-1 text-muted-foreground" />
                             <p className="font-display text-[19px] font-bold tracking-[-0.02em] text-foreground">{s.value.toLocaleString()}</p>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">{s.label}</p>
+                            <p className="font-medium text-[11px] text-muted-foreground">{s.label}</p>
                         </div>
                     ))}
                 </div>
@@ -108,7 +108,7 @@ export function PdfToTextUI() {
                         <div className="flex-1 min-w-0">
                             <p className="font-display font-semibold text-[13.5px]">Looks like an image-only PDF</p>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                <span className="text-accent">§</span> Try the <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> tool to extract text from scanned pages.
+                                Try the <a href="/tool/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> tool to extract text from scanned pages.
                             </p>
                         </div>
                     </div>
@@ -116,8 +116,8 @@ export function PdfToTextUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Extracted text</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Extracted text</span>
                     <button onClick={handleCopy} className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-accent hover:opacity-80 transition-opacity", copied && "animate-copy-flash")}>
                         {copied ? <><CheckCircle2 size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
                     </button>
@@ -153,7 +153,7 @@ export function PdfToTextUI() {
                     <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                         {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : <><ScanText size={13} /> Extract text</>}
                     </button>
-                    {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

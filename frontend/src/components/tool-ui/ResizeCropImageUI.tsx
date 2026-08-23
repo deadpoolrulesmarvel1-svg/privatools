@@ -119,8 +119,8 @@ export function ResizeCropImageUI() {
                 <>
                     {preview && srcDims && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span><span className="text-accent">§</span> Preview</span>
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                                <span>Preview</span>
                                 <span>{srcDims.w}×{srcDims.h} px source</span>
                             </div>
                             <div className="p-4 flex items-center justify-center bg-paper-2/30">
@@ -146,8 +146,8 @@ export function ResizeCropImageUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Quick presets
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Quick presets
                         </div>
                         <div className="p-3 flex flex-wrap gap-1.5">
                             {presets.map(p => {
@@ -157,7 +157,7 @@ export function ResizeCropImageUI() {
                                         key={p.label}
                                         onClick={() => applyPreset(p.w, p.h)}
                                         className={cn(
-                                            "rounded-md border px-2.5 py-1.5 font-mono text-[10.5px] tracking-[0.04em] uppercase transition-colors",
+                                            "font-medium rounded-md border px-2.5 py-1.5 text-[11.5px] transition-colors",
                                             active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                         )}
                                     >
@@ -169,13 +169,13 @@ export function ResizeCropImageUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Dimensions</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Dimensions</span>
                             <span className="text-accent">{width}×{height} px</span>
                         </div>
                         <div className="p-4 grid grid-cols-2 gap-3">
                             <div>
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Width (px)</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Width (px)</label>
                                 <input
                                     type="number" inputMode="numeric" value={width}
                                     onChange={e => setWidth(parseInt(e.target.value) || 800)} min={1}
@@ -183,7 +183,7 @@ export function ResizeCropImageUI() {
                                 />
                             </div>
                             <div>
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Height (px)</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Height (px)</label>
                                 <input
                                     type="number" inputMode="numeric" value={height}
                                     onChange={e => setHeight(parseInt(e.target.value) || 600)} min={1}
@@ -204,7 +204,7 @@ export function ResizeCropImageUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : mode === "resize" ? <><Maximize2 size={13} /> Resize to {width}×{height}</> : <><Crop size={13} /> Crop to {width}×{height}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

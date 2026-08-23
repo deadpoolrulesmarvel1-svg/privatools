@@ -59,7 +59,7 @@ export function SplitByBookmarksUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">Bookmarked</span> chapters extracted
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                             ZIP archive downloaded
                         </p>
                         <button
@@ -102,7 +102,7 @@ export function SplitByBookmarksUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                         : <><BookOpen size={13} /> Split by bookmarks</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

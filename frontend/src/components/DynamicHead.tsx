@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useSkin } from "@/hooks/useSkin";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { blogPosts } from "@/data/blog";
@@ -23,7 +24,7 @@ const TOTAL_TOOL_COUNT = tools.length + nonPdfTools.length;
 const pageMeta: Record<string, { title: string; description: string }> = {
     "/": {
         title: "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        description: `${TOTAL_TOOL_COUNT} free, open-source file tools — PDF, image, video, and developer utilities. Public demo files use isolated temporary processing; self-host when you want your own infrastructure. No behavioural tracking, no accounts.`,
+        description: `${TOTAL_TOOL_COUNT} free, open-source file tools — PDF, image, video, and developer utilities. Public demo files use isolated temporary processing; self-host when you want your own infrastructure. No behavioural tracking, no account needed.`,
     },
     "/about": {
         title: "About PrivaTools — How We Handle Your Files | Privacy-First",
@@ -47,7 +48,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/terms": {
         title: "Terms of Service — PrivaTools",
-        description: "Terms of service for PrivaTools. Free, open-source file tools provided as-is under the MIT license. No accounts, no data collection.",
+        description: "Terms of service for PrivaTools. Free, open-source file tools provided as-is under the MIT license. No account needed, no tracking.",
     },
     "/compare": {
         title: "PrivaTools vs iLovePDF vs Smallpdf vs Adobe — Free Comparison",
@@ -55,7 +56,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/ilovepdf": {
         title: "PrivaTools vs iLovePDF — Honest Feature Comparison (2026)",
-        description: "PrivaTools vs iLovePDF compared: pricing, file limits, privacy, features. PrivaTools is 100% free with no ads, no accounts, and open source. See the full comparison.",
+        description: "PrivaTools vs iLovePDF compared: pricing, file limits, privacy, features. PrivaTools is 100% free with no ads, no account needed, and open source. See the full comparison.",
     },
     "/compare/smallpdf": {
         title: "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
@@ -79,7 +80,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/lightpdf": {
         title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
-        description: "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. No file limits, no accounts, no ads. Compare privacy and features.",
+        description: "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. No file limits, no account needed, no ads. Compare privacy and features.",
     },
 };
 
@@ -191,8 +192,15 @@ const authorSchema = {
  */
 export function DynamicHead() {
     const { pathname } = useLocation();
+    const { skin } = useSkin();
 
     useEffect(() => {
+        // A ported design owns the whole screen, including its own routing and
+        // its own document titles. Ours would overwrite them with the title for
+        // whatever React Router path happens to be underneath — which for a
+        // hash-routed skin is always "/".
+        if (skin !== "signature") return;
+
         const tool = toolMap[pathname];
         const url = `${BASE_URL}${pathname === "/" ? "" : pathname}`;
 
@@ -493,7 +501,7 @@ export function DynamicHead() {
                 removeJsonLd();
             }
         }
-    }, [pathname]);
+    }, [pathname, skin]);
 
     return null;
 }

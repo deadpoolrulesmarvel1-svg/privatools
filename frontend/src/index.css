@@ -17,110 +17,83 @@
  */
 
 @font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin-400-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin-500-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Fraunces';
+  font-family: 'Bricolage Grotesque';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-600-normal.woff2') format('woff2');
+  src: url('/fonts/bricolage-grotesque-latin-600-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Bricolage Grotesque';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-700-normal.woff2') format('woff2');
+  src: url('/fonts/bricolage-grotesque-latin-700-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Bricolage Grotesque';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url('/fonts/fraunces-latin-800-normal.woff2') format('woff2');
+  src: url('/fonts/bricolage-grotesque-latin-800-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 900;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin-900-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-@font-face {
-  font-family: 'Inter';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-500-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/inter-latin-600-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-600-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Outfit';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/inter-latin-700-normal.woff2') format('woff2');
+  src: url('/fonts/outfit-latin-700-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'DM Mono';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/dm-mono-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'DM Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/dm-mono-latin-500-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
@@ -130,114 +103,149 @@
 
 @layer base {
   :root {
-    --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
-    --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    --font-display: 'Bricolage Grotesque', 'Outfit', system-ui, sans-serif;
+    --font-sans:    'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'DM Mono', 'SF Mono', Menlo, monospace;
 
-    /* ── Light — warm paper + deep ink ─────────────────────────────── */
-    --background: 40 36% 96%;            /* #FAF7F0 warm paper */
-    --foreground: 30 18% 8%;             /* #16140E deep ink */
+    /* ── Light ─────────────────────────────────────────────────────────
+       Teal primary with an amber highlight: a warm/cool complementary duo
+       that reads cheerful rather than corporate. Teal is unclaimed as a
+       primary here — Foxit uses it only as a tertiary — while five rivals
+       share blue and two share orange. */
+    --background: 0 0% 100%;
+    --foreground: 195 42% 8%;            /* #0C1D22 teal-leaning near-black */
 
-    --paper:      40 36% 96%;            /* base */
-    --paper-2:    38 28% 92%;            /* #ECE5D3 slightly tinted second surface */
-    --paper-3:    36 22% 88%;            /* #DFD7C2 */
+    --paper:      0 0% 100%;
+    --paper-2:    186 44% 97%;           /* #F3FAFB */
+    --paper-3:    186 36% 93%;           /* #E4F2F4 */
 
     --card: 0 0% 100%;
-    --card-foreground: 30 18% 8%;
-    --card-tint: 40 30% 94%;
+    --card-foreground: 195 42% 8%;
+    --card-tint: 186 50% 98%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 30 18% 8%;
+    --popover-foreground: 195 42% 8%;
 
-    --primary: 30 18% 8%;                /* deep ink primary CTA */
-    --primary-foreground: 40 36% 96%;
+    --primary: 175 100% 26%;             /* #00857A — 4.55:1 with white; 33% was 2.96:1 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 38 24% 90%;             /* warm putty */
-    --secondary-foreground: 30 18% 8%;
+    --secondary: 186 40% 95%;
+    --secondary-foreground: 195 42% 8%;
 
-    --muted: 38 22% 92%;
-    --muted-foreground: 30 8% 32%;       /* #534F46 — sufficient contrast */
+    --muted: 186 30% 96%;
+    --muted-foreground: 196 14% 38%;     /* #536B70 — AA on white */
 
-    /* Signal green — accessible on warm paper, WCAG AA */
-    --accent: 152 82% 30%;               /* #0E8A56 darkened for AA on cream */
-    --accent-foreground: 40 36% 96%;
-    --accent-soft: 152 60% 92%;          /* tinted pill background */
+    /* Energy, not another button colour: highlights, badges, "new". */
+    --accent: 34 100% 32%;               /* #A35C00 — 5.0:1 on white */
+    --accent-bright: 38 100% 50%;        /* #FFA800 — fills only, never text */
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 40 100% 94%;
 
-    /* Copper, used for "industry first" — restrained */
-    --copper: 19 75% 35%;                /* #9F4D1B */
-    --copper-soft: 19 60% 90%;
+    --copper: 28 92% 33%;                /* warning — 4.7:1 on white */
+    --copper-soft: 32 100% 94%;
+    --success: 158 80% 30%;
+    --success-soft: 158 60% 94%;
 
-    --destructive: 0 70% 38%;
+    --destructive: 356 78% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 36 18% 80%;                /* #CFC7B3 warm hairline */
-    --border-strong: 36 16% 64%;         /* #A89F89 stronger rule */
-    --input: 36 18% 80%;
-    --ring: 152 82% 30%;
+    --border: 190 26% 89%;
+    --border-strong: 192 18% 74%;
+    --input: 190 26% 89%;
+    --ring: 175 100% 26%;
 
-    --radius: 0.625rem;                  /* 10px — a touch larger than v0 */
+    --radius: 1.25rem;
 
-    /* Sidebar tokens preserved for shadcn compat */
-    --sidebar-background: 40 36% 96%;
-    --sidebar-foreground: 30 18% 8%;
-    --sidebar-primary: 30 18% 8%;
-    --sidebar-primary-foreground: 40 36% 96%;
-    --sidebar-accent: 38 24% 90%;
-    --sidebar-accent-foreground: 30 18% 8%;
-    --sidebar-border: 36 18% 80%;
-    --sidebar-ring: 152 82% 30%;
+    /* Twelve families, all at the same saturation and lightness so they read
+       as one wheel rather than a dozen unrelated defaults. Only the hue moves. */
+    --cat-organize:  210 72% 48%;
+    --cat-edit:      265 72% 48%;
+    --cat-optimize:  175 72% 38%;
+    --cat-security:  350 72% 50%;
+    --cat-to-pdf:    150 72% 36%;
+    --cat-from-pdf:   32 82% 46%;
+    --cat-advanced:  240 72% 56%;
+    --cat-image:     320 72% 50%;
+    --cat-video:      12 78% 50%;
+    --cat-developer: 190 78% 40%;
+    --cat-archive:    45 82% 44%;
+    --cat-document:   95 62% 36%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 195 42% 8%;
+    --sidebar-primary: 175 100% 33%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 186 40% 95%;
+    --sidebar-accent-foreground: 195 42% 8%;
+    --sidebar-border: 190 26% 89%;
+    --sidebar-ring: 175 100% 33%;
   }
 
+  /* ── Dark — true black ─────────────────────────────────────────── */
   .dark {
-    /* ── Dark — bone on near-black, warm undertone ─────────────────── */
-    --background: 30 8% 6%;              /* #100F0C — warm near-black */
-    --foreground: 40 22% 90%;            /* #EDE6D2 bone */
+    --foreground: 186 30% 95%;
+    --card-foreground: 186 30% 95%;
+    --popover-foreground: 186 30% 95%;
 
-    --paper:   30 8% 6%;
-    --paper-2: 30 7% 9%;                 /* #181714 second surface */
-    --paper-3: 30 6% 13%;                /* #21201D */
+    --primary: 175 75% 47%;              /* lifted so it holds on a dark ground */
+    --primary-foreground: 195 45% 6%;
 
-    --card: 30 7% 8%;                    /* #161512 */
-    --card-foreground: 40 22% 90%;
-    --card-tint: 30 6% 11%;
+    --accent: 40 100% 62%;
+    --accent-bright: 40 100% 62%;
+    --accent-foreground: 195 45% 6%;
+    --accent-soft: 36 60% 16%;
 
-    --popover: 30 7% 8%;
-    --popover-foreground: 40 22% 90%;
+    --copper: 32 96% 62%;
+    --copper-soft: 28 45% 16%;
+    --success: 158 62% 48%;
+    --success-soft: 158 40% 14%;
 
-    --primary: 40 22% 90%;               /* bone primary on dark = inverted */
-    --primary-foreground: 30 8% 6%;
-
-    --secondary: 30 6% 13%;
-    --secondary-foreground: 40 18% 78%;
-
-    --muted: 30 6% 12%;
-    --muted-foreground: 38 12% 68%;      /* #A8A293 readable on near-black */
-
-    /* Signal green — pops on dark */
-    --accent: 152 76% 48%;               /* #28C886 vibrant */
-    --accent-foreground: 30 8% 6%;
-    --accent-soft: 152 50% 16%;
-
-    --copper: 22 80% 60%;                /* #E48543 vivid */
-    --copper-soft: 22 30% 18%;
-
-    --destructive: 0 70% 55%;
+    --destructive: 356 85% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 6% 18%;                 /* #2F2D29 */
-    --border-strong: 30 6% 28%;          /* #4A4742 */
-    --input: 30 6% 18%;
-    --ring: 152 76% 48%;
+    --ring: 175 75% 47%;
+    --sidebar-primary: 175 75% 47%;
+    --sidebar-primary-foreground: 195 45% 6%;
 
-    --sidebar-background: 30 8% 6%;
-    --sidebar-foreground: 40 22% 90%;
-    --sidebar-primary: 40 22% 90%;
-    --sidebar-primary-foreground: 30 8% 6%;
-    --sidebar-accent: 30 6% 13%;
-    --sidebar-accent-foreground: 40 22% 90%;
-    --sidebar-border: 30 6% 18%;
-    --sidebar-ring: 152 76% 48%;
+    /* True black, with elevation carried by lightness alone. Neutral on
+       purpose: it is what makes the category hues punch. */
+    --background: 0 0% 2.5%;
+    --paper:      0 0% 2.5%;
+    --paper-2:    0 0% 6%;
+    --paper-3:    0 0% 10%;
+    --card:       0 0% 5%;
+    --card-tint:  0 0% 8%;
+    --popover:    0 0% 5%;
+    --secondary:  0 0% 12%;
+    --secondary-foreground: 0 0% 88%;
+    --muted:      0 0% 10%;
+    --muted-foreground: 0 0% 66%;
+    --border:     0 0% 15%;
+    --border-strong: 0 0% 28%;
+    --input:      0 0% 15%;
+
+    --sidebar-background: 0 0% 2.5%;
+    --sidebar-foreground: 186 30% 95%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 186 30% 95%;
+    --sidebar-border: 0 0% 15%;
+
+    /* Same wheel, lifted for legibility on dark. */
+    --cat-organize:  210 88% 66%;
+    --cat-edit:      265 88% 72%;
+    --cat-optimize:  175 70% 50%;
+    --cat-security:  350 88% 68%;
+    --cat-to-pdf:    150 62% 48%;
+    --cat-from-pdf:   32 92% 58%;
+    --cat-advanced:  240 90% 74%;
+    --cat-image:     320 85% 68%;
+    --cat-video:      12 90% 64%;
+    --cat-developer: 190 80% 54%;
+    --cat-archive:    45 92% 58%;
+    --cat-document:   95 60% 52%;
   }
+
+
 }
 
 @layer base {
@@ -300,15 +308,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
   color: hsl(var(--muted-foreground));
   font-weight: 500;
 }
 .section-mark::before {
-  content: "§";
+  content: "";
   font-family: var(--font-display);
   font-style: italic;
   font-size: 14px;
@@ -330,25 +337,22 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  height: 24px;
-  padding: 0 0.625rem;
+  height: 26px;
+  padding: 0 0.75rem;
   background: hsl(var(--paper-2));
   color: hsl(var(--muted-foreground));
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  border-radius: 999px;
   border-radius: 6px;
   border: 1px solid hsl(var(--border));
 }
 
 .category-tag {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: hsl(var(--muted-foreground));
 }
 
@@ -456,11 +460,20 @@
   overflow: hidden;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: 14px;
+  border-radius: 20px;
   transition:
-    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    transform   0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow  0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform   0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow  0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-tile:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--tile, var(--primary)) / 0.55);
+  box-shadow: 0 20px 44px -24px hsl(var(--tile, var(--primary)) / 0.7),
+              0 2px 8px -4px hsl(var(--foreground) / 0.08);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-tile, .hero-tile:hover { transition: none; transform: none; }
 }
 .hero-tile:active { transform: translateY(0); transition-duration: 0.06s; }
 .hero-tile::before {
@@ -496,26 +509,27 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 44px;
-  padding: 0 1.25rem;
+  height: 48px;
+  padding: 0 1.75rem;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
-  letter-spacing: -0.005em;
-  border-radius: 8px;
-  transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.08),
-    0 1px 2px 0 rgba(20,15,5,0.20);
+  border-radius: 999px;
+  box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.32), 0 8px 20px -8px hsl(var(--primary) / 0.5);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.15s ease;
 }
 .btn-editorial:hover {
-  background: hsl(var(--primary) / 0.92);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.12),
-    0 4px 14px -2px rgba(20,15,5,0.30),
-    0 0 0 3px hsl(var(--accent) / 0.18);
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.32), 0 16px 32px -10px hsl(var(--primary) / 0.55);
+}
+.btn-editorial:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  .btn-editorial, .btn-editorial:hover, .btn-editorial:active { transition: none; transform: none; }
 }
 .btn-editorial:active { transform: translateY(1px); }
 
@@ -538,26 +552,39 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 44px;
-  padding: 0 1.25rem;
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
+  height: 48px;
+  padding: 0 1.75rem;
+  /* Coral primary, fully rounded. The main action on a consumer tool should
+     look pressable from across the room. */
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
-  border-radius: 8px;
-  transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.20),
-    0 1px 2px 0 hsl(var(--accent) / 0.30);
+  border-radius: 999px;
+  /* Shadow carries the button's own hue rather than generic black — the
+     difference between a button sitting on the page and one lit by it. */
+  box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.35), 0 8px 20px -8px hsl(var(--primary) / 0.55);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.15s ease;
 }
 .btn-accent:hover {
-  filter: brightness(1.05);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--paper) / 0.25),
-    0 6px 18px -4px hsl(var(--accent) / 0.45);
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.35), 0 16px 32px -10px hsl(var(--primary) / 0.6);
 }
-.btn-accent:active { transform: translateY(1px); }
+.btn-accent:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 0 hsl(var(--primary) / 0.35), 0 4px 12px -6px hsl(var(--primary) / 0.5);
+}
+.btn-accent:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--background)), 0 0 0 6px hsl(var(--ring) / 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-accent, .btn-accent:hover, .btn-accent:active { transition: none; transform: none; }
+}
 
 /* Secondary outline — same geometry, transparent */
 .btn-secondary-pill {
@@ -710,19 +737,19 @@
 }
 
 /* ── Per-suite tile color (set --tile per element) ────────────────── */
-.cat-organize { --tile: 200 90% 45%; }   /* cyan */
-.cat-edit     { --tile: 270 70% 55%; }   /* violet */
-.cat-optimize { --tile: 152 76% 35%; }   /* the brand green itself */
-.cat-security { --tile: 350 80% 50%; }   /* rose */
-.cat-to-pdf   { --tile: 22  85% 45%; }   /* burnt orange / copper */
-.cat-from-pdf { --tile: 220 75% 55%; }   /* blue */
-.cat-advanced { --tile: 250 75% 60%; }   /* indigo */
+.cat-organize { --tile: var(--cat-organize); }
+.cat-edit     { --tile: var(--cat-edit); }
+.cat-optimize { --tile: var(--cat-optimize); }
+.cat-security { --tile: var(--cat-security); }
+.cat-to-pdf   { --tile: var(--cat-to-pdf); }
+.cat-from-pdf { --tile: var(--cat-from-pdf); }
+.cat-advanced { --tile: var(--cat-advanced); }
 
-.cat-image          { --tile: 320 75% 55%; } /* pink */
-.cat-video-audio    { --tile: 18  85% 50%; } /* orange-red */
-.cat-developer      { --tile: 195 85% 45%; } /* sky */
-.cat-archive        { --tile: 45  85% 45%; } /* amber */
-.cat-document-office{ --tile: 80  65% 40%; } /* lime-olive */
+.cat-image          { --tile: var(--cat-image); }
+.cat-video-audio    { --tile: var(--cat-video); }
+.cat-developer      { --tile: var(--cat-developer); }
+.cat-archive        { --tile: var(--cat-archive); }
+.cat-document-office{ --tile: var(--cat-document); }
 
 .dark .cat-organize { --tile: 200 80% 60%; }
 .dark .cat-edit     { --tile: 270 75% 70%; }
@@ -742,13 +769,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  width: 40px;
-  border-radius: 10px;
-  color: hsl(var(--tile, var(--accent)));
-  background: hsl(var(--tile, var(--accent)) / 0.10);
-  border: 1px solid hsl(var(--tile, var(--accent)) / 0.20);
-  transition: background 0.15s ease, transform 0.18s ease, border-color 0.18s ease;
+  height: 42px;
+  width: 42px;
+  border-radius: 14px;
+  color: #fff;
+  background: hsl(var(--tile, var(--primary)));
+  border: none;
+  box-shadow: 0 8px 18px -10px hsl(var(--tile, var(--primary)) / 0.85);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-tile:hover .icon-tile,
+.tool-card:hover .icon-tile {
+  transform: scale(1.08) rotate(-3deg);
+  box-shadow: 0 12px 26px -10px hsl(var(--tile, var(--primary)) / 0.95);
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-tile, .hero-tile:hover .icon-tile, .tool-card:hover .icon-tile {
+    transition: none; transform: none;
+  }
 }
 .tool-card:hover .icon-tile,
 .hero-tile:hover .icon-tile {
@@ -833,7 +872,7 @@
   60%  { transform: scale(1.08); opacity: 1; }
   100% { transform: scale(1); }
 }
-.animate-success-pop { animation: success-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-success-pop { animation: success-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes corner-extend {
   from { opacity: 0; transform: scale(0.5); }
@@ -844,6 +883,119 @@
 .animate-corner-extend > .corner-mark:nth-child(2) { animation-delay: 0.10s; }
 .animate-corner-extend > .corner-mark:nth-child(3) { animation-delay: 0.15s; }
 .animate-corner-extend > .corner-mark:nth-child(4) { animation-delay: 0.20s; }
+
+/* The drop zone is the product on 219 pages. 56 components had rolled their
+   own with the same Tailwind geometry, so rather than editing 56 files this
+   upgrades all of them at once: softer corners, more room, and a lift on hover
+   so the target feels alive rather than like a fieldset. */
+/* Route transition. Content arrives rather than blinking into place; the
+   header and footer stay put so only the changing region moves. */
+@keyframes route-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.workspace-enter {
+  animation: route-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Anything interactive that should feel like an object rather than a rectangle. */
+.press {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.press:hover  { transform: translateY(-2px); }
+.press:active { transform: translateY(1px); transition-duration: 0.08s; }
+
+/* A slow drift for ambient background shapes. Deliberately long and subtle —
+   ambient motion should be noticed only if you look for it. */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(0, -14px, 0) scale(1.04); }
+}
+.drift      { animation: drift 14s ease-in-out infinite; }
+.drift-slow { animation: drift 22s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-enter { animation: none; }
+  .press, .press:hover, .press:active { transition: none; transform: none; }
+  .drift, .drift-slow { animation: none; }
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Nothing should mount all at once. A grid that appears as a single block
+   reads as a screenshot; the same grid cascading in reads as a place that is
+   doing something. Y-translation plus opacity only — both GPU-composited. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.stagger-in > * {
+  opacity: 0;
+  animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* Capped at 12 — past that the last card would wait most of a second, which
+   reads as jank rather than choreography. */
+.stagger-in > *:nth-child(1)  { animation-delay: 0.02s; }
+.stagger-in > *:nth-child(2)  { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(3)  { animation-delay: 0.08s; }
+.stagger-in > *:nth-child(4)  { animation-delay: 0.11s; }
+.stagger-in > *:nth-child(5)  { animation-delay: 0.14s; }
+.stagger-in > *:nth-child(6)  { animation-delay: 0.17s; }
+.stagger-in > *:nth-child(7)  { animation-delay: 0.20s; }
+.stagger-in > *:nth-child(8)  { animation-delay: 0.23s; }
+.stagger-in > *:nth-child(9)  { animation-delay: 0.26s; }
+.stagger-in > *:nth-child(10) { animation-delay: 0.29s; }
+.stagger-in > *:nth-child(11) { animation-delay: 0.32s; }
+.stagger-in > *:nth-child(n+12) { animation-delay: 0.35s; }
+
+/* Scroll reveal — sections settle in as they enter the viewport. */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in > * { animation: none; opacity: 1; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Card shadow carries the card's own hue rather than generic black, so a grid
+   of tools reads as coloured objects on a page instead of grey rectangles. */
+.tool-card:hover {
+  box-shadow: 0 18px 40px -22px var(--hue), 0 2px 8px -4px hsl(var(--foreground) / 0.08);
+}
+
+.dropzone-surface {
+  border-radius: 28px !important;
+  padding-top: 3.5rem !important;
+  padding-bottom: 3.5rem !important;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dropzone-surface:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 16px 44px -24px hsl(var(--primary) / 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dropzone-surface, .dropzone-surface:hover { transition: none; transform: none; }
+}
+
+/* Corner brackets are the last of the technical-drawing motif. Hidden here
+   rather than deleted from 96 components: the JSX stays valid, the marks stop
+   rendering, and reverting is one line. */
+.corner-mark { display: none !important; }
 
 /* ── Dropzone interaction — corner marks gently extend on hover ── */
 .corner-mark { transition: transform 0.25s ease-out, opacity 0.25s ease-out; }
@@ -913,7 +1065,7 @@
   0%   { opacity: 0; transform: scale(0.85) translateY(4px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
-.animate-pop-in { animation: pop-in 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+.animate-pop-in { animation: pop-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* ── Crossfade — for swapping content (e.g. status bar facts) ── */
 @keyframes crossfade {
@@ -975,7 +1127,7 @@
   0%   { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-.animate-count-up { animation: count-up 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
+.animate-count-up { animation: count-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* ── Marquee — used by privacy ticker ─────────────────────────────── */
 @keyframes marquee-x {
@@ -998,21 +1150,28 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Scoped to this design. A ported skin (src/skins/) brings the scrollbar
+   treatment its own source had, and ours interfered with it in a way that
+   showed up as layout: `scrollbar-color` flips Chromium to overlay scrollbars,
+   and `*::-webkit-scrollbar` forces classic ones — either way the viewport
+   reserved a different gutter than the original design did, and every route
+   came out 10px wide or narrow. */
+
 /* Firefox — thin, muted thumb. */
-* { scrollbar-width: thin; scrollbar-color: hsl(var(--border-strong)) transparent; }
+:root:not([data-skin]) * { scrollbar-width: thin; scrollbar-color: hsl(var(--border-strong)) transparent; }
 
 /* WebKit/Blink — slim, rounded, accent on hover. */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb {
+:root:not([data-skin]) *::-webkit-scrollbar { width: 10px; height: 10px; }
+:root:not([data-skin]) *::-webkit-scrollbar-track { background: transparent; }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb {
   background: hsl(var(--border-strong));
   border-radius: 999px;
   border: 2px solid hsl(var(--background));
   transition: background 0.18s ease;
 }
-*::-webkit-scrollbar-thumb:hover  { background: hsl(var(--accent) / 0.55); }
-*::-webkit-scrollbar-thumb:active { background: hsl(var(--accent) / 0.70); }
-*::-webkit-scrollbar-corner       { background: transparent; }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb:hover  { background: hsl(var(--accent) / 0.55); }
+:root:not([data-skin]) *::-webkit-scrollbar-thumb:active { background: hsl(var(--accent) / 0.70); }
+:root:not([data-skin]) *::-webkit-scrollbar-corner       { background: transparent; }
 
 ::selection { background: hsl(var(--accent) / 0.25); color: hsl(var(--foreground)); }
 
@@ -1033,6 +1192,88 @@ button.btn-accent:focus-visible {
   outline: 2px solid hsl(var(--foreground));
   outline-offset: 3px;
 }
+/* ── Ported-design overflow guard ─────────────────────────────────── */
+/* Grid and flex items default to `min-width: auto`, which refuses to shrink
+   below the content's intrinsic width. Both imported designs that lay out in
+   fixed tracks hit this at 375px:
+
+   - Aurora puts a full URL in a two-column grid cell, and that one unbreakable
+     string widened the document to 410px.
+   - Structured's sticky header could not shrink its search control below its
+     own label, so the page laid out at 508px inside a 375px viewport and the
+     browser shrank the entire design to fit.
+
+   Letting those boxes shrink, and letting a long URL wrap, fixes both without
+   touching any design's own sizing: min-width:0 only ever permits shrinking,
+   never forces it, and the wrap is scoped to links and buttons, which never
+   hold prose. Structured has no CSS breakpoints at all — it switches layouts
+   in JavaScript off window.innerWidth — so there was no media query to fix
+   this in. */
+[data-skin] :where(div, button, a, p, span, li, header, nav, section, main, aside) { min-width: 0; }
+/* `break-word`, not `anywhere`: both wrap a long URL once the box is narrow,
+   but `anywhere` also lowers the element's min-content width, which let a
+   flex button collapse to one character and stack "Filter" vertically. */
+[data-skin] :where(button, a) { overflow-wrap: break-word; }
+
+/* Aurora's responsive ladder stops at 767px, where its four-up grid becomes
+   two-up and stays there. At 375px that leaves 165px columns — cramped for
+   the cards, and too narrow for the one that holds a full URL, which spilled
+   35px past the viewport and made the page scroll sideways.
+   `:root[…]` rather than `[…]` so this outranks skin-native.css regardless of
+   import order. */
+@media (max-width: 480px) {
+  :root[data-skin="aurora"] { --c4: 1fr; }
+}
+
+/* The designs wrap their data tables in a rounded panel that sets
+   `overflow: hidden` to keep the corners clean. On a phone that clips the
+   table instead of scrolling it, so the right-hand columns — Local, Server,
+   Offline on the tools table — simply could not be reached. Wide content
+   should scroll inside its own box, which is what this makes it do. */
+@media (max-width: 767px) {
+  [data-skin] :has(> table) { overflow-x: auto !important; }
+}
+
+/* A keyboard shortcut hint is noise on a device with no keyboard, and these
+   sit inside the search control where they were the last thing making its row
+   too wide to fit. */
+@media (pointer: coarse) {
+  :where(kbd) { display: none; }
+}
+
+/* ── Touch target floor ───────────────────────────────────────────── */
+/* WCAG 2.5.8 asks for a 24px minimum target. A dozen standalone links and
+   buttons sat at 17-20px tall — fine with a mouse, fiddly with a thumb.
+
+   `min-height` has no effect on `display:inline`, so this reaches exactly the
+   controls that need it: standalone links and buttons, which are inline-flex
+   or block. Links inside running prose stay inline and untouched, which is
+   also what 2.5.8's inline exception wants. Zero specificity, so any element
+   that deliberately sizes itself larger still wins. */
+@media (pointer: coarse) {
+  :where(a, button, [role="button"], summary) { min-height: 24px; }
+  /* Width too: icon buttons run 14-23px across, which height alone would
+     leave as a tall sliver rather than a real target. Inert on inline
+     elements, so links inside prose are untouched — same as the height. */
+  :where(a, button, [role="button"]) { min-width: 24px; }
+  /* A checkbox is square, so height alone would leave a 16x24 sliver. */
+  :where(input[type="checkbox"], input[type="radio"]) { min-height: 24px; min-width: 24px; }
+}
+
+/* ── Hover-revealed row actions ───────────────────────────────────── */
+/* List rows hide their delete/reorder buttons behind `group-hover:opacity-100`.
+   Hover is the one interaction a keyboard has no access to, so those buttons
+   stayed at opacity:0 while still being focusable — a keyboard user could tab
+   to "remove" and never see which row it belonged to. Touch has no hover
+   either, so the same controls were unreachable on a phone.
+
+   Hooking Tailwind's own generated class fixes every occurrence at once, and
+   keeps future ones correct without anyone remembering this rule. */
+.group:focus-within .group-hover\:opacity-100 { opacity: 1; }
+@media (hover: none) {
+  .group .group-hover\:opacity-100 { opacity: 1; }
+}
+
 /* High-contrast environment — bump the ring to 3px and use foreground for
    maximum delta against any backdrop. */
 @media (prefers-contrast: more) {
@@ -1238,7 +1479,7 @@ button.btn-accent:focus-visible {
 .blog-prose blockquote {
   margin: 1.5rem 0;
   padding: 0.25rem 0 0.25rem 1.5rem;
-  border-left: 3px solid hsl(var(--accent));
+  border-left: 1px solid hsl(var(--border-strong));
   color: hsl(var(--muted-foreground));
   font-style: italic;
   font-family: var(--font-display);
@@ -1465,4 +1706,25 @@ button.btn-accent:focus-visible {
   .text-muted-foreground\/85 { color: hsl(var(--foreground) / 0.90) !important; }
   .text-foreground\/40,
   .text-foreground\/50 { color: hsl(var(--foreground) / 0.95) !important; }
+}
+
+/* ── Reduced motion: the backstop ─────────────────────────────────── */
+/* The blocks above disable animation selector by selector, which means every
+   new keyframe has to remember to add itself — and several did not: the
+   recovered hover transforms in skin-interactions.css, and the ported designs'
+   own keyframes, were still moving for someone who asked the OS not to.
+   This catches everything, including whatever gets added next.
+
+   0.01ms rather than `none` on purpose: the animation and transition still
+   run, so anything waiting on animationend or transitionend still fires and
+   nothing gets stuck half-shown. It is simply over before it is seen. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }

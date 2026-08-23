@@ -31,11 +31,15 @@ def _json(
     *,
     request: Request | None = None,
     extra: dict[str, Any] | None = None,
+    passthrough_headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     body: dict[str, Any] = {"detail": detail}
     if extra:
         body.update(extra)
-    headers: dict[str, str] = {}
+    # Headers set on the HTTPException are part of the answer, not decoration:
+    # a 429 without Retry-After tells the client nothing about when to try
+    # again, and a 401 without WWW-Authenticate omits the scheme.
+    headers: dict[str, str] = dict(passthrough_headers or {})
     if request is not None:
         rid = getattr(request.state, "request_id", None)
         if rid:
@@ -58,8 +62,35 @@ async def tool_error_handler(request: Request, exc: ToolError) -> JSONResponse:
     return _json(exc.status_code, exc.detail, request=request)
 
 
+def _json_payload(status: int, payload: dict, *, request: Request, headers=None) -> JSONResponse:
+    """Return a structured body verbatim, keeping the request id and headers."""
+    body = dict(payload)
+    rid = getattr(request.state, "request_id", None)
+    if rid:
+        body.setdefault("request_id", rid)
+    response = JSONResponse(status_code=status, content=body)
+    for name, value in (headers or {}).items():
+        response.headers[name] = value
+    if rid:
+        response.headers["X-Request-ID"] = rid
+    return response
+
+
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Preserve HTTPException semantics but propagate the request-id header."""
+    # /api/v1 raises a dict detail carrying a machine-readable `code` alongside
+    # the human message, so a client can branch without string-matching prose.
+    # Flattening that to "Request failed" would take the contract away; it is
+    # only passed through on 4xx, where the detail is author-curated, and only
+    # on the versioned surface.
+    if (
+        isinstance(exc.detail, dict)
+        and exc.status_code < 500
+        and request.url.path.startswith("/api/v1")
+    ):
+        return _json_payload(exc.status_code, exc.detail, request=request,
+                             headers=getattr(exc, "headers", None))
+
     detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
     if exc.status_code == 400 and detail.startswith("Part exceeded maximum size"):
         return _json(
@@ -75,7 +106,10 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     if exc.status_code >= 500:
         logger.warning("%d on %s: %s", exc.status_code, request.url.path, detail)
         detail = "Processing failed. Please try again."
-    return _json(exc.status_code, detail, request=request)
+    return _json(
+        exc.status_code, detail, request=request,
+        passthrough_headers=getattr(exc, "headers", None) if exc.status_code < 500 else None,
+    )
 
 
 async def validation_error_handler(

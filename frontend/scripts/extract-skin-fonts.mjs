@@ -1,0 +1,153 @@
+/**
+ * Extracts the real font files each imported design uses.
+ *
+ *   node scripts/extract-skin-fonts.mjs
+ *
+ * The standalone exports embed their assets as a UUID -> {mime, data} map, and
+ * their @font-face rules reference those UUIDs. So the actual woff2 bytes for
+ * Sora, Inter, Manrope, IBM Plex Mono, Geist, Geist Mono and Material Symbols
+ * are already on disk — nothing is downloaded here.
+ *
+ * Only the latin and latin-ext subsets are written. The exports carry the full
+ * Google Fonts subset matrix (cyrillic, greek, vietnamese …), which would add
+ * megabytes this app has no use for. Material Symbols is taken whole: it is a
+ * single icon face and the designs render icons as ligature text.
+ */
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FONT_DIR = resolve(HERE, "../public/fonts/skins");
+const OUT_CSS = resolve(HERE, "../src/styles/skin-fonts.css");
+
+// The standalone exports are gitignored (13 MB of embedded font binaries).
+// See design-sources/README.md for how to re-obtain them.
+const SERVE = resolve(HERE, "../../design-sources");
+
+const EXPORTS = ["aurora", "carbon", "structured"].map((id) => ({
+  id,
+  file: `${SERVE}/${id}.standalone.html`,
+}));
+
+/** Latin coverage — the exports label subsets only via unicode-range. */
+const isLatin = (range) => /U\+0000-00FF/.test(range) || /U\+0100-02(BA|AF)/.test(range);
+
+function assetMap(src) {
+  // The store is a JSON object of "uuid":{"mime":…,"data":"…"} pairs. Scanning
+  // for the entry shape is far cheaper than locating and parsing the whole blob.
+  const map = new Map();
+  const re = /"([0-9a-f-]{36})":\{"mime":"([^"]+)","compressed":(true|false),"data":"([A-Za-z0-9+/=]+)"\}/g;
+  let m;
+  while ((m = re.exec(src))) {
+    map.set(m[1], { mime: m[2], compressed: m[3] === "true", data: m[4] });
+  }
+  return map;
+}
+
+function faces(src) {
+  const out = [];
+  const re = /@font-face\s*\{([\s\S]{0,900}?)\}/g;
+  let m;
+  while ((m = re.exec(src))) {
+    const b = m[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
+    const family = b.match(/font-family:\s*['"]?([^;'"]+)/)?.[1]?.trim();
+    const weight = b.match(/font-weight:\s*([^;]+)/)?.[1]?.trim() ?? "400";
+    const style = b.match(/font-style:\s*([^;]+)/)?.[1]?.trim() ?? "normal";
+    const uuid = b.match(/url\(\s*['"]?([0-9a-f-]{36})['"]?\s*\)/)?.[1];
+    const range = b.match(/unicode-range:\s*([^;]+)/)?.[1]?.trim() ?? "";
+    if (family && uuid) out.push({ family, weight, style, uuid, range });
+  }
+  return out;
+}
+
+mkdirSync(FONT_DIR, { recursive: true });
+
+const written = new Map();       // uuid -> filename
+let roundedWinner = null;        // the one file that serves "Material Symbols Rounded"
+const cssRules = [];
+let bytes = 0;
+
+// Carbon's rounded face is variable (wght 200-700) and so covers Aurora's
+// 'wght' 300 too; extracting it first makes it the shared file.
+EXPORTS.sort((a, b) => (a.id === "carbon" ? -1 : b.id === "carbon" ? 1 : 0));
+
+for (const { id, file } of EXPORTS) {
+  const src = readFileSync(file, "utf8");
+  const assets = assetMap(src);
+  const all = faces(src);
+  const wanted = all.filter((f) => /Material Symbols/i.test(f.family) || isLatin(f.range));
+
+  const seen = new Set();
+  for (const f of wanted) {
+    const key = `${f.family}|${f.weight}|${f.style}|${f.range}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const asset = assets.get(f.uuid);
+    if (!asset) continue;
+
+    // Aurora and Carbon both name their icon face "Material Symbols Rounded"
+    // with no unicode-range, so two @font-face rules would compete for the same
+    // family and one skin's icons would silently render as tofu. They share a
+    // single merged file instead — see mergeRoundedIcons() below.
+    if (/Material Symbols Rounded/i.test(f.family)) {
+      if (!roundedWinner) roundedWinner = f.uuid;
+      if (f.uuid !== roundedWinner) continue;
+    }
+
+    let name = written.get(f.uuid);
+    if (!name) {
+      const slug = f.family.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      name = `${slug}-${f.weight.replace(/\s+/g, "_")}-${f.uuid.slice(0, 8)}.woff2`;
+      const buf = Buffer.from(asset.data, "base64");
+      writeFileSync(resolve(FONT_DIR, name), buf);
+      written.set(f.uuid, name);
+      bytes += buf.length;
+    }
+
+    cssRules.push(
+      `@font-face {\n` +
+      `  font-family: '${f.family}';\n` +
+      `  font-style: ${f.style};\n` +
+      `  font-weight: ${f.weight};\n` +
+      `  font-display: swap;\n` +
+      `  src: url('/fonts/skins/${name}') format('woff2');\n` +
+      (f.range ? `  unicode-range: ${f.range};\n` : "") +
+      `}`,
+    );
+  }
+  console.log(`${id}: ${all.length} faces seen, ${wanted.length} latin/icon kept`);
+}
+
+writeFileSync(
+  OUT_CSS,
+  `/* AUTO-GENERATED by scripts/extract-skin-fonts.mjs — do not edit by hand.\n` +
+  ` *\n` +
+  ` * Real faces for the three imported design themes, extracted from the\n` +
+  ` * standalone exports' embedded asset store. Self-hosted rather than loaded\n` +
+  ` * from Google Fonts: this is a privacy product, and the source designs'\n` +
+  ` * <link> to fonts.googleapis.com would disclose every visitor's IP.\n` +
+ ` */\n\n` + cssRules.join("\n") + "\n\n" +
+  `/* Google's hosted stylesheet ships these utility classes alongside the\n` +
+  ` * @font-face rules, and Carbon and Structured mark their icons with the\n` +
+  ` * class rather than an inline font-family. Self-hosting means we have to\n` +
+  ` * supply them, or every icon falls back to the body face and renders the\n` +
+  ` * codepoint as tofu.\n` +
+  ` *\n` +
+  ` * No 'liga' feature: icons are rendered by codepoint here, and the subset\n` +
+  ` * fonts carry no ligature table.\n` +
+  ` */\n` +
+  [".material-symbols-rounded", ".material-symbols-outlined"].map((cls) =>
+    `${cls} {\n` +
+    `  font-family: '${cls === ".material-symbols-rounded" ? "Material Symbols Rounded" : "Material Symbols Outlined"}';\n` +
+    `  font-weight: normal;\n  font-style: normal;\n  font-size: 24px;\n` +
+    `  line-height: 1;\n  letter-spacing: normal;\n  text-transform: none;\n` +
+    `  display: inline-block;\n  white-space: nowrap;\n  word-wrap: normal;\n` +
+    `  direction: ltr;\n  -webkit-font-smoothing: antialiased;\n}`
+  ).join("\n") + "\n",
+  "utf8",
+);
+
+console.log(`\n${written.size} font files, ${(bytes / 1e6).toFixed(2)} MB total`);
+console.log(`Wrote ${OUT_CSS}`);

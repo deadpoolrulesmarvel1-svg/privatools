@@ -129,7 +129,7 @@ export function BookmarksUI() {
                     tabIndex={0}
                     aria-label="Upload PDF"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -139,7 +139,7 @@ export function BookmarksUI() {
                         <Bookmark size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Select a PDF to bookmark</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Build a table of contents · point to page numbers</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Build a table of contents · point to page numbers</p>
                 </div>
             ) : (
                 <>
@@ -149,7 +149,7 @@ export function BookmarksUI() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{file.size}</p>
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{file.size}</p>
                         </div>
                         <button onClick={() => setFile(null)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                             <X size={13} />
@@ -157,8 +157,8 @@ export function BookmarksUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Bookmarks</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Bookmarks</span>
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => setMode("rows")}
@@ -178,7 +178,7 @@ export function BookmarksUI() {
                             <div className="p-3 space-y-2 animate-fade-in">
                                 {marks.map((m, i) => (
                                     <div key={i} className="flex items-center gap-2 group">
-                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         <input
                                             value={m.title}
                                             onChange={e => updateMark(i, { title: e.target.value })}
@@ -186,7 +186,7 @@ export function BookmarksUI() {
                                             className="flex-1 min-w-0 rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                         />
                                         <div className="flex items-center gap-1 shrink-0">
-                                            <span className="font-mono text-[9.5px] tracking-wider text-muted-foreground/70">p.</span>
+                                            <span className="font-mono text-[9.5px] tracking-wider text-muted-foreground">p.</span>
                                             <input
                                                 type="number" min={1} max={99999} value={m.page}
                                                 onChange={e => updateMark(i, { page: Math.max(1, Math.min(99999, parseInt(e.target.value) || 1)) })}
@@ -225,11 +225,11 @@ export function BookmarksUI() {
                                     )}
                                 />
                                 {jsonValid ? (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                                        <span className="text-accent">§</span> Array of <span className="text-foreground">{`{ title, page }`}</span> objects
+                                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
+                                        Array of <span className="text-foreground">{`{ title, page }`}</span> objects
                                     </p>
                                 ) : (
-                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive mt-2">
+                                    <p className="font-medium text-[11px] text-destructive mt-2">
                                         Invalid JSON — expected an array of <span className="text-foreground">{`{ title: string, page: number }`}</span>
                                     </p>
                                 )}
@@ -247,7 +247,7 @@ export function BookmarksUI() {
                         <button type="button" onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Writing…</> : <><Bookmark size={13} /> Add bookmarks</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                     </div>
                 </>
             )}

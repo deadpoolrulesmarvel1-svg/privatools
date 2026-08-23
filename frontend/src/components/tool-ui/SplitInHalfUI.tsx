@@ -22,8 +22,8 @@ export function SplitInHalfUI() {
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Cut direction
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Cut direction
                 </div>
                 <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {options.map((o, idx) => {
@@ -62,7 +62,7 @@ export function SplitInHalfUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                        <span className="font-medium text-[11px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
                                         <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{o.label}</p>
                                     </div>
                                     <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">{o.desc}</p>

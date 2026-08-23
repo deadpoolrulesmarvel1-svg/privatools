@@ -127,8 +127,8 @@ export function RedactUI() {
 
                         {report && Object.keys(report.codes).length > 0 && (
                             <div className="mt-4 rounded-lg border border-border bg-card/60 overflow-hidden">
-                                <div className="px-3 py-1.5 border-b border-border bg-paper-2/40 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
-                                    <span className="text-accent">§</span> Withholding log
+                                <div className="font-medium px-3 py-1.5 border-b border-border bg-paper-2/40 text-[11px] text-muted-foreground">
+                                    Withholding log
                                 </div>
                                 <div className="divide-y divide-border">
                                     {Object.entries(report.codes).map(([code, count]) => (
@@ -148,7 +148,7 @@ export function RedactUI() {
                                         </div>
                                     )}
                                 </div>
-                                <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80">
+                                <p className="px-3 py-1.5 border-t border-border font-mono text-[10px] tracking-[0.04em] text-muted-foreground">
                                     Across {report.pages.length} page{report.pages.length === 1 ? "" : "s"} · not saved anywhere — copy it now if you need it
                                 </p>
                             </div>
@@ -179,15 +179,15 @@ export function RedactUI() {
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Redaction boxes ({boxes.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Redaction boxes ({boxes.length})</span>
                         <div className="flex items-center gap-2">
                             <label htmlFor="redact-codeset" className="sr-only">Exemption code set</label>
                             <select
                                 id="redact-codeset"
                                 value={codeSet}
                                 onChange={e => setCodeSet(e.target.value)}
-                                className="h-6 rounded border border-border bg-card px-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase text-foreground outline-none focus:border-accent"
+                                className="font-medium h-6 rounded border border-border bg-card px-1.5 text-[11.5px] text-foreground outline-none focus:border-accent"
                             >
                                 <option value="">No codes</option>
                                 {EXEMPTION_CODE_SETS.map(set => (
@@ -219,8 +219,8 @@ export function RedactUI() {
                                         )}
                                     >
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
-                                                §{String(idx + 1).padStart(2, "0")}
+                                            <span className={cn("font-medium text-[11px]", isSel ? "text-accent" : "text-muted-foreground")}>
+                                                {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">Box {idx + 1}</span>
                                             <button onClick={(e) => { e.stopPropagation(); remove(b.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -236,7 +236,7 @@ export function RedactUI() {
                                                 { f: "height", label: "H", min: 1 },
                                             ] as const).map((c, ci) => (
                                                 <div key={c.f}>
-                                                    <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                    <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(b.id, el); else rowRefs.current.delete(b.id); } : undefined}
                                                         type="number" inputMode="numeric" min={c.min}
@@ -250,7 +250,7 @@ export function RedactUI() {
                                         </div>
                                         {activeSet && (
                                             <div className="mt-2">
-                                                <label htmlFor={`code-${b.id}`} className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">
+                                                <label htmlFor={`code-${b.id}`} className="font-medium text-[10.5px] text-muted-foreground">
                                                     Exemption
                                                 </label>
                                                 <select
@@ -273,8 +273,8 @@ export function RedactUI() {
                                 );
                             })}
                             {activeSet && (
-                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground/80 pt-1">
-                                    <span className="text-accent">§</span> {activeSet.citation} — the code is stamped inside each box
+                                <p className="font-mono text-[10px] tracking-[0.04em] text-muted-foreground pt-1">
+                                    {activeSet.citation} — the code is stamped inside each box
                                 </p>
                             )}
                         </div>
@@ -303,10 +303,10 @@ export function RedactUI() {
                                         />
                                     );
                                 })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2 text-center">
-                                <span className="text-accent">§</span> Permanent · not reversible
+                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
+                                Permanent · not reversible
                             </p>
                         </div>
                     </div>
@@ -325,7 +325,7 @@ export function RedactUI() {
                         {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Redacting…</> : <><EyeOff size={13} /> Redact {boxes.length} region{boxes.length !== 1 && "s"}</>}
                     </button>
                     {state !== "processing" && boxes.length > 0 && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

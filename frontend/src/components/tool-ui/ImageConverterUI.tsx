@@ -124,8 +124,8 @@ export function ImageConverterUI() {
             />
             {preview && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Preview
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Preview
                     </div>
                     <div className="p-4 flex items-center justify-center bg-paper-2/30">
                         <img src={preview} alt="Preview" className="max-h-48 max-w-full object-contain rounded border border-border" />
@@ -133,8 +133,8 @@ export function ImageConverterUI() {
                 </div>
             )}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Target format
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Target format
                 </div>
                 <div className="p-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {formats.map(f => {
@@ -146,7 +146,7 @@ export function ImageConverterUI() {
                                 aria-pressed={active}
                                 aria-label={`Convert to ${f.toUpperCase()}`}
                                 className={cn(
-                                    "min-h-[44px] rounded-lg border py-2.5 px-2 font-mono text-[11px] tracking-[0.10em] uppercase transition-colors",
+                                    "font-medium min-h-[44px] rounded-lg border py-2.5 px-2 text-[12px] transition-colors",
                                     active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                 )}
                             >
@@ -158,7 +158,7 @@ export function ImageConverterUI() {
                 {LOSSY.has(target) && (
                     <div className="px-4 pb-4 pt-1 border-t border-border">
                         <div className="flex items-center justify-between mb-1.5">
-                            <label htmlFor="conv-quality" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Quality</label>
+                            <label htmlFor="conv-quality" className="font-medium text-[11px] text-muted-foreground">Quality</label>
                             <span className="font-mono text-[12px] text-accent tabular-nums">{quality}%</span>
                         </div>
                         <input
@@ -168,7 +168,7 @@ export function ImageConverterUI() {
                             aria-label="Output quality"
                             className="w-full h-2 accent-[hsl(var(--accent))] touch-manipulation"
                         />
-                        <div className="mt-1 flex justify-between font-mono text-[9.5px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                        <div className="font-medium mt-1 flex justify-between text-[9.5px] text-muted-foreground">
                             <span>← smaller</span><span>balanced</span><span>sharper →</span>
                         </div>
                     </div>
@@ -176,11 +176,11 @@ export function ImageConverterUI() {
                 {file && estimatedOut !== null && (
                     <div className="px-4 pb-3 -mt-1 grid grid-cols-2 gap-2">
                         <div className="rounded-lg border border-border bg-paper-2/40 p-2 text-center">
-                            <p className="font-mono text-[9.5px] tracking-[0.08em] uppercase text-muted-foreground">Source</p>
+                            <p className="font-medium text-[9.5px] text-muted-foreground">Source</p>
                             <p className="font-mono text-[13px] text-foreground tabular-nums">{formatFileSize(file.size)}</p>
                         </div>
                         <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-2 text-center">
-                            <p className="font-mono text-[9.5px] tracking-[0.08em] uppercase text-accent">{target.toUpperCase()} (est.)</p>
+                            <p className="font-medium text-[9.5px] text-accent">{target.toUpperCase()} (est.)</p>
                             <p className="font-mono text-[13px] text-accent tabular-nums">~{formatFileSize(estimatedOut)}</p>
                         </div>
                     </div>
@@ -196,7 +196,7 @@ export function ImageConverterUI() {
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Converting…</> : <><Download size={13} /> Convert to {target.toUpperCase()}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>
