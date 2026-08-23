@@ -65,3 +65,18 @@ qrcode==8.2
 pyzbar==0.1.9
 defusedxml==0.7.1
 mistune==3.3.4
+
+# Clerk session verification. Clerk signs its session tokens RS256, so checking
+# one needs RSA — which the standard library does not have. PyJWT does the JWT
+# work and cryptography does the maths.
+#
+# Declared together on purpose: pyjwt[crypto] would pull cryptography in as an
+# extra, and app/auth/clerk_session.py imports cryptography's exceptions
+# directly, so test_declared_dependencies would (rightly) object to it arriving
+# as somebody else's transitive dependency.
+#
+# The alternative was asking Clerk's API to verify each token, which would put
+# a network round-trip on every key request and make API key management stop
+# working whenever Clerk had an incident.
+pyjwt==2.11.0
+cryptography==46.0.5

@@ -39,6 +39,8 @@ IMPORT_TO_DISTRIBUTION = {
     "pptx": "python-pptx",
     "barcode": "python-barcode",
     "pillow_heif": "pillow-heif",
+    # PyJWT installs as `pyjwt` and imports as `jwt`.
+    "jwt": "pyjwt",
 }
 
 # Imported by app code but deliberately NOT direct dependencies.

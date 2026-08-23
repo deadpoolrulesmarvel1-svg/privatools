@@ -67,6 +67,7 @@ from .routes import (
     accessibility,
 )
 from .routes import accounts as accounts_routes
+from .routes import clerk_webhook as clerk_webhook_routes
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
 
@@ -735,6 +736,7 @@ app.include_router(remove_watermark.router, prefix="/api")
 app.include_router(developer.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(accounts_routes.router, prefix="/api")
+app.include_router(clerk_webhook_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
 
 # Sitemap + OG image

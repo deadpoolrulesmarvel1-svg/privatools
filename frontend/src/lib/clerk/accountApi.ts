@@ -179,10 +179,10 @@ export const clerkAccountApi = {
         const clerk = requireClerk();
         if (!clerk.user) throw new Error("Not signed in.");
         try {
-            // Clerk owns the identity; our API keys are removed by the
-            // user.deleted webhook. See backend/app/routes/clerk_webhook.py —
-            // without it, deleting an account here would leave live keys
-            // spending quota forever.
+            // Clerk owns the identity; the API keys are removed on this side
+            // by the user.deleted webhook (backend/app/routes/clerk_webhook.py).
+            // Without it, deleting an account here would leave live keys
+            // authenticating and spending quota for a user who is gone.
             await clerk.user.delete();
             return { ok: true };
         } catch (err) {
