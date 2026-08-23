@@ -51,6 +51,17 @@ def _directive(policy: str, name: str) -> str:
     return m.group(1) if m else ""
 
 
+def _sources(policy: str, name: str) -> list[str]:
+    """A directive as its source tokens.
+
+    Membership rather than substring on purpose: `"https://img.clerk.com" in
+    directive` is also satisfied by `https://img.clerk.com.evil.com`, which is
+    exactly the sort of thing these tests exist to catch. CodeQL flags the
+    substring form as incomplete URL sanitization and it is right to.
+    """
+    return _directive(policy, name).split()
+
+
 ACCOUNT_PATHS = ["/account", "/account/keys", "/account/"]
 NON_ACCOUNT_PATHS = ["/", "/tool/merge-pdf", "/tool/summarize-pdf", "/about", "/accounts-payable"]
 
@@ -58,10 +69,10 @@ NON_ACCOUNT_PATHS = ["/", "/tool/merge-pdf", "/tool/summarize-pdf", "/about", "/
 @pytest.mark.parametrize("path", ACCOUNT_PATHS)
 def test_account_pages_can_reach_clerk(path: str, csp):
     policy = csp(path, "n0nce", "")
-    assert f"https://{FAPI_HOST}" in _directive(policy, "script-src")
-    assert f"https://{FAPI_HOST}" in _directive(policy, "connect-src")
-    assert "https://img.clerk.com" in _directive(policy, "img-src")
-    assert "https://challenges.cloudflare.com" in _directive(policy, "frame-src"), (
+    assert f"https://{FAPI_HOST}" in _sources(policy, "script-src")
+    assert f"https://{FAPI_HOST}" in _sources(policy, "connect-src")
+    assert "https://img.clerk.com" in _sources(policy, "img-src")
+    assert "https://challenges.cloudflare.com" in _sources(policy, "frame-src"), (
         "Clerk's bot check renders a Cloudflare Turnstile iframe; without "
         "frame-src it falls back to default-src 'self' and the check is blocked."
     )
