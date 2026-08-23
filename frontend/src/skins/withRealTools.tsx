@@ -19,6 +19,11 @@ import React, { Suspense, lazy } from "react";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
+// Never literals. CLAUDE.md: the site once advertised 221 when it had 219.
+const TOOL_TOTAL = tools.length + nonPdfTools.length;
+const PDF_COUNT = tools.length;
+const NON_PDF_COUNT = nonPdfTools.length;
+
 const ToolUI = lazy(() =>
     import("@/pages/ToolPage").then((m) => ({ default: m.ToolUI })),
 );
@@ -31,11 +36,26 @@ export function withRealTools(Base, config) {
     return class WithRealTools extends Base {
         renderVals() {
             const v = super.renderVals();
+
+            // Counts, from the registry. The designs shipped literals — "200+
+            // tools", "106 tools", and a "107 tools" that was never right — and
+            // a literal is wrong the day a tool is added. Supplied here because
+            // this mixin already holds both registries and every skin uses it.
+            const vTotals = {
+                toolTotal: TOOL_TOTAL,
+                toolTotalLabel: `${TOOL_TOTAL} tools`,
+                pdfToolCount: PDF_COUNT,
+                pdfToolCountLabel: `${PDF_COUNT} tools`,
+                nonPdfToolCount: NON_PDF_COUNT,
+                searchToolsLabel: `Search ${TOOL_TOTAL} tools`,
+                seeAllToolsLabel: `See all ${TOOL_TOTAL} tools`,
+            };
+
             const slug = config.slugOf(this.state, v);
             const tool = slug ? BY_SLUG.get(slug) : undefined;
 
             if (!tool) {
-                return { ...v, isRealTool: false, realToolUI: null, realToolSlug: "", realToolName: "" };
+                return { ...v, ...vTotals, isRealTool: false, realToolUI: null, realToolSlug: "", realToolName: "" };
             }
 
             const related = [...BY_SLUG.values()]
@@ -44,6 +64,7 @@ export function withRealTools(Base, config) {
 
             return {
                 ...v,
+                ...vTotals,
                 // The design's own tool route is switched off: its run panel
                 // simulates processing, and the block in the extension markup
                 // renders the real component in its place.

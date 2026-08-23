@@ -250,7 +250,16 @@ describe("catalogue adapters", () => {
         // caught a literal "Search 219 tools" in SiteHeader that every other
         // surface was already deriving.
         const shells = ["../components/SiteHeader.tsx", "../components/SiteFooter.tsx",
-                        "../components/shells/StandardShell.tsx"];
+                        "../components/shells/StandardShell.tsx",
+                        // The generated skins sat outside this guard, which is
+                        // exactly where the literals were: "Search 200+ tools" in
+                        // Aurora and Carbon, and a category rail in Structured
+                        // claiming 107 PDF tools, 12 archive tools against a real 2,
+                        // and 22 document tools against a real 2. A guard that stops
+                        // short of the generated output is aimed at the wrong file.
+                        "../skins/aurora/SkinApp.tsx",
+                        "../skins/carbon/SkinApp.tsx",
+                        "../skins/structured/SkinApp.tsx"];
         const offenders: string[] = [];
         for (const rel of shells) {
             const src = readFileSync(resolve(__dirname, rel), "utf8");
@@ -259,12 +268,35 @@ describe("catalogue adapters", () => {
                 const code = line.replace(/\/\*[\s\S]*?\*\//g, "").trim();
                 if (code.startsWith("*") || code.startsWith("//")) continue;
                 // A three-digit number inside rendered text or a string literal.
-                if (/(>[^<>{]*|["`][^"`]*)\b(2[0-9]{2}|1[0-9]{2})\s+(free\s+)?tools?\b/.test(code)) {
+                // `200+` is not three digits followed by a space, so the original
+                // pattern walked straight past it while it sat in two heroes.
+                if (/(>[^<>{]*|["'`][^"'`]*)\b(\d{2,3}\+|2[0-9]{2}|1[0-9]{2})\s+(free\s+)?tools?\b/.test(code)) {
                     offenders.push(`${rel}: ${code.slice(0, 80)}`);
                 }
             }
         }
         expect(offenders).toEqual([]);
+    });
+
+    it("keep the designs' demo affordances switched off", () => {
+        // Aurora ships a "Demo: first visit" toggle and four buttons that fake
+        // an error — unsupported file, over 500 MB, password needed, server
+        // unavailable. Carbon has the same idea under showStateJumps. They
+        // exist so a designer can preview those states; left on, a visitor can
+        // click "Demo: over 500 MB" and be shown a failure that never happened.
+        //
+        // Both designs carry their own switch, so this asserts the switch is
+        // thrown rather than that the markup is gone.
+        const knobs: Record<string, string> = {
+            aurora: "showDemoControls",
+            carbon: "showStateJumps",
+        };
+        for (const [skin, knob] of Object.entries(knobs)) {
+            const src = readFileSync(resolve(__dirname, `../skins/${skin}/SkinApp.tsx`), "utf8");
+            if (!src.includes(knob)) continue;
+            const m = src.match(new RegExp(`"${knob}":\\s*(true|false)`));
+            expect(m?.[1], `${skin}: ${knob} default`).toBe("false");
+        }
     });
 
     it("never reintroduce the invented 221 / 107 / 114 figures", () => {

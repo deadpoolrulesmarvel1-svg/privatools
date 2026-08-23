@@ -112,6 +112,66 @@ const COPY_REWRITES = [
    "Processing mode is a privacy claim, so it comes from the registry rather than being assigned to fill the interface: tools that run in your browser read Local, the rest read Server."],
 ];
 
+/**
+ * Literals in the *logic* (not the JSX) that must come from the registry.
+ *
+ * COPY_REWRITES' sibling, kept separate because these replace a value with an
+ * imported binding rather than swapping wording. LABEL_BINDINGS cannot reach
+ * them: they sit inside JS data structures, not markup.
+ */
+const LOGIC_BINDINGS = [
+  // Structured's category rail, every figure invented: 12 archive tools
+  // against a real 2, 22 document tools against a real 2, and no row at all
+  // for the 26 developer tools. Replaced by the registry-derived table, which
+  // keeps the design's icons and colours.
+  [/var catDef = \[\[[\s\S]*?\]\];/,
+   "var catDef = STRUCTURED_CATEGORIES.map(function (c) { return c.slice(); });"],
+  // Structured's footer shipped three of its own design-review routes:
+  // ['atlas','PWA & errors'], ['404','404'] and ['showcase','Components (dev)'].
+  // The last is labelled "(dev)" in the product's own footer, which is the
+  // design telling you it was never meant to be there. A visitor clicking it
+  // lands in a component gallery.
+  [/,\s*\['atlas', 'PWA & errors'\], \['404', '404'\], \['showcase', 'Components \(dev\)'\]/g, ""],
+  // Meta description. "200+" understates a real 219.
+  [/200\+ tools, 500 MB per file/g, "' + TOOL_TOTAL + ' tools, 500 MB per file"],
+  // The invented 221 / 107 / 114 that CLAUDE.md calls out by name — the site
+  // once advertised 221 when it had 219. Carbon carried them in two places
+  // that matter more than a hero: a changelog entry stating them as fact, and
+  // a privacy policy claiming to cover "every one of the 221 tools".
+  [/Catalogue at 221 tools/g, "Catalogue at ' + TOOL_TOTAL + ' tools"],
+  [/107 PDF and 114 non-PDF tools\. Two PDF tools are awaiting subfamily assignment and appear under Pending review in the directory\./g,
+   "' + PDF_COUNT + ' PDF and ' + NON_PDF_COUNT + ' non-PDF tools."],
+  [/every one of the 221 tools/g, "every one of the ' + TOOL_TOTAL + ' tools"],
+];
+
+/**
+ * The designs were built against a domain this product does not use.
+ *
+ * privatools.io appears twelve times across Aurora and Carbon — in support
+ * addresses, canonical URLs, and a privacy policy that names it as the site
+ * the policy covers. A privacy policy naming the wrong domain is not a
+ * cosmetic error.
+ */
+const DOMAIN_FIXES = [[/privatools\.io/g, "privatools.me"]];
+
+
+function bindLogicLiterals(id, logic) {
+  let out = logic, changed = 0;
+  for (const [pattern, replacement] of [...LOGIC_BINDINGS, ...DOMAIN_FIXES]) {
+    const next = out.replace(pattern, replacement);
+    if (next !== out) changed++;
+    out = next;
+  }
+  // Import only what this skin actually references — an unused import is a
+  // type error under noUnusedLocals, and only Structured has a category rail.
+  const needed = ["STRUCTURED_CATEGORIES", "TOOL_TOTAL", "PDF_COUNT", "NON_PDF_COUNT"]
+    .filter((name) => new RegExp(`\\b${name}\\b`).test(out));
+  if (needed.length) {
+    out = `import { ${needed.join(", ")} } from "@/skins/counts";\n${out}`;
+  }
+  return { logic: out, changed };
+}
+
 function rewriteCopy(logic) {
   let out = logic, changed = 0;
   for (const [pattern, replacement] of COPY_REWRITES) {
@@ -277,6 +337,19 @@ const LABEL_BINDINGS = [
    "{v.acctCopyStorage}"],
   [/We send no email, so there is no reset link to fall back on\./g,
    "{v.acctCopyRecovery}"],
+  // Counts. The designs shipped "200+ tools" and, in Structured, a flat
+  // "107 tools" that was never the real figure. CLAUDE.md is blunt about this:
+  // the total is tools.length + nonPdfTools.length and never a literal — the
+  // site once advertised 221 when it had 219. Bound so they cannot drift again.
+  [/Search 200\+ tools or type a command…/g, "{v.searchToolsLabel} or type a command…"],
+  [/Search 200\+ tools/g, "{v.searchToolsLabel}"],
+  [/See all 200\+ tools/g, "{v.seeAllToolsLabel}"],
+  [/200\+ tools/g, "{v.toolTotalLabel}"],
+  [/\b10[67] tools\b/g, "{v.pdfToolCountLabel}"],
+  // The wrong domain reaches the JSX too — a placeholder in Carbon's share
+  // panel. DOMAIN_FIXES only sees the logic, so it is repeated here rather
+  // than left as the one survivor of twelve.
+  [/privatools\.io/g, "privatools.me"],
 ];
 
 function bindLabels(jsx) {
@@ -405,6 +478,10 @@ function build(id) {
   logic = copy.logic;
   if (copy.changed) console.log(`  copy: ${copy.changed} sample-data phrase(s) corrected`);
 
+  const logicBound = bindLogicLiterals(id, logic);
+  logic = logicBound.logic;
+  if (logicBound.changed) console.log(`  counts: ${logicBound.changed} invented figure(s) now read from the registry`);
+
   const lookups = makeLookupsTotal(logic);
   logic = lookups.logic;
   if (lookups.count) console.log(`  lookups: ${lookups.count} inline record lookup(s) made total`);
@@ -515,6 +592,23 @@ function build(id) {
     console.log(`  props: cleared ${knob}="${defaults[knob]}" — it overrode the themed token`);
     defaults[knob] = "";
   }
+  // Demo affordances belong to the design source, not the product. Aurora
+  // ships a "Demo: first visit" toggle and four buttons that fake an error —
+  // unsupported file, over 500 MB, password needed, server unavailable — so a
+  // designer could preview those states. Carbon has the same idea under
+  // `showStateJumps`. Left on, a visitor can click "Demo: over 500 MB" and be
+  // shown a failure that never happened.
+  //
+  // Both designs already carry the switch; nobody had thrown it. Setting the
+  // prop rather than deleting the markup keeps the affordances reachable for
+  // anyone rendering the component directly to review those states.
+  for (const knob of ["showDemoControls", "showStateJumps"]) {
+    if (defaults[knob] === true) {
+      defaults[knob] = false;
+      console.log(`  props: ${knob}=false — design-source demo affordances hidden`);
+    }
+  }
+
   console.log(`  props: ${JSON.stringify(defaults)}`);
 
   const out = `/* AUTO-GENERATED by scripts/build-skin-app.mjs — do not edit by hand.

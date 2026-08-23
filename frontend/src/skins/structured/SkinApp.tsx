@@ -20,6 +20,8 @@ import { AURORA_CATALOGUE, CARBON_REGISTRY } from "@/skins/catalogue";
 /** Icon lookup by Material Symbols name, resolved to this skin's font. */
 const ICON = new Proxy({}, { get: (_t, name) => skinIcon("structured", String(name)) });
 
+import { STRUCTURED_CATEGORIES, TOOL_TOTAL } from "@/skins/counts";
+
 const FAMS = {
   'PDF': ['picture_as_pdf', 'var(--coral)', 'var(--coralSoft)'],
   'Images': ['image', 'var(--blue)', 'var(--blueSoft)'],
@@ -262,7 +264,7 @@ class Component extends React.Component {
   }
   describeFor(route) {
     var d = {
-      home: 'Free, local-first file tools. 200+ tools, 500 MB per file, no account, no analytics, no document retention.',
+      home: 'Free, local-first file tools. ' + TOOL_TOTAL + ' tools, 500 MB per file, no account, no analytics, no document retention.',
       tools: 'Browse 200+ free file tools by family, task, input, output and processing mode.',
       compare: 'Compare file tools on the priorities that matter to you. No universal winner.',
       status: 'Live status for the website, local tools and best-effort server processing in Mumbai, India.'
@@ -539,7 +541,7 @@ class Component extends React.Component {
         go: function () { self.go(n[0]); }, goClose: function () { self.go(n[0]); }
       };
     });
-    var catDef = [['PDF', 'picture_as_pdf', 'var(--coral)', '107 tools'], ['Images', 'image', 'var(--blue)', '38 tools'], ['Video', 'movie', 'var(--violet)', '24 tools'], ['Audio', 'graphic_eq', 'var(--teal)', '18 tools'], ['Archives', 'folder_zip', 'var(--amber)', '12 tools'], ['Documents & Data', 'table_chart', 'var(--em)', '22 tools'], ['Converters', 'swap_horiz', 'var(--blue)', 'Task family'], ['Editors', 'edit_document', 'var(--violet)', 'Task family'], ['Security', 'shield_lock', 'var(--em)', 'Task family']];
+    var catDef = STRUCTURED_CATEGORIES.map(function (c) { return c.slice(); });
     var navCats = catDef.map(function (c) {
       var on = st.route === 'tools' && st.fam === c[0];
       return { label: c[0], icon: c[1], ic: on ? 'var(--em)' : c[2], fg: on ? 'var(--ink)' : 'var(--ink2)', bg: on ? 'var(--emSoft)' : 'transparent', count: c[3], color: c[2], go: function () { self.setState({ fam: ['Converters', 'Editors', 'Security'].indexOf(c[0]) >= 0 ? 'All' : c[0], task: c[0] === 'Converters' ? 'Convert' : c[0] === 'Editors' ? 'Edit' : c[0] === 'Security' ? 'Security' : 'All' }); self.go('tools'); }, goClose: function () { self.go('tools'); } };
@@ -1263,7 +1265,7 @@ class Component extends React.Component {
         ['popular', 'boolean', 'Optional. Surfaces on Home'],
         ['options', 'array', 'Optional per-tool control schema']
       ].map(function (r) { return { field: r[0], type: r[1], note: r[2] }; }),
-      footerLinks: [['about', 'About'], ['privacy', 'Privacy'], ['security', 'Security'], ['terms', 'Terms'], ['acceptable-use', 'Acceptable use'], ['processors', 'Processors'], ['accessibility', 'Accessibility'], ['support', 'Support'], ['status', 'Status'], ['atlas', 'PWA & errors'], ['404', '404'], ['showcase', 'Components (dev)']].map(function (l) {
+      footerLinks: [['about', 'About'], ['privacy', 'Privacy'], ['security', 'Security'], ['terms', 'Terms'], ['acceptable-use', 'Acceptable use'], ['processors', 'Processors'], ['accessibility', 'Accessibility'], ['support', 'Support'], ['status', 'Status']].map(function (l) {
         return { label: l[1], go: function () { self.go(l[0]); } };
       })
     };
@@ -2016,7 +2018,7 @@ Component.prototype.render = function render() {
 
                           ))}
       </ul>
-      <button onClick={v.goTools} style={css("margin-top:10px;font-size:12.5px;color:var(--em)")}>See all 200+ tools →</button>
+      <button onClick={v.goTools} style={css("margin-top:10px;font-size:12.5px;color:var(--em)")}>{v.seeAllToolsLabel} →</button>
       </div>
       </section>
 
@@ -2143,7 +2145,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;align-items:center;gap:8px")}>
       <div style={css("display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);min-width:220px")}>
       <span className="ms" style={css("font-size:18px;color:var(--ink3)")}>{ICON.search}</span>
-      <input value={v.q} onChange={v.onQ} placeholder="Search 200+ tools" aria-label="Search tools" style={css("flex:1;min-width:0;border:0;background:none;outline:none;font-size:13px")} />
+      <input value={v.q} onChange={v.onQ} placeholder="{v.searchToolsLabel}" aria-label="Search tools" style={css("flex:1;min-width:0;border:0;background:none;outline:none;font-size:13px")} />
 
                         {Boolean(v.hasQ) && (<>
                           <button onClick={v.clearQ} aria-label="Clear search" style={css("display:flex")}><span className="ms" style={css("font-size:16px;color:var(--ink3)")}>{ICON.close}</span></button>
@@ -4226,7 +4228,7 @@ Component.prototype.render = function render() {
                   <p style={css("margin-top:6px;font-size:12.5px;color:var(--ink3);max-width:52ch;margin-left:auto;margin-right:auto")}>{v.notFoundLead}</p>
                 </>)}
       <p style={css("margin-top:6px;font-size:13px;color:var(--ink2)")}>We could not find <span style={css("font-family:'Geist Mono',ui-monospace,monospace;color:var(--ink)")}>{v.failedUrlPath}</span></p>
-      <button onClick={v.openPalette} style={css("display:flex;align-items:center;gap:8px;margin:16px auto 0;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:13px;color:var(--ink3);white-space:nowrap")}><span className="ms" style={css("font-size:18px")}>{ICON.search}</span>Search 200+ tools<kbd style={css("font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;padding:2px 5px;border:1px solid var(--line);border-radius:5px")}>⌘K</kbd></button>
+      <button onClick={v.openPalette} style={css("display:flex;align-items:center;gap:8px;margin:16px auto 0;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:13px;color:var(--ink3);white-space:nowrap")}><span className="ms" style={css("font-size:18px")}>{ICON.search}</span>{v.searchToolsLabel}<kbd style={css("font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;padding:2px 5px;border:1px solid var(--line);border-radius:5px")}>⌘K</kbd></button>
       <div style={css("margin-top:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px;text-align:left")}>
       <h2 style={css("font-size:13px;font-weight:500")}>Did you mean</h2>
       <ul style={css("margin-top:10px;display:flex;flex-direction:column;gap:5px")}>
