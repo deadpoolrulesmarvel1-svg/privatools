@@ -78,5 +78,8 @@ mistune==3.3.4
 # The alternative was asking Clerk's API to verify each token, which would put
 # a network round-trip on every key request and make API key management stop
 # working whenever Clerk had an incident.
-pyjwt==2.11.0
-cryptography==46.0.5
+pyjwt==2.13.0
+# Current, not merely patched. 46.x carries 19 known advisories
+# (GHSA-537c-gmf6-5ccf among them) and 48.0.1 is only the minimum fix; both
+# the audit and the dependency-review job refuse the 46 series outright.
+cryptography==50.0.0
