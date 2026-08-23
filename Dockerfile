@@ -9,6 +9,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends brotli \
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
+
+# Clerk's publishable key, baked at build time because Vite inlines VITE_* into
+# the bundle — it cannot be supplied at runtime like the backend's variables.
+#
+# Public by design: it names the instance's Frontend API host and nothing more,
+# and it is visible in the bundle of every Clerk site. The *secret* key is a
+# runtime variable and must never appear here.
+#
+# Empty is the meaningful default and the one in use today: with no key the
+# provider is never mounted and the SDK is not even downloaded, so accounts fall
+# back to local auth and the entry bundle stays 124K smaller.
+ARG VITE_CLERK_PUBLISHABLE_KEY=""
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+
 RUN npm run build \
     && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
 

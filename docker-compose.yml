@@ -32,6 +32,25 @@ services:
       # runtime <meta> tag, widens the CSP connect-src, and auto-trusts the api
       # Host. Empty = same-origin (unchanged). See deploy/api-subdomain-split.md.
       - PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL:-}
+      # Clerk, all optional and all empty by default. Unset means the backend
+      # verifies the local session cookie exactly as it always has; there is no
+      # half-configured state, because current_user consults Clerk only when a
+      # publishable key is present.
+      #
+      # CLERK_PUBLISHABLE_KEY  is public — the backend derives the instance's
+      #                        Frontend API host from it, for the CSP and for
+      #                        the JWKS URL, exactly as the browser SDK does.
+      # CLERK_WEBHOOK_SECRET   signs user.deleted deliveries. Without it the
+      #                        webhook refuses every call rather than accepting
+      #                        unverified ones, so an account deleted in Clerk
+      #                        would leave its API keys live here.
+      #
+      # CLERK_SECRET_KEY is deliberately absent. Session verification is done
+      # against Clerk's public JWKS and needs no credential, and nothing here
+      # calls Clerk's Backend API — so shipping the secret into the container
+      # would put a real credential somewhere nothing reads it.
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY:-}
+      - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET:-}
     restart: unless-stopped
     # Bound container stdout/stderr on disk. The default json-file driver is
     # unbounded — a 5xx storm or a left-on DEBUG session would fill the VM disk,

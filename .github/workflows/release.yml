@@ -45,6 +45,13 @@ jobs:
         with:
           context: .
           platforms: linux/arm64,linux/amd64
+          # Repository *variable*, not a secret: a Clerk publishable key names
+          # the instance's Frontend API host and is visible in the bundle of
+          # every Clerk site. Unset until a production Clerk instance exists,
+          # and unset means Clerk is off — the SDK is not downloaded and
+          # accounts use local auth, which is the current behaviour.
+          build-args: |
+            VITE_CLERK_PUBLISHABLE_KEY=${{ vars.CLERK_PUBLISHABLE_KEY }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
