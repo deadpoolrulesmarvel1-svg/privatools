@@ -15,6 +15,7 @@
 import { mergeNavItem } from "./navInject";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
+    MIN_PASSWORD_LENGTH,
 } from "./accountLogic";
 
 /**
@@ -75,13 +76,41 @@ export function withAccounts(Base, config) {
                 : accountApi.login(email, password);
             request
                 .then((res) => {
+                    // Clerk can stop half way and email a code. Local auth never
+                    // did, so `user` would be null here and the form would
+                    // silently reappear as though nothing had happened.
+                    if (res.status === "needs_email_code") {
+                        this._setAcct({
+                            busy: false, password: "", error: "",
+                            needsEmailCode: true, emailCode: "",
+                        });
+                        return;
+                    }
                     // Signup answers with the recovery code, and it is answered
                     // exactly once. There is no reset email, so dropping it here
                     // — which is what this used to do — left the account with no
-                    // way back in at all.
+                    // way back in at all. Clerk sends "" and the panel that
+                    // renders it is already conditional, so it just does not show.
                     this._setAcct({
                         user: res.user, busy: false, password: "", error: "",
                         recoveryCode: res.recovery_code ?? "", recoverySaved: false,
+                    });
+                    this._loadKeys();
+                })
+                .catch((err) => this._setAcct({ busy: false, error: err.message }));
+        };
+
+        /** Finish a Clerk sign-up with the code it emailed. */
+        _acctVerifyEmail = (event) => {
+            if (event && event.preventDefault) event.preventDefault();
+            const code = (this.state.acct.emailCode || "").trim();
+            if (!code) return;
+            this._setAcct({ busy: true, error: "" });
+            accountApi.verifyEmailCode(code)
+                .then(({ user }) => {
+                    this._setAcct({
+                        user, busy: false, error: "", needsEmailCode: false,
+                        emailCode: "", recoveryCode: "", recoverySaved: false,
                     });
                     this._loadKeys();
                 })
@@ -242,15 +271,17 @@ export function withAccounts(Base, config) {
                 acctPassword: a.password,
                 acctSetEmail: (e) => this._setAcct({ email: e.target.value, error: "" }),
                 acctSetPassword: (e) => this._setAcct({ password: e.target.value, error: "" }),
-                acctSubmit: this._acctSubmit,
+                acctSubmit: a.needsEmailCode ? this._acctVerifyEmail : this._acctSubmit,
                 acctBusy: a.busy,
                 acctBusyOpacity: a.busy ? ".6" : "1",
                 acctSubmitLabel: a.busy ? "Working…" : (
-                    a.mode === "signup" ? "Create account"
-                        : a.mode === "recover" ? "Reset password" : "Sign in"),
+                    a.needsEmailCode ? "Verify email"
+                        : a.mode === "signup" ? "Create account"
+                            : a.mode === "recover" ? "Reset password" : "Sign in"),
                 acctPasswordLabel: a.mode === "recover" ? "New password" : "Password",
                 acctPwAutocomplete: a.mode === "signin" ? "current-password" : "new-password",
-                acctHintD: a.mode === "signup" ? "block" : "none",
+                acctHintD: (a.mode === "signup" && !a.needsEmailCode) ? "block" : "none",
+                acctPasswordHint: `At least ${MIN_PASSWORD_LENGTH} characters. Length is what makes a password strong.`,
                 acctError: a.error,
                 acctErrD: a.error ? "block" : "none",
 
@@ -290,13 +321,24 @@ export function withAccounts(Base, config) {
                 acctRotateLabel: a.busy ? "Working…" : "Generate",
                 acctRecoveryNudgeD: a.recoverySaved ? "none" : "block",
 
-                acctRecoverD: a.mode === "recover" ? "block" : "none",
+                // The email-code step reuses the recovery-code input rather than
+                // adding a field. The skins' markup comes from their design
+                // sources and cannot grow one, but this input is already the
+                // right shape — a short code, one-time-code autocomplete, in
+                // the same form — so it is retargeted instead of duplicated.
+                acctRecoverD: (a.mode === "recover" || a.needsEmailCode) ? "block" : "none",
                 acctCredsD: a.mode === "recover" ? "none" : "block",
-                acctRecoveryInput: a.recoveryInput,
-                acctSetRecoveryInput: (e) => this._setAcct({ recoveryInput: e.target.value, error: "" }),
+                acctCodeLabel: a.needsEmailCode ? "Emailed code" : "Recovery code",
+                acctRecoveryInput: a.needsEmailCode ? a.emailCode : a.recoveryInput,
+                acctSetRecoveryInput: (e) => this._setAcct(
+                    a.needsEmailCode
+                        ? { emailCode: e.target.value, error: "" }
+                        : { recoveryInput: e.target.value, error: "" },
+                ),
                 acctRecoverSubmit: this._acctRecover,
                 acctShowRecover: () => this._setAcct({ mode: "recover", error: "" }),
                 acctRecoverLabel: a.busy ? "Working…" : "Reset password",
+                acctVerifyEmail: this._acctVerifyEmail,
 
                 acctNewKey: this._acctNewKey,
                 acctNewKeyValue: a.freshKey,

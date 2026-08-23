@@ -4846,11 +4846,11 @@ Component.prototype.render = function render() {
               <input type="password" value={v.acctPassword} onChange={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px")} />
       </label>
       <div style={css(`display:${v.acctRecoverD}`)}>
-      <label style={css("display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)")}>Recovery code
+      <label style={css("display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text2)")}>{v.acctCodeLabel}
                 <input type="text" value={v.acctRecoveryInput} onChange={v.acctSetRecoveryInput} autoComplete="one-time-code" style={css("padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--text);font-size:13px;min-height:44px;font-family:'Geist Mono',ui-monospace,monospace")} />
       </label>
       </div>
-      <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--text3)`)}>At least 10 characters. Length is what makes a password strong.</div>
+      <div style={css(`display:${v.acctHintD};font-size:11.5px;color:var(--text3)`)}>{v.acctPasswordHint}</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12px;color:var(--co)`)}>{v.acctError}</div>
       <button type="button" onClick={v.acctShowRecover} style={css("align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:11.5px;color:var(--text2);text-decoration:underline")}>Forgotten your password? Use your recovery code</button>
       <button type="submit" disabled={v.acctBusy} style={css(`height:40px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--em);color:var(--em-ink,#04120C);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>

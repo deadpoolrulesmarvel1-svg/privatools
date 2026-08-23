@@ -12,6 +12,9 @@
  * `setState`, not a hook.
  */
 
+import { isClerkEnabled } from "@/lib/clerk/instance";
+import { clerkAccountApi } from "@/lib/clerk/accountApi";
+
 export interface ApiKey {
     key_id: string;
     label: string;
@@ -40,6 +43,15 @@ export interface Strength {
     hint: string;
 }
 
+/**
+ * The shortest password this deployment will accept.
+ *
+ * Clerk enforces its own floor server-side (15 at the time of writing), so a
+ * UI that promised less would cheerfully accept a password and then be
+ * refused. Local auth keeps the 10 it always had.
+ */
+export const MIN_PASSWORD_LENGTH = isClerkEnabled() ? 15 : 10;
+
 const COMMON = [
     "password", "qwerty", "letmein", "welcome", "admin", "iloveyou",
     "123456", "12345678", "abc123", "monkey", "dragon", "football",
@@ -47,14 +59,19 @@ const COMMON = [
 
 export function strengthOf(password: string): Strength {
     const pw = password ?? "";
-    if (!pw) return { score: 0, label: "", hint: "At least 10 characters." };
+    // The floor tracks whoever is actually going to check it. Clerk enforces
+    // its own server-side minimum, and a form that promised less would accept
+    // a password and then be refused — which reads as a bug, not a rule.
+    const min = MIN_PASSWORD_LENGTH;
+    if (!pw) return { score: 0, label: "", hint: `At least ${min} characters.` };
 
     const lower = pw.toLowerCase();
     if (COMMON.some((c) => lower.includes(c))) {
         return { score: 0, label: "Too easy to guess", hint: "That contains a very common password." };
     }
-    if (pw.length < 10) {
-        return { score: 0, label: "Too short", hint: `${10 - pw.length} more character${10 - pw.length === 1 ? "" : "s"} needed.` };
+    if (pw.length < min) {
+        const short = min - pw.length;
+        return { score: 0, label: "Too short", hint: `${short} more character${short === 1 ? "" : "s"} needed.` };
     }
 
     // Length does most of the work; variety is a modest bonus.
@@ -101,6 +118,16 @@ export interface AccountState {
     /** The "replace my recovery code" form is open. */
     rotating: boolean;
     rotatePassword: string;
+    /**
+     * Clerk asked for the code it emailed before finishing sign-up.
+     *
+     * Local auth had no such step — it issued a recovery code and was done —
+     * so this is only ever set when Clerk is the backing store. Treating it as
+     * ordinary state rather than a separate mode keeps the four skins from
+     * each growing a branch.
+     */
+    needsEmailCode: boolean;
+    emailCode: string;
 }
 
 export const initialAccountState: AccountState = {
@@ -108,6 +135,7 @@ export const initialAccountState: AccountState = {
     user: null, keys: [], freshKey: "", confirmingDelete: false,
     recoveryCode: "", recoverySaved: false, showPassword: false, recoveryInput: "",
     rotating: false, rotatePassword: "",
+    needsEmailCode: false, emailCode: "",
 };
 
 const BASE = "/api";
@@ -127,12 +155,18 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     return body as T;
 }
 
-export const accountApi = {
+const localAccountApi = {
     me: () => call<{ user: AccountUser }>("/auth/me"),
-    register: (email: string, password: string) =>
-        call<{ user: AccountUser; recovery_code: string }>("/auth/register", {
-            method: "POST", body: JSON.stringify({ email, password }),
-        }),
+    register: async (email: string, password: string) => {
+        const res = await call<{ user: AccountUser; recovery_code: string }>(
+            "/auth/register",
+            { method: "POST", body: JSON.stringify({ email, password }) },
+        );
+        // Local sign-up is always finished in one step — there is no email to
+        // verify against. Reported in the same shape as Clerk's so callers
+        // branch on the status rather than on which backend they got.
+        return { status: "complete" as const, ...res };
+    },
     recover: (email: string, recoveryCode: string, newPassword: string) =>
         call<{ ok: true; recovery_code: string }>("/auth/recover", {
             method: "POST",
@@ -162,6 +196,59 @@ export const accountApi = {
     revokeKey: (keyId: string) =>
         call<{ ok: true }>(`/keys/${encodeURIComponent(keyId)}`, { method: "DELETE" }),
 };
+
+/**
+ * The account API the UIs actually call.
+ *
+ * Two implementations behind one shape: Clerk when this deployment has a
+ * publishable key, the local scrypt endpoints when it does not. The four skins
+ * and AccountPage call this and never learn which they got — which is the only
+ * reason moving identity to Clerk is not a change to four UIs and a generator.
+ *
+ * Resolved per call rather than once at module load, because Clerk arrives
+ * asynchronously and a value captured at import time would be the wrong one.
+ */
+/**
+ * What both implementations agree to provide.
+ *
+ * Written out rather than inferred from one side, because the two genuinely
+ * differ and inferring from either would let the other quietly drift. The
+ * methods local auth cannot honour are declared here and throw — a clear
+ * refusal beats a missing property that only fails at the call site.
+ */
+export type AccountApi = Omit<typeof localAccountApi, "register"> & {
+    register(
+        email: string,
+        password: string,
+    ): Promise<
+        | { status: "complete"; user: AccountUser; recovery_code: string }
+        | { status: "needs_email_code"; user: null; recovery_code: string }
+    >;
+    verifyEmailCode(code: string): Promise<{ user: AccountUser }>;
+    startPasswordReset(email: string): Promise<{ ok: true }>;
+    finishPasswordReset(code: string, newPassword: string): Promise<{ ok: true }>;
+};
+
+/** Only Clerk emails codes; local auth hands out a recovery code at signup. */
+function notWithLocalAuth(what: string): never {
+    throw new Error(`${what} needs email, which this deployment does not use. Use your recovery code.`);
+}
+
+const localOnlyStubs = {
+    verifyEmailCode: () => notWithLocalAuth("Email verification"),
+    startPasswordReset: () => notWithLocalAuth("Password reset by email"),
+    finishPasswordReset: () => notWithLocalAuth("Password reset by email"),
+};
+
+export const accountApi = new Proxy({} as AccountApi, {
+    get(_target, prop: string) {
+        const impl: Record<string, unknown> = isClerkEnabled()
+            ? (clerkAccountApi as unknown as Record<string, unknown>)
+            : ({ ...localAccountApi, ...localOnlyStubs } as unknown as Record<string, unknown>);
+        return impl[prop];
+    },
+});
+
 
 /** A short, human description of a key for a list row. */
 export function describeKey(key: ApiKey): string {

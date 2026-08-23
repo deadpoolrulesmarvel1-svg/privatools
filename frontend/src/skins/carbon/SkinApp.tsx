@@ -4923,11 +4923,11 @@ Component.prototype.render = function render() {
               <input type="password" value={v.acctPassword} onChange={v.acctSetPassword} autoComplete={v.acctPwAutocomplete} required={v.true} style={css("padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
       </label>
       <div style={css(`display:${v.acctRecoverD}`)}>
-      <label style={css("display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>Recovery code
+      <label style={css("display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)")}>{v.acctCodeLabel}
                 <input type="text" value={v.acctRecoveryInput} onChange={v.acctSetRecoveryInput} autoComplete="one-time-code" style={css("padding:11px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px;font-family:ui-monospace,monospace")} />
       </label>
       </div>
-      <div style={css(`display:${v.acctHintD};font-size:12px;color:var(--pt-txt3,#6B8085)`)}>At least 10 characters. Length is what makes a password strong.</div>
+      <div style={css(`display:${v.acctHintD};font-size:12px;color:var(--pt-txt3,#6B8085)`)}>{v.acctPasswordHint}</div>
       <div role="alert" style={css(`display:${v.acctErrD};font-size:12.5px;color:var(--pt-coral,#FF7A6B)`)}>{v.acctError}</div>
       <button type="button" onClick={v.acctShowRecover} style={css("align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:var(--pt-txt2,#9FB3B8);text-decoration:underline")}>Forgotten your password? Use your recovery code</button>
       <button type="submit" disabled={v.acctBusy} style={css(`height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B);opacity:${v.acctBusyOpacity}`)}>{v.acctSubmitLabel}</button>
