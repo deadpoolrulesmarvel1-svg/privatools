@@ -66,4 +66,34 @@ behind the host's nginx. The container binds `127.0.0.1:8000` only. Images are
 built and cosign-signed in CI and pulled by tag — the VM does not build.
 
 `app-data` holds accounts and API keys and is deliberately a separate volume
-from `app-temp`, which a janitor sweeps by age.
+from `app-temp`, which a janitor sweeps by age. **It does not exist on the VM
+yet** — prod runs v1.8.1, which predates accounts, and `/api/auth/signup` 404s
+there. Nothing to lose today; the day a release ships accounts it holds the
+only copy of every account and recovery code, and with no email path there is
+no way to reissue one. No backup tooling is installed on the host.
+
+**Merging to `main` does not deploy.** `auto-deploy.sh` defaults to
+`DEPLOY_MODE=auto`, which deploys the newest `v*` tag reachable from `main` and
+falls back to branch HEAD *only until the first tag exists*. 17 tags exist, so
+the gate is on: prod sits on the last tag while `main` runs ahead. Cutting a
+`v*` tag is what ships. The VM sets no `DEPLOY_MODE`, so the default applies.
+
+Signature verification is fail-closed in prod — cosign is installed there, and
+the script only warns-and-proceeds on a host without it.
+
+## Read-only container
+
+`read_only: true` is on. Only LibreOffice needs to write outside the volumes:
+it puts its IPC pipe in `/tmp` and fails with "no valid pipe path found"
+otherwise, and it **ignores `TMPDIR`** for that (TMPDIR is already
+`/app/temp`), so the tmpfs is the only fix. weasyprint, rembg and the image
+tools all pass with no writable `/tmp` at all.
+
+The baked caches live in `/app/cache`, not `/tmp`, because the tmpfs masks
+whatever is under it — when they were on `/tmp`, rembg silently re-downloaded
+u2netp from a GitHub release on the first request and the failure looked like
+latency. If you move them back, that returns.
+
+onnxruntime reports an unreadable model as a bare `system error number 13`,
+naming neither the file nor the permission, so the `chown` of `/app/cache` is
+load-bearing.
