@@ -90,8 +90,17 @@ COPY --from=frontend-build /app/frontend/dist frontend/dist/
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
 
-# Create temp directory with proper ownership
-RUN mkdir -p temp && chown -R appuser:appuser temp
+# Create the temp and data directories with proper ownership.
+#
+# /app/data must exist IN THE IMAGE, not just be created at runtime. Compose
+# mounts the app-data named volume there, and Docker seeds a fresh volume from
+# whatever the image has at that path — including its ownership. With no such
+# directory in the image, Docker creates the mountpoint root:root, appuser
+# cannot write, and the first signup dies on
+# `sqlite3.OperationalError: unable to open database file`. store.py's
+# `DATA_DIR.mkdir(exist_ok=True)` does not save it: the directory already
+# exists, it just isn't writable. Under read_only: true there is no fallback.
+RUN mkdir -p temp data && chown -R appuser:appuser temp data
 # The appuser must be able to read the pre-baked rembg model. onnxruntime
 # reports a bare "system error number 13" when it cannot — an EACCES that names
 # neither the file nor the permission, so get the ownership right here.
