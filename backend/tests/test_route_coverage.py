@@ -34,6 +34,7 @@ BACKEND_ACCOUNT_POST_ENDPOINTS = {
     "/auth/login",
     "/auth/logout",
     "/auth/recover",
+    "/auth/recovery-code",
     "/auth/password",
     "/keys",
 }
