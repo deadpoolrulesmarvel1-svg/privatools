@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import base64
 import os
 import re
 import secrets
@@ -243,6 +244,70 @@ _BYOK_ORIGINS = [
 # app.runtime_config and frontend/src/lib/api.ts (resolveApiOrigin()).
 _PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
 
+# --- Clerk (optional) ------------------------------------------------------
+#
+# Clerk's SDK is fetched from the instance's own Frontend API host, and that
+# host differs per instance: a dev instance is <slug>.clerk.accounts.dev, a
+# production one is usually clerk.<your-domain>. Hardcoding either would break
+# the other, so derive it from the publishable key, which encodes the host —
+# that is the same thing the browser SDK does, and it means dev and prod each
+# get the right origin with no code change.
+#
+# Unset key = Clerk is off, and none of this reaches the policy.
+_CLERK_PUBLISHABLE_KEY = os.environ.get("CLERK_PUBLISHABLE_KEY", "").strip()
+
+
+def _clerk_fapi_origin(publishable_key: str) -> str:
+    """https://<fapi-host> for a publishable key, or "" if it is unusable.
+
+    Format is pk_(test|live)_<base64("<host>$")>. Deliberately total: a
+    malformed key must disable Clerk's CSP entries, never crash a request that
+    every page depends on for its security headers.
+    """
+    try:
+        parts = publishable_key.split("_", 2)
+        if len(parts) != 3 or parts[0] != "pk":
+            return ""
+        body = parts[2]
+        host = base64.b64decode(body + "=" * (-len(body) % 4)).decode("ascii").rstrip("$")
+        # Anchor to Clerk-controlled hosts. Without this a doctored key could
+        # inject an arbitrary origin into script-src on the account page.
+        #
+        # A bare startswith("clerk.") is not enough: "clerk.accounts.dev.evil.com"
+        # begins with "clerk." and would have been accepted. A production FAPI
+        # host is clerk.<your-domain>, and it never carries accounts.dev — that
+        # only ever appears as the .clerk.accounts.dev suffix of a dev instance.
+        looks_dev = host.endswith(".clerk.accounts.dev")
+        looks_prod = host.startswith("clerk.") and "accounts.dev" not in host
+        if not re.fullmatch(r"[A-Za-z0-9.-]+", host) or not (looks_dev or looks_prod):
+            logger.warning("clerk: publishable key names an unexpected FAPI host; ignoring")
+            return ""
+        return f"https://{host}"
+    except Exception:
+        logger.warning("clerk: publishable key is malformed; Clerk CSP entries disabled")
+        return ""
+
+
+_CLERK_FAPI_ORIGIN = _clerk_fapi_origin(_CLERK_PUBLISHABLE_KEY)
+
+# Clerk's bot/abuse hosts, per its CSP guide. The subdomain wildcard is Clerk's
+# own requirement and is not the thing test_connect_src_is_never_a_wildcard
+# guards against: that test exists to keep `https:` — any host at all — out of
+# the policy. A wildcard bounded to one vendor's domain is still an allowlist.
+_CLERK_BOT_HOSTS = ["https://challenges.cloudflare.com", "https://*.protect.clerk.com"]
+
+
+def _is_clerk_path(path: str) -> bool:
+    """Only the account pages get Clerk's origins.
+
+    Same reasoning as _BYOK_PATHS: 219 tool pages have no reason to be able to
+    reach an identity provider, and scoping means a bug on one of them cannot
+    become an exfiltration route.
+    """
+    p = path.rstrip("/") or "/"
+    return p == "/account" or p.startswith("/account/")
+
+
 
 def _inject_csp_nonce(html: str, nonce: str | None) -> str:
     if not nonce:
@@ -269,13 +334,27 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     if path in _BYOK_PATHS:
         connect_src.extend(_BYOK_ORIGINS)
 
+    img_src = ["'self'", "data:", "blob:"]
+    # No frame-src today, so frames fall back to default-src 'self'. Clerk's
+    # bot check renders a Cloudflare Turnstile iframe, which needs naming.
+    frame_src = ["'self'"]
+
+    # Clerk, only on the account pages and only when it is configured at all.
+    if _CLERK_FAPI_ORIGIN and _is_clerk_path(path):
+        script_src.extend([_CLERK_FAPI_ORIGIN, *_CLERK_BOT_HOSTS])
+        # The :* on the protect host is Clerk's documented requirement.
+        connect_src.extend([_CLERK_FAPI_ORIGIN, "https://*.protect.clerk.com:*"])
+        img_src.append("https://img.clerk.com")
+        frame_src.extend(_CLERK_BOT_HOSTS)
+
     return (
         "default-src 'self'; "
         f"script-src {' '.join(script_src)}; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
-        "img-src 'self' data: blob:; "
+        f"img-src {' '.join(img_src)}; "
         f"connect-src {' '.join(connect_src)}; "
+        f"frame-src {' '.join(frame_src)}; "
         "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )
