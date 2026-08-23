@@ -14,7 +14,15 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=REPO_DIR=/home/ubuntu/privatools
 Environment=REMOTE=origin
 Environment=BRANCH=main
-Environment=HEALTH_URL=http://127.0.0.1:8000/api/health
+# /readyz, not /api/health. Both carry build_sha, so either one confirms the
+# new revision is live — but /api/health is a liveness probe that returns 200
+# whenever the process is up, while /readyz runs the real dependency checks
+# (pikepdf, fitz, PIL, tessdata, temp writable, free disk) and 503s when one
+# fails. Pointing the gate at /api/health let a container that booted with
+# broken deps pass as a successful deploy, which is the exact case
+# auto-deploy.sh says it is guarding against. It also governs the rollback
+# confirmation, so the weaker probe made a half-broken rollback look healthy.
+Environment=HEALTH_URL=http://127.0.0.1:8000/readyz
 ExecStart=/usr/local/bin/privatools-auto-deploy
 TimeoutStartSec=45min
 

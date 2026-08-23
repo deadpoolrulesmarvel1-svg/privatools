@@ -12,9 +12,14 @@ learned by getting it wrong first.
 - **Run the whole backend suite, not the files you touched.** A route-coverage
   test asserts every backend POST is either a registered tool or a named
   account endpoint, so adding an endpoint fails a file you never opened.
-- **The full backend suite segfaults on macOS** around 55% — a native-library
-  interaction across modules, not a regression. Every file passes alone. Loop
-  per-file to get a clean signal; CI on Linux runs it whole.
+- **The backend suite segfaults on macOS.** Loop per-file to get a clean
+  signal; CI on Linux runs it whole and passes. Two separate crashes:
+  a native-library interaction across modules that kills a whole-suite run
+  around 55%, and `tests/test_phased_routes.py`, which dies **even run alone**
+  in `pyzbar.decode` (`qr_reader_service.read_qr`) on a pool thread — Homebrew
+  zbar under Python 3.13. So a per-file loop reports one failing file with zero
+  failing tests; that is the expected local result, not a regression. Confirm a
+  change to that path in CI rather than locally.
 - **CI does not run on a plain branch.** `test.yml` and `security.yml` trigger
   on pull requests and pushes to `main`. To verify a branch without a PR:
   `gh workflow run test.yml --ref <branch>`.

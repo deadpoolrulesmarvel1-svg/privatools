@@ -36,3 +36,7 @@ lo_input_*.pdf
 
 # Durable app state (accounts, API keys). Created at runtime; never committed.
 data/
+
+# Local agent state. Holds a per-machine command allowlist that quotes real
+# host paths and SSH invocations — machine-local, never shared.
+.claude/settings.local.json

@@ -55,6 +55,53 @@ describe("summarizeWithByok", () => {
     expect(seen.length).toBeGreaterThan(0);
   });
 
+  it("fences the document, so a line planted in it cannot claim the document ended", async () => {
+    const f = mockOk("x");
+    await summarizeWithByok({ ...ARGS, text: "DOCUMENT BODY HERE", length: "short" });
+    const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+    const id = body.system.match(/<<<DOCUMENT ([0-9a-f]{16})>>>/)?.[1];
+    expect(id).toBeTruthy();
+    const turn = JSON.stringify(body.messages);
+    expect(turn).toContain(`<<<DOCUMENT ${id}>>>`);
+    expect(turn).toContain(`<<<END DOCUMENT ${id}>>>`);
+    expect(turn).toContain("DOCUMENT BODY HERE");
+  });
+
+  it("draws a fresh id per run, so one learned from a reply is spent", async () => {
+    const f = mockOk("x");
+    await summarizeWithByok({ ...ARGS, text: "t", length: "short" });
+    await summarizeWithByok({ ...ARGS, text: "t", length: "short" });
+    const idOf = (i: number) =>
+      JSON.parse((f.mock.calls[i][1] as RequestInit).body as string)
+        .system.match(/<<<DOCUMENT ([0-9a-f]{16})>>>/)?.[1];
+    expect(idOf(0)).toBeTruthy();
+    expect(idOf(0)).not.toBe(idOf(1));
+  });
+
+  it("fences each chunk summary before stitching, under an id the chunks never saw", async () => {
+    // A chunk summary is model output derived from untrusted text, so it is
+    // untrusted. Left as a bare "Section N:" label it could forge a section.
+    const f = mockOk("part");
+    const long = "word ".repeat(MAX_CHARS_PER_CALL);
+    await summarizeWithByok({ ...ARGS, text: long, length: "medium" });
+
+    const bodyAt = (i: number) => JSON.parse((f.mock.calls[i][1] as RequestInit).body as string);
+    const idIn = (sys: string) => sys.match(/<<<DOCUMENT ([0-9a-f]{16})>>>/)?.[1];
+
+    const chunkId = idIn(bodyAt(0).system);
+    const stitch = bodyAt(f.mock.calls.length - 1);
+    const stitchId = idIn(stitch.system);
+
+    expect(chunkId).toBeTruthy();
+    expect(stitchId).toBeTruthy();
+    expect(stitchId).not.toBe(chunkId);
+
+    const turn = JSON.stringify(stitch.messages);
+    expect(turn).toContain(`<<<DOCUMENT ${stitchId}`);
+    expect(turn).toContain(`<<<END DOCUMENT ${stitchId}>>>`);
+    expect(turn).not.toContain(chunkId);
+  });
+
   it("propagates a ByokError rather than swallowing it", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 401, json: async () => ({}) } as unknown as Response);
     await expect(summarizeWithByok({ ...ARGS, text: "t", length: "medium" }))

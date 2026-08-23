@@ -25,6 +25,8 @@ from app.main import _content_security_policy, _BYOK_PATHS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PROVIDERS_TS = REPO_ROOT / "frontend" / "src" / "lib" / "byok" / "providers.ts"
+FRONTEND_SRC = REPO_ROOT / "frontend" / "src"
+TOOL_PAGE_TSX = FRONTEND_SRC / "pages" / "ToolPage.tsx"
 
 
 def _registry_origins() -> set[str]:
@@ -90,3 +92,88 @@ def test_connect_src_is_never_a_wildcard():
             "which is exactly what this product promises does not happen."
         )
         assert "*" not in connect.replace("localhost:*", "").replace("127.0.0.1:*", "")
+
+
+# --- the set itself, derived rather than restated -------------------------
+#
+# The docstring above says a tool that does not use BYOK has no business
+# reaching a provider. Asserting that needs the *actual* answer to "which
+# pages use BYOK", not a second copy of _BYOK_PATHS — a copy agrees with a
+# mistake. So walk the frontend: which lazily-loaded tool component can, by
+# following its imports, reach lib/byok. Smart Redact sat in this set for a
+# while on the strength of being an "AI page"; it runs BERT-NER in the tab and
+# never calls out, which is what the walk sees and a hand-written list did not.
+
+_IMPORT_RE = re.compile(r'from\s+"(@/[^"]+)"')
+
+
+def _resolve(spec: str) -> Path | None:
+    rel = spec[len("@/"):]
+    for cand in (f"{rel}.tsx", f"{rel}.ts", f"{rel}/index.tsx", f"{rel}/index.ts"):
+        f = FRONTEND_SRC / cand
+        if f.exists():
+            return f
+    return None
+
+
+def _reaches_byok(entry: Path) -> bool:
+    """True if entry transitively imports anything under lib/byok."""
+    seen: set[Path] = set()
+    stack = [entry]
+    while stack:
+        f = stack.pop()
+        if f in seen or not f.exists():
+            continue
+        seen.add(f)
+        if "lib/byok" in f.as_posix():
+            return True
+        for spec in _IMPORT_RE.findall(f.read_text(encoding="utf-8")):
+            if spec.startswith("@/lib/byok"):
+                return True
+            nxt = _resolve(spec)
+            if nxt is not None and nxt.suffix in (".ts", ".tsx"):
+                stack.append(nxt)
+    return False
+
+
+def _slugs_that_use_byok() -> set[str]:
+    """Slugs whose ToolPage component can reach a BYOK provider."""
+    page = TOOL_PAGE_TSX.read_text(encoding="utf-8")
+
+    # const LazyFooUI = lazyNamed(() => import("@/components/tool-ui/FooUI"), ...)
+    modules = dict(
+        re.findall(r'const\s+(\w+)\s*=\s*lazyNamed\(\s*\(\)\s*=>\s*import\("(@/[^"]+)"\)', page)
+    )
+    assert modules, "parsed zero lazy tool components from ToolPage.tsx — parser is stale"
+
+    # case "slug": return <LazyFooUI />;
+    cases = re.findall(r'case\s+"([a-z0-9-]+)":\s*return\s*<(\w+)\b', page)
+    assert cases, "parsed zero slug->component cases from ToolPage.tsx — parser is stale"
+
+    out: set[str] = set()
+    for slug, comp in cases:
+        spec = modules.get(comp)
+        if not spec:
+            continue
+        entry = _resolve(spec)
+        if entry is not None and _reaches_byok(entry):
+            out.add(slug)
+    return out
+
+
+def test_byok_paths_match_the_pages_that_actually_use_byok():
+    expected = {f"/tool/{slug}" for slug in _slugs_that_use_byok()}
+    assert expected, "the walk found no BYOK page at all — it has gone blind, fix it before trusting it"
+
+    extra = sorted(_BYOK_PATHS - expected)
+    assert not extra, (
+        f"{extra} can reach an AI provider but never calls one. Every page in "
+        "_BYOK_PATHS is a page whose CSP permits egress to eight AI vendors; "
+        "grant that only where a key is actually used."
+    )
+
+    missing = sorted(expected - _BYOK_PATHS)
+    assert not missing, (
+        f"{missing} use BYOK but are absent from _BYOK_PATHS, so the browser "
+        "will block every provider call — a network fault to the user."
+    )
