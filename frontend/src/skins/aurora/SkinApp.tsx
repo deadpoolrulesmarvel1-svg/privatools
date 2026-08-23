@@ -5137,7 +5137,7 @@ Component.defaultProps = {
   "theme": "dark",
   "returningUser": true,
   "serverState": "ok",
-  "showDemoControls": true
+  "showDemoControls": false
 };
 
 export default Component;

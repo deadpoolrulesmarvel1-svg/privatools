@@ -5183,7 +5183,7 @@ Component.prototype.render = function render() {
 Component.defaultProps = {
   "motion": "full",
   "serviceState": "operational",
-  "showStateJumps": true
+  "showStateJumps": false
 };
 
 export default Component;

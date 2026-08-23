@@ -278,6 +278,27 @@ describe("catalogue adapters", () => {
         expect(offenders).toEqual([]);
     });
 
+    it("keep the designs' demo affordances switched off", () => {
+        // Aurora ships a "Demo: first visit" toggle and four buttons that fake
+        // an error — unsupported file, over 500 MB, password needed, server
+        // unavailable. Carbon has the same idea under showStateJumps. They
+        // exist so a designer can preview those states; left on, a visitor can
+        // click "Demo: over 500 MB" and be shown a failure that never happened.
+        //
+        // Both designs carry their own switch, so this asserts the switch is
+        // thrown rather than that the markup is gone.
+        const knobs: Record<string, string> = {
+            aurora: "showDemoControls",
+            carbon: "showStateJumps",
+        };
+        for (const [skin, knob] of Object.entries(knobs)) {
+            const src = readFileSync(resolve(__dirname, `../skins/${skin}/SkinApp.tsx`), "utf8");
+            if (!src.includes(knob)) continue;
+            const m = src.match(new RegExp(`"${knob}":\\s*(true|false)`));
+            expect(m?.[1], `${skin}: ${knob} default`).toBe("false");
+        }
+    });
+
     it("never reintroduce the invented 221 / 107 / 114 figures", () => {
         const counts = [
             CATALOGUE_COUNTS.total, CATALOGUE_COUNTS.pdf, CATALOGUE_COUNTS.nonPdf,
