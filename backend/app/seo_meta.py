@@ -1537,6 +1537,26 @@ def _last_reviewed_for(slug: str) -> str:
     return TOOL_LAST_REVIEWED.get(slug, TOOL_LAST_REVIEWED_DEFAULT)
 
 
+_TOP_LEVEL_SPA_ROUTES = frozenset({
+    "/",
+    "/about",
+    "/privacy",
+    "/security",
+    "/terms",
+    "/blog",
+    "/compare",
+    "/pipeline",
+    "/batch",
+    "/tools",
+    "/my-stuff",
+    "/my-stuff/vault",
+    "/account",
+    "/account/keys",
+    "/status",
+    "/support",
+})
+
+
 @lru_cache(maxsize=1024)
 def path_is_known(path: str) -> bool:
     """
@@ -1562,8 +1582,16 @@ def path_is_known(path: str) -> bool:
     if p.startswith("/compare/"):
         # Static-meta covers /compare/ilovepdf etc. /compare itself is in _STATIC_META.
         return p in _STATIC_META
-    # Top-level SPA routes the frontend handles
-    if p in ("/", "/about", "/privacy", "/security", "/terms", "/blog", "/compare", "/pipeline", "/batch"):
+    # Top-level SPA routes the frontend handles.
+    #
+    # Kept in step with App.tsx's <Route path=...> declarations by
+    # tests/test_spa_routes_are_known.py, which parses them out rather than
+    # holding a second copy — a copy is what let /account, /account/keys,
+    # /my-stuff/vault, /status and /support ship 404ing, two of them linked
+    # from the main nav. They rendered fine once React Router took over, so
+    # the only symptoms were the status code, a flash of "Page Not Found" in
+    # the tab title, and crawlers seeing a 404.
+    if p in _TOP_LEVEL_SPA_ROUTES:
         return True
     return False
 
