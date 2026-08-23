@@ -96,8 +96,8 @@ export function VideoToGifUI() {
             {file && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> GIF settings</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>GIF settings</span>
                             {estimate !== null && (
                                 <span className="text-accent normal-case tracking-normal">≈ {estimate.toFixed(1)} MB/sec of video</span>
                             )}
@@ -105,28 +105,28 @@ export function VideoToGifUI() {
                         <div className="p-4 grid grid-cols-2 gap-3">
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">FPS</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">FPS</label>
                                     <span className="font-mono text-[11px] text-accent">{fps}</span>
                                 </div>
                                 <input type="range" min={1} max={30} value={fps}
                                     onChange={e => setFps(parseInt(e.target.value))}
                                     aria-label={`Frames per second: ${fps}`}
                                     className="mt-2 w-full accent-accent" />
-                                <div className="flex justify-between font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground/85 mt-1">
+                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground mt-1">
                                     <span>Choppy (1)</span>
                                     <span>Smooth (30)</span>
                                 </div>
                             </div>
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Width</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">Width</label>
                                     <span className="font-mono text-[11px] text-accent">{width} px</span>
                                 </div>
                                 <input type="range" min={120} max={1280} step={20} value={width}
                                     onChange={e => setWidth(parseInt(e.target.value))}
                                     aria-label={`GIF width: ${width} pixels`}
                                     className="mt-2 w-full accent-accent" />
-                                <div className="flex justify-between font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground/85 mt-1">
+                                <div className="font-medium flex justify-between text-[9.5px] text-muted-foreground mt-1">
                                     <span>Tiny</span>
                                     <span>HD</span>
                                 </div>
@@ -143,7 +143,7 @@ export function VideoToGifUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rendering…</> : <><Film size={13} /> Convert to GIF</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

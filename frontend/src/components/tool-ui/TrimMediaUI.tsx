@@ -129,8 +129,8 @@ export function TrimMediaUI() {
                 <>
                     {objectUrl && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span><span className="text-accent">§</span> Preview & scrub</span>
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                                <span>Preview & scrub</span>
                                 {duration > 0 && (
                                     <span className="text-accent normal-case tracking-normal">{formatHms(current)} / {formatHms(duration)}</span>
                                 )}
@@ -193,18 +193,18 @@ export function TrimMediaUI() {
                                         <button
                                             type="button"
                                             onClick={() => setStart(formatHms(current))}
-                                            className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card font-mono text-[11px] tracking-[0.06em] uppercase text-foreground hover:bg-secondary/60 transition-colors"
+                                            className="font-medium inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card text-[12px] text-foreground hover:bg-secondary/60 transition-colors"
                                         >
                                             Mark start
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setEnd(formatHms(current))}
-                                            className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card font-mono text-[11px] tracking-[0.06em] uppercase text-foreground hover:bg-secondary/60 transition-colors"
+                                            className="font-medium inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card text-[12px] text-foreground hover:bg-secondary/60 transition-colors"
                                         >
                                             Mark end
                                         </button>
-                                        <span className="ml-auto font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                                        <span className="font-medium ml-auto text-[11.5px] text-muted-foreground">
                                             Selection: {(endSec - startSec).toFixed(1)}s
                                         </span>
                                     </div>
@@ -213,17 +213,17 @@ export function TrimMediaUI() {
                         </div>
                     )}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Time range (HH:MM:SS)
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Time range (HH:MM:SS)
                         </div>
                         <div className="p-4 grid grid-cols-2 gap-3">
                             <div>
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Start</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">Start</label>
                                 <input value={start} onChange={e => setStart(e.target.value)} placeholder="00:00:00"
                                     className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors" />
                             </div>
                             <div>
-                                <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">End</label>
+                                <label className="font-medium text-[11px] text-muted-foreground">End</label>
                                 <input value={end} onChange={e => setEnd(e.target.value)} placeholder="00:00:10"
                                     className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors" />
                             </div>
@@ -239,10 +239,10 @@ export function TrimMediaUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Trimming…</> : <><Scissors size={13} /> Trim {start} → {end}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                         {startSec >= endSec && (
-                            <span className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-destructive">
+                            <span className="font-medium text-[11.5px] text-destructive">
                                 End must be after start
                             </span>
                         )}

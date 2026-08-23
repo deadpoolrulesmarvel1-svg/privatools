@@ -1,8 +1,43 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "frontend", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--prefix", "frontend"], "port": 8090, "autoPort": true },
-    { "name": "backend", "runtimeExecutable": "/private/tmp/claude-501/-Users-lakshya-projects-priva-tool--claude-worktrees-dazzling-swartz-82749f/592fb200-8ff4-44ca-8bfe-54668b519e8f/scratchpad/venv/bin/python",
-      "runtimeArgs": ["-m", "uvicorn", "backend.app.main:app", "--port", "8000"], "port": 8000 }
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend"
+      ],
+      "port": 8090,
+      "autoPort": true
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "/private/tmp/claude-501/-Users-lakshya-projects-priva-tool--claude-worktrees-dazzling-swartz-82749f/592fb200-8ff4-44ca-8bfe-54668b519e8f/scratchpad/venv/bin/python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "backend.app.main:app",
+        "--port",
+        "8000"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "frontend-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--prefix",
+        "frontend",
+        "--",
+        "--port",
+        "8091"
+      ],
+      "port": 8091
+    }
   ]
 }

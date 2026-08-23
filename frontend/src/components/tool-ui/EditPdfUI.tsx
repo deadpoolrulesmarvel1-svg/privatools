@@ -878,7 +878,7 @@ function EditRenderer({ edit, pageSize, scale, isSelected, activeTool, onSelect,
                     <>
                         <ResizeGripsForBox editId={edit.id} />
                         <FloatingToolbar onDuplicate={onDuplicate} onDelete={onDelete}>
-                            <span className="text-[11px] text-gray-500 px-2">Image · drag handles to resize</span>
+                            <span className="text-[11px] text-muted-foreground px-2">Image · drag handles to resize</span>
                         </FloatingToolbar>
                     </>
                 )}
@@ -924,7 +924,7 @@ function EditRenderer({ edit, pageSize, scale, isSelected, activeTool, onSelect,
                                 <FillToggle filled={!!(re.fill_color)} onToggle={v => onUpdate({ fill_color: v ? re.stroke_color : "" } as any)} />
                             </>
                         )}
-                        {isWhiteout && <span className="text-[11px] text-gray-500 px-2">Whiteout · drag handles to resize</span>}
+                        {isWhiteout && <span className="text-[11px] text-muted-foreground px-2">Whiteout · drag handles to resize</span>}
                     </FloatingToolbar>
                 </>
             )}
@@ -950,7 +950,7 @@ function ResizeGripsForBox({ editId }: { editId: string }) {
                 <div key={g.h}
                     data-resize-handle={g.h}
                     data-edit-id={editId}
-                    className="edit-pdf-resize-handle absolute w-2.5 h-2.5 rounded-sm bg-white border-2 border-blue-500"
+                    className="edit-pdf-resize-handle absolute w-2.5 h-2.5 rounded-sm bg-white border-2 border-accent"
                     style={{ ...g.style, transform: "translate(-50%, -50%)", zIndex: 30 }}
                 />
             ))}
@@ -963,7 +963,7 @@ function LineEndpointHandle({ editId, which, left, top }: { editId: string; whic
         <div
             data-resize-handle={which}
             data-edit-id={editId}
-            className="edit-pdf-resize-handle absolute w-3 h-3 rounded-full bg-white border-2 border-blue-500"
+            className="edit-pdf-resize-handle absolute w-3 h-3 rounded-full bg-white border-2 border-accent"
             style={{ left, top, transform: "translate(-50%, -50%)", zIndex: 30, cursor: "move" }}
         />
     );
@@ -972,28 +972,28 @@ function LineEndpointHandle({ editId, which, left, top }: { editId: string; whic
 /* ────────────── Floating prop toolbars ────────────── */
 function FloatingToolbar({ children, onDuplicate, onDelete }: { children: React.ReactNode; onDuplicate: () => void; onDelete: () => void; }) {
     return (
-        <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white shadow-xl px-1.5 py-1 z-40 whitespace-nowrap"
+        <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-xl border border-border bg-white shadow-xl px-1.5 py-1 z-40 whitespace-nowrap"
             onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             {children}
             <Divider />
-            <button onClick={onDuplicate} title="Duplicate (⌘D)" className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600"><Copy size={12} /></button>
-            <button onClick={onDelete} title="Delete (⌫)" className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:bg-red-50 hover:text-red-500"><Trash2 size={12} /></button>
+            <button onClick={onDuplicate} title="Duplicate (⌘D)" className="w-7 h-7 flex items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground/80"><Copy size={12} /></button>
+            <button onClick={onDelete} title="Delete (⌫)" className="w-7 h-7 flex items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 size={12} /></button>
         </div>
     );
 }
 
 function Divider() {
-    return <div className="w-px h-5 bg-gray-200" />;
+    return <div className="w-px h-5 bg-paper-3" />;
 }
 
 function ColorRow({ colors, active, onChange, label }: { colors: string[]; active: string; onChange: (c: string) => void; label?: string }) {
     return (
         <div className="flex items-center gap-1 px-1">
-            {label && <span className="text-[10px] text-gray-500 mr-0.5">{label}</span>}
+            {label && <span className="text-[10px] text-muted-foreground mr-0.5">{label}</span>}
             {colors.map(c => (
                 <button key={c} onClick={() => onChange(c)}
                     aria-label={`Color ${c}`}
-                    className={cn("w-5 h-5 rounded-full border-2 transition-all", active === c ? "border-blue-500 scale-110" : "border-gray-200 hover:scale-110")}
+                    className={cn("w-5 h-5 rounded-full border-2 transition-all", active === c ? "border-accent scale-110" : "border-border hover:scale-110")}
                     style={{ backgroundColor: c }} />
             ))}
         </div>
@@ -1003,7 +1003,7 @@ function ColorRow({ colors, active, onChange, label }: { colors: string[]; activ
 function StrokeWidthRow({ width, onChange }: { width: number; onChange: (w: number) => void }) {
     return (
         <select value={width} onChange={e => onChange(+e.target.value)}
-            className="h-7 rounded bg-transparent text-[11px] text-gray-700 focus:ring-0 cursor-pointer hover:bg-gray-50 px-1">
+            className="h-7 rounded bg-transparent text-[11px] text-foreground focus:ring-0 cursor-pointer hover:bg-paper-2 px-1">
             {[1, 2, 3, 4, 6, 8, 12].map(w => <option key={w} value={w}>{w}px</option>)}
         </select>
     );
@@ -1012,7 +1012,7 @@ function StrokeWidthRow({ width, onChange }: { width: number; onChange: (w: numb
 function FillToggle({ filled, onToggle }: { filled: boolean; onToggle: (v: boolean) => void }) {
     return (
         <button onClick={() => onToggle(!filled)}
-            className={cn("text-[11px] font-medium px-2 h-7 rounded transition-all", filled ? "bg-blue-100 text-blue-700" : "text-gray-500 hover:bg-gray-100")}>
+            className={cn("text-[11px] font-medium px-2 h-7 rounded transition-all", filled ? "bg-accent/15 text-accent" : "text-muted-foreground hover:bg-secondary")}>
             {filled ? "Filled" : "Outline"}
         </button>
     );
@@ -1021,7 +1021,7 @@ function FillToggle({ filled, onToggle }: { filled: boolean; onToggle: (v: boole
 function OpacitySlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
     return (
         <div className="flex items-center gap-1.5 px-1">
-            <span className="text-[10px] text-gray-500">{Math.round(value * 100)}%</span>
+            <span className="text-[10px] text-muted-foreground">{Math.round(value * 100)}%</span>
             <input type="range" min={0.1} max={1} step={0.05} value={value} onChange={e => onChange(+e.target.value)} className="w-16 accent-blue-500" />
         </div>
     );
@@ -1059,11 +1059,11 @@ function Thumb({ pdfDoc, pageNum, active, editCount, onClick }: { pdfDoc: any; p
     return (
         <button onClick={onClick}
             className={cn("relative block w-full rounded overflow-hidden border-2 transition-all",
-                active ? "border-blue-500 shadow-lg" : "border-transparent hover:border-white/20")}>
+                active ? "border-accent shadow-lg" : "border-transparent hover:border-white/20")}>
             <canvas ref={canvasRef} className="block w-full" />
             <div className="flex items-center justify-between px-1.5 py-1 text-[10px] font-medium" style={{ background: active ? "hsl(216 90% 60%)" : "hsl(224 15% 14%)", color: active ? "white" : "rgba(255,255,255,0.5)" }}>
                 <span>{pageNum}</span>
-                {editCount > 0 && <span className="rounded-full bg-blue-500 text-white text-[9px] w-4 h-4 flex items-center justify-center">{editCount}</span>}
+                {editCount > 0 && <span className="rounded-full bg-accent text-white text-[9px] w-4 h-4 flex items-center justify-center">{editCount}</span>}
             </div>
         </button>
     );
@@ -1086,21 +1086,21 @@ function TextToolbar({ edit, onUpdate, onDuplicate, onDelete }: {
     edit: TextEdit; onUpdate: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
     return (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white shadow-xl px-1.5 py-1 z-30 whitespace-nowrap"
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-0.5 rounded-xl border border-border bg-white shadow-xl px-1.5 py-1 z-30 whitespace-nowrap"
             onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             <button onClick={() => {
                 const base = edit.font_family.replace("-Bold", "");
                 onUpdate("font_family", edit.font_family.includes("Bold") ? base : `${base}-Bold`);
             }} className={cn("w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all",
-                edit.font_family.includes("Bold") ? "bg-blue-100 text-blue-700" : "text-gray-500 hover:bg-gray-100")}>B</button>
+                edit.font_family.includes("Bold") ? "bg-accent/15 text-accent" : "text-muted-foreground hover:bg-secondary")}>B</button>
             <Divider />
             <select value={edit.font_size} onChange={e => onUpdate("font_size", +e.target.value)}
-                className="h-8 rounded-lg border-0 bg-transparent text-sm text-gray-700 focus:ring-0 px-1.5 cursor-pointer font-medium hover:bg-gray-50">
+                className="h-8 rounded-lg border-0 bg-transparent text-sm text-foreground focus:ring-0 px-1.5 cursor-pointer font-medium hover:bg-paper-2">
                 {[8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <Divider />
             <select value={edit.font_family} onChange={e => onUpdate("font_family", e.target.value)}
-                className="h-8 rounded-lg border-0 bg-transparent text-sm text-gray-700 focus:ring-0 cursor-pointer max-w-[100px] hover:bg-gray-50">
+                className="h-8 rounded-lg border-0 bg-transparent text-sm text-foreground focus:ring-0 cursor-pointer max-w-[100px] hover:bg-paper-2">
                 {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
             <Divider />
@@ -1108,15 +1108,15 @@ function TextToolbar({ edit, onUpdate, onDuplicate, onDelete }: {
                 {PALETTE.slice(0, 6).map(c => (
                     <button key={c} onClick={() => onUpdate("color", c)}
                         className={cn("w-6 h-6 rounded-full border-2 transition-all",
-                            edit.color === c ? "border-blue-500 scale-110 ring-2 ring-blue-200" : "border-gray-200 hover:scale-110")}
+                            edit.color === c ? "border-accent scale-110 ring-2 ring-blue-200" : "border-border hover:scale-110")}
                         style={{ backgroundColor: c }} />
                 ))}
                 <input type="color" value={edit.color} onChange={e => onUpdate("color", e.target.value)}
-                    className="w-6 h-6 rounded-full border-2 border-gray-200 cursor-pointer" />
+                    className="w-6 h-6 rounded-full border-2 border-border cursor-pointer" />
             </div>
             <Divider />
-            <button onClick={onDuplicate} title="Duplicate (⌘D)" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all"><Copy size={14} /></button>
-            <button onClick={onDelete} title="Delete (⌫)" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"><Trash2 size={14} /></button>
+            <button onClick={onDuplicate} title="Duplicate (⌘D)" className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground/80 transition-all"><Copy size={14} /></button>
+            <button onClick={onDelete} title="Delete (⌫)" className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"><Trash2 size={14} /></button>
         </div>
     );
 }

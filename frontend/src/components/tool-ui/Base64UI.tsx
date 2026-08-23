@@ -124,7 +124,7 @@ export function Base64UI() {
                         <Sparkles size={12} /> Try sample
                     </button>
                 )}
-                <span className="ml-auto font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <span className="font-medium ml-auto text-[11.5px] text-muted-foreground">
                     <KeyRound size={10} className="inline -mt-0.5 mr-1" />
                     {mode === "encode" ? "Text → Base64" : "Base64 → Text"}
                 </span>
@@ -139,23 +139,23 @@ export function Base64UI() {
                 >
                     <Sparkles size={13} className="text-accent" />
                     <span className="text-[12.5px] text-foreground">That looks like Base64 — switch to decode mode?</span>
-                    <span className="ml-auto font-mono text-[10px] tracking-[0.08em] uppercase text-accent">Switch</span>
+                    <span className="font-medium ml-auto text-[11px] text-accent">Switch</span>
                 </button>
             )}
 
             {/* Input + Output as code-editor panels */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> {mode === "encode" ? "Plain text" : "Base64"}</span>
+                    <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>{mode === "encode" ? "Plain text" : "Base64"}</span>
                         <div className="flex items-center gap-2 normal-case tracking-normal">
-                            {input && <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase">{input.length} char{input.length !== 1 ? "s" : ""}</span>}
+                            {input && <span className="font-medium text-[11.5px]">{input.length} char{input.length !== 1 ? "s" : ""}</span>}
                             {input && (
                                 <button
                                     type="button"
                                     onClick={() => setInput("")}
                                     aria-label="Clear input"
-                                    className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors px-2 h-6 rounded hover:bg-secondary/60"
+                                    className="font-medium text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 h-6 rounded hover:bg-secondary/60"
                                 >
                                     Clear
                                 </button>
@@ -167,20 +167,20 @@ export function Base64UI() {
                         onChange={e => setInput(e.target.value)}
                         placeholder={mode === "encode" ? "Enter text to encode…" : "Paste a Base64 string…"}
                         spellCheck={false}
-                        className="block w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                        className="block w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                     />
                 </div>
 
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                     <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> {mode === "encode" ? "Base64" : "Plain text"}
+                        <span className="font-medium text-[11.5px] text-muted-foreground">
+                            {mode === "encode" ? "Base64" : "Plain text"}
                         </span>
                         {output && (
                             <button
                                 onClick={copy}
                                 className={cn(
-                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors",
+                                    "font-medium inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors",
                                     copied && "animate-copy-flash"
                                 )}
                             >
@@ -189,7 +189,7 @@ export function Base64UI() {
                         )}
                     </div>
                     <pre className="w-full h-44 px-3 py-3 bg-transparent font-mono text-[13px] text-foreground overflow-auto break-all whitespace-pre-wrap">
-                        {output || <span className="text-muted-foreground/50 italic font-display">Output appears here…</span>}
+                        {output || <span className="text-muted-foreground italic font-display">Output appears here…</span>}
                     </pre>
                 </div>
             </div>

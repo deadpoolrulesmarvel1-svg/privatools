@@ -7,14 +7,14 @@
  *   - Tag cloud with counts — clicking a tag filters the grid. Tags are
  *     visually weighted by count (popular tags render larger / bolder).
  *   - "New" badge on posts whose updatedAt is within 30 days (animated dot)
- *   - Featured post on a clean state; below the featured panel a §-numbered
+ *   - Featured post on a clean state; below the featured panel a -numbered
  *     "More like this" rail (other posts sharing the featured's primary tag)
  *   - Empty state shows what was searched + suggests up to 3 alternative
  *     queries derived from existing tag tokens that share a prefix/substring
  *   - Result count chip with mono dateline
  *
- * Workshop styling preserved: § masthead, mono dateline, featured post with
- * corner marks, §-numbered article grid, category chip rail.
+ * Workshop styling preserved: masthead, mono dateline, featured post with
+ * corner marks, -numbered article grid, category chip rail.
  */
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -204,7 +204,7 @@ export default function BlogPage() {
         <header className="mb-10 animate-fade-up">
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-border">
             <p className="section-mark">PrivaTools Journal</p>
-            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+            <p className="font-medium text-[11.5px] text-muted-foreground">
               {blogPosts.length} guides · updated {formatDate(sorted[0]?.publishedAt || "2026-01-01")}
             </p>
           </div>
@@ -221,15 +221,15 @@ export default function BlogPage() {
         <div className="mb-8 space-y-3 animate-fade-up stagger-1">
           {/* Search */}
           <div className="rounded-xl border border-border bg-card overflow-hidden focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-colors">
-            <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-              <span><span className="text-accent">§</span> Search</span>
+            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+              <span>Search</span>
               <span className="flex items-center gap-3">
                 {q && (
                   <span className="text-accent tabular-nums">
                     {filtered.length} {filtered.length === 1 ? "match" : "matches"}
                   </span>
                 )}
-                <kbd className="hidden sm:inline-flex h-5 items-center px-1.5 rounded border border-border bg-paper-2/60 text-[9.5px] tracking-[0.06em] text-muted-foreground/80">/</kbd>
+                <kbd className="hidden sm:inline-flex h-5 items-center px-1.5 rounded border border-border bg-paper-2/60 text-[9.5px] tracking-[0.06em] text-muted-foreground">/</kbd>
               </span>
             </div>
             <div className="relative">
@@ -240,7 +240,7 @@ export default function BlogPage() {
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search across titles, descriptions, and tags…"
                 aria-label="Search articles"
-                className="w-full pl-10 pr-10 py-3 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                className="w-full pl-10 pr-10 py-3 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none"
               />
               {query && (
                 <button
@@ -265,7 +265,7 @@ export default function BlogPage() {
                   onClick={() => setActiveCat(c.id)}
                   aria-pressed={active}
                   className={cn(
-                    "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border font-mono text-[10.5px] tracking-[0.10em] uppercase transition-colors",
+                    "font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[11.5px] transition-colors",
                     active
                       ? `${c.toneBg} ${c.toneFg} font-semibold ring-1 ring-accent/40`
                       : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground"
@@ -278,7 +278,7 @@ export default function BlogPage() {
             {hasFilters && (
               <button
                 onClick={clearFilters}
-                className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-border bg-paper-2/30 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45"
+                className="font-medium ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-border bg-paper-2/30 text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45"
               >
                 <X size={11} /> Clear all
               </button>
@@ -288,7 +288,7 @@ export default function BlogPage() {
           {/* Active tag pill */}
           {activeTag && (
             <div className="flex items-center gap-2 animate-fade-in">
-              <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Tag filter:</span>
+              <span className="font-medium text-[11.5px] text-muted-foreground">Tag filter:</span>
               <button
                 onClick={() => setActiveTag(null)}
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-accent/45 bg-accent/[0.08] font-mono text-[10.5px] tracking-[0.06em] text-accent hover:bg-accent/[0.12]"
@@ -312,11 +312,11 @@ export default function BlogPage() {
                 <CornerMarks />
                 <div className="p-8 sm:p-10">
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
-                    <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-accent/20 border border-accent/45 text-accent font-mono text-[10px] tracking-[0.10em] uppercase font-semibold">
+                    <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-accent/20 border border-accent/45 text-accent text-[11px] font-semibold">
                       <Sparkles size={9} /> Featured
                     </span>
                     {isRecentlyUpdated(featured) && (
-                      <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-accent/15 border border-accent/40 text-accent font-mono text-[10px] tracking-[0.10em] uppercase">
+                      <span className="font-medium inline-flex items-center gap-1 h-6 px-2 rounded-full bg-accent/15 border border-accent/40 text-accent text-[11px]">
                         <span className="relative flex h-1.5 w-1.5">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-70" />
                           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
@@ -328,7 +328,7 @@ export default function BlogPage() {
                       const tagCat = TAG_CATEGORIES[t];
                       return tagCat ? (
                         <span key={t} className={cn(
-                          "inline-flex items-center h-6 px-2 rounded-full border font-mono text-[10px] tracking-[0.10em] uppercase",
+                          "font-medium inline-flex items-center h-6 px-2 rounded-full border text-[11px]",
                           tagCat.toneBg, tagCat.toneFg
                         )}>
                           {tagCat.label}
@@ -343,7 +343,7 @@ export default function BlogPage() {
                   <p className="text-[15px] text-muted-foreground leading-relaxed mb-6 max-w-xl">
                     {featured.description}
                   </p>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                  <div className="font-medium flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1"><Calendar size={11} /> {formatDate(featured.publishedAt)}</span>
                     <span className="inline-flex items-center gap-1"><Clock size={11} /> {featured.readTime}</span>
                     {featured.author && <span>by <span className="text-foreground">{featured.author}</span></span>}
@@ -356,8 +356,8 @@ export default function BlogPage() {
                         <Icon size={32} className="text-accent" />
                       </div>
                       <p className="mt-5 font-display text-[17px] font-semibold text-foreground tracking-[-0.015em]">{cat.label} guide</p>
-                      <p className="mt-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{featured.tags.join(" · ")}</p>
-                      <div className="mt-5 inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                      <p className="font-medium mt-1 text-[11.5px] text-muted-foreground">{featured.tags.join(" · ")}</p>
+                      <div className="font-medium mt-5 inline-flex items-center gap-1.5 text-[11.5px] text-accent">
                         Read the guide <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                       </div>
                     </div>
@@ -379,24 +379,24 @@ export default function BlogPage() {
                 {primary && (
                   <button
                     onClick={() => setActiveTag(primary)}
-                    className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent inline-flex items-center gap-1.5 transition-colors"
+                    className="font-medium text-[11.5px] text-muted-foreground hover:text-accent inline-flex items-center gap-1.5 transition-colors"
                   >
                     All {primary} <ArrowRight size={11} />
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-in">
                 {moreLikeFeatured.map((p, i) => (
                   <Link
                     key={p.slug}
                     to={`/blog/${p.slug}`}
                     className="group rounded-xl border border-border bg-card p-3.5 hover:border-accent/45 hover:bg-accent/[0.03] transition-colors"
                   >
-                    <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent/70 mb-1">§{String(i + 1).padStart(2, "0")}</p>
+                    <p className="font-medium text-[9.5px] text-accent mb-1">{String(i + 1).padStart(2, "0")}</p>
                     <p className="font-display text-[13px] font-semibold text-foreground leading-snug tracking-[-0.015em] line-clamp-3 group-hover:text-accent transition-colors">
                       {p.title}
                     </p>
-                    <p className="mt-2 font-mono text-[9.5px] tracking-[0.06em] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                    <p className="font-medium mt-2 text-[9.5px] text-muted-foreground inline-flex items-center gap-1.5">
                       <Clock size={9} /> {p.readTime}
                     </p>
                   </Link>
@@ -408,7 +408,7 @@ export default function BlogPage() {
 
         {/* ── Article grid ── */}
         {filteredRest.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {filteredRest.map((post, i) => {
               const cat = categoryFor(post);
               const Icon = cat.icon;
@@ -422,14 +422,14 @@ export default function BlogPage() {
                 >
                   <div className="flex items-center justify-between mb-4 gap-2">
                     <span className={cn(
-                      "inline-flex items-center gap-1 h-6 px-2 rounded-full border font-mono text-[9.5px] tracking-[0.10em] uppercase",
+                      "font-medium inline-flex items-center gap-1 h-6 px-2 rounded-full border text-[9.5px]",
                       cat.toneBg, cat.toneFg
                     )}>
                       <Icon size={10} /> {cat.label}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {recent && (
-                        <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded font-mono text-[9px] tracking-[0.10em] uppercase font-semibold bg-accent/15 border border-accent/35 text-accent">
+                        <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded text-[10.5px] font-semibold bg-accent/15 border border-accent/35 text-accent">
                           <span className="relative flex h-1 w-1">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-70" />
                             <span className="relative inline-flex h-1 w-1 rounded-full bg-accent" />
@@ -437,11 +437,11 @@ export default function BlogPage() {
                           New
                         </span>
                       )}
-                      <span className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{post.readTime}</span>
+                      <span className="font-medium text-[9.5px] text-muted-foreground">{post.readTime}</span>
                     </div>
                   </div>
                   <div className="flex items-start gap-2 mb-2">
-                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-1">§{String(idx).padStart(2, "0")}</span>
+                    <span className="font-medium text-[11px] text-accent shrink-0 mt-1">{String(idx).padStart(2, "0")}</span>
                     <h3 className="font-display text-[17px] font-bold text-foreground leading-snug tracking-[-0.02em] group-hover:text-foreground/95 transition-colors">
                       {highlight(post.title, q)}
                     </h3>
@@ -450,8 +450,8 @@ export default function BlogPage() {
                     {highlight(post.description, q)}
                   </p>
                   <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                    <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">{formatDate(post.publishedAt)}</span>
-                    <span className="inline-flex items-center gap-1 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                    <span className="font-medium text-[11px] text-muted-foreground">{formatDate(post.publishedAt)}</span>
+                    <span className="font-medium inline-flex items-center gap-1 text-[11.5px] text-accent">
                       Read <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -461,7 +461,7 @@ export default function BlogPage() {
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-paper-2/20 py-16 text-center px-6">
-            <p className="font-mono text-[11px] tracking-[0.10em] uppercase text-muted-foreground">No posts match these filters</p>
+            <p className="font-medium text-[12px] text-muted-foreground">No posts match these filters</p>
             {q && (
               <p className="mt-3 text-[14px] text-muted-foreground">
                 Searched for <span className="font-mono text-accent">"{query}"</span>
@@ -469,7 +469,7 @@ export default function BlogPage() {
             )}
             {suggestions.length > 0 && (
               <div className="mt-6">
-                <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/80 mb-2">Try one of these instead</p>
+                <p className="font-medium text-[11px] text-muted-foreground mb-2">Try one of these instead</p>
                 <div className="inline-flex flex-wrap justify-center gap-2">
                   {suggestions.map(s => (
                     <button
@@ -498,8 +498,8 @@ export default function BlogPage() {
             count for clarity. */}
         {tagCloud.length > 0 && (
           <section className="mt-16 rounded-xl border border-border bg-card overflow-hidden animate-fade-up">
-            <div className="px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-              <span><span className="text-accent">§</span> All tags</span>
+            <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+              <span>All tags</span>
               <span>{tagCloud.length} unique · weighted by post count</span>
             </div>
             <div className="p-4 flex flex-wrap items-baseline gap-x-2 gap-y-2">
@@ -525,7 +525,7 @@ export default function BlogPage() {
                     )}
                   >
                     <span>{tag}</span>
-                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground/70">{count}</span>
+                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{count}</span>
                   </button>
                 );
               })}

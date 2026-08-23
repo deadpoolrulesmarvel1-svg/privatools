@@ -123,7 +123,7 @@ export function UnlockUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
@@ -133,7 +133,7 @@ export function UnlockUI() {
                     <LockOpen size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select protected PDFs"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
             {files.length > 0 && (
@@ -141,13 +141,13 @@ export function UnlockUI() {
                     <div className="space-y-2">
                         {files.map((f, i) => (
                             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                 <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                     <FileText size={15} className="text-accent" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                                 </div>
                                 <button onClick={() => removeFile(f.id)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
                                     <X size={13} />
@@ -159,8 +159,8 @@ export function UnlockUI() {
                     <VaultTrialBanner state={trial} />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Document password
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Document password
                         </div>
                         <div className="p-4 space-y-2">
                             <div className="relative">
@@ -171,7 +171,7 @@ export function UnlockUI() {
                                     placeholder="Enter the existing password"
                                     autoFocus
                                     autoComplete="current-password"
-                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 />
                                 <button
                                     type="button"
@@ -183,8 +183,8 @@ export function UnlockUI() {
                                     {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                <span className="text-accent">§</span> {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
+                            <p className="font-medium text-[11px] text-muted-foreground">
+                                {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
                             </p>
                         </div>
                     </div>
@@ -199,7 +199,7 @@ export function UnlockUI() {
                         <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Unlocking…</> : <><LockOpen size={13} /> Unlock {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

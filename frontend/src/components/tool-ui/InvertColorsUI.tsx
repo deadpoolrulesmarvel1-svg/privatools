@@ -96,7 +96,7 @@ export function InvertColorsUI() {
                     tabIndex={0}
                     aria-label="Upload PDF"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -106,7 +106,7 @@ export function InvertColorsUI() {
                         <Moon size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop a PDF to invert colors</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Dark mode for any document</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Dark mode for any document</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
@@ -115,7 +115,7 @@ export function InvertColorsUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button onClick={() => setFile(null)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove file">
                         <X size={13} />
@@ -125,13 +125,13 @@ export function InvertColorsUI() {
 
             {/* Mode + DPI */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Options
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Options
                 </div>
                 <div className="p-5 space-y-5">
                     {/* Mode */}
                     <div>
-                        <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground mb-2">Inversion mode</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mb-2">Inversion mode</p>
                         <div className="grid grid-cols-2 gap-2">
                             {([
                                 { id: "full" as const,  label: "Full invert", desc: "Flip every color", icon: Moon },
@@ -156,7 +156,7 @@ export function InvertColorsUI() {
                                         </div>
                                         <div>
                                             <div className="flex items-baseline gap-1.5">
-                                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                                <span className="font-medium text-[11px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
                                                 <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{m.label}</p>
                                             </div>
                                             <p className="text-[11.5px] text-muted-foreground mt-0.5">{m.desc}</p>
@@ -169,7 +169,7 @@ export function InvertColorsUI() {
 
                     {/* DPI */}
                     <div>
-                        <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground mb-2">Quality (DPI)</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mb-2">Quality (DPI)</p>
                         <div className="grid grid-cols-3 gap-1.5">
                             {[
                                 { val: 72,  label: "Fast",     hint: "72 dpi" },
@@ -207,7 +207,7 @@ export function InvertColorsUI() {
                     <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Inverting…</> : <><Download size={13} /> Invert colors</>}
                     </button>
-                    {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

@@ -39,7 +39,7 @@ const TYPE_META: Record<EntityType, { label: string; color: string }> = {
     ORG:   { label: "Organizations", color: "bg-violet-500/10 text-violet-300 border-violet-500/30" },
     LOC:   { label: "Locations",     color: "bg-accent/10 text-accent border-accent/30" },
     MISC:  { label: "Other entities",color: "bg-slate-500/10 text-slate-300 border-slate-500/30" },
-    EMAIL: { label: "Emails",        color: "bg-blue-500/10 text-blue-300 border-blue-500/30" },
+    EMAIL: { label: "Emails",        color: "bg-accent/10 text-blue-300 border-accent/30" },
     PHONE: { label: "Phone numbers", color: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
     SSN:   { label: "SSNs",          color: "bg-orange-500/10 text-orange-300 border-orange-500/30" },
     CARD:  { label: "Credit cards",  color: "bg-copper-soft text-copper border-copper/30" },
@@ -303,7 +303,7 @@ export function SmartRedactUI() {
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 {hits !== null ? <><span className="italic text-accent">{hits}</span> match{hits === 1 ? "" : "es"} removed.</> : <><span className="italic text-accent">Redacted</span> PDF downloaded.</>}
                             </h2>
-                            <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                            <p className="font-medium mt-2 text-[12px] text-muted-foreground">
                                 {selected.size} item{selected.size === 1 ? "" : "s"} permanently redacted
                             </p>
                             <button
@@ -328,8 +328,8 @@ export function SmartRedactUI() {
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">§ Browser NER</span>
-                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">BERT-base · runs locally</span>
+                        <span className="text-[11px] text-accent font-medium">Browser NER</span>
+                        <span className="font-medium text-[11px] text-muted-foreground">BERT-base · runs locally</span>
                     </div>
                     <p className="text-[12.5px] text-foreground leading-relaxed">
                         <span className="font-medium">Detection happens in your browser.</span> The model + regex passes execute via WebAssembly, so your PDF stays local while PII is found. When you apply, the PDF and your selected strings are sent to our isolated backend for the PyMuPDF redaction, then deleted on response.
@@ -348,7 +348,7 @@ export function SmartRedactUI() {
                     tabIndex={0}
                     aria-label="Upload PDF for smart redaction"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -361,7 +361,7 @@ export function SmartRedactUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a PDF to auto-redact</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Text-based PDF · OCR first if it's a scan</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Text-based PDF · OCR first if it's a scan</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
@@ -370,7 +370,7 @@ export function SmartRedactUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     {(stage === "idle" || stage === "review" || stage === "error") && (
                         <button
@@ -396,7 +396,7 @@ export function SmartRedactUI() {
                                 {stage === "scanning"      && <>Scanning for personal information</>}
                                 {stage === "redacting"     && <>Applying redactions on the server</>}
                             </p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                                 {stage === "extracting"   && <>Page {progress.pages}{progress.totalPages ? ` of ${progress.totalPages}` : ""}</>}
                                 {stage === "loading-model" && <>{progress.modelPercent}% · one-time, cached</>}
                                 {stage === "scanning"      && <>Combining NER + regex patterns</>}
@@ -406,7 +406,7 @@ export function SmartRedactUI() {
                         {(stage === "extracting" || stage === "loading-model" || stage === "scanning") && (
                             <button
                                 onClick={() => { cancelledRef.current = true; setStage("idle"); }}
-                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 Cancel
                             </button>
@@ -444,8 +444,8 @@ export function SmartRedactUI() {
                 <div className="space-y-4">
                     {/* Review header */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Detections — {detections.length} items, {grouped.size} categor{grouped.size === 1 ? "y" : "ies"}</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Detections — {detections.length} items, {grouped.size} categor{grouped.size === 1 ? "y" : "ies"}</span>
                             <span>{selected.size} selected for redaction</span>
                         </div>
                         <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -453,7 +453,7 @@ export function SmartRedactUI() {
                                 Uncheck anything you want to keep — the rest will be permanently redacted.
                             </p>
                             <div className="flex items-center gap-2 shrink-0">
-                                <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Color</span>
+                                <span className="font-medium text-[11.5px] text-muted-foreground">Color</span>
                                 <input
                                     type="color"
                                     value={color}
@@ -467,7 +467,7 @@ export function SmartRedactUI() {
                     {detections.length === 0 ? (
                         <div className="rounded-xl border border-border bg-card p-6 text-center">
                             <p className="font-display text-[16px] text-foreground italic">No personal information detected.</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">Use the regular Redact tool to draw rectangles manually.</p>
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-2">Use the regular Redact tool to draw rectangles manually.</p>
                         </div>
                     ) : (
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -481,15 +481,15 @@ export function SmartRedactUI() {
                                     <div key={type} className="rounded-xl border border-border bg-card overflow-hidden">
                                         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40">
                                             <div className="flex items-center gap-2">
-                                                <span className={cn("inline-flex items-center px-1.5 h-5 rounded font-mono text-[9.5px] font-medium tracking-[0.10em] uppercase border", meta.color)}>
+                                                <span className={cn("inline-flex items-center px-1.5 h-5 rounded text-[9.5px] font-medium border", meta.color)}>
                                                     {meta.label}
                                                 </span>
-                                                <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
+                                                <span className="font-medium text-[11.5px] text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => toggleType(type, !allOn)}
-                                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                                className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                                             >
                                                 {allOn ? "Deselect all" : "Select all"}
                                             </button>
@@ -532,7 +532,7 @@ export function SmartRedactUI() {
                         </button>
                         <button
                             onClick={() => { setStage("idle"); setDetections([]); setSelected(new Set()); }}
-                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                            className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                         >
                             Re-scan
                         </button>

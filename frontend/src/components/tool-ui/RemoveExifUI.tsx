@@ -133,7 +133,7 @@ export function RemoveExifUI() {
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button" tabIndex={0} aria-label="Upload images"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
@@ -143,7 +143,7 @@ export function RemoveExifUI() {
                     <DatabaseZap size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more images" : "Select images to scrub"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPEG · PNG · WebP · TIFF · multi-file batch</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPEG · PNG · WebP · TIFF · multi-file batch</p>
             </div>
 
             {files.length > 0 && (
@@ -154,28 +154,28 @@ export function RemoveExifUI() {
                             const clean = probed && !probed.hasExif && !probed.hasXmp && !probed.hasGps;
                             return (
                                 <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                    <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70 w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                                    <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                     <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                         <ImageIcon size={15} className="text-accent" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                            <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{f.size}</span>
-                                            {!probed && <span className="font-mono text-[10px] tracking-wider uppercase text-muted-foreground/60">scanning…</span>}
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
+                                            {!probed && <span className="font-medium text-[11px] tracking-wider text-muted-foreground">scanning…</span>}
                                             {probed?.hasExif && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
                                             )}
                                             {probed?.hasXmp && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300">XMP</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">XMP</span>
                                             )}
                                             {probed?.hasGps && (
-                                                <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-destructive/15 text-destructive">
+                                                <span className="font-medium inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-destructive/15 text-destructive">
                                                     <MapPin size={9} /> GPS
                                                 </span>
                                             )}
                                             {clean && (
-                                                <span className="inline-flex items-center h-4 px-1.5 rounded font-mono text-[9.5px] tracking-wider uppercase bg-accent/15 text-accent">Clean</span>
+                                                <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-accent/15 text-accent">Clean</span>
                                             )}
                                         </div>
                                     </div>
@@ -188,8 +188,8 @@ export function RemoveExifUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Will be removed
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Will be removed
                         </div>
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
                             {STRIPPED.map(s => (
@@ -212,7 +212,7 @@ export function RemoveExifUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stripping…</> : <><DatabaseZap size={13} /> Remove EXIF from {files.length > 1 ? `${files.length} images` : "image"}</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

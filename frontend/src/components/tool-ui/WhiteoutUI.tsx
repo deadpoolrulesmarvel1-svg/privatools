@@ -125,8 +125,8 @@ export function WhiteoutUI() {
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> White-out regions ({regions.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>White-out regions ({regions.length})</span>
                         <button onClick={addRegion} className="inline-flex items-center gap-1 text-accent hover:opacity-80 transition-opacity">
                             <Plus size={11} /> Add
                         </button>
@@ -145,8 +145,8 @@ export function WhiteoutUI() {
                                         )}
                                     >
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
-                                                §{String(idx + 1).padStart(2, "0")}
+                                            <span className={cn("font-medium text-[11px]", isSel ? "text-accent" : "text-muted-foreground")}>
+                                                {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">Region {idx + 1}</span>
                                             <button onClick={(e) => { e.stopPropagation(); removeRegion(r.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -162,7 +162,7 @@ export function WhiteoutUI() {
                                                 { f: "height", label: "H", min: 1 },
                                             ] as const).map((c, ci) => (
                                                 <div key={c.f}>
-                                                    <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                    <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(r.id, el); else rowRefs.current.delete(r.id); } : undefined}
                                                         type="number" inputMode="numeric" min={c.min}
@@ -201,10 +201,10 @@ export function WhiteoutUI() {
                                         />
                                     );
                                 })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2 text-center">
-                                <span className="text-accent">§</span> Coords in points · top-left origin
+                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
+                                Coords in points · top-left origin
                             </p>
                         </div>
                     </div>
@@ -223,7 +223,7 @@ export function WhiteoutUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Erasing…</> : <><Eraser size={13} /> Apply {regions.length} white-out{regions.length !== 1 && "s"}</>}
                     </button>
                     {status !== "processing" && regions.length > 0 && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

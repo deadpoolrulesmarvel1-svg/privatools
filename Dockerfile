@@ -69,9 +69,17 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
 # first /api/remove-background request never has to wait on a GitHub release.
 # Numba JIT is disabled here so the import path doesn't trip on the slim
 # image's locator quirk (matches the runtime ENV NUMBA_DISABLE_JIT=1).
-RUN mkdir -p /tmp/u2net /tmp/cache /tmp/numba-cache \
- && NUMBA_DISABLE_JIT=1 U2NET_HOME=/tmp/u2net XDG_CACHE_HOME=/tmp/cache \
-    python -c "from rembg import new_session; new_session('u2netp'); print('rembg u2netp model cached at /tmp/u2net')"
+#
+# Baked under /app/cache, deliberately NOT /tmp: the container runs with
+# read_only: true and LibreOffice needs a writable /tmp for its IPC pipe, so a
+# tmpfs is mounted there — which would mask anything baked underneath. It did:
+# with a tmpfs on /tmp the model vanished and rembg silently re-downloaded it
+# from a GitHub release on the first request, turning a self-contained image
+# into one with a runtime network dependency. /app/cache is in the read-only
+# layer, which is all these need — they are read, never written.
+RUN mkdir -p /app/cache/u2net /app/cache/xdg \
+ && NUMBA_DISABLE_JIT=1 U2NET_HOME=/app/cache/u2net XDG_CACHE_HOME=/app/cache/xdg \
+    python -c "from rembg import new_session; new_session('u2netp'); print('rembg u2netp model cached at /app/cache/u2net')"
 
 # Copy backend
 COPY backend/ backend/
@@ -84,10 +92,10 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 
 # Create temp directory with proper ownership
 RUN mkdir -p temp && chown -R appuser:appuser temp
-# Pre-create the numba cache dir + ensure the appuser can read the pre-baked
-# rembg model + write to its own cache dirs.
-RUN mkdir -p /tmp/numba-cache \
- && chown -R appuser:appuser /tmp/numba-cache /tmp/u2net /tmp/cache
+# The appuser must be able to read the pre-baked rembg model. onnxruntime
+# reports a bare "system error number 13" when it cannot — an EACCES that names
+# neither the file nor the permission, so get the ownership right here.
+RUN chown -R appuser:appuser /app/cache
 
 ENV ENVIRONMENT=production
 ENV ALLOWED_ORIGINS=https://privatools.me
@@ -97,12 +105,16 @@ ENV ALLOWED_ORIGINS=https://privatools.me
 # fallback is only marginally slower for the small u2netp model, and
 # disabling avoids hanging workers at FastAPI startup.
 ENV NUMBA_DISABLE_JIT=1
+# Left on /tmp (a tmpfs under read_only) rather than /app/cache, because this
+# is the one cache that may be written at runtime. JIT is disabled above so
+# nothing should write it; if that ever changes, a tmpfs absorbs it instead of
+# failing on the read-only root.
 ENV NUMBA_CACHE_DIR=/tmp/numba-cache
-# rembg / pooch cache the u2netp model in $U2NET_HOME (default ~/.u2net which
-# resolves to /app/.u2net for the appuser — read-only). Send it to /tmp so
-# the runtime user can write the model on first download.
-ENV U2NET_HOME=/tmp/u2net
-ENV XDG_CACHE_HOME=/tmp/cache
+# rembg / pooch look for the u2netp model under $U2NET_HOME (default ~/.u2net,
+# which resolves to /app/.u2net for the appuser). Point both at the baked
+# read-only cache above — present at build time, so nothing is downloaded.
+ENV U2NET_HOME=/app/cache/u2net
+ENV XDG_CACHE_HOME=/app/cache/xdg
 
 # Cap native math/ML thread pools. numpy/scipy and onnxruntime (via rembg) each
 # spin up an OpenMP/BLAS pool sized to the host core count; on the 2-core VM,
@@ -118,7 +130,7 @@ ENV MKL_NUM_THREADS=1
 # of system /tmp. The media/archive/extract tools use raw tempfile.*; on /tmp
 # the janitor never swept them, so they leaked on every timeout/OOM/crash exit
 # path. /app/temp IS swept (utils.cleanup janitor, which recurses subdirs). The
-# cache dirs above stay on /tmp on purpose (build-baked, not user data).
+# cache dirs above live in /app/cache on purpose (build-baked, not user data).
 ENV TMPDIR=/app/temp
 
 # Switch to non-root user

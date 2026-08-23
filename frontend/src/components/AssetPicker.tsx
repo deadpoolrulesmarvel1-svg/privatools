@@ -46,8 +46,8 @@ export function AssetPicker({
     <div className={className ?? "mt-2 space-y-1.5"}>
       {items.length > 0 && (
         <>
-          <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
-            <span className="text-accent">§</span> Saved on this device
+          <p className="font-medium text-[11px] text-muted-foreground">
+            Saved on this device
           </p>
           <div className="flex flex-wrap gap-1.5">
             {items.map((a) => (
@@ -66,7 +66,7 @@ export function AssetPicker({
                 <button
                   type="button"
                   aria-label={`Delete ${a.name}`}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-9 coarse:w-9 rounded text-muted-foreground hover:text-destructive transition-colors"
                   onClick={() => remove(a.id)}
                 >
                   <Trash2 size={11} aria-hidden="true" />
@@ -81,7 +81,7 @@ export function AssetPicker({
         <button
           type="button"
           onClick={() => save(saveable.name, saveable)}
-          className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:opacity-80"
+          className="font-medium inline-flex items-center gap-1 text-[11px] text-accent hover:opacity-80"
         >
           <Save size={11} aria-hidden="true" />
           Save this image for next time

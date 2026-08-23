@@ -119,7 +119,7 @@ export function MultiFileUI({
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
-                    "relative w-full rounded-2xl border-2 border-dashed py-10 sm:py-12 px-6 text-center transition-colors group",
+                    "dropzone-surface relative w-full rounded-2xl border-2 border-dashed py-10 sm:py-12 px-6 text-center transition-colors group",
                     drag
                         ? "border-accent bg-accent/[0.06]"
                         : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -135,7 +135,7 @@ export function MultiFileUI({
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length === 0 ? `Add ${fileLabel}` : "Add more"}
                 </p>
-                <p className="mt-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium mt-1 text-[11.5px] text-muted-foreground">
                     Drag &amp; drop, or click — multi-select OK
                 </p>
                 <input
@@ -152,11 +152,11 @@ export function MultiFileUI({
             {files.length > 0 && (
                 <>
                     <div className="flex items-center justify-between px-1">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> {files.length} {fileLabel} · {formatFileSize(totalSize)} total
+                        <span className="font-medium text-[11.5px] text-muted-foreground">
+                            {files.length} {fileLabel} · {formatFileSize(totalSize)} total
                         </span>
                         {ordered && (
-                            <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85">
+                            <span className="font-medium text-[11px] text-muted-foreground">
                                 Order matters — drag or use ↑↓
                             </span>
                         )}
@@ -165,11 +165,11 @@ export function MultiFileUI({
                         {files.map((f, i) => (
                             <div key={f.id} className="group flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-secondary/30 transition-colors">
                                 {ordered && (
-                                    <span className="text-muted-foreground/85 hidden sm:inline-flex items-center justify-center h-7 w-7 coarse:h-11 coarse:w-11 rounded">
+                                    <span className="text-muted-foreground hidden sm:inline-flex items-center justify-center h-7 w-7 coarse:h-11 coarse:w-11 rounded">
                                         <GripVertical size={14} />
                                     </span>
                                 )}
-                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-7 text-center">
+                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7 text-center">
                                     {String(i + 1).padStart(2, "0")}
                                 </span>
                                 <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
@@ -225,7 +225,7 @@ export function MultiFileUI({
 
             {/* Action */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     {files.length === 0 ? "No files added" : `${files.length} file${files.length === 1 ? "" : "s"} ready`}
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -243,7 +243,7 @@ export function MultiFileUI({
                         )}
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             </div>

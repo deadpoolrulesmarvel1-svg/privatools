@@ -23,30 +23,7 @@
  */
 import { Link } from "react-router-dom";
 import { ArrowRight, Zap, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-export interface EmptyStateCTA {
-    label: string;
-    /** External or in-app link. Mutually exclusive with `onClick`. */
-    href?: string;
-    /** Local action (e.g. open command palette). Mutually exclusive with `href`. */
-    onClick?: () => void;
-    /** Tiny icon shown left of the label. Defaults to a `Zap` for the primary
-     *  CTA, none for the chip variants. */
-    icon?: LucideIcon;
-}
-
-export interface EmptyStateProps {
-    /** Lucide icon shown in the accent tile at the top-left. */
-    icon: LucideIcon;
-    /** Mono uppercase line above the title — keeps the section-mark rhythm. */
-    eyebrow?: string;
-    title: string;
-    description: string;
-    ctas?: EmptyStateCTA[];
-    /** Optional className to merge into the outer container. */
-    className?: string;
-    /** Tone: "neutral" (default, paper background) or "accent" (subtle green wash). */
+import { cn } from "@/lib/utils"; export interface EmptyStateCTA { label: string; /** External or in-app link. Mutually exclusive with `onClick`. */ href?: string; /** Local action (e.g. open command palette). Mutually exclusive with `href`. */ onClick?: () => void; /** Tiny icon shown left of the label. Defaults to a `Zap` for the primary * CTA, none for the chip variants. */ icon?: LucideIcon; } export interface EmptyStateProps { /** Lucide icon shown in the accent tile at the top-left. */ icon: LucideIcon; /** Mono line above the title — keeps the section-mark rhythm. */ eyebrow?: string; title: string; description: string; ctas?: EmptyStateCTA[]; /** Optional className to merge into the outer container. */ className?: string; /** Tone:"neutral" (default, paper background) or "accent" (subtle green wash). */
     tone?: "neutral" | "accent";
 }
 

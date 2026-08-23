@@ -1,0 +1,5 @@
+# The standalone exports embed the full, unsubset font binaries — 13 MB between
+# them. The subset faces they yield are committed under
+# frontend/public/fonts/skins/, so these are only needed to extract a *different*
+# set of glyphs. Re-download from the Claude Design project if you need them.
+*.standalone.html

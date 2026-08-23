@@ -79,8 +79,8 @@ export function DeletePagesUI() {
                 hint="Use range syntax like 1,3-5,9"
             />
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Pages to delete
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Pages to delete
                 </div>
                 <div className="p-4">
                     <input
@@ -90,17 +90,17 @@ export function DeletePagesUI() {
                         spellCheck={false}
                         aria-invalid={!rangeValid}
                         className={cn(
-                            "block w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                            "block w-full rounded-md border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                             rangeValid
                                 ? "border-border focus:border-accent focus:ring-accent/20"
                                 : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
                         )}
                     />
                     {rangeErr ? (
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-destructive mt-2">{rangeErr}</p>
+                        <p className="font-medium text-[11px] text-destructive mt-2">{rangeErr}</p>
                     ) : (
-                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2">
-                            <span className="text-accent">§</span> Syntax — comma-separated · "1-3" = range · "1,3-5,9" = mixed
+                        <p className="font-medium text-[11px] text-muted-foreground mt-2">
+                            Syntax — comma-separated · "1-3" = range · "1,3-5,9" = mixed
                         </p>
                     )}
                 </div>
@@ -114,7 +114,7 @@ export function DeletePagesUI() {
                 <button type="button" onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Deleting…</> : <><Trash2 size={13} /> Delete pages</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

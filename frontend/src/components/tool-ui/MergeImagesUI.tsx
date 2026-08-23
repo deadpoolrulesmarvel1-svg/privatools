@@ -126,7 +126,7 @@ export function MergeImagesUI() {
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button" tabIndex={0} aria-label="Upload images"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
@@ -136,15 +136,15 @@ export function MergeImagesUI() {
                     <Combine size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more images" : "Select images to merge"}</p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">JPG · PNG · WebP · BMP · at least 2 images</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">JPG · PNG · WebP · BMP · at least 2 images</p>
             </div>
 
             {files.length > 0 && (
                 <>
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> Images ({files.length})</span>
-                            {files.length > 1 && <span className="text-muted-foreground/70">drag to reorder</span>}
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>Images ({files.length})</span>
+                            {files.length > 1 && <span className="text-muted-foreground">drag to reorder</span>}
                         </div>
                         <div className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {files.map((f, i) => (
@@ -161,8 +161,8 @@ export function MergeImagesUI() {
                                     )}
                                 >
                                     <img src={f.preview} alt={f.name} className="w-full h-24 object-cover" />
-                                    <span className="absolute top-1 left-1 h-5 px-1.5 inline-flex items-center font-mono text-[9.5px] tracking-wider uppercase rounded bg-background/85 text-accent">
-                                        §{String(i + 1).padStart(2, "0")}
+                                    <span className="font-medium absolute top-1 left-1 h-5 px-1.5 inline-flex items-center text-[9.5px] tracking-wider rounded bg-background/85 text-accent">
+                                        {String(i + 1).padStart(2, "0")}
                                     </span>
                                     <span className="absolute top-1 left-9 h-5 w-5 rounded bg-background/85 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none" aria-hidden="true">
                                         <GripVertical size={11} />
@@ -183,8 +183,8 @@ export function MergeImagesUI() {
                     </div>
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Arrangement
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Arrangement
                         </div>
                         <div className="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {([
@@ -206,7 +206,7 @@ export function MergeImagesUI() {
                                         <d.Icon size={18} className={active ? "text-accent" : "text-muted-foreground"} />
                                         <div>
                                             <p className={cn("font-display text-[13.5px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{d.label}</p>
-                                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">{d.desc}</p>
+                                            <p className="font-medium text-[11px] text-muted-foreground">{d.desc}</p>
                                         </div>
                                     </button>
                                 );
@@ -225,7 +225,7 @@ export function MergeImagesUI() {
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Merging…</> : <><Combine size={13} /> Merge {files.length} images</>}
                         </button>
                         {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                         )}
                     </div>
                 </>

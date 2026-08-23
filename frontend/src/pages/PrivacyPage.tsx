@@ -5,7 +5,7 @@
  *   - Sticky right-side TOC (desktop) + collapsible TOC (mobile)
  *   - Reading-progress bar at top
  *   - Hash-link anchors on every section
- *   - § markers, mono dateline, corner-marked "short version" highlight
+ *   - markers, mono dateline, corner-marked "short version" highlight
  *
  * Highlighted clauses (privacy-relevant) get an accent panel with corner marks.
  * Last-updated timestamp links to the git history for diff transparency.
@@ -30,12 +30,13 @@ const SECTIONS: Section[] = [
   { id: "files-you-upload",    title: "1. Files You Upload" },
   { id: "client-side-tools",   title: "2. Client-Side Tools" },
   { id: "what-we-dont-collect",title: "3. Information We Do Not Collect", flag: true },
-  { id: "server-infrastructure",title: "4. Server Infrastructure" },
-  { id: "third-party",         title: "5. Third-Party Services" },
-  { id: "open-source",         title: "6. Open Source Transparency" },
-  { id: "childrens-privacy",   title: "7. Children's Privacy" },
-  { id: "changes",             title: "8. Changes to This Policy" },
-  { id: "contact",             title: "9. Contact" },
+  { id: "developer-accounts", title: "4. Developer Accounts" },
+  { id: "server-infrastructure",title: "5. Server Infrastructure" },
+  { id: "third-party",         title: "6. Third-Party Services" },
+  { id: "open-source",         title: "7. Open Source Transparency" },
+  { id: "childrens-privacy",   title: "8. Children's Privacy" },
+  { id: "changes",             title: "9. Changes to This Policy" },
+  { id: "contact",             title: "10. Contact" },
 ];
 
 /** Hand-rolled smooth scroll (matches BlogPostPage logic) for nested overflow containers. */
@@ -88,10 +89,10 @@ function AnalyticsOptOutPanel() {
       <div className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">
+            <span className="text-[11px] text-accent font-semibold">
               Analytics control
             </span>
-            <span className="rounded-full border border-border bg-paper-2/60 px-2 py-0.5 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+            <span className="font-medium rounded-full border border-border bg-paper-2/60 px-2 py-0.5 text-[11px] text-muted-foreground">
               {preference.effectiveDisabled ? "Analytics paused" : "Anonymous analytics allowed"}
             </span>
           </div>
@@ -129,7 +130,7 @@ function AnalyticsOptOutPanel() {
               )}
             />
           </span>
-          <span className="font-mono text-[10px] tracking-[0.08em] uppercase">
+          <span className="font-medium text-[11px]">
             Local opt-out
           </span>
         </button>
@@ -261,13 +262,13 @@ export default function PrivacyPage() {
             <nav className="mb-8 flex items-center justify-between flex-wrap gap-3" aria-label="Document navigation">
               <Link
                 to="/about"
-                className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent transition-colors"
+                className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
               >
                 <ArrowLeft size={12} /> About
               </Link>
               <button
                 onClick={copyLink}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
+                className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
               >
                 {copied ? <><Check size={11} className="text-accent" /> Copied</> : <><Link2 size={11} /> Copy link</>}
               </button>
@@ -276,7 +277,7 @@ export default function PrivacyPage() {
             {/* ── Header ── */}
             <header className="mb-8">
               <div className="flex flex-wrap gap-2 mb-5 items-center">
-                <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">
+                <span className="font-medium inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] text-[9.5px] text-accent">
                   <Shield size={10} /> Legal · Privacy
                 </span>
               </div>
@@ -293,11 +294,11 @@ export default function PrivacyPage() {
                 pageview telemetry we collect. Written plainly, with no dark patterns.
               </p>
 
-              <div className="mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+              <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
                 <span className="text-foreground">PrivaTools</span>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">·</span>
                 <a
                   href={GIT_HISTORY_URL}
                   target="_blank"
@@ -317,7 +318,7 @@ export default function PrivacyPage() {
                   <CornerMarks />
                   <div className="flex items-center gap-2 mb-3">
                     <Shield size={13} className="text-accent" />
-                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-semibold">§ The short version</span>
+                    <span className="text-[11px] text-accent font-semibold">The short version</span>
                   </div>
                   <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
                     <strong className="font-semibold">Your files are private.</strong> Server-side tools use isolated temporary
@@ -393,7 +394,7 @@ export default function PrivacyPage() {
                     We do not collect:
                   </p>
                   <ul className="font-display text-[15.5px] text-foreground leading-relaxed space-y-1.5 list-disc pl-6">
-                    <li>Names, email addresses, or account credentials (no accounts exist)</li>
+                    <li>Names, phone numbers, postal addresses, or payment details</li>
                     <li>Personally identifiable information from analytics beacons</li>
                     <li>Browser fingerprints or canvas-based device identifiers</li>
                     <li>Behavioural profiles, session recordings, or remarketing audiences</li>
@@ -402,14 +403,47 @@ export default function PrivacyPage() {
                   </ul>
                   <p className="font-display text-[15.5px] text-muted-foreground leading-relaxed mt-3">
                     We <em>do</em> collect aggregate pageview counts through a first-party analytics proxy — see
-                    Section 5 for details and how to opt out.
+                    Section 6 for details and how to opt out.
                   </p>
                 </div>
               </aside>
             </section>
 
             <div className="blog-prose prose-headings:scroll-mt-20">
-              <h2 id="server-infrastructure">4. Server Infrastructure</h2>
+              <h2 id="developer-accounts">4. Developer Accounts</h2>
+              <p>
+                Every file tool on this site works with no account. You do not need to sign up to use
+                anything, and nothing on a tool page asks you to.
+              </p>
+              <p>
+                An account exists for one purpose: issuing API keys for the developer API. If you
+                create one, we store your <strong>email address</strong> and a <strong>scrypt hash of
+                your password</strong> — never the password itself. We also store the keys you issue,
+                as a hash plus a short public identifier, so a key can be checked and rate-limited
+                without us holding the secret. Nothing else about you is recorded, and an account is
+                never linked to files processed through the tools.
+              </p>
+              <p>
+                We do not send email — not a welcome message, not a verification link, not a password
+                reset. That means your email address is never used to contact you, and it also means
+                there is no reset link if you forget your password. Instead you are given a
+                <strong> recovery code</strong> once, when you sign up. We store only a hash of it, so
+                we cannot tell you what it is later; if you lose both your password and your code, the
+                account cannot be recovered by us or by anyone else, and you would create a new one.
+              </p>
+              <p>
+                We do not send marketing email, share your address with anyone, or use it for
+                anything other than signing you in and contacting you about your keys. Deleting your
+                account removes the address, the password hash and every key immediately and
+                permanently; there is no soft-delete and no backup copy to restore from.
+              </p>
+              <p>
+                If you would rather not create an account at all, you do not have to. Every tool
+                remains free, unlimited and anonymous, and a self-hosted deployment can issue its own
+                keys through configuration instead.
+              </p>
+
+              <h2 id="server-infrastructure">5. Server Infrastructure</h2>
               <p>
                 PrivaTools runs on Oracle Cloud Infrastructure (ARM-based, 24 GB RAM). The server is
                 located in a single data center and is maintained by the PrivaTools team. We use HTTPS
@@ -425,7 +459,7 @@ export default function PrivacyPage() {
                 processing server.
               </p>
 
-              <h2 id="third-party">5. Third-Party Services</h2>
+              <h2 id="third-party">6. Third-Party Services</h2>
               <p>
                 PrivaTools uses the following third-party services. Typography is self-hosted
                 from <code>/fonts</code> on <code>privatools.me</code>; no Google Fonts or
@@ -440,7 +474,7 @@ export default function PrivacyPage() {
                 No advertising networks, remarketing scripts, or user profiling tools are used.
               </p>
 
-              <h2 id="open-source">6. Open Source Transparency</h2>
+              <h2 id="open-source">7. Open Source Transparency</h2>
               <p>
                 The entire PrivaTools codebase — frontend and backend — is open source under the MIT
                 license at{" "}
@@ -451,14 +485,16 @@ export default function PrivacyPage() {
                 you can self-host the entire application using Docker.
               </p>
 
-              <h2 id="childrens-privacy">7. Children's Privacy</h2>
+              <h2 id="childrens-privacy">8. Children's Privacy</h2>
               <p>
-                PrivaTools does not knowingly collect any information from anyone, including children
-                under 13. Since we collect no personal data and require no accounts, there is no
-                age-specific data to protect.
+                The file tools require no account and collect no personal data, so a child using
+                them leaves nothing behind. Developer accounts are optional, are intended for
+                developers using the API, and are not directed at children. We do not knowingly
+                create an account for anyone under 13 — if you believe we have, contact us and we
+                will delete it and its keys.
               </p>
 
-              <h2 id="changes">8. Changes to This Policy</h2>
+              <h2 id="changes">9. Changes to This Policy</h2>
               <p>
                 If we change this privacy policy, we will update the "Last updated" date at the top of
                 this page. Since we collect no user data, we have no way to notify you directly — we
@@ -466,7 +502,7 @@ export default function PrivacyPage() {
                 tracked in the public git history linked above.
               </p>
 
-              <h2 id="contact">9. Contact</h2>
+              <h2 id="contact">10. Contact</h2>
               <p>
                 If you have questions about this privacy policy or how PrivaTools handles your files,
                 contact us at{" "}
@@ -479,13 +515,13 @@ export default function PrivacyPage() {
 
             {/* ── Companion docs row ── */}
             <aside className="mt-12 pt-8 border-t border-border">
-              <p className="section-mark mb-5">§ Related</p>
+              <p className="section-mark mb-5">Related</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                   to="/security"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§01</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">01</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Security</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Vulnerability reporting, threat model, and subprocessors.</p>
@@ -495,7 +531,7 @@ export default function PrivacyPage() {
                   to="/terms"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§02</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">02</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Terms of Service</p>
                     <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">The legal terms for using PrivaTools.</p>
@@ -505,7 +541,7 @@ export default function PrivacyPage() {
                   href="mailto:hello@privatools.me"
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 shrink-0 mt-0.5">§03</span>
+                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">03</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
                       <Mail size={12} /> Email us
@@ -522,7 +558,7 @@ export default function PrivacyPage() {
           <aside className="hidden lg:block">
             <div className="sticky top-8">
               <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1.5"><List size={10} className="text-accent" /> Contents</span>
                   <span className="text-accent tabular-nums">{Math.round(progress)}%</span>
                 </div>
@@ -544,7 +580,7 @@ export default function PrivacyPage() {
                             {isActive && (
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded bg-accent" aria-hidden="true" />
                             )}
-                            {s.flag && <span className="text-accent mr-1" aria-hidden="true">§</span>}
+                            {s.flag && <span className="inline-block w-1 h-1 rounded-full bg-accent mr-1.5 align-middle" aria-hidden="true" />}
                             {s.title}
                           </button>
                         </li>
@@ -552,7 +588,7 @@ export default function PrivacyPage() {
                     })}
                   </ul>
                 </nav>
-                <div className="px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                <div className="font-medium px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 text-[11px] text-muted-foreground">
                   <a
                     href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
                     target="_blank"
@@ -570,9 +606,9 @@ export default function PrivacyPage() {
 
         {/* Mobile TOC — appears below header on narrow viewports */}
         <details className="lg:hidden mt-6 rounded-xl border border-border bg-card overflow-hidden">
-          <summary className="px-4 py-3 list-none cursor-pointer flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:bg-secondary/40 transition-colors">
+          <summary className="font-medium px-4 py-3 list-none cursor-pointer flex items-center gap-2 text-[11.5px] text-muted-foreground hover:bg-secondary/40 transition-colors">
             <List size={12} className="text-accent" />
-            <span><span className="text-accent">§</span> Table of contents</span>
+            <span>Table of contents</span>
             <span className="ml-auto font-mono text-[10px] tracking-wider text-accent">{SECTIONS.length}</span>
           </summary>
           <ul className="px-4 pb-3 space-y-1.5">

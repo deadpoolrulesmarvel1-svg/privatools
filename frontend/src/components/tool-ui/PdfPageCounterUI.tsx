@@ -75,7 +75,7 @@ export function PdfPageCounterUI() {
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
-                    "w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
+                    "dropzone-surface w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border/60 hover:border-accent/55 bg-card/40"
                 )}
             >
@@ -126,15 +126,15 @@ export function PdfPageCounterUI() {
             {results && (
                 <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
                     <div className="px-5 pt-5 pb-3 flex items-baseline justify-between">
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-accent">Total pages</p>
+                        <p className="text-[11px] font-semibold text-accent">Total pages</p>
                         <p className="text-3xl font-bold tracking-tight text-foreground tabular-nums">{total.toLocaleString()}</p>
                     </div>
                     <div className="border-t border-accent/15">
                         <table className="w-full text-[13px]">
                             <thead className="bg-card/40">
                                 <tr>
-                                    <th className="text-left px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">File</th>
-                                    <th className="text-right px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pages</th>
+                                    <th className="text-left px-5 py-2 text-[11px] font-semibold text-muted-foreground">File</th>
+                                    <th className="text-right px-5 py-2 text-[11px] font-semibold text-muted-foreground">Pages</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -167,7 +167,7 @@ export function PdfPageCounterUI() {
                         {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> Counting…</> : "Count pages"}
                     </Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             </div>

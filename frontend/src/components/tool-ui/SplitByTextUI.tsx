@@ -102,7 +102,7 @@ export function SplitByTextUI() {
                     tabIndex={0}
                     aria-label="Upload PDF"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -112,7 +112,7 @@ export function SplitByTextUI() {
                         <Scissors size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop a PDF to split by text</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Cuts before every page containing the search term</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Cuts before every page containing the search term</p>
                 </div>
             ) : (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3 flex items-center gap-3">
@@ -121,7 +121,7 @@ export function SplitByTextUI() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button
                         type="button"
@@ -135,8 +135,8 @@ export function SplitByTextUI() {
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Search term
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Search term
                 </div>
                 <div className="p-4 space-y-3">
                     <input
@@ -144,7 +144,7 @@ export function SplitByTextUI() {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         placeholder='e.g. "Invoice #", "Chapter", "Statement of"'
-                        className="block w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                        className="block w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                     />
                     <label className="flex items-center gap-2 text-[13px] text-foreground cursor-pointer select-none">
                         <input
@@ -175,7 +175,7 @@ export function SplitByTextUI() {
                         ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
                         : <><Download size={13} /> Split PDF</>}
                 </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
             </div>
         </div>
     );

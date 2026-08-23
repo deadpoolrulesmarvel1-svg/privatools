@@ -107,8 +107,8 @@ export function PermissionsUI() {
                 <>
                     {/* Owner password */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Owner password
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Owner password
                         </div>
                         <div className="p-4 space-y-2">
                             <div className="relative">
@@ -118,7 +118,7 @@ export function PermissionsUI() {
                                     value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)}
                                     placeholder="Required to change permissions later"
                                     autoComplete="new-password"
-                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 />
                                 <button
                                     type="button"
@@ -130,8 +130,8 @@ export function PermissionsUI() {
                                     {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>
                             </div>
-                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                                <span className="text-accent">§</span> Blank = default owner password
+                            <p className="font-medium text-[11px] text-muted-foreground">
+                                Blank = default owner password
                             </p>
                             {/* Owner passwords cannot be trialled — pdf.js opens an
                                 owner-protected file with an empty user password, so it
@@ -142,8 +142,8 @@ export function PermissionsUI() {
 
                     {/* Permissions */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Allowed actions
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Allowed actions
                         </div>
                         <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2" role="group" aria-label="PDF permissions">
                             {PERMS.map(p => {
@@ -169,7 +169,7 @@ export function PermissionsUI() {
                                                 {active && <Shield size={10} strokeWidth={2.75} />}
                                             </span>
                                         </div>
-                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{p.desc}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-1">{p.desc}</p>
                                     </button>
                                 );
                             })}
@@ -187,7 +187,7 @@ export function PermissionsUI() {
                             {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Applying…</> : <><Lock size={13} /> Set permissions</>}
                         </button>
                         {status !== "processing" && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                         )}
                     </div>
                 </>

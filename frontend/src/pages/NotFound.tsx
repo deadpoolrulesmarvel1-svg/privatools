@@ -127,115 +127,81 @@ export default function NotFound() {
     <div>
       {/* AppShell already provides `<main id="main-content">` — this page-level
          wrapper is a plain <div> to avoid nested-main markup. */}
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24 text-center">
-        {/* Newspaper "EXTRA!" header */}
-        <div className="mb-6">
-          <span className="section-flag text-lg tracking-[0.2em] px-4 py-2">EXTRA! EXTRA!</span>
-        </div>
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-20 sm:py-28 text-center">
+      {/* The numeral is the artwork. Set in the display face at a size that
+          reads as deliberate rather than as a ghost watermark behind the text. */}
+      <p
+        aria-hidden="true"
+        className="font-display font-extrabold leading-none tracking-[-0.06em] text-[110px] sm:text-[168px] bg-clip-text text-transparent select-none"
+        style={{ backgroundImage: "linear-gradient(160deg, hsl(var(--primary)), hsl(var(--cat-edit)) 55%, hsl(var(--accent)))" }}
+      >
+        404
+      </p>
 
-        {/* Big 404 — kept as a watermark behind the heading */}
-        <p
-          className="font-heading text-[120px] sm:text-[180px] font-black leading-none select-none text-foreground/5 mb-[-2rem] sm:mb-[-3rem]"
-          aria-hidden="true"
+      <h1 className="font-display text-[30px] sm:text-[38px] font-extrabold text-foreground tracking-[-0.035em] leading-tight text-balance -mt-2">
+        We couldn&rsquo;t find that page
+      </h1>
+
+      <p className="mt-3 text-[15.5px] text-muted-foreground max-w-lg mx-auto leading-relaxed">
+        Nothing was lost. Whatever you were working on never left your device
+        in the first place.
+      </p>
+
+      <p className="mt-4 inline-block rounded-full border border-border bg-paper-2 px-3.5 py-1.5 font-mono text-[12.5px] text-muted-foreground break-all">
+        {location.pathname}
+      </p>
+
+      <div className="mt-9 flex flex-wrap items-center justify-center gap-2.5">
+        <Link to="/" className="btn-accent">
+          <Home size={16} /> Go home
+        </Link>
+        <button
+          onClick={openCmdK}
+          className="press inline-flex items-center gap-2 h-12 px-6 rounded-full border border-border bg-card text-[15px] font-medium text-foreground hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          404
-        </p>
-
-        <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground mb-4">
-          Page Not Found
-        </h1>
-
-        <div className="rule-accent mx-auto w-12 mb-6" />
-
-        {/* Path echo — shows the user the URL the router saw */}
-        <p className="font-mono-meta text-[11px] text-muted-foreground/85 break-all max-w-md mx-auto mb-6">
-          <span className="text-accent">§</span> {location.pathname}
-        </p>
-
-        <p className="font-serif-body text-base text-muted-foreground max-w-md mx-auto leading-relaxed mb-10">
-          This page does not exist or has been moved. But rest assured —
-          <strong className="text-foreground/90"> your files are still safe.</strong> They never left
-          your computer.
-        </p>
-
-        {/* Three recovery paths */}
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <Link to="/" className="btn-editorial inline-flex items-center gap-2">
-            <Home size={14} /> Go home
-          </Link>
-          <button
-            type="button"
-            onClick={openCmdK}
-            className="inline-flex items-center gap-2 h-11 px-5 font-sans-ui text-sm font-semibold text-foreground border border-border rounded-lg hover:border-foreground/30 hover:bg-secondary/40 transition-all"
-            aria-label="Open command palette"
-          >
-            <Search size={14} /> Search tools
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 ml-1 font-mono text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-secondary/80">
-              ⌘K
-            </kbd>
-          </button>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 h-11 px-5 font-sans-ui text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Compass size={14} /> Browse all {TOTAL}+ tools
-          </Link>
-        </div>
-
-        {/* Suggestions */}
-        {sugg.length > 0 && (
-          <section className="mt-14 text-left">
-            <p className="font-mono-meta text-[11px] uppercase tracking-widest text-muted-foreground mb-4 text-center">
-              <span className="text-accent">§</span>{" "}
-              {isFallback ? "Try one of our most popular tools" : "Did you mean"}
-            </p>
-            <ul className="grid sm:grid-cols-2 gap-2 max-w-xl mx-auto">
-              {sugg.map(s => (
-                <li key={s.href}>
-                  <Link
-                    to={s.href}
-                    className="group flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">
-                        {s.name}
-                      </p>
-                      {s.description && (
-                        <p className="font-mono-meta text-[10.5px] text-muted-foreground mt-0.5 truncate">
-                          {s.description}
-                        </p>
-                      )}
-                    </div>
-                    <ArrowRight
-                      size={14}
-                      className="text-muted-foreground/70 shrink-0 mt-1 group-hover:translate-x-0.5 group-hover:text-accent transition-all"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Report broken link */}
-        <div className="mt-12 pt-8 border-t border-border max-w-md mx-auto">
-          <p className="font-mono-meta text-[10.5px] uppercase tracking-widest text-muted-foreground mb-2">
-            Followed a link here?
-          </p>
-          <a
-            href={REPORT_URL(location.pathname)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 font-sans-ui text-sm text-accent hover:text-accent/80 transition-colors"
-          >
-            <Flag size={12} /> Report this broken link
-          </a>
-        </div>
-
-        <p className="mt-12 font-mono-meta text-[10px] text-muted-foreground/85 uppercase tracking-widest">
-          PrivaTools · {TOTAL}+ Privacy-First File Tools
-        </p>
+          <Search size={16} /> Search {TOTAL} tools
+        </button>
+        <Link
+          to="/"
+          className="press inline-flex items-center gap-2 h-12 px-6 rounded-full border border-border bg-card text-[15px] font-medium text-foreground hover:border-primary/50 transition-colors"
+        >
+          <Compass size={16} /> Browse everything
+        </Link>
       </div>
+
+      <section className="mt-14 text-left">
+        <h2 className="text-[13.5px] font-semibold text-muted-foreground mb-3 text-center">
+          {isFallback ? "Or start with one of these" : "Did you mean one of these?"}
+        </h2>
+        <div className="grid gap-2.5 sm:grid-cols-2 stagger-in">
+          {sugg.map(s => (
+            <Link
+              key={s.href}
+              to={s.href}
+              className="press group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-left hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-semibold text-foreground">{s.name}</span>
+                <span className="block text-[13px] text-muted-foreground truncate">{s.description}</span>
+              </span>
+              <ArrowRight size={16} className="shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <p className="mt-12 text-[13.5px] text-muted-foreground">
+        Followed a link here?{" "}
+        <a
+          href={REPORT_URL(location.pathname)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+        >
+          <Flag size={13} /> Report the broken link
+        </a>
+      </p>
+    </div>
     </div>
   );
 }

@@ -176,8 +176,8 @@ export function FormCreatorUI() {
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Form fields ({fields.length})</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Form fields ({fields.length})</span>
                         <button onClick={addField} className="inline-flex items-center gap-1 text-accent hover:opacity-80 transition-opacity">
                             <Plus size={11} /> Add
                         </button>
@@ -196,8 +196,8 @@ export function FormCreatorUI() {
                                     )}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
-                                            §{String(idx + 1).padStart(2, "0")}
+                                        <span className={cn("font-medium text-[11px]", isSel ? "text-accent" : "text-muted-foreground")}>
+                                            {String(idx + 1).padStart(2, "0")}
                                         </span>
                                         <input
                                             ref={(el) => { if (el) nameRefs.current.set(f.id, el); else nameRefs.current.delete(f.id); }}
@@ -230,7 +230,7 @@ export function FormCreatorUI() {
                                             { key: "height", label: "H" },
                                         ] as const).map(c => (
                                             <div key={c.key}>
-                                                <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                 <input
                                                     value={f[c.key]}
                                                     onClick={e => e.stopPropagation()}
@@ -275,18 +275,18 @@ export function FormCreatorUI() {
                                     {(f.type === "text" || hasOptions) && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             <div>
-                                                <label className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Default value <span className="normal-case text-muted-foreground/60">(pre-fills)</span></label>
+                                                <label className="font-medium text-[9.5px] text-muted-foreground">Default value <span className="normal-case text-muted-foreground">(pre-fills)</span></label>
                                                 <input
                                                     value={f.value}
                                                     onClick={e => e.stopPropagation()}
                                                     onChange={e => updateField(f.id, { value: e.target.value })}
                                                     placeholder={hasOptions ? "Match one of the options" : "Optional"}
-                                                    className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-2 py-1 text-[12.5px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+                                                    className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-2 py-1 text-[12.5px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
                                                 />
                                             </div>
                                             {hasOptions && (
                                                 <div>
-                                                    <label className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Options (comma)</label>
+                                                    <label className="font-medium text-[9.5px] text-muted-foreground">Options (comma)</label>
                                                     <input
                                                         value={f.options}
                                                         onClick={e => e.stopPropagation()}
@@ -316,7 +316,7 @@ export function FormCreatorUI() {
                         {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Building form…</> : <><FormInput size={13} /> Generate fillable PDF</>}
                     </button>
                     {canSubmit && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
                     )}
                 </div>
             )}

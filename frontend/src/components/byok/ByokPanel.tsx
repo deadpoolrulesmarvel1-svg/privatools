@@ -52,7 +52,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
                 <KeyRound className="h-3.5 w-3.5 text-accent" />
-                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                <span className="font-medium text-[11.5px] text-muted-foreground">
                     Use your own AI key
                 </span>
             </div>
@@ -74,7 +74,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                     >
                         <span className="block truncate">{p.label}</span>
                         {byok.configured.includes(p.id) && (
-                            <span className="font-mono text-[9.5px] tracking-wider uppercase text-accent">
+                            <span className="font-medium text-[9.5px] tracking-wider text-accent">
                                 key saved
                             </span>
                         )}
@@ -84,7 +84,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
 
             {selected?.customBaseUrl && (
                 <label className="block">
-                    <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+                    <span className="font-medium text-[11px] text-muted-foreground">
                         Base URL
                     </span>
                     <input
@@ -170,8 +170,8 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
             </label>
 
             <div className="rounded-lg border border-accent/30 bg-accent/[0.05] px-3 py-2 space-y-1">
-                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">
-                    § Where this goes
+                <span className="text-[11px] text-accent font-medium">
+                    Where this goes
                 </span>
                 <p className="text-[12px] text-foreground leading-snug">
                     Your key and your file go straight from this browser to{" "}

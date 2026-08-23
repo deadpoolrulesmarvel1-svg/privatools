@@ -60,7 +60,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
                     )}
                     <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     <button
                         type="button"
@@ -91,23 +91,38 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
             tabIndex={0}
             aria-label={label || "Upload file"}
             className={cn(
-                "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 px-6 text-center group",
+                // The drop zone is the product on 219 pages, so it gets the room
+                // and the colour. Lifts and saturates on hover/drag instead of
+                // just changing a border colour.
+                "dropzone-surface relative flex flex-col items-center justify-center gap-4 rounded-[28px] border-2 border-dashed cursor-pointer text-center group",
+                "py-16 sm:py-20 px-6 overflow-hidden",
+                "transition-[transform,background-color,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                "motion-reduce:transition-none",
                 drag
-                    ? "border-accent bg-accent/[0.06]"
-                    : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
+                    ? "border-primary bg-primary/[0.07] scale-[1.01] shadow-[0_18px_50px_-20px_hsl(var(--primary)/0.55)]"
+                    : "border-border-strong bg-paper-2/60 hover:border-primary/60 hover:bg-primary/[0.04] hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-22px_hsl(var(--primary)/0.45)] motion-reduce:hover:translate-y-0",
                 className,
             )}
         >
             <CornerMarks />
             <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }} />
-            <div className={cn(
-                "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
-                drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
-            )}>
-                <Upload size={20} className="text-accent" strokeWidth={1.75} />
+            <div
+                aria-hidden="true"
+                className={cn(
+                    "h-16 w-16 rounded-3xl flex items-center justify-center shrink-0",
+                    "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                    "bg-primary text-primary-foreground shadow-[0_10px_24px_-10px_hsl(var(--primary)/0.7)]",
+                    drag ? "scale-110 rotate-3" : "group-hover:scale-105 group-hover:-rotate-2",
+                )}
+            >
+                <Upload size={26} strokeWidth={2.25} />
             </div>
-            <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{label || "Drop file here"}</p>
-            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{hint || "Drag & drop or click to browse"}</p>
+            <p className="font-display text-[24px] sm:text-[27px] font-bold text-foreground tracking-[-0.03em] leading-tight text-balance">
+                {label || "Drop your file here"}
+            </p>
+            <p className="text-[14.5px] text-muted-foreground max-w-sm">
+                {hint || "Drag & drop, or click to browse"}
+            </p>
         </div>
     );
 }
@@ -148,7 +163,7 @@ export function ProcessingBar({ progress, label, className }: ProgressBarProps) 
     const labelText = label || "Processing…";
     return (
         <div className={cn("space-y-1.5", className)}>
-            <div className="flex justify-between items-center font-mono text-[10.5px] tracking-[0.08em] uppercase">
+            <div className="font-medium flex justify-between items-center text-[11.5px]">
                 <span className="text-muted-foreground">{labelText}</span>
                 {!isIndeterminate && <span className="text-accent font-medium tabular-nums">{Math.round(progress)}%</span>}
             </div>

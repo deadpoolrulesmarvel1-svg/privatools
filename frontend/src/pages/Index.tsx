@@ -13,8 +13,7 @@ import {
     Search, X, ArrowRight, Upload, Command, GitBranch,
     Sparkles, FileText, Image as ImageIcon, Video, Code as CodeIcon,
     Archive as ArchiveIcon, FileBox, Cpu,
-    Pin, Clock, ShieldCheck, Newspaper,
-} from "lucide-react";
+    Pin, Clock, ShieldCheck, } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
@@ -225,7 +224,7 @@ export default function Index() {
                             <div className="h-16 w-16 mx-auto rounded-2xl bg-accent/15 border border-accent/40 flex items-center justify-center mb-4">
                                 <Upload size={28} className="text-accent" strokeWidth={1.75} />
                             </div>
-                            <p className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-2">§ Drop anywhere</p>
+                            <p className="font-medium text-[11.5px] text-accent mb-2">Drop anywhere</p>
                             <p className="font-display text-[28px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 Release to <span className="italic text-accent">match tools</span>
                             </p>
@@ -244,7 +243,7 @@ export default function Index() {
                             <p className="font-display text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
                                 {droppedFile.name}
                             </p>
-                            <p className="font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground mt-1">
+                            <p className="font-medium text-[12px] text-muted-foreground mt-1">
                                 {allMatched.length} matching tool{allMatched.length !== 1 ? "s" : ""}
                             </p>
                         </div>
@@ -255,7 +254,7 @@ export default function Index() {
                             <X size={13} /> <span className="hidden sm:inline">Back to dashboard</span><span className="sm:hidden">Back</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 stagger-in">
                         {allMatched.map(t => {
                             const Icon = t.icon;
                             return (
@@ -295,7 +294,7 @@ export default function Index() {
                     <section className="mb-10 animate-fade-up stagger-1">
                         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                             <span className="section-mark reveal-underline">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
-                            <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
+                            <span className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                                 <ShieldCheck size={11} className="text-accent" />
                                 Private by default
                             </span>
@@ -305,7 +304,7 @@ export default function Index() {
                             <span className="text-muted-foreground italic font-medium">What are we doing today?</span>
                         </h1>
                         <p className="mt-4 max-w-[58ch] text-[14.5px] sm:text-[15px] text-muted-foreground leading-relaxed">
-                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — browser-only where possible, self-hosted when processing needs a server. No accounts, no watermarks.
+                            <span className="text-foreground font-medium">{TOOL_TOTAL} tools</span> for PDFs, images, video, code and archives — browser-only where possible, self-hosted when processing needs a server. No account needed, no watermarks.
                         </p>
 
                         {/* Big workshop CTA — primary action on the dashboard */}
@@ -333,7 +332,7 @@ export default function Index() {
                             >
                                 <Search size={17} className="text-muted-foreground shrink-0 group-hover:text-accent transition-colors" />
                                 <span className="flex-1 text-[14px] sm:text-[15px] text-muted-foreground truncate">
-                                    Search {TOOL_TOTAL} tools <span className="hidden sm:inline text-muted-foreground/70">— try "compress", "redact", "JWT"…</span>
+                                    Search {TOOL_TOTAL} tools <span className="hidden sm:inline text-muted-foreground">— try "compress", "redact", "JWT"…</span>
                                 </span>
                                 <kbd className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md border border-border bg-secondary/60 font-mono text-[11px] text-muted-foreground shrink-0">
                                     <Command size={11} />K
@@ -344,7 +343,7 @@ export default function Index() {
                                 <span className="flex-1 text-[13.5px] sm:text-[14px] text-muted-foreground">
                                     or drop any file <span className="hidden sm:inline opacity-70">anywhere on this page</span>
                                 </span>
-                                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">↓</span>
+                                <span className="font-medium text-[11.5px] text-muted-foreground">↓</span>
                                 <input
                                     type="file"
                                     className="sr-only"
@@ -372,8 +371,8 @@ export default function Index() {
                                 to={`/blog/${LATEST_POST.slug}`}
                                 className="group mt-4 inline-flex items-center gap-2 max-w-full text-left rounded-lg border border-border/70 bg-paper-2/30 hover:bg-accent/[0.05] hover:border-accent/40 px-3 py-2 transition-colors"
                             >
-                                <span className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.10em] uppercase text-accent shrink-0">
-                                    <Newspaper size={11} /> New
+                                <span className="font-medium inline-flex items-center gap-1 text-[11px] text-accent shrink-0">
+                                    <Sparkles size={11} /> New
                                 </span>
                                 <span className="text-[12.5px] text-muted-foreground truncate group-hover:text-foreground transition-colors">
                                     {LATEST_POST.title}
@@ -389,20 +388,19 @@ export default function Index() {
                         <div className="mb-4">
                             <div className="flex items-baseline justify-between gap-3 flex-wrap">
                                 <div className="flex items-baseline gap-2.5">
-                                    <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                                     <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground whitespace-nowrap">
                                         {favorites.length > 0 ? (<><Pin size={13} className="inline -mt-1 text-accent" /> Pinned</>) : "Start here"}
                                     </h2>
                                 </div>
-                                <Link to="/?tab=pdf" className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+                                <Link to="/?tab=pdf" className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
                                     Browse all {TOOL_TOTAL} <ArrowRight size={11} />
                                 </Link>
                             </div>
-                            <p className="font-mono text-[10.5px] text-muted-foreground/80 mt-1 ml-[18px]">
+                            <p className="text-[13px] text-muted-foreground mt-1 ml-[18px]">
                                 {favorites.length > 0 ? "Your favorite tools, one click away" : "The eight tools people open most"}
                             </p>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 animate-grid-enter">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 stagger-in">
                             {pinned.map(tool => {
                                 const Icon = tool.icon;
                                 return (
@@ -428,11 +426,10 @@ export default function Index() {
                     {/* ─── Recent activity ─────────────────────────────── */}
                     <section className="mb-12 animate-fade-up stagger-3">
                         <div className="flex items-baseline gap-3 mb-4">
-                            <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                                 <Clock size={14} className="inline -mt-1 text-muted-foreground" /> Recent
                             </h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">{recent.length > 0 ? "last session" : "nothing yet"}</span>
+                            <span className="text-[13px] text-muted-foreground">{recent.length > 0 ? "last session" : "nothing yet"}</span>
                         </div>
                         {recent.length > 0 ? (
                             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
@@ -476,11 +473,10 @@ export default function Index() {
                     {/* ─── Suite tiles ─────────────────────────────────── */}
                     <section className="mb-12 animate-fade-up stagger-4">
                         <div className="flex items-baseline gap-3 mb-4">
-                            <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">Suites</h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">browse by file type</span>
+                            <span className="text-[13px] text-muted-foreground">browse by file type</span>
                         </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 animate-grid-enter">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 stagger-in">
                             {SUITE_TILES.map(s => {
                                 const Icon = s.icon;
                                 return (
@@ -494,14 +490,14 @@ export default function Index() {
                                             <span className="icon-tile">
                                                 <Icon size={18} strokeWidth={1.75} />
                                             </span>
-                                            <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">
                                                 {String(s.count).padStart(2, "0")} tools
                                             </span>
                                         </div>
                                         <p className="font-display text-[19px] sm:text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">{s.label}</p>
-                                        <p className="mt-0.5 text-[11.5px] sm:text-[12px] text-muted-foreground/85 leading-snug italic">{s.blurb}</p>
+                                        <p className="mt-0.5 text-[11.5px] sm:text-[12px] text-muted-foreground leading-snug italic">{s.blurb}</p>
                                         <p className="mt-2 text-[12px] sm:text-[12.5px] text-muted-foreground leading-snug line-clamp-1">{s.example}</p>
-                                        <p className="mt-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground/85 inline-flex items-center gap-1 group-hover:text-accent transition-colors">
+                                        <p className="font-medium mt-3 text-[11.5px] text-muted-foreground inline-flex items-center gap-1 group-hover:text-accent transition-colors">
                                             Open suite <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
                                         </p>
                                     </Link>
@@ -515,11 +511,10 @@ export default function Index() {
                         {/* Workflows */}
                         <div>
                             <div className="flex items-baseline gap-3 mb-4">
-                                <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                                 <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                                     <GitBranch size={14} className="inline -mt-1 text-accent" /> Workflows
                                 </h2>
-                                <span className="font-mono text-[10.5px] text-muted-foreground/80">pre-baked Pipelines</span>
+                                <span className="text-[13px] text-muted-foreground">pre-baked pipelines</span>
                             </div>
                             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
                                 {SUGGESTED_PIPELINES.map((p, i) => (
@@ -531,7 +526,7 @@ export default function Index() {
                                     >
                                         <div className="flex items-start justify-between gap-4 mb-2">
                                             <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] leading-tight">{p.title}</p>
-                                            <span className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-muted-foreground/85 shrink-0">§{String(i + 1).padStart(2, "0")}</span>
+                                            <span className="font-medium text-[11.5px] text-muted-foreground shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         </div>
                                         <p className="text-[12.5px] text-muted-foreground leading-snug mb-2.5">{p.description}</p>
                                         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -545,7 +540,9 @@ export default function Index() {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/0 group-hover:text-accent transition-colors inline-flex items-center gap-1 shrink-0">
+                                            {/* Decorative reinforcement — the card is already a link named
+                                                after the pipeline, so this repeats nothing a screen reader needs. */}
+                                            <span aria-hidden="true" className="font-medium text-[11px] text-muted-foreground/0 group-hover:text-accent group-focus-within:text-accent [@media(hover:none)]:text-accent transition-colors inline-flex items-center gap-1 shrink-0">
                                                 Build <ArrowRight size={10} />
                                             </span>
                                         </div>
@@ -557,7 +554,6 @@ export default function Index() {
                         {/* Featured */}
                         <div>
                             <div className="flex items-baseline gap-3 mb-4">
-                                <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                                 <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                                     <Sparkles size={14} className="inline -mt-1 text-accent" /> Featured today
                                 </h2>
@@ -566,7 +562,7 @@ export default function Index() {
                                 <div className="absolute inset-y-0 left-0 w-1 bg-accent" />
                                 <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
                                 <div className="relative">
-                                    <div className="flex items-center gap-2 mb-3 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                                    <div className="font-medium flex items-center gap-2 mb-3 text-[11.5px] text-accent">
                                         <Cpu size={11} /> Browser AI
                                     </div>
                                     <p className="font-display text-[24px] font-bold text-foreground tracking-[-0.025em] leading-tight">
@@ -577,7 +573,7 @@ export default function Index() {
                                         in your browser via WebAssembly. ~250 MB model
                                         downloads once and stays cached. The PDF never leaves your machine.
                                     </p>
-                                    <p className="mt-4 font-mono text-[10.5px] tracking-[0.06em] uppercase text-accent inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                                    <p className="font-medium mt-4 text-[11.5px] text-accent inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
                                         Open tool <ArrowRight size={11} />
                                     </p>
                                 </div>
@@ -588,9 +584,8 @@ export default function Index() {
                     {/* ─── Privacy receipts — comparison strip ──────────── */}
                     <section className="mb-12 animate-fade-up stagger-6">
                         <div className="flex items-baseline gap-3 mb-4">
-                            <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
                             <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">Receipts</h2>
-                            <span className="font-mono text-[10.5px] text-muted-foreground/80">verifiable, no marketing</span>
+                            <span className="text-[13px] text-muted-foreground">verifiable, no marketing</span>
                         </div>
 
                         {/* Mobile: stacked feature rows. Desktop: 3-col grid. */}
@@ -598,7 +593,7 @@ export default function Index() {
                             {/* Desktop / tablet — 3-column table */}
                             <div className="hidden sm:grid grid-cols-[1.1fr_1fr_1fr] text-[13px]">
                                 <div className="p-5 border-r border-border">
-                                    <p className="font-mono text-[10px] uppercase tracking-[0.10em] text-muted-foreground/85 font-medium mb-4">Feature</p>
+                                    <p className="text-[11px] text-muted-foreground font-medium mb-4">Feature</p>
                                     <ul className="space-y-3 text-foreground/90">
                                         <li>Files uploaded to a 3rd party</li>
                                         <li>Account / sign-up</li>
@@ -609,7 +604,7 @@ export default function Index() {
                                     </ul>
                                 </div>
                                 <div className="p-5 border-r border-border bg-paper-2/50">
-                                    <p className="font-mono text-[10px] uppercase tracking-[0.10em] text-muted-foreground/85 font-medium mb-4">iLovePDF / Smallpdf</p>
+                                    <p className="text-[11px] text-muted-foreground font-medium mb-4">iLovePDF / Smallpdf</p>
                                     <ul className="space-y-3 text-muted-foreground">
                                         <li className="line-through decoration-muted-foreground/60">Their server</li>
                                         <li className="line-through decoration-muted-foreground/60">After free quota</li>
@@ -620,7 +615,7 @@ export default function Index() {
                                     </ul>
                                 </div>
                                 <div className="p-5 bg-accent/[0.06]">
-                                    <p className="font-mono text-[10px] uppercase tracking-[0.10em] text-accent font-medium mb-4">Privatools</p>
+                                    <p className="text-[11px] text-accent font-medium mb-4">Privatools</p>
                                     <ul className="space-y-3 text-foreground">
                                         <li className="font-medium">Your own infra</li>
                                         <li className="font-medium">Never</li>
@@ -643,7 +638,7 @@ export default function Index() {
                                     { feature: "Pipeline / chaining",           them: "Not offered",      us: "Industry first" },
                                 ].map(row => (
                                     <div key={row.feature} className="px-4 py-3">
-                                        <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/85 mb-1.5">{row.feature}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground mb-1.5">{row.feature}</p>
                                         <div className="flex items-center justify-between gap-3">
                                             <span className="text-muted-foreground line-through decoration-muted-foreground/60 text-[12.5px]">{row.them}</span>
                                             <span className="text-foreground font-medium text-[12.5px] text-right">{row.us}</span>

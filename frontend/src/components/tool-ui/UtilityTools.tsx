@@ -40,7 +40,7 @@ function CopyButton({ value }: { value: string }) {
 function ClientToolBanner({ label }: { label: string }) {
     return (
         <div className="rounded-lg border border-accent/30 bg-accent/[0.05] px-3 py-2 flex items-center gap-2.5">
-            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">§ Browser-only</span>
+            <span className="text-[11px] text-accent font-medium">Browser-only</span>
             <span className="opacity-50 hidden sm:inline">—</span>
             <p className="text-[12.5px] text-foreground leading-snug">{label}</p>
         </div>
@@ -105,8 +105,8 @@ export function PasswordGeneratorUI() {
 
             {/* Output console — big, mono, prominent */}
             <div className="relative rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Password — {pwd.length} char{pwd.length !== 1 ? "s" : ""}</span>
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Password — {pwd.length} char{pwd.length !== 1 ? "s" : ""}</span>
                     <span className="text-accent">{strength.label}</span>
                 </div>
                 <div className="px-4 py-5">
@@ -144,14 +144,14 @@ export function PasswordGeneratorUI() {
 
             {bulk.length > 0 && (
                 <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Batch · {bulk.length}</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Batch · {bulk.length}</span>
                         <CopyButton value={bulk.join("\n")} />
                     </div>
                     <div className="divide-y divide-border">
                         {bulk.map((p, i) => (
                             <div key={i} className="flex items-center gap-3 px-4 py-2">
-                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/60 w-5">{i + 1}</span>
+                                <span className="font-medium text-[11px] text-muted-foreground w-5">{i + 1}</span>
                                 <p className="font-mono text-[13px] text-foreground flex-1 break-all select-all">{p}</p>
                                 <CopyButton value={p} />
                             </div>
@@ -162,14 +162,14 @@ export function PasswordGeneratorUI() {
 
             {/* Options panel */}
             <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Options
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Options
                 </div>
                 <div className="p-5 space-y-5">
                     {/* Length slider */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label htmlFor="pw-len" className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Length</label>
+                            <label htmlFor="pw-len" className="font-medium text-[11.5px] text-muted-foreground">Length</label>
                             <span className="font-mono text-[13px] text-accent tabular-nums">{String(length).padStart(2, "0")}</span>
                         </div>
                         <input
@@ -179,14 +179,14 @@ export function PasswordGeneratorUI() {
                             onChange={e => setLength(parseInt(e.target.value, 10))}
                             className="w-full accent-[hsl(var(--accent))]"
                         />
-                        <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground/85">
+                        <div className="mt-1 flex justify-between font-mono text-[9.5px] text-muted-foreground">
                             <span>04</span><span>16</span><span>32</span><span>64</span>
                         </div>
                     </div>
 
                     {/* Character sets */}
                     <div>
-                        <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground mb-2">Character sets</p>
+                        <p className="font-medium text-[11.5px] text-muted-foreground mb-2">Character sets</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {[
                                 { label: "Uppercase A–Z", checked: upper, set: setUpper, hint: "ABC…" },
@@ -219,7 +219,7 @@ export function PasswordGeneratorUI() {
                                         className="sr-only"
                                     />
                                     <span className="flex-1 text-[13px] text-foreground">{opt.label}</span>
-                                    <span className="font-mono text-[10.5px] text-muted-foreground/85">{opt.hint}</span>
+                                    <span className="font-mono text-[10.5px] text-muted-foreground">{opt.hint}</span>
                                 </label>
                             ))}
                         </div>
@@ -264,12 +264,12 @@ export function UuidGeneratorUI() {
 
             {/* Options bar */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Options
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Options
                 </div>
                 <div className="p-4 flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
-                        <label htmlFor="uuid-count" className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Count</label>
+                        <label htmlFor="uuid-count" className="font-medium text-[11.5px] text-muted-foreground">Count</label>
                         <input
                             id="uuid-count"
                             type="number" inputMode="numeric" min={1} max={500} value={count}
@@ -278,7 +278,7 @@ export function UuidGeneratorUI() {
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Variant</span>
+                        <span className="font-medium text-[11.5px] text-muted-foreground">Variant</span>
                         <div role="tablist" aria-label="Variant" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
                             {(["v4", "v7-like"] as const).map(v => {
                                 const active = variant === v;
@@ -290,7 +290,7 @@ export function UuidGeneratorUI() {
                                         aria-selected={active}
                                         onClick={() => setVariant(v)}
                                         className={cn(
-                                            "inline-flex items-center h-7 px-2.5 font-mono text-[11px] tracking-[0.06em] uppercase font-medium rounded transition-colors",
+                                            "inline-flex items-center h-7 px-2.5 text-[12px] font-medium rounded transition-colors",
                                             active ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                                         )}
                                     >
@@ -312,8 +312,8 @@ export function UuidGeneratorUI() {
 
             {/* Output console */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Output · {list.length} UUID{list.length !== 1 ? "s" : ""}</span>
+                <div className="font-medium flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    <span>Output · {list.length} UUID{list.length !== 1 ? "s" : ""}</span>
                     <CopyButton value={list.join("\n")} />
                 </div>
                 <pre className="font-mono text-[13px] text-foreground p-4 max-h-[60vh] overflow-y-auto leading-relaxed select-all">
@@ -386,12 +386,12 @@ export function LoremIpsumUI() {
 
             {/* Options bar */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Options
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Options
                 </div>
                 <div className="p-4 flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Units</span>
+                        <span className="font-medium text-[11.5px] text-muted-foreground">Units</span>
                         <div role="tablist" aria-label="Units" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
                             {(["paragraphs", "sentences", "words"] as const).map(u => {
                                 const active = units === u;
@@ -403,7 +403,7 @@ export function LoremIpsumUI() {
                                         aria-selected={active}
                                         onClick={() => setUnits(u)}
                                         className={cn(
-                                            "inline-flex items-center h-7 px-2.5 font-mono text-[11px] tracking-[0.06em] uppercase font-medium rounded transition-colors capitalize",
+                                            "inline-flex items-center h-7 px-2.5 text-[12px] font-medium rounded transition-colors capitalize",
                                             active ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                                         )}
                                     >
@@ -414,7 +414,7 @@ export function LoremIpsumUI() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <label htmlFor="lorem-count" className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Count</label>
+                        <label htmlFor="lorem-count" className="font-medium text-[11.5px] text-muted-foreground">Count</label>
                         <input
                             id="lorem-count"
                             type="number" inputMode="numeric" min={1} max={100} value={count}
@@ -432,7 +432,7 @@ export function LoremIpsumUI() {
                         <button
                             type="button"
                             onClick={() => setReroll(r => r + 1)}
-                            className="inline-flex items-center gap-1 px-2 h-7 rounded font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                            className="font-medium inline-flex items-center gap-1 px-2 h-7 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                             aria-label="Generate new text"
                         >
                             <RefreshCw size={11} /> Reroll
@@ -441,7 +441,7 @@ export function LoremIpsumUI() {
                     </div>
                 </div>
                 <div className="px-4 pb-3 -mt-1 flex flex-wrap items-center gap-1.5">
-                    <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground mr-1">Variant</span>
+                    <span className="font-medium text-[11.5px] text-muted-foreground mr-1">Variant</span>
                     {(Object.keys(LOREM_VARIANTS) as LoremVariant[]).map(v => {
                         const active = variant === v;
                         return (
@@ -450,7 +450,7 @@ export function LoremIpsumUI() {
                                 type="button"
                                 onClick={() => setVariant(v)}
                                 className={cn(
-                                    "inline-flex items-center h-6 px-2 rounded-md font-mono text-[10.5px] tracking-[0.06em] uppercase border transition-colors",
+                                    "font-medium inline-flex items-center h-6 px-2 rounded-md text-[11.5px] border transition-colors",
                                     active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                 )}
                             >
@@ -463,8 +463,8 @@ export function LoremIpsumUI() {
 
             {/* Output */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Generated · {count} {units}
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Generated · {count} {units}
                 </div>
                 <textarea
                     readOnly
@@ -525,8 +525,8 @@ export function WordCounterUI() {
 
             {/* Stats grid */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Stats
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Stats
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 divide-x divide-border">
                     {[
@@ -539,7 +539,7 @@ export function WordCounterUI() {
                         { label: "Reading",      value: String(stats.readingMin),             unit: "min" },
                     ].map(s => (
                         <div key={s.label} className="p-4">
-                            <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{s.label}</p>
+                            <p className="font-medium text-[9.5px] text-muted-foreground">{s.label}</p>
                             <p className="font-display text-[26px] text-foreground tracking-[-0.025em] mt-1 tabular-nums leading-none" style={{ fontVariationSettings: '"opsz" 144' }}>
                                 {s.value}
                                 {s.unit && <span className="font-mono text-[12px] text-muted-foreground ml-1">{s.unit}</span>}
@@ -552,16 +552,16 @@ export function WordCounterUI() {
             {/* Writing quality strip */}
             {text && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Writing quality
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Writing quality
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
                         <div className="p-3">
-                            <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Avg word length</p>
+                            <p className="font-medium text-[9.5px] text-muted-foreground">Avg word length</p>
                             <p className="font-mono text-[16px] text-foreground mt-1 tabular-nums">{stats.avgWordLen}</p>
                         </div>
                         <div className="p-3">
-                            <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Longest sentence</p>
+                            <p className="font-medium text-[9.5px] text-muted-foreground">Longest sentence</p>
                             <p className={cn(
                                 "font-mono text-[16px] mt-1 tabular-nums",
                                 stats.longestSentenceLen > 30 ? "text-copper" : "text-foreground"
@@ -570,7 +570,7 @@ export function WordCounterUI() {
                             </p>
                         </div>
                         <div className="p-3">
-                            <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Passive voice (approx.)</p>
+                            <p className="font-medium text-[9.5px] text-muted-foreground">Passive voice (approx.)</p>
                             <p className={cn(
                                 "font-mono text-[16px] mt-1 tabular-nums",
                                 stats.passiveCount > 0 ? "text-copper" : "text-foreground"
@@ -584,25 +584,25 @@ export function WordCounterUI() {
 
             {/* Text editor */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Input</span>
+                <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Input</span>
                     <div className="flex items-center gap-2 normal-case tracking-normal">
                         {!text && (
                             <button
                                 type="button"
                                 onClick={loadSample}
-                                className="inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors"
+                                className="font-medium inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11px] transition-colors"
                             >
                                 <Sparkles size={10} /> Try sample
                             </button>
                         )}
                         {text && (
                             <>
-                                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase">{stats.chars.toLocaleString()} char{stats.chars !== 1 ? "s" : ""}</span>
+                                <span className="font-medium text-[11.5px]">{stats.chars.toLocaleString()} char{stats.chars !== 1 ? "s" : ""}</span>
                                 <button
                                     type="button"
                                     onClick={() => setText("")}
-                                    className="inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors"
+                                    className="font-medium inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11px] transition-colors"
                                     aria-label="Clear input"
                                 >
                                     Clear
@@ -615,7 +615,7 @@ export function WordCounterUI() {
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste or type text here…"
-                    className="block w-full h-[40vh] px-4 py-3 bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                    className="block w-full h-[40vh] px-4 py-3 bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground resize-none outline-none"
                 />
             </div>
         </div>
@@ -682,12 +682,12 @@ export function ColorConverterUI() {
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             aria-label="Color picker"
                         />
-                        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-background/80 backdrop-blur font-mono text-[10px] tracking-[0.06em] uppercase text-foreground">
+                        <span className="font-medium absolute bottom-2 left-2 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-background/80 backdrop-blur text-[11px] text-foreground">
                             Click to edit
                         </span>
                         {/* Contrast badge */}
                         <span
-                            className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 h-6 rounded font-mono text-[10.5px] tracking-[0.06em] uppercase font-medium"
+                            className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 h-6 rounded text-[11.5px] font-medium"
                             style={{
                                 background: contrastWhite > contrastBlack ? "#fff" : "#000",
                                 color: contrastWhite > contrastBlack ? "#000" : "#fff",
@@ -699,7 +699,7 @@ export function ColorConverterUI() {
                     {/* Inputs */}
                     <div className="p-5 space-y-3">
                         <div>
-                            <label className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">Hex</label>
+                            <label className="font-medium text-[11.5px] text-muted-foreground">Hex</label>
                             <input
                                 type="text"
                                 value={hex}
@@ -717,7 +717,7 @@ export function ColorConverterUI() {
                                     { label: "B", value: rgb.b },
                                 ].map(c => (
                                     <div key={c.label}>
-                                        <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground/85">{c.label}</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground">{c.label}</p>
                                         <p className="font-mono text-[14px] text-foreground mt-0.5 tabular-nums">{c.value}</p>
                                     </div>
                                 ))}
@@ -729,8 +729,8 @@ export function ColorConverterUI() {
 
             {rgb && hsl ? (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> All formats
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        All formats
                     </div>
                     <div className="divide-y divide-border">
                         {[
@@ -742,7 +742,7 @@ export function ColorConverterUI() {
                             { label: "CSS VAR", value: `--brand: ${hex.toLowerCase()};` },
                         ].map(item => (
                             <div key={item.label} className="flex items-center gap-3 px-4 py-2.5">
-                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent w-16 shrink-0">{item.label}</span>
+                                <span className="font-medium text-[11px] text-accent w-16 shrink-0">{item.label}</span>
                                 <p className="flex-1 font-mono text-[13px] text-foreground break-all select-all">{item.value}</p>
                                 <CopyButton value={item.value} />
                             </div>
@@ -831,8 +831,8 @@ export function UrlEncoderUI() {
             {/* I/O panels */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Input</span>
+                    <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Input</span>
                         {input && <span>{input.length} char{input.length !== 1 ? "s" : ""}</span>}
                     </div>
                     <textarea
@@ -840,24 +840,24 @@ export function UrlEncoderUI() {
                         onChange={e => setInput(e.target.value)}
                         placeholder={mode === "jwt" ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…" : "Paste text here…"}
                         spellCheck={false}
-                        className="block w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                        className="block w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                     />
                 </div>
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                     <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between">
-                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground"><span className="text-accent">§</span> Output</span>
+                        <span className="font-medium text-[11.5px] text-muted-foreground">Output</span>
                         <CopyButton value={output} />
                     </div>
                     <pre className="w-full h-[40vh] p-4 bg-transparent font-mono text-[13px] text-foreground/90 overflow-auto whitespace-pre-wrap break-all">
-                        {output || <span className="text-muted-foreground/50 italic">Output appears here…</span>}
+                        {output || <span className="text-muted-foreground italic">Output appears here…</span>}
                     </pre>
                 </div>
             </div>
             {/* Query string table */}
             {queryPairs && queryPairs.length > 0 && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span className="text-accent">§</span> Query params · {queryPairs.length}
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                        Query params · {queryPairs.length}
                     </div>
                     <div className="divide-y divide-border max-h-72 overflow-auto">
                         {queryPairs.map(([k, v], i) => (
@@ -913,8 +913,8 @@ export function JwtDecoderUI() {
         <div className="space-y-4">
             <ClientToolBanner label="JWT tokens never leave the browser — decoded locally with atob()." />
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Token</span>
+                <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Token</span>
                     {token && <span>{token.length} char{token.length !== 1 ? "s" : ""}</span>}
                 </div>
                 <textarea
@@ -922,7 +922,7 @@ export function JwtDecoderUI() {
                     onChange={e => setToken(e.target.value)}
                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…"
                     spellCheck={false}
-                    className="block w-full h-28 p-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none break-all"
+                    className="block w-full h-28 p-3 bg-transparent font-mono text-[13px] text-foreground placeholder:text-muted-foreground resize-none outline-none break-all"
                 />
             </div>
             {decoded && "error" in decoded && (
@@ -936,25 +936,25 @@ export function JwtDecoderUI() {
                     {/* Metadata strip */}
                     {(exp !== null || iat !== null) && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Claims
+                            <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Claims
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
                                 {iat !== null && (
                                     <div className="p-4">
-                                        <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Issued</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground">Issued</p>
                                         <p className="font-mono text-[13px] text-foreground mt-1">{new Date(iat * 1000).toISOString()}</p>
                                     </div>
                                 )}
                                 {exp !== null && (
                                     <div className="p-4">
-                                        <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Expires</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground">Expires</p>
                                         <p className="font-mono text-[13px] text-foreground mt-1">{new Date(exp * 1000).toISOString()}</p>
                                     </div>
                                 )}
                                 {exp !== null && (
                                     <div className="p-4">
-                                        <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Status</p>
+                                        <p className="font-medium text-[11px] text-muted-foreground">Status</p>
                                         <p className={cn(
                                             "font-mono text-[13px] mt-1 font-medium",
                                             exp > now ? "text-accent" : "text-destructive"
@@ -976,7 +976,7 @@ export function JwtDecoderUI() {
                     {/* Signature */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-paper-2/40">
-                            <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground"><span className="text-accent">§</span> Signature · not verified</span>
+                            <span className="font-medium text-[11.5px] text-muted-foreground">Signature · not verified</span>
                             <CopyButton value={decoded.signature} />
                         </div>
                         <pre className="px-3 py-3 font-mono text-[12px] text-muted-foreground overflow-auto break-all whitespace-pre-wrap">{decoded.signature}</pre>
@@ -1031,8 +1031,8 @@ export function RegexTesterUI() {
 
             {/* Pattern + flags — code-editor feel */}
             <div className="rounded-xl border border-border bg-card overflow-hidden font-mono">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Pattern</span>
+                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[10.5px] text-muted-foreground">
+                    <span>Pattern</span>
                     <span>{result.kind === "ok" ? `${result.matches.length} match${result.matches.length !== 1 ? "es" : ""}` : result.kind === "err" ? "invalid" : ""}</span>
                 </div>
                 <div className="flex items-center px-3 py-2 gap-1 text-[14px] text-foreground">
@@ -1041,7 +1041,7 @@ export function RegexTesterUI() {
                         value={pattern}
                         onChange={e => setPattern(e.target.value)}
                         placeholder={String.raw`\d{3}-\d{3}-\d{4}`}
-                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/50"
+                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
                         spellCheck={false}
                     />
                     <span className="text-muted-foreground select-none">/</span>
@@ -1049,7 +1049,7 @@ export function RegexTesterUI() {
                         value={flags}
                         onChange={e => setFlags(e.target.value.toLowerCase().replace(/[^gimsuy]/g, ""))}
                         placeholder="gim"
-                        className="w-16 bg-transparent outline-none text-accent placeholder:text-muted-foreground/40"
+                        className="w-16 bg-transparent outline-none text-accent placeholder:text-muted-foreground"
                         spellCheck={false}
                         aria-label="Flags"
                     />
@@ -1058,8 +1058,8 @@ export function RegexTesterUI() {
 
             {/* Test string */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Test string</span>
+                <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Test string</span>
                     <div className="flex items-center gap-2 normal-case tracking-normal">
                         {!pattern && !text && (
                             <button
@@ -1069,19 +1069,19 @@ export function RegexTesterUI() {
                                     setFlags("g");
                                     setText("Contact alice@example.com or bob@test.io for details. Internal: ops@privatools.app.");
                                 }}
-                                className="inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors"
+                                className="font-medium inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 text-[11px] transition-colors"
                             >
                                 <Sparkles size={10} /> Try sample
                             </button>
                         )}
-                        {text && <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase">{text.length} char{text.length !== 1 ? "s" : ""}</span>}
+                        {text && <span className="font-medium text-[11.5px]">{text.length} char{text.length !== 1 ? "s" : ""}</span>}
                     </div>
                 </div>
                 <textarea
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste the text to test against…"
-                    className="block w-full h-40 px-3 py-3 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 bg-transparent outline-none resize-none"
+                    className="block w-full h-40 px-3 py-3 font-mono text-[13px] text-foreground placeholder:text-muted-foreground bg-transparent outline-none resize-none"
                     spellCheck={false}
                 />
             </div>
@@ -1097,8 +1097,8 @@ export function RegexTesterUI() {
                 <>
                     {/* Highlighted matches */}
                     <div className="rounded-xl border border-accent/30 bg-card overflow-hidden">
-                        <div className="px-3 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
-                            <span className="text-accent">§</span> {result.matches.length} match{result.matches.length === 1 ? "" : "es"}
+                        <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-accent">
+                            {result.matches.length} match{result.matches.length === 1 ? "" : "es"}
                         </div>
                         <div className="px-3 py-3 font-mono text-[13px] text-foreground whitespace-pre-wrap break-words leading-relaxed">
                             {typeof highlighted === "string" ? (
@@ -1116,8 +1116,8 @@ export function RegexTesterUI() {
                     {/* Match details */}
                     {result.matches.length > 0 && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="px-3 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                                <span className="text-accent">§</span> Match details
+                            <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                                Match details
                             </div>
                             <div className="divide-y divide-border max-h-60 overflow-auto">
                                 {result.matches.map((m, i) => (
@@ -1126,7 +1126,7 @@ export function RegexTesterUI() {
                                         <span className="text-muted-foreground shrink-0">@{m.index}</span>
                                         <span className="text-foreground break-all">"{m.match}"</span>
                                         {m.groups.length > 0 && (
-                                            <span className="text-muted-foreground/85 break-all"> · groups: [{m.groups.map(g => JSON.stringify(g)).join(", ")}]</span>
+                                            <span className="text-muted-foreground break-all"> · groups: [{m.groups.map(g => JSON.stringify(g)).join(", ")}]</span>
                                         )}
                                     </div>
                                 ))}
@@ -1169,12 +1169,12 @@ export function TimestampConverterUI() {
 
             {/* Input */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Epoch (s/ms) or ISO 8601</span>
+                <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Epoch (s/ms) or ISO 8601</span>
                     <button
                         type="button"
                         onClick={setNow}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                        className="font-medium inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                     >
                         <RefreshCw size={10} /> Now
                     </button>
@@ -1184,7 +1184,7 @@ export function TimestampConverterUI() {
                     onChange={e => setInput(e.target.value)}
                     placeholder="1704067200 or 2024-01-01T00:00:00Z"
                     spellCheck={false}
-                    className="block w-full px-3 py-3 bg-transparent font-mono text-[15px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                    className="block w-full px-3 py-3 bg-transparent font-mono text-[15px] text-foreground placeholder:text-muted-foreground outline-none"
                 />
             </div>
 
@@ -1196,8 +1196,8 @@ export function TimestampConverterUI() {
 
             {parsed && !("error" in parsed) && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Conversions</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Conversions</span>
                         <span>Detected: <span className="text-accent">{parsed.source}</span></span>
                     </div>
                     <div className="divide-y divide-border">
@@ -1210,7 +1210,7 @@ export function TimestampConverterUI() {
                             ["Relative",          relTime(parsed.d.getTime() - Date.now())],
                         ].map(([k, v]) => (
                             <div key={k} className="flex items-center gap-3 px-4 py-2.5">
-                                <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent w-36 shrink-0">{k}</span>
+                                <span className="font-medium text-[11px] text-accent w-36 shrink-0">{k}</span>
                                 <span className="font-mono text-[13px] text-foreground flex-1 truncate select-all">{v}</span>
                                 <CopyButton value={String(v)} />
                             </div>
@@ -1400,7 +1400,7 @@ function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
             <ClientToolBanner label="Parsing happens entirely in your browser — no upload, no server." />
             <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground" htmlFor="yamljson-input">{fromLabel}</label>
+                    <label className="text-[11px] font-semibold text-muted-foreground" htmlFor="yamljson-input">{fromLabel}</label>
                     <textarea
                         id="yamljson-input"
                         aria-label={fromLabel}
@@ -1412,7 +1412,7 @@ function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
                 </div>
                 <div>
                     <div className="flex items-center justify-between">
-                        <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{toLabel}</label>
+                        <label className="text-[11px] font-semibold text-muted-foreground">{toLabel}</label>
                         {result.ok && result.out && <CopyButton value={result.out} />}
                     </div>
                     {result.ok ? (
@@ -1504,8 +1504,8 @@ export function CaseConverterUI() {
 
             {/* Input */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> Input</span>
+                <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>Input</span>
                     {hasMultiline && (
                         <label className="inline-flex items-center gap-1.5 cursor-pointer normal-case tracking-normal">
                             <input
@@ -1523,19 +1523,19 @@ export function CaseConverterUI() {
                     onChange={e => setInput(e.target.value)}
                     spellCheck={false}
                     placeholder="Type or paste any string…"
-                    className="block w-full h-24 px-3 py-3 bg-transparent font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 resize-none outline-none"
+                    className="block w-full h-24 px-3 py-3 bg-transparent font-mono text-[14px] text-foreground placeholder:text-muted-foreground resize-none outline-none"
                 />
             </div>
 
             {/* All variants as a list */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Variants · {rows.length}
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Variants · {rows.length}
                 </div>
                 <div className="divide-y divide-border">
                     {rows.map(([label, value]) => (
                         <div key={label} className="flex items-start gap-3 px-4 py-2.5">
-                            <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent w-32 shrink-0 mt-0.5">{label}</span>
+                            <span className="font-medium text-[11px] text-accent w-32 shrink-0 mt-0.5">{label}</span>
                             <pre className={cn(
                                 "font-mono text-[13px] text-foreground flex-1 select-all break-all",
                                 value.includes("\n") ? "whitespace-pre-wrap" : "truncate"
@@ -1555,7 +1555,7 @@ function JwtPanel({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-paper-2/40">
-                <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground"><span className="text-accent">§</span> {label}</span>
+                <span className="font-medium text-[11.5px] text-muted-foreground">{label}</span>
                 <CopyButton value={value} />
             </div>
             <pre className="px-3 py-3 font-mono text-[12px] text-foreground/90 overflow-auto max-h-72 leading-relaxed">{value}</pre>

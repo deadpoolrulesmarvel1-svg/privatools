@@ -10,10 +10,23 @@ import { useHistory } from "@/hooks/useHistory";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
+import { ToolFaq } from "@/components/ToolFaq";
 import { ToolIllustration } from "@/components/ToolIllustration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToolSkeleton } from "@/components/ToolSkeleton";
 import { ToolPrivacyBadge } from "@/components/ToolPrivacyBadge";
+
+/** Each tool family carries its own hue through the hero, icon and accents. */
+const CATEGORY_HUE: Record<Category, string> = {
+  organize: "var(--cat-organize)",
+  edit: "var(--cat-edit)",
+  optimize: "var(--cat-optimize)",
+  security: "var(--cat-security)",
+  "to-pdf": "var(--cat-to-pdf)",
+  "from-pdf": "var(--cat-from-pdf)",
+  advanced: "var(--cat-advanced)",
+};
+const hueOf = (c: Category) => `hsl(${CATEGORY_HUE[c] ? `var(--cat-${c})` : "var(--cat-advanced)"})`;
 
 type AnyModule = Record<string, unknown>;
 
@@ -219,8 +232,8 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
   return (
     <div className="border-t border-border pt-5 -mx-4 sm:mx-0 overflow-hidden">
       <div className="flex items-baseline gap-2 mb-3 px-4 sm:px-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
-        <span className="text-[11px] font-mono text-muted-foreground/80">{categoryTools.length}</span>
+        <p className="text-[11px] font-semibold text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
+        <span className="text-[11px] font-mono text-muted-foreground">{categoryTools.length}</span>
       </div>
       <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-4 sm:px-0">
         {categoryTools.map(t => {
@@ -265,7 +278,7 @@ function ToolLoadingCard() {
   );
 }
 
-function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
+export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
     case "merge-pdf": return <LazyMergeUI />;
     case "split-pdf": return <LazySplitUI />;
@@ -419,11 +432,17 @@ export default function ToolPage() {
   return (
     <div className={cn("h-full flex flex-col", cc)}>
       {/* ─── Workspace header — slim, like Pipeline/Batch ───────────── */}
-      <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
+      <header
+        className="relative flex items-start justify-between gap-3 px-5 sm:px-7 py-9 sm:py-12 border-b border-border overflow-hidden"
+        style={{
+          // A soft wash of the tool's own hue rather than a flat grey band.
+          ["--tool-hue" as string]: hueOf(tool.category),
+          background: `linear-gradient(180deg, color-mix(in srgb, ${hueOf(tool.category)} 9%, transparent) 0%, transparent 100%)`,
+        }}
+      >
         <div className="min-w-0 flex-1">
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
-            <span className="text-accent">§</span>
+          <nav aria-label="Breadcrumb" className="font-medium text-[11px] text-muted-foreground mb-3 flex items-center gap-2">
             <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
             <span className="opacity-50">/</span>
             <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors">{meta.label}</Link>
@@ -433,8 +452,14 @@ export default function ToolPage() {
 
           <div className="flex items-start gap-4">
             {/* Tool icon */}
-            <span className="hidden sm:inline-flex icon-tile icon-tile-lg shrink-0">
-              <ToolIcon size={22} strokeWidth={1.75} />
+            {/* The category's colour, not a neutral tile. With 219 tools across a
+                dozen families, colour tells you where you are before you read. */}
+            <span
+              className="hidden sm:inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white shadow-[0_10px_26px_-12px_var(--tool-hue)]"
+              style={{ background: "var(--tool-hue)" }}
+              aria-hidden="true"
+            >
+              <ToolIcon size={28} strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -450,7 +475,7 @@ export default function ToolPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                <h1 className="font-display font-extrabold text-foreground text-[38px] sm:text-[52px] tracking-[-0.04em] leading-[1.02] text-balance">
                   {tool.name}
                 </h1>
                 <button
@@ -469,7 +494,7 @@ export default function ToolPage() {
                   <Star size={16} strokeWidth={1.8} fill={favorite ? "currentColor" : "none"} />
                 </button>
               </div>
-              <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
+              <p className="mt-3 text-[16.5px] text-muted-foreground leading-relaxed max-w-[60ch]">
                 {tool.longDescription || tool.description}
               </p>
             </div>
@@ -525,7 +550,6 @@ export default function ToolPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 lg:gap-12 mt-12">
           <div>
             <div className="flex items-baseline gap-3 mb-5">
-              <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
               <h2 className="font-display text-[22px] font-semibold text-foreground tracking-[-0.02em]">How it works</h2>
               <span className="flex-1 h-px bg-border ml-2" />
             </div>
@@ -536,7 +560,7 @@ export default function ToolPage() {
                 { step: "03", title: "Download",  desc: "Result ready immediately — no waiting, no email." },
               ].map(s => (
                 <div key={s.step} className="rounded-xl border border-border bg-card p-5">
-                  <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-3">{s.step}</div>
+                  <div className="font-medium text-[11.5px] text-accent mb-3">{s.step}</div>
                   <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.015em] mb-1.5">{s.title}</p>
                   <p className="text-[13px] text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
@@ -546,8 +570,8 @@ export default function ToolPage() {
 
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                <span className="text-accent">§</span> Related
+              <h3 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                Related
               </h3>
               <div className="space-y-0.5">
                 {relatedTools.map(t => {
@@ -569,7 +593,7 @@ export default function ToolPage() {
                 <span className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">Open source</span>
               </div>
               <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-3">Free forever, MIT licensed. Audit, fork, or self-host.</p>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.06em] uppercase font-medium text-accent">
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-accent">
                 View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </span>
             </a>
@@ -586,8 +610,8 @@ export default function ToolPage() {
               if (posts.length === 0) return null;
               return (
                 <div className="rounded-xl border border-border bg-card p-5">
-                  <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
-                    <span className="text-accent">§</span> Related articles
+                  <h3 className="text-[11.5px] font-semibold text-muted-foreground mb-4">
+                    Related articles
                   </h3>
                   <div className="space-y-0.5">
                     {posts.map(post => (
@@ -602,6 +626,11 @@ export default function ToolPage() {
             })()}
           </div>
         </div>
+
+        {/* The objection-answering FAQ every incumbent ships. The content
+            already existed for crawlers; this is the first time a person
+            sees it. */}
+        <ToolFaq slug={tool.slug} toolName={tool.name} />
        </div>
       </section>
     </div>

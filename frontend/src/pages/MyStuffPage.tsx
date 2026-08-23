@@ -54,7 +54,7 @@ function Row({
   return (
     <div className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.10em] text-accent">
+        <div className="text-[11px] font-semibold text-accent">
           {label}
         </div>
         <div className="mt-0.5 text-sm text-foreground">{detail}</div>
@@ -132,13 +132,13 @@ export default function MyStuffPage() {
           <HardDrive className="h-6 w-6 text-accent" aria-hidden="true" />
           My Stuff
         </h1>
-        <p className="font-mono text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+        <p className="font-medium text-[12px] text-muted-foreground">
           Stored on this device only
         </p>
       </header>
 
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        PrivaTools has no accounts and never uploads any of this. Everything below lives in
+        PrivaTools needs no account and never uploads any of this. Everything below lives in
         this browser, on this device, and goes away if you clear your browsing data.
       </p>
 
@@ -213,12 +213,12 @@ export default function MyStuffPage() {
                     </code>
                   )}
                 </span>
-                <span className="flex shrink-0 items-center gap-3">
+                <span className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => reveal(e.id)}
                     aria-label={revealed[e.id] ? `Hide ${e.label}` : `Show ${e.label}`}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-11 coarse:w-11 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                   >
                     {revealed[e.id] ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -229,7 +229,7 @@ export default function MyStuffPage() {
                   <button
                     type="button"
                     aria-label={`Delete ${e.label}`}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="inline-flex shrink-0 items-center justify-center h-6 w-6 coarse:h-11 coarse:w-11 rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
                     onClick={async () => {
                       await vault.deleteEntry(e.id);
                       await refresh();

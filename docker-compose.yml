@@ -14,9 +14,13 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - app-temp:/app/temp
+      # Accounts and API keys. Deliberately NOT app-temp: the cleanup janitor
+      # sweeps that volume by age and would delete the user table.
+      - app-data:/app/data
     environment:
       - PRIVATOOLS_BUILD_SHA=${GIT_SHA:-unknown}
       - PORT=8000
+      - PRIVATOOLS_DATA_DIR=/app/data
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300
       - TRUSTED_HOSTS=privatools.me,www.privatools.me,127.0.0.1,localhost
@@ -42,16 +46,30 @@ services:
       - no-new-privileges:true   # a child process can't gain privileges via setuid
     cap_drop:
       - ALL                      # the app + ffmpeg/libreoffice/ghostscript need no Linux caps
-    # read_only root fs is the one remaining hardening step. It needs writable
-    # tmpfs mounts for the cache dirs the image redirects to /tmp (fontconfig,
-    # numba) plus a writable libreoffice profile, and must NOT mask the baked
-    # rembg model at /tmp/u2net. Enable after a smoke test of the weasyprint /
-    # office / remove-background tools in a built container:
-    #   read_only: true
-    #   tmpfs:
-    #     - /tmp/cache
-    #     - /tmp/numba-cache
-    #     - /run
+    # Read-only root filesystem: nothing outside the two named volumes and the
+    # tmpfs below can be written, so a write-primitive in any of the ~14 native
+    # converters has nowhere to land a payload.
+    #
+    # The one thing that genuinely needs a writable /tmp is LibreOffice, which
+    # puts its IPC pipe there and fails with the unhelpful "no valid pipe path
+    # found" otherwise. It ignores TMPDIR for that (TMPDIR is already
+    # /app/temp), so the mount is the only fix. 64M is ample for a named pipe;
+    # user data goes to /app/temp, which the janitor sweeps.
+    #
+    # noexec is deliberate and verified — LibreOffice needs to create a pipe
+    # there, not execute anything.
+    #
+    # This works only because the baked caches were moved off /tmp to
+    # /app/cache (see Dockerfile): a tmpfs here masks whatever is underneath,
+    # and when it masked /tmp/u2net rembg quietly re-downloaded the model from
+    # GitHub on the first request.
+    #
+    # Verified on the VM against the signed v1.8.1 image: html-to-pdf
+    # (weasyprint), office-to-pdf (libreoffice), remove-background (rembg,
+    # zero runtime downloads) and image-to-pdf all return 200, /readyz ready.
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
     deploy:
       resources:
         limits:
@@ -74,3 +92,4 @@ services:
 
 volumes:
   app-temp:
+  app-data:

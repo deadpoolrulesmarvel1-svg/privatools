@@ -72,21 +72,21 @@ export function VideoSpeedUI() {
                 </div>
             </div>
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept=".mp4,.mov,.webm,.avi,.mkv" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
                 <CornerMarks />
                 <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-accent/10 border border-accent/30 group-hover:bg-accent/15 transition-colors">
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop a video here"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{file.size}</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{file.size}</p>}
             </div>
             {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
             {file && state !== "processing" && (
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Change speed</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -140,14 +140,14 @@ export function AudioTrimUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept=".mp3,.wav,.aac,.flac,.ogg,.m4a" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
                 <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-accent/10 border border-accent/30 group-hover:bg-accent/15 transition-colors">
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an audio file"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -166,7 +166,7 @@ export function AudioTrimUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Trim audio</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -227,7 +227,7 @@ export function ImagePaletteUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif"
                     className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -235,7 +235,7 @@ export function ImagePaletteUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div>
                 <div className="flex items-center justify-between mb-2">
@@ -250,15 +250,15 @@ export function ImagePaletteUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Extract palette</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
             {status === "processing" && <Button disabled><Loader2 size={14} className="animate-spin mr-1.5" />Analyzing…</Button>}
             {palette && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                        <span><span className="text-accent">§</span> Dominant colors · {palette.length}</span>
+                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                        <span>Dominant colors · {palette.length}</span>
                         <Palette size={11} className="text-accent" />
                     </div>
                     {/* Click-to-copy swatch row */}
@@ -276,7 +276,7 @@ export function ImagePaletteUI() {
                                     style={{ background: p.hex, flexGrow: p.percentage || 1 }}
                                 >
                                     <span className={cn(
-                                        "absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-[0.06em] uppercase transition-opacity",
+                                        "font-medium absolute inset-0 flex items-center justify-center text-[11px] transition-opacity",
                                         isCopied ? "opacity-100 bg-black/40 text-white" : "opacity-0 group-hover:opacity-100 bg-black/30 text-white"
                                     )}>
                                         {isCopied ? <><Check size={11} className="mr-1" /> Copied</> : p.hex}
@@ -300,9 +300,9 @@ export function ImagePaletteUI() {
                                 <div className="h-8 w-8 rounded-md shrink-0 border border-border" style={{ background: p.hex }} />
                                 <div className="flex-1 min-w-0">
                                     <p className="font-mono text-[13px] text-foreground">{p.hex}</p>
-                                    <p className="font-mono text-[10.5px] tracking-[0.04em] uppercase text-muted-foreground">rgb({p.rgb.join(", ")}) · {p.percentage}%</p>
+                                    <p className="font-medium text-[11.5px] text-muted-foreground">rgb({p.rgb.join(", ")}) · {p.percentage}%</p>
                                 </div>
-                                <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground inline-flex items-center gap-1">
+                                <span className="font-medium text-[11px] text-muted-foreground inline-flex items-center gap-1">
                                     {copiedHex === p.hex ? <><Check size={11} className="text-accent" /> Copied</> : <><Copy size={11} /> Copy</>}
                                 </span>
                             </button>
@@ -349,7 +349,7 @@ export function PixelateImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp" className="hidden"
                     onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -357,7 +357,7 @@ export function PixelateImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
                 <div>
@@ -396,7 +396,7 @@ export function PixelateImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">Apply {mode}</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -450,7 +450,7 @@ export function RotateImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -458,7 +458,7 @@ export function RotateImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
 
             <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
@@ -508,7 +508,7 @@ export function RotateImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className=""><RotateCw size={14} className="mr-1.5" />Rotate image</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}
@@ -561,7 +561,7 @@ export function FlipImageUI() {
     return (
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
-                className="relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
+                className="dropzone-surface relative cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border-strong hover:border-accent/55 hover:bg-accent/[0.04] bg-paper-2/30 py-12 transition-colors group">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ""; }} />
                 <CornerMarks />
@@ -569,7 +569,7 @@ export function FlipImageUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.02em]">{file ? file.name : "Drop an image"}</p>
-                {file && <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
+                {file && <p className="font-medium text-[11.5px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
             </div>
 
             <div className="rounded-xl border border-border bg-card/40 p-5">
@@ -608,7 +608,7 @@ export function FlipImageUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={process} className="">{direction === "horizontal" ? <FlipHorizontal size={14} className="mr-1.5" /> : <FlipVertical size={14} className="mr-1.5" />}Flip image</Button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             )}

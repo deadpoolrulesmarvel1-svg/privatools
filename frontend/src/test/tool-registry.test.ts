@@ -13,6 +13,12 @@ const root = process.cwd();
 function sourceFiles(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === "test") continue;
+        // src/skins holds the ported design themes, generated verbatim from
+        // their Claude Design projects. They are self-contained prototypes with
+        // their own hash router and their own sample records — their "/tool/x"
+        // strings are not this app's routes and must not be checked against
+        // this app's registry.
+        if (entry.name === "skins") continue;
         const path = join(dir, entry.name);
         if (entry.isDirectory()) {
             sourceFiles(path, out);

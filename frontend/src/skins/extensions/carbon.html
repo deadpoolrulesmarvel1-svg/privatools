@@ -1,0 +1,205 @@
+<!-- Account and API keys — Carbon Glass. Carbon's own measurements, glass
+     panels and aqua edge, so this reads as part of the design. -->
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1180px;margin:0 auto;padding:22px clamp(16px,3vw,34px) 0">
+  <h1 style="margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em">{{ acctTitle }}</h1>
+  <p style="margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)">{{ acctLede }}</p>
+
+  <!-- Shown once, and standing in front of everything else until acknowledged.
+       There is no reset email, so a code the visitor scrolls past is an account
+       they will eventually lose. -->
+  <div style="display:{{ acctRecoveryD }};border:1px solid var(--pt-edge,rgba(79,225,222,.34));border-radius:14px;background:var(--pt-aquaBg,rgba(15,156,151,.11));padding:18px;margin-top:18px">
+    <div style="font-size:15px;font-weight:600">Save your recovery code</div>
+    <div style="font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:6px;line-height:1.6">This is shown once and is the only way back into your account. We send no email, so there is no reset link to fall back on.</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px">
+      <code style="border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:10px;background:var(--pt-solid,#0B141A);padding:9px 12px;font-family:ui-monospace,monospace;font-size:14px;letter-spacing:.1em">{{ acctRecoveryCode }}</code>
+      <button type="button" onClick="{{ acctCopyRecovery }}" style="height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">{{ acctCopyLabel }}</button>
+      <button type="button" onClick="{{ acctDownloadRecovery }}" style="height:36px;padding:0 14px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">Download</button>
+    </div>
+    <button type="button" onClick="{{ acctAckRecovery }}" style="margin-top:14px;height:40px;padding:0 16px;border-radius:11px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B)">I have saved it</button>
+    <div style="display:{{ acctRecoveryNudgeD }};font-size:11.5px;color:var(--pt-txt3,#6B8085);margin-top:8px">Write it down or put it in a password manager before continuing.</div>
+  </div>
+
+  <sc-if value="{{ acctSignedOut }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px">
+    <form onSubmit="{{ acctSubmit }}" style="display:grid;gap:13px;padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)">
+      <div style="display:flex;gap:8px">
+        <button type="button" onClick="{{ acctShowSignIn }}" style="flex:1;height:36px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;border:1px solid {{ acctSignInBd }};background:{{ acctSignInBg }};color:{{ acctSignInFg }}">Sign in</button>
+        <button type="button" onClick="{{ acctShowSignUp }}" style="flex:1;height:36px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;border:1px solid {{ acctSignUpBd }};background:{{ acctSignUpBg }};color:{{ acctSignUpFg }}">Create account</button>
+      </div>
+      <label style="display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)">Email
+        <input type="email" value="{{ acctEmail }}" onInput="{{ acctSetEmail }}" autoComplete="email" required="{{ true }}"
+               style="padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)">{{ acctPasswordLabel }}
+        <input type="password" value="{{ acctPassword }}" onInput="{{ acctSetPassword }}" autoComplete="{{ acctPwAutocomplete }}" required="{{ true }}"
+               style="padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+      </label>
+      <div style="display:{{ acctRecoverD }}">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8)">Recovery code
+          <input type="text" value="{{ acctRecoveryInput }}" onInput="{{ acctSetRecoveryInput }}" autoComplete="one-time-code"
+                 style="padding:11px 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px;font-family:ui-monospace,monospace" />
+        </label>
+      </div>
+      <div style="display:{{ acctHintD }};font-size:12px;color:var(--pt-txt3,#6B8085)">At least 10 characters. Length is what makes a password strong.</div>
+      <div role="alert" style="display:{{ acctErrD }};font-size:12.5px;color:var(--pt-coral,#FF7A6B)">{{ acctError }}</div>
+      <button type="button" onClick="{{ acctShowRecover }}" style="align-self:flex-start;background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:var(--pt-txt2,#9FB3B8);text-decoration:underline">Forgotten your password? Use your recovery code</button>
+      <button type="submit" disabled="{{ acctBusy }}" style="height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B);opacity:{{ acctBusyOpacity }}">{{ acctSubmitLabel }}</button>
+    </form>
+
+    <div style="padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span class="material-symbols-rounded" style="font-size:19px;color:var(--pt-aqua,#4FE1DE)">person_off</span>
+        <div style="font-size:14.5px;font-weight:700">You do not need an account</div>
+      </div>
+      <p style="margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--pt-txt2,#9FB3B8)">Every tool works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</p>
+      <p style="margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--pt-txt2,#9FB3B8)">We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</p>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ acctSignedIn }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px">
+    <div style="padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-size:14.5px;font-weight:700">API keys</div>
+        <button type="button" onClick="{{ acctNewKey }}" style="height:34px;padding:0 13px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B)">New key</button>
+      </div>
+
+      <div style="display:{{ acctNewKeyD }};margin-top:13px;padding:13px;border-radius:12px;border:1px solid var(--pt-edge,rgba(79,225,222,.32));background:var(--pt-aquaBg,rgba(79,225,222,.12))">
+        <div style="font-size:12.5px;font-weight:700;color:var(--pt-aqua,#4FE1DE)">Copy this now — it is not shown again</div>
+        <code style="display:block;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;word-break:break-all;color:var(--pt-txt,#E8F1F2)">{{ acctNewKeyValue }}</code>
+      </div>
+
+      <div style="display:{{ acctNoKeysD }};margin-top:13px;font-size:13px;color:var(--pt-txt2,#9FB3B8)">No keys yet. Create one to start using the API.</div>
+
+      <sc-for list="{{ acctKeys }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13.5px;font-weight:600;color:{{ k.labelColor }}">{{ k.label }}</div>
+            <div style="font-size:12px;color:var(--pt-txt3,#6B8085);margin-top:2px">{{ k.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ k.revoke }}" disabled="{{ k.revoked }}" style="display:{{ k.revokeD }};height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px">Revoke</button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)">
+      <div style="font-size:14.5px;font-weight:700">Signed in</div>
+      <div style="margin-top:6px;font-size:13px;color:var(--pt-txt2,#9FB3B8);word-break:break-all">{{ acctEmailShown }}</div>
+      <button type="button" onClick="{{ acctSignOut }}" style="margin-top:14px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt,#E8F1F2);font-size:13px;font-weight:600">Sign out</button>
+      <!-- Replacing a mislaid code needs the password, not just the session: a
+           stolen cookie would otherwise mint a code the thief keeps, one that
+           outlives the owner noticing and changing their password. -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))">
+        <div style="font-size:13px;font-weight:600;color:var(--pt-txt,#E8F1F2)">Recovery code</div>
+        <div style="font-size:11.5px;color:var(--pt-txt2,#9FB3B8);margin-top:4px;line-height:1.5">Lost the one from signup? Generate a replacement. The old code stops working.</div>
+        <button type="button" onClick="{{ acctToggleRotate }}" style="display:{{ acctRotateOpenD }};margin-top:9px;width:100%;height:38px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">Generate a new code</button>
+        <form onSubmit="{{ acctRotateSubmit }}" style="display:{{ acctRotateFormD }};margin-top:9px">
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--pt-txt2,#9FB3B8)">Confirm your password
+            <input type="password" value="{{ acctRotatePassword }}" onInput="{{ acctSetRotatePassword }}" autoComplete="current-password" required="{{ true }}"
+                   style="padding:9px 11px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+          </label>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <button type="submit" disabled="{{ acctBusy }}" style="flex:1;height:38px;border-radius:11px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B);opacity:{{ acctBusyOpacity }}">{{ acctRotateLabel }}</button>
+            <button type="button" onClick="{{ acctToggleRotate }}" style="height:38px;padding:0 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <button type="button" onClick="{{ acctDelete }}" style="margin-top:8px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-coral,#FF7A6B);background:transparent;color:var(--pt-coral,#FF7A6B);font-size:13px;font-weight:600">{{ acctDeleteLabel }}</button>
+      <p style="margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)">Deleting removes your email, your password hash and every key. It cannot be undone.</p>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- Vault — real AES-GCM under a non-extractable device key (lib/localStore).
+     Not the simulated vault the imported design shipped, so the "protection is
+     simulated, do not enter real passwords" notice is deliberately absent. -->
+<sc-if value="{{ isVaultReal }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1180px;margin:0 auto;padding:22px clamp(16px,3vw,34px) 0">
+  <h1 style="margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.025em">Vault</h1>
+  <div style="margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)">Passwords for locked documents, encrypted on this device. {{ vltCount }} stored.</div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;margin-top:20px">
+    <div style="padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)">
+      <div style="font-size:14.5px;font-weight:700">Stored passwords</div>
+
+      <div style="display:{{ vltEmptyD }};font-size:12.5px;color:var(--pt-txt2);margin-top:10px">Nothing stored yet. Add a password below and PrivaTools will try it automatically when you open a locked file.</div>
+      <div role="status" style="display:{{ vltUnreadableD }};margin-top:10px;font-size:12px;color:var(--pt-coral)">{{ vltUnreadable }}</div>
+
+      <sc-for list="{{ vltEntries }}" as="e" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:{{ e.labelColor }}">{{ e.label }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">{{ e.secret }}</div>
+            <div style="font-size:11px;color:var(--pt-txt3);margin-top:2px">{{ e.meta }}</div>
+          </div>
+          <button type="button" onClick="{{ e.reveal }}" aria-label="{{ e.revealLabel }}" style="height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt2,#9FB3B8);font-size:12.5px"><span class="material-symbols-rounded" style="font-size:18px;">{{ e.revealIcon }}</span></button>
+          <button type="button" onClick="{{ e.copy }}" aria-label="Copy password" style="height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt2,#9FB3B8);font-size:12.5px"><span class="material-symbols-rounded" style="font-size:18px;">{{ 'content_copy' }}</span></button>
+          <button type="button" onClick="{{ e.remove }}" aria-label="Delete password" style="height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px"><span class="material-symbols-rounded" style="font-size:18px;">{{ 'delete' }}</span></button>
+        </div>
+      </sc-for>
+
+      <button type="button" onClick="{{ vltClear }}" style="display:{{ vltClearD }};margin-top:14px;height:32px;padding:0 11px;border-radius:9px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-coral,#FF7A6B);font-size:12.5px">{{ vltClearLabel }}</button>
+    </div>
+
+    <form onSubmit="{{ vltAdd }}" style="padding:18px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A)">
+      <div style="font-size:14.5px;font-weight:700">Add a password</div>
+      <label style="display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:11px">Name
+        <input type="text" value="{{ vltLabel }}" onInput="{{ vltSetLabel }}" placeholder="e.g. Bank statements" style="padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+      </label>
+      <label style="display:grid;gap:6px;font-size:12.5px;color:var(--pt-txt2,#9FB3B8);margin-top:9px">Password
+        <input type="password" value="{{ vltPassword }}" onInput="{{ vltSetPassword }}" autoComplete="off" style="padding:11px 12px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+      </label>
+      <div role="alert" style="display:{{ vltErrD }};margin-top:8px;font-size:12px;color:var(--pt-coral)">{{ vltError }}</div>
+      <button type="submit" disabled="{{ vltBusy }}" style="margin-top:11px;width:100%;opacity:{{ vltBusyOpacity }};height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:linear-gradient(140deg,var(--pt-aqua,#4FE1DE),var(--pt-teal,#26C8BA));color:var(--pt-onAqua,#04191B)">{{ vltAddLabel }}</button>
+      <p style="margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)">Encrypted with a key this browser generated and cannot export. That means it never leaves this device — and it cannot sync to another one. Clearing site data erases it.</p>
+    </form>
+  </div>
+</div>
+</sc-if>
+
+<!-- Tool page — Carbon Glass chrome, real tool UI. Its own tool route
+     simulates the run and stands down; this keeps the design's glass panels,
+     breadcrumb and chips around the component that actually works. -->
+<sc-if value="{{ isRealTool }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1180px;margin:0 auto;padding:20px clamp(16px,3vw,34px) 0">
+  <nav aria-label="Breadcrumb" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--pt-txt3,#6B8085);margin-bottom:18px">
+    <a href="#/" onClick="{{ rtHome }}" style="border-bottom:none;color:var(--pt-txt2,#9FB3B8)">Home</a>
+    <span class="material-symbols-rounded" style="font-size:14px">chevron_right</span>
+    <a href="#/tools" onClick="{{ rtTools }}" style="border-bottom:none;color:var(--pt-txt2,#9FB3B8)">All tools</a>
+    <span class="material-symbols-rounded" style="font-size:14px">chevron_right</span>
+    <span style="color:var(--pt-txt,#E8F1F2);font-weight:600">{{ realToolName }}</span>
+  </nav>
+
+  <h1 style="margin:0;font-size:clamp(28px,3.5vw,44px);font-weight:800;letter-spacing:-.03em">{{ realToolName }}</h1>
+  <p style="margin:9px 0 0;font-size:14px;color:var(--pt-txt2,#9FB3B8)">{{ realToolDesc }}</p>
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+    <sc-for list="{{ rtChips }}" as="c" hint-placeholder-count="4">
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:{{ c.fg }};border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:20px;padding:5px 11px;background:{{ c.bg }}">
+        <span class="material-symbols-rounded" style="font-size:15px">{{ c.icon }}</span>{{ c.label }}</span>
+    </sc-for>
+  </div>
+
+  <div style="margin-top:20px;padding:20px;border-radius:16px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-panel,rgba(13,23,29,.62));backdrop-filter:blur(18px)">
+    {{ realToolUI }}
+  </div>
+
+  <div style="display:{{ rtRelatedD }};margin-top:20px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:11px">Related tools</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+      <sc-for list="{{ rtRelated }}" as="r" hint-placeholder-count="4">
+        <button type="button" onClick="{{ r.go }}" style="text-align:left;padding:15px;border-radius:14px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-solid,#0B141A);cursor:pointer;color:var(--pt-txt,#E8F1F2)">
+          <span class="material-symbols-rounded" style="font-size:19px;color:var(--pt-aqua,#4FE1DE)">{{ r.icon }}</span>
+          <div style="font-size:13.5px;font-weight:700;margin-top:8px">{{ r.name }}</div>
+          <div style="font-size:12px;color:var(--pt-txt2,#9FB3B8);margin-top:3px;line-height:1.45">{{ r.desc }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>

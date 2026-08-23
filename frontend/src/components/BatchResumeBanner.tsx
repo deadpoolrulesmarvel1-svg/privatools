@@ -49,7 +49,7 @@ export function BatchResumeBanner() {
       <span className="inline-flex items-center justify-center h-6 w-6 rounded shrink-0">
         <History size={12} className="text-accent" />
       </span>
-      <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-accent font-medium shrink-0">
+      <span className="text-[11.5px] text-accent font-medium shrink-0">
         Batch interrupted
       </span>
       <span className="opacity-50 hidden sm:inline">—</span>
@@ -59,7 +59,7 @@ export function BatchResumeBanner() {
       <Link
         to="/batch"
         onClick={dismiss}
-        className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-accent hover:underline shrink-0"
+        className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-accent hover:underline shrink-0"
       >
         Resume
       </Link>

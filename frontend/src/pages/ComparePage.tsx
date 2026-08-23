@@ -5,7 +5,7 @@
  *   1. Directory view (no slug) — quick-answer matrix + head-to-head cards.
  *   2. Detail view (/compare/:slug) — full feature table + verdict.
  *
- * Workshop styling: § markers, mono dateline, corner-marked PrivaTools row in matrix,
+ * Workshop styling: markers, mono dateline, corner-marked PrivaTools row in matrix,
  * signal-green Check / muted X, accent value-prop cards.
  */
 import { useParams, Link } from "react-router-dom";
@@ -352,35 +352,35 @@ export default function ComparePage() {
 
         {/* ── Back link ── */}
         <nav>
-          <Link to="/compare" className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground hover:text-accent transition-colors">
+          <Link to="/compare" className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors">
             <ArrowLeft size={12} /> All comparisons
           </Link>
         </nav>
 
         {/* ── Hero ── */}
         <header className="animate-fade-up text-center">
-          <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-accent/[0.05] font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent mb-5">
+          <span className="font-medium inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-accent/30 bg-accent/[0.05] text-[11.5px] text-accent mb-5">
             <Shield size={11} /> Honest comparison · updated May 2026
           </span>
           <h1 className="font-display font-bold text-foreground tracking-[-0.025em] leading-tight text-3xl sm:text-5xl"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-            PrivaTools <span className="text-muted-foreground/60">vs</span> <span className="italic text-accent">{comp.name}</span>
+            PrivaTools <span className="text-muted-foreground">vs</span> <span className="italic text-accent">{comp.name}</span>
           </h1>
           {/* Competitor tagline + pricing snapshot — gives the hero specificity instead of a generic byline. */}
-          <p className="font-display italic text-[15px] sm:text-[17px] text-muted-foreground/85 max-w-xl mx-auto mt-3 leading-relaxed">
+          <p className="font-display italic text-[15px] sm:text-[17px] text-muted-foreground max-w-xl mx-auto mt-3 leading-relaxed">
             "{comp.tagline}"
           </p>
           <p className="comparison-summary font-display text-[15px] sm:text-[17px] text-muted-foreground max-w-2xl mx-auto mt-4 leading-relaxed">
             Side-by-side comparison of features, pricing, and privacy practices — including the one area where {comp.name} genuinely beats us today.
           </p>
-          <div className="mt-5 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full border border-border bg-card font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">
+          <div className="font-medium mt-5 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full border border-border bg-card text-[11px] text-muted-foreground">
             <Trophy size={10} className="text-accent" />
             PrivaTools wins <span className="text-accent font-semibold">{privatoolsWinsVs(comp)}</span>/4 fundamentals
           </div>
         </header>
 
         {/* ── Quick stats ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-up">
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-up stagger-in">
           {[
             { label: "Pricing",    value: comp.pricing || "—",    Icon: DollarSign },
             { label: "Free tier",  value: comp.freeLimit || "—",  Icon: Zap },
@@ -390,7 +390,7 @@ export default function ComparePage() {
             return (
               <div key={i} className="rounded-xl border border-border bg-card p-4">
                 <Icon size={13} className="text-muted-foreground" />
-                <p className="mt-2 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{s.label}</p>
+                <p className="font-medium mt-2 text-[11px] text-muted-foreground">{s.label}</p>
                 <p className="mt-1 font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{s.value}</p>
               </div>
             );
@@ -399,16 +399,16 @@ export default function ComparePage() {
 
         {/* ── Feature matrix ── */}
         <section className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-up">
-          <div className="px-5 py-3 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-            <span className="text-accent">§</span> Feature matrix
+          <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+            Feature matrix
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-paper-2/20">
-                  <th className="text-left px-5 py-2.5 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground w-[40%]">Feature</th>
-                  <th className="text-left px-4 py-2.5 font-mono text-[9.5px] tracking-[0.10em] uppercase text-accent">PrivaTools</th>
-                  <th className="text-left px-4 py-2.5 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{comp.name}</th>
+                  <th className="font-medium text-left px-5 py-2.5 text-[9.5px] text-muted-foreground w-[40%]">Feature</th>
+                  <th className="font-medium text-left px-4 py-2.5 text-[9.5px] text-accent">PrivaTools</th>
+                  <th className="font-medium text-left px-4 py-2.5 text-[9.5px] text-muted-foreground">{comp.name}</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,13 +430,13 @@ export default function ComparePage() {
 
         {/* ── Honest tradeoff card ── */}
         <section className="animate-fade-up rounded-2xl border border-border bg-card overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground inline-flex items-center gap-1.5 w-full">
+          <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground inline-flex items-center gap-1.5 w-full">
             <Scale size={11} className="text-accent" />
-            <span><span className="text-accent">§</span> Honest tradeoff</span>
+            <span>Honest tradeoff</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border stagger-in">
             <div className="p-6 sm:p-7">
-              <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent mb-2 inline-flex items-center gap-1.5">
+              <p className="font-medium text-[11px] text-accent mb-2 inline-flex items-center gap-1.5">
                 <Trophy size={11} /> PrivaTools wins for
               </p>
               <h3 className="font-display text-[18px] font-bold text-foreground tracking-[-0.02em] mb-3 leading-snug">
@@ -450,7 +450,7 @@ export default function ComparePage() {
               </ul>
             </div>
             <div className="p-6 sm:p-7 bg-paper-2/30">
-              <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-copper mb-2 inline-flex items-center gap-1.5">
+              <p className="font-medium text-[11px] text-copper mb-2 inline-flex items-center gap-1.5">
                 <Trophy size={11} /> {comp.name} wins for
               </p>
               <h3 className="font-display text-[18px] font-bold text-foreground tracking-[-0.02em] mb-3 leading-snug">
@@ -459,7 +459,7 @@ export default function ComparePage() {
               <p className="text-[13px] text-muted-foreground leading-relaxed">
                 {COMPETITOR_EDGE[comp.slug] ?? "On the axes we measure, we don't see a meaningful edge for this competitor — they're competing primarily on legacy brand recognition."}
               </p>
-              <p className="mt-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+              <p className="font-medium mt-3 text-[11.5px] text-muted-foreground">
                 <Minus size={10} className="inline mr-1" />
                 If that workflow is your main need, this competitor may serve you better.
               </p>
@@ -522,8 +522,8 @@ export default function ComparePage() {
 
         {/* ── Other comparisons ── */}
         <section className="pb-4">
-          <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground text-center mb-4">
-            <span className="text-accent">§</span> Other comparisons · wins / 4
+          <p className="font-medium text-[11px] text-muted-foreground text-center mb-4">
+            Other comparisons · wins / 4
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {Object.entries(competitors)
@@ -534,11 +534,11 @@ export default function ComparePage() {
                   <Link
                     key={key}
                     to={`/compare/${key}`}
-                    className="group inline-flex items-center gap-1.5 h-8 pl-3 pr-1.5 rounded-full border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:border-accent/45 hover:bg-accent/[0.04] hover:text-accent transition-colors"
+                    className="font-medium group inline-flex items-center gap-1.5 h-8 pl-3 pr-1.5 rounded-full border border-border bg-card text-[11.5px] text-muted-foreground hover:border-accent/45 hover:bg-accent/[0.04] hover:text-accent transition-colors"
                   >
                     <span>vs {c.name}</span>
                     <span className={cn(
-                      "inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full font-mono text-[9.5px] tracking-[0.06em] uppercase",
+                      "font-medium inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full text-[9.5px]",
                       w >= 3 ? "bg-accent/15 text-accent border border-accent/30" : "bg-secondary/60 text-muted-foreground border border-border"
                     )}>
                       <Trophy size={9} /> {w}/4
@@ -627,13 +627,13 @@ function DirectoryView() {
         <header className="animate-fade-up max-w-3xl">
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-border">
             <p className="section-mark">Honest comparisons</p>
-            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+            <p className="font-medium text-[11.5px] text-muted-foreground">
               {allEntries.length} competitors · updated May 2026
             </p>
           </div>
           <h1 className="font-display font-bold text-foreground tracking-[-0.025em] leading-[1.05] text-4xl sm:text-6xl"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-            PrivaTools <span className="text-muted-foreground/60">vs</span> <span className="italic text-accent">everyone</span> else.
+            PrivaTools <span className="text-muted-foreground">vs</span> <span className="italic text-accent">everyone</span> else.
           </h1>
           <p className="font-display text-[16px] sm:text-[18px] text-muted-foreground mt-5 leading-relaxed">
             Direct, no-spin comparisons against every major PDF and file tool. We tell you when a competitor wins — and which ones charge for features we give away free.
@@ -641,7 +641,7 @@ function DirectoryView() {
         </header>
 
         {/* ── At-a-glance stat row — last tile is the savings calc ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-up stagger-1">
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-up stagger-1 stagger-in">
           {[
             { icon: DollarSign, label: "Truly free",     value: "No quotas" },
             { icon: Lock,       label: "Open source",    value: "MIT licensed" },
@@ -653,7 +653,7 @@ function DirectoryView() {
               <div key={i} className="relative rounded-xl border border-accent/30 bg-accent/[0.05] p-4 overflow-hidden hover:bg-accent/[0.08] transition-colors">
                 <CornerMarks />
                 <Icon size={14} className="text-accent" />
-                <p className="mt-2 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{s.label}</p>
+                <p className="font-medium mt-2 text-[9.5px] text-muted-foreground">{s.label}</p>
                 <p className="mt-1 font-display text-[14px] font-bold text-foreground tracking-[-0.015em] leading-snug">{s.value}</p>
               </div>
             );
@@ -665,25 +665,24 @@ function DirectoryView() {
           <div className="relative p-7 sm:p-9 grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-7 items-center">
             <CornerMarks />
             <div>
-              <p className="section-mark mb-2">§ Annual savings</p>
+              <p className="section-mark mb-2">Annual savings</p>
               <h2 className="font-display text-[22px] sm:text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight"
                   style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                 If you bought everyone below
               </h2>
               <div className="mt-5 flex items-baseline gap-2">
-                <span className="font-display font-bold text-foreground text-6xl sm:text-7xl tracking-[-0.04em] leading-none"
-                      style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                  ${annualSavingsAll}
+                <span className="font-display font-extrabold text-foreground text-6xl sm:text-7xl tracking-[-0.05em] leading-none tabular-nums">
+                  ${annualSavingsAll.toLocaleString()}
                 </span>
-                <span className="font-mono text-[12px] tracking-[0.06em] uppercase text-muted-foreground">/ yr</span>
+                <span className="font-medium text-[12px] text-muted-foreground">/ yr</span>
               </div>
-              <p className="mt-2 font-mono text-[11px] tracking-[0.04em] uppercase text-accent">
-                <span>§</span> What PrivaTools saves you
+              <p className="font-medium mt-2 text-[12px] text-accent">
+                What PrivaTools saves you
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground flex items-center justify-between">
-                <span><span className="text-accent">§</span> Competitor pricing</span>
+              <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Competitor pricing</span>
                 <span>monthly</span>
               </div>
               <div className="divide-y divide-border max-h-72 overflow-y-auto">
@@ -712,7 +711,7 @@ function DirectoryView() {
                     key={f.id}
                     onClick={() => setFilter(f.id)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border font-mono text-[10.5px] tracking-[0.10em] uppercase transition-colors",
+                      "font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[11.5px] transition-colors",
                       active
                         ? "border-accent bg-accent/[0.08] text-accent"
                         : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground"
@@ -732,7 +731,7 @@ function DirectoryView() {
                     key={s.id}
                     onClick={() => setSort(s.id)}
                     className={cn(
-                      "h-7 px-2.5 rounded font-mono text-[10.5px] tracking-[0.06em] uppercase transition-colors",
+                      "font-medium h-7 px-2.5 rounded text-[11.5px] transition-colors",
                       active ? "bg-card border border-accent text-accent" : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                     )}
                   >
@@ -742,22 +741,22 @@ function DirectoryView() {
               })}
             </div>
           </div>
-          <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
-            <span className="text-accent">§</span> Showing <span className="text-accent">{sorted.length}</span> of {allEntries.length} competitors
+          <p className="font-medium text-[11.5px] text-muted-foreground">
+            Showing <span className="text-accent">{sorted.length}</span> of {allEntries.length} competitors
           </p>
         </section>
 
         {/* ── Quick-answer matrix ── */}
         <section className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-up">
-          <div className="px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-            <span><span className="text-accent">§</span> Quick-answer matrix · click headers to sort</span>
+          <div className="font-medium px-5 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+            <span>Quick-answer matrix · click headers to sort</span>
             <span>{sorted.length} rows</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-paper-2/20">
-                  <th className="text-left px-5 py-2.5 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">Tool</th>
+                  <th className="font-medium text-left px-5 py-2.5 text-[9.5px] text-muted-foreground">Tool</th>
                   <SortableHeader label="Free"      align="center" thisKey="price" sort={sort} setSort={setSort} />
                   <SortableHeader label="Open src"  align="center" thisKey="wins"  sort={sort} setSort={setSort} />
                   <SortableHeader label="Self-host" align="center" thisKey="wins"  sort={sort} setSort={setSort} />
@@ -770,7 +769,7 @@ function DirectoryView() {
                 <tr className="border-b border-accent/20 bg-accent/[0.06] hover:bg-accent/[0.09] transition-colors">
                   <td className="px-5 py-3.5">
                     <span className="font-display font-bold text-foreground tracking-[-0.015em]">PrivaTools</span>
-                    <span className="ml-2 inline-flex items-center h-5 px-1.5 rounded font-mono text-[9px] tracking-[0.10em] uppercase font-bold bg-accent/25 text-accent border border-accent/40">Us</span>
+                    <span className="ml-2 inline-flex items-center h-5 px-1.5 rounded text-[10.5px] font-bold bg-accent/25 text-accent border border-accent/40">Us</span>
                   </td>
                   {/* Each cell pairs the icon with a sr-only text label so screen
                      readers don't have to interpret a bare green check as "yes". */}
@@ -786,7 +785,7 @@ function DirectoryView() {
                   return (
                   <tr key={key} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
                     <td className="px-5 py-3">
-                      <Link to={`/compare/${key}`} className="font-display font-semibold text-[14px] text-foreground tracking-[-0.015em] hover:text-accent transition-colors">{c.name}</Link>
+                      <Link to={`/compare/${key}`} className="font-display font-semibold text-[14px] text-foreground tracking-[-0.015em] hover:text-accent transition-colors inline-flex items-center min-h-[24px]">{c.name}</Link>
                     </td>
                     <td className="text-center px-3">{c.pricing?.toLowerCase().startsWith("free") ? yes("Free") : no("Free")}</td>
                     <td className="text-center px-3">{c.openSource ? yes("Open source") : no("Open source")}</td>
@@ -799,7 +798,7 @@ function DirectoryView() {
                 {sorted.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-5 py-10 text-center">
-                      <p className="font-mono text-[11px] tracking-[0.10em] uppercase text-muted-foreground">No competitors match this filter</p>
+                      <p className="font-medium text-[12px] text-muted-foreground">No competitors match this filter</p>
                     </td>
                   </tr>
                 )}
@@ -816,7 +815,7 @@ function DirectoryView() {
             Pick a comparison
           </h2>
           <p className="text-[14px] text-muted-foreground mt-2 mb-6">Each page is a full feature-by-feature breakdown plus pricing, free-tier limits, and our honest verdict.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {sorted.map(([key, c], i) => {
               const wins = privatoolsWinsVs(c);
               const monthly = MONTHLY_PRICING[key] || 0;
@@ -829,7 +828,7 @@ function DirectoryView() {
                 >
                   <div className="flex items-start justify-between mb-3 gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent/70 mb-1">§{String(i + 1).padStart(2, "0")}</p>
+                      <p className="font-medium text-[11px] text-accent mb-1">{String(i + 1).padStart(2, "0")}</p>
                       <h3 className="font-display text-[19px] font-bold text-foreground tracking-[-0.02em] group-hover:text-accent transition-colors leading-tight">
                         vs {c.name}
                       </h3>
@@ -837,7 +836,7 @@ function DirectoryView() {
                     </div>
                     {/* Winner badge */}
                     <div className={cn(
-                      "shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-full border font-mono text-[10px] tracking-[0.06em] uppercase",
+                      "font-medium shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-full border text-[11px]",
                       wins >= 3 ? "border-accent/45 bg-accent/[0.08] text-accent" : "border-border bg-card text-muted-foreground"
                     )}>
                       <Trophy size={10} /> {wins}/4
@@ -847,7 +846,7 @@ function DirectoryView() {
                     <div className="flex items-center gap-2">
                       <DollarSign size={11} className="text-muted-foreground shrink-0" />
                       <span className="text-foreground">{c.pricing || "Paid"}</span>
-                      {monthly > 0 && <span className="text-muted-foreground/60 ml-auto">= ${Math.round(monthly * 12)}/yr</span>}
+                      {monthly > 0 && <span className="text-muted-foreground ml-auto">= ${Math.round(monthly * 12)}/yr</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       <Zap size={11} className="text-muted-foreground shrink-0" />
@@ -863,7 +862,7 @@ function DirectoryView() {
                       wins on. Builds trust by not pretending PrivaTools is strictly best at
                       everything. Falls back to a neutral note when nothing stands out. */}
                   <div className="mb-4 rounded-md border border-border/70 bg-paper-2/40 px-2.5 py-2">
-                    <p className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-copper mb-0.5 inline-flex items-center gap-1">
+                    <p className="font-medium text-[9.5px] text-copper mb-0.5 inline-flex items-center gap-1">
                       <Scale size={9} /> Where they win
                     </p>
                     <p className="font-mono text-[11px] text-muted-foreground leading-snug">
@@ -872,26 +871,26 @@ function DirectoryView() {
                   </div>
                   <div className="flex items-center flex-wrap gap-1.5 mt-auto pt-3 border-t border-border">
                     {c.openSource && (
-                      <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded font-mono text-[9.5px] tracking-[0.10em] uppercase bg-accent/15 border border-accent/30 text-accent">
+                      <span className="font-medium inline-flex items-center gap-1 h-5 px-1.5 rounded text-[9.5px] bg-accent/15 border border-accent/30 text-accent">
                         <Lock size={9} /> Open
                       </span>
                     )}
                     {c.selfHostable && (
-                      <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded font-mono text-[9.5px] tracking-[0.10em] uppercase bg-accent/15 border border-accent/30 text-accent">
+                      <span className="font-medium inline-flex items-center gap-1 h-5 px-1.5 rounded text-[9.5px] bg-accent/15 border border-accent/30 text-accent">
                         <ServerCog size={9} /> Self
                       </span>
                     )}
                     {!c.openSource && !c.cloudUploads && (
-                      <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded font-mono text-[9.5px] tracking-[0.10em] uppercase bg-secondary/60 border border-border text-muted-foreground">
+                      <span className="font-medium inline-flex items-center gap-1 h-5 px-1.5 rounded text-[9.5px] bg-secondary/60 border border-border text-muted-foreground">
                         <EyeOff size={9} /> Closed
                       </span>
                     )}
                     {c.cloudUploads && (
-                      <span className="inline-flex items-center gap-1 h-5 px-1.5 rounded font-mono text-[9.5px] tracking-[0.10em] uppercase bg-copper/15 border border-copper/30 text-copper">
+                      <span className="font-medium inline-flex items-center gap-1 h-5 px-1.5 rounded text-[9.5px] bg-copper/15 border border-copper/30 text-copper">
                         <Eye size={9} /> Sees files
                       </span>
                     )}
-                    <span className="ml-auto inline-flex items-center gap-1 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                    <span className="font-medium ml-auto inline-flex items-center gap-1 text-[11.5px] text-accent">
                       Compare <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -928,7 +927,7 @@ function DirectoryView() {
                   </a>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-in">
                 {[
                   { icon: Lock,  title: "True privacy",     desc: "Files processed in an isolated container and deleted immediately. No 2-hour retention." },
                   { icon: Heart, title: "Actually free",    desc: "No \"2 tasks/day\" limits, no premium upsells, no watermarks, no account ever required." },
@@ -974,7 +973,7 @@ function SortableHeader({
   const active = sort === thisKey;
   return (
     <th className={cn(
-      "px-3 py-2.5 font-mono text-[9.5px] tracking-[0.10em] uppercase",
+      "font-medium px-3 py-2.5 text-[9.5px]",
       align === "right" && "text-right pr-5",
       align === "left"  && "text-left pl-5",
       align === "center" && "text-center",

@@ -29,7 +29,7 @@ function validateBarcodeInput(type: string, raw: string): string | null {
         case "ean8":   return digitsOnly(value) && value.length === 7  ? null : "EAN-8 needs exactly 7 digits (check digit auto-added).";
         case "upca":   return digitsOnly(value) && value.length === 11 ? null : "UPC-A needs exactly 11 digits (check digit auto-added).";
         case "isbn13": return digitsOnly(value) && value.length === 12 ? null : "ISBN-13 needs 12 digits (check digit auto-added).";
-        case "code39": return /^[A-Z0-9\-. $/+%]+$/.test(value) ? null : "Code 39 allows uppercase A-Z, 0-9, and -.$/+% only.";
+        case "code39": return /^[A-Z0-9\-. $/+%]+$/.test(value) ? null : "Code 39 allows A-Z, 0-9, and -.$/+% only.";
         case "code128":return value.length > 0 ? null : "Please enter barcode data";
         case "qr":     return value.length <= 4296 ? null : "QR text exceeds the 4,296 character limit.";
         default:       return null;
@@ -131,7 +131,7 @@ export function BarcodeGeneratorUI() {
                                 <img src={previewUrl} alt="Generated barcode" className="max-h-44 max-w-full object-contain" />
                             </div>
                             <p className="font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground mt-2 break-all">
-                                <span className="text-accent">§</span> {data}
+                                {data}
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
                                 <button onClick={download} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -151,8 +151,8 @@ export function BarcodeGeneratorUI() {
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Format
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Format
                 </div>
                 <div className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {BARCODE_TYPES.map(t => {
@@ -172,7 +172,7 @@ export function BarcodeGeneratorUI() {
                                     {t.value === "qr" ? <QrCode size={11} className="text-accent" /> : <Hash size={11} className="text-muted-foreground" />}
                                     <p className={cn("font-display text-[13px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{t.label}</p>
                                 </div>
-                                <p className="font-mono text-[9.5px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{t.desc}</p>
+                                <p className="font-medium text-[9.5px] text-muted-foreground mt-1">{t.desc}</p>
                             </button>
                         );
                     })}
@@ -180,8 +180,8 @@ export function BarcodeGeneratorUI() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span className="text-accent">§</span> Data
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Data
                 </div>
                 <div className="p-4 space-y-2">
                     <input
@@ -190,17 +190,17 @@ export function BarcodeGeneratorUI() {
                         aria-label={`Barcode data for ${BARCODE_TYPES.find(t => t.value === barcodeType)?.label}`}
                         aria-invalid={!!validationError && data.length > 0}
                         className={cn(
-                            "w-full rounded-md border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 transition-colors",
+                            "w-full rounded-md border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 transition-colors",
                             validationError && data.length > 0
                                 ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
                                 : "border-border focus:border-accent focus:ring-accent/20"
                         )}
                     />
                     <p className={cn(
-                        "font-mono text-[10px] tracking-[0.04em] uppercase",
-                        validationError && data.length > 0 ? "text-destructive" : "text-muted-foreground/85"
+                        "font-medium text-[11px]",
+                        validationError && data.length > 0 ? "text-destructive" : "text-muted-foreground"
                     )}>
-                        <span className={validationError && data.length > 0 ? "text-destructive" : "text-accent"}>§</span>{" "}
+                        <span className={validationError && data.length > 0 ? "text-destructive" : "text-accent"}></span>{" "}
                         {validationError && data.length > 0 ? validationError : hint(barcodeType)}
                     </p>
                 </div>
@@ -221,7 +221,7 @@ export function BarcodeGeneratorUI() {
                     {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rendering…</> : <><Sparkles size={13} /> Generate {BARCODE_TYPES.find(t => t.value === barcodeType)?.label}</>}
                 </button>
                 {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
                 )}
             </div>
         </div>

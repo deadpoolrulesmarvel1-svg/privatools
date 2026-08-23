@@ -75,8 +75,8 @@ export function MarkdownHtmlUI() {
             <div className={cn("grid gap-3", view === "split" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
                 {(view === "split" || view === "html") && (
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Markdown
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Markdown
                         </div>
                         <textarea
                             value={input} onChange={e => setInput(e.target.value)}
@@ -87,8 +87,8 @@ export function MarkdownHtmlUI() {
 
                 {(view === "split" || view === "html") && (
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span><span className="text-accent">§</span> HTML output</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                            <span>HTML output</span>
                             <button onClick={copy} className={cn("h-6 px-2 rounded inline-flex items-center gap-1 transition-colors text-muted-foreground hover:text-accent hover:bg-accent/[0.06]", copied && "animate-copy-flash")}>
                                 {copied ? <><Check size={10} className="text-accent" /> Copied</> : <><Copy size={10} /> Copy</>}
                             </button>
@@ -102,8 +102,8 @@ export function MarkdownHtmlUI() {
 
                 {view === "preview" && (
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Preview · sandboxed
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Preview · sandboxed
                         </div>
                         {/*
                           Sandbox the preview in an iframe so user-supplied Markdown

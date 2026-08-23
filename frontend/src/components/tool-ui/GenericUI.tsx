@@ -209,7 +209,7 @@ export function GenericUI({
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             Done — file <span className="italic text-accent">downloaded</span>.
                         </h2>
-                        <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground truncate">
+                        <p className="font-medium mt-2 text-[12px] text-muted-foreground truncate">
                             {getOutputFilename()}
                         </p>
                         <div className="mt-5 flex flex-wrap gap-2">
@@ -249,7 +249,7 @@ export function GenericUI({
                 tabIndex={0}
                 aria-label={`Upload file for ${toolName}`}
                 className={cn(
-                    "relative cursor-pointer rounded-2xl border-2 border-dashed transition-colors px-6 py-12 sm:py-14 text-center overflow-hidden group",
+                    "dropzone-surface relative cursor-pointer rounded-2xl border-2 border-dashed transition-colors px-6 py-12 sm:py-14 text-center overflow-hidden group",
                     drag
                         ? "border-accent bg-accent/[0.06]"
                         : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -283,7 +283,7 @@ export function GenericUI({
                     <p className="font-display text-[20px] font-semibold text-foreground tracking-[-0.02em] mb-1.5">
                         {drag ? "Drop it" : "Click to select or drop a file"}
                     </p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    <p className="font-medium text-[11.5px] text-muted-foreground">
                         Accepts {acceptsLabel} · Max {MAX_FILE_SIZE_LABEL}
                     </p>
                 </div>
@@ -297,12 +297,12 @@ export function GenericUI({
                         <p className="font-medium">Something went wrong</p>
                         <p className="text-[12px] opacity-80 mt-0.5 break-words font-mono">{error}</p>
                         <div className="mt-2 flex items-center gap-3">
-                            <button onClick={process} disabled={!canProcess} className="font-mono text-[11px] tracking-wider uppercase text-destructive hover:underline disabled:opacity-50">
+                            <button onClick={process} disabled={!canProcess} className="font-medium text-[12px] tracking-wider text-destructive hover:underline disabled:opacity-50">
                                 Try again
                             </button>
                             <button
                                 onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError || error, `${toolName} (${slug})`)).catch(() => {})}
-                                className="font-mono text-[11px] tracking-wider uppercase text-destructive/80 hover:underline"
+                                className="font-medium text-[12px] tracking-wider text-destructive hover:underline"
                             >
                                 Copy report
                             </button>
@@ -337,7 +337,7 @@ export function GenericUI({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{f.size}</p>
+                                <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
                             </div>
                             {state !== "processing" && (
                                 <button
@@ -371,11 +371,11 @@ export function GenericUI({
                             </button>
                             <button
                                 onClick={clearFile}
-                                className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                                className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                             >
                                 Clear
                             </button>
-                            <span className="ml-auto flex items-center gap-3 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground/85">
+                            <span className="font-medium ml-auto flex items-center gap-3 text-[11.5px] text-muted-foreground">
                                 {timeEstimate && <span className="flex items-center gap-1"><Clock size={10} /> {timeEstimate}</span>}
                                 <kbd className="hidden sm:inline-flex items-center gap-0.5 bg-secondary border border-border rounded px-1.5 py-0.5 text-[10px]">⌘ ↵</kbd>
                             </span>
@@ -389,7 +389,7 @@ export function GenericUI({
                             </button>
                             <button
                                 onClick={cancelProcessing}
-                                className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                                className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                             >
                                 Cancel
                             </button>
@@ -428,8 +428,8 @@ function StepTimeline({ stepIndex, processing }: { stepIndex: number; processing
                                 {isProcessing ? <Loader2 size={13} className="animate-spin" /> : isDone ? <CheckCircle2 size={13} strokeWidth={2.4} /> : step.num}
                             </div>
                             <span className={cn(
-                                "font-mono text-[9.5px] tracking-[0.08em] uppercase",
-                                isDone || isCurrent ? "text-foreground" : "text-muted-foreground/85"
+                                "font-medium text-[9.5px]",
+                                isDone || isCurrent ? "text-foreground" : "text-muted-foreground"
                             )}>
                                 {step.label}
                             </span>

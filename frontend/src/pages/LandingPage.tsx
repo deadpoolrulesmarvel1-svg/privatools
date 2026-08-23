@@ -38,7 +38,7 @@ const features = [
 // Trust signals — surface above the fold next to the hero.
 const TRUST_SIGNALS = [
   { icon: FileCheck,  label: "MIT licensed",       sub: "Audit the code"    , href: "https://github.com/deadpoolrulesmarvel1-svg/privatools/blob/main/LICENSE" },
-  { icon: ServerOff,  label: "No account required",sub: "Zero sign-up flow" , href: undefined },
+  { icon: ServerOff,  label: "No account required",sub: "Never for the tools" , href: undefined },
   { icon: Package,    label: "Self-hostable",      sub: "Docker, one command", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#self-host" },
 ];
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
               <p className="font-display text-lg sm:text-xl text-foreground/80 leading-relaxed max-w-lg">
                 PrivaTools gives you {TOTAL_ROUNDED}+ powerful file tools — PDF, image, video, and developer
                 utilities. Browser-only where possible; isolated temporary processing when a backend is needed.
-                No accounts, no ads, no watermarks.
+                No account needed, no ads, no watermarks.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
                 <Link to="/" className="btn-editorial inline-flex items-center gap-2">
@@ -89,8 +89,8 @@ export default function LandingPage() {
                     <span className="inline-flex items-center gap-1.5">
                       <Check size={11} className="text-accent shrink-0" />
                       <Icon size={11} className="text-accent/80 shrink-0" />
-                      <span className="uppercase tracking-[0.06em]">{s.label}</span>
-                      <span className="text-muted-foreground/60 normal-case">· {s.sub}</span>
+                      <span className="">{s.label}</span>
+                      <span className="text-muted-foreground normal-case">· {s.sub}</span>
                     </span>
                   );
                   return (
@@ -112,10 +112,10 @@ export default function LandingPage() {
             <div className="space-y-6">
               {/* By the numbers — derived from the catalog */}
               <div className="editorial-insert p-6">
-                <h2 className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent font-semibold mb-4 inline-flex items-center gap-1.5">
-                  <span aria-hidden="true">§</span> By the numbers
+                <h2 className="text-[11.5px] text-accent font-semibold mb-4 inline-flex items-center gap-1.5">
+                  <span aria-hidden="true"></span> By the numbers
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 stagger-in">
                   {[
                     { num: `${TOTAL}`,           label: "Tools" },
                     { num: "0",                  label: "Data collected" },
@@ -124,11 +124,11 @@ export default function LandingPage() {
                   ].map(stat => (
                     <div key={stat.label}>
                       <p className="font-display text-3xl font-bold text-foreground nums-tabular">{stat.num}</p>
-                      <p className="font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground mt-1 uppercase">{stat.label}</p>
+                      <p className="font-medium text-[11.5px] text-muted-foreground mt-1">{stat.label}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 pt-4 border-t border-border font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                <p className="font-medium mt-4 pt-4 border-t border-border text-[11px] text-muted-foreground">
                   {PDF_COUNT} PDF · {NONPDF_COUNT} non-PDF
                 </p>
               </div>
@@ -176,7 +176,7 @@ export default function LandingPage() {
               Start With the Tools Everyone Uses
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {featured.map((tool, i) => {
               const m = categoryMeta[tool.category];
               const Icon = tool.icon;
@@ -213,7 +213,7 @@ export default function LandingPage() {
           <div className="text-center mt-8">
             <Link
               to="/"
-              className="font-sans-ui text-sm font-semibold text-accent hover:text-accent/80 transition-colors inline-flex items-center gap-1"
+              className="font-sans-ui text-sm font-semibold text-accent hover:text-accent transition-colors inline-flex items-center gap-1"
             >
               View all {TOTAL}+ tools <ArrowRight size={14} />
             </Link>
@@ -230,7 +230,7 @@ export default function LandingPage() {
               Built Different, by Design
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
             {features.map((f, i) => {
               const FIcon = f.icon;
               return (
@@ -269,7 +269,7 @@ export default function LandingPage() {
           >
             <Github size={14} /> Star on GitHub
           </a>
-          <div className="mt-6 flex items-center justify-center gap-6 font-mono text-[10.5px] tracking-[0.04em] text-muted-foreground uppercase">
+          <div className="font-medium mt-6 flex items-center justify-center gap-6 text-[11.5px] text-muted-foreground">
             <span>MIT License</span>
             <span aria-hidden="true">·</span>
             <span>PRs Welcome</span>

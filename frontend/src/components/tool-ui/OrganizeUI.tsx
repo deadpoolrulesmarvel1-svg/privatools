@@ -160,7 +160,7 @@ export function OrganizeUI() {
                     tabIndex={0}
                     aria-label="Upload file"
                     className={cn(
-                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag
                             ? "border-accent bg-accent/[0.06]"
                             : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -175,7 +175,7 @@ export function OrganizeUI() {
                         <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
                     <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Select a PDF to organize</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Drag &amp; drop or click — we'll render thumbnails for every page</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">Drag &amp; drop or click — we'll render thumbnails for every page</p>
                 </div>
             )}
 
@@ -183,7 +183,7 @@ export function OrganizeUI() {
                 <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center gap-3">
                     <Loader2 size={20} className="animate-spin text-accent" />
                     <p className="font-display text-[15px] text-foreground">Rendering thumbnails…</p>
-                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">First-time pages may take a moment</p>
+                    <p className="font-medium text-[11.5px] text-muted-foreground">First-time pages may take a moment</p>
                 </div>
             )}
 
@@ -196,7 +196,7 @@ export function OrganizeUI() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[14px] font-medium text-foreground truncate">{file?.name}</p>
-                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                            <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
                                 {pageOrder.length} page{pageOrder.length !== 1 ? "s" : ""}
                                 {pageOrder.length !== thumbnails.length ? <span className="text-accent"> · {thumbnails.length - pageOrder.length} removed</span> : <span> · original order</span>}
                             </p>
@@ -205,8 +205,8 @@ export function OrganizeUI() {
 
                     {/* Pages grid */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground flex items-center justify-between">
-                            <span><span className="text-accent">§</span> Pages — drag to reorder, click ✕ to remove</span>
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground flex items-center justify-between">
+                            <span>Pages — drag to reorder, click ✕ to remove</span>
                             <span>{pageOrder.length} / {thumbnails.length}</span>
                         </div>
                         <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -259,8 +259,8 @@ export function OrganizeUI() {
 
                                     {/* Footer */}
                                     <div className="flex items-center justify-between px-2 py-1.5 bg-card">
-                                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
-                                            <span className="text-muted-foreground/70">orig</span>&nbsp;p{String(pageNum).padStart(2, "0")}
+                                        <span className="font-medium text-[11px] text-muted-foreground">
+                                            <span className="text-muted-foreground">orig</span>&nbsp;p{String(pageNum).padStart(2, "0")}
                                         </span>
                                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
@@ -305,7 +305,7 @@ export function OrganizeUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Organizing…</>
                                 : <><Download size={13} /> Apply &amp; download</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         <button
                             type="button"
                             onClick={undo}
@@ -319,7 +319,7 @@ export function OrganizeUI() {
                             type="button"
                             onClick={() => { pushHistory(pageOrder); setPageOrder(thumbnails.map((_, i) => i + 1)); }}
                             disabled={state === "processing"}
-                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                            className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
                         >
                             Reset order
                         </button>

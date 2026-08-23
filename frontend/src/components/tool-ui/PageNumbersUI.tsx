@@ -94,7 +94,7 @@ export function PageNumbersUI() {
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
                                 </p>
                             )}
                             <div className="mt-5 flex flex-wrap gap-2">
@@ -137,7 +137,7 @@ export function PageNumbersUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -149,7 +149,7 @@ export function PageNumbersUI() {
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs to number"}
                 </p>
-                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                <p className="font-medium text-[11.5px] text-muted-foreground">
                     Multi-file OK · same settings applied to all · max {MAX_FILE_SIZE_LABEL} each
                 </p>
             </div>
@@ -167,8 +167,8 @@ export function PageNumbersUI() {
                     />
 
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                            <span className="text-accent">§</span> Number position
+                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                            Number position
                         </div>
                         <div className="p-5 grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-5 items-center">
                             <div className="relative aspect-[3/4] bg-paper-2/40 border border-border rounded-md mx-auto w-full max-w-[200px]">
@@ -193,7 +193,7 @@ export function PageNumbersUI() {
                             </div>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Start number</label>
+                                    <label className="font-medium text-[11px] text-muted-foreground">Start number</label>
                                     <input
                                         type="number" inputMode="numeric" value={startNumber}
                                         onChange={e => setStartNumber(Math.max(1, Math.min(99999, parseInt(e.target.value) || 1)))} min={1} max={99999}
@@ -202,7 +202,7 @@ export function PageNumbersUI() {
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Font size</label>
+                                        <label className="font-medium text-[11px] text-muted-foreground">Font size</label>
                                         <span className="font-mono text-[11px] text-accent">{fontSize} pt</span>
                                     </div>
                                     <input
@@ -222,11 +222,11 @@ export function PageNumbersUI() {
                                 ? <><Loader2 size={13} className="animate-spin" /> Numbering… ({proc.doneCount}/{proc.entries.length})</>
                                 : <><ListOrdered size={13} /> Number {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         <button
                             type="button"
                             onClick={resetConfig}
-                            className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            className="font-medium ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                             title="Restore default settings"
                         >
                             <Undo2 size={10} /> Reset to defaults

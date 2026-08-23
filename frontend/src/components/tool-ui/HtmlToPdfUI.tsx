@@ -121,9 +121,9 @@ export function HtmlToPdfUI() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
-                    <span><span className="text-accent">§</span> {mode === "url" ? "Web page URL" : "HTML content"}</span>
-                    {htmlSize && <span className="text-muted-foreground/70">{htmlSize}</span>}
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                    <span>{mode === "url" ? "Web page URL" : "HTML content"}</span>
+                    {htmlSize && <span className="text-muted-foreground">{htmlSize}</span>}
                 </div>
                 <div className="p-4">
                     {mode === "url" ? (
@@ -132,7 +132,7 @@ export function HtmlToPdfUI() {
                             placeholder="https://example.com"
                             aria-label="Web page URL"
                             spellCheck={false}
-                            className="w-full rounded-md border border-border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                            className="w-full rounded-md border border-border bg-card px-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                         />
                     ) : (
                         <textarea
@@ -141,14 +141,14 @@ export function HtmlToPdfUI() {
                             aria-label="HTML content"
                             spellCheck={false}
                             wrap="off"
-                            className="w-full rounded-md border border-border bg-paper-2/40 px-3 py-2.5 font-mono text-[12.5px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors resize-y overflow-x-auto whitespace-pre tab-size-2"
+                            className="w-full rounded-md border border-border bg-paper-2/40 px-3 py-2.5 font-mono text-[12.5px] leading-relaxed text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors resize-y overflow-x-auto whitespace-pre tab-size-2"
                             style={{ tabSize: 2 }}
                         />
                     )}
                 </div>
                 {mode === "url" && url.trim() && (
-                    <div className="px-4 pb-3 font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
-                        <span className="text-accent">§</span> Output: <span className="text-foreground">{getOutputName()}</span>
+                    <div className="font-medium px-4 pb-3 text-[11px] text-muted-foreground">
+                        Output: <span className="text-foreground">{getOutputName()}</span>
                     </div>
                 )}
             </div>
@@ -163,7 +163,7 @@ export function HtmlToPdfUI() {
                 <button onClick={process} disabled={state === "processing" || !canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Converting…</> : <><Download size={13} /> Convert to PDF</>}
                 </button>
-                {canProcess && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {canProcess && state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
     );

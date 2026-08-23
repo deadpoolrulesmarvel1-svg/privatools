@@ -22,6 +22,12 @@ STALE_PRIVACY_CLAIMS = (
     "Zero uploads",
     "No accounts, no tracking",
     "no tracking, no ads",
+    # Optional developer accounts exist (they issue API keys), so any phrasing
+    # that says accounts do not exist is now false. "No account needed" and
+    # "no account required" stay true and are what the copy should say.
+    "No accounts,",
+    "no accounts,",
+    "no accounts exist",
 )
 
 STALE_STORAGE_CLAIMS = (
