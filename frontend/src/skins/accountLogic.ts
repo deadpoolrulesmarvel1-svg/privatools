@@ -62,19 +62,19 @@ export interface Strength {
  */
 export const ACCOUNT_COPY = isClerkEnabled()
     ? {
+        storageHeading: "Clerk holds the sign-in.",
         storage:
-            "Sign-in is handled by Clerk, our authentication provider. They hold your "
-            + "email address and password; we never see the password. Deleting your "
-            + "account removes it there and every API key here, immediately.",
+            "They keep your email and password; we never see the password. "
+            + "Deleting your account removes both, and every key here, immediately.",
         recovery:
             "Forgotten your password? Clerk emails you a reset link. Your files are "
             + "never involved — an account only ever issues API keys.",
     }
     : {
+        storageHeading: "We store an email and a hash.",
         storage:
-            "We store your email address and a scrypt hash of your password — never the "
-            + "password itself. Deleting your account removes both immediately, along "
-            + "with every key.",
+            "A scrypt hash of your password, never the password itself. "
+            + "Deleting your account removes both, and every key, immediately.",
         recovery:
             "We send no email — not even a reset link. Instead you get a recovery code "
             + "at signup. It is the only way back in, so keep it somewhere safe.",
