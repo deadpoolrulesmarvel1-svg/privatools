@@ -63,6 +63,10 @@ class PasswordChange(BaseModel):
     new_password: str = Field(max_length=1024)
 
 
+class RecoveryRotate(BaseModel):
+    current_password: str = Field(max_length=1024)
+
+
 class KeyRequest(BaseModel):
     label: str = Field(default="", max_length=64)
 
@@ -243,6 +247,36 @@ async def change_password(
         keep_token=request.cookies.get(SESSION_COOKIE, ""),
     )
     return {"ok": True}
+
+
+@router.post("/auth/recovery-code")
+@limiter.limit(CREDENTIAL_RATE_LIMIT)
+async def rotate_recovery_code(
+    request: Request,
+    body: RecoveryRotate,
+    user: accounts.User = Depends(current_user),
+):
+    """Issue a fresh recovery code to someone already signed in.
+
+    Gated on the current password rather than the session alone. A stolen
+    session is otherwise enough to mint a code the thief keeps — one that
+    survives the owner noticing and changing their password, which is exactly
+    the kind of quiet persistence a recovery mechanism must not hand out.
+
+    The previous code stops working immediately. That is the reason to offer
+    this at all: a code that was written down and then lost should be
+    replaceable without going through a password reset.
+    """
+    found = accounts.credentials_for(user.email)
+    if not found or not await hashing_pool.verify(body.current_password, found[1]):
+        raise HTTPException(status_code=401, detail="Your current password is incorrect.")
+
+    code = accounts.new_recovery_code()
+    accounts.rotate_recovery_code(
+        user.id,
+        await hashing_pool.hash_password(accounts.normalise_recovery_code(code)),
+    )
+    return {"ok": True, "recovery_code": code}
 
 
 @router.get("/keys")

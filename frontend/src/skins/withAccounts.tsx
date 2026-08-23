@@ -14,7 +14,7 @@
  */
 import { mergeNavItem } from "./navInject";
 import {
-    accountApi, describeKey, defaultKeyLabel, initialAccountState,
+    accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
 } from "./accountLogic";
 
 /**
@@ -111,6 +111,32 @@ export function withAccounts(Base, config) {
 
         /** Dismiss the panel. Only reachable once the code has been shown. */
         _acctAckRecovery = () => this._setAcct({ recoveryCode: "", recoverySaved: true });
+
+        _acctDownloadRecovery = () => {
+            const { recoveryCode, user } = this.state.acct;
+            if (!recoveryCode) return;
+            downloadRecoveryCode(recoveryCode, user ? user.email : "");
+            this._setAcct({ recoverySaved: true });
+        };
+
+        /** Open and close the "replace my code" form. */
+        _acctToggleRotate = () => this._setAcct({
+            rotating: !this.state.acct.rotating, rotatePassword: "", error: "",
+        });
+        _acctSetRotatePassword = (e) => this._setAcct({ rotatePassword: e.target.value, error: "" });
+
+        /** Mint a fresh code for someone already signed in. */
+        _acctRotate = (event) => {
+            if (event && event.preventDefault) event.preventDefault();
+            const { rotatePassword } = this.state.acct;
+            this._setAcct({ busy: true, error: "" });
+            accountApi.rotateRecovery(rotatePassword)
+                .then(({ recovery_code }) => this._setAcct({
+                    busy: false, rotating: false, rotatePassword: "", error: "",
+                    recoveryCode: recovery_code, recoverySaved: false,
+                }))
+                .catch((err) => this._setAcct({ busy: false, error: err.message }));
+        };
 
         _acctNewKey = () => {
             const { keys } = this.state.acct;
@@ -251,6 +277,17 @@ export function withAccounts(Base, config) {
                 acctCopyRecovery: this._acctCopyRecovery,
                 acctCopyLabel: a.recoverySaved ? "Copied" : "Copy",
                 acctAckRecovery: this._acctAckRecovery,
+                acctDownloadRecovery: this._acctDownloadRecovery,
+
+                // Replacing a mislaid code, from inside a signed-in session.
+                acctRotating: a.rotating,
+                acctRotateFormD: a.rotating ? "block" : "none",
+                acctRotateOpenD: a.rotating ? "none" : "block",
+                acctToggleRotate: this._acctToggleRotate,
+                acctRotatePassword: a.rotatePassword,
+                acctSetRotatePassword: this._acctSetRotatePassword,
+                acctRotateSubmit: this._acctRotate,
+                acctRotateLabel: a.busy ? "Working…" : "Generate",
                 acctRecoveryNudgeD: a.recoverySaved ? "none" : "block",
 
                 acctRecoverD: a.mode === "recover" ? "block" : "none",

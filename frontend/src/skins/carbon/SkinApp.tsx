@@ -4902,6 +4902,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px")}>
       <code style={css("border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:10px;background:var(--pt-solid,#0B141A);padding:9px 12px;font-family:ui-monospace,monospace;font-size:14px;letter-spacing:.1em")}>{v.acctRecoveryCode}</code>
       <button type="button" onClick={v.acctCopyRecovery} style={css("height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600")}>{v.acctCopyLabel}</button>
+      <button type="button" onClick={v.acctDownloadRecovery} style={css("height:36px;padding:0 14px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600")}>Download</button>
       </div>
       <button type="button" onClick={v.acctAckRecovery} style={css("margin-top:14px;height:40px;padding:0 16px;border-radius:11px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B)")}>I have saved it</button>
       <div style={css(`display:${v.acctRecoveryNudgeD};font-size:11.5px;color:var(--pt-txt3,#6B8085);margin-top:8px`)}>Write it down or put it in a password manager before continuing.</div>
@@ -4973,6 +4974,21 @@ Component.prototype.render = function render() {
       <div style={css("font-size:14.5px;font-weight:700")}>Signed in</div>
       <div style={css("margin-top:6px;font-size:13px;color:var(--pt-txt2,#9FB3B8);word-break:break-all")}>{v.acctEmailShown}</div>
       <button type="button" onClick={v.acctSignOut} style={css("margin-top:14px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt,#E8F1F2);font-size:13px;font-weight:600")}>Sign out</button>
+
+      <div style={css("margin-top:14px;padding-top:12px;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))")}>
+      <div style={css("font-size:13px;font-weight:600;color:var(--pt-txt,#E8F1F2)")}>Recovery code</div>
+      <div style={css("font-size:11.5px;color:var(--pt-txt2,#9FB3B8);margin-top:4px;line-height:1.5")}>Lost the one from signup? Generate a replacement. The old code stops working.</div>
+      <button type="button" onClick={v.acctToggleRotate} style={css(`display:${v.acctRotateOpenD};margin-top:9px;width:100%;height:38px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600`)}>Generate a new code</button>
+      <form onSubmit={v.acctRotateSubmit} style={css(`display:${v.acctRotateFormD};margin-top:9px`)}>
+      <label style={css("display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--pt-txt2,#9FB3B8)")}>Confirm your password
+                  <input type="password" value={v.acctRotatePassword} onChange={v.acctSetRotatePassword} autoComplete="current-password" required={v.true} style={css("padding:9px 11px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px")} />
+      </label>
+      <div style={css("display:flex;gap:7px;margin-top:9px")}>
+      <button type="submit" disabled={v.acctBusy} style={css(`flex:1;height:38px;border-radius:11px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B);opacity:${v.acctBusyOpacity}`)}>{v.acctRotateLabel}</button>
+      <button type="button" onClick={v.acctToggleRotate} style={css("height:38px;padding:0 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px")}>Cancel</button>
+      </div>
+      </form>
+      </div>
       <button type="button" onClick={v.acctDelete} style={css("margin-top:8px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-coral,#FF7A6B);background:transparent;color:var(--pt-coral,#FF7A6B);font-size:13px;font-weight:600")}>{v.acctDeleteLabel}</button>
       <p style={css("margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)")}>Deleting removes your email, your password hash and every key. It cannot be undone.</p>
       </div>

@@ -98,12 +98,16 @@ export interface AccountState {
     showPassword: boolean;
     /** Signing in, creating an account, or recovering one. */
     recoveryInput: string;
+    /** The "replace my recovery code" form is open. */
+    rotating: boolean;
+    rotatePassword: string;
 }
 
 export const initialAccountState: AccountState = {
     mode: "signin", email: "", password: "", busy: false, error: "",
     user: null, keys: [], freshKey: "", confirmingDelete: false,
     recoveryCode: "", recoverySaved: false, showPassword: false, recoveryInput: "",
+    rotating: false, rotatePassword: "",
 };
 
 const BASE = "/api";
@@ -133,6 +137,11 @@ export const accountApi = {
         call<{ ok: true; recovery_code: string }>("/auth/recover", {
             method: "POST",
             body: JSON.stringify({ email, recovery_code: recoveryCode, new_password: newPassword }),
+        }),
+    /** Issue a fresh recovery code while signed in, replacing a mislaid one. */
+    rotateRecovery: (currentPassword: string) =>
+        call<{ ok: true; recovery_code: string }>("/auth/recovery-code", {
+            method: "POST", body: JSON.stringify({ current_password: currentPassword }),
         }),
     changePassword: (currentPassword: string, newPassword: string) =>
         call<{ ok: true }>("/auth/password", {
@@ -165,4 +174,44 @@ export function describeKey(key: ApiKey): string {
 /** Default label for a new key, so the user never has to name one to start. */
 export function defaultKeyLabel(existing: ApiKey[]): string {
     return `Key ${existing.length + 1}`;
+}
+
+/**
+ * Saves a recovery code to a file.
+ *
+ * A code is only useful if it survives the tab it was shown in, and "copy"
+ * puts it somewhere a clipboard manager may hand to the next app that asks.
+ * A file goes where the person chooses and is still there next year.
+ *
+ * The contents say what the code is for, because a bare string in Downloads a
+ * year from now is indistinguishable from junk.
+ */
+export function downloadRecoveryCode(code: string, email: string): void {
+    const today = new Date().toISOString().slice(0, 10);
+    const body = [
+        "PrivaTools recovery code",
+        "",
+        `Account:  ${email}`,
+        `Issued:   ${today}`,
+        "",
+        `    ${code}`,
+        "",
+        "This is the only way back into the account. PrivaTools sends no email,",
+        "so there is no reset link. Keep this file, or put the code in a password",
+        "manager.",
+        "",
+        "Using it resets the password, signs out every session, and issues a new",
+        "code — this one stops working at that point.",
+        "",
+    ].join("\n");
+
+    const url = URL.createObjectURL(new Blob([body], { type: "text/plain;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `privatools-recovery-code-${today}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoking immediately can race the download in some browsers.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

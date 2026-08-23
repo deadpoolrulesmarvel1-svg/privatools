@@ -252,3 +252,60 @@ def test_a_successful_login_clears_the_failure_count(client):
         client.post("/api/auth/login", json={**CREDS, "password": "wrong-password-here"})
     assert client.post("/api/auth/login", json=CREDS).status_code == 200
     assert acc.login_locked_until(CREDS["email"]) is None
+
+
+# ── rotating a recovery code from inside a session ─────────────────────────
+
+def test_a_signed_in_user_can_mint_a_fresh_recovery_code(client):
+    """The point of the flow: a code you wrote down and lost is replaceable.
+
+    Without this the only route back is a password reset, which needs the code
+    you no longer have.
+    """
+    reg = _register(client).json()
+    first = reg["recovery_code"]
+
+    res = client.post("/api/auth/recovery-code", json={"current_password": CREDS["password"]})
+    assert res.status_code == 200
+    second = res.json()["recovery_code"]
+    assert second and second != first
+
+    # The old one is dead, the new one works.
+    client.post("/api/auth/logout")
+    stale = client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": first, "new_password": "a-brand-new-password-1"})
+    assert stale.status_code == 401
+
+    fresh = client.post("/api/auth/recover", json={
+        "email": CREDS["email"], "recovery_code": second, "new_password": "a-brand-new-password-2"})
+    assert fresh.status_code == 200
+
+
+def test_rotating_a_recovery_code_needs_the_current_password(client):
+    """A stolen session alone must not mint a code the thief keeps.
+
+    Otherwise the owner changing their password afterwards does not evict them:
+    the attacker still holds a working way back in.
+    """
+    _register(client)
+    res = client.post("/api/auth/recovery-code", json={"current_password": "not-the-password"})
+    assert res.status_code == 401
+
+
+def test_rotating_a_recovery_code_needs_a_session(client):
+    _register(client)
+    client.post("/api/auth/logout")
+    res = client.post("/api/auth/recovery-code", json={"current_password": CREDS["password"]})
+    assert res.status_code == 401
+
+
+def test_rotating_a_recovery_code_keeps_you_signed_in(client):
+    """Replacing a mislaid code is housekeeping, not a breach response.
+
+    apply_recovery ends every session because the password may have leaked.
+    This is the opposite situation and must not sign the person out.
+    """
+    _register(client)
+    assert client.post("/api/auth/recovery-code",
+                       json={"current_password": CREDS["password"]}).status_code == 200
+    assert client.get("/api/auth/me").status_code == 200

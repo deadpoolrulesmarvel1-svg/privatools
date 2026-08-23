@@ -121,6 +121,9 @@ describe("account capability parity", () => {
         ["makes them acknowledge it", "acctAckRecovery"],
         ["offers a way to redeem one", "acctShowRecover"],
         ["takes the code as input", "acctRecoveryInput"],
+        ["lets it be saved to a file", "acctDownloadRecovery"],
+        ["can replace a mislaid code", "acctToggleRotate"],
+        ["asks for the password before doing so", "acctSetRotatePassword"],
     ];
 
     for (const skin of IMPORTED) {
@@ -132,6 +135,16 @@ describe("account capability parity", () => {
             });
         }
     }
+
+    it("rotating a code is gated on the password, not the session alone", () => {
+        // A stolen cookie must not mint a code the thief keeps — one that
+        // outlives the owner noticing and changing their password.
+        const src = readFileSync(resolve(__dirname, "../../../backend/app/routes/accounts.py"), "utf8");
+        const route = src.slice(src.indexOf('@router.post("/auth/recovery-code")'));
+        const body = route.slice(0, route.indexOf("@router.get"));
+        expect(body).toContain("current_password");
+        expect(body).toContain("hashing_pool.verify");
+    });
 
     it("the mixin keeps the code the register call returns", () => {
         // `_acctSubmit` used to destructure `{ user }` and drop recovery_code.

@@ -4475,6 +4475,7 @@ Component.prototype.render = function render() {
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px")}>
       <code style={css("border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 11px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13.5px;letter-spacing:.1em")}>{v.acctRecoveryCode}</code>
       <button type="button" onClick={v.acctCopyRecovery} style={css("height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:500")}>{v.acctCopyLabel}</button>
+      <button type="button" onClick={v.acctDownloadRecovery} style={css("height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:600")}>Download</button>
       </div>
       <button type="button" onClick={v.acctAckRecovery} style={css("margin-top:13px;height:36px;padding:0 15px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:500;background:var(--em);color:var(--em-ink,#04231A)")}>I have saved it</button>
       <div style={css(`display:${v.acctRecoveryNudgeD};font-size:11.5px;color:var(--ink3);margin-top:8px`)}>Write it down or put it in a password manager before continuing.</div>
@@ -4543,6 +4544,21 @@ Component.prototype.render = function render() {
       <h2 style={css("font-size:14px;font-weight:500")}>Signed in</h2>
       <div style={css("margin-top:5px;font-size:12.5px;color:var(--ink2);word-break:break-all")}>{v.acctEmailShown}</div>
       <button type="button" onClick={v.acctSignOut} style={css("margin-top:12px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--ink);font-size:12.5px")}>Sign out</button>
+
+      <div style={css("margin-top:14px;padding-top:12px;border-top:1px solid var(--line)")}>
+      <div style={css("font-size:13px;font-weight:600;color:var(--ink)")}>Recovery code</div>
+      <div style={css("font-size:11.5px;color:var(--ink2);margin-top:4px;line-height:1.5")}>Lost the one from signup? Generate a replacement. The old code stops working.</div>
+      <button type="button" onClick={v.acctToggleRotate} style={css(`display:${v.acctRotateOpenD};margin-top:9px;width:100%;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:600`)}>Generate a new code</button>
+      <form onSubmit={v.acctRotateSubmit} style={css(`display:${v.acctRotateFormD};margin-top:9px`)}>
+      <label style={css("display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--ink2)")}>Confirm your password
+                  <input type="password" value={v.acctRotatePassword} onChange={v.acctSetRotatePassword} autoComplete="current-password" required={v.true} style={css("padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:13px;min-height:44px")} />
+      </label>
+      <div style={css("display:flex;gap:7px;margin-top:9px")}>
+      <button type="submit" disabled={v.acctBusy} style={css(`flex:1;height:34px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--em);color:var(--em-ink,#04231A);opacity:${v.acctBusyOpacity}`)}>{v.acctRotateLabel}</button>
+      <button type="button" onClick={v.acctToggleRotate} style={css("height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px")}>Cancel</button>
+      </div>
+      </form>
+      </div>
       <button type="button" onClick={v.acctDelete} style={css("margin-top:7px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--coral);background:transparent;color:var(--coral);font-size:12.5px")}>{v.acctDeleteLabel}</button>
       <p style={css("margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--ink3)")}>Deleting removes your email, your password hash and every key. It cannot be undone.</p>
       </section>

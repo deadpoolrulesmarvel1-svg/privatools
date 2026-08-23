@@ -6,11 +6,11 @@
  * presentation differs.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-    accountApi, describeKey, defaultKeyLabel, initialAccountState, strengthOf,
-    type AccountState,
+    accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
+    strengthOf, type AccountState,
 } from "@/skins/accountLogic";
 
 export default function AccountPage() {
@@ -105,6 +105,7 @@ export default function AccountPage() {
                 <RecoveryPanel
                     code={s.recoveryCode}
                     saved={s.recoverySaved}
+                    email={s.user?.email ?? ""}
                     onSaved={() => patch({ recoveryCode: "", recoverySaved: true })}
                     onAck={() => patch({ recoverySaved: true })}
                 />
@@ -266,8 +267,12 @@ export default function AccountPage() {
                                 className="mt-4 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-border text-[13px] font-medium">
                             <LogOut size={13} aria-hidden="true" /> Sign out
                         </button>
+                        <RotateRecovery
+                            onIssued={code => patch({ recoveryCode: code, recoverySaved: false, error: "" })}
+                        />
+
                         <button onClick={remove}
-                                className="mt-2 h-9 w-full rounded-lg border border-destructive text-[13px] font-medium text-destructive">
+                                className="mt-4 h-9 w-full rounded-lg border border-destructive text-[13px] font-medium text-destructive">
                             {s.confirmingDelete ? "Press again to delete for good" : "Delete account"}
                         </button>
                         {s.error && <p role="alert" className="mt-2 text-[12.5px] text-destructive">{s.error}</p>}
@@ -302,6 +307,76 @@ function StrengthMeter({ password }: { password: string }) {
     );
 }
 
+
+/**
+ * Replace a recovery code from inside a signed-in session.
+ *
+ * The code is shown once at signup, which means the common failure is not
+ * losing the password — it is mislaying the code and only finding out when it
+ * is already needed. This is the way out of that, and it needs no email.
+ *
+ * The password is asked for because a session alone must not be enough: a
+ * stolen cookie would otherwise mint a code the thief keeps, one that survives
+ * the owner noticing and changing their password.
+ */
+function RotateRecovery({ onIssued }: { onIssued: (code: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [password, setPassword] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState("");
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setBusy(true); setError("");
+        accountApi.rotateRecovery(password)
+            .then(({ recovery_code }) => {
+                setBusy(false); setPassword(""); setOpen(false);
+                onIssued(recovery_code);
+            })
+            .catch((err: Error) => { setBusy(false); setError(err.message); });
+    };
+
+    return (
+        <div className="mt-4 border-t border-border pt-4">
+            <h3 className="font-display text-[13.5px] font-semibold">Recovery code</h3>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
+                Lost the one from signup? Generate a replacement. The old code stops working.
+            </p>
+
+            {!open && (
+                <button onClick={() => setOpen(true)}
+                        className="mt-2.5 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-border text-[13px] font-medium hover:bg-secondary/60 transition-colors">
+                    <RefreshCw size={13} aria-hidden="true" /> Generate a new code
+                </button>
+            )}
+
+            {open && (
+                <form onSubmit={submit} className="mt-2.5 grid gap-2">
+                    <label className="grid gap-1 text-[11.5px] text-muted-foreground">
+                        Confirm your password
+                        <input
+                            type="password" value={password} autoComplete="current-password" required
+                            onChange={e => { setPassword(e.target.value); setError(""); }}
+                            className="h-9 rounded-lg border border-border bg-card px-2.5 text-[13px] text-foreground"
+                        />
+                    </label>
+                    {error && <p role="alert" className="text-[12px] text-destructive">{error}</p>}
+                    <div className="flex gap-2">
+                        <button type="submit" disabled={busy}
+                                className="h-9 flex-1 rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-60">
+                            {busy ? "Working…" : "Generate"}
+                        </button>
+                        <button type="button" onClick={() => { setOpen(false); setPassword(""); setError(""); }}
+                                className="h-9 rounded-lg border border-border px-3 text-[13px] font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            )}
+        </div>
+    );
+}
+
 /**
  * The recovery code, shown once.
  *
@@ -309,12 +384,13 @@ function StrengthMeter({ password }: { password: string }) {
  * a code the user scrolls past is an account they will eventually lose.
  */
 function RecoveryPanel({
-    code, saved, onSaved, onAck,
-}: { code: string; saved: boolean; onSaved: () => void; onAck: () => void }) {
+    code, saved, email, onSaved, onAck,
+}: { code: string; saved: boolean; email: string; onSaved: () => void; onAck: () => void }) {
     const [copied, setCopied] = useState(false);
     const copy = () => {
         navigator.clipboard.writeText(code).then(() => { setCopied(true); onAck(); }).catch(() => {});
     };
+    const save = () => { downloadRecoveryCode(code, email); onAck(); };
     return (
         <section className="mt-6 rounded-2xl border border-primary/40 bg-primary/[0.06] p-5">
             <h2 className="font-display text-[16px] font-semibold">Save your recovery code</h2>
@@ -330,6 +406,12 @@ function RecoveryPanel({
                         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-[13px] font-medium">
                     {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
                     {copied ? "Copied" : "Copy"}
+                </button>
+                {/* A clipboard is where the next app that asks gets handed it, and it
+                    does not survive the tab. A file goes where the person chooses. */}
+                <button onClick={save}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-[13px] font-medium">
+                    <Download size={13} aria-hidden="true" /> Download
                 </button>
             </div>
             <button onClick={onSaved}

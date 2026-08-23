@@ -416,6 +416,27 @@ def apply_recovery(user_id: str, password_hash: str, recovery_hash: str) -> None
     logger.info("accounts: recovery applied for user %s", user_id)
 
 
+def rotate_recovery_code(user_id: str, recovery_hash: str) -> None:
+    """Replace the recovery code without touching the password or sessions.
+
+    Unlike :func:`apply_recovery`, this is someone who is already signed in and
+    still knows their password — they are replacing a code they mislaid, not
+    recovering from a lost one. Ending their sessions would be punishing them
+    for tidying up.
+
+    The old code stops working the moment this returns, which is the point: a
+    code written on a piece of paper that has since gone missing should not
+    stay valid forever.
+    """
+    store.init()
+    with store.write() as conn:
+        conn.execute(
+            "UPDATE users SET recovery_hash = ?, recovery_used_at = ? WHERE id = ?",
+            (recovery_hash, _now(), user_id),
+        )
+    logger.info("accounts: recovery code rotated for user %s", user_id)
+
+
 def change_password(user_id: str, password_hash: str, keep_token: str | None = None) -> None:
     """Set a new password and drop other sessions, keeping the current one."""
     store.init()

@@ -14,6 +14,7 @@
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px">
       <code style="border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 11px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13.5px;letter-spacing:.1em">{{ acctRecoveryCode }}</code>
       <button type="button" onClick="{{ acctCopyRecovery }}" style="height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:500">{{ acctCopyLabel }}</button>
+      <button type="button" onClick="{{ acctDownloadRecovery }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:600">Download</button>
     </div>
     <button type="button" onClick="{{ acctAckRecovery }}" style="margin-top:13px;height:36px;padding:0 15px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:500;background:var(--em);color:var(--em-ink,#04231A)">I have saved it</button>
     <div style="display:{{ acctRecoveryNudgeD }};font-size:11.5px;color:var(--ink3);margin-top:8px">Write it down or put it in a password manager before continuing.</div>
@@ -84,6 +85,25 @@
       <h2 style="font-size:14px;font-weight:500">Signed in</h2>
       <div style="margin-top:5px;font-size:12.5px;color:var(--ink2);word-break:break-all">{{ acctEmailShown }}</div>
       <button type="button" onClick="{{ acctSignOut }}" style="margin-top:12px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--ink);font-size:12.5px">Sign out</button>
+      <!-- Replacing a mislaid code needs the password, not just the session: a
+           stolen cookie would otherwise mint a code the thief keeps, one that
+           outlives the owner noticing and changing their password. -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">Recovery code</div>
+        <div style="font-size:11.5px;color:var(--ink2);margin-top:4px;line-height:1.5">Lost the one from signup? Generate a replacement. The old code stops working.</div>
+        <button type="button" onClick="{{ acctToggleRotate }}" style="display:{{ acctRotateOpenD }};margin-top:9px;width:100%;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:600">Generate a new code</button>
+        <form onSubmit="{{ acctRotateSubmit }}" style="display:{{ acctRotateFormD }};margin-top:9px">
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--ink2)">Confirm your password
+            <input type="password" value="{{ acctRotatePassword }}" onInput="{{ acctSetRotatePassword }}" autoComplete="current-password" required="{{ true }}"
+                   style="padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:13px;min-height:44px" />
+          </label>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <button type="submit" disabled="{{ acctBusy }}" style="flex:1;height:34px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--em);color:var(--em-ink,#04231A);opacity:{{ acctBusyOpacity }}">{{ acctRotateLabel }}</button>
+            <button type="button" onClick="{{ acctToggleRotate }}" style="height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:12.5px">Cancel</button>
+          </div>
+        </form>
+      </div>
+
       <button type="button" onClick="{{ acctDelete }}" style="margin-top:7px;width:100%;height:34px;border-radius:8px;cursor:pointer;border:1px solid var(--coral);background:transparent;color:var(--coral);font-size:12.5px">{{ acctDeleteLabel }}</button>
       <p style="margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--ink3)">Deleting removes your email, your password hash and every key. It cannot be undone.</p>
     </section>

@@ -14,6 +14,7 @@
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px">
       <code style="border:1px solid var(--pt-line,rgba(255,255,255,.085));border-radius:10px;background:var(--pt-solid,#0B141A);padding:9px 12px;font-family:ui-monospace,monospace;font-size:14px;letter-spacing:.1em">{{ acctRecoveryCode }}</code>
       <button type="button" onClick="{{ acctCopyRecovery }}" style="height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">{{ acctCopyLabel }}</button>
+      <button type="button" onClick="{{ acctDownloadRecovery }}" style="height:36px;padding:0 14px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">Download</button>
     </div>
     <button type="button" onClick="{{ acctAckRecovery }}" style="margin-top:14px;height:40px;padding:0 16px;border-radius:11px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B)">I have saved it</button>
     <div style="display:{{ acctRecoveryNudgeD }};font-size:11.5px;color:var(--pt-txt3,#6B8085);margin-top:8px">Write it down or put it in a password manager before continuing.</div>
@@ -87,6 +88,25 @@
       <div style="font-size:14.5px;font-weight:700">Signed in</div>
       <div style="margin-top:6px;font-size:13px;color:var(--pt-txt2,#9FB3B8);word-break:break-all">{{ acctEmailShown }}</div>
       <button type="button" onClick="{{ acctSignOut }}" style="margin-top:14px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-line2,rgba(255,255,255,.15));background:transparent;color:var(--pt-txt,#E8F1F2);font-size:13px;font-weight:600">Sign out</button>
+      <!-- Replacing a mislaid code needs the password, not just the session: a
+           stolen cookie would otherwise mint a code the thief keeps, one that
+           outlives the owner noticing and changing their password. -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--pt-line,rgba(255,255,255,.085))">
+        <div style="font-size:13px;font-weight:600;color:var(--pt-txt,#E8F1F2)">Recovery code</div>
+        <div style="font-size:11.5px;color:var(--pt-txt2,#9FB3B8);margin-top:4px;line-height:1.5">Lost the one from signup? Generate a replacement. The old code stops working.</div>
+        <button type="button" onClick="{{ acctToggleRotate }}" style="display:{{ acctRotateOpenD }};margin-top:9px;width:100%;height:38px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px;font-weight:600">Generate a new code</button>
+        <form onSubmit="{{ acctRotateSubmit }}" style="display:{{ acctRotateFormD }};margin-top:9px">
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--pt-txt2,#9FB3B8)">Confirm your password
+            <input type="password" value="{{ acctRotatePassword }}" onInput="{{ acctSetRotatePassword }}" autoComplete="current-password" required="{{ true }}"
+                   style="padding:9px 11px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:var(--pt-bg2,#071016);color:var(--pt-txt,#E8F1F2);font-size:13px;min-height:44px" />
+          </label>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <button type="submit" disabled="{{ acctBusy }}" style="flex:1;height:38px;border-radius:11px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:var(--pt-aqua,#4FE1DE);color:var(--pt-onAqua,#04191B);opacity:{{ acctBusyOpacity }}">{{ acctRotateLabel }}</button>
+            <button type="button" onClick="{{ acctToggleRotate }}" style="height:38px;padding:0 13px;border-radius:11px;border:1px solid var(--pt-line,rgba(255,255,255,.085));background:transparent;color:var(--pt-txt,#E8F1F2);cursor:pointer;font-size:12.5px">Cancel</button>
+          </div>
+        </form>
+      </div>
+
       <button type="button" onClick="{{ acctDelete }}" style="margin-top:8px;width:100%;height:38px;border-radius:10px;cursor:pointer;border:1px solid var(--pt-coral,#FF7A6B);background:transparent;color:var(--pt-coral,#FF7A6B);font-size:13px;font-weight:600">{{ acctDeleteLabel }}</button>
       <p style="margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--pt-txt3,#6B8085)">Deleting removes your email, your password hash and every key. It cannot be undone.</p>
     </div>
