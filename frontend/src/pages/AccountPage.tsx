@@ -10,7 +10,7 @@ import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, R
 import { cn } from "@/lib/utils";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
-    strengthOf, type AccountState,
+    strengthOf, type AccountState, ACCOUNT_COPY,
 } from "@/skins/accountLogic";
 
 export default function AccountPage() {
@@ -33,6 +33,21 @@ export default function AccountPage() {
         e.preventDefault();
         patch({ busy: true, error: "" });
 
+        // Sign-up left half-finished: Clerk emailed a code and is waiting for
+        // it. One form, so the submit routes here before anything else.
+        if (s.needsEmailCode) {
+            accountApi.verifyEmailCode(s.emailCode.trim())
+                .then(({ user }) => {
+                    patch({
+                        user, busy: false, error: "", needsEmailCode: false,
+                        emailCode: "", recoveryCode: "", password: "",
+                    });
+                    loadKeys();
+                })
+                .catch((err: Error) => patch({ busy: false, error: err.message }));
+            return;
+        }
+
         if (s.mode === "recover") {
             accountApi.recover(s.email, s.recoveryInput, s.password)
                 .then(({ recovery_code }) => patch({
@@ -46,10 +61,27 @@ export default function AccountPage() {
 
         if (s.mode === "signup") {
             accountApi.register(s.email, s.password)
-                .then(({ user, recovery_code }) => {
-                    // Shown once. There is no email to resend it to, so the UI
-                    // holds here until the user says they have saved it.
-                    patch({ user, busy: false, password: "", error: "", recoveryCode: recovery_code });
+                .then((res) => {
+                    // Clerk verifies at sign-up and stops here to email a code.
+                    // Local auth never did, so `user` would be null and the form
+                    // would quietly reappear as if nothing had happened.
+                    if (res.status === "needs_email_code") {
+                        // The password stays put. Every theme marks that input
+                        // `required`, and clearing it makes the form fail HTML5
+                        // validation before the submit handler ever runs — the
+                        // button simply does nothing, with no error to explain
+                        // it. It is the same password already in flight, and it
+                        // is cleared once verification completes.
+                        patch({ busy: false, error: "", needsEmailCode: true, emailCode: "" });
+                        return;
+                    }
+                    // Shown once. With local auth there is no email to resend it
+                    // to, so the UI holds here until the user says they saved it.
+                    // Clerk sends "", and the panel is already conditional.
+                    patch({
+                        user: res.user, busy: false, password: "", error: "",
+                        recoveryCode: res.recovery_code,
+                    });
                     loadKeys();
                 })
                 .catch((err: Error) => patch({
@@ -137,15 +169,17 @@ export default function AccountPage() {
                                    value={s.email} onChange={e => patch({ email: e.target.value, error: "" })} />
                         </label>
 
-                        {s.mode === "recover" && (
+                        {(s.mode === "recover" || s.needsEmailCode) && (
                             <label className="grid gap-1.5 text-[12px] text-muted-foreground">
-                                Recovery code
+                                {s.needsEmailCode ? "Code we emailed you" : "Recovery code"}
                                 <input
                                     type="text" required autoComplete="one-time-code"
-                                    placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+                                    placeholder={s.needsEmailCode ? "123456" : "XXXXX-XXXXX-XXXXX-XXXXX"}
                                     className={cn(field, "font-mono tracking-[0.08em]")}
-                                    value={s.recoveryInput}
-                                    onChange={e => patch({ recoveryInput: e.target.value, error: "" })}
+                                    value={s.needsEmailCode ? s.emailCode : s.recoveryInput}
+                                    onChange={e => patch(s.needsEmailCode
+                                        ? { emailCode: e.target.value, error: "" }
+                                        : { recoveryInput: e.target.value, error: "" })}
                                 />
                             </label>
                         )}
@@ -200,16 +234,11 @@ export default function AccountPage() {
                             An account exists for one thing: issuing API keys for the developer API.
                         </p>
                         <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-                            We store your email address and a scrypt hash of your password — never the
-                            password itself. Deleting your account removes both immediately, along with
-                            every key.
+                            {ACCOUNT_COPY.storage}
                         </p>
                         <p className="mt-2.5 flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
                             <LifeBuoy size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-                            <span>
-                                We send no email — not even a reset link. Instead you get a recovery code
-                                at signup. It is the only way back in, so keep it somewhere safe.
-                            </span>
+                            <span>{ACCOUNT_COPY.recovery}</span>
                         </p>
                     </aside>
                 </div>

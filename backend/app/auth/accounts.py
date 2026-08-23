@@ -31,6 +31,11 @@ from . import passwords
 
 logger = logging.getLogger(__name__)
 
+# Stored in password_hash for identities owned by an external provider. The
+# column is NOT NULL and this value cannot be produced by the hasher, so such a
+# row can never satisfy a password check — verify() parses "scrypt$n$r$p$..".
+EXTERNAL_IDENTITY_SENTINEL = "external-identity-no-local-password"
+
 SESSION_TTL = timedelta(days=30)
 SESSION_TOKEN_BYTES = 32
 API_KEY_BYTES = 24
@@ -205,6 +210,33 @@ def get_user(user_id: str) -> User | None:
     with store.read() as conn:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     return _row_to_user(row) if row else None
+
+
+def ensure_external_user(user_id: str, email: str = "") -> None:
+    """Make sure a row exists for an identity this app does not own.
+
+    Clerk holds the identity, but api_keys, sessions and api_quota all carry
+    `REFERENCES users(id) ON DELETE CASCADE`, so a Clerk user with no row here
+    cannot be given an API key at all — the insert fails on the foreign key —
+    and deleting one later would cascade from nothing. A shadow row keeps every
+    one of those invariants true without duplicating anything Clerk owns.
+
+    The password column is NOT NULL and gets a sentinel that no hash format can
+    produce, so this row can never satisfy a local password check. `email_lower`
+    is UNIQUE and unknown at this point — the token carries the user id, not the
+    address — so the id is used as the placeholder, which is unique by
+    construction and obviously not an address.
+
+    Idempotent: called on the way into every authenticated request.
+    """
+    store.init()
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with store.write() as conn:
+        conn.execute(
+            "INSERT INTO users (id, email, email_lower, password_hash, created_at)"
+            " VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING",
+            (user_id, email, user_id.lower(), EXTERNAL_IDENTITY_SENTINEL, now),
+        )
 
 
 def delete_user(user_id: str) -> None:

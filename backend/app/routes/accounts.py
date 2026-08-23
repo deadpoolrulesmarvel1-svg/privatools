@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from ..auth import accounts
+from ..auth import accounts, clerk_session
 from ..auth import hashing_pool
 from ..rate_limit import limiter
 
@@ -71,8 +71,38 @@ class KeyRequest(BaseModel):
     label: str = Field(default="", max_length=64)
 
 
+def _bearer(request: Request) -> str:
+    header = request.headers.get("authorization", "")
+    scheme, _, token = header.partition(" ")
+    return token.strip() if scheme.lower() == "bearer" else ""
+
+
 def current_user(request: Request) -> accounts.User:
-    """Dependency: the signed-in user, or 401."""
+    """Dependency: the signed-in user, or 401.
+
+    Two ways in, and only ever one per deployment. With Clerk configured the
+    browser holds a Clerk session and sends a bearer token; without it, the
+    local session cookie. Clerk is checked first and, when it is configured, is
+    the only thing checked — falling back to the cookie would leave the old
+    auth path reachable on a deployment that believes it has moved off it.
+
+    Clerk users have no row here. The user id in the token is the same string
+    the api_keys and api_quota tables already key on — they hold a text id and
+    never cared where it came from — so no local record has to exist for a key
+    to belong to someone.
+    """
+    if clerk_session.is_configured():
+        identity = clerk_session.verify(_bearer(request))
+        if identity is None:
+            raise HTTPException(status_code=401, detail="Not signed in")
+        # api_keys, sessions and api_quota all reference users(id) with a
+        # cascade, so a Clerk user needs a row here before it can hold a key —
+        # without one the insert fails outright on the foreign key. The row
+        # carries no credentials; Clerk remains the only thing that can
+        # authenticate it. Idempotent, so this is a no-op after the first call.
+        accounts.ensure_external_user(identity.user_id)
+        return accounts.User(id=identity.user_id, email="", created_at="")
+
     user = accounts.resolve_session(request.cookies.get(SESSION_COOKIE, ""))
     if user is None:
         raise HTTPException(status_code=401, detail="Not signed in")

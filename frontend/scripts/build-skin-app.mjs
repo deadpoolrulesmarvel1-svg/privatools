@@ -247,6 +247,48 @@ function adaptAccentInkLogic(id, logic) {
   return { logic: out, count };
 }
 
+
+/**
+ * Literal strings in the designs' markup that became wrong once real behaviour
+ * arrived, turned into bindings so the app can decide the wording.
+ *
+ * Same reasoning as COPY_REWRITES, one layer down: these live in the JSX, not
+ * the logic, and hand-editing SkinApp.tsx does not survive a regeneration.
+ *
+ * - "Recovery code" is now sometimes an emailed verification code, because
+ *   Clerk verifies at sign-up and the input is reused rather than duplicated.
+ * - "At least 10 characters" is whatever the backing store enforces; Clerk's
+ *   floor is higher, and a form that promises less gets refused server-side.
+ */
+const LABEL_BINDINGS = [
+  // Anchored to <label> on purpose. A bare />Recovery code/ also matches the
+  // heading of the panel that *displays* a freshly issued code, which is a
+  // different string with a different meaning. It happens to render correctly
+  // either way today — Clerk never issues one, so that panel never opens — but
+  // that is a coincidence, and coincidences stop being true.
+  [/(<label[^>]*>)Recovery code\b/g, "$1{v.acctCodeLabel}"],
+  [/At least 10 characters\. Length is what makes a password strong\./g,
+   "{v.acctPasswordHint}"],
+  // A factual claim about privacy, and false once identity moves to Clerk:
+  // there is an email, there is a reset link, and somebody else checks the
+  // password. Leaving the old wording rendered would be worse than the
+  // migration itself, so it follows the backing store like everything else.
+  [/We store your email address and a scrypt hash of your password[^<{]*?every key\./g,
+   "{v.acctCopyStorage}"],
+  [/We send no email, so there is no reset link to fall back on\./g,
+   "{v.acctCopyRecovery}"],
+];
+
+function bindLabels(jsx) {
+  let out = jsx, changed = 0;
+  for (const [pattern, replacement] of LABEL_BINDINGS) {
+    const next = out.replace(pattern, replacement);
+    if (next !== out) changed++;
+    out = next;
+  }
+  return { jsx: out, changed };
+}
+
 function adaptAccentInk(id, jsx) {
   const literals = ACCENT_INK[id];
   if (!literals) return { jsx, count: 0 };
@@ -443,6 +485,10 @@ function build(id) {
   const ink = adaptAccentInk(id, jsx);
   jsx = ink.jsx;
   if (ink.count) console.log(`  accent ink: ${ink.count} button label(s) now follow the theme`);
+
+  const labels = bindLabels(jsx);
+  jsx = labels.jsx;
+  if (labels.changed) console.log(`  labels: ${labels.changed} hardcoded label(s) bound to app state`);
 
   // Each design declares its props with defaults in the runtime's data-props
   // blob. Those defaults are part of the design (opening route, motion level,

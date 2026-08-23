@@ -37,6 +37,10 @@ BACKEND_ACCOUNT_POST_ENDPOINTS = {
     "/auth/recovery-code",
     "/auth/password",
     "/keys",
+    # Not a tool and not a user-facing endpoint: Clerk calls it to say a user
+    # was deleted, so the API keys that user owns can be removed here. Signed
+    # with the Svix scheme and refused outright without a configured secret.
+    "/clerk/webhook",
 }
 
 # Make `backend.app.main` importable for the live-app checks below.
