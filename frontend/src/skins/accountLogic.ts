@@ -50,6 +50,36 @@ export interface Strength {
  * UI that promised less would cheerfully accept a password and then be
  * refused. Local auth keeps the 10 it always had.
  */
+/**
+ * What the account page says about where your credentials go.
+ *
+ * A factual claim about privacy, and it stops being true the moment identity
+ * moves to Clerk: there *is* an email, there *is* a reset link, and the
+ * password is checked by somebody else's server. Leaving the old wording in
+ * place would be the worst outcome of this migration — worse than the
+ * migration itself — so the copy follows the backing store, from one place
+ * that all four themes read.
+ */
+export const ACCOUNT_COPY = isClerkEnabled()
+    ? {
+        storage:
+            "Sign-in is handled by Clerk, our authentication provider. They hold your "
+            + "email address and password; we never see the password. Deleting your "
+            + "account removes it there and every API key here, immediately.",
+        recovery:
+            "Forgotten your password? Clerk emails you a reset link. Your files are "
+            + "never involved — an account only ever issues API keys.",
+    }
+    : {
+        storage:
+            "We store your email address and a scrypt hash of your password — never the "
+            + "password itself. Deleting your account removes both immediately, along "
+            + "with every key.",
+        recovery:
+            "We send no email — not even a reset link. Instead you get a recovery code "
+            + "at signup. It is the only way back in, so keep it somewhere safe.",
+    };
+
 export const MIN_PASSWORD_LENGTH = isClerkEnabled() ? 15 : 10;
 
 const COMMON = [

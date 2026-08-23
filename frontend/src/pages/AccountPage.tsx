@@ -10,7 +10,7 @@ import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, R
 import { cn } from "@/lib/utils";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
-    strengthOf, type AccountState,
+    strengthOf, type AccountState, ACCOUNT_COPY,
 } from "@/skins/accountLogic";
 
 export default function AccountPage() {
@@ -40,7 +40,7 @@ export default function AccountPage() {
                 .then(({ user }) => {
                     patch({
                         user, busy: false, error: "", needsEmailCode: false,
-                        emailCode: "", recoveryCode: "",
+                        emailCode: "", recoveryCode: "", password: "",
                     });
                     loadKeys();
                 })
@@ -66,7 +66,13 @@ export default function AccountPage() {
                     // Local auth never did, so `user` would be null and the form
                     // would quietly reappear as if nothing had happened.
                     if (res.status === "needs_email_code") {
-                        patch({ busy: false, password: "", error: "", needsEmailCode: true, emailCode: "" });
+                        // The password stays put. Every theme marks that input
+                        // `required`, and clearing it makes the form fail HTML5
+                        // validation before the submit handler ever runs — the
+                        // button simply does nothing, with no error to explain
+                        // it. It is the same password already in flight, and it
+                        // is cleared once verification completes.
+                        patch({ busy: false, error: "", needsEmailCode: true, emailCode: "" });
                         return;
                     }
                     // Shown once. With local auth there is no email to resend it
@@ -228,16 +234,11 @@ export default function AccountPage() {
                             An account exists for one thing: issuing API keys for the developer API.
                         </p>
                         <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-                            We store your email address and a scrypt hash of your password — never the
-                            password itself. Deleting your account removes both immediately, along with
-                            every key.
+                            {ACCOUNT_COPY.storage}
                         </p>
                         <p className="mt-2.5 flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
                             <LifeBuoy size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-                            <span>
-                                We send no email — not even a reset link. Instead you get a recovery code
-                                at signup. It is the only way back in, so keep it somewhere safe.
-                            </span>
+                            <span>{ACCOUNT_COPY.recovery}</span>
                         </p>
                     </aside>
                 </div>

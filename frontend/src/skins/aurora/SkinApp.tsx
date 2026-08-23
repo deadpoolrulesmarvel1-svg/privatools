@@ -4821,7 +4821,7 @@ Component.prototype.render = function render() {
 
       <div style={css(`display:${v.acctRecoveryD};border:1px solid var(--em);border-radius:14px;background:var(--emsoft);padding:18px;margin-top:18px`)}>
       <div style={css("font-family:Sora,sans-serif;font-size:15px;font-weight:600")}>Save your recovery code</div>
-      <div style={css("font-size:12.5px;color:var(--text2);margin-top:6px;line-height:1.6")}>This is shown once and is the only way back into your account. We send no email, so there is no reset link to fall back on.</div>
+      <div style={css("font-size:12.5px;color:var(--text2);margin-top:6px;line-height:1.6")}>This is shown once and is the only way back into your account. {v.acctCopyRecovery}</div>
       <div style={css("display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px")}>
       <code style={css("border:1px solid var(--line);border-radius:10px;background:var(--pnl);padding:9px 12px;font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;letter-spacing:.1em")}>{v.acctRecoveryCode}</code>
       <button type="button" onClick={v.acctCopyRecovery} style={css("height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:12.5px;font-weight:600")}>{v.acctCopyLabel}</button>
@@ -4858,7 +4858,7 @@ Component.prototype.render = function render() {
       <div style={css("border:1px solid var(--line);border-radius:14px;background:var(--pnlq);padding:18px")}>
       <div style={css("font-family:Sora,sans-serif;font-size:14px;font-weight:600")}>You do not need an account</div>
       <div style={css("font-size:12.5px;color:var(--text2);margin-top:8px;line-height:1.6")}>Every one of the tools works without signing in, and nothing on a tool page asks you to. An account exists for one thing: issuing API keys for the developer API.</div>
-      <div style={css("font-size:12.5px;color:var(--text2);margin-top:10px;line-height:1.6")}>We store your email address and a scrypt hash of your password — never the password itself. Deleting your account removes both immediately, along with every key.</div>
+      <div style={css("font-size:12.5px;color:var(--text2);margin-top:10px;line-height:1.6")}>{v.acctCopyStorage}</div>
       </div>
       </div>
 

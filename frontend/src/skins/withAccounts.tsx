@@ -15,7 +15,7 @@
 import { mergeNavItem } from "./navInject";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
-    MIN_PASSWORD_LENGTH,
+    MIN_PASSWORD_LENGTH, ACCOUNT_COPY,
 } from "./accountLogic";
 
 /**
@@ -80,8 +80,12 @@ export function withAccounts(Base, config) {
                     // did, so `user` would be null here and the form would
                     // silently reappear as though nothing had happened.
                     if (res.status === "needs_email_code") {
+                        // Password deliberately kept: the designs mark that
+                        // input `required`, so clearing it fails HTML5
+                        // validation and the submit button goes dead with
+                        // nothing on screen to say why.
                         this._setAcct({
-                            busy: false, password: "", error: "",
+                            busy: false, error: "",
                             needsEmailCode: true, emailCode: "",
                         });
                         return;
@@ -111,6 +115,7 @@ export function withAccounts(Base, config) {
                     this._setAcct({
                         user, busy: false, error: "", needsEmailCode: false,
                         emailCode: "", recoveryCode: "", recoverySaved: false,
+                        password: "",
                     });
                     this._loadKeys();
                 })
@@ -282,6 +287,8 @@ export function withAccounts(Base, config) {
                 acctPwAutocomplete: a.mode === "signin" ? "current-password" : "new-password",
                 acctHintD: (a.mode === "signup" && !a.needsEmailCode) ? "block" : "none",
                 acctPasswordHint: `At least ${MIN_PASSWORD_LENGTH} characters. Length is what makes a password strong.`,
+                acctCopyStorage: ACCOUNT_COPY.storage,
+                acctCopyRecovery: ACCOUNT_COPY.recovery,
                 acctError: a.error,
                 acctErrD: a.error ? "block" : "none",
 

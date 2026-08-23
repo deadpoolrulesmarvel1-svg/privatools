@@ -269,6 +269,14 @@ const LABEL_BINDINGS = [
   [/(<label[^>]*>)Recovery code\b/g, "$1{v.acctCodeLabel}"],
   [/At least 10 characters\. Length is what makes a password strong\./g,
    "{v.acctPasswordHint}"],
+  // A factual claim about privacy, and false once identity moves to Clerk:
+  // there is an email, there is a reset link, and somebody else checks the
+  // password. Leaving the old wording rendered would be worse than the
+  // migration itself, so it follows the backing store like everything else.
+  [/We store your email address and a scrypt hash of your password[^<{]*?every key\./g,
+   "{v.acctCopyStorage}"],
+  [/We send no email, so there is no reset link to fall back on\./g,
+   "{v.acctCopyRecovery}"],
 ];
 
 function bindLabels(jsx) {
