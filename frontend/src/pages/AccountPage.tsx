@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SocialSignIn } from "@/components/account/SocialSignIn";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     strengthOf, type AccountState, ACCOUNT_COPY,
@@ -163,9 +164,13 @@ export default function AccountPage() {
                             ))}
                         </div>
 
+                        {!s.needsEmailCode && s.mode !== "recover" && (
+                            <SocialSignIn mode={s.mode === "signup" ? "signup" : "signin"} />
+                        )}
+
                         <label className="grid gap-1.5 text-[12px] text-muted-foreground">
                             Email
-                            <input type="email" required autoComplete="email" autoFocus className={field}
+                            <input type="email" required autoComplete="email" className={field}
                                    value={s.email} onChange={e => patch({ email: e.target.value, error: "" })} />
                         </label>
 

@@ -268,9 +268,12 @@ describe("catalogue adapters", () => {
                 const code = line.replace(/\/\*[\s\S]*?\*\//g, "").trim();
                 if (code.startsWith("*") || code.startsWith("//")) continue;
                 // A three-digit number inside rendered text or a string literal.
-                // `200+` is not three digits followed by a space, so the original
-                // pattern walked straight past it while it sat in two heroes.
-                if (/(>[^<>{]*|["'`][^"'`]*)\b(\d{2,3}\+|2[0-9]{2}|1[0-9]{2})\s+(free\s+)?tools?\b/.test(code)) {
+                // Two shapes have slipped past this already. `200+` is not three
+                // digits followed by a space, and "200+ free file tools" is not
+                // a count followed by "tools" — there are two words in between.
+                // So match a number followed by any short run of adjectives and
+                // then "tool(s)", rather than one phrasing at a time.
+                if (/(>[^<>{]*|["'`][^"'`]*)\b(\d{2,4}\+?)\s+(?:free\s+|file\s+|working\s+){0,3}tools?\b/.test(code)) {
                     offenders.push(`${rel}: ${code.slice(0, 80)}`);
                 }
             }

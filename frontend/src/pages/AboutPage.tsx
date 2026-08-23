@@ -470,7 +470,7 @@ export default function AboutPage() {
                 { v: "v1.2.1", date: "2026-05-15", title: "SEO content push", desc: "Long-form blog posts, HowTo + FAQ schemas for 18 more tools." },
                 { v: "v1.2.0", date: "2026-05-15", title: "11 new tools + office-to-pdf fix", desc: "Web-optimize, split-by-text, pdf-to-html, pdf-to-rtf, view-exif, JWT decoder, regex tester, timestamp converter, image-converter aliases." },
                 { v: "v1.1.0", date: "2026-05-04", title: "33 new tools + UI redesign + browser AI", desc: "Highlight, Smart Redact (BERT-NER in-browser), Summarize PDF (distilbart in-browser), video/audio toolkit, 21 custom tool illustrations." },
-                { v: "v1.0.0", date: "2026-03-05", title: "Launch", desc: "First public release. 107 tools, MIT license, open source from day one." },
+                { v: "v1.0.0", date: "2026-03-05", title: "Launch", desc: "First public release. MIT license, open source from day one." },
               ].map((r, i) => (
                 <a
                   key={i}

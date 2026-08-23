@@ -78,6 +78,15 @@ async function callWithToken<T>(path: string, init?: RequestInit): Promise<T> {
     return body as T;
 }
 
+/** The social providers this deployment offers, in the order they are shown. */
+export type SocialProvider = "google" | "github" | "apple";
+
+export const SOCIAL_PROVIDERS: ReadonlyArray<{ id: SocialProvider; label: string }> = [
+    { id: "google", label: "Google" },
+    { id: "github", label: "GitHub" },
+    { id: "apple", label: "Apple" },
+];
+
 export type RegisterResult =
     | { status: "complete"; user: AccountUser; recovery_code: string }
     | { status: "needs_email_code"; user: null; recovery_code: string };
@@ -145,6 +154,31 @@ export const clerkAccountApi = {
             }
             await clerk.setActive({ session: attempt.createdSessionId });
             return { user: toAccountUser(clerk.user!) };
+        } catch (err) {
+            throw readable(err);
+        }
+    },
+
+    /**
+     * Hand off to a social provider.
+     *
+     * This is the door most people will actually use, and the reason moving to
+     * Clerk was worth it: it removes the password entirely, and with it the
+     * scrypt hashing, the per-account lockout, and the recovery code that was
+     * previously the only way back into an account.
+     *
+     * `authenticateWithRedirect` leaves the page, so nothing after it runs on
+     * success. The redirect comes back to /account, where Clerk completes the
+     * handshake from the URL before the app renders.
+     */
+    signInWithSocial: async (provider: SocialProvider): Promise<void> => {
+        const clerk = requireClerk();
+        try {
+            await clerk.client!.signIn.authenticateWithRedirect({
+                strategy: `oauth_${provider}` as `oauth_${SocialProvider}`,
+                redirectUrl: `${window.location.origin}/account`,
+                redirectUrlComplete: `${window.location.origin}/account`,
+            });
         } catch (err) {
             throw readable(err);
         }
