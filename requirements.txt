@@ -35,7 +35,7 @@ fastapi==0.141.1
 uvicorn[standard]==0.52.3
 python-multipart==0.0.32
 pikepdf==8.12.0
-pypdf==6.16.1
+pypdf==6.16.2
 pdf2image==1.17.0
 Pillow==12.3.0
 reportlab==4.1.0
