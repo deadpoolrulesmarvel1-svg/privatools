@@ -48,7 +48,7 @@ python-docx==1.2.0
 openpyxl==3.1.5
 python-pptx==1.0.2
 pillow-heif==1.4.0
-onnxruntime==1.23.2
+onnxruntime==1.29.0
 rembg==2.0.81
 # Declared explicitly because app code imports cv2 directly
 # (services/image_watermark_remove_service.py). It used to arrive transitively
