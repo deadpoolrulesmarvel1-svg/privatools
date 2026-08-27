@@ -53,12 +53,27 @@ export function withPathRoutes(Base: any): React.ComponentType<any> {
         }
 
         /**
+         * Tell the design its hash changed, since replaceState will not.
+         *
+         * HashChangeEvent carries oldURL/newURL, which a design may read
+         * instead of location.hash; a plain Event would leave those undefined.
+         */
+        _announceHashChange(oldURL, newURL) {
+            let event;
+            try {
+                event = new HashChangeEvent("hashchange", { oldURL, newURL });
+            } catch {
+                event = new Event("hashchange"); // older engines
+            }
+            window.dispatchEvent(event);
+        }
+
+        /**
          * Translate `/tool/merge-pdf` into `#/tool/merge-pdf`.
          *
          * Only when there is no hash already: once the design is navigating
          * itself the hash is authoritative, and overwriting it would fight the
-         * user's clicks. Setting `location.hash` fires `hashchange`, which is
-         * what the design listens on, so no re-render has to be forced.
+         * user's clicks.
          */
         _syncHashFromPath() {
             try {
@@ -68,7 +83,21 @@ export function withPathRoutes(Base: any): React.ComponentType<any> {
                 if (!path || path === "") return;
 
                 const target = hashForPath(path);
-                if (target) window.location.hash = target;
+                if (!target) return;
+
+                // replaceState, not `location.hash = target`.
+                //
+                // Assigning to location.hash PUSHES a history entry, so the
+                // tool page became its own predecessor: pressing back left the
+                // hash empty, this handler put it straight back, and the user
+                // never escaped the page they were on. Verified — back from
+                // /tool/merge-pdf in Carbon returned to /tool/merge-pdf.
+                //
+                // replaceState leaves the entry count alone, at the cost of
+                // not firing hashchange, so the design is told by hand.
+                const oldURL = window.location.href;
+                window.history.replaceState(window.history.state, "", target);
+                this._announceHashChange(oldURL, window.location.href);
             } catch {
                 /* a design that renders is better than one that throws on a URL */
             }

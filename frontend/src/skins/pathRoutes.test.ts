@@ -64,3 +64,26 @@ describe("pathRoutes", () => {
         expect(hashForPath("")).toBe("");
     });
 });
+
+describe("withPathRoutes history handling", () => {
+    // Comments only, stripped — the file explains at length why it does NOT
+    // assign to location.hash, and that prose matched the guard.
+    const src = readFileSync(resolve(__dirname, "./withPathRoutes.tsx"), "utf-8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/.*$/gm, "");
+
+    it("never assigns to location.hash, which would trap the back button", () => {
+        // `location.hash = x` PUSHES a history entry, making the tool page its
+        // own predecessor: back clears the hash, the mixin restores it, and the
+        // user cannot leave. Caught in review by walking back from
+        // /tool/merge-pdf in Carbon and landing on /tool/merge-pdf.
+        expect(src).not.toMatch(/location\.hash\s*=[^=]/);
+        expect(src).toContain("history.replaceState");
+    });
+
+    it("dispatches hashchange itself, since replaceState does not", () => {
+        // The whole bridge rests on the design hearing about the new hash.
+        expect(src).toMatch(/dispatchEvent/);
+        expect(src).toMatch(/["']hashchange["']/);
+    });
+});
