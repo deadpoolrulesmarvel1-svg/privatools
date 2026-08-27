@@ -16,6 +16,7 @@ import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
 import { withRealCatalogue } from "../withRealCatalogue";
 import { withRealTools } from "../withRealTools";
+import { withPathRoutes } from "../withPathRoutes";
 import { mergeNavItem } from "../navInject";
 
 const PALETTE = {
@@ -82,4 +83,9 @@ const Skin: React.ComponentType = withRealTools(withVault(
     at("#/vault", ["is404", "isVault"]),
 ), REAL_TOOLS);
 
-export default Skin;
+/*
+ * Outermost on purpose: it must see the fully-composed component, and its only
+ * job is to translate an incoming path URL into the hash this design routes on.
+ * Without it every /tool/<slug> URL renders the homepage — see withPathRoutes.
+ */
+export default withPathRoutes(Skin);
