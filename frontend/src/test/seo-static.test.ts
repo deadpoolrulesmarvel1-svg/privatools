@@ -94,7 +94,7 @@ describe("static SEO files", () => {
             readFileSync(join(root, "src/pages/TermsPage.tsx"), "utf8"),
             readFileSync(join(root, "src/data/blog.ts"), "utf8"),
             readFileSync(join(root, "src/data/tools.ts"), "utf8"),
-            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+            readFileSync(join(root, "src/skins/daylight/SkinApp.tsx"), "utf8"),
             readFileSync(join(root, "src/components/ErrorBoundary.tsx"), "utf8"),
             readFileSync(join(root, "src/components/FirstRunWelcome.tsx"), "utf8"),
             readFileSync(join(root, "src/components/HeroArtwork.tsx"), "utf8"),
@@ -136,7 +136,7 @@ describe("static SEO files", () => {
         const toolPageSurfaces = [
             readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/NonPdfToolPage.tsx"), "utf8"),
-            readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8"),
+            readFileSync(join(root, "src/skins/daylight/SkinApp.tsx"), "utf8"),
         ].join("\n");
 
         expect(toolPageSurfaces).not.toContain("Processed on your own infrastructure");

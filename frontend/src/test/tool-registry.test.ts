@@ -84,10 +84,10 @@ describe("tool registry quality", () => {
 
         const blogCopy = JSON.stringify(blogPosts);
         const comparePage = readFileSync(join(root, "src/pages/ComparePage.tsx"), "utf8");
-        const dynamicHead = readFileSync(join(root, "src/components/DynamicHead.tsx"), "utf8");
+        const daylightApp = readFileSync(join(root, "src/skins/daylight/SkinApp.tsx"), "utf8");
         const aboutPage = readFileSync(join(root, "src/pages/AboutPage.tsx"), "utf8");
         const opensearch = readFileSync(join(root, "public/opensearch.xml"), "utf8");
-        const currentSurfaces = [blogCopy, comparePage, dynamicHead, aboutPage, opensearch].join("\n");
+        const currentSurfaces = [blogCopy, comparePage, daylightApp, aboutPage, opensearch].join("\n");
 
         expect(blogCopy).toContain(`${TOTAL_TOOL_COUNT} tools`);
         expect(blogCopy).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);

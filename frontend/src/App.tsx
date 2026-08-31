@@ -11,7 +11,6 @@ import {
   loadCompressUI,
   loadMergeUI,
   loadSplitUI,
-  loadCommandPalette,
 } from "./lib/prefetch";
 
 // @tanstack/react-query is in package.json but no component in the app uses
@@ -42,11 +41,7 @@ const AccountPage = lazy(() => import("./pages/AccountPage"));
 const VaultPage = lazy(() => import("./pages/VaultPage"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
-const CommandPalette = lazy(loadCommandPalette);
-const DynamicHead = lazy(() => import("./components/DynamicHead").then(m => ({ default: m.DynamicHead })));
 const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
-const BackendStatusBanner = lazy(() => import("./components/BackendStatusBanner").then(m => ({ default: m.BackendStatusBanner })));
-const BatchResumeBanner = lazy(() => import("./components/BatchResumeBanner").then(m => ({ default: m.BatchResumeBanner })));
 const ShortcutsHelp = lazy(() => import("./components/ShortcutsHelp").then(m => ({ default: m.ShortcutsHelp })));
 const FirstSuccessListener = lazy(() => import("./components/FirstSuccessListener").then(m => ({ default: m.FirstSuccessListener })));
 
@@ -102,29 +97,6 @@ function RoutePrefetcher() {
   return null;
 }
 
-function CommandPaletteGate() {
-  const [shouldMount, setShouldMount] = useState(false);
-
-  useEffect(() => {
-    if (shouldMount) return;
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShouldMount(true);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [shouldMount]);
-
-  if (!shouldMount) return null;
-  return (
-    <Suspense fallback={null}>
-      <CommandPalette defaultOpen />
-    </Suspense>
-  );
-}
-
 function AfterInitialPaint({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
@@ -156,10 +128,8 @@ const App = () => (
     <AppProviders>
     <BrowserRouter>
       <GlobalErrorWire />
-      <CommandPaletteGate />
       <AfterInitialPaint>
         <Suspense fallback={null}>
-          <DynamicHead />
           <ShortcutsHelp />
           <OnboardingTour />
           <FirstSuccessListener />
@@ -167,12 +137,6 @@ const App = () => (
       </AfterInitialPaint>
       <RoutePrefetcher />
       <AppShell>
-        <AfterInitialPaint>
-          <Suspense fallback={null}>
-            <BackendStatusBanner />
-            <BatchResumeBanner />
-          </Suspense>
-        </AfterInitialPaint>
         <Routes>
           <Route path="/" element={withRouteFallback(<Index />)} />
           <Route path="/about" element={withRouteFallback(<AboutPage />)} />

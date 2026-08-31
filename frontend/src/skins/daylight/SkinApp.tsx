@@ -487,6 +487,7 @@ const CSS = `
 .dl-tchip.green { background:var(--dl-wash); border-color:transparent; color:var(--dl-green); font-weight:600; }
 .dl-tchip.warn { background:var(--dl-amber-wash); border-color:transparent; color:var(--dl-amber); font-weight:600; }
 .dl-toolui { margin-top:26px; }
+.dl-toolfine { margin:14px 2px 0; max-width:760px; font-size:12.5px; line-height:1.6; color:var(--dl-mut); }
 .dl-nf { padding-top:36px; }
 .dl-nf h1 { font-weight:700; font-size:clamp(32px, 4vw, 46px); letter-spacing:-.022em; }
 .dl-nf p { color:var(--dl-muted); margin-top:10px; max-width:42em; }
@@ -690,6 +691,34 @@ export default class DaylightSkinApp extends React.Component {
         this._timers = [];
     }
 
+    /**
+     * The document title for a route. First loads get theirs from the server's
+     * SSR head injection; this is what keeps the tab honest across in-app
+     * navigation. Tool pages mirror the server's pattern exactly so a client
+     * nav lands on the same title a fresh load would have.
+     */
+    titleFor(r) {
+        if (r.view === "tool") {
+            const t = BY_SLUG.get(r.slug);
+            if (t) return `${t.name} Online Free — No Sign Up | PrivaTools`;
+            return "Tool not found · PrivaTools";
+        }
+        if (r.view === "blog" && r.post) {
+            const post = BLOG.find((b) => b.id === r.post);
+            if (post) return `${post.title} · PrivaTools`;
+        }
+        const NAMES = {
+            tools: "All tools", pipeline: "Pipeline", batch: "Batch",
+            mystuff: "My Stuff", vault: "Vault",
+            account: r.keys ? "API keys" : "Account",
+            compare: "Compare", blog: "Blog", about: "About",
+            privacy: "Privacy", security: "Security & trust", terms: "Terms",
+            status: "Status", support: "Support",
+        };
+        const name = NAMES[r.view];
+        return name ? `${name} · PrivaTools` : "PrivaTools — Free, Open-Source Privacy-First File Tools";
+    }
+
     /** Extended by the mixins; the base contributes only the absorber they inject nav into. */
     renderVals() { return { dlNav: [] }; }
 
@@ -700,6 +729,7 @@ export default class DaylightSkinApp extends React.Component {
             const r = parseHash(location.hash);
             this.setState(r, () => {
                 window.scrollTo(0, 0);
+                document.title = this.titleFor(this.state);
                 if (r.view === "tool" && BY_SLUG.has(r.slug)) this.logHistory(r.slug);
             });
         };
@@ -744,6 +774,7 @@ export default class DaylightSkinApp extends React.Component {
         document.documentElement.setAttribute("data-theme", resolveTheme(this.state.themeMode));
 
         // First mount can already be deep-linked to a tool.
+        document.title = this.titleFor(this.state);
         if (this.state.view === "tool" && BY_SLUG.has(this.state.slug)) this.logHistory(this.state.slug);
     }
 
@@ -1325,6 +1356,11 @@ export default class DaylightSkinApp extends React.Component {
                         </div>
                         {/* The real run surface: the same tool component the house design mounts. */}
                         <div className="dl-toolui">{v.realToolUI}</div>
+                        <p className="dl-toolfine">
+                            {tool.clientOnly
+                                ? "Runs entirely in your browser — this file never leaves your machine, so there is nothing for us to store."
+                                : "Processed in isolated temporary storage on our disclosed server (Mumbai, IN) and deleted after the job — never on third-party clouds. The whole stack is also self-hostable on your own infrastructure."}
+                        </p>
                         <section className="dl-sec" style={{ paddingTop: 72, paddingBottom: 8 }}>
                             <h2 className="dl-sec-title" style={{ fontSize: 23, marginBottom: 16 }}>Related tools</h2>
                             <div className="dl-grid">{related.map((t, i) => this.ToolCard(t, i))}</div>

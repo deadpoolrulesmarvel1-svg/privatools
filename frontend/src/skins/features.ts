@@ -1,18 +1,17 @@
 /**
  * The feature manifest.
  *
- * One list, four consumers. Every skin must reach every entry here — the
- * standing requirement is that no theme offers less than another — and
- * `skin-parity.test.ts` fails the build if one doesn't.
+ * Everything the site must offer, in one list. `skin-parity.test.ts` fails
+ * the build if the active design misses an entry without recording it as
+ * PENDING — the guard that kept four parallel skins honest, kept because it
+ * is just as good at catching a surface lost in a redesign.
  *
- * Adding a feature to the product means adding it here once, not four times.
- * `surface` says where it already lives:
+ * Adding a feature to the product means adding it here once. `surface` says
+ * where it already lives:
  *
- *   "native"    the theme's own imported design already has this route
- *   "extension" added by us through the generator seam (src/skins/extensions/)
+ *   "native"    the design's own markup already has this route
+ *   "extension" behavior supplied by the mixins (src/skins/extensions/)
  *
- * Native surfaces still have to be *wired* to real data — the ported designs
- * ship their own sample catalogues — but they exist and are reachable.
  */
 
 export interface Feature {
@@ -71,36 +70,14 @@ export const FEATURE_IDS = FEATURES.map((f) => f.id);
  * What each skin already provides natively, from its own imported design.
  * Anything not listed has to come from that skin's extension file.
  *
- * Kept explicit rather than derived: the three ported apps each express routing
- * differently (Aurora and Carbon by hash, Structured by path), and a parser
- * that guessed would fail quietly in exactly the case the parity test exists
- * to catch.
+ * Kept explicit rather than derived: a parser that guessed from the routing
+ * table would fail quietly in exactly the case the parity test exists to
+ * catch.
  */
 export const NATIVE_SURFACES: Record<string, string[]> = {
     daylight: [
         // Hand-written, so every surface is native except the three whose
         // behavior comes from the mixins in its extension file.
-        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
-        "compare", "blog", "about", "privacy", "security", "terms",
-        "status", "support",
-    ],
-    signature: [
-        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
-        "compare", "blog", "about", "privacy", "security", "terms",
-    ],
-    aurora: [
-        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
-        "compare", "blog", "support", "status",
-        // One `policy` route serves a set of documents — about, privacy,
-        // security, terms, processors, accessibility — each at its own hash.
-        "about", "privacy", "security", "terms",
-    ],
-    carbon: [
-        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
-        "compare", "blog", "about", "privacy", "security", "terms",
-        "status", "support",
-    ],
-    structured: [
         "home", "tools", "tool", "pipeline", "batch", "my-stuff",
         "compare", "blog", "about", "privacy", "security", "terms",
         "status", "support",
@@ -118,11 +95,7 @@ export function missingFrom(skin: string): Feature[] {
  * Filled in as each is built; `PENDING` below is what is still outstanding.
  */
 export const EXTENSION_SURFACES: Record<string, string[]> = {
-    signature: ["vault", "account", "api-keys", "status", "support"],
     daylight: ["account", "api-keys", "vault"],
-    aurora: ["account", "api-keys", "vault"],
-    carbon: ["account", "api-keys", "vault"],
-    structured: ["account", "api-keys", "vault"],
 };
 
 /**
@@ -135,11 +108,7 @@ export const EXTENSION_SURFACES: Record<string, string[]> = {
  * something goes missing that is NOT listed here.
  */
 export const PENDING: Record<string, string[]> = {
-    signature: [],
     daylight: [],
-    aurora: [],
-    carbon: [],
-    structured: [],
 };
 
 /** Everything a skin can reach today. */
