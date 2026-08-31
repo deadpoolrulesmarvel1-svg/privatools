@@ -127,7 +127,12 @@ describe("account capability parity", () => {
     ];
 
     for (const skin of IMPORTED) {
-        const file = resolve(__dirname, `../skins/extensions/${skin}.html`);
+        // Generator skins carry their account markup in extensions/<id>.html;
+        // a hand-written skin carries it in its own SkinApp source. Same
+        // guard, same binding names — only where the markup lives differs.
+        const generated = resolve(__dirname, `../skins/extensions/${skin}.html`);
+        const handWritten = resolve(__dirname, `../skins/${skin}/SkinApp.tsx`);
+        const file = existsSync(generated) ? generated : handWritten;
         for (const [what, binding] of REQUIRED) {
             it(`${skin} ${what}`, () => {
                 expect(existsSync(file)).toBe(true);

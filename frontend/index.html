@@ -75,7 +75,7 @@
           var d = document.documentElement;
           var skin = window.localStorage.getItem('privatools_skin');
           if (skin && skin !== 'signature' &&
-              ['aurora', 'carbon', 'structured'].indexOf(skin) !== -1) {
+              ['daylight', 'aurora', 'carbon', 'structured'].indexOf(skin) !== -1) {
             d.setAttribute('data-skin', skin);
           }
           var t = window.localStorage.getItem('privatools_theme');
@@ -87,9 +87,10 @@
              They apply it in componentDidMount, which is after first paint, so
              without this a visitor who chose light saw the dark palette flash
              on every load. Resolve it here instead. */
-          if (skin === 'aurora' || skin === 'carbon' || skin === 'structured') {
+          if (skin === 'daylight' || skin === 'aurora' || skin === 'carbon' || skin === 'structured') {
             var pref = null;
-            if (skin === 'aurora') pref = window.localStorage.getItem('pt-theme');
+            if (skin === 'daylight') pref = window.localStorage.getItem('privatools.daylight.theme');
+            else if (skin === 'aurora') pref = window.localStorage.getItem('pt-theme');
             else if (skin === 'carbon') pref = window.localStorage.getItem('pt.theme');
             else {
               var raw = window.localStorage.getItem('privatools.local.v1');

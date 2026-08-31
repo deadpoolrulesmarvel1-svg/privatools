@@ -77,6 +77,13 @@ export const FEATURE_IDS = FEATURES.map((f) => f.id);
  * to catch.
  */
 export const NATIVE_SURFACES: Record<string, string[]> = {
+    daylight: [
+        // Hand-written, so every surface is native except the three whose
+        // behavior comes from the mixins in its extension file.
+        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
+        "compare", "blog", "about", "privacy", "security", "terms",
+        "status", "support",
+    ],
     signature: [
         "home", "tools", "tool", "pipeline", "batch", "my-stuff",
         "compare", "blog", "about", "privacy", "security", "terms",
@@ -112,6 +119,7 @@ export function missingFrom(skin: string): Feature[] {
  */
 export const EXTENSION_SURFACES: Record<string, string[]> = {
     signature: ["vault", "account", "api-keys", "status", "support"],
+    daylight: ["account", "api-keys", "vault"],
     aurora: ["account", "api-keys", "vault"],
     carbon: ["account", "api-keys", "vault"],
     structured: ["account", "api-keys", "vault"],
@@ -128,6 +136,7 @@ export const EXTENSION_SURFACES: Record<string, string[]> = {
  */
 export const PENDING: Record<string, string[]> = {
     signature: [],
+    daylight: [],
     aurora: [],
     carbon: [],
     structured: [],

@@ -18,6 +18,7 @@ import { SkinDock } from "@/components/SkinDock";
  * extension yet fall back to the generated component directly.
  */
 const APPS: Record<Exclude<SkinId, "signature">, React.LazyExoticComponent<React.ComponentType>> = {
+    daylight: lazy(() => import("./extensions/daylight")),
     aurora: lazy(() => import("./extensions/aurora")),
     carbon: lazy(() => import("./extensions/carbon")),
     structured: lazy(() => import("./extensions/structured")),

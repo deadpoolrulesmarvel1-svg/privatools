@@ -23,6 +23,7 @@ export type ThemeChoice = "system" | "light" | "dark";
 /** Where each design keeps the preference. */
 const KEYS: Record<SkinId, { kind: "plain" | "json"; key: string }> = {
     signature: { kind: "plain", key: "privatools_theme" },
+    daylight: { kind: "plain", key: "privatools.daylight.theme" },
     aurora: { kind: "plain", key: "pt-theme" },
     carbon: { kind: "plain", key: "pt.theme" },
     structured: { kind: "json", key: "privatools.local.v1" },

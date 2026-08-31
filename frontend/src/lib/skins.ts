@@ -12,7 +12,7 @@
  * no `data-skin` attribute and stays the fallback if a stored value goes bad.
  */
 
-export const SKIN_IDS = ["signature", "aurora", "carbon", "structured"] as const;
+export const SKIN_IDS = ["signature", "daylight", "aurora", "carbon", "structured"] as const;
 export type SkinId = (typeof SKIN_IDS)[number];
 
 export interface SkinMeta {
@@ -37,6 +37,13 @@ export const SKINS: Record<SkinId, SkinMeta> = {
         blurb: "The house design — teal and amber on white, two-tier navigation.",
         swatch: ["#00A896", "#FFA800"],
         surface: "app",
+    },
+    daylight: {
+        id: "daylight",
+        name: "Daylight",
+        blurb: "Emerald on clean paper — the drop-anywhere hero, colored tool families.",
+        swatch: ["#0E8A5F", "#C4574E"],
+        surface: "ported",
     },
     aurora: {
         id: "aurora",
