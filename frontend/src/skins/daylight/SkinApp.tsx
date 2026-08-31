@@ -43,6 +43,19 @@ import {
 import { describeEntry } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
 
+/*
+ * The four surfaces below mount the house design's real pages whole — the same
+ * pattern withRealTools uses for the 112 tool components. Pipeline's chain
+ * runner (server-side chaining with a per-step fallback), Batch's per-file
+ * engine with resume, Status's live health checks and My Stuff's localStore
+ * management all keep working exactly as built; Daylight draws the chrome and
+ * the tokens (palette, type, radius) make them render native.
+ */
+const HousePipeline = React.lazy(() => import("@/pages/PipelinePage"));
+const HouseBatch = React.lazy(() => import("@/pages/BatchPage"));
+const HouseMyStuff = React.lazy(() => import("@/pages/MyStuffPage"));
+const HouseStatus = React.lazy(() => import("@/pages/StatusPage"));
+
 /* ═══════════════════════════ catalogue (real) ═══════════════════════════ */
 
 const ALL_TOOLS = [
@@ -101,7 +114,7 @@ export function parseHash(hash) {
     if (seg[0] === "security" || seg[0] === "trust") return { view: "security" };
     const SIMPLE = ["pipeline", "batch", "compare", "about", "privacy", "terms", "status", "support"];
     if (SIMPLE.includes(seg[0])) return { view: seg[0] };
-    return { view: "home" };
+    return { view: "notfound" };
 }
 
 const go = (hash) => { location.hash = hash; };
@@ -683,8 +696,6 @@ export default class DaylightSkinApp extends React.Component {
             palOpen: false, palQ: "", palSel: 0,
             dragging: false, dropped: null,
             toast: "",
-            chain: [], pipeFile: null, pipeRunning: false, pipeDoneAt: 0,
-            bfiles: [], bTool: "compress-pdf", bRunning: false, bDone: 0,
             history: this.readHistory(),
         };
         this._raf = [];
@@ -713,7 +724,7 @@ export default class DaylightSkinApp extends React.Component {
             account: r.keys ? "API keys" : "Account",
             compare: "Compare", blog: "Blog", about: "About",
             privacy: "Privacy", security: "Security & trust", terms: "Terms",
-            status: "Status", support: "Support",
+            status: "Status", support: "Support", notfound: "Page not found",
         };
         const name = NAMES[r.view];
         return name ? `${name} · PrivaTools` : "PrivaTools — Free, Open-Source Privacy-First File Tools";
@@ -751,15 +762,27 @@ export default class DaylightSkinApp extends React.Component {
         window.addEventListener("keydown", this._onKey);
 
         this._depth = 0;
-        this._onDragEnter = (e) => { e.preventDefault(); this._depth++; if (!this.state.dragging) this.setState({ dragging: true }); };
+        // Views whose content owns drops — the real tool components, the
+        // mounted house pages, the vault and account forms — handle files
+        // themselves. Hijacking there would steal a drop aimed straight at a
+        // dropzone; the drop-anywhere hero belongs to the browsing surfaces.
+        this._dropHijackable = () => !["tool", "batch", "pipeline", "mystuff", "vault", "account"].includes(this.state.view);
+        this._onDragEnter = (e) => { if (!this._dropHijackable()) return; e.preventDefault(); this._depth++; if (!this.state.dragging) this.setState({ dragging: true }); };
         this._onDragOver = (e) => e.preventDefault();
-        this._onDragLeave = (e) => { e.preventDefault(); this._depth = Math.max(0, this._depth - 1); if (!this._depth) this.setState({ dragging: false }); };
+        this._onDragLeave = (e) => { if (!this._dropHijackable()) return; e.preventDefault(); this._depth = Math.max(0, this._depth - 1); if (!this._depth) this.setState({ dragging: false }); };
         this._onDrop = (e) => {
-            e.preventDefault(); this._depth = 0;
+            this._depth = 0;
+            if (!this._dropHijackable()) {
+                if (this.state.dragging) this.setState({ dragging: false });
+                // A drop the content did not claim must still never navigate
+                // the tab away to the raw file.
+                if (!e.defaultPrevented) e.preventDefault();
+                return;
+            }
+            e.preventDefault();
             const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
             this.setState({ dragging: false });
             if (!files.length) return;
-            if (this.state.view === "batch") { this.batchAdd(files); return; }
             const match = DROP_ROUTES.find(([re]) => re.test(files[0].name));
             go("");
             this.setState({ dropped: { files: files.map((f) => ({ name: f.name, size: f.size })), kind: match[1], slugs: match[2] } });
@@ -772,6 +795,16 @@ export default class DaylightSkinApp extends React.Component {
         // Paint the stored choice now; index.html already pre-painted it, but a
         // hot-switch from the dock into this skin arrives without a reload.
         document.documentElement.setAttribute("data-theme", resolveTheme(this.state.themeMode));
+
+        // A path the bridge could not translate (and no hash to rescue it) is
+        // a dead URL — show the 404 view instead of the homepage wearing the
+        // wrong address. Deferred a tick so withPathRoutes has synced first.
+        this._timers.push(setTimeout(() => {
+            const path = location.pathname.replace(/\/+$/, "");
+            if (!location.hash && path && this.state.view === "home") {
+                this.setState({ view: "notfound" }, () => { document.title = this.titleFor(this.state); });
+            }
+        }, 0));
 
         // First mount can already be deep-linked to a tool.
         document.title = this.titleFor(this.state);
@@ -815,20 +848,6 @@ export default class DaylightSkinApp extends React.Component {
         this.setState({ history: [] });
         this.say("History cleared — it only ever lived on this device.");
     };
-    animateBar(el, ms, done) {
-        if (!el) { if (done) done(); return; }
-        const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (reduce) { el.style.transform = "translateX(0)"; if (done) done(); return; }
-        const t0 = performance.now();
-        const tick = (t) => {
-            const p = Math.min(1, (t - t0) / ms);
-            el.style.transform = `translateX(${-100 + p * 100}%)`;
-            if (p < 1) this._raf.push(requestAnimationFrame(tick));
-            else if (done) done();
-        };
-        this._raf.push(requestAnimationFrame(tick));
-    }
-
     /* ═══════════════════════ chrome ═══════════════════════ */
 
     Nav() {
@@ -1373,267 +1392,37 @@ export default class DaylightSkinApp extends React.Component {
 
     /* ── pipeline (native surface; the run is an illustration, and says so) ── */
 
-    Pipeline() {
-        const STEPS = ["compress-pdf", "watermark", "page-numbers", "rotate-pdf", "grayscale-pdf",
-            "flatten-pdf", "strip-metadata", "protect-pdf", "deskew-pdf", "remove-blank-pages"];
-        const PRESETS = [
-            ["Scan cleanup", ["deskew-pdf", "remove-blank-pages", "compress-pdf"]],
-            ["Share safely", ["strip-metadata", "flatten-pdf", "protect-pdf"]],
-            ["Paper trail", ["page-numbers", "watermark", "flatten-pdf"]],
-        ];
-        const { chain, pipeFile, pipeRunning, pipeDoneAt } = this.state;
-        const ready = chain.length >= 1 && !!pipeFile && !pipeRunning;
-        const runPipe = () => {
-            if (!ready) return;
-            this.setState({ pipeRunning: true, pipeDoneAt: 0 });
-            const nodes = [...document.querySelectorAll(".dl-cnode")];
-            let i = 0;
-            const step = () => {
-                if (i >= nodes.length) { this.setState({ pipeRunning: false, pipeDoneAt: Date.now() }); return; }
-                const node = nodes[i];
-                node.classList.add("running");
-                this.animateBar(node.querySelector(".dl-pbar i"), 750, () => {
-                    node.classList.remove("running"); node.classList.add("done");
-                    i++; step();
-                });
-            };
-            nodes.forEach((n) => n.classList.remove("done"));
-            step();
-        };
+    HousePage(Comp, label) {
         return (
-            <div className="dl-wrap">
-                <div className="dl-heror">
-                    <div className="dl-pghero">
-                        <div className="dl-eyebrow">Chain tools</div>
-                        <h1>One file. One trip.<br /><em>Many tools.</em></h1>
-                        <p>Build a chain of steps and run them as a single pass — your file makes one trip, not one per step.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3>Your file travels</h3>
-                        <div className="big">1 trip</div>
-                        <p className="sub2">vs {Math.max(chain.length, 1)} {chain.length > 1 ? "trips" : "per step"}, run one by one. Every step in the chain runs in the same pass on the same upload.</p>
-                    </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "300px minmax(0,1fr)", gap: 40, alignItems: "start", paddingTop: 36 }} className="dl-pipegrid">
-                    <div className="dl-panel">
-                        <h3>Add a step</h3>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {STEPS.map((s) => BY_SLUG.has(s) && (
-                                <button key={s} className="dl-schip" disabled={pipeRunning}
-                                    onClick={() => this.setState({ chain: [...chain, s] })}>
-                                    <span className="plus">+</span> {BY_SLUG.get(s).name}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="dl-hintl" style={{ marginTop: 12 }}>Steps apply in order, top to bottom.</p>
-                        <h3 style={{ marginTop: 18 }}>Presets</h3>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {PRESETS.map(([name, steps]) => (
-                                <button key={name} className="dl-schip" disabled={pipeRunning}
-                                    title={steps.map((x) => BY_SLUG.get(x).name).join(" → ")}
-                                    onClick={() => this.setState({ chain: [...steps] })}>{name}</button>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        {chain.length === 0
-                            ? <div className="dl-empty">Your chain is empty — add steps from the left.</div>
-                            : chain.map((s, i) => (
-                                <div className="dl-cnode" key={`${s}${i}`}>
-                                    <span className="num">{i + 1}</span>
-                                    <b>{BY_SLUG.get(s)?.name || s}</b>
-                                    <span className="ops">
-                                        <button aria-label="Move earlier" disabled={pipeRunning} onClick={() => {
-                                            if (i > 0) { const c = [...chain];[c[i - 1], c[i]] = [c[i], c[i - 1]]; this.setState({ chain: c }); }
-                                        }}>↑</button>
-                                        <button aria-label="Move later" disabled={pipeRunning} onClick={() => {
-                                            if (i < chain.length - 1) { const c = [...chain];[c[i], c[i + 1]] = [c[i + 1], c[i]]; this.setState({ chain: c }); }
-                                        }}>↓</button>
-                                        <button aria-label="Remove step" disabled={pipeRunning} onClick={() => {
-                                            const c = [...chain]; c.splice(i, 1); this.setState({ chain: c });
-                                        }}>×</button>
-                                    </span>
-                                    <span className="dl-pbar"><i /></span>
-                                </div>
-                            ))}
-                        {pipeFile
-                            ? <div className="dl-filerow" style={{ marginTop: 26 }}>
-                                <span className="dl-tag">PDF</span><b>{pipeFile.name}</b>
-                                <span className="sz">{fmtSize(pipeFile.size)}</span>
-                                <button aria-label="Remove file" disabled={pipeRunning} onClick={() => this.setState({ pipeFile: null })}>×</button>
-                            </div>
-                            : <div className="dl-empty" style={{ marginTop: 26, cursor: "pointer" }}
-                                onClick={() => this._pipeFi && this._pipeFi.click()}>
-                                <b style={{ display: "block", fontSize: 16, color: "var(--dl-ink)" }}>Add the file to run through the chain</b>
-                                <span style={{ display: "block", marginTop: 6 }}>One file in, one result out — every step chained in a single pass</span>
-                                <span className="dl-btn dl-btn-ghost" style={{ marginTop: 14, padding: "10px 20px", fontSize: 13.5 }}>Choose a file</span>
-                            </div>}
-                        <input type="file" hidden ref={(el) => { this._pipeFi = el; }} aria-label="Choose a file for the pipeline"
-                            onChange={(e) => { const f = e.target.files[0]; e.target.value = ""; if (f) this.setState({ pipeFile: { name: f.name, size: f.size } }); }} />
-                        <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 26, flexWrap: "wrap" }}>
-                            <button className="dl-btn dl-btn-primary" disabled={!ready} onClick={runPipe}>Run pipeline</button>
-                            <span style={{ fontSize: 13, color: "var(--dl-faint)" }}>
-                                {ready ? `${chain.length} ${chain.length === 1 ? "step" : "steps"} · one pass, one trip` : "Add at least one step and a file."}
-                            </span>
-                        </div>
-                        {pipeDoneAt > 0 && (
-                            <div className="dl-panel" style={{ marginTop: 20 }}>
-                                <h3 style={{ color: "var(--dl-green)" }}>Pipeline illustration complete</h3>
-                                <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>
-                                    {pipeFile?.name} → {chain.length} steps in one pass. This page illustrates the flow;
-                                    to actually run a chain today, use the tools in sequence — the real one-pass pipeline
-                                    runs through the classic interface while this design is in preview.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <style>{`@media (max-width: 940px){ .dl-pipegrid { grid-template-columns:1fr !important; } }`}</style>
+            <div className="dl-wrap dl-house">
+                <React.Suspense fallback={<div className="dl-empty" style={{ marginTop: 48 }}>Loading {label}…</div>}>
+                    <Comp />
+                </React.Suspense>
             </div>
         );
     }
 
-    /* ── batch (native surface; run is an illustration, and says so) ── */
-
-    Batch() {
-        const { bfiles, bTool, bRunning, bDone } = this.state;
-        const CHOICES = ["compress-pdf", "image-compressor", "pdf-to-word", "image-converter", "heic-to-jpg"];
-        const runAll = () => {
-            if (!bfiles.length || bRunning) return;
-            this.setState({ bRunning: true, bDone: 0 });
-            const rows = [...document.querySelectorAll(".dl-batchrow")];
-            let done = 0;
-            rows.forEach((row, i) => {
-                this._timers.push(setTimeout(() => {
-                    row.classList.add("running");
-                    this.animateBar(row.querySelector(".bar i"), 800 + (i % 4) * 300, () => {
-                        row.classList.remove("running"); row.classList.add("done");
-                        done++;
-                        this.setState({ bDone: done, ...(done === rows.length ? { bRunning: false } : null) });
-                    });
-                }, i * 160));
-            });
-        };
+    NotFound() {
         return (
             <div className="dl-wrap">
-                <div className="dl-heror">
-                    <div className="dl-pghero">
-                        <div className="dl-eyebrow">Bulk work</div>
-                        <h1>Same tool.<br /><em>Many files.</em></h1>
-                        <p>Pick one tool, drop a folder’s worth of files, and run them all. Each file gets its own progress; the batch gets one summary.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3>Queue</h3>
-                        <div className="big">{bfiles.length} files</div>
-                        <p className="sub2">{bfiles.length
-                            ? `Ready for ${BY_SLUG.get(bTool)?.name || "the selected tool"} — every file gets its own progress.`
-                            : "Nothing queued yet — drop files anywhere on this page."}</p>
+                <div className="dl-pghero" style={{ paddingTop: 90, paddingBottom: 50 }}>
+                    <div className="dl-eyebrow">404</div>
+                    <h1>Nothing at this address.<br /><em>The tools are, though.</em></h1>
+                    <p>The link may be old or mistyped. Everything the site offers is one search away — press ⌘K anywhere, or start below.</p>
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
+                        <a className="dl-btn dl-btn-primary" href="#/">Back to home</a>
+                        <a className="dl-btn dl-btn-ghost" href="#/tools">Browse all {TOTAL} tools</a>
                     </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", paddingTop: 30 }}>
-                    <label style={{ fontSize: 13.5, fontWeight: 600 }} htmlFor="dl-btool">Tool</label>
-                    <select id="dl-btool" className="dl-input" style={{ width: "auto" }} value={bTool}
-                        onChange={(e) => this.setState({ bTool: e.target.value })}>
-                        {CHOICES.map((s) => BY_SLUG.has(s) && <option key={s} value={s}>{BY_SLUG.get(s).name}</option>)}
-                    </select>
-                    <button className="dl-btn dl-btn-ghost" style={{ padding: "11px 20px", fontSize: 13.5 }}
-                        onClick={() => this._batchFi && this._batchFi.click()}>Add files</button>
-                    <button className="dl-btn dl-btn-quiet" style={{ marginLeft: "auto", fontSize: 13 }} disabled={bRunning}
-                        onClick={() => this.setState({ bfiles: [], bDone: 0 })}>Clear</button>
-                    <button className="dl-btn dl-btn-primary" disabled={!bfiles.length || bRunning} onClick={runAll}>Run all</button>
-                    <input type="file" multiple hidden ref={(el) => { this._batchFi = el; }} aria-label="Choose files for the batch"
-                        onChange={(e) => { this.batchAdd([...e.target.files]); e.target.value = ""; }} />
-                </div>
-                {bfiles.length > 0 && bDone > 0 && (
-                    <p style={{ fontSize: 13, color: "var(--dl-muted)", marginTop: 16 }}>
-                        {bDone === bfiles.length ? `All ${bfiles.length} done — illustration only; run the tool itself to process files.` : `${bDone} of ${bfiles.length} done`}
-                    </p>
-                )}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 20 }}>
-                    {bfiles.length === 0
-                        ? <div className="dl-empty">No files yet — add some, or drop them anywhere on this page.</div>
-                        : bfiles.map((f, i) => (
-                            <div className="dl-filerow dl-batchrow" key={`${f.name}${i}`}>
-                                <span className="dl-tag">{(f.name.split(".").pop() || "FILE").toUpperCase().slice(0, 4)}</span>
-                                <b>{f.name}</b>
-                                <span className="state"><Check size={14} /></span>
-                                <span className="sz">{fmtSize(f.size)}</span>
-                                <span className="bar"><i /></span>
-                            </div>
-                        ))}
-                </div>
-                <p className="dl-note" style={{ marginTop: 14 }}>The progress here illustrates the flow — open the chosen tool to actually process a batch; every tool accepts multiple files.</p>
             </div>
         );
     }
 
-    batchAdd(files) {
-        if (this.state.bRunning) return;
-        this.setState((s) => ({ bfiles: [...s.bfiles, ...files.map((f) => ({ name: f.name, size: f.size }))], bDone: 0 }));
-    }
+    Pipeline() { return this.HousePage(HousePipeline, "Pipeline"); }
 
-    /* ── my stuff / vault (vault is REAL via withVault) ── */
+    Batch() { return this.HousePage(HouseBatch, "Batch"); }
 
-    MyStuff() {
-        const h = this.state.history;
-        return (
-            <div className="dl-wrap">
-                <div className="dl-heror">
-                    <div className="dl-pghero">
-                        <div className="dl-eyebrow">On this device</div>
-                        <h1>My Stuff</h1>
-                        <p>Your activity — tool and time only, never files or filenames. It lives in this browser and nowhere else.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3>On this device</h3>
-                        <div className="big">{h.length} {h.length === 1 ? "entry" : "entries"}</div>
-                        <p className="sub2">Clear it any time and it’s gone everywhere, because there is no elsewhere.</p>
-                    </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 26 }}>
-                    <h2 className="dl-sec-title" style={{ fontSize: 22 }}>Recent tools</h2>
-                    {h.length > 0 && <button className="dl-btn dl-btn-quiet" style={{ marginLeft: "auto", fontSize: 13 }} onClick={this.clearHistory}>Clear history</button>}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-                    {h.length === 0
-                        ? <div className="dl-empty">Nothing yet — open a tool and it’ll show up here. Files and filenames never do.</div>
-                        : h.map((e) => {
-                            const t = BY_SLUG.get(e.s);
-                            if (!t) return null;
-                            const d = new Date(e.ts);
-                            return (
-                                <a key={e.s + e.ts} className="dl-filerow" href={`#/tool/${t.slug}`} style={{ color: "inherit" }}>
-                                    <span className="dl-tag">{(FAMILY_LABEL[t.category] || "").toUpperCase().slice(0, 9)}</span>
-                                    <b>{t.name}</b>
-                                    <span className="sz">{d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
-                                    <span />
-                                </a>
-                            );
-                        })}
-                </div>
-                <section className="dl-sec" style={{ paddingTop: 72 }}>
-                    <div className="dl-sec-head"><div><h2 className="dl-sec-title" style={{ fontSize: 22 }}>Yours, elsewhere</h2></div></div>
-                    <div className="dl-supcards" style={{ paddingTop: 0 }}>
-                        <div>
-                            <span className="glyph"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M6 8 V6 A3 3 0 0 1 12 6 V8" stroke="currentColor" strokeWidth="1.5" /></svg></span>
-                            <b>Vault</b>
-                            <p>Real AES-GCM storage for the passwords your protected files need. <a href="#/my-stuff/vault">Open the vault →</a></p>
-                        </div>
-                        <div>
-                            <span className="glyph"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M2.5 13 C 5 7, 7 7, 7.5 10.5 C 8 13.5, 9.5 13, 10.5 9 C 11 7, 12 8, 12.5 10 C 13 12, 14 12.5, 15.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" /></svg></span>
-                            <b>Saved signatures</b>
-                            <p>Drawn once, reused across signing tools — stored on this device by the tools themselves. <a href="#/tool/esign-pdf">Open E-Sign →</a></p>
-                        </div>
-                        <div>
-                            <span className="glyph"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M9 3 V15 M3 9 H15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg></span>
-                            <b>Developer keys</b>
-                            <p>API keys for the developer surface, if you use it. <a href="#/account">Manage keys →</a></p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        );
-    }
+    MyStuff() { return this.HousePage(HouseMyStuff, "My Stuff"); }
 
     Vault() {
         // Everything here is driven by withVault (extension): real AES-GCM storage.
@@ -1856,12 +1645,12 @@ export default class DaylightSkinApp extends React.Component {
                     {(a.keys || []).length === 0
                         ? <div className="dl-empty">No keys yet — create one to call the API.</div>
                         : a.keys.map((k) => (
-                            <div className="dl-keyrow" key={k.id}>
+                            <div className="dl-keyrow" key={k.key_id}>
                                 <span className="dl-tag">KEY</span>
                                 <code>{describeKey(k)}</code>
                                 <span className="kd">{k.label}</span>
                                 <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, padding: "6px 10px" }}
-                                    onClick={() => this._acctRevoke(k.id)}>Revoke</button>
+                                    onClick={() => this._acctRevoke(k.key_id)}>Revoke</button>
                             </div>
                         ))}
                 </div>
@@ -1890,6 +1679,17 @@ export default class DaylightSkinApp extends React.Component {
                             </div>
                         </form>
                     )}
+                </div>
+                <div className="dl-panel" style={{ maxWidth: 640, marginTop: 22, borderColor: "color-mix(in srgb, var(--dl-red) 35%, transparent)" }}>
+                    <h3>Delete this account</h3>
+                    <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>
+                        Removes the account and revokes every API key immediately. Your files were never
+                        stored, so there is nothing else to erase.
+                    </p>
+                    <button className="dl-btn dl-btn-ghost" style={{ marginTop: 12, padding: "10px 18px", fontSize: 13, color: "var(--dl-red)" }}
+                        disabled={a.busy} onClick={this._acctDelete}>
+                        {a.confirmingDelete ? "Press again to delete for good" : "Delete account"}
+                    </button>
                 </div>
             </div>
         );
@@ -2068,44 +1868,7 @@ export default class DaylightSkinApp extends React.Component {
         ]);
     }
 
-    Status() {
-        const SVC = [
-            ["Website", "privatools.me and every page on it"],
-            ["In-browser tools", "the local-first path — runs on your device"],
-            ["Server processing", "Mumbai, IN — isolated temporary storage"],
-            ["Downloads", "result delivery, this-tab only"],
-        ];
-        return (
-            <div className="dl-wrap">
-                <div className="dl-heror">
-                    <div className="dl-pghero">
-                        <div className="dl-eyebrow">Live status</div>
-                        <h1 style={{ display: "flex", alignItems: "center", gap: 16 }}><span className="dl-pulse" aria-hidden="true" />All systems normal</h1>
-                        <p>Current state of the site and its processing paths.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3>Last 90 days</h3>
-                        <div className="big">0 incidents</div>
-                        <p className="sub2">4 services watched · illustrative strips — the live checks are the source of truth.</p>
-                    </div>
-                </div>
-                <div style={{ paddingTop: 18 }}>
-                    {SVC.map(([name, sub], si) => (
-                        <div className="dl-svc" key={name}>
-                            <div className="r1"><b>{name}</b><span className="sub">{sub}</span><span className="badge">Operational</span></div>
-                            <div className="dl-upt">
-                                {Array.from({ length: 90 }, (_, d) => (
-                                    <i key={d} className={(d * 7 + si * 13) % 89 === 3 ? "warn" : ""} />
-                                ))}
-                            </div>
-                            <div className="cap"><span>90 days ago</span><span>Today</span></div>
-                        </div>
-                    ))}
-                    <p className="dl-note">Illustrative uptime strips — this page shows the design; live checks drive the production status page.</p>
-                </div>
-            </div>
-        );
-    }
+    Status() { return this.HousePage(HouseStatus, "Status"); }
 
     Support() {
         return (
@@ -2157,6 +1920,7 @@ export default class DaylightSkinApp extends React.Component {
                                                             : view === "terms" ? this.Terms()
                                                                 : view === "status" ? this.Status()
                                                                     : view === "support" ? this.Support()
+                                                                        : view === "notfound" ? this.NotFound()
                                                                         : this.Home();
         return (
             <div className="dl-root">

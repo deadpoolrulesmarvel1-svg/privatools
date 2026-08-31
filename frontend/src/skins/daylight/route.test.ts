@@ -27,10 +27,14 @@ describe("daylight route parser", () => {
         expect(parseHash("#/trust")).toEqual({ view: "security" });
     });
 
-    it("falls back to home, never to a crash", () => {
+    it("falls back to home for the empty route, never to a crash", () => {
         expect(parseHash("")).toEqual({ view: "home" });
         expect(parseHash("#/")).toEqual({ view: "home" });
-        expect(parseHash("#/nonsense")).toEqual({ view: "home" });
+    });
+
+    it("treats an unknown route as a 404, not a silent homepage", () => {
+        expect(parseHash("#/nonsense")).toEqual({ view: "notfound" });
+        expect(parseHash("#/tool-not-a-real-prefix/x")).toEqual({ view: "notfound" });
         expect(parseHash("#/tool/")).toEqual({ view: "tools", cat: "" });
     });
 
