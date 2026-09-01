@@ -30,10 +30,31 @@ async function pipelinePredownload(task: string, hfId: string, onProgress: (pct:
     const { pipeline, env } = await import("@huggingface/transformers");
     env.allowLocalModels = false;
     env.allowRemoteModels = true;
+    // transformers.js reports progress PER FILE, and a model is many files —
+    // naively forwarding `info.progress` makes the number jump between files
+    // (70% for the tokenizer, then 65% for the weights). Aggregate bytes across
+    // every file seen so far, and clamp the displayed number monotonic: the
+    // true ratio still dips when a newly discovered file grows the
+    // denominator, and a progress bar that goes backwards reads as broken.
+    const files = new Map<string, { loaded: number; total: number }>();
+    let best = 0;
+    const report = () => {
+        let loaded = 0;
+        let total = 0;
+        for (const f of files.values()) { loaded += f.loaded; total += f.total; }
+        if (!total) return;
+        const pct = Math.min(99, Math.round((loaded / total) * 100));
+        if (pct > best) { best = pct; onProgress(pct); }
+    };
     await pipeline(task as never, hfId, {
-        progress_callback: (info: { status: string; progress?: number }) => {
-            if (info.status === "progress" && typeof info.progress === "number") {
-                onProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
+        progress_callback: (info: { status: string; file?: string; loaded?: number; total?: number }) => {
+            if (info.status === "progress" && info.file
+                && typeof info.loaded === "number" && typeof info.total === "number" && info.total > 0) {
+                files.set(info.file, { loaded: info.loaded, total: info.total });
+                report();
+            } else if (info.status === "done" && info.file) {
+                const f = files.get(info.file);
+                if (f) { f.loaded = f.total; report(); }
             } else if (info.status === "ready") {
                 onProgress(100);
             }

@@ -190,6 +190,22 @@ const Check = ({ size = 15 }) => (
         <path d="M3 8 L6.2 11 L12 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
+const SOCIAL_ICONS = {
+    google: (
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z" />
+            <path fill="#FBBC05" d="M3.96 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z" />
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" />
+        </svg>
+    ),
+    github: (
+        <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+    ),
+};
+
 const Logo = ({ size = 23 }) => (
     <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden="true">
         <path d="M11 2 L19 6 V11 C19 15.5 15.6 19 11 20 C6.4 19 3 15.5 3 11 V6 Z" stroke="var(--dl-green)" strokeWidth="1.8" strokeLinejoin="round" />
@@ -572,30 +588,9 @@ const CSS = `
 .dl-input:focus { border-color:var(--dl-green); }
 .dl-hintl { font-size:12px; color:var(--dl-faint); }
 .dl-err { background:color-mix(in srgb, var(--dl-red) 10%, var(--dl-card)); border:1px solid color-mix(in srgb, var(--dl-red) 35%, var(--dl-rule)); color:var(--dl-red); border-radius:10px; padding:10px 14px; font-size:13px; margin:8px 0; }
-.dl-authwrap { display:grid; grid-template-columns:440px minmax(0,1fr); gap:56px; align-items:start; padding-top:56px; max-width:1020px; }
-.dl-root .dl-authfacts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:26px 0 6px; max-width:34em; border:1px solid var(--dl-rule-soft); border-radius:14px; background:var(--dl-card); box-shadow:var(--dl-sh1); overflow:hidden; }
-.dl-root .dl-authfacts > div { padding:16px 20px 14px; border-top:1px solid var(--dl-rule); }
-.dl-root .dl-authfacts > div:nth-child(-n+2) { border-top:0; }
-.dl-root .dl-authfacts > div:nth-child(2n) { border-left:1px solid var(--dl-rule); }
-.dl-root .dl-authfacts b { display:block; font-size:27px; font-weight:750; letter-spacing:-0.03em; color:var(--dl-ink); font-variant-numeric:tabular-nums; line-height:1.15; }
-.dl-root .dl-authfacts span { display:block; font-size:11px; font-weight:650; letter-spacing:0.07em; text-transform:uppercase; color:var(--dl-muted); margin-top:4px; }
-.dl-root .dl-authstep { font-size:11.5px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); margin:26px 0 8px; }
-.dl-root .dl-authcode { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:12px; padding:14px 16px; overflow-x:auto; max-width:34em; }
-.dl-root .dl-codewrap { border:1px solid var(--dl-rule-soft); border-radius:12px; max-width:34em; min-width:0; overflow:hidden; background:var(--dl-card); box-shadow:var(--dl-sh1); }
-.dl-root .dl-authwrap > * { min-width:0; }
-.dl-root .dl-codewrap header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:7px 8px 7px 16px; border-bottom:1px solid var(--dl-rule); background:var(--dl-paper-2); }
-.dl-root .dl-codewrap header > span { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; font-weight:600; color:var(--dl-muted); }
-.dl-root .dl-codewrap .dl-authcode { border:0; border-radius:0; box-shadow:none; max-width:none; }
-.dl-root .dl-copybtn { height:26px; padding:0 11px; border-radius:7px; border:1px solid var(--dl-rule-mid); background:var(--dl-card); color:var(--dl-ink); font-size:11.5px; font-weight:650; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
-.dl-root .dl-copybtn:hover { background:var(--dl-paper-2); }
-.dl-root .dl-copybtn:active { transform:scale(0.96); }
-.dl-root .dl-copybtn.done { color:var(--dl-green); border-color:color-mix(in srgb, var(--dl-green) 45%, var(--dl-rule)); }
-.dl-root .dl-authcode code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.7; color:var(--dl-ink); white-space:pre; }
-.dl-root .dl-authlinks { display:flex; flex-wrap:wrap; gap:18px; margin-top:22px; }
-.dl-root .dl-authlinks a { font-size:13.5px; font-weight:600; color:var(--dl-green); }
-.dl-root .dl-authnote { font-size:12.5px; color:var(--dl-muted); margin-top:22px; max-width:34em; line-height:1.6; padding-top:16px; border-top:1px solid var(--dl-rule); }
-@media (max-width: 900px) { .dl-authwrap { grid-template-columns:1fr; } }
-.dl-authcard { position:relative; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
+.dl-authwrap { display:flex; justify-content:center; padding:56px 0 32px; }
+.dl-authcard { position:relative; width:min(464px, 100%); background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:36px 36px 26px; display:flex; flex-direction:column; gap:6px; }
+@media (max-width: 560px) { .dl-authcard { padding:26px 22px 20px; } }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
 .dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; line-height:1.55; }
 .dl-root .dl-authcard form { display:flex; flex-direction:column; gap:16px; margin-top:14px; }
@@ -624,11 +619,11 @@ const CSS = `
 .dl-root .dl-pwrow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:7px; }
 .dl-root .dl-pwrow label { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--dl-muted); font-weight:500; cursor:pointer; }
 .dl-root .dl-pwrow .lvl { font-size:12px; font-weight:650; color:var(--dl-muted); }
-.dl-root .dl-social { display:flex; flex-direction:column; gap:9px; margin-top:16px; }
-.dl-root .dl-social button { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; height:42px; border-radius:11px; border:1px solid var(--dl-rule-mid); background:var(--dl-card); color:var(--dl-ink); font-size:14px; font-weight:600; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
-.dl-root .dl-social button:hover { background:var(--dl-paper-2); border-color:var(--dl-rule-strong); }
+.dl-root .dl-social { display:flex; flex-direction:column; gap:11px; margin-top:18px; }
+.dl-root .dl-social button { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; height:50px; border-radius:15px; border:1px solid var(--dl-rule-soft); background:var(--dl-paper-2); color:var(--dl-ink); font-size:15px; font-weight:600; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
+.dl-root .dl-social button:hover { background:color-mix(in srgb, var(--dl-ink) 4%, var(--dl-paper-2)); border-color:var(--dl-rule-mid); }
 .dl-root .dl-social button:active { transform:scale(0.985); }
-.dl-root .dl-social svg { width:17px; height:17px; flex:none; }
+.dl-root .dl-social svg { width:18px; height:18px; flex:none; }
 .dl-root .dl-authdiv { display:flex; align-items:center; gap:12px; margin:18px 0 2px; }
 .dl-root .dl-authdiv::before, .dl-root .dl-authdiv::after { content:""; flex:1; height:1px; background:var(--dl-rule); }
 .dl-root .dl-authdiv span { font-size:11px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); }
@@ -1928,21 +1923,6 @@ export default class DaylightSkinApp extends React.Component {
 
         const strength = a.mode !== "signin" && a.password ? strengthOf(a.password) : null;
 
-        const curlExample = `curl -X POST https://privatools.me/api/v1/compress \\
-  -H "X-API-Key: pk_…" \\
-  -F files=@in.pdf -F level=recommended -o out.pdf`;
-        const curlCopied = !!this.state.curlCopied;
-        const copyCurl = () => {
-            // writeText rejects asynchronously when the clipboard is denied, so a
-            // sync try/catch misses it and the global error toast fires. Only
-            // claim "Copied" once the promise resolves; stay quiet otherwise —
-            // the text is selectable either way.
-            navigator.clipboard.writeText(curlExample).then(() => {
-                clearTimeout(this._curlT);
-                this.setState({ curlCopied: true });
-                this._curlT = setTimeout(() => this.setState({ curlCopied: false }), 1600);
-            }).catch(() => {});
-        };
 
         if (!a.user) {
             return (
@@ -1982,21 +1962,12 @@ export default class DaylightSkinApp extends React.Component {
                                     {SOCIAL_SIGN_IN.length > 0 && a.mode !== "recover" && (
                                         <>
                                             <div className="dl-social">
-                                                <button type="button" onClick={() => this._acctSocial("google")} disabled={a.busy}>
-                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
-                                                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z" />
-                                                        <path fill="#FBBC05" d="M3.96 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z" />
-                                                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" />
-                                                    </svg>
-                                                    Continue with Google
-                                                </button>
-                                                <button type="button" onClick={() => this._acctSocial("github")} disabled={a.busy}>
-                                                    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-                                                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-                                                    </svg>
-                                                    Continue with GitHub
-                                                </button>
+                                                {SOCIAL_SIGN_IN.filter((sp) => SOCIAL_ICONS[sp.id]).map((sp) => (
+                                                    <button key={sp.id} type="button" onClick={() => this._acctSocial(sp.id)} disabled={a.busy}>
+                                                        {SOCIAL_ICONS[sp.id]}
+                                                        Continue with {sp.label}
+                                                    </button>
+                                                ))}
                                             </div>
                                             <div className="dl-authdiv"><span>or continue with email</span></div>
                                         </>
@@ -2100,43 +2071,7 @@ export default class DaylightSkinApp extends React.Component {
                                 {ACCOUNT_COPY.recovery}
                             </p>
                         </div>
-                        <div style={{ paddingTop: 40 }}>
-                            <div className="dl-eyebrow">Developers only</div>
-                            <h3 className="dl-h" style={{ fontSize: 24, margin: "10px 0" }}>Every tool works without this.</h3>
-                            <p style={{ color: "var(--dl-muted)", fontSize: 14.5, maxWidth: "34em" }}>
-                                Accounts exist for one thing: the developer API — keys, quota and nothing else. No login
-                                wall will ever appear in front of a download, and files sent through the API follow the
-                                same rules as the site: processed in isolation, deleted after use.
-                            </p>
-
-                            <div className="dl-authfacts">
-                                <div><b>{TOTAL}</b><span>tools, all free</span></div>
-                                <div><b>500</b><span>cost units / day</span></div>
-                                <div><b>250 MB</b><span>per key, per day</span></div>
-                                <div><b>0</b><span>files retained</span></div>
-                            </div>
-
-                            <p className="dl-authstep">Call it in one line once you have a key</p>
-                            <div className="dl-codewrap">
-                                <header>
-                                    <span>POST /api/v1/compress</span>
-                                    <button type="button" className={curlCopied ? "dl-copybtn done" : "dl-copybtn"} onClick={copyCurl}>
-                                        {curlCopied ? "✓ Copied" : "Copy"}
-                                    </button>
-                                </header>
-                                <pre className="dl-authcode"><code>{curlExample}</code></pre>
-                            </div>
-
-                            <div className="dl-authlinks">
-                                <a href="/api-docs">API reference →</a>
-                                <a href="#/security">How we handle files →</a>
-                                <a href="#/tools">Browse all {TOTAL} tools →</a>
-                            </div>
-
-                            <p className="dl-authnote">
-                                <b>{ACCOUNT_COPY.storageHeading}</b> {ACCOUNT_COPY.storage}
-                            </p>
-                        </div>
+                        
                     </div>
                 </div>
             );

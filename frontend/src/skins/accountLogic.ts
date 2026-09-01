@@ -87,7 +87,18 @@ export const ACCOUNT_COPY = isClerkEnabled()
  * Google, so the buttons must not be rendered at all rather than rendered and
  * throwing.
  */
-export const SOCIAL_SIGN_IN = isClerkEnabled() ? SOCIAL_PROVIDERS : [];
+/**
+ * Providers actually configured in the Clerk dashboard, in display order.
+ * Google is wired in code but its OAuth credentials are not entered yet —
+ * add "google" here the day the Google Cloud client exists and the button
+ * reappears. A rendered button for an unconfigured provider errors at click,
+ * which is worse than no button.
+ */
+const CONFIGURED_SOCIAL: ReadonlyArray<SocialProvider> = ["github"];
+
+export const SOCIAL_SIGN_IN = isClerkEnabled()
+    ? SOCIAL_PROVIDERS.filter((p) => CONFIGURED_SOCIAL.includes(p.id))
+    : [];
 
 /**
  * Whether password recovery goes through an emailed code (Clerk) or the
