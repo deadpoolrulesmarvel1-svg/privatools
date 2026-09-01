@@ -188,6 +188,8 @@ export interface AccountState {
     emailCode: string;
     /** Clerk recover only: the reset code has been emailed; show stage two. */
     resetEmailSent: boolean;
+    /** clerk-js never loaded — an extension is blocking it. Nothing here works. */
+    blocked: boolean;
 }
 
 export const initialAccountState: AccountState = {
@@ -195,7 +197,7 @@ export const initialAccountState: AccountState = {
     user: null, keys: [], freshKey: "", confirmingDelete: false,
     recoveryCode: "", recoverySaved: false, showPassword: false, recoveryInput: "",
     rotating: false, rotatePassword: "",
-    needsEmailCode: false, emailCode: "", resetEmailSent: false,
+    needsEmailCode: false, emailCode: "", resetEmailSent: false, blocked: false,
 };
 
 const BASE = "/api";

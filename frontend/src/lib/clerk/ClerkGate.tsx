@@ -11,9 +11,13 @@
  * takes the plain `<App />` path with none of this fetched at all.
  */
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ClerkProvider } from "@clerk/react";
 import { ClerkBridge } from "./ClerkBridge";
+import { markClerkLoadFailed } from "./instance";
+
+/** clerk-js failing to arrive, as reported by the provider. */
+const LOAD_FAILURE = /failed to load clerk/i;
 
 export default function ClerkGate({
     publishableKey,
@@ -22,6 +26,28 @@ export default function ClerkGate({
     publishableKey: string;
     children: ReactNode;
 }) {
+    // The provider reports a blocked script as an unhandled rejection and
+    // nothing else; catching it here is what lets the account page say
+    // something true rather than "still starting up".
+    useEffect(() => {
+        const seen = (text: string) => {
+            if (!LOAD_FAILURE.test(text)) return;
+            markClerkLoadFailed();
+            window.dispatchEvent(new CustomEvent("privatools:clerk-blocked"));
+        };
+        const onRejection = (e: PromiseRejectionEvent) => {
+            const r = e.reason as { message?: string } | string | undefined;
+            seen(typeof r === "string" ? r : r?.message ?? "");
+        };
+        const onError = (e: ErrorEvent) => seen(e.message ?? "");
+        window.addEventListener("unhandledrejection", onRejection);
+        window.addEventListener("error", onError);
+        return () => {
+            window.removeEventListener("unhandledrejection", onRejection);
+            window.removeEventListener("error", onError);
+        };
+    }, []);
+
     return (
         <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
             <ClerkBridge />

@@ -29,6 +29,10 @@ function isNoiseError(message: string): boolean {
     if (m.includes("resizeobserver loop")) return true;
     if (m === "script error.") return true;
     if (m.includes("aborterror")) return true;
+    // clerk-js blocked by an extension. The account page states this inline,
+    // with the one action that fixes it; a raw "failed to load script" toast
+    // on every page load says nothing a visitor can act on.
+    if (m.includes("failed to load clerk")) return true;
     return false;
 }
 

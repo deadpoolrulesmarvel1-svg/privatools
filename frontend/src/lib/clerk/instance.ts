@@ -19,6 +19,30 @@ export type ClerkInstance = ReturnType<typeof useClerk>;
 
 let instance: ClerkInstance | null = null;
 
+/**
+ * Set when clerk-js never arrives.
+ *
+ * Ad blockers and privacy extensions routinely block anything on a `clerk.`
+ * subdomain, and when they do the provider's script tag simply fails. Without
+ * this flag every caller reports "still starting up", which is a lie: it is
+ * never going to start. The distinction matters because the two states need
+ * opposite advice — wait, versus change a browser setting.
+ */
+let loadFailed = false;
+
+/** Called by <ClerkGate> when it sees the script fail. */
+export function markClerkLoadFailed(): void {
+    loadFailed = true;
+}
+
+export function clerkLoadFailed(): boolean {
+    return loadFailed;
+}
+
+/** Shown wherever the blocked case surfaces, so the wording stays identical. */
+export const CLERK_BLOCKED_MESSAGE =
+    "Sign-in could not load. A browser extension or network filter is blocking clerk.privatools.me — allow it and reload the page. Every tool on the site works without an account.";
+
 /** Set by <ClerkBridge>. Not for general use. */
 export function setClerkInstance(next: ClerkInstance | null): void {
     instance = next;
@@ -49,9 +73,11 @@ export function requireClerk(): ClerkInstance {
     const clerk = instance;
     if (!clerk) {
         throw new Error(
-            isClerkEnabled()
-                ? "Accounts are still starting up. Try again in a moment."
-                : "Accounts are not configured on this deployment.",
+            loadFailed
+                ? CLERK_BLOCKED_MESSAGE
+                : isClerkEnabled()
+                    ? "Accounts are still starting up. Try again in a moment."
+                    : "Accounts are not configured on this deployment.",
         );
     }
     return clerk;
@@ -68,7 +94,9 @@ export function requireClerk(): ClerkInstance {
 export function requireClerkClient(): ClerkInstance {
     const clerk = requireClerk();
     if (!clerk.client) {
-        throw new Error("Accounts are still starting up. Try again in a moment.");
+        throw new Error(
+            loadFailed ? CLERK_BLOCKED_MESSAGE : "Accounts are still starting up. Try again in a moment.",
+        );
     }
     return clerk;
 }

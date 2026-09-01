@@ -17,6 +17,7 @@ import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     MIN_PASSWORD_LENGTH, ACCOUNT_COPY, EMAIL_RESET,
 } from "./accountLogic";
+import { CLERK_BLOCKED_MESSAGE, clerkLoadFailed } from "@/lib/clerk/instance";
 
 /**
  * @param Base    the generated component
@@ -40,6 +41,10 @@ export function withAccounts(Base, config) {
             if (super.componentDidMount) super.componentDidMount();
             window.addEventListener("hashchange", this._onAcctNav);
             window.addEventListener("popstate", this._onAcctNav);
+            window.addEventListener("privatools:clerk-blocked", this._onClerkBlocked);
+            // The block usually happens before this route is even opened, so
+            // check the flag as well as listening for the event.
+            if (clerkLoadFailed()) this._onClerkBlocked();
             // Resolves any existing session before first paint of the route, so
             // it does not flash the signed-out form at someone already signed in.
             accountApi.me()
@@ -51,7 +56,12 @@ export function withAccounts(Base, config) {
             if (super.componentWillUnmount) super.componentWillUnmount();
             window.removeEventListener("hashchange", this._onAcctNav);
             window.removeEventListener("popstate", this._onAcctNav);
+            window.removeEventListener("privatools:clerk-blocked", this._onClerkBlocked);
         }
+
+        _onClerkBlocked = () => {
+            this._setAcct({ busy: false, blocked: true, error: CLERK_BLOCKED_MESSAGE });
+        };
 
         _setAcct(patch) {
             this.setState((s) => ({ acct: { ...s.acct, ...patch } }));

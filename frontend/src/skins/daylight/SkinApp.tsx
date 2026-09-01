@@ -610,6 +610,7 @@ const CSS = `
 .dl-authwrap { display:flex; justify-content:center; padding:56px 0 32px; }
 .dl-authcard { position:relative; width:min(464px, 100%); background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:36px 36px 26px; display:flex; flex-direction:column; gap:6px; }
 @media (max-width: 560px) { .dl-authcard { padding:26px 22px 20px; } }
+.dl-root .dl-authcard.is-blocked form, .dl-root .dl-authcard.is-blocked .dl-social { opacity:.5; pointer-events:none; }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
 .dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; line-height:1.55; }
 .dl-root .dl-authcard form { display:flex; flex-direction:column; gap:16px; margin-top:14px; }
@@ -1953,7 +1954,7 @@ export default class DaylightSkinApp extends React.Component {
             return (
                 <div className="dl-wrap">
                     <div className="dl-authwrap">
-                        <div className="dl-authcard">
+                        <div className={a.blocked ? "dl-authcard is-blocked" : "dl-authcard"}>
                             <span className="dl-marks" aria-hidden="true"><i /><i /><i /><i /></span>
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Logo size={30} /></div>
                             <h2>{a.mode === "signup" ? "Create your account" : a.mode === "recover" ? "Recover your account" : "Sign in to PrivaTools"}</h2>
@@ -1988,7 +1989,7 @@ export default class DaylightSkinApp extends React.Component {
                                         <>
                                             <div className="dl-social">
                                                 {SOCIAL_SIGN_IN.filter((sp) => SOCIAL_ICONS[sp.id]).map((sp) => (
-                                                    <button key={sp.id} type="button" className={`dl-sbtn ${sp.id}`} onClick={() => this._acctSocial(sp.id)} disabled={a.busy}>
+                                                    <button key={sp.id} type="button" className={`dl-sbtn ${sp.id}`} onClick={() => this._acctSocial(sp.id)} disabled={a.busy || a.blocked}>
                                                         {SOCIAL_ICONS[sp.id]}
                                                         Continue with {sp.label}
                                                     </button>
@@ -2065,7 +2066,7 @@ export default class DaylightSkinApp extends React.Component {
                                         {a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent && (
                                             <span className="dl-hintl">We’ll email a six-digit code so you can set a new password.</span>
                                         )}
-                                        <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
+                                        <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy || a.blocked} type="submit">
                                             {a.busy
                                                 ? (a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent ? "Sending…" : "Working…")
                                                 : a.mode === "signup" ? "Create account"
