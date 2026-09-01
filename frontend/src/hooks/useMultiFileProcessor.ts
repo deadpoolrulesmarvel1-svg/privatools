@@ -57,6 +57,9 @@ export interface ProcessOptions {
     concurrency?: number;
     /** Per-upload options (timeout, retries) passed through to uploadFile. */
     uploadOptions?: UploadOptions;
+    /** Client-side processor — when set, files never leave the browser:
+     *  the worker calls this instead of POSTing to `endpoint`. */
+    localProcess?: (file: File) => Promise<{ blob: Blob; outName?: string }>;
 }
 
 export interface UseMultiFileProcessorResult {
@@ -167,6 +170,15 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                 mutate(prev => prev.map(x => x.id === id ? { ...x, status: "running" } : x));
 
                 try {
+                    if (opts.localProcess) {
+                        const out = await opts.localProcess(file as File);
+                        const outName = out.outName || buildOutputFilename((file as File).name, opts.outputSuffix, opts.outputExt);
+                        mutate(prev => prev.map(x => x.id === id
+                            ? { ...x, status: "done", blob: out.blob, outName, headers: {} }
+                            : x,
+                        ));
+                        continue;
+                    }
                     const res = await uploadFile(opts.endpoint, file as File, opts.params, opts.uploadOptions);
                     const blob = await res.blob();
                     // Pull server-supplied filename if present; otherwise build one.

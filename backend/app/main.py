@@ -197,7 +197,15 @@ def _env_positive_int(name: str, default: int) -> int:
 # Security headers middleware
 # ---------------------------------------------------------------------------
 _SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
-_WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+_WASM_EVAL_PATHS = {
+    "/tool/summarize-pdf",
+    "/tool/smart-redact",
+    # On-device OPUS-MT / RMBG models run on onnxruntime-web, which needs
+    # wasm-unsafe-eval just like the two above. Translate shipped without
+    # this and its local model would have been blocked by prod CSP.
+    "/tool/translate-pdf",
+    "/tools/remove-background",
+}
 
 # Pages allowed to talk directly to a BYOK AI provider.
 #

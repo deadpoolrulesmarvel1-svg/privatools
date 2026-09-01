@@ -14,6 +14,7 @@ import { downloadBlob, formatFileSize } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { removeBackgroundLocal } from "@/lib/localBgRemove";
 
 const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".bmp"];
 const isImg = (f: File) => IMG_EXTS.some(e => f.name.toLowerCase().endsWith(e));
@@ -23,6 +24,8 @@ export function BackgroundRemoverUI() {
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const [sliderPct, setSliderPct] = useState(50);
+    const [engine, setEngine] = useState<"server" | "local">("server");
+    const [modelPct, setModelPct] = useState<number | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const ref = useRef<HTMLInputElement>(null);
 
@@ -64,9 +67,16 @@ export function BackgroundRemoverUI() {
             endpoint: "/remove-background",
             outputSuffix: "nobg",
             outputExt: "png",
+            ...(engine === "local" ? {
+                // One at a time — the WASM model is single-threaded and each
+                // inference already saturates it.
+                concurrency: 1,
+                localProcess: (f: File) => removeBackgroundLocal(f, pct => setModelPct(pct)),
+            } : {}),
         }, retry);
+        setModelPct(null);
         setPhase("done");
-    }, [proc]);
+    }, [proc, engine]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
@@ -215,8 +225,49 @@ export function BackgroundRemoverUI() {
                     {proc.entries.length ? "Add more images" : "Drop images to remove background"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">
-                    JPEG · PNG · WebP — AI runs on the server (your file is deleted after)
+                    {engine === "local"
+                        ? "JPEG · PNG · WebP — AI runs in your browser, images never upload"
+                        : "JPEG · PNG · WebP — AI runs on the server (your file is deleted after)"}
                 </p>
+            </div>
+
+            {/* Engine: server model vs on-device model */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Where the AI runs
+                </div>
+                <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setEngine("server")}
+                        aria-pressed={engine === "server"}
+                        disabled={phase === "processing"}
+                        className={cn(
+                            "rounded-lg border p-3 text-left transition-colors",
+                            engine === "server" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                        )}
+                    >
+                        <span className="block text-[13.5px] font-medium text-foreground">On our server</span>
+                        <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                            No download, fastest first run. Images are processed in isolation and deleted after.
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setEngine("local")}
+                        aria-pressed={engine === "local"}
+                        disabled={phase === "processing"}
+                        className={cn(
+                            "rounded-lg border p-3 text-left transition-colors",
+                            engine === "local" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                        )}
+                    >
+                        <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
+                        <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                            Images never leave your browser. Downloads a ~44 MB model once, then works offline.
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* Queue */}
@@ -254,7 +305,7 @@ export function BackgroundRemoverUI() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                         {phase === "processing"
-                            ? <><Loader2 size={13} className="animate-spin" /> Removing background… ({proc.doneCount}/{proc.entries.length})</>
+                            ? <><Loader2 size={13} className="animate-spin" /> {engine === "local" && modelPct !== null && modelPct < 100 ? `Downloading model — ${modelPct}%` : `Removing background… (${proc.doneCount}/${proc.entries.length})`}</>
                             : <><Eraser size={13} /> Remove background{proc.entries.length > 1 ? ` — ${proc.entries.length} images` : ""}</>}
                     </button>
                     {canProcess && (

@@ -48,6 +48,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { AiHubDialog } from "@/components/byok/AiHubDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -283,7 +284,7 @@ const CSS = `
 .dl-root button { font-family:inherit; cursor:pointer; }
 /* Bare buttons (no classes / dl-only classes) keep the quiet reset; anything
    carrying utility classes styles itself. */
-.dl-root button:not([class*="bg-"]):not([class*="border"]) { color:inherit; background:none; border:0; font-size:inherit; }
+.dl-root button:not([class*="bg-"]):not([class*="border"]):not(.dl-aibtn) { color:inherit; background:none; border:0; font-size:inherit; }
 .dl-root input[type="checkbox"] { accent-color: var(--dl-green); width:15px; height:15px; }
 .dl-root a { color:inherit; text-decoration:none; }
 /* Prose links stay green; component anchors (buttons, cards, chips) inherit,
@@ -319,6 +320,10 @@ const CSS = `
 .dl-searchpill:hover { border-color:var(--dl-rule-mid); box-shadow:var(--dl-sh1); }
 .dl-searchpill kbd { margin-left:auto; font-family:inherit; font-size:11px; border:1px solid var(--dl-rule); border-radius:5px; padding:1px 6px; background:var(--dl-paper); }
 .dl-root .dl-navcta { padding:9px 20px; font-size:13.5px; border-radius:999px; flex:none; }
+.dl-root .dl-aibtn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:13px; font-weight:650; border-radius:999px; flex:none; color:var(--dl-green-deep); background:var(--dl-wash); border:1px solid color-mix(in srgb, var(--dl-green) 45%, transparent); cursor:pointer; transition:transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 160ms ease, border-color 160ms ease; }
+.dl-root .dl-aibtn:hover { background:color-mix(in srgb, var(--dl-green) 22%, var(--dl-paper)); border-color:var(--dl-green); }
+.dl-root .dl-aibtn:active { transform:scale(0.97); }
+@media (max-width: 520px) { .dl-root .dl-aibtn { padding:8px 11px; } }
 .dl-iconbtn { display:none; background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; align-items:center; justify-content:center; flex:none; }
 .dl-themebtn { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex:none; }
 @media (max-width: 1120px) { .dl-links { display:none; } .dl-searchpill { display:none; } .dl-iconbtn { display:flex; margin-left:auto; } }
@@ -784,6 +789,7 @@ export default class DaylightSkinApp extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            aiHub: false,
             ...parseHash(typeof location !== "undefined" ? location.hash : "#/"),
             themeMode: this.readTheme(),
             q: "", catFilter: "", idxView: "tiles", blogTag: "",
@@ -1021,6 +1027,10 @@ export default class DaylightSkinApp extends React.Component {
                     <Tooltip><TooltipTrigger asChild><button className="dl-iconbtn" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
                         <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                     </button></TooltipTrigger><TooltipContent>Search — ⌘K</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><button className="dl-aibtn" onClick={() => this.setState({ aiHub: true })} aria-label="AI — bring your own key and on-device models">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" fill="currentColor" opacity="0.7"/></svg>
+                        AI
+                    </button></TooltipTrigger><TooltipContent>Bring your own key · on-device models</TooltipContent></Tooltip>
                     <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="#/account">{a.user ? "Account" : "Sign in"}</a>
                     <Tooltip><TooltipTrigger asChild><button className="dl-themebtn" onClick={this.cycleTheme} aria-label={`Theme: ${this.state.themeMode}`}>
                         {this.state.themeMode === "midnight"
@@ -1031,6 +1041,7 @@ export default class DaylightSkinApp extends React.Component {
                                 ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15 10.8 A6.5 6.5 0 1 1 7.2 3 A5.2 5.2 0 0 0 15 10.8 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
                                 : <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.4" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2.6 A6.4 6.4 0 0 1 9 15.4 Z" fill="currentColor" /></svg>}
                     </button></TooltipTrigger><TooltipContent>Theme: {this.state.themeMode} — click to cycle</TooltipContent></Tooltip>
+                    <AiHubDialog open={this.state.aiHub} onOpenChange={(v) => this.setState({ aiHub: v })} />
                 </div>
             </header>
         );
