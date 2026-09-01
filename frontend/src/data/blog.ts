@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-03-22",
     readTime: "8 min read",
     tldr:
-      "In 2026: PrivaTools (100% free, open source, 220 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+      "In 2026: PrivaTools (100% free, open source, 221 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
     relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
@@ -751,7 +751,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "PrivaTools Team",
     tldr:
-      "Top iLovePDF alternatives in 2026: PrivaTools (220 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+      "Top iLovePDF alternatives in 2026: PrivaTools (221 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
     relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `
@@ -769,7 +769,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Most Tools, Truly Free, Open Source</h2>
-<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 220 tools</p>
+<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 221 tools</p>
 <p>PrivaTools is the comprehensive open-source alternative. It includes everything iLovePDF does (merge, split, compress, convert, OCR, sign, redact) and a lot it doesn't (video tools, audio tools, AI summarization in your browser, smart redaction with NER, JWT decoder, regex tester). The entire stack is MIT-licensed; you can audit the code or self-host it on Docker.</p>
 <p>Files are processed in an isolated container and deleted immediately on response — no retention period, no upload caps beyond 500 MB per file, no watermarks, no ads, no account ever.</p>
 <p><strong>Best for:</strong> Privacy-conscious users, professionals handling confidential documents, organizations wanting on-premises file tooling.</p>
@@ -821,7 +821,7 @@ export const blogPosts: BlogPost[] = [
     <tr><th>Tool</th><th>Free?</th><th>Account?</th><th>Privacy</th><th>Tools</th></tr>
   </thead>
   <tbody>
-    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>220 tools</td></tr>
+    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>221 tools</td></tr>
     <tr><td>Stirling-PDF</td><td>Yes (self-host)</td><td>No</td><td>You host</td><td>~50</td></tr>
     <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Uploaded</td><td>95+</td></tr>
     <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>2hr retention</td><td>~35</td></tr>
@@ -1551,7 +1551,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 <p>Most comparisons on this blog contrast a local-first architecture with an upload-everything one. This one can't: ihatepdf processes files in your browser, exactly the way most of our catalogue does. Files never reach its servers — a claim you can verify in its network tab the same way you can in ours. When both sides make the same privacy bet, the comparison moves to what's built on top of it. As always, everything here comes from each site's public pages as of August 2026.</p>
 
 <h2>The short verdict</h2>
-<p><strong>ihatepdf</strong> is a clean, free, honest browser-only PDF toolkit — if your needs fit inside "PDF jobs a browser can do," it serves them well. <strong>PrivaTools</strong> covers that same ground and then keeps going: 220 tools across file types, server-class jobs done with disclosed per-job deletion, batch and pipeline automation, and no third-party scripts.</p>
+<p><strong>ihatepdf</strong> is a clean, free, honest browser-only PDF toolkit — if your needs fit inside "PDF jobs a browser can do," it serves them well. <strong>PrivaTools</strong> covers that same ground and then keeps going: 221 tools across file types, server-class jobs done with disclosed per-job deletion, batch and pipeline automation, and no third-party scripts.</p>
 
 <h2>Side by side</h2>
 <table>
@@ -1580,6 +1580,176 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 <h2>The bottom line</h2>
 <p>If both tools do your job locally, use whichever feels better — you've already won. The days PrivaTools earns the bookmark are the ones that need OCR at 2am, a folder of HEICs converted, a pipeline run on twelve contracts, or simply a page with no third-party scripts watching you work.</p>
 <p><em>Sources: ihatepdf.cv public pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
+`,
+  },
+  {
+    slug: "chat-with-pdf-free-private",
+    title: "How to Chat With a PDF for Free — Without Uploading It",
+    description:
+      "Ask questions about any PDF using your own AI key: the text is extracted in your browser and each question goes straight to the provider you choose, never through PrivaTools. Costs, honest limits, and how it compares with hosted chat services.",
+    publishedAt: "2026-09-01",
+    readTime: "8 min read",
+    tldr:
+      "PrivaTools Chat with PDF extracts the text in your browser with pdf.js and sends each question straight to the AI provider you pick, using your own API key — free, no subscription, no middleman holding your document. It needs a selectable text layer (run OCR on scans first) and reads the first ~100,000 characters.",
+    relatedTools: ["chat-with-pdf", "ocr-pdf", "summarize-pdf", "pdf-to-text"],
+    tags: ["AI", "PDF", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>"Chat with a PDF" is one of the most-searched file tasks of 2026, and nearly every site offering it works the same way: you upload the document to their servers, their backend calls an AI model, and a subscription meter decides how many questions you get. <a href="/tool/chat-with-pdf">PrivaTools Chat with PDF</a> inverts that design. The text is extracted inside your browser, each question travels straight from your tab to the AI provider you chose, and the meter is your own API account — which, for a typical question, means a fraction of a cent rather than a monthly plan.</p>
+
+<h2>How does chatting with a PDF work without an upload middleman?</h2>
+<p>PrivaTools Chat with PDF is built on a bring-your-own-key (BYOK) architecture. When you add a PDF, Mozilla's pdf.js — the same engine Firefox uses to display PDFs — extracts the text layer page by page inside the browser tab. When you ask a question, the browser sends that text and your question directly to the AI provider you configured: Anthropic, OpenAI, Google Gemini, Mistral, Groq, Together AI, DeepSeek, OpenRouter, or any self-hosted OpenAI-compatible endpoint such as Ollama. The request carries your own API key, which is stored encrypted at rest on your device, with a session-only mode for borrowed machines. PrivaTools servers never receive the document, the question, or the key — there is deliberately no server fallback for this tool, because a conversational answer needs a real LLM and we don't proxy documents. Follow-up questions keep recent turns of the conversation, so you can dig into an answer naturally.</p>
+<p>One detail worth knowing: the document is passed to the model inside a delimited fence with an instruction that whatever appears inside is data, not direction. A PDF containing text like "ignore previous instructions" gets quoted, not obeyed.</p>
+
+<h2>What does it cost to chat with a PDF this way?</h2>
+<p>The tool is free — no account, no task meter, no premium tier. What you pay is your provider's normal API rate for the tokens each question uses, billed to your own account. In practice that is startlingly small: a question against a full-length contract typically costs a fraction of a cent on current budget-tier models, and at most a few cents on frontier models. Some providers offer free API tiers, which work here too, and pointing the self-hosted option at Ollama on your own machine makes the marginal cost zero.</p>
+<p>Compare the hosted model: a chat-with-PDF subscription bills the same every month whether you ask three questions or three hundred. With your own key you pay per question asked, and for individual use the arithmetic rarely adds up to a dollar a month.</p>
+
+<h2>Why is bring-your-own-key more private than a hosted chat service?</h2>
+<p>With a hosted chat-with-PDF service, your document passes through — and usually rests on — a middleman's infrastructure: they receive the file, keep it around to answer follow-up questions, and their privacy policy governs retention, staff access, and whether your content improves their models. Bring-your-own-key removes the middleman entirely. The only parties are your browser and the AI provider you chose, under the API terms of your own account — terms you or your company may already have vetted for other work. There is no second retention policy stacked on top, no extra set of servers holding a copy, and nothing for PrivaTools to see, store, or train on. And if even one provider is one too many, the self-hosted option sends the text to an endpoint on your own machine, where it never crosses the internet at all.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tool/chat-with-pdf">Chat with PDF</a>.</li>
+  <li>Paste an API key once. The AI hub in the top bar manages keys for every provider and stores them encrypted on your device.</li>
+  <li>Drop your PDF — extraction runs in the tab with a per-page progress bar.</li>
+  <li>Ask anything: deadlines, obligations, definitions, "summarize section 4", "what does clause 7 mean for the tenant". Follow-ups keep the thread.</li>
+  <li>Copy out any answer, or clear the chat and load the next document.</li>
+</ol>
+
+<h2>What are the honest limits?</h2>
+<ul>
+  <li><strong>It needs a text layer.</strong> pdf.js can only extract text that exists as text. A scanned PDF is photographs of pages — run it through <a href="/tool/ocr-pdf">OCR PDF</a> first, then chat with the result. The tool detects the situation and says so rather than answering from nothing.</li>
+  <li><strong>Very long documents are truncated.</strong> The model receives the first ~100,000 characters — roughly 60–100 pages of typical text. When a document runs longer, the tool tells the model it is seeing only the beginning, and instructs it to flag, rather than guess, when an answer may sit past the cutoff.</li>
+  <li><strong>You need a key.</strong> There is no bundled model behind this tool — that is the design, not a gap: routing your document through PrivaTools servers to reach an LLM would undo the entire privacy story. If you want zero setup, <a href="/tool/summarize-pdf">Summarize PDF</a> ships a free on-device model.</li>
+  <li><strong>Answers are only as good as the model you picked.</strong> A small free-tier model will miss nuance a frontier model catches. Same tool, your choice of brain.</li>
+</ul>
+
+<h2>How does it compare with ChatPDF, Adobe AI Assistant, and Humata?</h2>
+<p>These services answer the same need with a different architecture: hosted processing, their choice of model, and a subscription above the free tier. We can't audit their internals, so the table sticks to each vendor's own published design rather than guessed numbers.</p>
+<table>
+  <thead><tr><th></th><th>PrivaTools Chat with PDF</th><th>ChatPDF</th><th>Adobe AI Assistant</th><th>Humata</th></tr></thead>
+  <tbody>
+    <tr><td>Where the PDF goes</td><td>Text extracted in your tab; questions go only to the provider you chose</td><td>Uploaded to their servers</td><td>Processed in Adobe's cloud</td><td>Uploaded to their cloud</td></tr>
+    <tr><td>Price model</td><td>Free tool; you pay your provider per question</td><td>Free tier with limits, subscription above it</td><td>Paid add-on subscription on top of Acrobat</td><td>Free tier with limits, subscription tiers above</td></tr>
+    <tr><td>Who picks the model</td><td>You — eight hosted providers, or self-hosted</td><td>They do</td><td>Adobe does</td><td>They do</td></tr>
+    <tr><td>Account required</td><td>No</td><td>For full use</td><td>Yes (Adobe ID)</td><td>Yes</td></tr>
+  </tbody>
+</table>
+<p>None of this makes the hosted services dishonest — subscriptions fund real engineering, and Adobe's assistant is genuinely well integrated with Acrobat. The difference is structural: they are services your document must visit; this is a tool your document passes through on its way to a provider you already trust.</p>
+
+<h2>The bottom line</h2>
+<p>If you're going to let an AI read a document, the list of parties who see it matters more than any feature. With bring-your-own-key chat, that list has one entry — the provider you chose — and the bill is your API meter, not another subscription. Bring a key, drop a PDF, ask.</p>
+<p><a href="/tool/chat-with-pdf">Chat with your PDF now — free, no account, straight to your provider →</a></p>
+`,
+  },
+  {
+    slug: "ai-pdf-tools-no-upload-byok",
+    title: "AI PDF Tools, No Upload Required: Your Own Key or On-Device Models",
+    description:
+      "PrivaTools runs AI two ways without an upload middleman: your own API key, sent browser-to-provider, or free on-device models that download once and then work offline. What each tool uses, model sizes, and how to verify it all in DevTools.",
+    publishedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "There are two ways to run AI on a document privately: bring your own API key, so text goes straight from your browser to a provider you already trust, or run a free on-device model that downloads once and then works offline. PrivaTools' five AI tools use both; the AI hub in the top bar manages keys and models.",
+    relatedTools: ["chat-with-pdf", "summarize-pdf", "translate-pdf", "smart-redact", "remove-background"],
+    tags: ["AI", "Privacy", "Engineering"],
+    author: "Lakshya Lodha",
+    body: `
+<p>The typical "AI PDF tool" is an upload box with a model behind it: your document goes to the vendor's servers, their backend calls the AI, and their privacy policy — not physics — is what stands between your contract and someone else's training run. PrivaTools takes a different approach, and it isn't one trick but two. This page explains both, because knowing which one a tool uses is the whole privacy story.</p>
+
+<h2>What are the two ways to run AI privately?</h2>
+<p><strong>Way one: bring your own key (BYOK).</strong> You paste an API key from a provider you already trust — Anthropic, OpenAI, Google Gemini, Mistral, Groq, Together AI, DeepSeek, OpenRouter, or a self-hosted OpenAI-compatible endpoint such as Ollama. The key is stored encrypted at rest on your device, and every request goes directly from your browser to that provider. PrivaTools never proxies the call, so there is no middleman server that could log, retain, or train on the text: the parties involved are your browser and your provider, full stop.</p>
+<p><strong>Way two: on-device models.</strong> The tool downloads a free, open model into the browser's cache — once — and runs it inside the tab with WebAssembly. After that download it works offline: the document is processed on your own CPU, no key, no account, no per-use cost.</p>
+<p>Both are managed from one place: the <strong>AI hub</strong> in the top bar. Its first tab holds keys per provider, with a session-only mode for borrowed machines; its second lists every on-device model with its real size on this device, a download button so you can fetch weights ahead of a flight, and a remove button that frees the space.</p>
+
+<h2>Which PrivaTools tools use which?</h2>
+<table>
+  <thead><tr><th>Tool</th><th>Free on-device engine</th><th>With your own key</th></tr></thead>
+  <tbody>
+    <tr><td><a href="/tool/chat-with-pdf">Chat with PDF</a></td><td>— (a real conversation needs a full LLM)</td><td>Any provider answers questions about the document</td></tr>
+    <tr><td><a href="/tool/summarize-pdf">Summarize PDF</a></td><td>DistilBART summarizer (English)</td><td>Stronger frontier-model summaries</td></tr>
+    <tr><td><a href="/tool/translate-pdf">Translate PDF</a></td><td>OPUS-MT — English to and from 24 languages</td><td>Any language, source auto-detected</td></tr>
+    <tr><td><a href="/tool/smart-redact">Smart Redact</a></td><td>Regex passes + a BERT NER model find PII locally</td><td>Better name and organisation coverage</td></tr>
+    <tr><td><a href="/tools/remove-background">Remove Background</a></td><td>RMBG-1.4 matting model</td><td>— (its alternative is our server engine)</td></tr>
+  </tbody>
+</table>
+<p>Smart Redact deserves a plain sentence, because it layers the two ways deliberately. Its regex passes — emails, phone numbers, SSNs, card numbers — always run locally, with no model and no network. If you opt into a key for better name coverage, the values those local passes already caught are masked out of the text before anything is sent: the tool that hunts your most sensitive strings is built so those exact strings are the ones a provider never receives. Applying the redactions is its one server step — the PDF and your approved list go to the isolated backend so PyMuPDF can remove the content for real, permanently, and the job's files are deleted when it ends.</p>
+
+<h2>How big are the on-device models?</h2>
+<p>Model weights are the cost of way two, and it is a one-time cost per device. Everything downloads from the Hugging Face CDN the first time a tool needs it (or ahead of time from the AI hub), lands in the browser's cache, and stays until you remove it:</p>
+<table>
+  <thead><tr><th>Model</th><th>Powers</th><th>One-time download</th></tr></thead>
+  <tbody>
+    <tr><td>DistilBART CNN</td><td>Summarize PDF</td><td>~250&nbsp;MB</td></tr>
+    <tr><td>BERT NER</td><td>Smart Redact's name/organisation detection</td><td>~250&nbsp;MB</td></tr>
+    <tr><td>OPUS-MT</td><td>Translate PDF</td><td>~107&nbsp;MB per language pair</td></tr>
+    <tr><td>RMBG-1.4</td><td>Remove Background</td><td>~44&nbsp;MB</td></tr>
+  </tbody>
+</table>
+<p>The AI hub reports the true size of everything cached and deletes any model in one click. None of it needs an account, because the cache belongs to your browser profile, not to us.</p>
+
+<h2>When should you pick which?</h2>
+<p>Pick the <strong>on-device engine</strong> when the document must not travel: it is free, works offline after the first download, and needs no key. Its honest ceiling is quality and language — DistilBART summarizes English only, small models miss nuance a frontier model catches, and a phone with little storage may not want 250&nbsp;MB of weights.</p>
+<p>Pick <strong>your own key</strong> when quality or language coverage matters more, when you already pay a provider whose data terms you've vetted, or when the job outgrows a small model. It costs whatever your provider bills for the tokens — typically a fraction of a cent per operation — and the text does leave the tab: to that one provider, and no one else.</p>
+<p>Pick <strong>a self-hosted endpoint</strong> when you want both at once: point the key panel at Ollama on your own machine and you get bigger-than-browser models with traffic that ends at localhost.</p>
+
+<h2>How do you verify any of this in DevTools?</h2>
+<p>Don't take this article's word for it — the network panel is the audit. Open your browser's developer tools, switch to the Network tab, and run the tool on a scrap file. An on-device tool shows the model download on first run — requests to huggingface.co — and after that, processing produces no request carrying your document; switch to airplane mode and it still works. A BYOK tool shows exactly one destination when you ask it to run: your provider's API domain, such as api.anthropic.com or api.openai.com, or your own server's address if you self-host. A server-backed PrivaTools tool shows a request to privatools.me — and tells you so before you add the file, with an amber chip on the tool page. Sixty seconds of watching that panel beats every privacy policy ever written, ours included.</p>
+
+<h2>The bottom line</h2>
+<p>"AI" and "private" stopped being opposites the moment models could run from a browser cache or answer to your own key. The right question for any AI file tool in 2026 is the one this page answers for ours: <em>who, exactly, receives my document?</em> Here the answer is either "no one" or "the provider you chose" — and the network panel will show you which, live.</p>
+`,
+  },
+  {
+    slug: "remove-background-without-uploading",
+    title: "Remove an Image Background Without Uploading It Anywhere",
+    description:
+      "PrivaTools' Background Remover can run the RMBG-1.4 model in your browser — a ~44 MB one-time download that then works offline — with a server engine as the no-download alternative. How that compares with remove.bg's upload model.",
+    publishedAt: "2026-09-01",
+    readTime: "6 min read",
+    tldr:
+      "PrivaTools removes image backgrounds two ways: on this device, where the RMBG-1.4 model (~44 MB, downloaded once) runs in your browser and then works offline, or on our server with no download, processed in isolation and deleted after the job. Both are free at full resolution — unlike upload-based services whose free tiers limit output resolution.",
+    relatedTools: ["remove-background", "image-converter", "image-compressor", "remove-exif"],
+    tags: ["Image", "AI", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Product shots, profile photos, passport pictures, design cutouts — background removal is the most-reached-for AI image job there is, and the famous way to do it is to upload your photo to a service and download the cutout. That trade is no longer necessary. <a href="/tools/remove-background">PrivaTools' Background Remover</a> can run the model in your browser: the photo stays on your machine, and after a one-time download the tool works with no connection at all.</p>
+
+<h2>How does background removal run in a browser?</h2>
+<p>The on-device engine uses RMBG-1.4, an open background-removal model from BRIA, running inside the tab through WebAssembly. The first time you choose "On this device", the ~44&nbsp;MB model downloads from the Hugging Face CDN and is cached by your browser — the same download-once arrangement PrivaTools uses for its summarizer, translator, and PII detector. From then on the pipeline is entirely local: the image is scaled to the model's 1024×1024 working resolution, the model predicts a matte — a per-pixel map of subject versus background — and that matte is composited into the original image's alpha channel at the photo's full resolution. The result is a PNG with real transparency, computed on your own hardware. Turn the network off after the first download and the tool keeps working, which is also the simplest proof of where the work happens.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tools/remove-background">Background Remover</a>.</li>
+  <li>Choose where the AI runs: <strong>On our server</strong> (no download, fastest first run) or <strong>On this device</strong> (one ~44&nbsp;MB download, then offline).</li>
+  <li>Drop JPEG, PNG, or WebP images — several at once if you like, each with its own status.</li>
+  <li>Download the results: one image saves as a transparent PNG; several pack into a single ZIP.</li>
+</ol>
+
+<h2>When is the server engine the better choice?</h2>
+<p>The server engine runs a U²-Net-family model on our backend, and it earns its place three ways. First run speed: there is no 44&nbsp;MB download, so the first cutout arrives sooner. Low-powered devices: matte prediction is real CPU work, and an older phone or a storage-tight laptop is happier letting the server carry it. And difficult images: the two engines are genuinely different models, so tricky edges — flyaway hair, fur, glass — can come out differently; when one leaves a rough edge, trying the other is free and often settles it. Choosing the server does mean the photo travels to our one disclosed server — the tool says exactly that before you add a file — where it is processed in isolated temporary storage and deleted when the job ends. No account, no retention window, no third-party cloud.</p>
+
+<h2>How does this compare with remove.bg?</h2>
+<p>remove.bg is the category's household name, and its quality reputation is earned. The differences are architecture and pricing model, so the table sticks to each side's own published design — no guessed numbers.</p>
+<table>
+  <thead><tr><th></th><th>PrivaTools Background Remover</th><th>remove.bg</th></tr></thead>
+  <tbody>
+    <tr><td>Where the photo goes</td><td>Stays on your device (browser engine), or one disclosed server with per-job deletion</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Price</td><td>Free — both engines, full resolution</td><td>Free tier limits output resolution; full resolution is tied to paid credits and subscriptions</td></tr>
+    <tr><td>Account</td><td>None</td><td>Required for full-resolution work</td></tr>
+    <tr><td>Works offline</td><td>Yes, after the one-time model download</td><td>No</td></tr>
+    <tr><td>Ecosystem</td><td>Part of a free 200-plus-tool file suite</td><td>API, desktop apps, and design-tool plugins</td></tr>
+  </tbody>
+</table>
+<p>Where remove.bg is simply better: integrations and specialisation. Its API, desktop apps, and design-tool plugins slot into production workflows, and years of tuning exactly one job show in its consistency across awkward subjects. If you process hundreds of non-sensitive product shots inside a design pipeline, it is a reasonable choice. The days this page exists for are the other ones: a photo you'd rather not upload, a batch you'd rather not meter, or full resolution without a plan.</p>
+
+<h2>What about the metadata in your photos?</h2>
+<p>Whatever happens to the cutout, the original photo still carries its EXIF block — capture time, camera model, sometimes GPS coordinates. If originals are heading anywhere public, strip them with <a href="/tools/remove-exif">Remove EXIF</a> first. And when the cutout needs a different format or a smaller file, <a href="/tools/image-converter">Image Converter</a> and <a href="/tools/image-compressor">Image Compressor</a> finish the job — no account for any of it, like everything else here.</p>
+
+<h2>The bottom line</h2>
+<p>Background removal was one of the last everyday image jobs that seemed to require someone else's cloud. It doesn't anymore: a 44&nbsp;MB model in your browser cache does the work on your machine, free and offline, with a server engine one click away for the days you'd rather skip the download. The photo only travels if you pick the engine that travels.</p>
+<p><a href="/tools/remove-background">Remove a background now — free, full resolution, no account →</a></p>
 `,
   },
 ];

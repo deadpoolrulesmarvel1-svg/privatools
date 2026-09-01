@@ -227,6 +227,27 @@ NOINDEX_PATHS: frozenset[str] = frozenset({"/my-stuff"})
 # Blog post metadata  (slug → post info dict)
 # ---------------------------------------------------------------------------
 _BLOG_POSTS: dict[str, dict] = {
+    "chat-with-pdf-free-private": {
+        "title": "How to Chat With a PDF for Free — Without Uploading It",
+        "description": "Ask questions about any PDF using your own AI key: the text is extracted in your browser and each question goes straight to the provider you choose, never through PrivaTools. Costs, honest limits, and how it compares with hosted chat services.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["AI", "PDF", "Privacy", "How-To"],
+    },
+    "ai-pdf-tools-no-upload-byok": {
+        "title": "AI PDF Tools, No Upload Required: Your Own Key or On-Device Models",
+        "description": "PrivaTools runs AI two ways without an upload middleman: your own API key, sent browser-to-provider, or free on-device models that download once and then work offline. What each tool uses, model sizes, and how to verify it all in DevTools.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["AI", "Privacy", "Engineering"],
+    },
+    "remove-background-without-uploading": {
+        "title": "Remove an Image Background Without Uploading It Anywhere",
+        "description": "PrivaTools' Background Remover can run the RMBG-1.4 model in your browser — a ~44 MB one-time download that then works offline — with a server engine as the no-download alternative. How that compares with remove.bg's upload model.",
+        "publishedAt": "2026-09-01",
+        "readTime": "6 min read",
+        "tags": ["Image", "AI", "Privacy", "How-To"],
+    },
     "compress-pdf-without-losing-quality": {
         "title": "How to Compress a PDF Without Losing Quality",
         "description": "Learn how to reduce PDF file size by up to 90% without visible quality loss. Three methods compared: online tools, desktop apps, and command-line.",
