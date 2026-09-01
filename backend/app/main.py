@@ -205,6 +205,7 @@ _WASM_EVAL_PATHS = {
     # this and its local model would have been blocked by prod CSP.
     "/tool/translate-pdf",
     "/tools/remove-background",
+    "/tools/transcribe-audio",
 }
 
 # Pages allowed to talk directly to a BYOK AI provider.
@@ -223,7 +224,13 @@ _WASM_EVAL_PATHS = {
 # AI vendors it never called. test_byok_csp derives this set by walking
 # ToolPage's lazy imports, so it demanded the entry back the moment the feature
 # landed rather than leaving the calls to fail as a mystery network fault.
-_BYOK_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact", "/tool/chat-with-pdf", "/tool/translate-pdf"}
+_BYOK_PATHS = {
+    "/tool/summarize-pdf",
+    "/tool/smart-redact",
+    "/tool/chat-with-pdf",
+    "/tool/translate-pdf",
+    "/tools/transcribe-audio",
+}
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
 # which would give away the guarantee this product is built on, so adding a

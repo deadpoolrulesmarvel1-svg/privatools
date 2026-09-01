@@ -201,7 +201,7 @@ const DROP_ROUTES = [
     [/\.pdf$/i, "PDF", ["merge-pdf", "compress-pdf", "pdf-to-word"]],
     [/\.(jpe?g|png|webp|heic|gif|bmp|tiff?)$/i, "image", ["image-compressor", "image-converter", "remove-exif"]],
     [/\.(mp4|mov|webm|mkv|avi)$/i, "video", ["video-converter", "compress-video", "extract-audio"]],
-    [/\.(mp3|wav|m4a|flac|ogg|aac)$/i, "audio", ["audio-converter", "audio-trim", "audio-merge"]],
+    [/\.(mp3|wav|m4a|flac|ogg|aac)$/i, "audio", ["transcribe-audio", "audio-converter", "audio-trim"]],
     [/\.(zip|tar|gz|rar|7z)$/i, "archive", ["extract-archive", "create-zip", "hash-generator"]],
     [/\.(docx?|xlsx?|pptx?|odt)$/i, "document", ["office-to-pdf", "word-to-pdf", "excel-to-pdf"]],
     [/.*/, "file", ["create-zip", "hash-generator", "txt-to-pdf"]],

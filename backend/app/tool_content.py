@@ -255,6 +255,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Pick a highlight color", "text": "Choose yellow, green, pink, blue, or orange. Highlights are added as real PDF annotations."},
         {"name": "Download the highlighted PDF", "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with permanent highlight annotations."},
     ],
+    "transcribe-audio": [
+        {"name": "Drop a recording", "text": "MP3, WAV, M4A, OGG, FLAC or AAC — meetings, voice notes, interviews, lectures. Nothing uploads in the default mode."},
+        {"name": "Pick where the AI runs", "text": "On this device: OpenAI Whisper downloads once (~41 MB tiny / ~74 MB base) into your browser cache and transcribes locally, even offline. Or use your own OpenAI/Groq key for noticeably better accuracy — the audio goes straight from your browser to that provider."},
+        {"name": "Transcribe", "text": "Click Transcribe. Local runs show live progress; a 10-minute recording takes a few minutes on a modern laptop with the tiny model."},
+        {"name": "Download text or subtitles", "text": "Copy the transcript, download it as .txt, or export timestamped .srt subtitles ready for any video player."},
+    ],
     "chat-with-pdf": [
         {"name": "Upload your PDF", "text": "Drag a PDF into the upload area. pdf.js extracts the text page-by-page entirely inside your browser — the document is never uploaded to PrivaTools."},
         {"name": "Add your AI key once", "text": "Pick a provider — Anthropic, OpenAI, Google Gemini, OpenRouter, Groq, Mistral, or a self-hosted OpenAI-compatible endpoint — and paste your API key. It is stored encrypted on your device and sent only to that provider."},
@@ -1253,6 +1259,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are the highlights real PDF annotations or flattened images?", "a": "Real PDF annotations. They render in every PDF viewer and can be removed later if you reopen the file in an editor. Nothing about the underlying text is changed."},
         {"q": "Can I highlight multiple phrases at once?", "a": "Run the tool once per phrase. Each run preserves previous highlights, so you can layer different colors for different keywords."},
         {"q": "Does the highlighter respect case?", "a": "Toggle case-sensitive matching for exact-case search; leave it off for case-insensitive flexible matching. Case-insensitive is the default."},
+    ],
+    "transcribe-audio": [
+        {"q": "Is my recording uploaded anywhere?", "a": "Not in the default mode. Whisper runs inside your browser through WebAssembly — the model file downloads once from a public CDN and caches, then the audio is decoded and transcribed entirely in your tab. Verify in DevTools → Network: no request carries your recording. If you switch to your own API key, the audio goes directly from your browser to that provider (OpenAI or Groq), never through PrivaTools."},
+        {"q": "How accurate is the in-browser model?", "a": "Whisper tiny (~41 MB) is solid for clear speech and voice notes; base (~74 MB) is noticeably better for meetings. Both trail the full-size models behind provider APIs — for important interviews, your own OpenAI or Groq key gives near-human accuracy for fractions of a cent per minute."},
+        {"q": "Which languages work?", "a": "Whisper is multilingual — it auto-detects the spoken language across ~100 languages, and both the local models and the provider APIs handle non-English speech."},
+        {"q": "Can I get subtitles for a video?", "a": "Yes — the local engine returns timestamps, and the SRT export drops straight into any video player or editor. Extract the audio track first with the Extract Audio tool if you have a video file."},
+        {"q": "How long a recording can it handle?", "a": "Locally: limited by your machine's memory and patience — hour-long recordings work but take a while on the tiny model. Provider APIs typically cap uploads around 25 MB, roughly 25 minutes of MP3; trim or split longer recordings first."},
     ],
     "chat-with-pdf": [
         {"q": "Where does my PDF go when I chat with it?", "a": "Nowhere near PrivaTools. The text is extracted by pdf.js inside your browser tab, and each question is sent, together with that text, directly from your browser to the AI provider you picked, authenticated with your own API key. Open DevTools → Network and you will see requests only to that provider."},

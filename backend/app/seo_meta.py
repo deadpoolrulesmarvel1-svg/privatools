@@ -509,7 +509,7 @@ _POPULARITY: dict[str, int] = {
     "generate-favicon": 236, "qr-reader": 237, "video-to-gif": 238,
     # ── non-PDF: video-audio ───────────────────────────────────────────
     "mp4-to-mp3": 250, "compress-video": 251, "video-converter": 252,
-    "mov-to-mp4": 253, "trim-media": 254, "audio-converter": 255,
+    "mov-to-mp4": 253, "trim-media": 254, "audio-converter": 255, "transcribe-audio": 255,
     "extract-audio": 256, "m4a-to-mp3": 257, "avi-to-mp4": 258,
     "webm-to-mp4": 259, "mp4-to-webm": 260, "gif-to-mp4": 261,
     "video-to-pdf": 262, "video-resizer": 263, "video-thumbnail": 264,
@@ -719,6 +719,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "video-to-pdf":     "Upload a video and download a PDF where each page is a frame sampled at your chosen interval — great for highlight reels.",
     "video-to-gif":     "Upload a short video (MP4/MOV/WebM) and download an animated GIF — pick FPS and width.",
     "audio-converter":  "Upload an audio file and pick a target format (MP3/WAV/OGG/FLAC/AAC) + bitrate — FFmpeg converts server-side.",
+    "transcribe-audio": "Drop a recording and click Transcribe — Whisper runs in your browser by default (downloads once, then offline), or use your own OpenAI/Groq key for higher accuracy. Download the transcript as text or SRT subtitles.",
     "video-merge":      "Upload 2+ videos and download a single merged video — concatenates in upload order.",
     "audio-merge":      "Upload 2+ audio files and download a single merged track — concatenates in upload order.",
     "extract-audio":    "Upload a video file and download just the audio track — pick MP3, WAV, AAC, or FLAC.",
@@ -1007,6 +1008,7 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "url-encoder":        ("URL Encoder / Decoder", "Encode or decode URLs online for free — percent-encode strings for use in query parameters, or decode %20/%26/etc back to readable text. Runs entirely in your browser. For JWT decoding, use the dedicated JWT Decoder."),
     # v1.1.0 / v1.2.0 additions
     "audio-converter":    ("Audio Converter",    "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported."),
+    "transcribe-audio":   ("Transcribe Audio (AI)", "Transcribe audio to text online free — OpenAI Whisper runs entirely in your browser via WebAssembly, so meetings and voice notes are never uploaded. Optionally use your own OpenAI or Groq key for higher accuracy; the audio then goes straight from your browser to that provider. Timestamps, plain text, and SRT subtitles included."),
     "image-upscaler":     ("Image Upscaler",     "Upscale images online for free — enlarge photos by 2x or 4x using high-quality Lanczos resampling. Supports JPG, PNG, and WebP. Perfect for improving resolution of small images, thumbnails, or screenshots."),
     "heic-to-png":        ("HEIC to PNG",        "Convert HEIC to PNG online for free — change Apple's High Efficiency Image format (the default for iPhone photos) to PNG, which every browser and editor can open. Free, private, no sign-up."),
     "webp-to-jpg":        ("WebP to JPG",        "Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately."),

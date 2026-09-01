@@ -106,6 +106,7 @@ const LazyFlipImageUI        = lazyNamed(() => import("@/components/tool-ui/Phas
 // Round-U dedicated UIs (formerly fell through to GenericUI)
 const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
 const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
+const LazyTranscribeAudioUI = lazyNamed(() => import("@/components/tool-ui/TranscribeAudioUI"), "TranscribeAudioUI");
 const LazyImageUpscalerUI   = lazyNamed(() => import("@/components/tool-ui/ImageUpscalerUI"), "ImageUpscalerUI");
 
 function CategoryToolNav({ currentSlug, category }: { currentSlug: string; category: NonPdfCategory }) {
@@ -205,6 +206,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "subtitle-converter": return <LazySubtitleConverterUI />;
     // Round-U
     case "audio-converter":    return <LazyAudioConverterUI />;
+    case "transcribe-audio":   return <LazyTranscribeAudioUI />;
     case "image-upscaler":     return <LazyImageUpscalerUI />;
     case "audio-merge":
       return <LazyMultiFileUI

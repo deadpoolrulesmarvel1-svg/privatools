@@ -28,6 +28,7 @@ const AI_TOOLS: { label: string; href: string }[] = [
     { label: "Translate PDF", href: "#/tool/translate-pdf" },
     { label: "Smart Redact", href: "#/tool/smart-redact" },
     { label: "Remove Background", href: "#/tools/remove-background" },
+    { label: "Transcribe Audio", href: "#/tools/transcribe-audio" },
 ];
 
 export function AiHubDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {

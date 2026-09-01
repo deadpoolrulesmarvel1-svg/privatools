@@ -50,6 +50,7 @@ const SYNONYMS: Record<string, string> = {
     "color-converter":  "hex rgb hsl picker palette",
     "pdf-page-counter": "count pages quantity number",
     "audio-converter":  "convert format mp3 wav ogg flac aac transcode",
+    "transcribe-audio": "speech to text whisper stt transcript subtitles dictation minutes",
     "image-upscaler":   "enhance enlarge bigger 2x 4x lanczos",
     "audio-merge":      "join combine concat audio tracks",
     "video-merge":      "join combine concat videos",

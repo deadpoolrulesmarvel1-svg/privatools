@@ -84,7 +84,7 @@ NON_PDF_TOOLS = [
     "remove-background", "svg-to-png", "image-watermark", "remove-image-watermark",
     "generate-favicon", "make-collage", "generate-barcode",
     "url-to-pdf", "qr-reader", "merge-images",
-    "image-upscaler", "audio-converter",
+    "image-upscaler", "audio-converter", "transcribe-audio",
     # v1.2.0 additions
     "webp-to-jpg", "webp-to-png", "heic-to-png", "view-exif",
     "jwt-decoder", "regex-tester", "timestamp-converter",

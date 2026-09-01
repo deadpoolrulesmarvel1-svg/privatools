@@ -466,6 +466,7 @@ const REGISTRY: Record<string, Renderer> = {
     "video-converter": Convert,
     "gif-to-mp4":     Convert,
     "audio-converter": Convert,
+    "transcribe-audio": Convert,
     "ocr-pdf":        Ocr,
     "image-ocr":      Ocr,
     "highlight-pdf":  Highlight,
