@@ -521,6 +521,19 @@ const CSS = `
 .dl-ministeps > div { display:flex; gap:11px; align-items:baseline; padding:9px 0; border-top:1px solid var(--dl-rule-soft); font-size:13.5px; }
 .dl-ministeps > div:first-child { border-top:0; padding-top:0; }
 .dl-ministeps i { font-style:normal; font-weight:700; font-size:12px; color:var(--dl-green); flex:none; }
+.dl-prosegrid { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:64px; align-items:start; padding-bottom:20px; }
+@media (max-width: 980px) { .dl-prosegrid { grid-template-columns:1fr; gap:10px; } }
+.dl-proserail { position:sticky; top:92px; display:flex; flex-direction:column; gap:16px; }
+@media (max-width: 980px) { .dl-proserail { position:static; } }
+.dl-facts h3 { margin-bottom:4px; }
+.dl-factr { display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-bottom:1px solid var(--dl-rule-soft); font-size:13px; color:var(--dl-muted); }
+.dl-factr:last-child { border-bottom:none; }
+.dl-factr b { color:var(--dl-ink); font-weight:600; text-align:right; }
+.dl-facts .fine { font-size:12.5px; color:var(--dl-muted); margin:2px 0 10px; }
+.dl-facts .dl-btn { display:block; text-align:left; padding:9px 14px; font-size:13px; margin-top:8px; }
+.dl-doclist { margin:0 0 8px; padding-left:2px; list-style:none; }
+.dl-doclist li { position:relative; padding:3px 0 3px 22px; color:var(--dl-muted); font-size:14.5px; line-height:1.65; }
+.dl-doclist li::before { content:""; position:absolute; left:2px; top:13px; width:7px; height:7px; border-radius:50%; background:var(--dl-green); opacity:.75; }
 .dl-doc { max-width:72ch; padding-top:8px; }
 .dl-doc h2 { font-weight:700; font-size:21px; letter-spacing:-.015em; margin:36px 0 10px; }
 .dl-doc p, .dl-doc li { font-size:15px; color:var(--dl-muted); }
@@ -548,6 +561,11 @@ const CSS = `
 .dl-reccode code { display:block; font-family:ui-monospace, Menlo, monospace; font-size:15px; letter-spacing:.04em; background:var(--dl-card); border:1px dashed var(--dl-rule-mid); border-radius:8px; padding:10px 12px; margin:10px 0; word-break:break-all; }
 .dl-keyrow { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:12px; align-items:center; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:11px; padding:12px 16px; font-size:13.5px; }
 .dl-keyrow code { font-family:ui-monospace, Menlo, monospace; font-size:12.5px; color:var(--dl-muted); overflow:hidden; text-overflow:ellipsis; }
+.dl-keyrow b { overflow-wrap:anywhere; }
+@media (max-width: 620px) {
+  .dl-keyrow { grid-template-columns:auto minmax(0,1fr) auto; }
+  .dl-keyrow > *:nth-child(4) { grid-column:2 / -1; justify-self:start; }
+}
 .dl-keyrow .kd { color:var(--dl-faint); font-size:12px; white-space:nowrap; }
 .dl-tag { font-size:10px; font-weight:700; letter-spacing:.06em; color:var(--dl-green); background:var(--dl-wash); border-radius:6px; padding:3px 7px; flex:none; }
 .dl-fresh { background:var(--dl-amber-wash); border:1px solid color-mix(in srgb, var(--dl-amber) 35%, var(--dl-rule)); border-radius:12px; padding:14px 16px; margin:10px 0; font-size:13px; }
@@ -653,7 +671,12 @@ const CSS = `
 @media (max-width: 700px) { .dl-palov { padding:0; } .dl-pal { max-width:none; height:100%; max-height:none; border-radius:0; border:0; } }
 
 /* chrome extras */
-.dl-sysdock { position:fixed; left:22px; bottom:22px; z-index:25; background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:14px; box-shadow:var(--dl-sh1); padding:12px 16px; display:flex; flex-direction:column; gap:7px; font-size:12px; }
+.dl-sysdock { position:fixed; left:22px; bottom:22px; z-index:25; background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; box-shadow:var(--dl-sh1); padding:9px 13px; font-size:12px; cursor:default; transition:border-radius 150ms cubic-bezier(0.23,1,0.32,1); }
+.dl-sysdock .dots { display:flex; gap:6px; }
+.dl-sysdock .rows { display:none; flex-direction:column; gap:7px; }
+.dl-sysdock:hover, .dl-sysdock:focus-visible { border-radius:14px; padding:12px 16px; }
+.dl-sysdock:hover .dots, .dl-sysdock:focus-visible .dots { display:none; }
+.dl-sysdock:hover .rows, .dl-sysdock:focus-visible .rows { display:flex; }
 .dl-sysdock .r { display:flex; align-items:center; gap:8px; }
 .dl-sysdock .d { width:7px; height:7px; border-radius:50%; background:var(--dl-green); flex:none; }
 .dl-sysdock .d.warn { background:var(--dl-amber); }
@@ -959,11 +982,17 @@ export default class DaylightSkinApp extends React.Component {
     }
 
     SysDock() {
+        // Collapsed to a three-dot pill so it never sits on top of content;
+        // hover or keyboard focus expands the detail card in place.
         return (
-            <div className="dl-sysdock" aria-label="Processing paths">
-                <div className="r"><span className="d" /><b>Local</b><span>Ready</span></div>
-                <div className="r"><span className="d warn" /><b>Server</b><span>Best effort · Mumbai, IN</span></div>
-                <div className="r"><span className="d" /><b>Offline</b><span>Cached tools ready</span></div>
+            <div className="dl-sysdock" tabIndex={0}
+                aria-label="Processing paths: local ready · server best effort, Mumbai · offline cached">
+                <div className="dots" aria-hidden="true"><span className="d" /><span className="d warn" /><span className="d" /></div>
+                <div className="rows" aria-hidden="true">
+                    <div className="r"><span className="d" /><b>Local</b><span>Ready</span></div>
+                    <div className="r"><span className="d warn" /><b>Server</b><span>Best effort · Mumbai, IN</span></div>
+                    <div className="r"><span className="d" /><b>Offline</b><span>Cached tools ready</span></div>
+                </div>
             </div>
         );
     }
@@ -1817,23 +1846,38 @@ export default class DaylightSkinApp extends React.Component {
         );
     }
 
-    Doc(title, eyebrow, sections) {
+    Doc(title, eyebrow, sections, rail) {
         return (
             <div className="dl-wrap">
                 <div className="dl-pghero">
                     <div className="dl-eyebrow">{eyebrow}</div>
                     <h1>{title}</h1>
                 </div>
-                <div className="dl-doc">
-                    {sections.map(([h, body]) => (
-                        <React.Fragment key={h}>
-                            <h2>{h}</h2>
-                            {Array.isArray(body)
-                                ? <ul>{body.map((li) => <li key={li}>{li}</li>)}</ul>
-                                : <p>{body}</p>}
-                        </React.Fragment>
-                    ))}
+                <div className={rail ? "dl-prosegrid" : undefined}>
+                    <div className="dl-doc">
+                        {sections.map(([h, body]) => (
+                            <React.Fragment key={h}>
+                                <h2>{h}</h2>
+                                {Array.isArray(body)
+                                    ? <ul className="dl-doclist">{body.map((li) => <li key={li}>{li}</li>)}</ul>
+                                    : <p>{body}</p>}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                    {rail && <aside className="dl-proserail">{rail}</aside>}
                 </div>
+            </div>
+        );
+    }
+
+    /** A quiet fact card for the prose pages' rail. */
+    Facts(title, rows) {
+        return (
+            <div className="dl-panel dl-facts">
+                <h3>{title}</h3>
+                {rows.map(([k, v]) => (
+                    <div className="dl-factr" key={k}><span>{k}</span><b>{v}</b></div>
+                ))}
             </div>
         );
     }
@@ -1843,7 +1887,23 @@ export default class DaylightSkinApp extends React.Component {
             ["The short version", `PrivaTools is ${TOTAL} file tools built on one rule: your documents are yours. Wherever a tool can run in your browser, it does; when a server is needed, it says so first, and deletes everything after use.`],
             ["Who pays for it", "The owner. There are no ads, no trackers, no premium tier and no investors to satisfy — which is why there is nothing on this site that tries to convert you into anything."],
             ["Where things run", "The site and its processing run from our disclosed server in Mumbai, India. Most tools never touch it — they run entirely on your device."],
-        ]);
+            ["The rule we build by", "If a job can run on your device, it must. The server is a fallback we disclose, never a default we hide — and every promise on this site is written so you can check it yourself."],
+        ], <>
+            {this.Facts("At a glance", [
+                ["Tools", `${TOTAL}`],
+                ["Runs", "Browser-first"],
+                ["Server", "Mumbai, IN"],
+                ["Funding", "Owner"],
+                ["Accounts", "API only"],
+                ["Price", "Free"],
+            ])}
+            <div className="dl-panel dl-facts">
+                <h3>Check the claims</h3>
+                <p className="fine">Nothing here asks to be believed.</p>
+                <a className="dl-btn dl-btn-ghost" href="#/security">How to verify →</a>
+                <a className="dl-btn dl-btn-ghost" href="#/compare">Against the others →</a>
+            </div>
+        </>);
     }
 
     Privacy() {
@@ -1857,7 +1917,20 @@ export default class DaylightSkinApp extends React.Component {
             ["Files", "Local-first is the default: if a tool can run entirely in your browser, it does, and your file never leaves your machine. Tools that require server processing say so before you add a file. Server processing is transient — files exist only for the duration of the job and are deleted after use. We keep no copies; once deleted, they are unrecoverable."],
             ["Accounts", "Tools never require an account. The optional developer account exists only for the API; it stores your email, a password hash, and your API keys — nothing else."],
             ["The full policy", <>This page is Daylight’s summary. The complete policy — including the AI tools’ model downloads and the developer API’s specifics — is the site policy it summarises.</>],
-        ]);
+        ], <>
+            {this.Facts("Where your file goes", [
+                ["Local tools", "Nowhere"],
+                ["Server tools", "Mumbai, IN"],
+                ["Kept for", "The job only"],
+                ["Copies", "None"],
+                ["Trackers", "None"],
+            ])}
+            <div className="dl-panel dl-facts">
+                <h3>Don’t take our word</h3>
+                <p className="fine">Every claim here has a check you can run from your own browser.</p>
+                <a className="dl-btn dl-btn-ghost" href="#/security">Verify it yourself →</a>
+            </div>
+        </>);
     }
 
     Terms() {
@@ -1865,7 +1938,19 @@ export default class DaylightSkinApp extends React.Component {
             ["The service", "PrivaTools provides file utilities free of charge, without accounts, for lawful personal and commercial use. The service is provided as-is, without warranty; verify important results before relying on them."],
             ["Acceptable use", "Don’t use the tools to process content you have no right to process, and don’t attempt to disrupt the service for others."],
             ["Liability", "To the maximum extent permitted by law, we are not liable for losses arising from use of the service. Your sole remedy is to stop using it — which costs nothing, because so does using it."],
-        ]);
+        ], <>
+            {this.Facts("In plain words", [
+                ["Cost", "Free"],
+                ["Use", "Personal & commercial"],
+                ["Warranty", "None — verify results"],
+                ["Your files", "Yours, always"],
+            ])}
+            <div className="dl-panel dl-facts">
+                <h3>Something unclear?</h3>
+                <p className="fine">A person reads every message.</p>
+                <a className="dl-btn dl-btn-ghost" href="#/support">Ask on Support →</a>
+            </div>
+        </>);
     }
 
     Status() { return this.HousePage(HouseStatus, "Status"); }

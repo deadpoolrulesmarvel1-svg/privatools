@@ -467,7 +467,7 @@ export default function BatchPage() {
     return (
         <div className="h-full flex flex-col">
             {/* Header — workspace bar */}
-            <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
+            <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-medium text-[11px] text-accent">Batch</span>

@@ -519,7 +519,7 @@ export default function PipelinePage() {
             <div className="flex-1 min-w-0 flex flex-col">
 
                 {/* Workspace header — file name, controls */}
-                <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
+                <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="font-medium text-[11px] text-accent">Pipeline</span>
