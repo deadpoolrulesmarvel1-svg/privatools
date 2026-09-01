@@ -34,7 +34,7 @@ export function withAccounts(Base, config) {
         constructor(props) {
             super(props);
             this.state = { ...this.state, acct: { ...initialAccountState } };
-            this._onAcctNav = () => this.forceUpdate();
+            this._onAcctNav = () => { this._ensureAccountPath(); this.forceUpdate(); };
         }
 
         componentDidMount() {
@@ -42,6 +42,7 @@ export function withAccounts(Base, config) {
             window.addEventListener("hashchange", this._onAcctNav);
             window.addEventListener("popstate", this._onAcctNav);
             window.addEventListener("privatools:clerk-blocked", this._onClerkBlocked);
+            this._ensureAccountPath();
             // The block usually happens before this route is even opened, so
             // check the flag as well as listening for the event.
             if (clerkLoadFailed()) this._onClerkBlocked();
@@ -58,6 +59,26 @@ export function withAccounts(Base, config) {
             window.removeEventListener("popstate", this._onAcctNav);
             window.removeEventListener("privatools:clerk-blocked", this._onClerkBlocked);
         }
+
+        /**
+         * Put the account view on the /account *path*, never a hash of some
+         * other page.
+         *
+         * The CSP that lets clerk-js load is scoped per path, and a hash never
+         * reaches the server — so `/#/account` and `/tool/x#/account` are served
+         * the homepage's and the tool's policies, which do not name Clerk, and
+         * sign-in dies with "Failed to load Clerk JS". Only a real navigation
+         * gets the right headers, so any hash that lands here is turned into
+         * one. `replace`, not `assign`: the broken URL should not sit in the
+         * back button.
+         */
+        _ensureAccountPath = () => {
+            if (typeof location === "undefined") return;
+            const m = /^#\/account(\/keys)?\/?$/.exec(location.hash || "");
+            if (!m) return;
+            if (location.pathname.replace(/\/+$/, "") === "/account") return;
+            location.replace(m[1] ? "/account/keys" : "/account");
+        };
 
         _onClerkBlocked = () => {
             this._setAcct({ busy: false, blocked: true, error: CLERK_BLOCKED_MESSAGE });

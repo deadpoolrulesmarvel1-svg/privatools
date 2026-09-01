@@ -236,7 +236,8 @@ const PAGES_FOR_PALETTE = [
     ["#/batch", "Batch", "Same tool, many files"],
     ["#/my-stuff/vault", "Vault", "Device-local encrypted passwords"],
     ["#/my-stuff", "My Stuff", "Your activity on this device"],
-    ["#/account", "Developer API", "Sign in, keys and quota"],
+    // A real path, not a hash: see _ensureAccountPath in withAccounts.
+    ["/account", "Developer API", "Sign in, keys and quota"],
     ["#/status", "Status", "Live service state"],
     ["#/security", "Trust & security", "The promises, verifiable"],
     ["#/compare", "Compare", "The fine print, side by side"],
@@ -1122,7 +1123,7 @@ export default class DaylightSkinApp extends React.Component {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" fill="currentColor" opacity="0.7"/></svg>
                         AI
                     </button></TooltipTrigger><TooltipContent>Bring your own key · on-device models</TooltipContent></Tooltip>
-                    <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="#/account">{a.user ? "Account" : "Sign in"}</a>
+                    <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="/account">{a.user ? "Account" : "Sign in"}</a>
                     <Tooltip><TooltipTrigger asChild><button className="dl-themebtn" onClick={this.cycleTheme} aria-label={`Theme: ${this.state.themeMode}`}>
                         {this.state.themeMode === "midnight"
                             ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15.4 11.2 A6.8 6.8 0 1 1 6.8 2.6 A5.4 5.4 0 0 0 15.4 11.2 Z" fill="currentColor" /><path d="M13.4 3.2 l.55 1.25 1.25.55 -1.25.55 -.55 1.25 -.55-1.25 -1.25-.55 1.25-.55 Z" fill="currentColor" /></svg>

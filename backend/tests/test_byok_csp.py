@@ -195,3 +195,44 @@ def test_byok_paths_match_the_pages_that_actually_use_byok():
         f"{missing} use BYOK but are absent from _BYOK_PATHS, so the browser "
         "will block every provider call — a network fault to the user."
     )
+
+
+# ---------------------------------------------------------------------------
+# Clerk's origins are scoped to /account, and the skin must therefore reach the
+# account page by that PATH. It once linked to `#/account`, a hash — which the
+# browser never sends to a server, so the page was served the homepage's or a
+# tool's policy, neither of which names Clerk, and clerk-js was blocked. The
+# symptom was "Failed to load Clerk JS" for every visitor who clicked Sign in,
+# while a direct visit to /account worked, which is what made it hard to see.
+# ---------------------------------------------------------------------------
+
+SKIN_TSX = FRONTEND_SRC / "skins" / "daylight" / "SkinApp.tsx"
+
+
+def test_account_is_linked_by_path_not_hash():
+    """No `href="#/account"` anywhere in the skin."""
+    text = SKIN_TSX.read_text(encoding="utf-8")
+    offenders = re.findall(r'href=\{?"#/account[^"]*"', text)
+    assert not offenders, (
+        "The account page must be reached by a real path so it gets the CSP "
+        f"that permits clerk-js; found hash links: {offenders}"
+    )
+
+
+def test_only_account_path_carries_clerk_origins(monkeypatch):
+    """/account gets Clerk's hosts; the homepage and tool pages do not."""
+    import app.main as main
+
+    if not main._CLERK_FAPI_ORIGIN:
+        monkeypatch.setattr(main, "_CLERK_FAPI_ORIGIN", "https://clerk.example.com")
+
+    origin = main._CLERK_FAPI_ORIGIN
+    account = main._content_security_policy("/account", "n0nce", "")
+    assert origin in account, "clerk-js cannot load on the page that needs it"
+
+    for path in ("/", "/tools", "/tool/merge-pdf"):
+        csp = main._content_security_policy(path, "n0nce", "")
+        assert origin not in csp, (
+            f"{path} should not be able to reach the identity provider; if the "
+            "skin now needs it there, the account route regressed to a hash"
+        )
