@@ -32,13 +32,15 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
-        "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
-        "response. No account needed, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
+        "PrivaTools privacy policy: local-first tools, isolated temporary processing deleted on "
+        "response, on-device AI models, and bring-your-own-key AI that talks to your provider "
+        "directly — never through us. Updated September 1, 2026.",
     ),
     "/security": (
         "Security & Trust — PrivaTools",
-        "PrivaTools security, threat model, transparency, GDPR rights, and vulnerability reporting "
-        "details for the privacy-first file tool suite.",
+        "Security and threat model as verifiable promises: local tools upload nothing, server tools "
+        "disclose themselves first, AI keys go only to your provider under a scoped "
+        "content-security policy — every claim ships with the check that proves it.",
     ),
     "/terms": (
         "Terms of Service — PrivaTools",
@@ -52,8 +54,9 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     ),
     "/about": (
         "About PrivaTools — How We Handle Your Files | Privacy-First",
-        "How PrivaTools processes your files with zero-knowledge architecture. Files "
-        "are processed and immediately deleted — never stored or shared. 100% open source.",
+        "Owner-funded, open-source file tools built on one rule: your documents are yours. "
+        "Browser-first processing, disclosed server fallback, and AI without surrender — "
+        "on-device models or your own API key, never our middleman.",
     ),
     "/batch": (
         "Batch Process Files — Apply Tools to Many Files | PrivaTools",
@@ -1700,9 +1703,17 @@ _TOTAL_TOOLS = len(_PDF_TOOLS) + len(_NONPDF_TOOLS)
 _STATIC_META["/"] = (
     _STATIC_META["/"][0],
     f"{_TOTAL_TOOLS} free, open-source file tools for PDF, image, video, audio, and developer "
-    "work. Browser-only when possible; isolated temporary processing when needed.",
+    "work. AI two private ways — on-device models or your own API key. Browser-only when "
+    "possible; isolated temporary processing when needed.",
 )
 _NOT_FOUND_META = (_NOT_FOUND_META[0], _NOT_FOUND_META[1].replace("213", str(_TOTAL_TOOLS)))
+# Compare-page descriptions predate the registries too; normalise every stale
+# hand-written count to the derived one.
+_STATIC_META = {
+    k: (t, d.replace("213 tools", f"{_TOTAL_TOOLS} tools")
+            .replace("213 privacy-first tools", f"{_TOTAL_TOOLS} privacy-first tools"))
+    for k, (t, d) in _STATIC_META.items()
+}
 
 @lru_cache(maxsize=512)
 def get_meta_for_path(path: str) -> tuple[str, str]:

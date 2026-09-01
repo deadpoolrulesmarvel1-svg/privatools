@@ -781,6 +781,9 @@ const CMP_ROWS = [
     ["Retention after processing", ["Zero · this tab only", true], ["Time-limited", ""], ["Time-limited", ""], ["“Deleted after 2 hours”", ""], ["n/a", ""]],
     ["Account walls", ["Never for tools", true], ["For some features", ""], ["For some features", ""], ["For some features", ""], ["None", ""]],
     ["Ads & third-party scripts", ["None", true], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""]],
+    ["AI tools on the free tier", ["On-device models · free", true], ["Cloud AI, paid tiers", ""], ["Cloud AI, paid tiers", ""], ["Not offered", ""], ["Not offered", ""]],
+    ["Bring your own AI key", ["8 providers + self-hosted", true], ["Not offered", ""], ["Not offered", ""], ["Not offered", ""], ["Not offered", ""]],
+    ["Many files per run", ["Up to 25 → one ZIP", true], ["Counts against quotas", ""], ["Counts against quotas", ""], ["Counts against quotas", ""], ["n/a", ""]],
 ];
 
 /* ═══════════════════════════ the component ═══════════════════════════ */
@@ -2067,7 +2070,11 @@ export default class DaylightSkinApp extends React.Component {
                         ["Some jobs — OCR, office conversion, heavy video — need more than a browser can do. Those tools carry an amber “uses our server” chip before you add a file. Processing happens in isolated temporary storage on our server in Mumbai, India, and your file is deleted after use.",
                             "We’d rather tell you where the server is than pretend there isn’t one."]],
                     ["No third-party code touches your files", "How to check: network tab, again",
-                        ["Many free tool sites load their actual processing code from public CDNs at runtime — unpinned scripts, fetched while you’re holding a sensitive document. We don’t. Every tool is bundled and served from privatools.me, integrity-checked at build time, behind a strict content-security policy."]],
+                        ["Many free tool sites load their actual processing code from public CDNs at runtime — unpinned scripts, fetched while you’re holding a sensitive document. We don’t. Every tool is bundled and served from privatools.me, integrity-checked at build time, behind a strict content-security policy.",
+                            "Two disclosed exceptions, scoped by that same policy to the tools that need them: on-device AI models and the in-browser OCR engine download from pinned CDNs on first use. Those requests carry code and model weights toward you — never your file the other way."]],
+                    ["Your AI key goes only to your provider", "How to check: network tab + the AI hub",
+                        ["Bring-your-own-key AI sends each request from your browser straight to the provider you configured — Anthropic, OpenAI, Gemini, Groq, or your own self-hosted server. Run one and watch the network panel: the only call is to that provider. The page’s security policy refuses every other AI host, and it only opens provider access at all on the handful of AI tool pages.",
+                            "The key itself is stored encrypted on your device, and the AI hub in the top bar shows and deletes it any time. It is never sent to PrivaTools."]],
                     ["No accounts, no trackers, no ads", "How to check: use the site",
                         ["There is nothing to sign up for to use a tool, no third-party script watching you, and nothing to sell. The site is owner-funded. Your history — kept on your device — records tool and time only, never files or filenames."]]]
                         .map(([h, how, ps]) => (
@@ -2081,8 +2088,12 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="dl-sec-head"><div><h2 className="dl-sec-title">Where we’re not perfect</h2><p className="dl-sec-sub">Said plainly, because that’s the point</p></div></div>
                     <Accordion type="single" collapsible className="dl-acc">
                         <AccordionItem value="models">
-                            <AccordionTrigger>Some on-device AI tools download their models from a CDN</AccordionTrigger>
-                            <AccordionContent>Background removal and similar tools fetch model weights — not your files — on first use, disclosed in the privacy policy. Your document still never leaves the browser.</AccordionContent>
+                            <AccordionTrigger>On-device AI models download from a CDN once</AccordionTrigger>
+                            <AccordionContent>Summarize, Smart Redact, Translate, Remove Background, Transcribe Audio and in-browser OCR fetch model weights or engine files — not your files — on first use, then cache them in your browser. The AI hub in the top bar lists every installed model with its real size and removes any of them. Your document still never leaves the browser.</AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="byok">
+                            <AccordionTrigger>Your own AI key means trusting the provider you picked</AccordionTrigger>
+                            <AccordionContent>With bring-your-own-key, the text of the document you run (or the page images, for vision OCR) goes to that provider under your agreement with them — that is the entire point, and it is your call per run. We keep ourselves out of the path; we cannot keep your provider out of it. The free on-device engines exist precisely for the documents where even that is too much.</AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="server">
                             <AccordionTrigger>Server tools mean trusting our server</AccordionTrigger>
@@ -2111,7 +2122,7 @@ export default class DaylightSkinApp extends React.Component {
                 <div className="dl-pghero">
                     <div className="dl-eyebrow">Side by side</div>
                     <h1>The fine print,<br /><em>compared properly.</em></h1>
-                    <p>Checked against each site’s own public pages, August 2026. Their free tiers are what most people actually use — so that’s the column we compare.</p>
+                    <p>Checked against each site’s own public pages, August–September 2026. Their free tiers are what most people actually use — so that’s the column we compare.</p>
                 </div>
                 <div className="dl-cmpscroll" style={{ marginTop: 30 }}>
                     <table className="dl-cmp">
@@ -2289,6 +2300,7 @@ export default class DaylightSkinApp extends React.Component {
             ["Who pays for it", "The owner. There are no ads, no trackers, no premium tier and no investors to satisfy — which is why there is nothing on this site that tries to convert you into anything."],
             ["Where things run", "The site and its processing run from our disclosed server in Mumbai, India. Most tools never touch it — they run entirely on your device."],
             ["The rule we build by", "If a job can run on your device, it must. The server is a fallback we disclose, never a default we hide — and every promise on this site is written so you can check it yourself."],
+            ["AI without surrender", "AI here comes two private ways. Free on-device models — summarizing, redaction, translation, background removal, speech-to-text, OCR — download once into your browser and then work offline; nothing uploads. And if you want frontier quality, bring your own API key: Chat with PDF and the other AI tools call your provider directly from your browser, never through us. The AI hub in the top bar manages both."],
         ], <>
             {this.Facts("At a glance", [
                 ["Tools", `${TOTAL}`],
@@ -2297,6 +2309,7 @@ export default class DaylightSkinApp extends React.Component {
                 ["Funding", "Owner"],
                 ["Accounts", "API only"],
                 ["Price", "Free"],
+                ["AI", "On-device + your key"],
             ])}
             <div className="dl-panel dl-facts">
                 <h3>Check the claims</h3>
@@ -2314,9 +2327,12 @@ export default class DaylightSkinApp extends React.Component {
                 "Tools run in your browser wherever possible; those files never reach us.",
                 "When a tool needs our server, your file is processed in isolated temporary storage in Mumbai, India, and deleted after use.",
                 "Activity kept on your device holds tool and time only — never files or filenames.",
+                "On-device AI models download once into your browser cache; your files never ride along.",
+                "Optional bring-your-own-key AI talks to your chosen provider directly from your browser — we never see the key, the request, or the reply.",
             ]],
             ["Files", "Local-first is the default: if a tool can run entirely in your browser, it does, and your file never leaves your machine. Tools that require server processing say so before you add a file. Server processing is transient — files exist only for the duration of the job and are deleted after use. We keep no copies; once deleted, they are unrecoverable."],
             ["Accounts", "Tools never require an account. The optional developer account exists only for the API; it stores your email, a password hash, and your API keys — nothing else."],
+            ["AI", "By default, AI features run on models downloaded into your browser — the download carries weights toward you, never your file the other way, and the AI hub can remove any model. If you add your own API key, requests for those runs go straight from your browser to that provider under your agreement with them; the key is stored encrypted on this device and is never transmitted to PrivaTools. Saved PDF passwords live in a separate device-local vault whose key the browser will not export."],
             ["The full policy", <>This page is Daylight’s summary. The complete policy — including the AI tools’ model downloads and the developer API’s specifics — is the site policy it summarises.</>],
         ], <>
             {this.Facts("Where your file goes", [
@@ -2325,6 +2341,8 @@ export default class DaylightSkinApp extends React.Component {
                 ["Kept for", "The job only"],
                 ["Copies", "None"],
                 ["3rd-party trackers", "None"],
+                ["AI by default", "On-device"],
+                ["With your key", "Browser → provider"],
             ])}
             <div className="dl-panel dl-facts">
                 <h3>Don’t take our word</h3>
@@ -2339,6 +2357,7 @@ export default class DaylightSkinApp extends React.Component {
             ["The service", "PrivaTools provides file utilities free of charge, without accounts, for lawful personal and commercial use. The service is provided as-is, without warranty; verify important results before relying on them."],
             ["Acceptable use", "Don’t use the tools to process content you have no right to process, and don’t attempt to disrupt the service for others."],
             ["Liability", "To the maximum extent permitted by law, we are not liable for losses arising from use of the service. Your sole remedy is to stop using it — which costs nothing, because so does using it."],
+            ["Your own AI key", "Bring-your-own-key requests travel directly from your browser to the AI provider you configured and are governed by your agreement with that provider, including its pricing and data terms. PrivaTools never receives, stores, or proxies the key or that traffic, and is not a party to that relationship."],
         ], <>
             {this.Facts("In plain words", [
                 ["Cost", "Free"],

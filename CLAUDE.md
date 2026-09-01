@@ -97,3 +97,36 @@ latency. If you move them back, that returns.
 onnxruntime reports an unreadable model as a bare `system error number 13`,
 naming neither the file nor the permission, so the `chown` of `/app/cache` is
 load-bearing.
+
+## AI stack (added 2026-09-01)
+
+- **Two AI paths, one dialog.** On-device models (transformers.js → browser
+  Cache API "transformers-cache") and BYOK (`lib/byok/*`). The top-bar AI hub
+  (`AiHubDialog`) manages both; `lib/localModels.ts` is the model registry and
+  does honest cache introspection — never invent an "installed" state.
+- **BYOK client is two functions** (`complete`, `transcribe`) in
+  `lib/byok/client.ts` — the only network calls in the package, on purpose.
+  Message content accepts image parts; `buildRequest` maps them per provider
+  shape. Tasks (`tasks.ts`) fence document text per call — keep that.
+- **CSP is per-path and guarded by tests.** `_BYOK_PATHS` must equal the pages
+  whose components can transitively import `lib/byok` — `test_byok_csp.py`
+  WALKS both ToolPage and NonPdfToolPage to verify. `_WASM_EVAL_PATHS` covers
+  every page running onnx/tesseract wasm; `_TESSERACT_PATHS` additionally
+  extends script-src to cdn.jsdelivr.net (blob workers inherit page CSP).
+  A new AI page that misses these ships broken ONLY in prod — dev has no CSP.
+- **Non-PDF tools live at `/tools/<slug>`** (NonPdfToolPage), PDF at
+  `/tool/<slug>`. The Daylight skin mounts the right switch via
+  `withRealTools` — both, since 2026-09-01; it once only knew ToolPage and
+  every non-PDF tool rendered wrong in the skin.
+- **`useMultiFileProcessor` reads state through a ref mirror** (`mutate()`).
+  Never read state by capturing values inside a `setState` updater — React
+  defers updaters and the hook silently processed zero files for months.
+- **npm lockfile rule:** regenerate only with `npx -y npm@11.19.0` (CI's npm).
+  Local npm 11.6 prunes `@emnapi/*` platform entries and breaks CI's `npm ci`.
+- **Registering a tool slug touches ~14 places** — registries, ToolPage or
+  NonPdfToolPage, ToolIllustration, review dates, palette synonyms, FAQ via
+  `tool_content.py` (then regenerate `tool-faq.json` from it — Python is
+  authoritative, `test_tool_faq_export`), `seo_meta.py`, `sitemap.py`, CSP
+  sets, `gen-llms.mjs` run, and the public count literals
+  (manifest/opensearch/samples + blog copy). The count tests enforce most of
+  it; the CSP walker and FAQ export tests catch the rest.
