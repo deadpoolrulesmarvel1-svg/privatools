@@ -47,6 +47,31 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "Terms of service for PrivaTools — open-source under MIT license, no account "
         "required, no warranty. You retain rights to your files.",
     ),
+    "/support": (
+        "Support — PrivaTools",
+        "Owner-funded means owner-answered: report a bug, ask a privacy question, or check "
+        "the status page. A person reads every message — no ticket maze, no chatbot.",
+    ),
+    "/status": (
+        "Status — PrivaTools",
+        "Live status for PrivaTools processing paths — local tools always work in your "
+        "browser; this page tracks the server-backed ones honestly.",
+    ),
+    "/account": (
+        "Account — PrivaTools",
+        "The optional developer account: API keys and quota, nothing else. Every tool on "
+        "PrivaTools works without an account.",
+    ),
+    "/account/keys": (
+        "API Keys — PrivaTools",
+        "Create and manage PrivaTools developer API keys. Accounts exist only for the API — "
+        "the tools themselves never ask for one.",
+    ),
+    "/my-stuff/vault": (
+        "Password Vault — PrivaTools",
+        "Saved PDF passwords, encrypted on this device with a key your browser will not "
+        "export. Import, review, or erase them — nothing syncs, nothing uploads.",
+    ),
     "/my-stuff": (
         "My Stuff — PrivaTools",
         "Everything PrivaTools has stored in this browser: saved passwords, signatures, "
@@ -224,12 +249,59 @@ _STATIC_META: dict[str, tuple[str, str]] = {
 # known page (indexed) or unknown (noindex + 404). /my-stuff is a per-device
 # management screen with no content value — surfacing it in search results
 # would be confusing, and it must also stay out of the sitemap.
-NOINDEX_PATHS: frozenset[str] = frozenset({"/my-stuff"})
+NOINDEX_PATHS: frozenset[str] = frozenset({
+    "/my-stuff",
+    "/my-stuff/vault",
+    "/account",
+    "/account/keys",
+})
 
 # ---------------------------------------------------------------------------
 # Blog post metadata  (slug → post info dict)
 # ---------------------------------------------------------------------------
 _BLOG_POSTS: dict[str, dict] = {
+    "transcribe-audio-free-no-upload": {
+        "title": "Transcribe Audio to Text Free — Without Uploading the Recording",
+        "description": "Run OpenAI's Whisper model inside your browser to transcribe meetings, interviews, and voice notes for free — the recording never uploads. Timestamps, .txt and .srt export, an own-key option for higher accuracy, and the honest limits of both paths.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["AI", "Audio", "Privacy", "How-To"],
+    },
+    "ocr-scanned-pdf-free-three-ways": {
+        "title": "OCR a Scanned PDF Free: Three Engines, and When Each Wins",
+        "description": "PrivaTools OCR PDF ships three engines: server Tesseract with searchable-PDF output, in-browser tesseract.js where nothing uploads, and vision AI through your own key for hard scans. A decision guide, with a trade-off table.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["PDF", "OCR", "AI", "How-To"],
+    },
+    "translate-pdf-free-private": {
+        "title": "Translate a PDF for Free — Without Uploading It",
+        "description": "PrivaTools Translate PDF runs OPUS-MT translation models inside your browser — about 107 MB per language pair, downloaded once — or translates between 30 languages through your own AI key with automatic source detection. What each path sends, and the one Save-as-PDF caveat.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["PDF", "AI", "Privacy", "How-To"],
+    },
+    "bring-your-own-ai-key-guide": {
+        "title": "Bring Your Own AI Key: The 10-Minute Setup Guide",
+        "description": "What bring-your-own-key means, where all eight supported providers issue API keys, the self-hosted Ollama path, where the key is stored, what tasks really cost, and how to verify with DevTools that requests go straight from your browser to your provider.",
+        "publishedAt": "2026-09-01",
+        "readTime": "9 min read",
+        "tags": ["AI", "Privacy", "How-To"],
+    },
+    "batch-process-files-free": {
+        "title": "Batch-Process Files for Free: 25 at a Time, No Quotas",
+        "description": "Around 160 of PrivaTools' 221 tools take up to 25 files per run — per-file status, retry-failed, one ZIP. The /batch page swallows folder drops, /pipeline chains tools into one pass, and none of it is metered. How it works, honestly.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["Productivity", "PDF", "Image", "How-To"],
+    },
+    "chatpdf-alternatives-private": {
+        "title": "ChatPDF Alternatives That Don't Keep Your Documents",
+        "description": "Hosted chat-with-PDF services work by holding your file: upload, retention, their model, a subscription above the free tier. Here are the private alternatives — bring-your-own-key chat, an on-device summarizer, or a model on your own machine — with honest pros for both sides.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["AI", "PDF", "Comparison", "Privacy"],
+    },
     "chat-with-pdf-free-private": {
         "title": "How to Chat With a PDF for Free — Without Uploading It",
         "description": "Ask questions about any PDF using your own AI key: the text is extracted in your browser and each question goes straight to the provider you choose, never through PrivaTools. Costs, honest limits, and how it compares with hosted chat services.",

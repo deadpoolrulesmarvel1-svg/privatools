@@ -1631,6 +1631,36 @@ There are two ways to run AI on a document privately: bring your own API key, so
 
 PrivaTools removes image backgrounds two ways: on this device, where the RMBG-1.4 model (~44 MB, downloaded once) runs in your browser and then works offline, or on our server with no download, processed in isolation and deleted after the job. Both are free at full resolution — unlike upload-based services whose free tiers limit output resolution.
 
+### [Transcribe Audio to Text Free — Without Uploading the Recording](https://privatools.me/blog/transcribe-audio-free-no-upload)
+*Published 2026-09-01 · 8 min read*
+
+Open PrivaTools Transcribe Audio, choose the free on-device engine, and OpenAI's Whisper model — Tiny at ~41 MB or Base at ~74 MB — transcribes the recording inside your browser with timestamps, exporting .txt or .srt. Nothing uploads. For higher accuracy, add your own OpenAI or Groq key and the audio goes browser-to-provider directly.
+
+### [OCR a Scanned PDF Free: Three Engines, and When Each Wins](https://privatools.me/blog/ocr-scanned-pdf-free-three-ways)
+*Published 2026-09-01 · 8 min read*
+
+PrivaTools OCRs scanned PDFs three ways, all free: the default server engine (Tesseract — multi-file queue, searchable-PDF output, deleted per job), an in-browser engine (tesseract.js — nothing uploads, text output), and a vision-AI engine that reads hard scans with your own GPT-4o, Claude, or Gemini-class key. Pick by scan quality and privacy need.
+
+### [Translate a PDF for Free — Without Uploading It](https://privatools.me/blog/translate-pdf-free-private)
+*Published 2026-09-01 · 7 min read*
+
+PrivaTools Translate PDF extracts text with pdf.js and translates it on your device with OPUS-MT models — ~107 MB per language pair, downloaded once, English-centric pairs, free. Your own AI key unlocks 30 languages in any direction with source auto-detect. Only the optional Save-as-PDF step sends text to a server — the translation, never the original file.
+
+### [Bring Your Own AI Key: The 10-Minute Setup Guide](https://privatools.me/blog/bring-your-own-ai-key-guide)
+*Published 2026-09-01 · 9 min read*
+
+Bring your own key means PrivaTools' AI tools run on an API key you created at a provider you already trust. Paste it once into the AI hub; it is stored encrypted on your device, every request goes browser-to-provider directly, and a typical task costs a fraction of a cent on your own meter instead of a subscription.
+
+### [Batch-Process Files for Free: 25 at a Time, No Quotas](https://privatools.me/blog/batch-process-files-free)
+*Published 2026-09-01 · 7 min read*
+
+Around 160 of PrivaTools' 221 tools accept up to 25 files per run, with per-file status, a retry-failed button, and one ZIP download — free, no quotas, no account. The /batch page handles bigger folder drops through any batchable tool, and /pipeline chains steps so one drop runs several tools in sequence.
+
+### [ChatPDF Alternatives That Don't Keep Your Documents](https://privatools.me/blog/chatpdf-alternatives-private)
+*Published 2026-09-01 · 7 min read*
+
+ChatPDF-style services hold your document: it uploads to their servers, stays for follow-up questions, and a subscription sits above the free tier. The private alternative keeps the file out of a middleman's hands: PrivaTools Chat with PDF extracts text in your browser and sends questions straight to an AI provider you choose — or to a model on your own machine.
+
 ### [PrivaTools vs ihatepdf (2026): When Both Sides Are Private](https://privatools.me/blog/privatools-vs-ihatepdf)
 *Published 2026-08-30 · 6 min read*
 

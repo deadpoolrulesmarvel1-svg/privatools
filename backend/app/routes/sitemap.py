@@ -164,7 +164,15 @@ BLOG_POSTS: dict[str, str] = {
     "privatools-vs-ilovepdf": "2026-08-20",
     "privatools-vs-smallpdf": "2026-08-24",
     "privatools-vs-sejda": "2026-08-27",
-    "privatools-vs-ihatepdf": "2026-08-30",
+    "privatools-vs-ihatepdf": "2026-08-30",    "chat-with-pdf-free-private": "2026-09-01",
+    "ai-pdf-tools-no-upload-byok": "2026-09-01",
+    "remove-background-without-uploading": "2026-09-01",
+    "transcribe-audio-free-no-upload": "2026-09-01",
+    "ocr-scanned-pdf-free-three-ways": "2026-09-01",
+    "translate-pdf-free-private": "2026-09-01",
+    "bring-your-own-ai-key-guide": "2026-09-01",
+    "batch-process-files-free": "2026-09-01",
+    "chatpdf-alternatives-private": "2026-09-01",
 }
 
 BASE_URL = "https://privatools.me"
@@ -240,6 +248,9 @@ def _build_sitemap_xml(today_iso: str) -> bytes:
     xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
     xml += _entry(f"{BASE_URL}/batch", today_iso, "0.7", "weekly")
     xml += _entry(f"{BASE_URL}/pipeline", today_iso, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/security", today_iso, "0.6", "monthly")
+    xml += _entry(f"{BASE_URL}/support", today_iso, "0.4", "monthly")
+    xml += _entry(f"{BASE_URL}/status", today_iso, "0.3", "weekly")
     xml += _entry(f"{BASE_URL}/compare", today_iso, "0.7", "monthly")
     xml += _entry(f"{BASE_URL}/blog", today_iso, "0.8", "weekly")
     # All-tools directory hub — a high-value internal-linking surface. Like the
