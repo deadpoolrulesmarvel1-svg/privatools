@@ -173,20 +173,28 @@ def remove_files(*paths: str | Path) -> None:
             logger.debug("remove_files: failed to delete %s: %s", p, exc)
 
 
-def validate_pdf_content(content: bytes) -> None:
+def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     """Raise HTTPException(400) if content doesn't look like a valid PDF.
 
-    The "%PDF-" magic check is cheap and rejects the most common
-    failure mode (a wrong-extension upload, a 1-byte truncation, an
-    HTML error page accidentally re-uploaded). It is NOT a full
-    well-formed-PDF parser — that happens in the service layer.
+    Cheap magic sniff before any heavy work. Per ISO 32000 the "%PDF-"
+    header may be preceded by up to 1024 bytes of preamble — and real
+    files use that allowance (government-issued PDFs, some scanner and
+    signer outputs), so checking only content[:5] rejected perfectly
+    valid documents. Search the window a conforming reader searches.
+    It is NOT a full well-formed-PDF parser — that happens in the
+    service layer.
     """
+    label = f"“{filename}”" if filename else "File"
     if not content:
-        raise HTTPException(status_code=400, detail="File is empty.")
-    if content[:5] != b"%PDF-":
+        raise HTTPException(status_code=400, detail=f"{label} is empty.")
+    if b"%PDF-" not in content[:1024]:
         raise HTTPException(
             status_code=400,
-            detail="File does not appear to be a valid PDF.",
+            detail=(
+                f"{label} does not appear to be a PDF. If it downloaded "
+                "incompletely, re-download it; if it has a different "
+                "extension, convert it to PDF first."
+            ),
         )
 
 

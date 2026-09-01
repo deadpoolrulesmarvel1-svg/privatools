@@ -54,6 +54,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast as sonnerToast } from "sonner";
+import { storeFileHandoff } from "@/lib/file-handoff";
 import { cn } from "@/lib/utils";
 
 /*
@@ -310,13 +311,16 @@ const CSS = `
 @media (max-width: 640px) { .dl-navcta { display:none; } }
 
 /* hero */
-.dl-hero { display:grid; grid-template-columns:minmax(0,1.12fr) 340px; gap:64px; align-items:center; padding:80px 0 0; }
+.dl-hero { display:grid; grid-template-columns:minmax(0,1.12fr) 340px; gap:64px; align-items:center; padding:80px 0 0; position:relative; }
+.dl-hero::before { content:""; position:absolute; top:-120px; left:-160px; width:640px; height:520px; border-radius:50%; background:radial-gradient(closest-side, color-mix(in srgb, var(--dl-green) 9%, transparent), transparent 72%); pointer-events:none; }
+.dl-hero > * { position:relative; }
 @media (max-width: 1020px) { .dl-hero { grid-template-columns:1fr; gap:30px; padding-top:44px; } }
 .dl-hero h1 { font-weight:700; font-size:clamp(50px, 6vw, 84px); line-height:1.02; letter-spacing:-.024em; margin:18px 0 22px; }
 .dl-hero h1 em { font-style:normal; color:var(--dl-green); }
 .dl-hero .sub { font-size:18px; color:var(--dl-muted); max-width:33em; margin-bottom:26px; }
 .dl-hint { font-size:13px; color:var(--dl-faint); margin-top:16px; }
-.dl-receipt { background:var(--dl-card); border:1px solid var(--dl-rule-soft); border-radius:18px; box-shadow:var(--dl-sh2); padding:24px 26px 20px; display:flex; flex-direction:column; }
+.dl-receipt { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:18px; box-shadow:var(--dl-sh2); padding:24px 26px 20px; display:flex; flex-direction:column; transition:transform 220ms var(--dl-eo), box-shadow 220ms var(--dl-eo); }
+@media (hover:hover) { .dl-receipt:hover { transform:translateY(-3px); } }
 .dl-receipt .rh { display:flex; justify-content:space-between; align-items:baseline; padding-bottom:12px; border-bottom:1px solid var(--dl-rule); font-weight:700; font-size:16px; }
 .dl-receipt .rh span { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dl-faint); font-weight:600; }
 .dl-receipt .rr { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:10.5px 0; border-bottom:1px solid var(--dl-rule); font-size:13.5px; }
@@ -456,7 +460,10 @@ const CSS = `
 .dl-catsec h2 .ic { width:30px; height:30px; border-radius:9px; background:color-mix(in srgb, var(--dl-cc) 13%, var(--dl-card)); display:flex; align-items:center; justify-content:center; color:var(--dl-cc); }
 .dl-catsec h2 .n { font-size:12.5px; color:var(--dl-faint); font-weight:500; margin-left:auto; }
 .dl-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(216px, 1fr)); gap:10px; padding-top:14px; }
-.dl-root .dl-tile { display:flex; gap:12px; align-items:flex-start; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:13px; padding:13px 14px; color:var(--dl-ink); transition:transform 170ms var(--dl-eo), box-shadow .16s, border-color .16s; }
+.dl-root .dl-tile { display:flex; gap:12px; align-items:flex-start; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:13px; padding:14px 15px; color:var(--dl-ink); transition:transform 170ms var(--dl-eo), box-shadow .16s, border-color .16s; }
+.dl-root .dl-tile b { font-size:14.5px; font-weight:650; letter-spacing:-.01em; }
+.dl-root .dl-tile p { font-size:12.5px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+@media (hover:hover) { .dl-root .dl-tile:hover { border-color:color-mix(in srgb, var(--dl-cc, var(--dl-green)) 45%, var(--dl-rule)); } }
 @media (hover:hover) { .dl-root .dl-tile:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--dl-cc) 45%, var(--dl-rule)); box-shadow:var(--dl-sh2); color:var(--dl-ink); } }
 .dl-tile .ic { flex:none; width:40px; height:40px; border-radius:12px; background:color-mix(in srgb, var(--dl-cc) 16%, var(--dl-card)); color:var(--dl-cc); display:flex; align-items:center; justify-content:center; }
 .dl-tile b { font-size:13.5px; font-weight:600; display:block; line-height:1.3; }
@@ -484,7 +491,7 @@ const CSS = `
 .dl-toolhead .desc { font-size:16.5px; color:var(--dl-muted); max-width:40em; }
 .dl-tchips { display:flex; gap:9px; flex-wrap:wrap; margin-top:18px; }
 .dl-toolui { margin-top:26px; }
-.dl-toolfine { margin:14px 2px 0; max-width:760px; font-size:12.5px; line-height:1.6; color:var(--dl-mut); }
+.dl-toolfine { margin:24px 2px 0; padding-top:14px; border-top:1px solid var(--dl-rule-soft); max-width:72ch; font-size:12px; line-height:1.65; color:var(--dl-faint); }
 .dl-nf { padding-top:36px; }
 .dl-nf h1 { font-weight:700; font-size:clamp(32px, 4vw, 46px); letter-spacing:-.022em; }
 .dl-nf p { color:var(--dl-muted); margin-top:10px; max-width:42em; }
@@ -637,7 +644,7 @@ const CSS = `
   .rv, .dl-ccards.rv > *, .dl-claims.rv > * { opacity:1; transform:none; transition:none; }
 }
 .dl-btags { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 26px; }
-.dl-chip { border:1px solid var(--dl-rule); background:var(--dl-card); color:var(--dl-muted); border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; transition:transform 160ms var(--dl-eo), border-color 150ms ease, color 150ms ease; }
+.dl-chip { border:1px solid var(--dl-rule); background:var(--dl-card); color:var(--dl-muted); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:transform 160ms var(--dl-eo), border-color 150ms ease, color 150ms ease; }
 .dl-chip:hover { border-color:var(--dl-rule-mid); color:var(--dl-ink); }
 .dl-chip:active { transform:scale(.97); }
 .dl-chip.on { background:var(--dl-ink); border-color:var(--dl-ink); color:var(--dl-paper); }
@@ -903,6 +910,7 @@ export default class DaylightSkinApp extends React.Component {
             const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
             this.setState({ dragging: false });
             if (!files.length) return;
+            this._droppedFiles = files; // the real File objects, for the handoff
             const match = DROP_ROUTES.find(([re]) => re.test(files[0].name));
             go("");
             this.setState({ dropped: { files: files.map((f) => ({ name: f.name, size: f.size })), kind: match[1], slugs: match[2] } });
@@ -1269,6 +1277,7 @@ export default class DaylightSkinApp extends React.Component {
                             const files = [...e.target.files];
                             e.target.value = "";
                             if (!files.length) return;
+                            this._droppedFiles = files;
                             const match = DROP_ROUTES.find(([re]) => re.test(files[0].name));
                             this.setState({ dropped: { files: files.map((f) => ({ name: f.name, size: f.size })), kind: match[1], slugs: match[2] } });
                         }} />
@@ -1279,8 +1288,19 @@ export default class DaylightSkinApp extends React.Component {
                         <div className="dl-picked">
                             {d.files.map((f) => <span key={f.name}>{f.name} <b>{fmtSize(f.size)}</b></span>)}
                         </div>
-                        <div className="dl-sughead">Looks like a <b>{d.kind}</b> — nothing has uploaded. Pick a tool:</div>
-                        <div className="dl-sugrow">
+                        <div className="dl-sughead">
+                            Looks like a <b>{d.kind}</b> — nothing has uploaded. Pick a tool and it opens with
+                            {d.files.length > 1 ? " your first file loaded (add the rest inside)." : " your file already loaded."}
+                        </div>
+                        <div className="dl-sugrow"
+                            onClickCapture={(e) => {
+                                const a = e.target.closest && e.target.closest('a[href^="#/tool/"]');
+                                if (!a || !this._droppedFiles || !this._droppedFiles.length) return;
+                                e.preventDefault();
+                                const slug = a.getAttribute("href").replace("#/tool/", "");
+                                // ≤3 MB rides sessionStorage; larger files fall back to a normal open.
+                                storeFileHandoff(this._droppedFiles[0], slug).finally(() => go(`#/tool/${slug}`));
+                            }}>
                             {d.slugs.map((s, i) => BY_SLUG.has(s) && this.ToolCard(BY_SLUG.get(s), i))}
                         </div>
                     </div>
