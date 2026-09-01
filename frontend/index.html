@@ -54,6 +54,9 @@
       #prepaint-shell { background: #FAFAF8; color: #15191B; }
       #prepaint-shell header { border-bottom: 1px solid #E7E5DF; }
       /* Dark, once the pre-paint script has resolved the stored choice… */
+      html[data-theme="midnight"] #prepaint-shell { background: #000000; color: #F2F3F5; }
+      html[data-theme="midnight"] #prepaint-brand { color: #F2F3F5; }
+      html[data-theme="midnight"] #prepaint-brand em { color: #3EE39C; }
       html[data-theme="dark"] #prepaint-brand { color: #E8EAED; }
       html[data-theme="dark"] #prepaint-brand em { color: #38D392; }
       html[data-theme="dark"] #prepaint-shell { background: #0F1113; color: #E8EAED; }
@@ -79,7 +82,7 @@
           var d = document.documentElement;
           var pref = null;
           try { pref = window.localStorage.getItem('privatools.daylight.theme'); } catch (e) {}
-          if (pref !== 'light' && pref !== 'dark') {
+          if (pref !== 'light' && pref !== 'dark' && pref !== 'midnight') {
             pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
           }
           d.setAttribute('data-theme', pref);

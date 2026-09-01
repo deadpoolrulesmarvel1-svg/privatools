@@ -142,6 +142,35 @@ for (const [id, skin] of Object.entries(SKINS)) {
     parts.push("");
     parts.push(block(`:root[data-theme="dark"]`, skin, "dark", { fonts: false }));
     parts.push("");
+    // Midnight: the dark palette on true-black surfaces. Same accents, so
+    // every contrast pair only improves; kept as overrides so the two dark
+    // modes can never drift apart except where black demands it.
+    {
+      const t = tokensFor(skin, "dark");
+      const overrides = {
+        background: "0 0% 0%",
+        paper: "240 6% 4%",
+        "paper-2": "240 6% 6%",
+        "paper-3": "240 5% 8%",
+        card: "240 6% 4%",
+        "card-tint": "0 0% 2%",
+        popover: "240 6% 6%",
+        secondary: "240 5% 8%",
+        muted: "240 6% 6%",
+        border: "240 6% 12%",
+        "border-strong": "240 6% 19%",
+        input: "240 6% 12%",
+      };
+      const lines = [`:root[data-theme="midnight"] {`];
+      for (const [k, v] of Object.entries({ ...t, ...overrides, sidebar: undefined })) {
+        if (v !== undefined) lines.push(`  --${k}: ${v};`);
+      }
+      for (const [k, v] of Object.entries(skin.dark.raw)) lines.push(`  --${k}: ${v};`);
+      lines.push("}");
+      parts.push(lines.join("\n"));
+      parts.push("");
+    }
+
     // Before the pre-paint script runs (or with JS off), no attribute exists;
     // a dark-OS visitor still has to get the dark palette.
     parts.push(`@media (prefers-color-scheme: dark) {`);

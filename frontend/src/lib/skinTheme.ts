@@ -14,7 +14,7 @@
 
 import type { SkinId } from "./skins";
 
-export type ThemeChoice = "system" | "light" | "dark";
+export type ThemeChoice = "system" | "light" | "dark" | "midnight";
 
 /** Where the preference is kept. */
 const KEYS: Record<SkinId, { key: string }> = {
@@ -33,14 +33,14 @@ export function readThemeChoice(skin: SkinId): ThemeChoice {
         const spec = KEYS[skin];
         if (!spec) return "system";
         const v = localStorage.getItem(spec.key);
-        return v === "light" || v === "dark" || v === "system" ? v : "system";
+        return v === "light" || v === "dark" || v === "midnight" || v === "system" ? v : "system";
     } catch {
         return "system";
     }
 }
 
-/** Resolve `system` against the OS; the DOM only understands light or dark. */
-export function resolveTheme(choice: ThemeChoice): "light" | "dark" {
+/** Resolve `system` against the OS; explicit choices (midnight included) pass through. */
+export function resolveTheme(choice: ThemeChoice): "light" | "dark" | "midnight" {
     return choice === "system" ? systemPrefers() : choice;
 }
 

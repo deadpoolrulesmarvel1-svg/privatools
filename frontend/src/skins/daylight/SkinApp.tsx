@@ -40,7 +40,7 @@ import { nonPdfTools } from "@/data/non-pdf-tools";
 import {
     ACCOUNT_COPY, MIN_PASSWORD_LENGTH, SOCIAL_SIGN_IN, describeKey, strengthOf,
 } from "../accountLogic";
-import { describeEntry } from "../vaultLogic";
+import { describeEntry, vaultApi } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
 import { blogPosts } from "@/data/blog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -251,6 +251,20 @@ const CSS = `
   --dl-sh1:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -16px rgba(0,0,0,.6);
   --dl-sh2:0 2px 6px rgba(0,0,0,.45), 0 24px 56px -20px rgba(0,0,0,.7);
 }
+
+/* Midnight — a true-black variant of dark: same accents, OLED surfaces. */
+[data-theme="midnight"] .dl-root {
+  --dl-paper:#000000; --dl-card:#0A0A0D; --dl-card2:#101014;
+  --dl-ink:#F2F3F5; --dl-muted:#A6ACB3; --dl-faint:#787E85;
+  --dl-rule:#1E1E24; --dl-rule-soft:#141419; --dl-rule-mid:#34343C;
+  --dl-green:#3EE39C; --dl-green-deep:#6FEAB8; --dl-wash:#0E2A1E; --dl-ghost:#123526;
+  --dl-amber:#E0AC41; --dl-amber-wash:#2A2109; --dl-red:#E86C61;
+  --dl-on-accent:#06130C;
+  --dl-band:#000000; --dl-band-ink:#F2F5F0; --dl-band-muted:#9AA19B; --dl-band-green:#3EE39C;
+  --dl-sh1:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -16px rgba(0,0,0,.85);
+  --dl-sh2:0 2px 6px rgba(0,0,0,.65), 0 24px 56px -20px rgba(0,0,0,.9);
+}
+[data-theme="midnight"] .dl-band { border:1px solid var(--dl-rule); }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme]) .dl-root {
     --dl-paper:#0F1113; --dl-card:#171A1D; --dl-card2:#1D2124;
@@ -410,13 +424,13 @@ const CSS = `
 .dl-band { background:var(--dl-band); color:var(--dl-band-ink); border-radius:22px; padding:52px; display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:52px; position:relative; overflow:hidden; }
 .dl-band::after { content:""; position:absolute; top:-40%; right:-12%; width:60%; height:120%; background:radial-gradient(closest-side, color-mix(in srgb, var(--dl-band-green) 13%, transparent), transparent 70%); pointer-events:none; }
 @media (max-width: 980px) { .dl-band { grid-template-columns:1fr; padding:36px 28px; } }
-.dl-band h2 { font-weight:700; font-size:33px; letter-spacing:-.022em; line-height:1.08; }
+.dl-band h2 { font-weight:700; font-size:33px; letter-spacing:-.022em; line-height:1.08; color:var(--dl-band-ink); }
 .dl-band h2 em { font-style:normal; color:var(--dl-band-green); }
 .dl-band .lead { color:var(--dl-band-muted); font-size:15px; margin-top:14px; max-width:30em; }
 .dl-step { display:flex; gap:16px; padding:16px 0; border-top:1px solid rgba(255,255,255,.1); }
 .dl-step:first-child { border-top:0; padding-top:0; }
 .dl-step .dot { flex:none; width:32px; height:32px; border-radius:10px; background:color-mix(in srgb, var(--dl-band-green) 14%, transparent); display:flex; align-items:center; justify-content:center; color:var(--dl-band-green); }
-.dl-step b { font-size:15px; font-weight:600; display:block; margin-bottom:2px; }
+.dl-step b { font-size:15px; font-weight:600; display:block; margin-bottom:2px; color:var(--dl-band-ink); }
 .dl-step p { font-size:13px; color:var(--dl-band-muted); line-height:1.55; }
 
 .dl-foot { border-top:1px solid var(--dl-rule); margin-top:104px; background:var(--dl-card); }
@@ -621,6 +635,8 @@ const CSS = `
 .dl-root .dl-reprow p a { color:var(--dl-green); font-weight:600; }
 .dl-reprow .dl-supcta { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:24px; }
 .dl-supcta span { font-size:13px; color:var(--dl-muted); max-width:32ch; }
+.dl-vimport { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--dl-faint); }
+.dl-vimphint { font-size:11.5px; color:var(--dl-faint); margin-top:10px; line-height:1.6; }
 .dl-vsteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-top:30px; }
 @media (max-width: 860px) { .dl-vsteps { grid-template-columns:1fr; } }
 .dl-vsteps > div { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:14px; padding:18px 20px; }
@@ -962,7 +978,8 @@ export default class DaylightSkinApp extends React.Component {
     }
     readTheme() { return readThemeChoice("daylight"); }
     cycleTheme = () => {
-        const next = this.state.themeMode === "system" ? "light" : this.state.themeMode === "light" ? "dark" : "system";
+        const order = ["system", "light", "dark", "midnight"];
+        const next = order[(order.indexOf(this.state.themeMode) + 1) % order.length];
         setThemeChoice("daylight", next);
         this.setState({ themeMode: next });
     };
@@ -1006,7 +1023,9 @@ export default class DaylightSkinApp extends React.Component {
                     </button></TooltipTrigger><TooltipContent>Search — ⌘K</TooltipContent></Tooltip>
                     <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="#/account">{a.user ? "Account" : "Sign in"}</a>
                     <Tooltip><TooltipTrigger asChild><button className="dl-themebtn" onClick={this.cycleTheme} aria-label={`Theme: ${this.state.themeMode}`}>
-                        {this.state.themeMode === "light"
+                        {this.state.themeMode === "midnight"
+                            ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15.4 11.2 A6.8 6.8 0 1 1 6.8 2.6 A5.4 5.4 0 0 0 15.4 11.2 Z" fill="currentColor" /><path d="M13.4 3.2 l.55 1.25 1.25.55 -1.25.55 -.55 1.25 -.55-1.25 -1.25-.55 1.25-.55 Z" fill="currentColor" /></svg>
+                            : this.state.themeMode === "light"
                             ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.6" stroke="currentColor" strokeWidth="1.6" /><path d="M9 1.5 V3.5 M9 14.5 V16.5 M1.5 9 H3.5 M14.5 9 H16.5 M3.7 3.7 L5.1 5.1 M12.9 12.9 L14.3 14.3 M14.3 3.7 L12.9 5.1 M5.1 12.9 L3.7 14.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                             : this.state.themeMode === "dark"
                                 ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15 10.8 A6.5 6.5 0 1 1 7.2 3 A5.2 5.2 0 0 0 15 10.8 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
@@ -1114,6 +1133,42 @@ export default class DaylightSkinApp extends React.Component {
      *  AlertDialogs below ARE the confirmation, so arm the latch and fire. */
     _acctDeleteNow = () => { this._setAcct({ confirmingDelete: true }); this._timers.push(setTimeout(() => this._acctDelete(), 30)); };
     _vaultClearNow = () => { this._setVault({ confirmingClear: true }); this._timers.push(setTimeout(() => this._vaultClear(), 30)); };
+
+    /** Import vault entries from parsed rows — encrypted one by one on arrival. */
+    _vaultImportEntries = async (rows, sourceLabel) => {
+        const valid = (Array.isArray(rows) ? rows : []).filter(
+            (r) => r && typeof r.label === "string" && r.label.trim() && typeof r.password === "string" && r.password);
+        if (!valid.length) {
+            this._setVault({ error: 'No usable entries — expected JSON like [{"label":"file.pdf","password":"…"}].' });
+            return;
+        }
+        this._setVault({ busy: true, error: "" });
+        try {
+            for (const r of valid) await vaultApi.add(r.label.trim(), r.password);
+            this._setVault({ busy: false });
+            this._loadVault();
+            this.say(`Imported ${valid.length} ${valid.length === 1 ? "entry" : "entries"} from ${sourceLabel} — encrypted on this device.`);
+        } catch (err) {
+            this._setVault({ busy: false, error: err.message });
+        }
+    };
+
+    _vaultImportFile = (e) => {
+        const f = e.target.files && e.target.files[0];
+        e.target.value = "";
+        if (!f) return;
+        f.text().then((txt) => {
+            let data;
+            try { data = JSON.parse(txt); } catch { this._setVault({ error: `“${f.name}” isn’t valid JSON.` }); return; }
+            this._vaultImportEntries(Array.isArray(data) ? data : data.entries, `“${f.name}”`);
+        });
+    };
+
+    _vaultLoadSample = () => this._vaultImportEntries([
+        { label: "sample-invoice.pdf", password: "inv-2026-demo" },
+        { label: "sample-contract.pdf", password: "Contract#Demo1" },
+        { label: "sample-payslip.pdf", password: "payslip-demo-9" },
+    ], "the sample set");
 
     _installApp = async () => {
         if (this.state.isApp) { this.say("You’re already in the installed app."); return; }
@@ -1747,6 +1802,19 @@ export default class DaylightSkinApp extends React.Component {
                         </form>
                         <p className="dl-hintl" style={{ marginTop: 12 }}>
                             Stored with AES-GCM under a non-extractable key in this browser. Protect PDF and Unlock PDF can use these without you retyping them.
+                        </p>
+                        <div className="dl-vimport">
+                            <span>Or start faster:</span>
+                            <label className={cn(buttonVariants({ variant: "outline", size: "sm" }), "cursor-pointer")}>
+                                Import JSON…
+                                <input type="file" accept=".json,application/json" hidden onChange={this._vaultImportFile} />
+                            </label>
+                            <button type="button" className={buttonVariants({ variant: "ghost", size: "sm" })} onClick={this._vaultLoadSample}>
+                                Load 3 sample entries
+                            </button>
+                        </div>
+                        <p className="dl-vimphint">
+                            Format: {"[{\"label\":\"file.pdf\",\"password\":\"…\"}]"} — imported entries are encrypted the moment they land; samples are demo data you can delete.
                         </p>
                     </aside>
                 </div>

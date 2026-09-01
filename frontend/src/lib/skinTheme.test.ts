@@ -39,6 +39,13 @@ describe("painting now", () => {
         expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     });
 
+    it("stamps midnight as its own attribute value", () => {
+        setThemeChoice("daylight", "midnight");
+        expect(localStorage.getItem("privatools.daylight.theme")).toBe("midnight");
+        expect(document.documentElement.getAttribute("data-theme")).toBe("midnight");
+        expect(readThemeChoice("daylight")).toBe("midnight");
+    });
+
     it("resolves system against the OS before stamping", () => {
         vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
         setThemeChoice("daylight", "system");
@@ -68,5 +75,9 @@ describe("the second copy in index.html", () => {
     it("stamps the same attribute, resolving system against the OS", () => {
         expect(html).toContain("setAttribute('data-theme'");
         expect(html).toContain("prefers-color-scheme: light");
+    });
+
+    it("lets a stored midnight through the pre-paint", () => {
+        expect(html).toContain("'midnight'");
     });
 });

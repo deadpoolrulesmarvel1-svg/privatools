@@ -50,6 +50,7 @@ const SHELL_TOKENS = [
 const MODES = [
     ["light", ":root"],
     ["dark", ':root[data-theme="dark"]'],
+    ["midnight", ':root[data-theme="midnight"]'],
 ] as const;
 
 describe("skin registry", () => {

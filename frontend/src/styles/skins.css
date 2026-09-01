@@ -152,6 +152,74 @@
   --shadow-panel: 0 24px 56px -20px rgba(0,0,0,.7);
 }
 
+:root[data-theme="midnight"] {
+  --background: 0 0% 0%;
+  --foreground: 210 12.5% 93.7%;
+  --paper: 240 6% 4%;
+  --paper-2: 240 6% 6%;
+  --paper-3: 240 5% 8%;
+  --card: 240 6% 4%;
+  --card-foreground: 210 12.5% 93.7%;
+  --card-tint: 0 0% 2%;
+  --popover: 240 6% 6%;
+  --popover-foreground: 210 12.5% 93.7%;
+  --primary: 154.8 63.8% 52.4%;
+  --primary-foreground: 150 25% 6.3%;
+  --secondary: 240 5% 8%;
+  --secondary-foreground: 210 12.5% 93.7%;
+  --muted: 240 6% 6%;
+  --muted-foreground: 210 7.2% 67.5%;
+  --accent: 40.1 67% 54.9%;
+  --accent-bright: 40.7 72.7% 59.8%;
+  --accent-foreground: 40 52.9% 6.7%;
+  --copper: 4.1 65.4% 64.9%;
+  --success: 154.8 63.8% 52.4%;
+  --destructive: 4.1 65.4% 64.9%;
+  --destructive-foreground: 210 11.8% 6.7%;
+  --ring: 154.8 63.8% 52.4%;
+  --border: 240 6% 12%;
+  --border-strong: 240 6% 19%;
+  --input: 240 6% 12%;
+  --accent-soft: 42.1 26.5% 13.4%;
+  --copper-soft: 355.8 16.4% 13.5%;
+  --success-soft: 161.6 35% 12.3%;
+  --cat-organize: 210 52% 64%;
+  --cat-edit: 265 52% 64%;
+  --cat-optimize: 175 52% 64%;
+  --cat-security: 350 52% 64%;
+  --cat-to-pdf: 150 52% 64%;
+  --cat-from-pdf: 32 52% 64%;
+  --cat-advanced: 240 52% 64%;
+  --cat-image: 320 52% 64%;
+  --cat-video: 12 52% 64%;
+  --cat-developer: 190 52% 64%;
+  --cat-archive: 45 52% 64%;
+  --cat-document: 95 52% 64%;
+  --sidebar-background: 210 13% 9%;
+  --sidebar-foreground: 210 12.5% 93.7%;
+  --sidebar-primary: 154.8 63.8% 52.4%;
+  --sidebar-primary-foreground: 150 25% 6.3%;
+  --sidebar-accent: 210 10.3% 15.3%;
+  --sidebar-accent-foreground: 210 12.5% 93.7%;
+  --sidebar-border: 206.1 5.9% 15.2%;
+  --sidebar-ring: 154.8 63.8% 52.4%;
+  --rail: #14171A;
+  --scrim: rgba(0,0,0,.7);
+  --hero-bg: radial-gradient(120% 140% at 12% 0%, #171E22 0%, #0F1113 62%);
+  --panel-glass: rgba(23,26,29,.85);
+  --edge: rgba(56,211,146,.32);
+  --edge-soft: rgba(56,211,146,.18);
+  --edge-hot: rgba(56,211,146,.55);
+  --halo: rgba(56,211,146,.12);
+  --halo-2: rgba(224,115,107,.08);
+  --sheen: rgba(255,255,255,.15);
+  --grain-o: 0;
+  --glass-blur: 12px;
+  --glass-a: rgba(56,211,146,.07);
+  --primary-glow: rgba(56,211,146,.2);
+  --shadow-panel: 0 24px 56px -20px rgba(0,0,0,.7);
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --background: 210 11.8% 6.7%;
