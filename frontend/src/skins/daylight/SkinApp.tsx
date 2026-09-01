@@ -574,7 +574,26 @@ const CSS = `
 @media (max-width: 900px) { .dl-authwrap { grid-template-columns:1fr; } }
 .dl-authcard { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
-.dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; }
+.dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; line-height:1.55; }
+.dl-root .dl-authcard form { display:flex; flex-direction:column; gap:16px; margin-top:14px; }
+.dl-root .dl-authcard .dl-field { display:flex; flex-direction:column; gap:6px; }
+.dl-root .dl-authsubmit { width:100%; height:44px; font-size:14.5px; margin-top:2px; }
+.dl-root .dl-pwmeter { display:flex; gap:4px; margin-top:8px; }
+.dl-root .dl-pwmeter i { flex:1; height:3px; border-radius:2px; background:var(--dl-rule-mid); transition:background-color 220ms ease; }
+.dl-root .dl-pwmeter i.on-1 { background:#D9534F; }
+.dl-root .dl-pwmeter i.on-2 { background:#E0A03A; }
+.dl-root .dl-pwmeter i.on-3 { background:var(--dl-green); }
+.dl-root .dl-pwrow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:7px; }
+.dl-root .dl-pwrow label { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--dl-muted); font-weight:500; cursor:pointer; }
+.dl-root .dl-pwrow .lvl { font-size:12px; font-weight:650; color:var(--dl-muted); }
+.dl-root .dl-social { display:flex; flex-direction:column; gap:9px; margin-top:4px; }
+.dl-root .dl-social button { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; height:42px; border-radius:11px; border:1px solid var(--dl-rule-mid); background:var(--dl-card); color:var(--dl-ink); font-size:14px; font-weight:600; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
+.dl-root .dl-social button:hover { background:var(--dl-paper-2); border-color:var(--dl-rule-strong); }
+.dl-root .dl-social button:active { transform:scale(0.985); }
+.dl-root .dl-social svg { width:17px; height:17px; flex:none; }
+.dl-root .dl-authdiv { display:flex; align-items:center; gap:12px; margin:18px 0 2px; }
+.dl-root .dl-authdiv::before, .dl-root .dl-authdiv::after { content:""; flex:1; height:1px; background:var(--dl-rule); }
+.dl-root .dl-authdiv span { font-size:11px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); }
 .dl-reccode { background:var(--dl-wash); border:1px solid color-mix(in srgb, var(--dl-green) 30%, var(--dl-rule)); border-radius:12px; padding:16px 18px; margin-top:12px; }
 .dl-reccode code { display:block; font-family:ui-monospace, Menlo, monospace; font-size:15px; letter-spacing:.04em; background:var(--dl-card); border:1px dashed var(--dl-rule-mid); border-radius:8px; padding:10px 12px; margin:10px 0; word-break:break-all; }
 .dl-keyrow { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:12px; align-items:center; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:11px; padding:12px 16px; font-size:13.5px; }
@@ -1889,7 +1908,7 @@ export default class DaylightSkinApp extends React.Component {
                                         <Input id="dl-code"  value={a.emailCode}
                                             onChange={(e) => this._setAcct({ emailCode: e.target.value, error: "" })} autoComplete="one-time-code" />
                                     </div>
-                                    <button className={buttonVariants()} style={{ width: "100%" }} disabled={a.busy} type="submit">
+                                    <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
                                         {a.busy ? "Checking…" : "Verify"}
                                     </button>
                                 </form>
@@ -1915,19 +1934,50 @@ export default class DaylightSkinApp extends React.Component {
                                             value={a.password}
                                             onChange={(e) => this._setAcct({ password: e.target.value, error: "" })}
                                             autoComplete={a.mode === "signin" ? "current-password" : "new-password"} />
-                                        <Label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "var(--dl-muted)", fontWeight: 500 }}>
-                                            <input type="checkbox" checked={!!a.showPassword}
-                                                onChange={(e) => this._setAcct({ showPassword: e.target.checked })} /> Show password
-                                        </Label>
-                                        {strength && <span className="dl-hintl">Strength: {strength.label}</span>}
+                                        {strength && (
+                                            <div className="dl-pwmeter" aria-hidden="true">
+                                                {[1, 2, 3].map((n) => (
+                                                    <i key={n} className={strength.score >= n ? `on-${strength.score}` : ""} />
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="dl-pwrow">
+                                            <label>
+                                                <input type="checkbox" checked={!!a.showPassword}
+                                                    onChange={(e) => this._setAcct({ showPassword: e.target.checked })} /> Show password
+                                            </label>
+                                            {strength && <span className="lvl">{strength.label}</span>}
+                                        </div>
                                     </div>
-                                    <button className={buttonVariants()} style={{ width: "100%" }} disabled={a.busy} type="submit">
+                                    <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
                                         {a.busy ? "Working…" : a.mode === "signup" ? "Create account" : a.mode === "recover" ? "Reset password" : "Sign in"}
                                     </button>
                                 </form>
                             )}
+                            {SOCIAL_SIGN_IN.length > 0 && a.mode !== "recover" && !a.needsEmailCode && (
+                                <>
+                                    <div className="dl-authdiv"><span>or</span></div>
+                                    <div className="dl-social">
+                                        <button type="button" onClick={() => this._acctSocial("google")} disabled={a.busy}>
+                                            <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
+                                                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z" />
+                                                <path fill="#FBBC05" d="M3.96 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z" />
+                                                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" />
+                                            </svg>
+                                            Continue with Google
+                                        </button>
+                                        <button type="button" onClick={() => this._acctSocial("github")} disabled={a.busy}>
+                                            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                                            </svg>
+                                            Continue with GitHub
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                             {a.mode !== "recover" && !a.needsEmailCode && (
-                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 4 }} onClick={acctShowRecover}>
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 10 }} onClick={acctShowRecover}>
                                     Lost your password? Recover with your code
                                 </button>
                             )}

@@ -185,6 +185,16 @@ export function withAccounts(Base, config) {
                 .catch((err) => this._setAcct({ error: err.message }));
         };
 
+        // Social sign-in. accountApi.signInWithSocial redirects the tab to the
+        // provider when Clerk is configured, and rejects with a plain message
+        // on the local-auth build — where SOCIAL_SIGN_IN is empty and no skin
+        // renders the buttons in the first place.
+        _acctSocial = (provider) => {
+            this._setAcct({ busy: true, error: "" });
+            accountApi.signInWithSocial(provider)
+                .catch((err) => this._setAcct({ busy: false, error: err.message }));
+        };
+
         _acctSignOut = () => {
             accountApi.logout()
                 .then(() => this._setAcct({ ...initialAccountState }))

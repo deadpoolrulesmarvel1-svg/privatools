@@ -92,7 +92,19 @@ def test_connect_src_is_never_a_wildcard():
             "allowlist: 'https:' would let any page exfiltrate to any host, "
             "which is exactly what this product promises does not happen."
         )
-        assert "*" not in connect.replace("localhost:*", "").replace("127.0.0.1:*", "")
+        # Scoped subdomain wildcards on a single named vendor are allowed —
+        # Hugging Face redirects model weights to region-varying CDN hosts, so
+        # an exact list would break for users outside one region. What must
+        # never appear is a *scheme* wildcard ("https:") or a bare "*", which
+        # would let any page reach any host.
+        residual = (
+            connect.replace("localhost:*", "")
+            .replace("127.0.0.1:*", "")
+            .replace("https://*.hf.co", "")
+        )
+        assert "*" not in residual, (
+            f"{path} connect-src carries an unscoped wildcard: {connect}"
+        )
 
 
 # --- the set itself, derived rather than restated -------------------------

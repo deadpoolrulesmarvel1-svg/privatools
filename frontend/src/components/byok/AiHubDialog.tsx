@@ -52,7 +52,16 @@ export function AiHubDialog({ open, onOpenChange }: { open: boolean; onOpenChang
         try {
             await m.predownload(setPct);
         } catch (e) {
-            setErr(e instanceof Error ? e.message : "Download failed — check your connection and try again.");
+            // The weights may have cached fine and only the WebAssembly
+            // instantiation failed — that happens when the hub is opened from a
+            // page whose CSP does not grant wasm-unsafe-eval. The model is
+            // genuinely installed and the tool page will run it, so only report
+            // a failure when nothing actually landed in the cache.
+            const nowCached = await listCachedModels();
+            const landed = nowCached.some((c) => c.hfId === m.hfId && c.bytes > 1_000_000);
+            if (!landed) {
+                setErr(e instanceof Error ? e.message : "Download failed — check your connection and try again.");
+            }
         } finally {
             setBusyId(null);
             refresh();

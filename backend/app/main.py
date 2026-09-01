@@ -362,7 +362,19 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     # in the browser; the request never carries user file content. When the
     # api-subdomain split is active, the SPA fetches /api from a cross-origin
     # host, so that origin must be whitelisted here or the browser blocks it.
-    connect_src = ["'self'", "https://huggingface.co", "https://cdn.jsdelivr.net"]
+    # huggingface.co serves model metadata, but 302-redirects the actual
+    # weights to a region-varying CDN host (us.aws.cdn.hf.co, cdn-lfs*.hf.co,
+    # …). CSP re-checks the redirect target, so without the *.hf.co entry every
+    # on-device model download dies as "Failed to fetch" — in production only,
+    # since dev serves no CSP at all. The wildcard is scoped to one vendor
+    # domain; it is not a scheme wildcard.
+    connect_src = [
+        "'self'",
+        "https://huggingface.co",
+        "https://*.hf.co",
+        "https://cdn-lfs.huggingface.co",
+        "https://cdn.jsdelivr.net",
+    ]
     if api_base:
         connect_src.append(api_base)
     if path in _BYOK_PATHS:
