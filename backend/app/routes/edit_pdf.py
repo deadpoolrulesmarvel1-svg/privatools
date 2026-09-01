@@ -14,7 +14,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_EDITS = 5000
-VALID_EDIT_TYPES = {"text", "rectangle", "circle", "line", "highlight", "image"}
+VALID_EDIT_TYPES = {"text", "rectangle", "circle", "line", "arrow", "pen", "highlight", "image"}
 
 
 def _sanitize_edits(edits_list: list) -> list:
@@ -50,6 +50,8 @@ def _sanitize_edits(edits_list: list) -> list:
                         float(edit[key])
                     except (TypeError, ValueError):
                         raise ValueError(f"field {key!r} is not numeric")
+            if edit_type == "pen" and not isinstance(edit.get("points"), list):
+                raise ValueError("pen edit needs a points list")
             cleaned.append(edit)
         except Exception as exc:  # noqa: BLE001 — defensive, we log and drop
             logger.warning(

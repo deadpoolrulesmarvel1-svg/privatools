@@ -8,6 +8,8 @@
  *   • Whiteout     — click-drag a solid white rectangle (cover content)
  *   • Rectangle    — click-drag a stroked rectangle
  *   • Line         — click-drag from one point to another
+ *   • Arrow        — click-drag a line with an arrowhead at the far end
+ *   • Pen          — freehand ink; drag to draw a smooth stroke
  *   • Circle       — click-drag from center outward
  *   • Image        — click to place; opens file picker, drops at click point
  *
@@ -26,6 +28,7 @@ import {
     Download, CheckCircle2, AlertCircle, Type, Eraser, Square, Circle as CircleIcon,
     Minus, Highlighter, Undo2, Redo2, Trash2, Copy, ChevronRight, ZoomIn,
     ZoomOut, X, ChevronLeft, MousePointer2, Image as ImageIcon, Layers,
+    Pen, MoveUpRight, ListTree,
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
@@ -77,17 +80,21 @@ interface HighlightEdit extends BaseEdit { type: "highlight"; x: number; y: numb
 interface LineEdit extends BaseEdit { type: "line"; x1: number; y1: number; x2: number; y2: number; color: string; stroke_width: number; }
 interface CircleEdit extends BaseEdit { type: "circle"; x: number; y: number; radius: number; stroke_color: string; fill_color: string; stroke_width: number; }
 interface ImageEdit extends BaseEdit { type: "image"; x: number; y: number; width: number; height: number; image_data: string; }
+interface ArrowEdit extends BaseEdit { type: "arrow"; x1: number; y1: number; x2: number; y2: number; color: string; stroke_width: number; }
+interface PenEdit extends BaseEdit { type: "pen"; points: [number, number][]; color: string; stroke_width: number; }
 
-type Edit = TextEdit | RectEdit | HighlightEdit | LineEdit | CircleEdit | ImageEdit;
-type ToolId = "select" | "text" | "highlight" | "whiteout" | "rect" | "line" | "circle" | "image";
+type Edit = TextEdit | RectEdit | HighlightEdit | LineEdit | CircleEdit | ImageEdit | ArrowEdit | PenEdit;
+type ToolId = "select" | "text" | "pen" | "highlight" | "whiteout" | "rect" | "line" | "arrow" | "circle" | "image";
 
 const TOOLS: { id: ToolId; icon: typeof Type; label: string; shortcut: string; hint: string }[] = [
     { id: "select",    icon: MousePointer2, label: "Select",    shortcut: "V", hint: "Click an edit to select, drag to move" },
     { id: "text",      icon: Type,          label: "Text",      shortcut: "T", hint: "Click to drop a text box" },
+    { id: "pen",       icon: Pen,           label: "Pen",       shortcut: "P", hint: "Drag to draw freehand ink" },
     { id: "highlight", icon: Highlighter,   label: "Highlight", shortcut: "H", hint: "Click + drag to highlight a region" },
     { id: "whiteout",  icon: Eraser,        label: "Whiteout",  shortcut: "W", hint: "Click + drag to cover with white" },
     { id: "rect",      icon: Square,        label: "Rectangle", shortcut: "R", hint: "Click + drag a stroked rectangle" },
     { id: "line",      icon: Minus,         label: "Line",      shortcut: "L", hint: "Click + drag a line between two points" },
+    { id: "arrow",     icon: MoveUpRight,   label: "Arrow",     shortcut: "A", hint: "Click + drag; arrowhead lands where you release" },
     { id: "circle",    icon: CircleIcon,    label: "Circle",    shortcut: "C", hint: "Click + drag from center outward" },
     { id: "image",     icon: ImageIcon,     label: "Image",     shortcut: "I", hint: "Click to insert an image at that point" },
 ];
@@ -116,6 +123,7 @@ export function EditPdfUI() {
     const history = useEditHistory<Edit[]>([]);
     const edits = history.present;
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [showEditsList, setShowEditsList] = useState(false);
     const [state, setState] = useState<"idle" | "editing" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -302,6 +310,12 @@ export function EditPdfUI() {
                 case "line":
                     newEdit = { id, type: "line", page: currentPage, x1: x, y1: y, x2: x, y2: y, color: "#2563eb", stroke_width: 2 };
                     break;
+                case "arrow":
+                    newEdit = { id, type: "arrow", page: currentPage, x1: x, y1: y, x2: x, y2: y, color: "#2563eb", stroke_width: 2 };
+                    break;
+                case "pen":
+                    newEdit = { id, type: "pen", page: currentPage, points: [[x, y]], color: "#2563eb", stroke_width: 3 };
+                    break;
                 case "circle":
                     newEdit = { id, type: "circle", page: currentPage, x, y, radius: 0, stroke_color: "#2563eb", fill_color: "", stroke_width: 2 };
                     break;
@@ -330,6 +344,20 @@ export function EditPdfUI() {
         const initial = gestureRef.current.initial;
         if (!initial) return;
         e.preventDefault();
+        // Pen collects absolute points rather than a delta transform.
+        if (gesture.kind === "draw" && gesture.tool === "pen") {
+            const { x, y } = pdfCoords(e.clientX, e.clientY);
+            const nextEdits = editsRef.current.map(ed => {
+                if (ed.id !== gesture.id || ed.type !== "pen") return ed;
+                const last = ed.points[ed.points.length - 1];
+                // Decimate: skip points closer than ~1.5pt so strokes stay light.
+                if (last && Math.hypot(x - last[0], y - last[1]) < 1.5) return ed;
+                if (ed.points.length >= 2000) return ed;
+                return { ...ed, points: [...ed.points, [x, y] as [number, number]] };
+            });
+            historySetTransient(nextEdits);
+            return;
+        }
         const dxClient = e.clientX - start.x;
         const dyClient = e.clientY - start.y;
         const rect = overlayRef.current?.getBoundingClientRect();
@@ -370,7 +398,8 @@ export function EditPdfUI() {
         // Nudge so the dupe is visible
         if ("x" in dup) (dup as any).x += 20;
         if ("y" in dup) (dup as any).y -= 20;
-        if (dup.type === "line") { dup.x1 += 20; dup.y1 -= 20; dup.x2 += 20; dup.y2 -= 20; }
+        if (dup.type === "line" || dup.type === "arrow") { dup.x1 += 20; dup.y1 -= 20; dup.x2 += 20; dup.y2 -= 20; }
+        if (dup.type === "pen") dup.points = dup.points.map(([px, py]) => [px + 20, py - 20] as [number, number]);
         history.set([...edits, dup]);
         setSelectedId(dup.id);
     }, [edits, history]);
@@ -426,7 +455,7 @@ export function EditPdfUI() {
             // Don't intercept regular keys when typing
             if (isText(e.target)) return;
             // Single-letter tool switching
-            const shortcuts: Record<string, ToolId> = { v: "select", t: "text", h: "highlight", w: "whiteout", r: "rect", l: "line", c: "circle", i: "image" };
+            const shortcuts: Record<string, ToolId> = { v: "select", t: "text", p: "pen", h: "highlight", w: "whiteout", r: "rect", l: "line", a: "arrow", c: "circle", i: "image" };
             if (shortcuts[e.key.toLowerCase()] && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 e.preventDefault();
                 setActiveTool(shortcuts[e.key.toLowerCase()]);
@@ -498,7 +527,7 @@ export function EditPdfUI() {
     if (state === "idle") return (
         <FileUploadZone file={null} onFileSelect={pickFile} onClear={() => { }} accept=".pdf"
             label="Drop PDF to edit visually"
-            hint="Add text, shapes, lines, highlights, images, whiteout · move, resize, undo · server-flattened on Apply" />
+            hint="Add text, freehand ink, arrows, shapes, highlights, images, whiteout · move, resize, undo · server-flattened on Apply" />
     );
 
     const scale = 1.5 * (zoom / 100);
@@ -529,6 +558,18 @@ export function EditPdfUI() {
                         className={cn("p-1.5 rounded-lg transition-colors",
                             showThumbs ? "text-white bg-white/[0.08]" : "text-white/40 hover:text-white hover:bg-white/[0.06]")}>
                         <Layers size={14} />
+                    </button>
+                )}
+
+                {/* Edits list */}
+                {edits.length > 0 && (
+                    <button onClick={() => setShowEditsList(v => !v)}
+                        title="All edits — click one to jump to it"
+                        aria-pressed={showEditsList}
+                        className={cn("flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors",
+                            showEditsList ? "text-white bg-white/[0.08]" : "text-white/40 hover:text-white hover:bg-white/[0.06]")}>
+                        <ListTree size={14} />
+                        {edits.length}
                     </button>
                 )}
 
@@ -652,6 +693,49 @@ export function EditPdfUI() {
                 </div>
             </div>
 
+            {/* Edits list panel */}
+            {showEditsList && edits.length > 0 && (
+                <div className="absolute right-4 top-14 w-[260px] max-h-[60vh] overflow-y-auto rounded-xl shadow-2xl z-40"
+                    style={{ background: "hsl(224 18% 10%)", border: "1px solid hsl(224 15% 16%)" }}>
+                    <div className="px-3 py-2 text-[10.5px] font-semibold tracking-wider uppercase text-white/40 sticky top-0"
+                        style={{ background: "hsl(224 18% 10%)", borderBottom: "1px solid hsl(224 15% 16%)" }}>
+                        {edits.length} edit{edits.length === 1 ? "" : "s"} · all pages
+                    </div>
+                    {edits.map((ed, i) => {
+                        const Icon = ed.type === "text" ? Type
+                            : ed.type === "highlight" ? Highlighter
+                            : ed.type === "line" ? Minus
+                            : ed.type === "arrow" ? MoveUpRight
+                            : ed.type === "pen" ? Pen
+                            : ed.type === "circle" ? CircleIcon
+                            : ed.type === "image" ? ImageIcon
+                            : (ed as RectEdit).fill_color === "#ffffff" && (ed as RectEdit).stroke_width === 0 ? Eraser : Square;
+                        const label = ed.type === "text" ? ((ed as TextEdit).text ? `“${(ed as TextEdit).text.slice(0, 22)}”` : "Empty text")
+                            : ed.type === "pen" ? "Ink stroke"
+                            : ed.type === "rectangle" ? ((ed as RectEdit).fill_color === "#ffffff" && (ed as RectEdit).stroke_width === 0 ? "Whiteout" : "Rectangle")
+                            : ed.type.charAt(0).toUpperCase() + ed.type.slice(1);
+                        return (
+                            <div key={ed.id}
+                                className={cn("flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors group",
+                                    ed.id === selectedId ? "bg-white/[0.08]" : "hover:bg-white/[0.04]")}
+                                onClick={() => { setCurrentPage(ed.page); setSelectedId(ed.id); }}>
+                                <Icon size={13} className="text-white/40 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] text-white/80 truncate">{label}</p>
+                                    <p className="text-[10px] text-white/35">Page {ed.page} · #{i + 1}</p>
+                                </div>
+                                <button
+                                    onClick={e => { e.stopPropagation(); removeEdit(ed.id); }}
+                                    title="Delete this edit"
+                                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/40 hover:text-red-400 transition-all">
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {/* Error toast */}
             {error && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-xl px-5 py-3 text-sm shadow-2xl z-50"
@@ -695,17 +779,19 @@ function updateForGesture(initial: Edit, gesture: NonNullable<GestureKind>, dx: 
 }
 
 function applyTranslate(e: Edit, dx: number, dy: number): Edit {
-    if (e.type === "line") return { ...e, x1: e.x1 + dx, y1: e.y1 + dy, x2: e.x2 + dx, y2: e.y2 + dy };
+    if (e.type === "line" || e.type === "arrow") return { ...e, x1: e.x1 + dx, y1: e.y1 + dy, x2: e.x2 + dx, y2: e.y2 + dy };
+    if (e.type === "pen") return { ...e, points: e.points.map(([px, py]) => [px + dx, py + dy] as [number, number]) };
     if (e.type === "circle") return { ...e, x: e.x + dx, y: e.y + dy };
     return { ...e, x: (e as any).x + dx, y: (e as any).y + dy } as Edit;
 }
 
 function applyResize(initial: Edit, dx: number, dy: number, handle: ResizeHandle | "draw", pageSize: { w: number; h: number }): Edit {
-    if (initial.type === "line") {
+    if (initial.type === "line" || initial.type === "arrow") {
         if (handle === "p1") return { ...initial, x1: initial.x1 + dx, y1: initial.y1 + dy };
         if (handle === "p2" || handle === "draw") return { ...initial, x2: initial.x2 + dx, y2: initial.y2 + dy };
         return initial;
     }
+    if (initial.type === "pen") return initial; // pen has no resize; move only
     if (initial.type === "circle") {
         // Resize from center → radius = distance from initial center to current cursor.
         // For "draw", the radius is the distance from the click origin (initial.x/y) to (initial.x + dx, initial.y + dy).
@@ -820,6 +906,81 @@ function EditRenderer({ edit, pageSize, scale, isSelected, activeTool, onSelect,
                             <StrokeWidthRow width={edit.stroke_width} onChange={w => onUpdate({ stroke_width: w } as any)} />
                         </FloatingToolbar>
                     </>
+                )}
+            </div>
+        );
+    }
+
+    if (edit.type === "arrow") {
+        // Same bbox pattern as line, but the SVG viewBox is in PDF units so
+        // the arrowhead keeps its shape (the page div preserves the PDF
+        // aspect ratio, so PDF units are uniform on screen).
+        const { x1, y1, x2, y2 } = edit;
+        const minX = Math.min(x1, x2), maxY = Math.max(y1, y2);
+        const bw = Math.max(Math.abs(x2 - x1), 1), bh = Math.max(Math.abs(y2 - y1), 1);
+        const left = `${xPct(minX)}%`;
+        const top = `${yPctFromTop(maxY)}%`;
+        const w = `${(bw / pageSize.w) * 100}%`;
+        const h = `${(bh / pageSize.h) * 100}%`;
+        // Local svg coords: y grows downward.
+        const lx1 = x1 - minX, ly1 = maxY - y1, lx2 = x2 - minX, ly2 = maxY - y2;
+        const head = Math.max(10, edit.stroke_width * 4);
+        const ang = Math.atan2(ly2 - ly1, lx2 - lx1);
+        const hx1 = lx2 - head * Math.cos(ang - 0.42), hy1 = ly2 - head * Math.sin(ang - 0.42);
+        const hx2 = lx2 - head * Math.cos(ang + 0.42), hy2 = ly2 - head * Math.sin(ang + 0.42);
+        const shaftX = lx2 - head * 0.6 * Math.cos(ang), shaftY = ly2 - head * 0.6 * Math.sin(ang);
+        const p1Left = `${((lx1 / bw) * 100).toFixed(2)}%`, p1Top = `${((ly1 / bh) * 100).toFixed(2)}%`;
+        const p2Left = `${((lx2 / bw) * 100).toFixed(2)}%`, p2Top = `${((ly2 / bh) * 100).toFixed(2)}%`;
+        const ringClass = isSelected ? "ring-2 ring-blue-400" : "";
+        return (
+            <div className={cn("absolute", ringClass)} style={{ left, top, width: w, height: h, zIndex: isSelected ? 20 : 5 }}>
+                <svg width="100%" height="100%" viewBox={`0 0 ${bw} ${bh}`} preserveAspectRatio="none" style={{ overflow: "visible", pointerEvents: "none" }}>
+                    <line x1={lx1} y1={ly1} x2={shaftX} y2={shaftY} stroke={edit.color} strokeWidth={edit.stroke_width} strokeLinecap="round" />
+                    <polygon points={`${lx2},${ly2} ${hx1},${hy1} ${hx2},${hy2}`} fill={edit.color} />
+                </svg>
+                <div data-edit-body="1" data-edit-id={edit.id}
+                    onClick={e => { e.stopPropagation(); onSelect(); }}
+                    className="absolute inset-0 cursor-pointer" style={{ pointerEvents: "auto" }} />
+                {isSelected && (
+                    <>
+                        <LineEndpointHandle editId={edit.id} which="p1" left={p1Left} top={p1Top} />
+                        <LineEndpointHandle editId={edit.id} which="p2" left={p2Left} top={p2Top} />
+                        <FloatingToolbar onDuplicate={onDuplicate} onDelete={onDelete}>
+                            <ColorRow colors={PALETTE.slice(0, 6)} active={edit.color} onChange={c => onUpdate({ color: c } as any)} />
+                            <Divider />
+                            <StrokeWidthRow width={edit.stroke_width} onChange={w => onUpdate({ stroke_width: w } as any)} />
+                        </FloatingToolbar>
+                    </>
+                )}
+            </div>
+        );
+    }
+
+    if (edit.type === "pen") {
+        const xs = edit.points.map(pt => pt[0]), ys = edit.points.map(pt => pt[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const bw = Math.max(maxX - minX, 1), bh = Math.max(maxY - minY, 1);
+        const left = `${xPct(minX)}%`;
+        const top = `${yPctFromTop(maxY)}%`;
+        const w = `${(bw / pageSize.w) * 100}%`;
+        const h = `${(bh / pageSize.h) * 100}%`;
+        const pts = edit.points.map(([px, py]) => `${px - minX},${maxY - py}`).join(" ");
+        const ringClass = isSelected ? "ring-2 ring-blue-400" : "";
+        return (
+            <div className={cn("absolute", ringClass)} style={{ left, top, width: w, height: h, zIndex: isSelected ? 20 : 5 }}>
+                <svg width="100%" height="100%" viewBox={`0 0 ${bw} ${bh}`} preserveAspectRatio="none" style={{ overflow: "visible", pointerEvents: "none" }}>
+                    <polyline points={pts} fill="none" stroke={edit.color} strokeWidth={edit.stroke_width} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div data-edit-body="1" data-edit-id={edit.id}
+                    onClick={e => { e.stopPropagation(); onSelect(); }}
+                    className="absolute inset-0 cursor-pointer" style={{ pointerEvents: "auto" }} />
+                {isSelected && (
+                    <FloatingToolbar onDuplicate={onDuplicate} onDelete={onDelete}>
+                        <ColorRow colors={PALETTE.slice(0, 6)} active={edit.color} onChange={c => onUpdate({ color: c } as any)} />
+                        <Divider />
+                        <StrokeWidthRow width={edit.stroke_width} onChange={w => onUpdate({ stroke_width: w } as any)} />
+                    </FloatingToolbar>
                 )}
             </div>
         );
