@@ -223,6 +223,13 @@ export const clerkAccountApi = {
                 continueSignUpUrl: here,
             });
         } catch (err) {
+            // The flow can already be finished by the time this runs — Clerk
+            // answers a second callback with "identifier_already_signed_in"
+            // and then sends the browser to its hosted Account Portal, which
+            // to the visitor looks exactly like sign-in failing and dumping
+            // them on a stranger's page. Their session is fine; say nothing.
+            const e = err as { errors?: Array<{ code?: string }> };
+            if (e?.errors?.some((x) => x.code === "identifier_already_signed_in")) return;
             throw readable(err);
         }
     },

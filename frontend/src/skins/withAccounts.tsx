@@ -91,7 +91,11 @@ export function withAccounts(Base, config) {
                 // "needs_identifier", so a truthiness check runs the callback
                 // on every ordinary visit to the page.
                 const returning = new URLSearchParams(location.search).has(SSO_RETURN);
-                if (!clerk.user && returning) {
+                // `session` settles before `user` does, and running the
+                // callback against a finished flow is what bounces the visitor
+                // to the hosted portal. Check both.
+                const alreadyIn = Boolean(clerk.user || clerk.session);
+                if (returning && !alreadyIn) {
                     try {
                         await accountApi.completeSocialRedirect();
                         // Clerk leaves its bookkeeping in the address bar.
