@@ -2241,9 +2241,9 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 "articleSection": "Blog",
                 "keywords": ", ".join(post.get("tags", [])),
                 "author": {
-                    "@type": "Organization",
+                    "@type": "Person",
                     "@id": f"{BASE_URL}/about#author",
-                    "name": post.get("author") or "PrivaTools Team",
+                    "name": post.get("author") or "Lakshya Lodha",
                     "url": f"{BASE_URL}/about",
                     "sameAs": ["https://github.com/deadpoolrulesmarvel1-svg/privatools"],
                 },

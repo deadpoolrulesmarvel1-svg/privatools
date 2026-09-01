@@ -44,6 +44,14 @@ import { describeEntry } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
 import { blogPosts } from "@/data/blog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { toast as sonnerToast } from "sonner";
+import { cn } from "@/lib/utils";
 
 /*
  * The four surfaces below mount the house design's real pages whole — the same
@@ -254,8 +262,15 @@ const CSS = `
 }
 .dl-root *, .dl-root *::before, .dl-root *::after { box-sizing:border-box; }
 .dl-root h1, .dl-root h2, .dl-root h3, .dl-root p, .dl-root ul, .dl-root figure { margin:0; }
-.dl-root button { font-family:inherit; cursor:pointer; color:inherit; background:none; border:0; font-size:inherit; }
-.dl-root a { color:var(--dl-green); text-decoration:none; }
+.dl-root button { font-family:inherit; cursor:pointer; }
+/* Bare buttons (no classes / dl-only classes) keep the quiet reset; anything
+   carrying utility classes styles itself. */
+.dl-root button:not([class*="bg-"]):not([class*="border"]) { color:inherit; background:none; border:0; font-size:inherit; }
+.dl-root input[type="checkbox"] { accent-color: var(--dl-green); width:15px; height:15px; }
+.dl-root a { color:inherit; text-decoration:none; }
+/* Prose links stay green; component anchors (buttons, cards, chips) inherit,
+   so Tailwind utility colors on them are never fought by a broad rule. */
+.dl-root p a, .dl-root li a, .dl-root .dl-note a, .dl-root .dl-hintl a { color:var(--dl-green); font-weight:600; }
 .dl-root a:hover { color:var(--dl-green-deep); }
 .dl-root :focus-visible { outline:2px solid var(--dl-green); outline-offset:3px; border-radius:4px; }
 .dl-root ::selection { background:var(--dl-ghost); }
@@ -956,9 +971,8 @@ export default class DaylightSkinApp extends React.Component {
 
     /* ── tiny infra ── */
     say(msg) {
-        this.setState({ toast: msg });
-        clearTimeout(this._toastT);
-        this._toastT = setTimeout(() => this.setState({ toast: "" }), 2600);
+        // One toast system for the whole app — the same Sonner the tool UIs use.
+        sonnerToast(msg);
     }
     readTheme() { return readThemeChoice("daylight"); }
     cycleTheme = () => {
@@ -1004,7 +1018,7 @@ export default class DaylightSkinApp extends React.Component {
                     <button className="dl-iconbtn" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
                         <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                     </button>
-                    <a className="dl-btn dl-btn-ghost dl-navcta" href="#/account">{a.user ? "Account" : "Sign in"}</a>
+                    <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="#/account">{a.user ? "Account" : "Sign in"}</a>
                     <button className="dl-themebtn" onClick={this.cycleTheme} title={`Theme: ${this.state.themeMode}`} aria-label={`Theme: ${this.state.themeMode}`}>
                         {this.state.themeMode === "light"
                             ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.6" stroke="currentColor" strokeWidth="1.6" /><path d="M9 1.5 V3.5 M9 14.5 V16.5 M1.5 9 H3.5 M14.5 9 H16.5 M3.7 3.7 L5.1 5.1 M12.9 12.9 L14.3 14.3 M14.3 3.7 L12.9 5.1 M5.1 12.9 L3.7 14.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
@@ -1038,7 +1052,7 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="brand">
                         <a className="dl-brand" href="#/"><Logo size={21} /> PrivaTools</a>
                         <p>{TOTAL} file tools that treat your documents like they’re yours. Free, no account, no watermark — owner-funded, with nothing to sell you.</p>
-                        <button type="button" className="dl-btn dl-btn-ghost finstall" onClick={this._installApp}>
+                        <button type="button" className={cn(buttonVariants({ variant: "outline" }), "finstall")} onClick={this._installApp}>
                             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V9 M4 6.5 L7 9.5 L10 6.5 M2 12.5 H12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             Install the app
                         </button>
@@ -1240,8 +1254,8 @@ export default class DaylightSkinApp extends React.Component {
                         <h1>Drop any file.<br />Keep it <em>private.</em></h1>
                         <p className="sub">We’ll show you every tool that can handle it — and nothing uploads until you choose one. No account, no watermark, no tricks.</p>
                         <div style={{ display: "flex", gap: 13, flexWrap: "wrap" }}>
-                            <a className="dl-btn dl-btn-primary" href="#/tool/merge-pdf">Try Merge PDF</a>
-                            <a className="dl-btn dl-btn-ghost" href="#/tools">Browse all {TOTAL}</a>
+                            <a className={buttonVariants()} href="#/tool/merge-pdf">Try Merge PDF</a>
+                            <a className={buttonVariants({ variant: "outline" })} href="#/tools">Browse all {TOTAL}</a>
                         </div>
                         <p className="dl-hint">Or just drop a file anywhere on this page — PDFs, images, video, audio, code, archives · up to 500&nbsp;MB each</p>
                     </div>
@@ -1330,8 +1344,8 @@ export default class DaylightSkinApp extends React.Component {
                                 passwords your protected files need. Nothing in it ever reaches a server.
                             </p>
                             <div style={{ display: "flex", gap: 12, marginTop: 22, flexWrap: "wrap" }}>
-                                <a className="dl-btn dl-btn-primary" href="#/my-stuff/vault">Open your vault</a>
-                                <a className="dl-btn dl-btn-ghost" href="#/security">How it’s protected</a>
+                                <a className={buttonVariants()} href="#/my-stuff/vault">Open your vault</a>
+                                <a className={buttonVariants({ variant: "outline" })} href="#/security">How it’s protected</a>
                             </div>
                         </div>
                         <div className="dl-vmock" aria-hidden="true">
@@ -1339,9 +1353,9 @@ export default class DaylightSkinApp extends React.Component {
                                 <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M6 8 V6 A3 3 0 0 1 12 6 V8" stroke="currentColor" strokeWidth="1.5" /></svg>
                                 <b>Vault</b><span>this device only</span>
                             </div>
-                            <div className="vr"><span className="dl-tag">AES</span><b>tax-return-2026.pdf</b><span>password</span></div>
-                            <div className="vr"><span className="dl-tag">AES</span><b>contract-final.pdf</b><span>password</span></div>
-                            <div className="vr"><span className="dl-tag">AES</span><b>scan-archive.zip</b><span>password</span></div>
+                            <div className="vr"><Badge variant="wash">AES</Badge><b>tax-return-2026.pdf</b><span>password</span></div>
+                            <div className="vr"><Badge variant="wash">AES</Badge><b>contract-final.pdf</b><span>password</span></div>
+                            <div className="vr"><Badge variant="wash">AES</Badge><b>scan-archive.zip</b><span>password</span></div>
                         </div>
                     </div>
                 </section>
@@ -1377,7 +1391,7 @@ export default class DaylightSkinApp extends React.Component {
                         <div>
                             <h2>Privacy you can <em>watch,</em> not just trust.</h2>
                             <p className="lead">Every claim here is a behavior you can check from your own browser — no faith required.</p>
-                            <a className="dl-btn dl-btn-primary" style={{ marginTop: 22, display: "inline-flex" }} href="#/security">Read the promises</a>
+                            <a className={buttonVariants()} style={{ marginTop: 22, display: "inline-flex" }} href="#/security">Read the promises</a>
                         </div>
                         <div>
                             {[["Local tools make zero upload requests", "Open your network tab and run one — nothing leaves."],
@@ -1539,20 +1553,26 @@ export default class DaylightSkinApp extends React.Component {
                 <div className="dl-toolwrap">
                     {this.ToolRail(slug)}
                     <div>
-                        <div className="dl-crumb" style={{ marginBottom: 10 }}>
-                            <a href="#/tools">All tools</a> &nbsp;/&nbsp; {FAMILY_LABEL[tool.category] || tool.category} &nbsp;/&nbsp; <span style={{ color: "var(--dl-ink)" }}>{tool.name}</span>
-                        </div>
+                        <Breadcrumb style={{ marginBottom: 10 }}>
+                            <BreadcrumbList>
+                                <BreadcrumbItem><BreadcrumbLink href="#/tools">All tools</BreadcrumbLink></BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem><BreadcrumbLink href={`#/tools?cat=${tool.category}`}>{FAMILY_LABEL[tool.category] || tool.category}</BreadcrumbLink></BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem><BreadcrumbPage>{tool.name}</BreadcrumbPage></BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
                         <div className="dl-toolhead">
                             <h1>{tool.name}</h1>
                             <p className="desc">{tool.description}</p>
                             <div className="dl-tchips">
-                                <span className="dl-tchip green">{FAMILY_LABEL[tool.category] || tool.category}</span>
+                                <Badge variant="wash" className="dl-tchip">{FAMILY_LABEL[tool.category] || tool.category}</Badge>
                                 {tool.clientOnly
-                                    ? <span className="dl-tchip green">Runs on your device · nothing uploads</span>
-                                    : <span className="dl-tchip warn">Uses our server · deleted after</span>}
-                                <span className="dl-tchip">500 MB per file</span>
-                                <span className="dl-tchip">No retention</span>
-                                <span className="dl-tchip">Free, no account</span>
+                                    ? <Badge variant="wash" className="dl-tchip">Runs on your device · nothing uploads</Badge>
+                                    : <Badge variant="warn" className="dl-tchip">Uses our server · deleted after</Badge>}
+                                <Badge variant="outline" className="dl-tchip">500 MB per file</Badge>
+                                <Badge variant="outline" className="dl-tchip">No retention</Badge>
+                                <Badge variant="outline" className="dl-tchip">Free, no account</Badge>
                             </div>
                         </div>
                         {/* The real run surface: the same tool component the house design mounts. */}
@@ -1577,7 +1597,14 @@ export default class DaylightSkinApp extends React.Component {
     HousePage(Comp, label) {
         return (
             <div className="dl-wrap dl-house">
-                <React.Suspense fallback={<div className="dl-empty" style={{ marginTop: 48 }}>Loading {label}…</div>}>
+                <React.Suspense fallback={
+                    <div style={{ marginTop: 48, display: "grid", gap: 14 }} aria-label={`Loading ${label}`}>
+                        <Skeleton className="h-10 w-64" />
+                        <Skeleton className="h-4 w-96 max-w-full" />
+                        <Skeleton className="h-40 w-full rounded-[14px]" />
+                        <Skeleton className="h-40 w-full rounded-[14px]" />
+                    </div>
+                }>
                     <Comp />
                 </React.Suspense>
             </div>
@@ -1592,8 +1619,8 @@ export default class DaylightSkinApp extends React.Component {
                     <h1>Nothing at this address.<br /><em>The tools are, though.</em></h1>
                     <p>The link may be old or mistyped. Everything the site offers is one search away — press ⌘K anywhere, or start below.</p>
                     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-                        <a className="dl-btn dl-btn-primary" href="#/">Back to home</a>
-                        <a className="dl-btn dl-btn-ghost" href="#/tools">Browse all {TOTAL} tools</a>
+                        <a className={buttonVariants()} href="#/">Back to home</a>
+                        <a className={buttonVariants({ variant: "outline" })} href="#/tools">Browse all {TOTAL} tools</a>
                     </div>
                 </div>
             </div>
@@ -1645,25 +1672,25 @@ export default class DaylightSkinApp extends React.Component {
                                 ? <div className="dl-empty">Nothing stored yet — add the password for a protected file on the right.</div>
                                 : entries.map((en) => (
                                     <div className="dl-keyrow" key={en.id}>
-                                        <span className="dl-tag">AES</span>
+                                        <Badge variant="wash">AES</Badge>
                                         <span style={{ minWidth: 0 }}>
                                             <b style={{ display: "block", fontSize: 14 }}>{en.label}</b>
                                             <code>{vlt.revealedId === en.id ? vlt.revealedValue : "••••••••••••"}</code>
                                             <span className="kd" style={{ display: "block" }}>{describeEntry(en)}</span>
                                         </span>
-                                        <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, padding: "6px 10px" }}
+                                        <button className={buttonVariants({ variant: "ghost", size: "sm" })}
                                             onClick={() => this._vaultReveal(en.id)}>{vlt.revealedId === en.id ? "Hide" : "Reveal"}</button>
                                         <span style={{ display: "flex", gap: 2 }}>
-                                            <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, padding: "6px 10px" }}
+                                            <button className={buttonVariants({ variant: "ghost", size: "sm" })}
                                                 onClick={() => { this._vaultCopy(en.id); this.say("Copied — decrypted on this device only."); }}>Copy</button>
-                                            <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, padding: "6px 8px" }}
+                                            <button className={buttonVariants({ variant: "ghost", size: "sm" })}
                                                 onClick={() => this._vaultDelete(en.id)} aria-label={`Delete ${en.label}`}>Delete</button>
                                         </span>
                                     </div>
                                 ))}
                         </div>
                         {entries.length > 0 && (
-                            <button className="dl-btn dl-btn-quiet" style={{ fontSize: 13, marginTop: 14 }} onClick={this._vaultClear}>
+                            <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 14 }} onClick={this._vaultClear}>
                                 {vlt.confirmingClear ? "Press again to erase everything" : "Clear the vault"}
                             </button>
                         )}
@@ -1672,16 +1699,16 @@ export default class DaylightSkinApp extends React.Component {
                         <h3>Store a password</h3>
                         <form onSubmit={this._vaultAdd}>
                             <div className="dl-field">
-                                <label htmlFor="dl-vl">Name</label>
-                                <input id="dl-vl" className="dl-input" value={vlt.label || ""} placeholder="e.g. tax-return-2026.pdf"
+                                <Label htmlFor="dl-vl">Name</Label>
+                                <Input id="dl-vl"  value={vlt.label || ""} placeholder="e.g. tax-return-2026.pdf"
                                     onChange={(e) => this._setVault({ label: e.target.value, error: "" })} />
                             </div>
                             <div className="dl-field">
-                                <label htmlFor="dl-vp">Password</label>
-                                <input id="dl-vp" className="dl-input" type="password" value={vlt.password || ""} placeholder="The password to keep"
+                                <Label htmlFor="dl-vp">Password</Label>
+                                <Input id="dl-vp"  type="password" value={vlt.password || ""} placeholder="The password to keep"
                                     onChange={(e) => this._setVault({ password: e.target.value, error: "" })} />
                             </div>
-                            <button className="dl-btn dl-btn-primary" style={{ width: "100%", marginTop: 6 }} disabled={vlt.busy} type="submit">
+                            <button className={buttonVariants()} style={{ width: "100%", marginTop: 6 }} disabled={vlt.busy} type="submit">
                                 {vlt.busy ? "Encrypting…" : "Encrypt & store"}
                             </button>
                         </form>
@@ -1731,49 +1758,49 @@ export default class DaylightSkinApp extends React.Component {
                                 <form onSubmit={this._acctVerifyEmail}>
                                     <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>We emailed a code to <b>{a.email}</b>. Enter it to finish signing up.</p>
                                     <div className="dl-field">
-                                        <label htmlFor="dl-code">Email code</label>
-                                        <input id="dl-code" className="dl-input" value={a.emailCode}
+                                        <Label htmlFor="dl-code">Email code</Label>
+                                        <Input id="dl-code"  value={a.emailCode}
                                             onChange={(e) => this._setAcct({ emailCode: e.target.value, error: "" })} autoComplete="one-time-code" />
                                     </div>
-                                    <button className="dl-btn dl-btn-primary" style={{ width: "100%" }} disabled={a.busy} type="submit">
+                                    <button className={buttonVariants()} style={{ width: "100%" }} disabled={a.busy} type="submit">
                                         {a.busy ? "Checking…" : "Verify"}
                                     </button>
                                 </form>
                             ) : (
                                 <form onSubmit={this._acctSubmit}>
                                     <div className="dl-field">
-                                        <label htmlFor="dl-email">Email</label>
-                                        <input id="dl-email" className="dl-input" type="email" required value={a.email}
+                                        <Label htmlFor="dl-email">Email</Label>
+                                        <Input id="dl-email"  type="email" required value={a.email}
                                             onChange={(e) => this._setAcct({ email: e.target.value, error: "" })} autoComplete="email" />
                                     </div>
                                     {a.mode === "recover" && (
                                         <div className="dl-field">
-                                            <label htmlFor="dl-rec">Recovery code</label>
-                                            <input id="dl-rec" className="dl-input" required value={acctRecoveryInput}
+                                            <Label htmlFor="dl-rec">Recovery code</Label>
+                                            <Input id="dl-rec"  required value={acctRecoveryInput}
                                                 onChange={(e) => this._setAcct({ recoveryInput: e.target.value, error: "" })} />
                                             <span className="dl-hintl">The code shown once at signup — it’s the only way back in.</span>
                                         </div>
                                     )}
                                     <div className="dl-field">
-                                        <label htmlFor="dl-pass">{a.mode === "recover" ? "New password" : "Password"}</label>
-                                        <input id="dl-pass" className="dl-input" type={a.showPassword ? "text" : "password"} required
+                                        <Label htmlFor="dl-pass">{a.mode === "recover" ? "New password" : "Password"}</Label>
+                                        <Input id="dl-pass"  type={a.showPassword ? "text" : "password"} required
                                             minLength={a.mode === "signin" ? undefined : MIN_PASSWORD_LENGTH}
                                             value={a.password}
                                             onChange={(e) => this._setAcct({ password: e.target.value, error: "" })}
                                             autoComplete={a.mode === "signin" ? "current-password" : "new-password"} />
-                                        <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "var(--dl-muted)", fontWeight: 500 }}>
+                                        <Label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "var(--dl-muted)", fontWeight: 500 }}>
                                             <input type="checkbox" checked={!!a.showPassword}
                                                 onChange={(e) => this._setAcct({ showPassword: e.target.checked })} /> Show password
-                                        </label>
+                                        </Label>
                                         {strength && <span className="dl-hintl">Strength: {strength.label}</span>}
                                     </div>
-                                    <button className="dl-btn dl-btn-primary" style={{ width: "100%" }} disabled={a.busy} type="submit">
+                                    <button className={buttonVariants()} style={{ width: "100%" }} disabled={a.busy} type="submit">
                                         {a.busy ? "Working…" : a.mode === "signup" ? "Create account" : a.mode === "recover" ? "Reset password" : "Sign in"}
                                     </button>
                                 </form>
                             )}
                             {a.mode !== "recover" && !a.needsEmailCode && (
-                                <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, marginTop: 4 }} onClick={acctShowRecover}>
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 4 }} onClick={acctShowRecover}>
                                     Lost your password? Recover with your code
                                 </button>
                             )}
@@ -1805,11 +1832,11 @@ export default class DaylightSkinApp extends React.Component {
                         </p>
                         <code>{acctRecoveryCode}</code>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                            <button className="dl-btn dl-btn-ghost" style={{ padding: "9px 18px", fontSize: 13 }} onClick={acctCopyRecovery}>
+                            <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={acctCopyRecovery}>
                                 {a.recoverySaved ? "Copied ✓" : "Copy code"}
                             </button>
-                            <button className="dl-btn dl-btn-ghost" style={{ padding: "9px 18px", fontSize: 13 }} onClick={acctDownloadRecovery}>Download as file</button>
-                            <button className="dl-btn dl-btn-primary" style={{ padding: "9px 18px", fontSize: 13 }} onClick={acctAckRecovery}>I’ve saved it</button>
+                            <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={acctDownloadRecovery}>Download as file</button>
+                            <button className={buttonVariants({ size: "sm" })} onClick={acctAckRecovery}>I’ve saved it</button>
                         </div>
                     </div>
                 )}
@@ -1820,8 +1847,8 @@ export default class DaylightSkinApp extends React.Component {
                         <p style={{ fontSize: 13.5, color: "var(--dl-muted)", marginTop: 4 }}>Signed in as <b>{a.user.email}</b></p>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-                        <button className="dl-btn dl-btn-ghost" style={{ padding: "10px 18px", fontSize: 13 }} onClick={this._acctNewKey}>Create key</button>
-                        <button className="dl-btn dl-btn-quiet" style={{ fontSize: 13 }} onClick={this._acctSignOut}>Sign out</button>
+                        <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={this._acctNewKey}>Create key</button>
+                        <button className={buttonVariants({ variant: "ghost", size: "sm" })} onClick={this._acctSignOut}>Sign out</button>
                     </div>
                 </div>
                 {a.error && <div className="dl-err" role="alert">{a.error}</div>}
@@ -1836,10 +1863,10 @@ export default class DaylightSkinApp extends React.Component {
                         ? <div className="dl-empty">No keys yet — create one to call the API.</div>
                         : a.keys.map((k) => (
                             <div className="dl-keyrow" key={k.key_id}>
-                                <span className="dl-tag">KEY</span>
+                                <Badge variant="wash">KEY</Badge>
                                 <code>{describeKey(k)}</code>
                                 <span className="kd">{k.label}</span>
-                                <button className="dl-btn dl-btn-quiet" style={{ fontSize: 12.5, padding: "6px 10px" }}
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })}
                                     onClick={() => this._acctRevoke(k.key_id)}>Revoke</button>
                             </div>
                         ))}
@@ -1850,22 +1877,22 @@ export default class DaylightSkinApp extends React.Component {
                         Mislaid your code? You can replace it — the old one stops working the moment a new one is issued.
                     </p>
                     {!a.rotating ? (
-                        <button className="dl-btn dl-btn-ghost" style={{ marginTop: 12, padding: "10px 18px", fontSize: 13 }} onClick={acctToggleRotate}>
+                        <button className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12 }} onClick={acctToggleRotate}>
                             Replace my recovery code
                         </button>
                     ) : (
                         <form onSubmit={this._acctRotate}>
                             <div className="dl-field">
-                                <label htmlFor="dl-rotp">Confirm your password</label>
-                                <input id="dl-rotp" className="dl-input" type="password" required value={a.rotatePassword}
+                                <Label htmlFor="dl-rotp">Confirm your password</Label>
+                                <Input id="dl-rotp"  type="password" required value={a.rotatePassword}
                                     onChange={acctSetRotatePassword} autoComplete="current-password" />
                                 <span className="dl-hintl">Required so a stolen session alone can’t mint a code that outlives a password change.</span>
                             </div>
                             <div style={{ display: "flex", gap: 10 }}>
-                                <button className="dl-btn dl-btn-primary" style={{ padding: "10px 20px", fontSize: 13.5 }} disabled={a.busy} type="submit">
+                                <button className={buttonVariants({ size: "sm" })} disabled={a.busy} type="submit">
                                     {a.busy ? "Working…" : "Issue new code"}
                                 </button>
-                                <button className="dl-btn dl-btn-quiet" style={{ fontSize: 13 }} type="button" onClick={acctToggleRotate}>Cancel</button>
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} type="button" onClick={acctToggleRotate}>Cancel</button>
                             </div>
                         </form>
                     )}
@@ -1876,7 +1903,7 @@ export default class DaylightSkinApp extends React.Component {
                         Removes the account and revokes every API key immediately. Your files were never
                         stored, so there is nothing else to erase.
                     </p>
-                    <button className="dl-btn dl-btn-ghost" style={{ marginTop: 12, padding: "10px 18px", fontSize: 13, color: "var(--dl-red)" }}
+                    <button className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12, color: "var(--dl-red)" }}
                         disabled={a.busy} onClick={this._acctDelete}>
                         {a.confirmingDelete ? "Press again to delete for good" : "Delete account"}
                     </button>
@@ -1943,7 +1970,7 @@ export default class DaylightSkinApp extends React.Component {
                             <b>Found a security issue?</b>
                             <p>Straight to the owner, no triage queue. Our disclosure policy lives at <a href="/.well-known/security.txt">security.txt</a>.</p>
                         </div>
-                        <a className="dl-btn dl-btn-ghost" href="mailto:hello@privatools.me?subject=Security%20report">Report a vulnerability</a>
+                        <a className={buttonVariants({ variant: "outline" })} href="mailto:hello@privatools.me?subject=Security%20report">Report a vulnerability</a>
                     </div>
                 </section>
             </div>
@@ -2012,12 +2039,18 @@ export default class DaylightSkinApp extends React.Component {
             const older = POSTS_NEWEST[i + 1];
             return (
                 <div className="dl-wrap">
-                    <div className="dl-crumb" style={{ paddingTop: 36 }}><a href="#/blog">Blog</a> &nbsp;/&nbsp; <span style={{ color: "var(--dl-ink)" }}>{post.title}</span></div>
+                    <Breadcrumb style={{ paddingTop: 36 }}>
+                        <BreadcrumbList>
+                            <BreadcrumbItem><BreadcrumbLink href="#/blog">Blog</BreadcrumbLink></BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem><BreadcrumbPage>{post.title}</BreadcrumbPage></BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
                     <div className="dl-artgrid">
                         <article className="dl-article">
                             <div className="dl-eyebrow">{post.tags[0]}</div>
                             <h1>{post.title}</h1>
-                            <div className="am">{fmtDate(post.publishedAt)} · {post.readTime} · {post.author || "PrivaTools maintainers"}</div>
+                            <div className="am">{fmtDate(post.publishedAt)} · {post.readTime} · {post.author || "Lakshya Lodha"}</div>
                             {post.tldr && <div className="dl-tldr"><b>TL;DR</b><p>{post.tldr}</p></div>}
                             {/* Our own authored HTML from src/data/blog.ts — the same body the
                                 server injects for crawlers, so what Google reads is what people see. */}
@@ -2032,13 +2065,13 @@ export default class DaylightSkinApp extends React.Component {
                                 <div className="dl-panel dl-facts">
                                     <h3>Tools in this guide</h3>
                                     <p className="fine">Every one free — no account, no caps.</p>
-                                    {related.map((t) => <a key={t.slug} className="dl-btn dl-btn-ghost" href={`#/tool/${t.slug}`}>{t.name} →</a>)}
+                                    {related.map((t) => <a key={t.slug} className={buttonVariants({ variant: "outline" })} href={`#/tool/${t.slug}`}>{t.name} →</a>)}
                                 </div>
                             )}
                             <div className="dl-panel dl-facts">
                                 <h3>Verify, don’t trust</h3>
                                 <p className="fine">Claims in our posts come with checks you can run yourself.</p>
-                                <a className="dl-btn dl-btn-ghost" href="#/security">The 60-second test →</a>
+                                <a className={buttonVariants({ variant: "outline" })} href="#/security">The 60-second test →</a>
                             </div>
                         </aside>
                     </div>
@@ -2140,8 +2173,8 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-panel dl-facts">
                 <h3>Check the claims</h3>
                 <p className="fine">Nothing here asks to be believed.</p>
-                <a className="dl-btn dl-btn-ghost" href="#/security">How to verify →</a>
-                <a className="dl-btn dl-btn-ghost" href="#/compare">Against the others →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="#/security">How to verify →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="#/compare">Against the others →</a>
             </div>
         </>);
     }
@@ -2168,7 +2201,7 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-panel dl-facts">
                 <h3>Don’t take our word</h3>
                 <p className="fine">Every claim here has a check you can run from your own browser.</p>
-                <a className="dl-btn dl-btn-ghost" href="#/security">Verify it yourself →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="#/security">Verify it yourself →</a>
             </div>
         </>);
     }
@@ -2188,7 +2221,7 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-panel dl-facts">
                 <h3>Something unclear?</h3>
                 <p className="fine">A person reads every message.</p>
-                <a className="dl-btn dl-btn-ghost" href="#/support">Ask on Support →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="#/support">Ask on Support →</a>
             </div>
         </>);
     }
@@ -2203,7 +2236,7 @@ export default class DaylightSkinApp extends React.Component {
                     <h1>A person reads this.<br /><em>Really.</em></h1>
                     <p>Owner-funded means owner-answered. No ticket deflection, no chatbot maze — say what broke or what’s missing and it gets read.</p>
                     <div className="dl-supcta">
-                        <a className="dl-btn dl-btn-primary" href="mailto:hello@privatools.me">Email hello@privatools.me</a>
+                        <a className={buttonVariants()} href="mailto:hello@privatools.me">Email hello@privatools.me</a>
                         <span>Straight to the owner’s inbox — replies in days, not ticket queues.</span>
                     </div>
                 </div>
@@ -2265,7 +2298,6 @@ export default class DaylightSkinApp extends React.Component {
                         <div><b>Drop it.</b><p>We’ll show you every tool that can handle it — nothing uploads.</p></div>
                     </div>
                 )}
-                {this.state.toast && <div className="dl-toast" role="status">{this.state.toast}</div>}
             </div>
         );
     }

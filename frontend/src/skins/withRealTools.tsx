@@ -16,6 +16,7 @@
  * binding — the generated JSX renders `{v.realToolUI}` like any other value.
  */
 import React, { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
@@ -87,8 +88,9 @@ export function withRealTools(Base, config) {
                 realToolUI: (
                     <Suspense
                         fallback={
-                            <div style={{ padding: "24px 0", opacity: 0.65, fontSize: 13 }}>
-                                Loading {tool.name}…
+                            <div style={{ padding: "24px 0", display: "grid", gap: 12 }} aria-label={`Loading ${tool.name}`}>
+                                <Skeleton className="h-44 w-full rounded-[14px]" />
+                                <Skeleton className="h-4 w-56" />
                             </div>
                         }
                     >

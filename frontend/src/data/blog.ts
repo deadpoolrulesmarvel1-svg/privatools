@@ -1299,7 +1299,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "Most file operations — merging PDFs, converting images, rewriting metadata — are pure computation your browser can do locally, so the file never leaves your machine. Only jobs needing native code (full OCR models, office-suite conversion, heavy video transcodes) require a server, and an honest tool tells you which is which before you add a file.",
     relatedTools: ["merge-pdf", "image-converter", "strip-metadata", "ocr-pdf"],
     tags: ["Engineering", "Privacy"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>Most of what a file tool does — parsing pages, reordering them, rewriting metadata, re-encoding an image — is computation, and your browser is a very capable computer. When you merge two PDFs on <a href="/tool/merge-pdf">our merge tool</a>, a library running in your tab reads both files from memory, builds a new document, and hands it back to you. No network request exists in that story, which is why the network tab stays empty.</p>
 
@@ -1334,7 +1334,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "For PrivaTools server jobs, a file exists exactly as long as the job does: written to isolated temporary storage, processed, streamed back, removed. No results bucket, no retention window, no recoverable copy — and most of the catalogue never touches a server at all.",
     relatedTools: ["ocr-pdf", "pdf-to-word", "compress-pdf"],
     tags: ["Trust", "Privacy"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>"We delete your files" is the least verifiable claim on the internet. You can watch a network tab prove a local tool uploads nothing; you cannot watch a server's disk. So a promise about server-side deletion deserves a precise, mechanical definition — here is ours.</p>
 
@@ -1369,7 +1369,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "Skip the preamble and ask four things of any file tool: Where do files go? How long do they stay? Whose code runs on the page? What does 'free' actually include? The answers — usually buried mid-policy — tell you who the product really serves.",
     relatedTools: ["strip-metadata", "compress-pdf"],
     tags: ["Guides", "Privacy"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>Privacy policies are written to be skimmed past. But for a site that handles your documents, four specific answers matter more than every other paragraph combined — and you can find all four in about a minute with Ctrl-F.</p>
 
@@ -1401,7 +1401,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "iLovePDF is a polished, mature suite whose free tier has task limits, Premium-gated settings, and server-side processing with time-limited retention. PrivaTools is fully free with no caps, runs most tools in your browser so files never upload, and deletes server-job files per-job. Choose iLovePDF for its desktop/mobile apps and workflow ecosystem; choose PrivaTools when price, limits, or file privacy decide it.",
     relatedTools: ["merge-pdf", "compress-pdf", "pdf-to-word", "edit-pdf"],
     tags: ["Comparison", "PDF"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>iLovePDF is probably the first name anyone meets when they search for a PDF tool, and it earns much of that position: the suite is mature, fast, and pleasant to use. This comparison isn't about pretending otherwise. It's about the fine print — what the free tier actually includes, where your file physically goes, and how long it stays there — checked against each site's own public pages in August 2026.</p>
 
@@ -1451,7 +1451,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "Smallpdf is the most polished PDF suite on the web, but its free tier caps daily tasks and gates stronger compression behind Pro, and every file processes on its servers with time-limited retention. PrivaTools is uncapped and free, local-first so most files never upload, with per-job deletion for server tools. Pick Smallpdf for polish and integrations; pick PrivaTools for zero limits and files that stay on your machine.",
     relatedTools: ["compress-pdf", "pdf-to-word", "esign-pdf", "merge-pdf"],
     tags: ["Comparison", "PDF"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>Smallpdf more or less invented the modern PDF-tool website: one task per page, a big friendly dropzone, and an interface calm enough to trust. Twenty-something tools later it remains the reference for polish. The question this comparison answers is narrower: what does its free tier actually let you do, and what happens to your file when you drop it — versus doing the same job on PrivaTools. Everything below was checked against each site's own public pages in August 2026.</p>
 
@@ -1499,7 +1499,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "Sejda offers the web's best free PDF editor with unusually transparent limits: 3 tasks per hour, 200 pages/50 MB per file, files deleted after 2 hours. PrivaTools has no task caps, a 500 MB limit, browser-local processing for most tools and per-job deletion for the rest. Use Sejda for occasional heavy editing; use PrivaTools for volume, larger files, or documents that shouldn't upload.",
     relatedTools: ["edit-pdf", "compress-pdf", "split-pdf", "fill-form"],
     tags: ["Comparison", "PDF"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>Sejda deserves more credit than it gets. Its web PDF editor — real text editing, not annotation overlays — is the best free one available, and its limits are stated with a transparency most competitors avoid: three tasks per hour, up to 200 pages or 50&nbsp;MB per document, files deleted after two hours. This comparison takes that honesty seriously and measures both sides with the same ruler, from each site's own public pages as of August 2026.</p>
 
@@ -1546,7 +1546,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
       "ihatepdf is a genuinely private, free, browser-only PDF suite — files never upload by its stated, network-tab-verifiable design, the same architecture PrivaTools uses for most tools. The differences: PrivaTools spans 200+ tools across PDF, image, video, audio and developer work, handles server-class jobs (OCR, office conversion) with disclosed per-job deletion, loads no third-party scripts, and adds batch, pipelines and an installable offline app.",
     relatedTools: ["merge-pdf", "ocr-pdf", "pdf-to-word", "image-compressor"],
     tags: ["Comparison", "PDF"],
-    author: "PrivaTools maintainers",
+    author: "Lakshya Lodha",
     body: `
 <p>Most comparisons on this blog contrast a local-first architecture with an upload-everything one. This one can't: ihatepdf processes files in your browser, exactly the way most of our catalogue does. Files never reach its servers — a claim you can verify in its network tab the same way you can in ours. When both sides make the same privacy bet, the comparison moves to what's built on top of it. As always, everything here comes from each site's public pages as of August 2026.</p>
 
