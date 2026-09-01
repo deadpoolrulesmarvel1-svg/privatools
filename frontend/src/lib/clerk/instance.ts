@@ -63,16 +63,31 @@ export function setClerkInstance(next: ClerkInstance | null): void {
  * Resolves null when Clerk is not configured, when the script was blocked, or
  * when it simply never arrives — every caller must handle that.
  */
-export function whenClerkReady(timeoutMs = 15_000): Promise<ClerkInstance | null> {
-    if (instance) return Promise.resolve(instance);
-    if (!isClerkEnabled() || loadFailed) return Promise.resolve(null);
-    return new Promise((resolve) => {
-        waiters.push(resolve);
-        setTimeout(() => {
-            const i = waiters.indexOf(resolve);
-            if (i >= 0) { waiters.splice(i, 1); resolve(instance); }
-        }, timeoutMs);
-    });
+export async function whenClerkReady(timeoutMs = 15_000): Promise<ClerkInstance | null> {
+    if (!isClerkEnabled() || loadFailed) return null;
+    const deadline = Date.now() + timeoutMs;
+
+    let clerk = instance;
+    if (!clerk) {
+        clerk = await new Promise<ClerkInstance | null>((resolve) => {
+            waiters.push(resolve);
+            setTimeout(() => {
+                const i = waiters.indexOf(resolve);
+                if (i >= 0) { waiters.splice(i, 1); resolve(instance); }
+            }, timeoutMs);
+        });
+    }
+    if (!clerk) return null;
+
+    // Being parked is not the same as being usable. <ClerkBridge> hands over
+    // whatever useClerk() returns, which exists well before clerk-js has
+    // finished loading and built `client` — and every call that touches
+    // `client` throws until it has. Waiting only for the instance made an
+    // OAuth return fail with "Accounts are still starting up".
+    while (!clerk.loaded && !loadFailed && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 50));
+    }
+    return clerk.loaded ? clerk : null;
 }
 
 /**

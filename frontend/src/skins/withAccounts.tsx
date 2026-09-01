@@ -18,6 +18,7 @@ import {
     MIN_PASSWORD_LENGTH, ACCOUNT_COPY, EMAIL_RESET,
 } from "./accountLogic";
 import { CLERK_BLOCKED_MESSAGE, clerkLoadFailed, whenClerkReady } from "@/lib/clerk/instance";
+import { SSO_RETURN } from "@/lib/clerk/accountApi";
 
 /**
  * @param Base    the generated component
@@ -84,14 +85,13 @@ export function withAccounts(Base, config) {
                     if (clerkLoadFailed()) this._onClerkBlocked();
                     return;
                 }
-                // A half-finished attempt lives on the client, not in the URL:
-                // Clerk does not reliably hand back a query parameter to key
-                // off, so ask the sign-in/sign-up resources whether one is
-                // mid-flight. The query check stays as a second signal.
-                const pending = Boolean(
-                    clerk.client?.signIn?.status || clerk.client?.signUp?.status,
-                );
-                if (!clerk.user && (pending || /[?&]__clerk/.test(location.search))) {
+                // Only on the leg back from the provider, which signInWithSocial
+                // marks explicitly. Clerk's own resources cannot be used to
+                // detect this: an untouched signIn already reads
+                // "needs_identifier", so a truthiness check runs the callback
+                // on every ordinary visit to the page.
+                const returning = new URLSearchParams(location.search).has(SSO_RETURN);
+                if (!clerk.user && returning) {
                     try {
                         await accountApi.completeSocialRedirect();
                         // Clerk leaves its bookkeeping in the address bar.

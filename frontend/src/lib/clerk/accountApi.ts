@@ -26,6 +26,9 @@ import { clerkToken, requireClerk, requireClerkClient } from "./instance";
 
 const BASE = "/api";
 
+/** Query flag we add to the OAuth return URL; see signInWithSocial. */
+export const SSO_RETURN = "__pt_sso";
+
 /** Clerk errors carry the useful text in `errors[0]`, not in `message`. */
 function readable(err: unknown): Error {
     const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
@@ -186,7 +189,11 @@ export const clerkAccountApi = {
         try {
             await clerk.client.signIn.authenticateWithRedirect({
                 strategy: `oauth_${provider}` as `oauth_${SocialProvider}`,
-                redirectUrl: `${window.location.origin}/account`,
+                // The marker is what tells the landing page to finish the
+                // handshake. Inferring it from signIn.status does not work:
+                // a freshly loaded page already reports "needs_identifier",
+                // so any truthiness check fires on every visit.
+                redirectUrl: `${window.location.origin}/account?${SSO_RETURN}=1`,
                 redirectUrlComplete: `${window.location.origin}/account`,
             });
         } catch (err) {
