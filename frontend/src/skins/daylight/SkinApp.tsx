@@ -1191,6 +1191,7 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="dl-palin">
                         <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="var(--dl-faint)" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="var(--dl-faint)" strokeWidth="1.5" strokeLinecap="round" /></svg>
                         <input autoFocus value={this.state.palQ} placeholder={`Search ${TOTAL} tools…`}
+                            role="combobox" aria-expanded="true" aria-controls="dl-pallist" aria-activedescendant={items[sel] ? `dl-palopt-${sel}` : undefined}
                             onChange={(e) => this.setState({ palQ: e.target.value, palSel: 0 })}
                             onKeyDown={(e) => {
                                 if (e.key === "ArrowDown") { e.preventDefault(); this.setState({ palSel: Math.min(sel + 1, items.length - 1) }); }
@@ -1199,7 +1200,7 @@ export default class DaylightSkinApp extends React.Component {
                             }} />
                         <kbd>esc</kbd>
                     </div>
-                    <div className="dl-pallist">
+                    <div className="dl-pallist" role="listbox" id="dl-pallist" aria-label="Results">
                         {items.length === 0 && <div className="dl-palempty">No tool or page matches “{this.state.palQ}”.</div>}
                         {items.map((entry, i) => {
                             const group = entry.kind === "page" ? "Pages" : entry.recent ? "Recent" : (items.some((x) => x.recent) ? "Popular" : "Tools");
@@ -1209,6 +1210,7 @@ export default class DaylightSkinApp extends React.Component {
                                 <React.Fragment key={entry.kind === "page" ? entry.hash : entry.t.slug}>
                                     {header}
                                     <div className={`dl-palitem${i === sel ? " sel" : ""}`}
+                                        role="option" id={`dl-palopt-${i}`} aria-selected={i === sel}
                                         onClick={() => goEntry(entry)}
                                         onMouseMove={() => { if (this.state.palSel !== i) this.setState({ palSel: i }); }}>
                                         <b>{entry.kind === "page" ? entry.label : entry.t.name}</b>

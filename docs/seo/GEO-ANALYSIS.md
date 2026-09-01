@@ -36,3 +36,31 @@ do not execute JavaScript. Date: 2026-09-01. Re-run after the next `v*` deploy.*
 
 ## Explicitly not recommended
 Per Google's AI-optimization guidance baked into the skill: no llms.txt-as-ranking-lever claims, no AI-specific rewriting, no mention-farming. GEO here is SEO fundamentals applied to AI surfaces — which is what this codebase now does.
+
+---
+
+# Technical Audit Addendum (`seo-technical` skill)
+
+**Technical Score: 90/100**
+
+| Category | Status | Notes |
+|---|---|---|
+| Crawlability | pass | robots.txt valid, AI crawlers deliberately allowed (Bytespider blocked), 262-URL sitemap referenced; SPA content fully SSR'd so nothing critical needs JS |
+| Indexability | pass | Self-referencing canonicals in raw HTML (curl-verified); unknown URLs return real 404 meta; no parameterized duplicates |
+| Security | pass | Nonce-based CSP, X-Frame-Options DENY, nosniff, referrer-policy from the app itself; HSTS terminates at prod nginx |
+| URL structure | pass | Clean hyphenated paths, ≤3 clicks to any tool via /tools |
+| Mobile | pass | Responsive throughout, mobile tab bar, no horizontal overflow (measured), content parity — same SSR for all agents |
+| Core Web Vitals | warn (no field data) | Lab: entry 62 KiB gzip, fonts preloaded, reveals are transform/opacity-only. CrUX will exist only post-launch traffic; re-check via `claude-seo run pagespeed_check.py` once deployed |
+| Structured data | pass | BlogPosting w/ named Person author + dateModified, Review w/ ratings, Breadcrumb, Organization inlined (validated by direct builder calls) |
+| JS rendering | pass | The defining strength: full body SSR injection; JSON-LD, canonical, robots meta all in initial HTML |
+| IndexNow | pass | Key file served from root; deploy script pings on every release |
+
+**Agent-UX (accessibility-tree heuristic, run in-DOM since the toolkit's scanner
+correctly refuses localhost):** 274 interactive elements on the catalogue page —
+0 unnamed, 0 unlabeled inputs, 0 pointer-cursor fake buttons. One finding fixed
+in the same commit: the ⌘K palette now exposes a proper combobox/listbox/option
+ARIA relationship with `aria-activedescendant`.
+
+**To run post-deploy (public URL required by the toolkit's SSRF guard):**
+`claude-seo run agent_ux_check.py https://privatools.me --json` and
+`claude-seo run pagespeed_check.py https://privatools.me --json`.
