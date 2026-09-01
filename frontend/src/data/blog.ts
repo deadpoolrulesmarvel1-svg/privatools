@@ -1578,7 +1578,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 <p>ihatepdf demonstrates the point this whole site is built on: browser-local file tools are practical, fast and free to run, which is exactly why upload-first suites deserve the scrutiny. We consider it the most honest of our competitors — this comparison exists because "which private one?" is a question people actually ask, not because one of us is hiding something.</p>
 
 <h2>The bottom line</h2>
-<p>If both tools do your job locally, use whichever feels better — you've already won. The days PrivaTools earns the bookmark are the ones that need OCR at 2am, a folder of HEICs converted, a pipeline run on twelve contracts, or simply a page with no analytics watching you work.</p>
+<p>If both tools do your job locally, use whichever feels better — you've already won. The days PrivaTools earns the bookmark are the ones that need OCR at 2am, a folder of HEICs converted, a pipeline run on twelve contracts, or simply a page with no third-party scripts watching you work.</p>
 <p><em>Sources: ihatepdf.cv public pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
 `,
   },

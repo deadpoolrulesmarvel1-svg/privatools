@@ -410,7 +410,12 @@ const CSS = `
 
 .dl-foot { border-top:1px solid var(--dl-rule); margin-top:104px; background:var(--dl-card); }
 .dl-foot .cols { display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:40px; padding:44px 32px 34px; max-width:1480px; margin:0 auto; }
-@media (max-width: 900px) { .dl-foot .cols { grid-template-columns:1fr 1fr; gap:34px 24px; } .dl-foot .brand { grid-column:1 / -1; } }
+@media (max-width: 900px) {
+  .dl-foot .cols { grid-template-columns:1fr 1fr; gap:34px 24px; }
+  .dl-foot .brand { grid-column:1 / -1; }
+  .dl-foot .cols > div:last-child { grid-column:1 / -1; }
+  .dl-foot .cols > div:last-child ul { display:grid; grid-template-columns:1fr 1fr; gap:9px 24px; }
+}
 .dl-foot .brand .finstall { margin-top:16px; padding:9px 16px; font-size:13px; gap:8px; }
 .dl-foot h4 { font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--dl-faint); font-weight:600; margin:0 0 13px; }
 .dl-foot ul { list-style:none; padding:0; display:flex; flex-direction:column; gap:9px; }
@@ -419,6 +424,7 @@ const CSS = `
 .dl-foot .brand p { font-size:13px; color:var(--dl-muted); margin-top:12px; max-width:24em; line-height:1.6; }
 .dl-foot .base { border-top:1px solid var(--dl-rule); }
 .dl-foot .base > div { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; max-width:1480px; margin:0 auto; padding:18px 32px; font-size:12.5px; color:var(--dl-faint); }
+@media (min-width: 981px) { .dl-foot .base > div { padding-left:96px; } } /* clears the status pill */
 
 /* catalogue */
 .dl-idxhero { display:flex; flex-direction:column; gap:16px; padding:40px 0 4px; }
@@ -505,7 +511,6 @@ const CSS = `
 .dl-facts h3 { margin-bottom:4px; }
 .dl-factr { display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-bottom:1px solid var(--dl-rule-soft); font-size:13px; color:var(--dl-muted); }
 .dl-factr:last-child { border-bottom:none; }
-.dl-flink { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; }
 .dl-claimlink { background:none; border:none; padding:0; margin-top:8px; font-size:13px; font-weight:600; color:var(--dl-green); cursor:pointer; }
 .dl-claimlink:hover { text-decoration:underline; }
 .dl-factr b { color:var(--dl-ink); font-weight:600; text-align:right; }
@@ -1034,11 +1039,10 @@ export default class DaylightSkinApp extends React.Component {
                         <li><a href="#/about">About</a></li>
                         <li><a href="#/privacy">Privacy</a></li>
                         <li><a href="#/terms">Terms</a></li>
-                        <li><button type="button" className="dl-flink" onClick={this._installApp}>Install the app</button></li>
                     </ul></div>
                 </div>
                 <div className="base"><div>
-                    <span>© 2026 PrivaTools · owner-funded · no ads, no analytics, no paid tier</span>
+                    <span>© 2026 PrivaTools · owner-funded · no ads, no third-party scripts, no paid tier</span>
                     <span>Server jobs: disclosed · Mumbai, IN · deleted after use</span>
                 </div></div>
             </footer>
@@ -1879,7 +1883,7 @@ export default class DaylightSkinApp extends React.Component {
                     ["No third-party code touches your files", "How to check: network tab, again",
                         ["Many free tool sites load their actual processing code from public CDNs at runtime — unpinned scripts, fetched while you’re holding a sensitive document. We don’t. Every tool is bundled and served from privatools.me, integrity-checked at build time, behind a strict content-security policy."]],
                     ["No accounts, no trackers, no ads", "How to check: use the site",
-                        ["There is nothing to sign up for to use a tool, no analytics script watching you, and nothing to sell. The site is owner-funded. Your history — kept on your device — records tool and time only, never files or filenames."]]]
+                        ["There is nothing to sign up for to use a tool, no third-party script watching you, and nothing to sell. The site is owner-funded. Your history — kept on your device — records tool and time only, never files or filenames."]]]
                         .map(([h, how, ps]) => (
                             <div className="dl-promise" key={h}>
                                 <div><h3>{h}</h3><div className="how">{how}</div></div>
