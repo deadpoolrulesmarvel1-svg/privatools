@@ -17,6 +17,7 @@
  */
 import React, { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LocalModelBanner } from "@/components/byok/LocalModelBanner";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
@@ -94,6 +95,11 @@ export function withRealTools(Base, config) {
                 realToolDesc: tool.description,
                 realToolAccepts: tool.accepts ?? "",
                 realToolUI: (
+                    <>
+                    {/* Fetches this tool's on-device model on arrival rather
+                        than on first run. Sits above the tool in every skin
+                        because this is the one place they all render through. */}
+                    <LocalModelBanner slug={tool.slug} />
                     <Suspense
                         fallback={
                             <div style={{ padding: "24px 0", display: "grid", gap: 12 }} aria-label={`Loading ${tool.name}`}>
@@ -118,6 +124,7 @@ export function withRealTools(Base, config) {
                             />
                         )}
                     </Suspense>
+                    </>
                 ),
             };
         }

@@ -207,9 +207,15 @@ const SOCIAL_ICONS = {
 };
 
 const Logo = ({ size = 23 }) => (
-    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden="true">
-        <path d="M11 2 L19 6 V11 C19 15.5 15.6 19 11 20 C6.4 19 3 15.5 3 11 V6 Z" stroke="var(--dl-green)" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="M7.5 11 L10 13.5 L14.5 8.5" stroke="var(--dl-green)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    // A page held between two registration marks: the file stays where it is.
+    // The 24-grid and stroke weight match public/icons/icon.svg exactly — change
+    // one and the favicon stops matching the header.
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"
+        stroke="var(--dl-green)" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9.6 6.2h3.6L15.8 8.8v8.4a1.4 1.4 0 0 1-1.4 1.4H9.6a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 9.6 6.2Z" />
+        <path d="M13.2 6.3v2.5h2.5" />
+        <path d="M3.6 7.6V4.6a1 1 0 0 1 1-1h3" />
+        <path d="M20.4 16.4v3a1 1 0 0 1-1 1h-3" />
     </svg>
 );
 
@@ -299,9 +305,11 @@ const CSS = `
 .dl-root *, .dl-root *::before, .dl-root *::after { box-sizing:border-box; }
 .dl-root h1, .dl-root h2, .dl-root h3, .dl-root p, .dl-root ul, .dl-root figure { margin:0; }
 .dl-root button { font-family:inherit; cursor:pointer; }
-/* Bare buttons (no classes / dl-only classes) keep the quiet reset; anything
-   carrying utility classes styles itself. */
-.dl-root button:not([class*="bg-"]):not([class*="border"]):not(.dl-aibtn):not(.dl-sbtn) { color:inherit; background:none; border:0; font-size:inherit; }
+/* Strips the design's default button chrome from buttons that should read as
+   plain text. Every dl- control styles itself, so the whole family is exempt:
+   this rule's specificity (0,4,1) silently beat all of them, which is why the
+   filter chips had no pills and the social buttons no brand fill. */
+.dl-root button:not([class*="bg-"]):not([class*="border"]):not([class*="dl-"]) { color:inherit; background:none; border:0; font-size:inherit; }
 .dl-root input[type="checkbox"] { accent-color: var(--dl-green); width:15px; height:15px; }
 .dl-root a { color:inherit; text-decoration:none; }
 /* Prose links stay green; component anchors (buttons, cards, chips) inherit,
@@ -341,8 +349,8 @@ const CSS = `
 .dl-root .dl-aibtn:hover { background:color-mix(in srgb, var(--dl-green) 22%, var(--dl-paper)); border-color:var(--dl-green); }
 .dl-root .dl-aibtn:active { transform:scale(0.97); }
 @media (max-width: 520px) { .dl-root .dl-aibtn { padding:8px 11px; } }
-.dl-iconbtn { display:none; background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; align-items:center; justify-content:center; flex:none; }
-.dl-themebtn { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex:none; }
+.dl-iconbtn { display:none; background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; align-items:center; justify-content:center; flex:none; color:inherit; }
+.dl-themebtn { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:999px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex:none; color:inherit; }
 @media (max-width: 1120px) { .dl-links { display:none; } .dl-searchpill { display:none; } .dl-iconbtn { display:flex; margin-left:auto; } }
 @media (max-width: 640px) { .dl-navcta { display:none; } }
 
@@ -502,6 +510,17 @@ const CSS = `
 .dl-chip.on { background:var(--dl-ink); border-color:var(--dl-ink); color:var(--dl-paper); }
 .dl-chip.on .n { color:color-mix(in srgb, var(--dl-paper) 70%, transparent); }
 .dl-count { font-size:13px; color:var(--dl-faint); margin-left:auto; white-space:nowrap; }
+@media (max-width: 760px) {
+  .dl-idxmeta { gap:10px; }
+  /* index.css sets scrollbar-width:thin on every element via
+     :root:not([data-skin]) *, which outranks a single class. */
+  .dl-root .dl-idxmeta .dl-chips { scrollbar-width:none; }
+  .dl-chips { flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; -ms-overflow-style:none;
+              scroll-snap-type:x proximity; margin:0 -32px; padding:2px 32px; }
+  .dl-chips::-webkit-scrollbar { display:none; }
+  .dl-chip { flex:none; scroll-snap-align:start; }
+  .dl-count { margin-left:0; }
+}
 .dl-catsec { padding-top:10px; padding-bottom:30px; }
 .dl-catsec h2 { font-weight:700; font-size:19px; letter-spacing:-.01em; display:flex; align-items:center; gap:11px; padding-bottom:12px; border-bottom:2px solid color-mix(in srgb, var(--dl-cc) 32%, var(--dl-rule)); }
 .dl-catsec h2 .ic { width:30px; height:30px; border-radius:9px; background:color-mix(in srgb, var(--dl-cc) 13%, var(--dl-card)); display:flex; align-items:center; justify-content:center; color:var(--dl-cc); }
@@ -733,7 +752,7 @@ const CSS = `
   .rv, .dl-ccards.rv > *, .dl-claims.rv > * { opacity:1; transform:none; transition:none; }
 }
 .dl-btags { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 26px; }
-.dl-chip { border:1px solid var(--dl-rule); background:var(--dl-card); color:var(--dl-muted); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:transform 160ms var(--dl-eo), border-color 150ms ease, color 150ms ease; }
+.dl-chip { border:1px solid var(--dl-rule); background:var(--dl-card); color:var(--dl-muted); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:transform 160ms var(--dl-eo), border-color 150ms ease, color 150ms ease; }
 .dl-chip:hover { border-color:var(--dl-rule-mid); color:var(--dl-ink); }
 .dl-chip:active { transform:scale(.97); }
 .dl-chip.on { background:var(--dl-ink); border-color:var(--dl-ink); color:var(--dl-paper); }
