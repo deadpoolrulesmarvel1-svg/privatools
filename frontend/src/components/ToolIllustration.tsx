@@ -475,6 +475,7 @@ const REGISTRY: Record<string, Renderer> = {
     "sanitize-pdf":   Lock,
     "unlock-pdf":     Unlock,
     "summarize-pdf":  Summarize,
+    "chat-with-pdf":  Summarize,
     "smart-redact":   Lock,
     // Non-PDF
     "image-compressor": ImageCompress,

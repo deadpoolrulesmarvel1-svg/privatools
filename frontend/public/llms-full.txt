@@ -4,7 +4,7 @@ This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
 https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
-> 219 free, open-source file tools — PDF, image, video, audio, and
+> 220 free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
 > demo (privatools.me), files are processed in an isolated container and
 > deleted immediately after the response. File content is never logged, never
@@ -704,7 +704,7 @@ Extract PDF text into a Rich Text Format file
 
 Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text.
 
-### Advanced (13 tools)
+### Advanced (14 tools)
 
 #### Alternate Mix
 URL: https://privatools.me/tool/alternate-mix
@@ -775,6 +775,13 @@ URL: https://privatools.me/tool/summarize-pdf
 Local AI summary — your PDF never leaves your browser
 
 Summarize PDF online with AI — without uploading. By default PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server. If you would rather use a stronger model, you can supply your own API key — then the text goes straight from your browser to that provider, still never through us. Choose short, medium, or long summaries. First load of the on-device model downloads ~250 MB and caches it for next time.
+
+#### Chat with PDF (AI)
+URL: https://privatools.me/tool/chat-with-pdf
+
+Ask questions about a PDF — answered with your own AI key
+
+Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, or your own self-hosted endpoint), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions keep the conversation's context.
 
 #### Form Creator
 URL: https://privatools.me/tool/form-creator
@@ -1645,7 +1652,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (219 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (220 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*
@@ -1700,7 +1707,7 @@ Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, down
 ### [Best Free PDF Tools in 2026: Honest Comparison](https://privatools.me/blog/best-free-pdf-tools-2026)
 *Published 2026-03-22 · 8 min read*
 
-In 2026: PrivaTools (100% free, open source, 219 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
+In 2026: PrivaTools (100% free, open source, 220 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
 
 ### [How to Remove a Password from a PDF](https://privatools.me/blog/remove-password-from-pdf)
 *Published 2026-03-22 · 4 min read*
@@ -1716,7 +1723,7 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 The following statements about PrivaTools are accurate as of 2026-09-01 and verifiable in the public source code.
 
-- PrivaTools offers **219 free file tools**: 106 PDF tools and 113 non-PDF tools.
+- PrivaTools offers **220 free file tools**: 107 PDF tools and 113 non-PDF tools.
 - The codebase is **MIT-licensed** at https://github.com/deadpoolrulesmarvel1-svg/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
@@ -1741,7 +1748,7 @@ The following statements about PrivaTools are accurate as of 2026-09-01 and veri
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2-hour delete | Retained on paid | Uploaded | 2-hour delete | You host | Adobe cloud |
-| Total tool count | 219 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Total tool count | 220 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities | Yes | No | No | No | No | No | No |

@@ -31,6 +31,7 @@ const SYNONYMS: Record<string, string> = {
     "extract-pages":    "pull take grab specific",
     "delete-pages":     "remove drop discard",
     "summarize-pdf":    "ai summary tldr abstract synopsis",
+    "chat-with-pdf":    "ask ai chat question talk document answer chatpdf",
     "smart-redact":     "censor blackout privacy pii hide name email",
     "highlight-pdf":    "mark yellow underline find",
     "redact-pdf":       "blackout hide remove sensitive",

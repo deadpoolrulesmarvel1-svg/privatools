@@ -255,6 +255,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Pick a highlight color", "text": "Choose yellow, green, pink, blue, or orange. Highlights are added as real PDF annotations."},
         {"name": "Download the highlighted PDF", "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with permanent highlight annotations."},
     ],
+    "chat-with-pdf": [
+        {"name": "Upload your PDF", "text": "Drag a PDF into the upload area. pdf.js extracts the text page-by-page entirely inside your browser — the document is never uploaded to PrivaTools."},
+        {"name": "Add your AI key once", "text": "Pick a provider — Anthropic, OpenAI, Google Gemini, OpenRouter, Groq, Mistral, or a self-hosted OpenAI-compatible endpoint — and paste your API key. It is stored encrypted on your device and sent only to that provider."},
+        {"name": "Ask questions in plain language", "text": "Type a question — payment terms, deadlines, obligations, definitions, a section summary. The document text and your question go straight from your browser to your provider; follow-ups keep the conversation context."},
+        {"name": "Copy the answers you need", "text": "Hover any answer to copy it. Start a new conversation on the same document at any time — nothing is stored anywhere once you close the tab."},
+    ],
     "summarize-pdf": [
         {"name": "Open the tool and accept the model download", "text": "On first use the page downloads a ~250 MB AI summarization model (distilbart-cnn) into your browser. It caches in IndexedDB so subsequent visits are instant."},
         {"name": "Upload your PDF", "text": "Drag a PDF (any length, any topic) into the upload area. Text is extracted page-by-page using pdf.js — entirely in the browser."},
@@ -1247,6 +1253,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are the highlights real PDF annotations or flattened images?", "a": "Real PDF annotations. They render in every PDF viewer and can be removed later if you reopen the file in an editor. Nothing about the underlying text is changed."},
         {"q": "Can I highlight multiple phrases at once?", "a": "Run the tool once per phrase. Each run preserves previous highlights, so you can layer different colors for different keywords."},
         {"q": "Does the highlighter respect case?", "a": "Toggle case-sensitive matching for exact-case search; leave it off for case-insensitive flexible matching. Case-insensitive is the default."},
+    ],
+    "chat-with-pdf": [
+        {"q": "Where does my PDF go when I chat with it?", "a": "Nowhere near PrivaTools. The text is extracted by pdf.js inside your browser tab, and each question is sent, together with that text, directly from your browser to the AI provider you picked, authenticated with your own API key. Open DevTools → Network and you will see requests only to that provider."},
+        {"q": "Which AI providers can I use?", "a": "Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, Groq, Mistral, or any self-hosted OpenAI-compatible endpoint such as Ollama or vLLM. You paste your own key once; it is stored encrypted on this device and never sent to PrivaTools."},
+        {"q": "Why do I need my own API key?", "a": "A conversational answer needs a full LLM, and proxying documents through our server would break the privacy model — we would see them. Bring-your-own-key means you pay your provider directly (typically fractions of a cent per question) and your document bypasses us entirely."},
+        {"q": "Does it work on scanned PDFs?", "a": "Not directly — a scan has no text layer. Run OCR PDF first, download the searchable PDF, then chat with that. The tool tells you when it finds no extractable text."},
+        {"q": "How long a document can it handle?", "a": "About 100,000 characters (roughly 50–70 pages of dense text) are sent as context per question. For longer documents the beginning is used and the assistant is told so — asking about specific sections or splitting the PDF first gives better answers."},
+        {"q": "Are my questions or the answers stored anywhere?", "a": "PrivaTools stores nothing — the conversation lives only in your browser tab. Your AI provider handles the request under its own API terms, the same as any other API call made with your key."},
     ],
     "summarize-pdf": [
         {"q": "Is my PDF really not uploaded?", "a": "Correct. The summarization model loads once into your browser (~250 MB, cached in IndexedDB after first load). After that, summarization runs entirely in WebAssembly inside your tab. Verify by opening DevTools → Network — no requests fire while summarization is running. Your PDF, your machine, your data."},

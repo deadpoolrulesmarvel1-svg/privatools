@@ -2,7 +2,7 @@ import {
   FileText, Merge, Scissors, BookOpen, Layout, Trash2, Download,
   PenTool, Stamp, AlignLeft, Hash, Tag, Bookmark,
   Minimize2, Layers, ScanLine, Wrench, Maximize2, RotateCw, Palette, Crop,
-  Shield, Unlock, EyeOff, DatabaseZap, MessageSquareOff, Info,
+  Shield, Unlock, EyeOff, DatabaseZap, MessageSquareOff, MessagesSquare, Info,
   Code, Image, FileBox,
   Table, FileImage, Presentation, Type, FileOutput,
   Shuffle, GitCompare, ImageDown, FormInput, Grid2x2, ScanText, Copy, QrCode, Archive,
@@ -707,6 +707,14 @@ const _toolsRaw: Tool[] = [
     category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
   },
   {
+    slug: "chat-with-pdf", icon: MessagesSquare, name: "Chat with PDF (AI)",
+    description: "Ask questions about a PDF — answered with your own AI key",
+    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, or your own self-hosted endpoint), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions keep the conversation's context.",
+    synonyms: "ask pdf chat document ai question answer chatpdf talk",
+    popularity: 30,
+    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
+  },
+  {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",
     description: "Draw rectangles, circles, lines, and arrows",
     longDescription: "Add shapes to PDF online — draw rectangles, circles, lines, and arrows with custom colors, fill, and stroke width. Perfect for technical drawings, callouts, and visual annotations. Free tool.",
@@ -800,10 +808,10 @@ const _toolsRaw: Tool[] = [
   {
     slug: "translate-pdf", icon: Languages, name: "Translate PDF",
     description: "Translate a PDF without uploading it",
-    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic, Hindi and Russian. No account, no API key, no watermarks. First run downloads the translation model once and caches it.",
+    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages on the free on-device model, or any language with your own AI key (optional) — the text then goes straight from your browser to that provider, never through us. No account, no watermarks. First run of the on-device model downloads it once and caches it.",
     synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
     popularity: 45,
-    clientOnly: true,
+    clientOnly: true, byok: true,
     category: "advanced", accepts: ".pdf", outputLabel: "translated text",
   },
 

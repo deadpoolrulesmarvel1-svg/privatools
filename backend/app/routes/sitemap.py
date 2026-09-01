@@ -51,7 +51,7 @@ PDF_TOOLS = [
     "odt-to-pdf",
     "pdf-to-tiff", "pdf-to-bmp", "pdf-to-gif", "pdf-to-svg",
     "split-in-half", "highlight-pdf", "summarize-pdf",
-    "smart-redact",
+    "smart-redact", "chat-with-pdf",
     # Round-O additions
     "pdf-to-jpg", "pdf-to-png", "pdf-to-long-image",
     # v1.2.0 PDF additions

@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Check, ExternalLink, Eye, EyeOff, KeyRound, Trash2 } from "lucide-react";
 
 import { PROVIDERS, providerById } from "@/lib/byok/providers";
+import { getBaseUrl, saveBaseUrl } from "@/lib/byok/keyStore";
 import { cn } from "@/lib/utils";
 import type { UseByok } from "@/hooks/useByok";
 
@@ -29,7 +30,7 @@ export interface ByokPanelProps {
 export function ByokPanel({ byok, purpose }: ByokPanelProps) {
     const [draft, setDraft] = useState("");
     const [reveal, setReveal] = useState(false);
-    const [baseUrl, setBaseUrl] = useState("");
+    const [baseUrl, setBaseUrl] = useState(() => (byok.provider ? getBaseUrl(byok.provider) ?? "" : ""));
     const [busy, setBusy] = useState(false);
 
     const selected = providerById(byok.provider);
@@ -39,6 +40,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
         if (!byok.provider || !draft.trim()) return;
         setBusy(true);
         try {
+            saveBaseUrl(byok.provider, baseUrl);
             await byok.save(byok.provider, draft.trim());
             // Drop the plaintext from component state the moment it is stored.
             setDraft("");
@@ -64,7 +66,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                     <button
                         key={p.id}
                         type="button"
-                        onClick={() => byok.selectProvider(p.id)}
+                        onClick={() => { byok.selectProvider(p.id); setBaseUrl(getBaseUrl(p.id) ?? ""); }}
                         className={cn(
                             "rounded-md border px-2.5 py-1.5 text-[12px] text-left transition-colors",
                             byok.provider === p.id
@@ -91,6 +93,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                         type="url"
                         value={baseUrl}
                         onChange={(e) => setBaseUrl(e.target.value)}
+                        onBlur={() => byok.provider && saveBaseUrl(byok.provider, baseUrl)}
                         placeholder="http://localhost:11434"
                         className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono"
                     />

@@ -37,7 +37,7 @@ const DOC_COUNT  = nonPdfTools.filter(t => t.category === "document-office").len
 // 8 default "starters" for users with no favorites yet
 const STARTER_SLUGS = [
     "merge-pdf", "compress-pdf", "edit-pdf", "image-to-pdf",
-    "ocr-pdf", "summarize-pdf", "smart-redact", "remove-background",
+    "ocr-pdf", "summarize-pdf", "chat-with-pdf", "smart-redact", "remove-background",
 ];
 
 const STARTER_TAGLINES: Record<string, string> = {
@@ -47,6 +47,7 @@ const STARTER_TAGLINES: Record<string, string> = {
     "image-to-pdf":      "JPG, PNG, HEIC into PDF",
     "ocr-pdf":           "Extract text from scans, 17 langs",
     "summarize-pdf":     "Local AI summary — never uploads",
+    "chat-with-pdf":     "Ask your PDF anything — your key, your provider",
     "smart-redact":      "Auto-detect PII with local NER",
     "remove-background": "Remove image bg with local AI",
     "highlight-pdf":     "Highlight every match of a phrase",

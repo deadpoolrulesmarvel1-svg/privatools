@@ -1,12 +1,12 @@
 # PrivaTools
 
-> 219 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
+> 220 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/deadpoolrulesmarvel1-svg/privatools.
 
 ## Key Facts
 
-- 219 tools: 106 PDF tools + 113 non-PDF tools (image, video/audio, developer, archive, utilities)
+- 220 tools: 107 PDF tools + 113 non-PDF tools (image, video/audio, developer, archive, utilities)
 - 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
 - Open source under the MIT license (https://opensource.org/licenses/MIT)
 - Self-hostable via Docker (`docker compose up --build`) — entire stack runs on your hardware
@@ -29,7 +29,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 | Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
 | Self-hostable | Yes | No | No | No | No | Yes | No |
 | Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | 219 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
+| Tool count | 220 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
 | No third-party AI API | Yes | No | No | No | No | No | No |
 | Includes video / audio | Yes | No | No | No | No | No | No |
 | Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
@@ -160,6 +160,7 @@ Three architectural commitments that are auditable in the source:
 - [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or stamp into a PDF
 - [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to PDF/A format for long-term archiving
 - [Summarize PDF (AI)](https://privatools.me/tool/summarize-pdf): Local AI summary — your PDF never leaves your browser
+- [Chat with PDF (AI)](https://privatools.me/tool/chat-with-pdf): Ask questions about a PDF — answered with your own AI key
 - [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
 - [Translate PDF](https://privatools.me/tool/translate-pdf): Translate a PDF without uploading it
 - [PDF Page Counter](https://privatools.me/tool/pdf-page-counter): Count pages in multiple PDFs instantly
@@ -339,7 +340,7 @@ Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAs
 ### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
 *Published 2026-05-15 · 12 min read*
 
-Top iLovePDF alternatives in 2026: PrivaTools (219 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
+Top iLovePDF alternatives in 2026: PrivaTools (220 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
 
 ### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
 *Published 2026-05-15 · 8 min read*
@@ -394,7 +395,7 @@ Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, down
 ### [Best Free PDF Tools in 2026: Honest Comparison](https://privatools.me/blog/best-free-pdf-tools-2026)
 *Published 2026-03-22 · 8 min read*
 
-In 2026: PrivaTools (100% free, open source, 219 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
+In 2026: PrivaTools (100% free, open source, 220 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
 
 ### [How to Remove a Password from a PDF](https://privatools.me/blog/remove-password-from-pdf)
 *Published 2026-03-22 · 4 min read*

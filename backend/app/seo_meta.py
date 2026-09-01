@@ -495,7 +495,7 @@ _POPULARITY: dict[str, int] = {
     "pdf-to-long-image": 146,
     # ── PDF: advanced ──────────────────────────────────────────────────
     "ocr-pdf": 160, "compare-pdf": 161, "fill-form": 162, "extract-images": 163,
-    "summarize-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
+    "summarize-pdf": 164, "chat-with-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
     "nup": 167, "overlay": 168, "alternate-mix": 169, "form-creator": 170,
     "pdf-to-pdfa": 171,
     # ── non-PDF: image ─────────────────────────────────────────────────
@@ -686,6 +686,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "overlay":          "Upload a background PDF and a foreground PDF — download a copy with foreground stamped over every background page.",
     "alternate-mix":    "Upload two PDFs and download a copy that interleaves their pages (1A, 1B, 2A, 2B…) — useful for un-imposing two-sided scans.",
     "summarize-pdf":    "Upload a PDF, click Summarize, and read the summary right on the page — DistilBART runs entirely in your browser by default, no upload. Optionally bring your own AI key for a stronger model.",
+    "chat-with-pdf":    "Drop a PDF, add your own AI key once, and ask questions in plain language — the text is extracted in your browser and each question goes straight to your provider, never through our servers.",
     # ── To PDF: high-volume converters ─────────────────────────────────
     "excel-to-pdf":     "Upload an .xlsx and download a PDF copy with the same formatting — works for multi-sheet workbooks.",
     "pptx-to-pdf-convert":"Upload a .pptx and download a one-slide-per-page PDF — perfect for handouts.",
@@ -946,6 +947,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly, so the document is not uploaded anywhere. Optionally use your own OpenAI, Anthropic or Gemini key for a stronger model; the text then goes straight from your browser to that provider and still never through our servers."),
+    "chat-with-pdf":  ("Chat with PDF (AI)",  "Chat with a PDF online free — ask questions and get answers grounded in the document. Text extraction happens in your browser and questions go directly to the AI provider you choose with your own API key (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, or self-hosted). The PDF never touches our servers."),
     "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free. Emails, phone numbers, SSNs and card numbers are always found in your browser by pattern matching. Names and addresses are found by a local BERT-NER model, or optionally by your own AI key — and anything the pattern pass already found is masked before any text is sent. You review every suggestion before the backend permanently applies the approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
