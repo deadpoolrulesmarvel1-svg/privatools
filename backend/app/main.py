@@ -206,7 +206,16 @@ _WASM_EVAL_PATHS = {
     "/tool/translate-pdf",
     "/tools/remove-background",
     "/tools/transcribe-audio",
+    # In-browser tesseract OCR runs its wasm core inside a blob worker.
+    "/tool/ocr-pdf",
+    "/tools/image-ocr",
 }
+
+# tesseract.js's blob worker importScripts() its worker/core JS from the
+# jsdelivr CDN, and a blob worker inherits the document's CSP — so these two
+# pages alone extend script-src to that host. Everywhere else stays
+# self+nonce.
+_TESSERACT_PATHS = {"/tool/ocr-pdf", "/tools/image-ocr"}
 
 # Pages allowed to talk directly to a BYOK AI provider.
 #
@@ -230,6 +239,8 @@ _BYOK_PATHS = {
     "/tool/chat-with-pdf",
     "/tool/translate-pdf",
     "/tools/transcribe-audio",
+    "/tool/ocr-pdf",
+    "/tools/image-ocr",
 }
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
@@ -343,6 +354,8 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     ]
     if path in _WASM_EVAL_PATHS:
         script_src.append("'wasm-unsafe-eval'")
+    if path in _TESSERACT_PATHS:
+        script_src.append("https://cdn.jsdelivr.net")
 
     # connect-src allows HF transformers to fetch the local-AI models
     # (Summarize PDF, Smart Redact). Models are downloaded once and cached

@@ -27,6 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PROVIDERS_TS = REPO_ROOT / "frontend" / "src" / "lib" / "byok" / "providers.ts"
 FRONTEND_SRC = REPO_ROOT / "frontend" / "src"
 TOOL_PAGE_TSX = FRONTEND_SRC / "pages" / "ToolPage.tsx"
+NON_PDF_PAGE_TSX = FRONTEND_SRC / "pages" / "NonPdfToolPage.tsx"
 
 
 def _registry_origins() -> set[str]:
@@ -136,19 +137,19 @@ def _reaches_byok(entry: Path) -> bool:
     return False
 
 
-def _slugs_that_use_byok() -> set[str]:
-    """Slugs whose ToolPage component can reach a BYOK provider."""
-    page = TOOL_PAGE_TSX.read_text(encoding="utf-8")
+def _slugs_that_use_byok(page_file: Path = TOOL_PAGE_TSX) -> set[str]:
+    """Slugs whose tool component on the given page can reach a BYOK provider."""
+    page = page_file.read_text(encoding="utf-8")
 
     # const LazyFooUI = lazyNamed(() => import("@/components/tool-ui/FooUI"), ...)
     modules = dict(
         re.findall(r'const\s+(\w+)\s*=\s*lazyNamed\(\s*\(\)\s*=>\s*import\("(@/[^"]+)"\)', page)
     )
-    assert modules, "parsed zero lazy tool components from ToolPage.tsx — parser is stale"
+    assert modules, f"parsed zero lazy tool components from {page_file.name} — parser is stale"
 
     # case "slug": return <LazyFooUI />;
     cases = re.findall(r'case\s+"([a-z0-9-]+)":\s*return\s*<(\w+)\b', page)
-    assert cases, "parsed zero slug->component cases from ToolPage.tsx — parser is stale"
+    assert cases, f"parsed zero slug->component cases from {page_file.name} — parser is stale"
 
     out: set[str] = set()
     for slug, comp in cases:
@@ -162,7 +163,12 @@ def _slugs_that_use_byok() -> set[str]:
 
 
 def test_byok_paths_match_the_pages_that_actually_use_byok():
-    expected = {f"/tool/{slug}" for slug in _slugs_that_use_byok()}
+    # PDF tools live at /tool/<slug>, non-PDF at /tools/<slug> — walk both
+    # pages, or the set is blind to half the catalogue (image OCR and audio
+    # transcription were the first non-PDF BYOK pages).
+    expected = {f"/tool/{slug}" for slug in _slugs_that_use_byok(TOOL_PAGE_TSX)} | {
+        f"/tools/{slug}" for slug in _slugs_that_use_byok(NON_PDF_PAGE_TSX)
+    }
     assert expected, "the walk found no BYOK page at all — it has gone blind, fix it before trusting it"
 
     extra = sorted(_BYOK_PATHS - expected)
