@@ -301,7 +301,7 @@ const CSS = `
 .dl-root button { font-family:inherit; cursor:pointer; }
 /* Bare buttons (no classes / dl-only classes) keep the quiet reset; anything
    carrying utility classes styles itself. */
-.dl-root button:not([class*="bg-"]):not([class*="border"]):not(.dl-aibtn) { color:inherit; background:none; border:0; font-size:inherit; }
+.dl-root button:not([class*="bg-"]):not([class*="border"]):not(.dl-aibtn):not(.dl-sbtn) { color:inherit; background:none; border:0; font-size:inherit; }
 .dl-root input[type="checkbox"] { accent-color: var(--dl-green); width:15px; height:15px; }
 .dl-root a { color:inherit; text-decoration:none; }
 /* Prose links stay green; component anchors (buttons, cards, chips) inherit,
@@ -624,6 +624,12 @@ const CSS = `
 .dl-root .dl-social button:hover { background:color-mix(in srgb, var(--dl-ink) 4%, var(--dl-paper-2)); border-color:var(--dl-rule-mid); }
 .dl-root .dl-social button:active { transform:scale(0.985); }
 .dl-root .dl-social svg { width:18px; height:18px; flex:none; }
+.dl-root .dl-social button.github { background:#24292F; border-color:#24292F; color:#fff; }
+.dl-root .dl-social button.github:hover { background:#32383F; border-color:#32383F; }
+[data-theme="dark"] .dl-root .dl-social button.github,
+[data-theme="midnight"] .dl-root .dl-social button.github { background:#F6F8FA; border-color:#F6F8FA; color:#24292F; }
+[data-theme="dark"] .dl-root .dl-social button.github:hover,
+[data-theme="midnight"] .dl-root .dl-social button.github:hover { background:#E7EBEF; border-color:#E7EBEF; }
 .dl-root .dl-authdiv { display:flex; align-items:center; gap:12px; margin:18px 0 2px; }
 .dl-root .dl-authdiv::before, .dl-root .dl-authdiv::after { content:""; flex:1; height:1px; background:var(--dl-rule); }
 .dl-root .dl-authdiv span { font-size:11px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); }
@@ -1963,7 +1969,7 @@ export default class DaylightSkinApp extends React.Component {
                                         <>
                                             <div className="dl-social">
                                                 {SOCIAL_SIGN_IN.filter((sp) => SOCIAL_ICONS[sp.id]).map((sp) => (
-                                                    <button key={sp.id} type="button" onClick={() => this._acctSocial(sp.id)} disabled={a.busy}>
+                                                    <button key={sp.id} type="button" className={`dl-sbtn ${sp.id}`} onClick={() => this._acctSocial(sp.id)} disabled={a.busy}>
                                                         {SOCIAL_ICONS[sp.id]}
                                                         Continue with {sp.label}
                                                     </button>

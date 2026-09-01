@@ -58,6 +58,22 @@ export function requireClerk(): ClerkInstance {
 }
 
 /**
+ * Like `requireClerk`, but for callers about to touch `clerk.client` — the
+ * piece that only exists once clerk-js has actually finished loading. A fast
+ * click can beat that load, and a production instance on a foreign origin
+ * (localhost against pk_live) never completes it at all. Either way the
+ * caller would otherwise crash with "Cannot read properties of undefined",
+ * which is not a message to show a person.
+ */
+export function requireClerkClient(): ClerkInstance {
+    const clerk = requireClerk();
+    if (!clerk.client) {
+        throw new Error("Accounts are still starting up. Try again in a moment.");
+    }
+    return clerk;
+}
+
+/**
  * A session token for the API, or null when signed out.
  *
  * Short-lived by design — Clerk refreshes it — so fetch one per request rather

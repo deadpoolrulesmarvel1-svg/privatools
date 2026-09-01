@@ -75,7 +75,7 @@ export function AiHubDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-[calc(100vw-24px)] rounded-xl sm:max-w-[560px] max-h-[88dvh] overflow-y-auto overflow-x-hidden">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles size={16} className="text-accent" /> AI on PrivaTools
@@ -87,8 +87,12 @@ export function AiHubDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 
                 <Tabs defaultValue="byok">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="byok"><KeyRound size={12} className="mr-1.5" /> Your own key</TabsTrigger>
-                        <TabsTrigger value="models"><Cpu size={12} className="mr-1.5" /> On-device models</TabsTrigger>
+                        <TabsTrigger value="byok" className="min-w-0">
+                            <KeyRound size={12} className="mr-1.5 shrink-0" /> <span className="truncate">Your own key</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="models" className="min-w-0">
+                            <Cpu size={12} className="mr-1.5 shrink-0" /> <span className="truncate">On-device models</span>
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="byok" className="space-y-4 pt-3">

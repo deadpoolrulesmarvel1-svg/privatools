@@ -29,12 +29,32 @@ export function loadBgModel(onProgress?: (pct: number) => void): Promise<Loaded>
             const { AutoModel, AutoProcessor, RawImage, env } = await import("@huggingface/transformers");
             env.allowLocalModels = false;
             env.allowRemoteModels = true;
-            const progress_callback = (info: { status: string; progress?: number }) => {
-                if (info.status === "progress" && typeof info.progress === "number") {
-                    onProgress?.(Math.min(100, Math.max(0, Math.round(info.progress))));
+            // Same aggregation as localModels.pipelinePredownload: transformers.js
+            // reports per-file percentages, so sum bytes across files, floor the
+            // denominator at the expected model size, and never let the shown
+            // number go backwards.
+            const files = new Map<string, { loaded: number; total: number }>();
+            const APPROX_BYTES = 44 * 1024 * 1024;
+            let best = 0;
+            const progress_callback = (info: { status: string; file?: string; loaded?: number; total?: number }) => {
+                if (info.status === "progress" && info.file
+                    && typeof info.loaded === "number" && typeof info.total === "number" && info.total > 0) {
+                    files.set(info.file, { loaded: info.loaded, total: info.total });
+                } else if (info.status === "done" && info.file) {
+                    const f = files.get(info.file);
+                    if (f) f.loaded = f.total;
                 } else if (info.status === "ready") {
                     onProgress?.(100);
+                    return;
+                } else {
+                    return;
                 }
+                let loaded = 0;
+                let total = 0;
+                for (const f of files.values()) { loaded += f.loaded; total += f.total; }
+                if (!total) return;
+                const pct = Math.min(99, Math.round((loaded / Math.max(total, APPROX_BYTES)) * 100));
+                if (pct > best) { best = pct; onProgress?.(pct); }
             };
             const model = await AutoModel.from_pretrained(BG_MODEL_ID, {
                 // The repo has no model_type transformers.js knows; its README

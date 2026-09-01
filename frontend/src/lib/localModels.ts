@@ -26,7 +26,7 @@ export interface LocalModelInfo {
 
 const TRANSFORMERS_CACHE = "transformers-cache";
 
-async function pipelinePredownload(task: string, hfId: string, onProgress: (pct: number) => void) {
+async function pipelinePredownload(task: string, hfId: string, onProgress: (pct: number) => void, approxBytes: number) {
     const { pipeline, env } = await import("@huggingface/transformers");
     env.allowLocalModels = false;
     env.allowRemoteModels = true;
@@ -43,7 +43,12 @@ async function pipelinePredownload(task: string, hfId: string, onProgress: (pct:
         let total = 0;
         for (const f of files.values()) { loaded += f.loaded; total += f.total; }
         if (!total) return;
-        const pct = Math.min(99, Math.round((loaded / total) * 100));
+        // Files register one at a time, so summing only the files seen so far
+        // fails the other way: config.json finishes alone, the sum reads 100%,
+        // and the clamp pins 99% for the whole weights download. Floor the
+        // denominator at the model's expected size — real totals take over as
+        // they come in and exceed it.
+        const pct = Math.min(99, Math.round((loaded / Math.max(total, approxBytes)) * 100));
         if (pct > best) { best = pct; onProgress(pct); }
     };
     await pipeline(task as never, hfId, {
@@ -70,7 +75,7 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         powers: "Summarize PDF · the free on-device engine",
         toolHref: "#/tool/summarize-pdf",
         approxLabel: "~250 MB",
-        predownload: (p) => pipelinePredownload("summarization", "Xenova/distilbart-cnn-6-6", p),
+        predownload: (p) => pipelinePredownload("summarization", "Xenova/distilbart-cnn-6-6", p, 250 * 1024 * 1024),
     },
     {
         id: "ner",
@@ -79,7 +84,7 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         powers: "Smart Redact · finds names and organisations locally",
         toolHref: "#/tool/smart-redact",
         approxLabel: "~250 MB",
-        predownload: (p) => pipelinePredownload("token-classification", "Xenova/bert-base-NER", p),
+        predownload: (p) => pipelinePredownload("token-classification", "Xenova/bert-base-NER", p, 250 * 1024 * 1024),
     },
     {
         id: "whisper-tiny",
@@ -88,7 +93,7 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         powers: "Transcribe Audio · fast on-device transcription",
         toolHref: "#/tools/transcribe-audio",
         approxLabel: "~41 MB",
-        predownload: (p) => pipelinePredownload("automatic-speech-recognition", "Xenova/whisper-tiny", p),
+        predownload: (p) => pipelinePredownload("automatic-speech-recognition", "Xenova/whisper-tiny", p, 41 * 1024 * 1024),
     },
     {
         id: "whisper-base",
@@ -97,7 +102,7 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         powers: "Transcribe Audio · the more accurate local model",
         toolHref: "#/tools/transcribe-audio",
         approxLabel: "~74 MB",
-        predownload: (p) => pipelinePredownload("automatic-speech-recognition", "Xenova/whisper-base", p),
+        predownload: (p) => pipelinePredownload("automatic-speech-recognition", "Xenova/whisper-base", p, 74 * 1024 * 1024),
     },
     {
         id: "bg-remove",

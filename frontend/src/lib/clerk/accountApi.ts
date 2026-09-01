@@ -22,7 +22,7 @@
  */
 
 import type { AccountUser, ApiKey } from "@/skins/accountLogic";
-import { clerkToken, requireClerk } from "./instance";
+import { clerkToken, requireClerk, requireClerkClient } from "./instance";
 
 const BASE = "/api";
 
@@ -103,15 +103,15 @@ export type RegisterResult =
 
 export const clerkAccountApi = {
     me: async (): Promise<{ user: AccountUser }> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         if (!clerk.user) throw new Error("Not signed in.");
         return { user: toAccountUser(clerk.user) };
     },
 
     register: async (email: string, password: string): Promise<RegisterResult> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            const attempt = await clerk.client!.signUp.create({
+            const attempt = await clerk.client.signUp.create({
                 emailAddress: email,
                 password,
             });
@@ -134,9 +134,9 @@ export const clerkAccountApi = {
 
     /** Second half of `register` when Clerk asked for an emailed code. */
     verifyEmailCode: async (code: string): Promise<{ user: AccountUser }> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            const attempt = await clerk.client!.signUp.attemptEmailAddressVerification({ code });
+            const attempt = await clerk.client.signUp.attemptEmailAddressVerification({ code });
             if (attempt.status !== "complete") {
                 throw new Error("That code did not complete sign-up. Request a new one.");
             }
@@ -148,9 +148,9 @@ export const clerkAccountApi = {
     },
 
     login: async (email: string, password: string): Promise<{ user: AccountUser }> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            const attempt = await clerk.client!.signIn.create({
+            const attempt = await clerk.client.signIn.create({
                 identifier: email,
                 password,
             });
@@ -182,9 +182,9 @@ export const clerkAccountApi = {
      * handshake from the URL before the app renders.
      */
     signInWithSocial: async (provider: SocialProvider): Promise<void> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            await clerk.client!.signIn.authenticateWithRedirect({
+            await clerk.client.signIn.authenticateWithRedirect({
                 strategy: `oauth_${provider}` as `oauth_${SocialProvider}`,
                 redirectUrl: `${window.location.origin}/account`,
                 redirectUrlComplete: `${window.location.origin}/account`,
@@ -241,9 +241,9 @@ export const clerkAccountApi = {
      * to send something first, so it is two calls rather than one.
      */
     startPasswordReset: async (email: string): Promise<{ ok: true }> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            await clerk.client!.signIn.create({
+            await clerk.client.signIn.create({
                 strategy: "reset_password_email_code",
                 identifier: email,
             });
@@ -257,9 +257,9 @@ export const clerkAccountApi = {
         code: string,
         newPassword: string,
     ): Promise<{ ok: true }> => {
-        const clerk = requireClerk();
+        const clerk = requireClerkClient();
         try {
-            const attempt = await clerk.client!.signIn.attemptFirstFactor({
+            const attempt = await clerk.client.signIn.attemptFirstFactor({
                 strategy: "reset_password_email_code",
                 code,
                 password: newPassword,
