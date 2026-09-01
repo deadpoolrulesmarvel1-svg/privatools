@@ -75,7 +75,7 @@ export default function StatusPage() {
 
     return (
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-            <h1 className="font-display text-[30px] font-bold tracking-[-0.025em]">Service status</h1>
+            <h1 className="font-display text-[36px] font-bold tracking-[-0.025em] sm:text-[44px]">Service status</h1>
             <p className="mt-1.5 text-[14px] text-muted-foreground">
                 Checked from this browser, right now. Nothing here is a stored uptime figure.
             </p>

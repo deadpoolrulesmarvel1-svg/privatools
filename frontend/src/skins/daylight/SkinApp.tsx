@@ -43,6 +43,7 @@ import {
 import { describeEntry } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
 import { blogPosts } from "@/data/blog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 /*
  * The four surfaces below mount the house design's real pages whole — the same
@@ -608,9 +609,31 @@ const CSS = `
 
 /* blog */
 /* ── blog: featured card, tag chips, article typography ── */
+/* ── the product pages' furniture ── */
+.dl-acc { max-width:820px; }
+.dl-acc button { font-size:15px; color:var(--dl-ink); font-family:inherit; }
+.dl-acc div[class*="pb-4"] { font-size:14px; color:var(--dl-muted); line-height:1.65; max-width:68ch; }
+.dl-reprow { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:28px; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:14px; padding:18px 22px; }
+.dl-reprow b { font-size:14.5px; }
+.dl-reprow p { font-size:13px; color:var(--dl-muted); margin-top:3px; }
+.dl-root .dl-reprow p a { color:var(--dl-green); font-weight:600; }
+.dl-reprow .dl-btn { padding:10px 18px; font-size:13.5px; flex:none; }
+.dl-supcta { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:24px; }
+.dl-supcta span { font-size:13px; color:var(--dl-muted); max-width:32ch; }
+.dl-vsteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-top:30px; }
+@media (max-width: 860px) { .dl-vsteps { grid-template-columns:1fr; } }
+.dl-vsteps > div { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:14px; padding:18px 20px; }
+.dl-vsteps i { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:9px; background:var(--dl-wash); color:var(--dl-green); font-style:normal; font-weight:700; font-size:12.5px; margin-bottom:10px; }
+.dl-vsteps b { display:block; font-size:14.5px; margin-bottom:4px; }
+.dl-vsteps p { font-size:13px; color:var(--dl-muted); line-height:1.6; }
+.dl-doc h2 { position:relative; padding-top:18px; }
+.dl-doc h2::before { content:""; position:absolute; top:0; left:0; width:26px; height:3px; border-radius:2px; background:var(--dl-green); opacity:.55; }
+
 /* ── scroll reveals — one-way content entrances; grids stagger children ── */
 .rv { opacity:0; transform:translateY(14px); transition:opacity 460ms var(--dl-eo), transform 460ms var(--dl-eo); }
 .rv.in { opacity:1; transform:none; }
+.rv-p { transform:translateY(8px); transition-duration:300ms; }
+.rv-p[data-d="1"] { transition-delay:60ms; } .rv-p[data-d="2"] { transition-delay:120ms; } .rv-p[data-d="3"] { transition-delay:180ms; }
 .dl-ccards.rv > *, .dl-claims.rv > * { opacity:0; transform:translateY(10px); transition:opacity 420ms var(--dl-eo), transform 420ms var(--dl-eo); }
 .dl-ccards.rv.in > *, .dl-claims.rv.in > * { opacity:1; transform:none; }
 .dl-ccards.rv.in > *:nth-child(2), .dl-claims.rv.in > *:nth-child(2) { transition-delay:50ms; }
@@ -1589,7 +1612,7 @@ export default class DaylightSkinApp extends React.Component {
         const entries = vlt.entries || [];
         return (
             <div className="dl-wrap">
-                <div className="dl-heror">
+                <div className="dl-heror rv rv-p">
                     <div className="dl-pghero">
                         <div className="dl-eyebrow">Device-local</div>
                         <h1>Your vault.<br /><em>This device only.</em></h1>
@@ -1608,6 +1631,14 @@ export default class DaylightSkinApp extends React.Component {
 
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 40, alignItems: "start", paddingTop: 30 }} className="dl-vaultgrid">
                     <div>
+                        <div className="dl-vsteps rv">
+                            {[["1", "Store it once", "The password is encrypted on this device with a key that cannot be exported."],
+                            ["2", "Use it without retyping", "Protect PDF and Unlock PDF can read entries directly — decrypted here, never sent."],
+                            ["3", "Gone means gone", "Delete an entry, or clear your browser data, and there is no copy anywhere to recover."]]
+                                .map(([n, t, d]) => (
+                                    <div key={n}><i>{n}</i><b>{t}</b><p>{d}</p></div>
+                                ))}
+                        </div>
                         <h2 className="dl-sec-title" style={{ fontSize: 22, marginBottom: 14 }}>Stored passwords</h2>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {entries.length === 0
@@ -1859,7 +1890,7 @@ export default class DaylightSkinApp extends React.Component {
     Security() {
         return (
             <div className="dl-wrap">
-                <div className="dl-heror">
+                <div className="dl-heror rv rv-p">
                     <div className="dl-pghero">
                         <div className="dl-eyebrow">The promises</div>
                         <h1>Don’t trust us.<br /><em>Check us.</em></h1>
@@ -1891,15 +1922,28 @@ export default class DaylightSkinApp extends React.Component {
                             </div>
                         ))}
                 </div>
-                <section className="dl-sec" style={{ paddingTop: 64 }}>
+                <section className="dl-sec rv" style={{ paddingTop: 64 }}>
                     <div className="dl-sec-head"><div><h2 className="dl-sec-title">Where we’re not perfect</h2><p className="dl-sec-sub">Said plainly, because that’s the point</p></div></div>
-                    <div className="dl-caveat">
-                        <b>Some on-device AI tools download their models from a CDN.</b>
-                        <p>Background removal and similar tools fetch model weights (not your files) on first use — disclosed in the privacy policy. Your document still never leaves the browser.</p>
-                    </div>
-                    <div className="dl-caveat">
-                        <b>Server tools mean trusting our server.</b>
-                        <p>For those tools, “deleted after use” is our promise, not something your network tab can prove. If a document is too sensitive for that, use a local-only tool — the chip tells you which is which.</p>
+                    <Accordion type="single" collapsible className="dl-acc">
+                        <AccordionItem value="models">
+                            <AccordionTrigger>Some on-device AI tools download their models from a CDN</AccordionTrigger>
+                            <AccordionContent>Background removal and similar tools fetch model weights — not your files — on first use, disclosed in the privacy policy. Your document still never leaves the browser.</AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="server">
+                            <AccordionTrigger>Server tools mean trusting our server</AccordionTrigger>
+                            <AccordionContent>For those tools, “deleted after use” is our promise, not something your network tab can prove. If a document is too sensitive for that, use a local-only tool — the chip tells you which is which.</AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="besteffort">
+                            <AccordionTrigger>One server, best effort — no failover</AccordionTrigger>
+                            <AccordionContent>Server-backed tools run on a single disclosed machine in Mumbai. If it’s down, they’re down until it’s fixed — the status page will say so honestly, and every local tool keeps working.</AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                    <div className="dl-reprow">
+                        <div>
+                            <b>Found a security issue?</b>
+                            <p>Straight to the owner, no triage queue. Our disclosure policy lives at <a href="/.well-known/security.txt">security.txt</a>.</p>
+                        </div>
+                        <a className="dl-btn dl-btn-ghost" href="mailto:hello@privatools.me?subject=Security%20report">Report a vulnerability</a>
                     </div>
                 </section>
             </div>
@@ -2045,22 +2089,22 @@ export default class DaylightSkinApp extends React.Component {
     Doc(title, eyebrow, sections, rail) {
         return (
             <div className="dl-wrap">
-                <div className="dl-pghero">
+                <div className="dl-pghero rv rv-p">
                     <div className="dl-eyebrow">{eyebrow}</div>
                     <h1>{title}</h1>
                 </div>
                 <div className={rail ? "dl-prosegrid" : undefined}>
-                    <div className="dl-doc">
+                    <div className="dl-doc rv rv-p" data-d="1">
                         {sections.map(([h, body]) => (
                             <React.Fragment key={h}>
-                                <h2>{h}</h2>
+                                <h2 id={h.toLowerCase().replace(/[^a-z0-9]+/g, "-")}>{h}</h2>
                                 {Array.isArray(body)
                                     ? <ul className="dl-doclist">{body.map((li) => <li key={li}>{li}</li>)}</ul>
                                     : <p>{body}</p>}
                             </React.Fragment>
                         ))}
                     </div>
-                    {rail && <aside className="dl-proserail">{rail}</aside>}
+                    {rail && <aside className="dl-proserail rv rv-p" data-d="2">{rail}</aside>}
                 </div>
             </div>
         );
@@ -2154,10 +2198,14 @@ export default class DaylightSkinApp extends React.Component {
     Support() {
         return (
             <div className="dl-wrap">
-                <div className="dl-pghero">
+                <div className="dl-pghero rv rv-p">
                     <div className="dl-eyebrow">Support</div>
                     <h1>A person reads this.<br /><em>Really.</em></h1>
                     <p>Owner-funded means owner-answered. No ticket deflection, no chatbot maze — say what broke or what’s missing and it gets read.</p>
+                    <div className="dl-supcta">
+                        <a className="dl-btn dl-btn-primary" href="mailto:hello@privatools.me">Email hello@privatools.me</a>
+                        <span>Straight to the owner’s inbox — replies in days, not ticket queues.</span>
+                    </div>
                 </div>
                 <div className="dl-supcards">
                     <div>
