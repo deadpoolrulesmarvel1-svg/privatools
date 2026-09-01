@@ -293,6 +293,44 @@ Three architectural commitments that are auditable in the source:
 
 Long-form, opinionated guides on PDF tools, AI, and the web — none sponsored.
 
+### [The PrivaTools Blog](https://privatools.me/blog)
+All guides and comparisons, newest first.
+
+### [PrivaTools vs ihatepdf (2026): When Both Sides Are Private](https://privatools.me/blog/privatools-vs-ihatepdf)
+*Published 2026-08-30 · 6 min read*
+
+ihatepdf is a genuinely private, free, browser-only PDF suite — files never upload by its stated, network-tab-verifiable design, the same architecture PrivaTools uses for most tools. The differences: PrivaTools spans 200+ tools across PDF, image, video, audio and developer work, handles server-class jobs (OCR, office conversion) with disclosed per-job deletion, loads no third-party scripts, and adds batch, pipelines and an installable offline app.
+
+### [PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question](https://privatools.me/blog/privatools-vs-sejda)
+*Published 2026-08-27 · 7 min read*
+
+Sejda offers the web's best free PDF editor with unusually transparent limits: 3 tasks per hour, 200 pages/50 MB per file, files deleted after 2 hours. PrivaTools has no task caps, a 500 MB limit, browser-local processing for most tools and per-job deletion for the rest. Use Sejda for occasional heavy editing; use PrivaTools for volume, larger files, or documents that shouldn't upload.
+
+### [PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope](https://privatools.me/blog/privatools-vs-smallpdf)
+*Published 2026-08-24 · 7 min read*
+
+Smallpdf is the most polished PDF suite on the web, but its free tier caps daily tasks and gates stronger compression behind Pro, and every file processes on its servers with time-limited retention. PrivaTools is uncapped and free, local-first so most files never upload, with per-job deletion for server tools. Pick Smallpdf for polish and integrations; pick PrivaTools for zero limits and files that stay on your machine.
+
+### [PrivaTools vs iLovePDF (2026): The Fine Print, Compared](https://privatools.me/blog/privatools-vs-ilovepdf)
+*Published 2026-08-20 · 8 min read*
+
+iLovePDF is a polished, mature suite whose free tier has task limits, Premium-gated settings, and server-side processing with time-limited retention. PrivaTools is fully free with no caps, runs most tools in your browser so files never upload, and deletes server-job files per-job. Choose iLovePDF for its desktop/mobile apps and workflow ecosystem; choose PrivaTools when price, limits, or file privacy decide it.
+
+### [How Local-First File Tools Actually Work](https://privatools.me/blog/how-local-first-works)
+*Published 2026-08-14 · 6 min read*
+
+Most file operations — merging PDFs, converting images, rewriting metadata — are pure computation your browser can do locally, so the file never leaves your machine. Only jobs needing native code (full OCR models, office-suite conversion, heavy video transcodes) require a server, and an honest tool tells you which is which before you add a file.
+
+### [What “Deleted After Use” Means on Our Servers](https://privatools.me/blog/what-deleted-means)
+*Published 2026-07-02 · 4 min read*
+
+For PrivaTools server jobs, a file exists exactly as long as the job does: written to isolated temporary storage, processed, streamed back, removed. No results bucket, no retention window, no recoverable copy — and most of the catalogue never touches a server at all.
+
+### [Reading a File Tool’s Privacy Policy in 60 Seconds](https://privatools.me/blog/reading-privacy-policies)
+*Published 2026-05-21 · 5 min read*
+
+Skip the preamble and ask four things of any file tool: Where do files go? How long do they stay? Whose code runs on the page? What does 'free' actually include? The answers — usually buried mid-policy — tell you who the product really serves.
+
 ### [AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)](https://privatools.me/blog/ai-pdf-summarizer-browser-2026)
 *Published 2026-05-15 · 9 min read*
 
@@ -342,6 +380,31 @@ Drawing black rectangles over text doesn't redact — the text is still in the f
 *Published 2026-03-29 · 7 min read*
 
 PrivaTools wins on unrestricted free editing with privacy. Sejda has the best text editor (limited free). PDF24 has the most features but uploads to their cloud. Adobe Acrobat Online is good but mostly paywalled.
+
+### [How to Compress a PDF Without Losing Quality](https://privatools.me/blog/compress-pdf-without-losing-quality)
+*Published 2026-03-22 · 5 min read*
+
+Use lossy compression at a balanced setting (PrivaTools' 'Recommended' level) to cut PDF size by 60–90% with no visible quality loss. Lossless saves only 5–30% but never touches image data. For maximum reduction, drop image DPI to 96 and lower JPEG quality.
+
+### [How to Merge PDF Files Online for Free](https://privatools.me/blog/merge-pdf-files-online-free)
+*Published 2026-03-22 · 4 min read*
+
+Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, download. No software, no account, no watermarks. Files are deleted from the server immediately after the response.
+
+### [Best Free PDF Tools in 2026: Honest Comparison](https://privatools.me/blog/best-free-pdf-tools-2026)
+*Published 2026-03-22 · 8 min read*
+
+In 2026: PrivaTools (100% free, open source, 219 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
+
+### [How to Remove a Password from a PDF](https://privatools.me/blog/remove-password-from-pdf)
+*Published 2026-03-22 · 4 min read*
+
+If you know the password: PrivaTools Unlock PDF or qpdf --password=… --decrypt. If you don't, you can't legally bypass it. 'Print to PDF' from a viewer is a workaround for owner-password-only PDFs.
+
+### [How to Convert Word to PDF for Free](https://privatools.me/blog/convert-word-to-pdf-free)
+*Published 2026-03-22 · 5 min read*
+
+Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: PrivaTools Word to PDF or Office to PDF. Google Docs preserves layout fairly well. python-docx + reportlab works for plain text but loses complex formatting.
 
 ## Comparisons (Side-by-Side)
 

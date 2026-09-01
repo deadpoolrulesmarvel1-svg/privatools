@@ -157,6 +157,14 @@ BLOG_POSTS: dict[str, str] = {
     "online-pdf-tools-tracking-you": "2026-05-15",
     "heic-conversion-guide-2026": "2026-05-15",
     "decode-jwt-tokens-safely-guide": "2026-05-15",
+    # August 2026 batch — the Daylight essays and the head-to-head comparisons.
+    "reading-privacy-policies": "2026-05-21",
+    "what-deleted-means": "2026-07-02",
+    "how-local-first-works": "2026-08-14",
+    "privatools-vs-ilovepdf": "2026-08-20",
+    "privatools-vs-smallpdf": "2026-08-24",
+    "privatools-vs-sejda": "2026-08-27",
+    "privatools-vs-ihatepdf": "2026-08-30",
 }
 
 BASE_URL = "https://privatools.me"

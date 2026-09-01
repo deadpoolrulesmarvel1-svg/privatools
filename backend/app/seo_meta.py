@@ -7,6 +7,7 @@ executing JavaScript.
 """
 from __future__ import annotations
 import json
+import logging
 import re
 from datetime import date
 from functools import lru_cache
@@ -331,6 +332,55 @@ _BLOG_POSTS: dict[str, dict] = {
         "readTime": "8 min read",
         "tags": ["JWT", "Developer", "Security", "How-To"],
     },
+    "how-local-first-works": {
+        "title": "How Local-First File Tools Actually Work",
+        "description": "Your browser can parse, render and rewrite most file formats on its own. Where the local/server line really sits — and why some jobs still need one.",
+        "publishedAt": "2026-08-14",
+        "readTime": "6 min read",
+        "tags": ["Engineering", "Privacy"],
+    },
+    "what-deleted-means": {
+        "title": "What \u201cDeleted After Use\u201d Means on Our Servers",
+        "description": "A promise you can't verify from a network tab deserves a precise definition. This is ours, mechanism by mechanism.",
+        "publishedAt": "2026-07-02",
+        "readTime": "4 min read",
+        "tags": ["Trust", "Privacy"],
+    },
+    "reading-privacy-policies": {
+        "title": "Reading a File Tool\u2019s Privacy Policy in 60 Seconds",
+        "description": "Four questions cut through any policy: where files go, how long they stay, who else runs code on the page, and what's behind the free tier.",
+        "publishedAt": "2026-05-21",
+        "readTime": "5 min read",
+        "tags": ["Guides", "Privacy"],
+    },
+    "privatools-vs-ilovepdf": {
+        "title": "PrivaTools vs iLovePDF (2026): The Fine Print, Compared",
+        "description": "iLovePDF is the biggest name in online PDF tools. We compared free tiers, file handling, limits and privacy line by line — here's where each one wins.",
+        "publishedAt": "2026-08-20",
+        "readTime": "8 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-smallpdf": {
+        "title": "PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope",
+        "description": "Smallpdf pioneered the clean one-task-one-page PDF site. We compared its free tier, limits and file handling against PrivaTools, line by line.",
+        "publishedAt": "2026-08-24",
+        "readTime": "7 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-sejda": {
+        "title": "PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question",
+        "description": "Sejda's PDF editor is the best free one on the web — for three tasks an hour. We compared its limits, retention and privacy with PrivaTools.",
+        "publishedAt": "2026-08-27",
+        "readTime": "7 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-ihatepdf": {
+        "title": "PrivaTools vs ihatepdf (2026): When Both Sides Are Private",
+        "description": "ihatepdf processes everything in your browser — the same privacy bet we make. So the comparison comes down to catalogue depth, heavy jobs and the details.",
+        "publishedAt": "2026-08-30",
+        "readTime": "6 min read",
+        "tags": ["Comparison", "PDF"],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -358,7 +408,13 @@ def _load_blog_bodies(_mtime_ns: int) -> dict[str, dict]:
     try:
         if _BLOG_JSON.exists():
             with _BLOG_JSON.open("r", encoding="utf-8") as _f:
-                return {p["slug"]: p for p in json.load(_f)}
+                data = {p["slug"]: p for p in json.load(_f)}
+            if len(data) != len(_BLOG_POSTS):
+                logging.getLogger(__name__).warning(
+                    "blog-content.json carries %d posts but _BLOG_POSTS has %d — "
+                    "the difference gets title-only SSR (rebuild the frontend)",
+                    len(data), len(_BLOG_POSTS))
+            return data
     except Exception:
         # Missing or malformed blog-content.json must not crash the app — fall
         # back to the lighter title-only SSR rendering.
@@ -1608,6 +1664,17 @@ _NOT_FOUND_META: tuple[str, str] = (
 )
 
 
+# The tool total is derived, never written down — the site once advertised a
+# count it didn't ship. Patch the two module-top literals that predate the
+# registries being defined.
+_TOTAL_TOOLS = len(_PDF_TOOLS) + len(_NONPDF_TOOLS)
+_STATIC_META["/"] = (
+    _STATIC_META["/"][0],
+    f"{_TOTAL_TOOLS} free, open-source file tools for PDF, image, video, audio, and developer "
+    "work. Browser-only when possible; isolated temporary processing when needed.",
+)
+_NOT_FOUND_META = (_NOT_FOUND_META[0], _NOT_FOUND_META[1].replace("213", str(_TOTAL_TOOLS)))
+
 @lru_cache(maxsize=512)
 def get_meta_for_path(path: str) -> tuple[str, str]:
     """Return (title, description) for the given URL path.
@@ -1646,6 +1713,13 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
     if path.startswith("/blog/"):
         if path in _STATIC_META:
             return _STATIC_META[path]
+        # Fall back to the post registry so a post never needs a second,
+        # hand-maintained _STATIC_META entry — the drift that shipped seven
+        # sitemap-advertised posts with a 404 title on an HTTP-200 page.
+        slug = path.removeprefix("/blog/")
+        post = _BLOG_POSTS.get(slug)
+        if post:
+            return (f"{post['title']} | PrivaTools", post["description"])
         return _NOT_FOUND_META
 
     # /compare/<slug>
@@ -1748,7 +1822,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "name": "PrivaTools",
                     "description": description,
                     "inLanguage": "en",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                     "potentialAction": {
                         "@type": "SearchAction",
                         "target": {"@type": "EntryPoint", "urlTemplate": f"{BASE_URL}/?q={{search_term_string}}"},
@@ -2098,7 +2172,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "name": "PrivaTools",
                     "url": BASE_URL,
                 },
-                "publisher": {"@id": f"{BASE_URL}/#organization"},
+                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 "mainEntityOfPage": {
                     "@type": "WebPage",
                     "@id": canonical_url,
@@ -2167,14 +2241,13 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 "articleSection": "Blog",
                 "keywords": ", ".join(post.get("tags", [])),
                 "author": {
-                    "@type": "Person",
+                    "@type": "Organization",
                     "@id": f"{BASE_URL}/about#author",
                     "name": post.get("author") or "PrivaTools Team",
                     "url": f"{BASE_URL}/about",
                     "sameAs": ["https://github.com/deadpoolrulesmarvel1-svg/privatools"],
-                    "worksFor": {"@id": f"{BASE_URL}/#organization"},
                 },
-                "publisher": {"@id": f"{BASE_URL}/#organization"},
+                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 "mainEntityOfPage": {
                     "@type": "WebPage",
                     "@id": canonical_url,
@@ -2225,7 +2298,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "description": description,
                     "url": canonical_url,
                     "inLanguage": "en",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                     "blogPost": [
                         {
                             "@type": "BlogPosting",
@@ -2321,7 +2394,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "datePublished": "2026-03-15",
                     "dateModified": "2026-03-29" if path == "/privacy" else "2026-03-29",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2344,7 +2417,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "applicationCategory": "BusinessApplication",
                     "operatingSystem": "Any (browser-based)",
                     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2413,6 +2486,8 @@ _COMPARE_DATA: dict[str, dict] = {
     "smallpdf": {"name": "Smallpdf", "rating": "3", "rating_note": "2 tasks/day limit + cloud upload", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (21 tools, PDF only)"}},
     "adobe-acrobat": {"name": "Adobe Acrobat Online", "rating": "4", "rating_note": "excellent features but $23/mo + cloud", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "sejda": {"name": "Sejda PDF", "rating": "3.5", "rating_note": "3 tasks/hour limit", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "tinywow": {"name": "TinyWow", "rating": "3.5", "rating_note": "free with ads + CAPTCHA", "features": {"Free to use": "Yes (ads + CAPTCHA)", "No account required": "Yes", "No file size limits": "No (500 MB)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded, deleted after 1 hour)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "Yes (PDF, image, video, AI writing)"}},
+    "ihatepdf": {"name": "ihatepdf.cv", "rating": "4.0", "rating_note": "browser-local, PDF only", "features": {"Free to use": "Yes (donation-funded)", "No account required": "Yes", "No file size limits": "Limited by device memory", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "Yes (never uploaded)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "pdf24": {"name": "PDF24", "rating": "4", "rating_note": "generous free tier — cloud upload only deduction", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "foxit": {"name": "Foxit PDF", "rating": "3", "rating_note": "paywall + cloud upload", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "lightpdf": {"name": "LightPDF", "rating": "2.5", "rating_note": "aggressive paywall + cloud upload", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF + basic image)"}},

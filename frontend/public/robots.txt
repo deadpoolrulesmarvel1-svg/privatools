@@ -57,98 +57,122 @@ Allow: /
 User-agent: GPTBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: OAI-SearchBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Google-Extended
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: GoogleOther
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Perplexity-User
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: anthropic-ai
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Claude-Web
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Claude-SearchBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: cohere-ai
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Cohere-Web
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: CCBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Applebot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Applebot-Extended
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Meta-ExternalAgent
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Meta-ExternalFetcher
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: FacebookBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Mistral-AI
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: YouBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: DiffBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: Diffbot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 User-agent: PetalBot
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 
 # ──────────────────────────────────────────────────────────────────
 # Blocked: aggressive training-only crawlers / archive scrapers
@@ -183,6 +207,7 @@ Disallow: /
 User-agent: *
 Allow: /
 Disallow: /api/
+Allow: /api/og-image
 Crawl-delay: 1
 
 # ──────────────────────────────────────────────────────────────────

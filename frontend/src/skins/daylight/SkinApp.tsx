@@ -42,6 +42,7 @@ import {
 } from "../accountLogic";
 import { describeEntry } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
+import { blogPosts } from "@/data/blog";
 
 /*
  * The four surfaces below mount the house design's real pages whole — the same
@@ -118,6 +119,12 @@ export function parseHash(hash) {
 }
 
 const go = (hash) => { location.hash = hash; };
+
+const fmtDate = (iso) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${d}, ${y}`;
+};
+const POSTS_NEWEST = [...blogPosts].sort((x, y) => y.publishedAt.localeCompare(x.publishedAt));
 
 /* ═══════════════════════════ small helpers ═══════════════════════════ */
 
@@ -200,37 +207,6 @@ const PAGES_FOR_PALETTE = [
 ];
 
 const HISTORY_KEY = "privatools.daylight.history";
-
-const BLOG = [
-    {
-        id: "how-local-first-works", tag: "Engineering", date: "Aug 14, 2026", mins: 6,
-        title: "How local-first file tools actually work",
-        excerpt: "The browser can parse, render and rewrite most file formats on its own. Here’s where the line really sits — and why some jobs still need a server.",
-        body: [
-            "Most of what a file tool does — parsing pages, reordering them, rewriting metadata, re-encoding an image — is computation, and your browser is a very capable computer. When you merge two PDFs here, a library running in this tab reads both files from memory, builds a new document, and hands it back to you. No network request exists in that story, which is why the network tab stays empty.",
-            "The honest boundary: some work needs native code the browser can’t carry — full OCR models, office-suite conversion, heavy video transcodes. Those tools say so up front, run in isolated temporary storage on our disclosed server, and delete everything after the job.",
-            "The rule we build by: if it can run on your device, it must. The server is a fallback we disclose, never a default we hide.",
-        ],
-    },
-    {
-        id: "what-deleted-means", tag: "Trust", date: "Jul 2, 2026", mins: 4,
-        title: "What “deleted after use” means on our servers",
-        excerpt: "A promise you can’t verify from a network tab deserves a precise definition. This is ours, mechanism by mechanism.",
-        body: [
-            "For server tools, your file exists exactly as long as the job does: it’s written to isolated temporary storage, processed, streamed back, and removed. There is no results bucket, no “keep for 2 hours” window, no copy we could recover later even if you asked us to.",
-            "We’d rather you not have to trust this at all — which is why most of the catalogue runs locally, and why every tool that doesn’t says so before you add a file.",
-        ],
-    },
-    {
-        id: "reading-privacy-policies", tag: "Guides", date: "May 21, 2026", mins: 5,
-        title: "Reading a file tool’s privacy policy in 60 seconds",
-        excerpt: "Four questions cut through any policy: where files go, how long they stay, who else runs code on the page, and what’s behind the free tier.",
-        body: [
-            "Skip the preamble and search for four things. Where do files go? If uploading is the default, everything else is damage control. How long do they stay? “Deleted after N hours” is a retention policy, not deletion. Whose code runs on the page? Analytics scripts and unpinned CDN tools see more than most policies admit. What does free actually include? Task caps and Pro-gated settings tell you who the product is really for.",
-            "Ask those four of us too — that’s what this site’s Trust page is for.",
-        ],
-    },
-];
 
 /* ═══════════════════════════════ styles ═══════════════════════════════ */
 
@@ -420,7 +396,8 @@ const CSS = `
 .dl-claim b svg { color:var(--dl-green); }
 .dl-claim p { font-size:13px; color:var(--dl-muted); line-height:1.55; margin-top:5px; }
 
-.dl-band { background:var(--dl-band); color:var(--dl-band-ink); border-radius:22px; padding:52px; display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:52px; }
+.dl-band { background:var(--dl-band); color:var(--dl-band-ink); border-radius:22px; padding:52px; display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:52px; position:relative; overflow:hidden; }
+.dl-band::after { content:""; position:absolute; top:-40%; right:-12%; width:60%; height:120%; background:radial-gradient(closest-side, color-mix(in srgb, var(--dl-band-green) 13%, transparent), transparent 70%); pointer-events:none; }
 @media (max-width: 980px) { .dl-band { grid-template-columns:1fr; padding:36px 28px; } }
 .dl-band h2 { font-weight:700; font-size:33px; letter-spacing:-.022em; line-height:1.08; }
 .dl-band h2 em { font-style:normal; color:var(--dl-band-green); }
@@ -433,8 +410,8 @@ const CSS = `
 
 .dl-foot { border-top:1px solid var(--dl-rule); margin-top:104px; background:var(--dl-card); }
 .dl-foot .cols { display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:40px; padding:44px 32px 34px; max-width:1480px; margin:0 auto; }
-@media (max-width: 900px) { .dl-foot .cols { grid-template-columns:1fr 1fr; gap:30px; } }
-@media (max-width: 560px) { .dl-foot .cols { grid-template-columns:1fr; } }
+@media (max-width: 900px) { .dl-foot .cols { grid-template-columns:1fr 1fr; gap:34px 24px; } .dl-foot .brand { grid-column:1 / -1; } }
+.dl-foot .brand .finstall { margin-top:16px; padding:9px 16px; font-size:13px; gap:8px; }
 .dl-foot h4 { font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--dl-faint); font-weight:600; margin:0 0 13px; }
 .dl-foot ul { list-style:none; padding:0; display:flex; flex-direction:column; gap:9px; }
 .dl-root .dl-foot ul a { color:var(--dl-muted); font-size:13.5px; }
@@ -528,6 +505,9 @@ const CSS = `
 .dl-facts h3 { margin-bottom:4px; }
 .dl-factr { display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-bottom:1px solid var(--dl-rule-soft); font-size:13px; color:var(--dl-muted); }
 .dl-factr:last-child { border-bottom:none; }
+.dl-flink { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; }
+.dl-claimlink { background:none; border:none; padding:0; margin-top:8px; font-size:13px; font-weight:600; color:var(--dl-green); cursor:pointer; }
+.dl-claimlink:hover { text-decoration:underline; }
 .dl-factr b { color:var(--dl-ink); font-weight:600; text-align:right; }
 .dl-facts .fine { font-size:12.5px; color:var(--dl-muted); margin:2px 0 10px; }
 .dl-facts .dl-btn { display:block; text-align:left; padding:9px 14px; font-size:13px; margin-top:8px; }
@@ -622,6 +602,53 @@ const CSS = `
 .dl-caveat p { font-size:13.5px; color:var(--dl-muted); margin-top:3px; max-width:60em; }
 
 /* blog */
+/* ── blog: featured card, tag chips, article typography ── */
+/* ── scroll reveals — one-way content entrances; grids stagger children ── */
+.rv { opacity:0; transform:translateY(14px); transition:opacity 460ms var(--dl-eo), transform 460ms var(--dl-eo); }
+.rv.in { opacity:1; transform:none; }
+.dl-ccards.rv > *, .dl-claims.rv > * { opacity:0; transform:translateY(10px); transition:opacity 420ms var(--dl-eo), transform 420ms var(--dl-eo); }
+.dl-ccards.rv.in > *, .dl-claims.rv.in > * { opacity:1; transform:none; }
+.dl-ccards.rv.in > *:nth-child(2), .dl-claims.rv.in > *:nth-child(2) { transition-delay:50ms; }
+.dl-ccards.rv.in > *:nth-child(3), .dl-claims.rv.in > *:nth-child(3) { transition-delay:100ms; }
+.dl-ccards.rv.in > *:nth-child(4), .dl-claims.rv.in > *:nth-child(4) { transition-delay:150ms; }
+@media (prefers-reduced-motion: reduce) {
+  .rv, .dl-ccards.rv > *, .dl-claims.rv > * { opacity:1; transform:none; transition:none; }
+}
+.dl-btags { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 26px; }
+.dl-chip { border:1px solid var(--dl-rule); background:var(--dl-card); color:var(--dl-muted); border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; transition:transform 160ms var(--dl-eo), border-color 150ms ease, color 150ms ease; }
+.dl-chip:hover { border-color:var(--dl-rule-mid); color:var(--dl-ink); }
+.dl-chip:active { transform:scale(.97); }
+.dl-chip.on { background:var(--dl-ink); border-color:var(--dl-ink); color:var(--dl-paper); }
+.dl-root .dl-bfeat { display:block; background:var(--dl-card); border:1px solid var(--dl-rule-soft); border-radius:16px; box-shadow:var(--dl-sh1); padding:30px 32px; margin-bottom:22px; color:var(--dl-ink); transition:transform 200ms var(--dl-eo), box-shadow 200ms var(--dl-eo); }
+@media (hover:hover) { .dl-root .dl-bfeat:hover { transform:translateY(-2px); box-shadow:var(--dl-sh2); } }
+.dl-bfeat h2 { font-size:27px; letter-spacing:-.02em; margin:10px 0 8px; }
+.dl-bfeat p { color:var(--dl-muted); font-size:15px; max-width:70ch; }
+.dl-bfeat .bm { display:flex; gap:12px; font-size:12.5px; color:var(--dl-faint); align-items:center; }
+.dl-bfeat .bt { color:var(--dl-green); font-weight:700; }
+.dl-bfeat .more { display:inline-block; margin-top:14px; font-size:13.5px; font-weight:700; color:var(--dl-green); }
+.dl-artgrid { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:64px; align-items:start; padding-bottom:30px; }
+@media (max-width: 980px) { .dl-artgrid { grid-template-columns:1fr; gap:14px; } }
+.dl-tldr { background:var(--dl-wash); border:1px solid var(--dl-ghost); border-radius:12px; padding:16px 18px; margin:20px 0 4px; font-size:14px; line-height:1.65; }
+.dl-tldr b { display:block; font-size:11.5px; letter-spacing:.08em; color:var(--dl-green); margin-bottom:5px; }
+.dl-tldr p { color:var(--dl-ink); margin:0; }
+.dl-artbody { font-size:15.5px; line-height:1.75; color:var(--dl-muted); }
+.dl-artbody p { margin:14px 0; }
+.dl-artbody h2 { font-size:22px; color:var(--dl-ink); letter-spacing:-.015em; margin:34px 0 10px; }
+.dl-artbody h3 { font-size:17px; color:var(--dl-ink); margin:24px 0 8px; }
+.dl-artbody strong { color:var(--dl-ink); font-weight:700; }
+.dl-artbody a { color:var(--dl-green); font-weight:600; text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--dl-green) 35%, transparent); text-underline-offset:3px; }
+.dl-artbody a:hover { text-decoration-color:var(--dl-green); }
+.dl-artbody ul, .dl-artbody ol { margin:14px 0; padding-left:24px; }
+.dl-artbody li { margin:7px 0; }
+.dl-artbody code { font-family:ui-monospace, Menlo, monospace; font-size:.88em; background:var(--dl-card2); border:1px solid var(--dl-rule-soft); border-radius:6px; padding:1px 6px; color:var(--dl-ink); }
+.dl-artbody table { width:100%; border-collapse:collapse; margin:18px 0; font-size:13.5px; display:block; overflow-x:auto; }
+.dl-artbody th, .dl-artbody td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--dl-rule); white-space:nowrap; }
+.dl-artbody th { color:var(--dl-ink); font-size:12px; letter-spacing:.05em; text-transform:uppercase; }
+.dl-artbody td:first-child, .dl-artbody th:first-child { white-space:normal; min-width:130px; }
+.dl-artbody td:nth-child(2) { color:var(--dl-green); font-weight:600; }
+.dl-artfoot { display:flex; gap:18px; flex-wrap:wrap; margin-top:36px; padding-top:18px; border-top:1px solid var(--dl-rule); font-size:13.5px; font-weight:600; }
+.dl-root .dl-artfoot a { color:var(--dl-green); }
+.dl-artfoot .nx { margin-left:auto; }
 .dl-bgrid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; padding-top:30px; }
 @media (max-width: 900px) { .dl-bgrid { grid-template-columns:1fr; } }
 .dl-root .dl-bpost { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:14px; padding:26px 28px; color:var(--dl-ink); display:flex; flex-direction:column; gap:10px; transition:transform 170ms var(--dl-eo), box-shadow .18s; }
@@ -699,12 +726,12 @@ const CSS = `
 
 const CMP_ROWS = [
     ["Price for everything", ["Free, all of it", true], ["Freemium", "Premium tier"], ["Freemium", "Pro tier"], ["Freemium", "daily caps"], ["Free", ""]],
-    ["Daily task limits", ["None", true], ["On some tools", ""], ["Limited free tasks", ""], ["3 tasks / day", ""], ["None", ""]],
+    ["Task limits", ["None", true], ["On some tools", ""], ["Limited free tasks", ""], ["3 tasks / hour", ""], ["None", ""]],
     ["Settings behind paywall", ["Never", true], ["Some", ""], ["Moderate & Strong compression are Pro", ""], ["Some", ""], ["None", ""]],
     ["Where files go", ["Local-first; disclosed server · Mumbai", true], ["Uploaded to their servers", ""], ["Uploaded to their servers", ""], ["Uploaded to their servers", ""], ["Stays in browser", ""]],
     ["Retention after processing", ["Zero · this tab only", true], ["Time-limited", ""], ["Time-limited", ""], ["“Deleted after 2 hours”", ""], ["n/a", ""]],
     ["Account walls", ["Never for tools", true], ["For some features", ""], ["For some features", ""], ["For some features", ""], ["None", ""]],
-    ["Trackers & ads", ["Zero", true], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""]],
+    ["Ads & third-party scripts", ["None", true], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""]],
 ];
 
 /* ═══════════════════════════ the component ═══════════════════════════ */
@@ -715,11 +742,13 @@ export default class DaylightSkinApp extends React.Component {
         this.state = {
             ...parseHash(typeof location !== "undefined" ? location.hash : "#/"),
             themeMode: this.readTheme(),
-            q: "", catFilter: "", idxView: "tiles",
+            q: "", catFilter: "", idxView: "tiles", blogTag: "",
             palOpen: false, palQ: "", palSel: 0,
             dragging: false, dropped: null,
             toast: "",
             history: this.readHistory(),
+            canInstall: false,
+            isApp: typeof matchMedia !== "undefined" && matchMedia("(display-mode: standalone)").matches,
         };
         this._raf = [];
         this._timers = [];
@@ -738,7 +767,7 @@ export default class DaylightSkinApp extends React.Component {
             return "Tool not found · PrivaTools";
         }
         if (r.view === "blog" && r.post) {
-            const post = BLOG.find((b) => b.id === r.post);
+            const post = blogPosts.find((b) => b.slug === r.post);
             if (post) return `${post.title} · PrivaTools`;
         }
         const NAMES = {
@@ -764,6 +793,7 @@ export default class DaylightSkinApp extends React.Component {
             this.setState(r, () => {
                 window.scrollTo(0, 0);
                 document.title = this.titleFor(this.state);
+                this._timers.push(setTimeout(this._armReveals, 60));
                 if (r.view === "tool" && BY_SLUG.has(r.slug)) this.logHistory(r.slug);
             });
         };
@@ -783,6 +813,52 @@ export default class DaylightSkinApp extends React.Component {
             }
         };
         window.addEventListener("keydown", this._onKey);
+
+        // PWA install. Chromium fires beforeinstallprompt when the app is
+        // installable; stash it so "Install the app" can open the real prompt.
+        // Safari (both platforms) never fires it — the handler falls back to
+        // per-platform instructions instead of a dead button.
+        this._onBip = (e) => { e.preventDefault(); this._bip = e; this.setState({ canInstall: true }); };
+        this._onInstalled = () => { this._bip = null; this.setState({ canInstall: false, isApp: true }); this.say("Installed — PrivaTools now opens as its own app."); };
+        window.addEventListener("beforeinstallprompt", this._onBip);
+        window.addEventListener("appinstalled", this._onInstalled);
+
+        // Scroll reveals + stat count-ups. One observer, re-armed after route
+        // changes because the tree under it is replaced wholesale. Under
+        // prefers-reduced-motion everything is simply visible.
+        this._revealIn = (el) => {
+            el.classList.add("in");
+            this._io && this._io.unobserve(el);
+            el.querySelectorAll("[data-count]").forEach((c) => this._countUp(c));
+        };
+        // Deterministic catch-up: anything at or above the fold reveals now.
+        // An IntersectionObserver alone can strand content invisible — an
+        // instant jump (End key, anchor, find-in-page) moves elements past
+        // the viewport between frames, so no intersection ever fires.
+        this._revealCatchup = () => {
+            const vh = window.innerHeight;
+            document.querySelectorAll(".rv:not(.in)").forEach((el) => {
+                if (el.getBoundingClientRect().top < vh * 0.92) this._revealIn(el);
+            });
+        };
+        this._armReveals = () => {
+            if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                document.querySelectorAll(".rv:not(.in)").forEach((el) => el.classList.add("in"));
+                return;
+            }
+            if (!this._io) {
+                this._io = new IntersectionObserver((entries) => {
+                    for (const e of entries) if (e.isIntersecting) this._revealIn(e.target);
+                }, { rootMargin: "0px 0px -6% 0px", threshold: 0.1 });
+            }
+            document.querySelectorAll(".rv:not(.in)").forEach((el) => this._io.observe(el));
+            this._revealCatchup();
+        };
+        // Unthrottled on purpose: a handful of rects per page is nothing, and
+        // an rAF-throttled handler starves in a hidden tab.
+        this._onScrollReveal = () => this._revealCatchup();
+        window.addEventListener("scroll", this._onScrollReveal, { passive: true });
+        this._armReveals();
 
         this._depth = 0;
         // Views whose content owns drops — the real tool components, the
@@ -838,10 +914,14 @@ export default class DaylightSkinApp extends React.Component {
         if (super.componentWillUnmount) super.componentWillUnmount();
         window.removeEventListener("hashchange", this._onHash);
         window.removeEventListener("keydown", this._onKey);
+        window.removeEventListener("beforeinstallprompt", this._onBip);
+        window.removeEventListener("appinstalled", this._onInstalled);
         window.removeEventListener("dragenter", this._onDragEnter);
         window.removeEventListener("dragover", this._onDragOver);
         window.removeEventListener("dragleave", this._onDragLeave);
         window.removeEventListener("drop", this._onDrop);
+        window.removeEventListener("scroll", this._onScrollReveal);
+        this._io && this._io.disconnect();
         this._raf.forEach(cancelAnimationFrame);
         this._timers.forEach(clearTimeout);
     }
@@ -930,6 +1010,10 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="brand">
                         <a className="dl-brand" href="#/"><Logo size={21} /> PrivaTools</a>
                         <p>{TOTAL} file tools that treat your documents like they’re yours. Free, no account, no watermark — owner-funded, with nothing to sell you.</p>
+                        <button type="button" className="dl-btn dl-btn-ghost finstall" onClick={this._installApp}>
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V9 M4 6.5 L7 9.5 L10 6.5 M2 12.5 H12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            Install the app
+                        </button>
                     </div>
                     <div><h4>Popular</h4><ul>
                         {POPULAR.slice(0, 5).map((t) => <li key={t.slug}><a href={`#/tool/${t.slug}`}>{t.name}</a></li>)}
@@ -950,10 +1034,11 @@ export default class DaylightSkinApp extends React.Component {
                         <li><a href="#/about">About</a></li>
                         <li><a href="#/privacy">Privacy</a></li>
                         <li><a href="#/terms">Terms</a></li>
+                        <li><button type="button" className="dl-flink" onClick={this._installApp}>Install the app</button></li>
                     </ul></div>
                 </div>
                 <div className="base"><div>
-                    <span>Owner-funded · no ads, no analytics, no paid tier</span>
+                    <span>© 2026 PrivaTools · owner-funded · no ads, no analytics, no paid tier</span>
                     <span>Server jobs: disclosed · Mumbai, IN · deleted after use</span>
                 </div></div>
             </footer>
@@ -980,6 +1065,42 @@ export default class DaylightSkinApp extends React.Component {
             </nav>
         );
     }
+
+    /** Tick a revealed stat from 0 to its real value. The markup already
+     *  holds the final number, so no-JS and reduced-motion read it as-is. */
+    _countUp = (el) => {
+        if (el.dataset.done) return;
+        el.dataset.done = "1";
+        const n = parseInt(el.dataset.count, 10);
+        if (!Number.isFinite(n) || n <= 0) return;
+        const t0 = performance.now();
+        const tick = (t) => {
+            const p = Math.min(1, (t - t0) / 700);
+            const e = 1 - Math.pow(1 - p, 3);
+            el.textContent = String(Math.round(n * e));
+            if (p < 1) this._raf.push(requestAnimationFrame(tick));
+        };
+        this._raf.push(requestAnimationFrame(tick));
+    };
+
+    _installApp = async () => {
+        if (this.state.isApp) { this.say("You’re already in the installed app."); return; }
+        if (this._bip) {
+            const prompt = this._bip;
+            this._bip = null;
+            this.setState({ canInstall: false });
+            prompt.prompt();
+            try {
+                const { outcome } = await prompt.userChoice;
+                if (outcome !== "accepted") { this._bip = prompt; this.setState({ canInstall: true }); }
+            } catch { /* dismissed */ }
+            return;
+        }
+        const ua = navigator.userAgent;
+        if (/iPad|iPhone|iPod/.test(ua)) this.say("In Safari: tap Share, then “Add to Home Screen”.");
+        else if (/Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) this.say("In Safari: File → Add to Dock.");
+        else this.say("In your browser’s menu, choose “Install PrivaTools”.");
+    };
 
     SysDock() {
         // Collapsed to a three-dot pill so it never sits on top of content;
@@ -1100,7 +1221,7 @@ export default class DaylightSkinApp extends React.Component {
                     <aside className="dl-receipt" aria-label="What this costs you">
                         <div className="rh">What it costs<span>Itemised</span></div>
                         {[["Price", "Free, forever"], ["Account", "None"], ["Watermarks", "None"],
-                        ["Ads & trackers", "None"], ["Daily limits", "None"], ["Your files", "Never stored"]]
+                        ["Ads & 3rd-party trackers", "None"], ["Daily limits", "None"], ["Your files", "Never stored"]]
                             .map(([k, v]) => <div className="rr" key={k}><span>{k}</span><b>{v}</b></div>)}
                         <div className="rf">Owner-funded. That’s the whole model.</div>
                     </aside>
@@ -1139,11 +1260,11 @@ export default class DaylightSkinApp extends React.Component {
                     </div>
                 )}
 
-                <div className="dl-stats">
-                    <div className="dl-stat"><b>{TOTAL}</b><span className="cap">tools, every one free</span></div>
-                    <div className="dl-stat"><b>{PDF_COUNT}</b><span className="cap">for PDF alone</span></div>
+                <div className="dl-stats rv">
+                    <div className="dl-stat"><b><span data-count={TOTAL}>{TOTAL}</span></b><span className="cap">tools, every one free</span></div>
+                    <div className="dl-stat"><b><span data-count={PDF_COUNT}>{PDF_COUNT}</span></b><span className="cap">for PDF alone</span></div>
                     <div className="dl-stat"><b>0</b><span className="cap">accounts, trackers or ads</span></div>
-                    <div className="dl-stat"><b>500<small>&nbsp;MB</small></b><span className="cap">per file, every tool</span></div>
+                    <div className="dl-stat"><b><span data-count="500">500</span><small>&nbsp;MB</small></b><span className="cap">per file, every tool</span></div>
                 </div>
 
                 <section className="dl-sec">
@@ -1158,7 +1279,7 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="dl-sec-head">
                         <div><h2 className="dl-sec-title">Every kind of file</h2><p className="dl-sec-sub">Twelve families, {TOTAL} tools — jump straight to yours</p></div>
                     </div>
-                    <div className="dl-ccards">
+                    <div className="dl-ccards rv">
                         {FAMILIES.map(([key, label, hue]) => {
                             const n = ALL_TOOLS.filter((t) => t.category === key).length;
                             if (!n) return null;
@@ -1173,7 +1294,7 @@ export default class DaylightSkinApp extends React.Component {
                 </section>
 
                 <section className="dl-sec">
-                    <div className="dl-vband">
+                    <div className="dl-vband rv">
                         <div>
                             <div className="dl-eyebrow">The vault</div>
                             <h2 className="dl-sec-title" style={{ fontSize: 31, marginTop: 10 }}>Your secrets, sealed on this device.</h2>
@@ -1210,17 +1331,22 @@ export default class DaylightSkinApp extends React.Component {
                 </section>
 
                 <section className="dl-sec">
-                    <div className="dl-claims">
+                    <div className="dl-claims rv">
                         {[["Your device first", "Wherever a tool can run in your browser, it does — the file never leaves your machine."],
                         ["Honest about servers", "Heavier jobs use our disclosed server — Mumbai, IN — and are deleted after use."],
                         ["No third-party code", "No CDN injects scripts into your tools. Everything is served from privatools.me."],
-                        ["Works offline", "Install once as an app; cached tools keep working without a connection."]]
-                            .map(([t, p]) => <div className="dl-claim" key={t}><b><Check />{t}</b><p>{p}</p></div>)}
+                        ["Works offline", "Install once as an app; cached tools keep working without a connection.", true]]
+                            .map(([t, p, install]) => (
+                                <div className="dl-claim" key={t}>
+                                    <b><Check />{t}</b><p>{p}</p>
+                                    {install && <button type="button" className="dl-claimlink" onClick={this._installApp}>Install the app →</button>}
+                                </div>
+                            ))}
                     </div>
                 </section>
 
                 <section className="dl-sec">
-                    <div className="dl-band">
+                    <div className="dl-band rv">
                         <div>
                             <h2>Privacy you can <em>watch,</em> not just trust.</h2>
                             <p className="lead">Every claim here is a behavior you can check from your own browser — no faith required.</p>
@@ -1807,38 +1933,104 @@ export default class DaylightSkinApp extends React.Component {
                 <p className="dl-note" style={{ marginTop: 14 }}>
                     Sources: each product’s public tool and pricing pages as read in August 2026. Corrections welcome — <a href="#/support">tell us</a>.
                 </p>
+                <section className="dl-sec" style={{ paddingTop: 60, paddingBottom: 8 }}>
+                    <div className="dl-sec-head"><div>
+                        <h2 className="dl-sec-title">The long-form breakdowns</h2>
+                        <p className="dl-sec-sub">One honest deep-dive per competitor — their strengths included</p>
+                    </div></div>
+                    <div className="dl-bgrid" style={{ paddingTop: 8 }}>
+                        {["privatools-vs-ilovepdf", "privatools-vs-smallpdf", "privatools-vs-sejda", "privatools-vs-ihatepdf"].map((sl) => {
+                            const b = blogPosts.find((x) => x.slug === sl);
+                            return b && (
+                                <a key={sl} className="dl-bpost" href={`#/blog/${sl}`}>
+                                    <div className="bm"><span className="bt">{b.tags[0]}</span><span>{fmtDate(b.publishedAt)}</span><span>{b.readTime}</span></div>
+                                    <h3>{b.title}</h3>
+                                    <p>{b.description}</p>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </section>
             </div>
         );
     }
 
     Blog() {
-        const post = BLOG.find((b) => b.id === this.state.post);
+        const post = blogPosts.find((b) => b.slug === this.state.post);
         if (post) {
+            const related = (post.relatedTools || []).map((sl) => BY_SLUG.get(sl)).filter(Boolean);
+            const i = POSTS_NEWEST.indexOf(post);
+            const newer = POSTS_NEWEST[i - 1];
+            const older = POSTS_NEWEST[i + 1];
             return (
                 <div className="dl-wrap">
                     <div className="dl-crumb" style={{ paddingTop: 36 }}><a href="#/blog">Blog</a> &nbsp;/&nbsp; <span style={{ color: "var(--dl-ink)" }}>{post.title}</span></div>
-                    <div className="dl-article">
-                        <div className="dl-eyebrow">{post.tag}</div>
-                        <h1>{post.title}</h1>
-                        <div className="am">{post.date} · {post.mins} min read</div>
-                        {post.body.map((p, i) => <p key={i}>{p}</p>)}
+                    <div className="dl-artgrid">
+                        <article className="dl-article">
+                            <div className="dl-eyebrow">{post.tags[0]}</div>
+                            <h1>{post.title}</h1>
+                            <div className="am">{fmtDate(post.publishedAt)} · {post.readTime} · {post.author || "PrivaTools maintainers"}</div>
+                            {post.tldr && <div className="dl-tldr"><b>TL;DR</b><p>{post.tldr}</p></div>}
+                            {/* Our own authored HTML from src/data/blog.ts — the same body the
+                                server injects for crawlers, so what Google reads is what people see. */}
+                            <div className="dl-artbody" dangerouslySetInnerHTML={{ __html: post.body }} />
+                            <div className="dl-artfoot">
+                                {older && <a href={`#/blog/${older.slug}`}>← {older.title}</a>}
+                                {newer && <a className="nx" href={`#/blog/${newer.slug}`}>{newer.title} →</a>}
+                            </div>
+                        </article>
+                        <aside className="dl-proserail">
+                            {related.length > 0 && (
+                                <div className="dl-panel dl-facts">
+                                    <h3>Tools in this guide</h3>
+                                    <p className="fine">Every one free — no account, no caps.</p>
+                                    {related.map((t) => <a key={t.slug} className="dl-btn dl-btn-ghost" href={`#/tool/${t.slug}`}>{t.name} →</a>)}
+                                </div>
+                            )}
+                            <div className="dl-panel dl-facts">
+                                <h3>Verify, don’t trust</h3>
+                                <p className="fine">Claims in our posts come with checks you can run yourself.</p>
+                                <a className="dl-btn dl-btn-ghost" href="#/security">The 60-second test →</a>
+                            </div>
+                        </aside>
                     </div>
                 </div>
             );
         }
+
+        const counts = {};
+        for (const b of blogPosts) for (const t of b.tags) counts[t] = (counts[t] || 0) + 1;
+        const TAGS = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 7).map(([t]) => t);
+        const tag = this.state.blogTag;
+        const posts = tag ? POSTS_NEWEST.filter((b) => b.tags.includes(tag)) : POSTS_NEWEST;
+        const [feat, ...rest] = posts;
         return (
             <div className="dl-wrap">
                 <div className="dl-pghero">
-                    <div className="dl-eyebrow">Notes</div>
+                    <div className="dl-eyebrow">Notes &amp; guides</div>
                     <h1>The blog</h1>
-                    <p>Short, technical, honest — how private file handling actually works, from the people building it.</p>
+                    <p>Short, technical, honest — how private file handling actually works, from the people building it. {blogPosts.length} posts and counting.</p>
                 </div>
+                <div className="dl-btags" role="group" aria-label="Filter posts by topic">
+                    <button className={`dl-chip${tag === "" ? " on" : ""}`} onClick={() => this.setState({ blogTag: "" })}>All · {blogPosts.length}</button>
+                    {TAGS.map((t) => (
+                        <button key={t} className={`dl-chip${tag === t ? " on" : ""}`} onClick={() => this.setState({ blogTag: tag === t ? "" : t })}>{t} · {counts[t]}</button>
+                    ))}
+                </div>
+                {feat && (
+                    <a className="dl-bfeat" href={`#/blog/${feat.slug}`}>
+                        <div className="bm"><span className="bt">{feat.tags[0]}</span><span>{fmtDate(feat.publishedAt)}</span><span>{feat.readTime}</span></div>
+                        <h2>{feat.title}</h2>
+                        <p>{feat.description}</p>
+                        <span className="more">Read the post →</span>
+                    </a>
+                )}
                 <div className="dl-bgrid">
-                    {BLOG.map((b) => (
-                        <a key={b.id} className="dl-bpost" href={`#/blog/${b.id}`}>
-                            <div className="bm"><span className="bt">{b.tag}</span><span>{b.date}</span><span>{b.mins} min</span></div>
+                    {rest.map((b) => (
+                        <a key={b.slug} className="dl-bpost" href={`#/blog/${b.slug}`}>
+                            <div className="bm"><span className="bt">{b.tags[0]}</span><span>{fmtDate(b.publishedAt)}</span><span>{b.readTime}</span></div>
                             <h3>{b.title}</h3>
-                            <p>{b.excerpt}</p>
+                            <p>{b.description}</p>
                         </a>
                     ))}
                 </div>
@@ -1923,7 +2115,7 @@ export default class DaylightSkinApp extends React.Component {
                 ["Server tools", "Mumbai, IN"],
                 ["Kept for", "The job only"],
                 ["Copies", "None"],
-                ["Trackers", "None"],
+                ["3rd-party trackers", "None"],
             ])}
             <div className="dl-panel dl-facts">
                 <h3>Don’t take our word</h3>

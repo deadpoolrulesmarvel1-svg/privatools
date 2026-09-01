@@ -226,6 +226,10 @@ for i in $(seq 1 "$HEALTH_RETRIES"); do
         rm -f "$FAILED_FILE"
         log "deploy complete; health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} checks"
         ping_deploy ok
+        # IndexNow: tell Bing-fed indexes (Copilot, DuckDuckGo, Yandex) the
+        # moment new URLs go live — a deploy is exactly when the sitemap
+        # changes. Best-effort; never blocks the deploy result.
+        curl -fsS --max-time 10 "https://api.indexnow.org/indexnow?url=https%3A%2F%2Fprivatools.me%2Fsitemap.xml&key=63a1ed0533fa44ea9b51efd7a6e34bd1" >/dev/null 2>&1 || true
         exit 0
     fi
     sleep "$HEALTH_INTERVAL"

@@ -1602,6 +1602,41 @@ Convert Markdown to HTML online for free — paste or upload .md files and get c
 
 ## Articles (full TL;DRs)
 
+### [PrivaTools vs ihatepdf (2026): When Both Sides Are Private](https://privatools.me/blog/privatools-vs-ihatepdf)
+*Published 2026-08-30 · 6 min read*
+
+ihatepdf is a genuinely private, free, browser-only PDF suite — files never upload by its stated, network-tab-verifiable design, the same architecture PrivaTools uses for most tools. The differences: PrivaTools spans 200+ tools across PDF, image, video, audio and developer work, handles server-class jobs (OCR, office conversion) with disclosed per-job deletion, loads no third-party scripts, and adds batch, pipelines and an installable offline app.
+
+### [PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question](https://privatools.me/blog/privatools-vs-sejda)
+*Published 2026-08-27 · 7 min read*
+
+Sejda offers the web's best free PDF editor with unusually transparent limits: 3 tasks per hour, 200 pages/50 MB per file, files deleted after 2 hours. PrivaTools has no task caps, a 500 MB limit, browser-local processing for most tools and per-job deletion for the rest. Use Sejda for occasional heavy editing; use PrivaTools for volume, larger files, or documents that shouldn't upload.
+
+### [PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope](https://privatools.me/blog/privatools-vs-smallpdf)
+*Published 2026-08-24 · 7 min read*
+
+Smallpdf is the most polished PDF suite on the web, but its free tier caps daily tasks and gates stronger compression behind Pro, and every file processes on its servers with time-limited retention. PrivaTools is uncapped and free, local-first so most files never upload, with per-job deletion for server tools. Pick Smallpdf for polish and integrations; pick PrivaTools for zero limits and files that stay on your machine.
+
+### [PrivaTools vs iLovePDF (2026): The Fine Print, Compared](https://privatools.me/blog/privatools-vs-ilovepdf)
+*Published 2026-08-20 · 8 min read*
+
+iLovePDF is a polished, mature suite whose free tier has task limits, Premium-gated settings, and server-side processing with time-limited retention. PrivaTools is fully free with no caps, runs most tools in your browser so files never upload, and deletes server-job files per-job. Choose iLovePDF for its desktop/mobile apps and workflow ecosystem; choose PrivaTools when price, limits, or file privacy decide it.
+
+### [How Local-First File Tools Actually Work](https://privatools.me/blog/how-local-first-works)
+*Published 2026-08-14 · 6 min read*
+
+Most file operations — merging PDFs, converting images, rewriting metadata — are pure computation your browser can do locally, so the file never leaves your machine. Only jobs needing native code (full OCR models, office-suite conversion, heavy video transcodes) require a server, and an honest tool tells you which is which before you add a file.
+
+### [What “Deleted After Use” Means on Our Servers](https://privatools.me/blog/what-deleted-means)
+*Published 2026-07-02 · 4 min read*
+
+For PrivaTools server jobs, a file exists exactly as long as the job does: written to isolated temporary storage, processed, streamed back, removed. No results bucket, no retention window, no recoverable copy — and most of the catalogue never touches a server at all.
+
+### [Reading a File Tool’s Privacy Policy in 60 Seconds](https://privatools.me/blog/reading-privacy-policies)
+*Published 2026-05-21 · 5 min read*
+
+Skip the preamble and ask four things of any file tool: Where do files go? How long do they stay? Whose code runs on the page? What does 'free' actually include? The answers — usually buried mid-policy — tell you who the product really serves.
+
 ### [AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)](https://privatools.me/blog/ai-pdf-summarizer-browser-2026)
 *Published 2026-05-15 · 9 min read*
 
