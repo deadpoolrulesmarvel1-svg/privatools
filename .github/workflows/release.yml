@@ -18,7 +18,12 @@ env:
 jobs:
   docker:
     name: Build, push, and sign image
-    runs-on: ubuntu-latest
+    # The deploy target is aarch64, so arm64 is the image that matters — and on
+    # an x86 runner it was the one being emulated through QEMU, which is where
+    # a release spent ~20 minutes. GitHub's ARM runners are free on public
+    # repos, so it now builds natively. Keep in step with `platforms` below:
+    # an x86 runner here without setup-qemu-action cannot build arm64 at all.
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read          # checkout
       id-token: write         # cosign keyless signing (OIDC)
@@ -26,7 +31,6 @@ jobs:
       security-events: write  # upload the Trivy SARIF report
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
@@ -44,15 +48,22 @@ jobs:
         id: build
         with:
           context: .
-          platforms: linux/arm64,linux/amd64
+          # arm64 only. The VM is the sole consumer and it is aarch64;
+          # test.yml covers "does this still build on amd64" separately.
+          platforms: linux/arm64
           # Repository *variable*, not a secret: a Clerk publishable key names
           # the instance's Frontend API host and is visible in the bundle of
-          # every Clerk site. Unset until a production Clerk instance exists,
-          # and unset means Clerk is off — the SDK is not downloaded and
-          # accounts use local auth, which is the current behaviour.
+          # every Clerk site. Set since 2026-09-01, which is what switches
+          # accounts from local auth to Clerk; unset means Clerk is off and the
+          # SDK is never downloaded.
           build-args: |
             VITE_CLERK_PUBLISHABLE_KEY=${{ vars.CLERK_PUBLISHABLE_KEY }}
           push: true
+          # Without this every release re-ran apt-get, `npm ci` and
+          # `pip install` from nothing. The Dockerfile copies package manifests
+          # before sources, so those layers survive a source-only change.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
