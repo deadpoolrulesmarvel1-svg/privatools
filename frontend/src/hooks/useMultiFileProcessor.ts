@@ -94,6 +94,16 @@ function makeEntry(file: File): FileEntry {
 
 export function useMultiFileProcessor(): UseMultiFileProcessorResult {
     const [entries, setEntries] = useState<FileEntry[]>([]);
+    // React defers state-updater callbacks, so code that "reads" state by
+    // passing through an updater sees nothing until the next render — which
+    // silently emptied run()'s work list. The ref mirror is written
+    // synchronously on every mutation and is the source of truth for all
+    // imperative reads; setEntries only feeds the render.
+    const entriesRef = useRef<FileEntry[]>([]);
+    const mutate = useCallback((updater: (prev: FileEntry[]) => FileEntry[]) => {
+        entriesRef.current = updater(entriesRef.current);
+        setEntries(entriesRef.current);
+    }, []);
     // The `inFlight` ref lets the caller call `run()` again without races —
     // we just refuse to start a second pass while one is going.
     const inFlight = useRef(false);
@@ -102,44 +112,40 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         const arr = Array.from(fl);
         const accepted = filter ? arr.filter(filter) : arr;
         if (!accepted.length) return;
-        setEntries(prev => [...prev, ...accepted.map(makeEntry)]);
-    }, []);
+        mutate(prev => [...prev, ...accepted.map(makeEntry)]);
+    }, [mutate]);
 
     const removeFile = useCallback((id: string) => {
-        setEntries(prev => prev.filter(e => e.id !== id));
-    }, []);
+        mutate(prev => prev.filter(e => e.id !== id));
+    }, [mutate]);
 
-    const clearAll = useCallback(() => setEntries([]), []);
+    const clearAll = useCallback(() => mutate(() => []), [mutate]);
 
     const reorder = useCallback((from: number, to: number) => {
-        setEntries(prev => {
+        mutate(prev => {
             if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev;
             const next = [...prev];
             const [moved] = next.splice(from, 1);
             next.splice(to, 0, moved);
             return next;
         });
-    }, []);
+    }, [mutate]);
 
     const reset = useCallback(() => {
         inFlight.current = false;
-        setEntries([]);
-    }, []);
+        mutate(() => []);
+    }, [mutate]);
 
     const run = useCallback(async (opts: ProcessOptions, retryOnly = false) => {
         if (inFlight.current) return;
         inFlight.current = true;
 
-        // Snapshot current entry IDs to process. We re-read state via setter
-        // to avoid stale closures inside concurrent workers.
-        let targetIds: string[] = [];
-        setEntries(prev => {
-            targetIds = prev
-                .filter(e => retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
-                .map(e => e.id);
-            // Mark them as queued (clears prior error states for retry path).
-            return prev.map(e => targetIds.includes(e.id) ? { ...e, status: "queued", error: undefined } : e);
-        });
+        // Snapshot from the ref — synchronous and stale-closure-free.
+        const targetIds = entriesRef.current
+            .filter(e => retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
+            .map(e => e.id);
+        // Mark them as queued (clears prior error states for retry path).
+        mutate(prev => prev.map(e => targetIds.includes(e.id) ? { ...e, status: "queued", error: undefined } : e));
 
         // Tiny semaphore — N workers pull from a shared cursor.
         const concurrency = Math.max(1, opts.concurrency ?? 3);
@@ -152,15 +158,11 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                 if (idx >= ids.length) return;
                 const id = ids[idx];
 
-                // Grab the file out of state (it might have been removed since)
-                let file: File | null = null;
-                setEntries(prev => {
-                    const e = prev.find(x => x.id === id);
-                    file = e?.file ?? null;
-                    if (!e) return prev;
-                    return prev.map(x => x.id === id ? { ...x, status: "running" } : x);
-                });
+                // Grab the file from the ref (it might have been removed since)
+                const entry = entriesRef.current.find(x => x.id === id);
+                const file: File | null = entry?.file ?? null;
                 if (!file) continue;
+                mutate(prev => prev.map(x => x.id === id ? { ...x, status: "running" } : x));
 
                 try {
                     const res = await uploadFile(opts.endpoint, file as File, opts.params);
@@ -183,14 +185,14 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                     const headers: Record<string, string> = {};
                     res.headers.forEach((v, k) => { headers[k.toLowerCase()] = v; });
 
-                    setEntries(prev => prev.map(x => x.id === id
+                    mutate(prev => prev.map(x => x.id === id
                         ? { ...x, status: "done", blob, outName, headers }
                         : x,
                     ));
                 } catch (e: unknown) {
                     const raw = e instanceof Error ? e.message : "Failed";
                     const msg = friendlyError(raw, "Processing failed");
-                    setEntries(prev => prev.map(x => x.id === id
+                    mutate(prev => prev.map(x => x.id === id
                         ? { ...x, status: "failed", error: msg }
                         : x,
                     ));
@@ -203,30 +205,26 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         await Promise.all(workers);
 
         inFlight.current = false;
-    }, []);
+    }, [mutate]);
 
     const downloadAll = useCallback((archiveBaseName: string) => {
-        // Re-read state synchronously by passing through setEntries' identity.
-        setEntries(prev => {
-            const done = prev.filter(e => e.status === "done" && e.blob);
-            if (done.length === 0) return prev;
-            if (done.length === 1) {
-                const e = done[0];
-                downloadBlob(e.blob!, e.outName || e.name);
-                return prev;
-            }
-            // N>1 → zip them
-            const buildAndDownload = async () => {
-                const items = await Promise.all(done.map(async e => ({
-                    name: e.outName || e.name,
-                    data: new Uint8Array(await e.blob!.arrayBuffer()),
-                })));
-                const zipBlob = buildZip(items);
-                downloadBlob(zipBlob, archiveBaseName.endsWith(".zip") ? archiveBaseName : `${archiveBaseName}.zip`);
-            };
-            void buildAndDownload();
-            return prev;
-        });
+        const done = entriesRef.current.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            const e = done[0];
+            downloadBlob(e.blob!, e.outName || e.name);
+            return;
+        }
+        // N>1 → zip them
+        const buildAndDownload = async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: e.outName || e.name,
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            const zipBlob = buildZip(items);
+            downloadBlob(zipBlob, archiveBaseName.endsWith(".zip") ? archiveBaseName : `${archiveBaseName}.zip`);
+        };
+        void buildAndDownload();
     }, []);
 
     // Derive aggregate counts. Cheap to recompute every render.
