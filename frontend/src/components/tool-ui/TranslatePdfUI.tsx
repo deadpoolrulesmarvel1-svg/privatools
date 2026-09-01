@@ -30,6 +30,22 @@ import {
     modelIdFor,
     targetsFor,
 } from "@/lib/translate/languages";
+import { useByok } from "@/hooks/useByok";
+import { ByokPanel } from "@/components/byok/ByokPanel";
+import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
+import { providerById } from "@/lib/byok/providers";
+import { translateWithByok } from "@/lib/byok/tasks";
+import { ByokError } from "@/lib/byok/errors";
+
+/** Targets offered on the BYOK engine — an LLM translates any of these, far
+ *  beyond the one-directional OPUS pairs, and detects the source itself. */
+const BYOK_LANGS = [
+    "English", "Spanish", "French", "German", "Italian", "Portuguese", "Dutch",
+    "Polish", "Ukrainian", "Russian", "Turkish", "Arabic", "Hebrew", "Hindi",
+    "Bengali", "Indonesian", "Vietnamese", "Thai", "Chinese (Simplified)",
+    "Chinese (Traditional)", "Japanese", "Korean", "Swedish", "Norwegian",
+    "Danish", "Finnish", "Czech", "Romanian", "Greek", "Hungarian",
+];
 
 type Phase = "idle" | "extracting" | "loading-model" | "translating" | "done";
 
@@ -98,6 +114,11 @@ async function extractPages(
 }
 
 export function TranslatePdfUI() {
+    const byok = useByok();
+    const [engine, setEngine] = useState<"local" | "byok">("local");
+    const [byokTarget, setByokTarget] = useState("French");
+    const [byokModel, setByokModel] = useState("");
+    const abortRef = useRef<AbortController | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [source, setSource] = useState("en");
     const [target, setTarget] = useState("fr");
@@ -129,7 +150,8 @@ export function TranslatePdfUI() {
 
     const translate = useCallback(async () => {
         const modelId = modelIdFor(source, target);
-        if (!file || !modelId) return;
+        if (!file) return;
+        if (engine === "local" && !modelId) return;
         cancelRef.current = false;
         setError(null); setPages([]);
 
@@ -145,6 +167,35 @@ export function TranslatePdfUI() {
             if (withText.length === 0) {
                 setError("No selectable text found — run the PDF through OCR first.");
                 setPhase("idle");
+                return;
+            }
+
+            if (engine === "byok") {
+                if (!byok.ready) throw new Error("Add an API key first, or switch to the on-device model.");
+                const apiKey = await getKey(byok.provider);
+                if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
+                const controller = new AbortController();
+                abortRef.current = controller;
+                setPhase("translating");
+                setChunkProgress({ done: 0, total: withText.length });
+                const out: TranslatedPage[] = [];
+                for (let i = 0; i < withText.length; i++) {
+                    if (cancelRef.current) return;
+                    const pg = withText[i];
+                    const translated = await translateWithByok({
+                        providerId: byok.provider,
+                        apiKey,
+                        baseUrl: getBaseUrl(byok.provider),
+                        model: byokModel.trim() || providerById(byok.provider)?.models[0] || "",
+                        text: pg.text,
+                        targetLanguage: byokTarget,
+                        signal: controller.signal,
+                    });
+                    out.push({ page: pg.page, source: pg.text, translated });
+                    setPages([...out]);
+                    setChunkProgress({ done: i + 1, total: withText.length });
+                }
+                setPhase("done");
                 return;
             }
 
@@ -175,11 +226,11 @@ export function TranslatePdfUI() {
             setPhase("done");
         } catch (e: unknown) {
             if (cancelRef.current) return;
-            const msg = e instanceof Error ? e.message : "Translation failed";
+            const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "Translation failed";
             setError(friendlyError(msg, "Couldn't translate that PDF."));
             setPhase("idle");
         }
-    }, [file, source, target]);
+    }, [file, source, target, engine, byok.ready, byok.provider, byokModel, byokTarget]);
 
     const asText = useCallback(
         () => pages.map(p => `— Page ${p.page} —\n\n${p.translated}`).join("\n\n"),
@@ -234,10 +285,12 @@ export function TranslatePdfUI() {
                             <div className="flex-1 min-w-0">
                                 <p className="section-mark mb-2">Translated</p>
                                 <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight">
-                                    {languageName(source)} → <span className="italic text-accent">{languageName(target)}</span>
+                                    {engine === "byok"
+                                        ? <>→ <span className="italic text-accent">{byokTarget}</span></>
+                                        : <>{languageName(source)} → <span className="italic text-accent">{languageName(target)}</span></>}
                                 </h2>
                                 <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
-                                    {pages.length} page{pages.length === 1 ? "" : "s"} · {words.toLocaleString()} words · translated on your device
+                                    {pages.length} page{pages.length === 1 ? "" : "s"} · {words.toLocaleString()} words · {engine === "byok" ? `translated with your ${providerById(byok.provider)?.label ?? "AI"} key` : "translated on your device"}
                                 </p>
                                 <div className="mt-5 flex flex-wrap gap-2">
                                     <button onClick={downloadText} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -306,7 +359,84 @@ export function TranslatePdfUI() {
                 </div>
             )}
 
+            {/* Engine: on-device model vs the user's own API key */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Which translator
+                </div>
+                <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setEngine("local")}
+                            aria-pressed={engine === "local"}
+                            disabled={busy}
+                            className={cn(
+                                "rounded-lg border p-3 text-left transition-colors",
+                                engine === "local" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                            )}
+                        >
+                            <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
+                            <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                Free, no key. Downloads a ~{APPROX_MODEL_MB} MB model per language pair.
+                                English-centric pairs only.
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setEngine("byok")}
+                            aria-pressed={engine === "byok"}
+                            disabled={busy}
+                            className={cn(
+                                "rounded-lg border p-3 text-left transition-colors",
+                                engine === "byok" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                            )}
+                        >
+                            <span className="block text-[13.5px] font-medium text-foreground">My own API key</span>
+                            <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                                Any language, much better quality, billed by your provider.
+                                The text goes to them, not to us.
+                            </span>
+                        </button>
+                    </div>
+                    {engine === "byok" && (
+                        <>
+                            <ByokPanel
+                                byok={byok}
+                                purpose="The extracted text of this PDF is sent to the provider you choose, using your key."
+                            />
+                            {byok.ready && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label className="block">
+                                        <span className="font-medium text-[11px] text-muted-foreground">Translate into</span>
+                                        <select
+                                            value={byokTarget}
+                                            onChange={e => setByokTarget(e.target.value)}
+                                            disabled={busy}
+                                            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors disabled:opacity-60"
+                                        >
+                                            {BYOK_LANGS.map(l => <option key={l} value={l}>{l}</option>)}
+                                        </select>
+                                        <span className="mt-1 block text-[11px] text-muted-foreground">Source language is detected automatically.</span>
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-medium text-[11px] text-muted-foreground">Model (optional)</span>
+                                        <input
+                                            type="text"
+                                            value={byokModel}
+                                            onChange={e => setByokModel(e.target.value)}
+                                            placeholder={providerById(byok.provider)?.models[0] ?? "provider default"}
+                                            className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono"
+                                        />
+                                    </label>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className={cn("rounded-xl border border-border bg-card overflow-hidden", engine === "byok" && "hidden")}>
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Languages
                 </div>
@@ -349,7 +479,9 @@ export function TranslatePdfUI() {
                     <p className="font-medium text-[12px] text-accent">
                         {phase === "extracting" && `Reading page ${pageProgress.done} of ${pageProgress.total || "?"}`}
                         {phase === "loading-model" && `Downloading model — ${modelPct}%`}
-                        {phase === "translating" && `Translating ${chunkProgress.done} of ${chunkProgress.total}`}
+                        {phase === "translating" && (engine === "byok"
+                            ? `Translating page ${Math.min(chunkProgress.done + 1, chunkProgress.total)} of ${chunkProgress.total} with your key`
+                            : `Translating ${chunkProgress.done} of ${chunkProgress.total}`)}
                     </p>
                     <div className="h-1.5 rounded-full bg-border/60 overflow-hidden">
                         <div
@@ -364,7 +496,7 @@ export function TranslatePdfUI() {
                         />
                     </div>
                     <button
-                        onClick={() => { cancelRef.current = true; setPhase("idle"); }}
+                        onClick={() => { cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
                         className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <Ban size={11} /> Cancel
@@ -375,7 +507,7 @@ export function TranslatePdfUI() {
             {!busy && (
                 <button
                     onClick={translate}
-                    disabled={!file || !validPair}
+                    disabled={!file || (engine === "local" ? !validPair : !byok.ready)}
                     className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <Languages size={13} /> Translate

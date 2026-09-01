@@ -25,7 +25,17 @@ export interface Provider {
     keysUrl?: string;
 }
 
-export interface Message { role: "system" | "user" | "assistant"; content: string }
+/** A message part — plain text, or an inline image for vision models. */
+export type ContentPart =
+    | { type: "text"; text: string }
+    | { type: "image"; mimeType: string; dataBase64: string };
+
+export interface Message { role: "system" | "user" | "assistant"; content: string | ContentPart[] }
+
+function textOf(content: string | ContentPart[]): string {
+    if (typeof content === "string") return content;
+    return content.filter((c): c is Extract<ContentPart, { type: "text" }> => c.type === "text").map(c => c.text).join("\n");
+}
 
 export interface CompleteInput {
     apiKey: string;
@@ -104,7 +114,7 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
     const maxTokens = input.maxTokens ?? 4096;
 
     if (p.shape === "anthropic") {
-        const system = input.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n");
+        const system = input.messages.filter((m) => m.role === "system").map((m) => textOf(m.content)).join("\n");
         const rest = input.messages.filter((m) => m.role !== "system");
         return {
             url: `${base}/v1/messages`,
@@ -118,13 +128,20 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
             body: JSON.stringify({
                 model: input.model, max_tokens: maxTokens,
                 ...(system ? { system } : {}),
-                messages: rest.map((m) => ({ role: m.role, content: m.content })),
+                messages: rest.map((m) => ({
+                    role: m.role,
+                    content: typeof m.content === "string" ? m.content : m.content.map((c) =>
+                        c.type === "text"
+                            ? { type: "text", text: c.text }
+                            : { type: "image", source: { type: "base64", media_type: c.mimeType, data: c.dataBase64 } },
+                    ),
+                })),
             }),
         };
     }
 
     if (p.shape === "gemini") {
-        const system = input.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n");
+        const system = input.messages.filter((m) => m.role === "system").map((m) => textOf(m.content)).join("\n");
         return {
             // Key goes in a header, NOT ?key= as Google's docs suggest: a URL
             // parameter lands in history, proxy logs and Referer headers.
@@ -133,7 +150,12 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
             body: JSON.stringify({
                 contents: input.messages
                     .filter((m) => m.role !== "system")
-                    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+                    .map((m) => ({
+                        role: m.role === "assistant" ? "model" : "user",
+                        parts: typeof m.content === "string" ? [{ text: m.content }] : m.content.map((c) =>
+                            c.type === "text" ? { text: c.text } : { inlineData: { mimeType: c.mimeType, data: c.dataBase64 } },
+                        ),
+                    })),
                 ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
                 generationConfig: { maxOutputTokens: maxTokens },
             }),
@@ -143,7 +165,17 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
     return {
         url: `${base}/v1/chat/completions`,
         headers: { "content-type": "application/json", authorization: `Bearer ${input.apiKey}` },
-        body: JSON.stringify({ model: input.model, max_tokens: maxTokens, messages: input.messages }),
+        body: JSON.stringify({
+            model: input.model, max_tokens: maxTokens,
+            messages: input.messages.map((m) => ({
+                role: m.role,
+                content: typeof m.content === "string" ? m.content : m.content.map((c) =>
+                    c.type === "text"
+                        ? { type: "text", text: c.text }
+                        : { type: "image_url", image_url: { url: `data:${c.mimeType};base64,${c.dataBase64}` } },
+                ),
+            })),
+        }),
     };
 }
 
@@ -159,4 +191,45 @@ export function parseResponse(p: Provider, json: unknown): string {
     }
     const choices = (j.choices ?? []) as Array<{ message?: { content?: string } }>;
     return choices[0]?.message?.content ?? "";
+}
+
+/** Providers whose API exposes OpenAI-style /v1/audio/transcriptions. */
+export function supportsTranscription(p: Provider): boolean {
+    return p.shape === "openai";
+}
+
+export const TRANSCRIBE_MODELS: Record<string, string> = {
+    openai: "gpt-4o-mini-transcribe",
+    groq: "whisper-large-v3",
+};
+
+export function buildTranscribeRequest(
+    p: Provider,
+    input: { apiKey: string; model: string; file: File | Blob; filename?: string; baseUrl?: string },
+): { url: string; headers: Record<string, string>; body: FormData } {
+    if (!supportsTranscription(p)) {
+        throw new Error(`${p.label} has no OpenAI-style transcription endpoint`);
+    }
+    const base = p.customBaseUrl
+        ? (() => { if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`); return input.baseUrl.replace(/\/+$/, ""); })()
+        : p.origin;
+    const body = new FormData();
+    body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));
+    body.append("model", input.model);
+    body.append("response_format", "text");
+    return {
+        url: `${base}/v1/audio/transcriptions`,
+        // No content-type: the browser sets the multipart boundary itself.
+        headers: { authorization: `Bearer ${input.apiKey}` },
+        body,
+    };
+}
+
+export function parseTranscribeResponse(raw: string): string {
+    // response_format=text returns plain text; some servers still send JSON.
+    try {
+        const j = JSON.parse(raw) as { text?: string };
+        if (typeof j.text === "string") return j.text;
+    } catch { /* plain text */ }
+    return raw;
 }

@@ -19,7 +19,7 @@ import { formatFileSize, downloadBlob } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
-import { getKey } from "@/lib/byok/keyStore";
+import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { summarizeWithByok } from "@/lib/byok/tasks";
 import { ByokError } from "@/lib/byok/errors";
@@ -201,6 +201,7 @@ export function SummarizePdfUI() {
                 const out = await summarizeWithByok({
                     providerId: byok.provider,
                     apiKey,
+                    baseUrl: getBaseUrl(byok.provider),
                     model: model || provider?.models[0] || "",
                     text,
                     length,

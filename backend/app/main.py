@@ -197,7 +197,25 @@ def _env_positive_int(name: str, default: int) -> int:
 # Security headers middleware
 # ---------------------------------------------------------------------------
 _SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
-_WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+_WASM_EVAL_PATHS = {
+    "/tool/summarize-pdf",
+    "/tool/smart-redact",
+    # On-device OPUS-MT / RMBG models run on onnxruntime-web, which needs
+    # wasm-unsafe-eval just like the two above. Translate shipped without
+    # this and its local model would have been blocked by prod CSP.
+    "/tool/translate-pdf",
+    "/tools/remove-background",
+    "/tools/transcribe-audio",
+    # In-browser tesseract OCR runs its wasm core inside a blob worker.
+    "/tool/ocr-pdf",
+    "/tools/image-ocr",
+}
+
+# tesseract.js's blob worker importScripts() its worker/core JS from the
+# jsdelivr CDN, and a blob worker inherits the document's CSP — so these two
+# pages alone extend script-src to that host. Everywhere else stays
+# self+nonce.
+_TESSERACT_PATHS = {"/tool/ocr-pdf", "/tools/image-ocr"}
 
 # Pages allowed to talk directly to a BYOK AI provider.
 #
@@ -215,7 +233,15 @@ _WASM_EVAL_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
 # AI vendors it never called. test_byok_csp derives this set by walking
 # ToolPage's lazy imports, so it demanded the entry back the moment the feature
 # landed rather than leaving the calls to fail as a mystery network fault.
-_BYOK_PATHS = {"/tool/summarize-pdf", "/tool/smart-redact"}
+_BYOK_PATHS = {
+    "/tool/summarize-pdf",
+    "/tool/smart-redact",
+    "/tool/chat-with-pdf",
+    "/tool/translate-pdf",
+    "/tools/transcribe-audio",
+    "/tool/ocr-pdf",
+    "/tools/image-ocr",
+}
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
 # which would give away the guarantee this product is built on, so adding a
@@ -328,6 +354,8 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     ]
     if path in _WASM_EVAL_PATHS:
         script_src.append("'wasm-unsafe-eval'")
+    if path in _TESSERACT_PATHS:
+        script_src.append("https://cdn.jsdelivr.net")
 
     # connect-src allows HF transformers to fetch the local-AI models
     # (Summarize PDF, Smart Redact). Models are downloaded once and cached

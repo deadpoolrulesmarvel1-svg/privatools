@@ -1,13 +1,15 @@
 /**
  * StampUI — rubber-stamp PDF pages with CONFIDENTIAL / DRAFT / APPROVED etc.
  * Workshop: stamp preset gallery showing actual stamp look, position picker, opacity slider.
+ * Multi-file via useMultiFileProcessor — same stamp applied to every PDF.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2, Stamp, RotateCcw, Download } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { FileUploadZone } from "./FileUploadZone";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 const STAMP_PRESETS = [
     { value: "confidential", label: "CONFIDENTIAL", tone: "destructive" },
@@ -42,12 +44,10 @@ export function StampUI() {
     const setCustomText = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["customText"]>) => setField("customText", v), [setField]);
     const setOpacity = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["opacity"]>) => setField("opacity", v), [setField]);
     const setPosition = useCallback((v: React.SetStateAction<typeof STAMP_DEFAULTS["position"]>) => setField("position", v), [setField]);
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
 
     const [pages, setPages] = useState("all");
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
 
     const activePreset = STAMP_PRESETS.find(s => s.value === stampType);
     const displayText = stampType === "custom" ? (customText.trim().toUpperCase() || "CUSTOM") : (activePreset?.label || "");
@@ -61,85 +61,122 @@ export function StampUI() {
 
     const stampPreviewColor = activePreset?.tone === "destructive" ? "hsl(var(--destructive))" : activePreset?.tone === "accent" ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))";
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try {
-            const params: Record<string, string | number | boolean> = {
-                stamp_type: stampType,
-                opacity: opacity / 100,
-                position,
-                pages,
-            };
-            if (stampType === "custom" && customText.trim()) params.custom_text = customText.trim();
-            const res = await uploadFile("/stamp-pdf", file, params);
-            const blob = await res.blob();
-            setResultBlob(blob);
-            setStatus("done");
-            downloadBlob(blob, file.name.replace(/\.pdf$/i, "_stamped.pdf"));
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Could not apply stamp";
-            setError(friendlyError(msg, "Couldn't stamp that PDF."));
-            setStatus("idle");
+    const canProcess = proc.entries.length > 0 && phase !== "processing" && !(stampType === "custom" && !customText.trim());
+
+    const process = useCallback(async (retry = false) => {
+        const params: Record<string, string | number | boolean> = {
+            stamp_type: stampType,
+            opacity: opacity / 100,
+            position,
+            pages,
+        };
+        if (stampType === "custom" && customText.trim()) params.custom_text = customText.trim();
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/stamp-pdf",
+            outputSuffix: "stamped",
+            outputExt: "pdf",
+            params,
+        }, retry);
+        setPhase("done");
+    }, [proc, stampType, opacity, position, pages, customText]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_stamped");
         }
-    }, [file, stampType, opacity, position, pages, customText]);
+    }, [phase, proc]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
             if ((tag === "input" || tag === "textarea") && !((e.metaKey || e.ctrlKey) && e.key === "Enter")) return;
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && status !== "processing" && !(stampType === "custom" && !customText.trim())) {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
                 e.preventDefault();
-                process();
+                void process(false);
             }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [file, status, stampType, customText, process]);
+    }, [canProcess, process]);
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Stamp applied</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            Marked <span className="italic text-accent">{displayText}</span>
-                        </h2>
-                        <div className="mt-5 flex flex-wrap gap-2">
-                            <button onClick={() => resultBlob && file && downloadBlob(resultBlob, file.name.replace(/\.pdf$/i, "_stamped.pdf"))} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                <Download size={13} /> Download again
-                            </button>
-                            <button
-                                onClick={() => { setFile(null); setStatus("idle"); setResultBlob(null); }}
-                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                            >
-                                <RotateCcw size={12} /> Stamp another
-                            </button>
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Stamp applied</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} marked <span className="italic text-accent">{displayText}</span>{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <>Marked <span className="italic text-accent">{displayText}</span></>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={() => proc.downloadAll("archive_stamped")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                                >
+                                    <RotateCcw size={12} /> Stamp another
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
             <FileUploadZone
-                file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                file={null}
+                onFileSelect={f => proc.addFiles([f])}
+                onFilesSelect={fs => proc.addFiles(fs)}
+                onClear={proc.clearAll}
+                multiple
                 accept=".pdf"
-                label="Drop PDF to stamp"
-                hint="Apply CONFIDENTIAL / DRAFT / APPROVED etc."
+                label={proc.entries.length ? "Add more files" : "Drop PDFs to stamp"}
+                hint="Apply CONFIDENTIAL / DRAFT / APPROVED etc. · same stamp on every file"
             />
 
-            {file && (
+            {proc.entries.length > 0 && (
                 <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
+
                     {/* Stamp gallery */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
@@ -218,6 +255,11 @@ export function StampUI() {
                                         placeholder="all · 1,3,5-8"
                                         className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                     />
+                                    {proc.entries.length > 1 && (
+                                        <p className="font-medium text-[11px] text-muted-foreground mt-1">
+                                            Same pages · same stamp across all {proc.entries.length} PDFs
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -255,22 +297,23 @@ export function StampUI() {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={process}
-                            disabled={status === "processing" || (stampType === "custom" && !customText.trim())}
+                            onClick={() => void process(false)}
+                            disabled={!canProcess}
                             className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stamping…</> : <><Stamp size={13} /> Apply stamp</>}
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Stamping… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Stamp size={13} /> Apply stamp{proc.entries.length > 1 ? ` — ${proc.entries.length} PDFs` : ""}</>}
                         </button>
-                        {status !== "processing" && !(stampType === "custom" && !customText.trim()) && (
+                        {canProcess && (
                             <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        )}
+                        {proc.entries.length > 0 && stampType === "custom" && !customText.trim() && phase !== "processing" && (
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
+                                <AlertCircle size={11} /> Enter the custom text first
+                            </span>
                         )}
                     </div>
                 </>

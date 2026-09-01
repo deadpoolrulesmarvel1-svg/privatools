@@ -518,7 +518,8 @@ export function GitignoreGeneratorUI() {
 function bumpSemver(version: string, kind: "major" | "minor" | "patch" | "prerelease") {
   const match = version.trim().replace(/^v/, "").match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
   if (!match) throw new Error("Use a version like 1.2.3 or v1.2.3-beta.1");
-  let [, majorRaw, minorRaw, patchRaw, pre] = match;
+  const [, majorRaw, minorRaw, patchRaw, preRaw] = match;
+  let pre = preRaw;
   let major = Number(majorRaw);
   let minor = Number(minorRaw);
   let patch = Number(patchRaw);

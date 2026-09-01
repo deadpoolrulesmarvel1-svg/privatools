@@ -1,81 +1,91 @@
-import { Suspense, lazy, useEffect } from "react";
-import { useSkin } from "@/hooks/useSkin";
-import { isSkinId, type SkinId } from "@/lib/skins";
-import { SkinDock } from "@/components/SkinDock";
+import { Suspense, lazy, useEffect, useState } from "react";
+import DaylightApp from "./extensions/daylight";
+import { hashForPath } from "./pathRoutes";
 
 /**
- * Renders a ported design theme in place of the app's own routes.
+ * Mounts Daylight — the site's design.
  *
- * The three imported designs are complete applications — their own navigation,
- * their own routing, their own page compositions — so a skin is not a re-skin
- * of our shell but a swap of the whole surface. Each is code-split; only the
- * active one is ever fetched.
+ * Daylight is a complete application: its own navigation, its own routing, its
+ * own page compositions. It began as one of four selectable skins and is now
+ * the only one, so it is imported eagerly — it *is* the first paint, and a
+ * lazy chunk here would put a blank frame in front of every visitor.
  */
-/**
- * Each entry loads that skin's *extension* where one exists — a subclass of the
- * generated component that adds the surfaces the imported design never had
- * (accounts, API keys, and the rest of the feature manifest). Skins without an
- * extension yet fall back to the generated component directly.
- */
-const APPS: Record<Exclude<SkinId, "signature">, React.LazyExoticComponent<React.ComponentType>> = {
-    aurora: lazy(() => import("./extensions/aurora")),
-    carbon: lazy(() => import("./extensions/carbon")),
-    structured: lazy(() => import("./extensions/structured")),
-};
+
+// The workspace banners the house shell used to carry. Backend-down and
+// unfinished-batch are product states, not house-design states, so they live
+// on whatever design owns the screen.
+const BackendStatusBanner = lazy(() =>
+    import("@/components/BackendStatusBanner").then((m) => ({ default: m.BackendStatusBanner })));
+const BatchResumeBanner = lazy(() =>
+    import("@/components/BatchResumeBanner").then((m) => ({ default: m.BatchResumeBanner })));
+
+/** Whether Daylight is currently showing the batch surface (hash router). */
+function useOnBatch(): boolean {
+    const [on, setOn] = useState(() => /^#\/batch(\/|\?|$)/.test(window.location.hash));
+    useEffect(() => {
+        const read = () => setOn(/^#\/batch(\/|\?|$)/.test(window.location.hash));
+        window.addEventListener("hashchange", read);
+        return () => window.removeEventListener("hashchange", read);
+    }, []);
+    return on;
+}
 
 export function SkinAppHost() {
-    const { skin, setSkin } = useSkin();
+    const onBatch = useOnBatch();
 
-    // Retire the pre-hydration brand painted by index.html. Our own shells do
-    // this from useShellChrome, which never runs when a ported design owns the
-    // screen — leaving a second, offset logo over the design's own.
+    // Retire the pre-hydration brand painted by index.html — Daylight renders
+    // its own header, and leaving both shows a second, offset logo.
     useEffect(() => { document.documentElement.classList.add("app-ready"); }, []);
 
-    // The skip link in index.html targets `#main-content`, which is the
-    // StandardShell's id. None of the ported designs use it — Aurora and
-    // Carbon call their main `#main`, Structured `#routeMain` — so in skin
-    // mode the link resolved to nothing and pressing it did exactly nothing.
-    // Aurora and Carbon also ship their own skip anchor, which put two of
-    // them in the tab order.
-    //
-    // The designs render behind Suspense, so the main element does not exist
-    // when this effect first runs. Poll on a timer rather than rAF: a tab
-    // opened in the background gets no animation frames at all, and the skip
-    // link has to be correct by the time that tab is brought forward.
+    // The skip link in index.html has to point at Daylight's main element.
+    // It targets `#main-content` (a default that predates Daylight), so
+    // retarget it once the design has mounted. Poll on a timer rather than
+    // rAF: a tab opened in the background gets no animation frames at all,
+    // and the link has to be correct by the time that tab is fronted.
     useEffect(() => {
-        if (skin === "signature") return;
         let tries = 0;
         let timer = 0;
         const settle = () => {
             const prepaint = document.getElementById("prepaint-skip");
             if (!prepaint) return;
-            const own = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')]
-                .find((a) => a !== prepaint && /skip to/i.test(a.textContent ?? ""));
-            if (own) { prepaint.remove(); return; }      // the design brought its own
             const main = document.querySelector("main[id]");
             if (main) { prepaint.setAttribute("href", `#${main.id}`); return; }
             if (++tries < 40) timer = window.setTimeout(settle, 50);
         };
         settle();
         return () => window.clearTimeout(timer);
-    }, [skin]);
+    }, []);
 
-    // ?skin=<id> makes a theme directly linkable, which is the only way to
-    // reach one without clicking through the dock.
-    useEffect(() => {
-        const wanted = new URLSearchParams(window.location.search).get("skin");
-        if (isSkinId(wanted) && wanted !== skin) setSkin(wanted);
-    }, [skin, setSkin]);
+    // The mounted house pages (Pipeline, Batch, Status, My Stuff, the tool
+    // components, the banners) link by path — <a href="/batch">, router
+    // <Link>s. Daylight navigates by hash, and only load/popstate go through
+    // the withPathRoutes bridge, so an unintercepted click would change the
+    // URL without changing the screen (router links) or trigger a full
+    // reload (plain anchors). Capture-phase, so it runs before react-router's
+    // own handler, which respects defaultPrevented.
+    const onClickCapture = (e: React.MouseEvent) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = (e.target as HTMLElement).closest?.("a");
+        if (!a) return;
+        const target = a.getAttribute("target");
+        if (target && target !== "_self") return;
+        const href = a.getAttribute("href") || "";
+        if (!href.startsWith("/") || href.startsWith("//")) return;
+        const path = href.split("?")[0].split("#")[0];
+        const hash = path === "/" ? "#/" : hashForPath(path);
+        if (!hash) return; // no mapping — let the browser navigate; the bridge handles it on load
+        e.preventDefault();
+        if (window.location.hash !== hash) window.location.hash = hash;
+        else window.scrollTo(0, 0);
+    };
 
-    if (skin === "signature") return null;
-    const App = APPS[skin];
-    if (!App) return null;
     return (
-        <>
-            <Suspense fallback={<div style={{ minHeight: "100dvh", background: "var(--bg0, var(--pt-bg, #04080B))" }} />}>
-                <App />
+        <div onClickCapture={onClickCapture}>
+            <Suspense fallback={null}>
+                <BackendStatusBanner />
+                {!onBatch && <BatchResumeBanner />}
             </Suspense>
-            <SkinDock />
-        </>
+            <DaylightApp />
+        </div>
     );
 }

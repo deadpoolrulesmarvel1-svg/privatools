@@ -4,103 +4,197 @@
  * Workshop touches: corner registration marks on dropzone, before/after
  * preview with a checkerboard transparency pattern on the "after" pane, and
  * a drag-handle slider that wipes between source and result for comparison.
+ * Multi-file via useMultiFileProcessor — the compare slider shows one result
+ * at a time (pick which via the chips); several results download as one ZIP.
  */
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Download, Loader2, AlertCircle, Eraser, CheckCircle2, X } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { downloadBlob, formatFileSize } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
+import { removeBackgroundLocal } from "@/lib/localBgRemove";
+
+const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".bmp"];
+const isImg = (f: File) => IMG_EXTS.some(e => f.name.toLowerCase().endsWith(e));
 
 export function BackgroundRemoverUI() {
-    const [file, setFile] = useState<File | null>(null);
-    const [previewSrc, setPreviewSrc] = useState<string | null>(null);
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-    const [resultUrl, setResultUrl] = useState<string | null>(null);
+    const proc = useMultiFileProcessor();
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const [sliderPct, setSliderPct] = useState(50);
+    const [engine, setEngine] = useState<"server" | "local">("server");
+    const [modelPct, setModelPct] = useState<number | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const ref = useRef<HTMLInputElement>(null);
 
-    // Defensive cleanup — if the user navigates away while a result blob is
-    // still live, revoke it so we don't leak the rendered URL.
-    useEffect(() => () => { if (resultUrl) URL.revokeObjectURL(resultUrl); }, [resultUrl]);
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const handleFile = (f: File) => {
-        setFile(f);
-        const reader = new FileReader();
-        reader.onload = () => setPreviewSrc(reader.result as string);
-        reader.readAsDataURL(f);
-    };
+    // Source preview for the first queued image (pre-processing).
+    const firstEntry = proc.entries[0] ?? null;
+    const firstFile = firstEntry?.file ?? null;
+    const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+    useEffect(() => {
+        if (!firstFile) { setPreviewSrc(null); return; }
+        const url = URL.createObjectURL(firstFile);
+        setPreviewSrc(url);
+        return () => URL.revokeObjectURL(url);
+    }, [firstFile]);
 
-    const canProcess = !!file && status !== "processing";
+    // Same naming as before: "nobg_<original name>".
+    const outNameFor = useCallback((name: string) => `nobg_${name || "image.png"}`, []);
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing");
-        setError(null);
-        try {
-            const res = await uploadFile("/remove-background", file);
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            setResultBlob(blob);
-            setResultUrl(url);
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't remove the background."));
-            setStatus("idle");
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, outNameFor(done[0].name));
+            return;
         }
-    }, [file]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: outNameFor(e.name),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), "archive_nobg.zip");
+        })();
+    }, [proc.entries, outNameFor]);
+
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/remove-background",
+            outputSuffix: "nobg",
+            outputExt: "png",
+            ...(engine === "local" ? {
+                // One at a time — the WASM model is single-threaded and each
+                // inference already saturates it.
+                concurrency: 1,
+                localProcess: (f: File) => removeBackgroundLocal(f, pct => setModelPct(pct)),
+            } : {}),
+        }, retry);
+        setModelPct(null);
+        setPhase("done");
+    }, [proc, engine]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
     }, [canProcess, process]);
 
+    // The result the compare slider shows — a picked done entry, or the first.
+    const doneEntries = proc.entries.filter(e => e.status === "done" && e.blob);
+    const selected = phase === "done" ? (doneEntries.find(e => e.id === selectedId) ?? doneEntries[0] ?? null) : null;
+    const selectedKey = selected?.id ?? null;
+    const [beforeUrl, setBeforeUrl] = useState<string | null>(null);
+    const [afterUrl, setAfterUrl] = useState<string | null>(null);
+    useEffect(() => {
+        if (!selected?.blob) { setBeforeUrl(null); setAfterUrl(null); return; }
+        const b = URL.createObjectURL(selected.file);
+        const a = URL.createObjectURL(selected.blob);
+        setBeforeUrl(b); setAfterUrl(a);
+        return () => { URL.revokeObjectURL(b); URL.revokeObjectURL(a); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedKey]);
+
     const reset = () => {
-        setFile(null); setPreviewSrc(null);
-        if (resultUrl) URL.revokeObjectURL(resultUrl);
-        setResultBlob(null); setResultUrl(null); setStatus("idle");
+        proc.reset();
+        setPhase("idle");
+        setSelectedId(null);
+        setSliderPct(50);
     };
 
-    if (status === "done" && resultUrl) return (
-        <div className="space-y-4">
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-                <div className="relative px-4 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between">
-                    <CornerMarks />
-                    <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
-                        <CheckCircle2 size={12} />
-                        Background removed
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="space-y-4">
+                <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                    <div className="relative px-4 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between">
+                        <CornerMarks />
+                        <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
+                            <CheckCircle2 size={12} />
+                            {isMulti
+                                ? <>Background removed — {proc.doneCount} of {proc.entries.length}{proc.failedCount > 0 && <span className="text-destructive"> · {proc.failedCount} failed</span>}</>
+                                : "Background removed"}
+                        </div>
+                        <button onClick={reset} className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
+                            Process another
+                        </button>
                     </div>
-                    <button onClick={reset} className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
-                        Process another
-                    </button>
-                </div>
-                <div className="p-5 space-y-3">
-                    <p className="font-medium text-[11.5px] text-muted-foreground">
-                        Drag the slider to compare
-                    </p>
-                    <BeforeAfterSlider
-                        before={previewSrc || ""}
-                        after={resultUrl}
-                        value={sliderPct}
-                        onChange={setSliderPct}
-                    />
-                </div>
-                <div className="px-5 pb-5">
-                    <button
-                        onClick={() => resultBlob && downloadBlob(resultBlob, `nobg_${file?.name || "image.png"}`)}
-                        className="btn-accent w-full sm:w-auto"
-                    >
-                        <Download size={13} /> Download PNG
-                    </button>
+                    {selected && afterUrl ? (
+                        <div className="p-5 space-y-3">
+                            {doneEntries.length > 1 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {doneEntries.map(e => {
+                                        const active = selected.id === e.id;
+                                        return (
+                                            <button
+                                                key={e.id}
+                                                onClick={() => setSelectedId(e.id)}
+                                                className={cn(
+                                                    "font-medium max-w-[180px] truncate rounded-md border px-2.5 py-1 text-[11.5px] transition-colors",
+                                                    active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                                                )}
+                                                title={e.name}
+                                            >
+                                                {e.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            <p className="font-medium text-[11.5px] text-muted-foreground">
+                                Drag the slider to compare
+                            </p>
+                            <BeforeAfterSlider
+                                before={beforeUrl || ""}
+                                after={afterUrl}
+                                value={sliderPct}
+                                onChange={setSliderPct}
+                            />
+                        </div>
+                    ) : (
+                        <div className="p-5">
+                            <p className="text-[13px] text-destructive">
+                                No image finished — retry the failed file{proc.failedCount === 1 ? "" : "s"} below.
+                            </p>
+                        </div>
+                    )}
+                    <div className="px-5 pb-5 flex flex-wrap items-center gap-2">
+                        {proc.doneCount > 0 && (
+                            <button
+                                onClick={downloadResults}
+                                className="btn-accent w-full sm:w-auto"
+                            >
+                                <Download size={13} /> Download {proc.doneCount > 1 ? `ZIP (${proc.doneCount})` : "PNG"}
+                            </button>
+                        )}
+                        {proc.failedCount > 0 && (
+                            <button
+                                onClick={() => void process(true)}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                            >
+                                Retry {proc.failedCount} failed
+                            </button>
+                        )}
+                    </div>
+                    {proc.failedCount > 0 && (
+                        <div className="px-5 pb-5 -mt-2 space-y-1.5">
+                            {proc.entries.filter(e => e.status === "failed").map(e => (
+                                <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
+                                    <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
+                                </p>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -108,19 +202,19 @@ export function BackgroundRemoverUI() {
             <div
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isImg); }}
                 onClick={() => ref.current?.click()}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button"
                 tabIndex={0}
-                aria-label="Upload image"
+                aria-label="Upload images"
                 className={cn(
                     "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-10 px-6 text-center group",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
                 <CornerMarks />
-                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
+                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isImg); e.target.value = ""; }} />
                 <div className={cn(
                     "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
                     drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
@@ -128,43 +222,91 @@ export function BackgroundRemoverUI() {
                     <Eraser size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {file ? "Replace image" : "Drop image to remove background"}
+                    {proc.entries.length ? "Add more images" : "Drop images to remove background"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">
-                    JPEG · PNG · WebP — AI runs on the server (your file is deleted after)
+                    {engine === "local"
+                        ? "JPEG · PNG · WebP — AI runs in your browser, images never upload"
+                        : "JPEG · PNG · WebP — AI runs on the server (your file is deleted after)"}
                 </p>
             </div>
 
+            {/* Engine: server model vs on-device model */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                    Where the AI runs
+                </div>
+                <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setEngine("server")}
+                        aria-pressed={engine === "server"}
+                        disabled={phase === "processing"}
+                        className={cn(
+                            "rounded-lg border p-3 text-left transition-colors",
+                            engine === "server" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                        )}
+                    >
+                        <span className="block text-[13.5px] font-medium text-foreground">On our server</span>
+                        <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                            No download, fastest first run. Images are processed in isolation and deleted after.
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setEngine("local")}
+                        aria-pressed={engine === "local"}
+                        disabled={phase === "processing"}
+                        className={cn(
+                            "rounded-lg border p-3 text-left transition-colors",
+                            engine === "local" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40",
+                        )}
+                    >
+                        <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
+                        <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                            Images never leave your browser. Downloads a ~44 MB model once, then works offline.
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Queue */}
+            {proc.entries.length > 0 && (
+                <MultiFileQueue
+                    entries={proc.entries}
+                    reorderable={false}
+                    onRemove={proc.removeFile}
+                    onReorder={proc.reorder}
+                    onClearAll={proc.clearAll}
+                    onRetryFailed={() => void process(true)}
+                    busy={phase === "processing"}
+                />
+            )}
+
             {/* Preview before processing */}
-            {previewSrc && file && (
+            {previewSrc && firstEntry && (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
                     <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
-                        <span>Source · {file.name}</span>
-                        <span>{formatFileSize(file.size)}</span>
+                        <span>Source · {firstEntry.name}{proc.entries.length > 1 ? " · first image" : ""}</span>
+                        <span>{formatFileSize(firstEntry.size)}</span>
                     </div>
                     <div className="p-4 flex items-center justify-center bg-paper-2/30">
                         <img src={previewSrc} alt="Preview" className="max-h-60 rounded-md object-contain" />
                     </div>
                     <div className="px-3 py-2 border-t border-border bg-paper-2/40 flex justify-end">
-                        <button onClick={reset} className="font-medium inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
+                        <button onClick={() => proc.removeFile(firstEntry.id)} className="font-medium inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
                             <X size={11} /> Remove
                         </button>
                     </div>
                 </div>
             )}
 
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />{error}
-                </div>
-            )}
-
-            {file && (
+            {proc.entries.length > 0 && (
                 <div className="flex items-center gap-3 flex-wrap">
-                    <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                        {status === "processing"
-                            ? <><Loader2 size={13} className="animate-spin" /> Removing background…</>
-                            : <><Eraser size={13} /> Remove background</>}
+                    <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        {phase === "processing"
+                            ? <><Loader2 size={13} className="animate-spin" /> {engine === "local" && modelPct !== null && modelPct < 100 ? `Downloading model — ${modelPct}%` : `Removing background… (${proc.doneCount}/${proc.entries.length})`}</>
+                            : <><Eraser size={13} /> Remove background{proc.entries.length > 1 ? ` — ${proc.entries.length} images` : ""}</>}
                     </button>
                     {canProcess && (
                         <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>

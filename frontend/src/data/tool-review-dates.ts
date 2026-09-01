@@ -19,6 +19,8 @@ export const TOOL_LAST_REVIEWED: Record<string, string> = {
   "redact-pdf": "2026-05-09",
   "smart-redact": "2026-05-13",
   "summarize-pdf": "2026-05-16",
+  "chat-with-pdf": "2026-09-01",
+  "transcribe-audio": "2026-09-01",
   "highlight-pdf": "2026-03-20",
   "image-compressor": "2026-05-11",
   "image-converter": "2026-04-15",

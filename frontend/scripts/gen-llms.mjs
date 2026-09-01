@@ -169,7 +169,8 @@ for (const g of nonPdfGroups) {
 }
 
 md += `\n## Recent Articles\n\nLong-form, opinionated guides on PDF tools, AI, and the web — none sponsored.\n`;
-for (const p of blogPosts.slice(0, 10)) {
+md += `\n### [The PrivaTools Blog](https://privatools.me/blog)\nAll guides and comparisons, newest first.\n`;
+for (const p of blogPosts) {
     md += `\n### [${p.title}](https://privatools.me/blog/${p.slug})\n`;
     md += `*Published ${p.publishedAt} · ${p.readTime}*\n\n`;
     md += `${p.tldr || p.description}\n`;
@@ -421,9 +422,12 @@ sitemap += entry(`${BASE}/privacy`, "2026-03-29", "0.4", "yearly");
 sitemap += entry(`${BASE}/terms`, "2026-03-29", "0.4", "yearly");
 sitemap += entry(`${BASE}/batch`, TODAY, "0.7", "weekly");
 sitemap += entry(`${BASE}/pipeline`, TODAY, "0.7", "weekly");
+sitemap += entry(`${BASE}/security`, TODAY, "0.6", "monthly");
+sitemap += entry(`${BASE}/support`, TODAY, "0.4", "monthly");
+sitemap += entry(`${BASE}/status`, TODAY, "0.3", "weekly");
 sitemap += entry(`${BASE}/compare`, TODAY, "0.7", "monthly");
 sitemap += entry(`${BASE}/blog`, TODAY, "0.8", "weekly");
-let urlCount = 8;
+let urlCount = 11;
 
 // Blog posts
 for (const p of blogPosts) {

@@ -1,18 +1,18 @@
 /**
  * ProtectUI — apply password + permission flags to one or more PDFs.
  * Workshop: signal-green dropzone, vault-style password panel with strength meter,
- * 3 permission switches, multi-file queue.
+ * 3 permission switches, multi-file queue via useMultiFileProcessor.
+ * Batch semantic: every file in the queue gets the SAME password.
  */
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, Shield, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Shield, LockKeyhole, RotateCcw, Sparkles, Download } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { VaultPasswordPicker } from "@/components/VaultPasswordPicker";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-
-type ProtectFile = { id: string; name: string; size: string; raw: File };
-let fileId = 0;
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 function getStrength(pw: string) {
     if (!pw) return { level: "—", pct: 0, tone: "muted", score: 0 } as const;
@@ -54,15 +54,6 @@ function generatePassword(): string {
     return out.join("");
 }
 
-function humanizeError(raw: string | undefined): string {
-    if (!raw) return "Protection failed — please try again";
-    const lower = raw.toLowerCase();
-    if (lower.includes("size") || lower.includes("too large")) return "PDF is too large — try compressing it first";
-    if (lower.includes("encrypted") || lower.includes("already")) return "PDF is already password-protected — unlock it first";
-    if (lower.includes("network") || lower.includes("fetch")) return "Network hiccup — check your connection and retry";
-    return raw;
-}
-
 const PROTECT_DEFAULTS: { allowPrint: boolean; allowExtract: boolean; allowModify: boolean } = {
     allowPrint: true,
     allowExtract: false,
@@ -75,49 +66,45 @@ export function ProtectUI() {
     const setAllowPrint = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowPrint"]>) => setField("allowPrint", v), [setField]);
     const setAllowExtract = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowExtract"]>) => setField("allowExtract", v), [setField]);
     const setAllowModify = useCallback((v: React.SetStateAction<typeof PROTECT_DEFAULTS["allowModify"]>) => setField("allowModify", v), [setField]);
-    const [files, setFiles] = useState<ProtectFile[]>([]);
+    const proc = useMultiFileProcessor();
     const [password, setPassword] = useState("");
     const [showPw, setShowPw] = useState(false);
 
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const [justGenerated, setJustGenerated] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
     const pwRef = useRef<HTMLInputElement>(null);
 
     const strength = useMemo(() => getStrength(password), [password]);
+    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
     // Auto-focus password field once a file is queued
     useEffect(() => {
-        if (files.length > 0 && !password) pwRef.current?.focus();
-    }, [files.length, password]);
+        if (proc.entries.length > 0 && !password) pwRef.current?.focus();
+    }, [proc.entries.length, password]);
 
-    const addFiles = (fl: FileList) => {
-        const next: ProtectFile[] = Array.from(fl)
-            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
-            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
-        if (next.length) { setFiles(prev => [...prev, ...next]); setState("idle"); setError(null); }
-    };
-    const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-    const canProcess = files.length > 0 && !!password && state !== "processing";
+    const canProcess = proc.entries.length > 0 && !!password && phase !== "processing";
 
-    const process = useCallback(async () => {
-        if (!files.length || !password) return;
-        setState("processing"); setError(null);
-        try {
-            const outExt = files.length === 1 ? "pdf" : "zip";
-            const outName = buildOutputFilename(files[0]?.raw.name, "protected", outExt);
-            await processFilesAndDownload("/protect", files.map(f => f.raw), outName, {
-                password, allow_print: allowPrint, allow_extract: allowExtract, allow_modify: allowModify,
-            });
-            setState("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Protection failed";
-            setError(friendlyError(msg, "Couldn't password-protect that PDF."));
-            setState("idle");
+    const process = useCallback(async (retry = false) => {
+        if (!password) return;
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/protect",
+            outputSuffix: "protected",
+            outputExt: "pdf",
+            params: { password, allow_print: allowPrint, allow_extract: allowExtract, allow_modify: allowModify },
+        }, retry);
+        setPhase("done");
+    }, [proc, password, allowPrint, allowExtract, allowModify]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_protected");
         }
-    }, [files, password, allowPrint, allowExtract, allowModify]);
+    }, [phase, proc]);
 
     const handleGenerate = useCallback(() => {
         const pw = generatePassword();
@@ -129,13 +116,13 @@ export function ProtectUI() {
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    if (state === "done") return (
+    if (phase === "done") return (
         <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
             <div className="relative p-7 sm:p-9 animate-corner-extend">
                 <CornerMarks />
@@ -146,24 +133,47 @@ export function ProtectUI() {
                     <div className="flex-1 min-w-0">
                         <p className="section-mark mb-2">Locked</p>
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{files.length}</span> file{files.length !== 1 && "s"} protected
+                            <span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount !== 1 && "s"} protected{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}
                         </h2>
+                        {proc.doneCount > 0 && (
+                            <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                {proc.doneCount > 1 ? "ZIP downloaded · every file opens with the same password" : "PDF downloaded"}
+                            </p>
+                        )}
                         {/* You just encrypted a document — this is the moment
                             you most want the password remembered. */}
-                        {password && (
+                        {password && proc.doneCount > 0 && (
                             <div className="mt-5">
                                 <SavePasswordPrompt
                                     password={password}
-                                    suggestedLabel={files[0]?.name.replace(/\.pdf$/i, "") ?? ""}
+                                    suggestedLabel={proc.entries[0]?.name.replace(/\.pdf$/i, "") ?? ""}
                                 />
                             </div>
                         )}
-                        <button
-                            onClick={() => { setFiles([]); setState("idle"); setPassword(""); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Protect more
-                        </button>
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {proc.doneCount > 0 && (
+                                <button
+                                    onClick={() => proc.downloadAll("archive_protected")}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
+                                >
+                                    <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                </button>
+                            )}
+                            {proc.failedCount > 0 && (
+                                <button
+                                    onClick={() => { downloadedRef.current = false; void process(true); }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                >
+                                    Retry {proc.failedCount} failed
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { proc.reset(); setPhase("idle"); setPassword(""); downloadedRef.current = false; }}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                <RotateCcw size={12} /> Protect more
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -175,7 +185,7 @@ export function ProtectUI() {
             <div
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
                 onClick={() => ref.current?.click()}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button"
@@ -187,33 +197,25 @@ export function ProtectUI() {
                 )}
             >
                 <CornerMarks />
-                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
                 <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
                     <LockKeyhole size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select PDFs to protect"}</p>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{proc.entries.length ? "Add more files" : "Select PDFs to protect"}</p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · password + permissions · max {MAX_FILE_SIZE_LABEL}</p>
             </div>
 
-            {files.length > 0 && (
+            {proc.entries.length > 0 && (
                 <>
-                    <div className="space-y-2">
-                        {files.map((f, i) => (
-                            <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                                <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                                    <FileText size={15} className="text-accent" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
-                                </div>
-                                <button onClick={() => removeFile(f.id)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
-                                    <X size={13} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
 
                     {/* Password panel */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -294,9 +296,9 @@ export function ProtectUI() {
                                     Strong password generated · save it somewhere safe
                                 </p>
                             )}
-                            {!justGenerated && files.length > 1 && (
+                            {!justGenerated && proc.entries.length > 1 && (
                                 <p className="font-medium text-[11px] text-muted-foreground">
-                                    Same password applied to all {files.length} files
+                                    Every file gets this password.
                                 </p>
                             )}
                         </div>
@@ -336,17 +338,18 @@ export function ProtectUI() {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3">
-                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Protecting…</> : <><LockKeyhole size={13} /> Protect {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
+                        <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Protecting… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><LockKeyhole size={13} /> Protect {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
                         {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {proc.entries.length > 0 && !password && phase !== "processing" && (
+                            <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
+                                <AlertCircle size={11} /> Set a password first
+                            </span>
+                        )}
                     </div>
                 </>
             )}

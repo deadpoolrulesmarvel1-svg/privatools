@@ -67,29 +67,14 @@ describe("parity", () => {
         });
     }
 
-    it("every ported skin with an extension list has the file to back it", () => {
+    it("every skin with an extension list has the file to back it", () => {
         for (const skin of SKINS) {
-            // Signature is not a ported design — it is this app's own React
-            // routes, so it delivers extra surfaces as pages rather than
-            // through the generator seam and has no extensions file.
-            if (skin === "signature") continue;
             if (EXTENSION_SURFACES[skin].length === 0) continue;
             const file = resolve(__dirname, `../skins/extensions/${skin}.tsx`);
             expect(existsSync(file), `${skin} declares extension surfaces but ${file} does not exist`).toBe(true);
         }
     });
 
-    it("signature's extra surfaces exist as real routed pages", () => {
-        // The parity manifest is only as good as the files behind it.
-        for (const page of ["AccountPage", "VaultPage", "StatusPage", "SupportPage"]) {
-            const file = resolve(__dirname, `../pages/${page}.tsx`);
-            expect(existsSync(file), `${page}.tsx is missing`).toBe(true);
-        }
-        const app = readFileSync(resolve(__dirname, "../App.tsx"), "utf8");
-        for (const path of ["/account", "/account/keys", "/my-stuff/vault", "/status", "/support"]) {
-            expect(app, `App.tsx has no route for ${path}`).toContain(`path="${path}"`);
-        }
-    });
 });
 
 describe("outstanding work", () => {
@@ -112,7 +97,7 @@ describe("outstanding work", () => {
  * thing that makes it worth having, so the parts that matter are named here.
  */
 describe("account capability parity", () => {
-    const IMPORTED = SKINS.filter((s) => s !== "signature");
+    const IMPORTED = SKINS;
 
     // Each is a binding the markup must reference for the capability to exist.
     const REQUIRED = [
@@ -127,7 +112,12 @@ describe("account capability parity", () => {
     ];
 
     for (const skin of IMPORTED) {
-        const file = resolve(__dirname, `../skins/extensions/${skin}.html`);
+        // Generator skins carry their account markup in extensions/<id>.html;
+        // a hand-written skin carries it in its own SkinApp source. Same
+        // guard, same binding names — only where the markup lives differs.
+        const generated = resolve(__dirname, `../skins/extensions/${skin}.html`);
+        const handWritten = resolve(__dirname, `../skins/${skin}/SkinApp.tsx`);
+        const file = existsSync(generated) ? generated : handWritten;
         for (const [what, binding] of REQUIRED) {
             it(`${skin} ${what}`, () => {
                 expect(existsSync(file)).toBe(true);

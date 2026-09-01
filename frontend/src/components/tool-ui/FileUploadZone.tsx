@@ -10,7 +10,9 @@ interface FileUploadZoneProps {
     accept?: string;
     label?: string;
     hint?: string;
-    multiple?: false;
+    /** Accept many files at once; incoming batches go to onFilesSelect. */
+    multiple?: boolean;
+    onFilesSelect?: (files: File[]) => void;
     showPreview?: boolean;
     className?: string;
 }
@@ -22,7 +24,7 @@ function getFileIcon(name: string) {
     return FileIcon;
 }
 
-export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hint, showPreview, className }: FileUploadZoneProps) {
+export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hint, showPreview, className, multiple, onFilesSelect }: FileUploadZoneProps) {
     const [drag, setDrag] = useState(false);
     const [previewSrc, setPreviewSrc] = useState<string | null>(null);
     const ref = useRef<HTMLInputElement>(null);
@@ -37,6 +39,15 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
         }
         setPreviewSrc(null);
     }, [onFileSelect, showPreview]);
+
+    const handleIncoming = useCallback((list: FileList) => {
+        if (multiple && onFilesSelect) {
+            const all = Array.from(list);
+            if (all.length) onFilesSelect(all);
+            return;
+        }
+        if (list[0]) handleFile(list[0]);
+    }, [multiple, onFilesSelect, handleFile]);
 
     const IconComp = file ? getFileIcon(file.name) : Upload;
 
@@ -79,7 +90,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
         <div
             onDragOver={e => { e.preventDefault(); setDrag(true); }}
             onDragLeave={() => setDrag(false)}
-            onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
+            onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) handleIncoming(e.dataTransfer.files); }}
             onClick={() => ref.current?.click()}
             onKeyDown={e => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -105,7 +116,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
             )}
         >
             <CornerMarks />
-            <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }} />
+            <input ref={ref} type="file" accept={accept} multiple={multiple} className="hidden" onChange={e => { if (e.target.files?.length) handleIncoming(e.target.files); e.target.value = ""; }} />
             <div
                 aria-hidden="true"
                 className={cn(

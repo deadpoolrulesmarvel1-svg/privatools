@@ -1,4 +1,5 @@
 import {
+  Mic,
   ImageIcon, RefreshCw, UserX, Crop, Film,
   Music, Scissors, Video,
   Braces, GitCompare, KeyRound, Hash,
@@ -27,6 +28,8 @@ export interface NonPdfTool {
   /** Lower = shown earlier in the UI. Reflects relative search demand. */
   popularity?: number;
   clientOnly?: boolean;
+  /** Tool can optionally use the visitor's own AI API key (BYOK). */
+  byok?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -408,6 +411,14 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format mp3 wav ogg flac aac transcode audio format",
     popularity: 7,
     category: "video-audio", accepts: ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma", outputLabel: "converted audio",
+  },
+  {
+    slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
+    description: "Speech to text in your browser — or with your own AI key",
+    longDescription: "Transcribe audio to text online for free — meetings, voice notes, interviews. By default OpenAI Whisper runs entirely in your browser via WebAssembly: the model downloads once (~41 MB) and your recording never leaves the tab. Prefer higher accuracy? Use your own OpenAI or Groq key (or a self-hosted endpoint) and the audio goes straight from your browser to that provider, never through us. Timestamped transcript, plain-text download, and SRT subtitles included.",
+    synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",
+    popularity: 20,
+    category: "video-audio", clientOnly: true, byok: true, accepts: ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac", outputLabel: "transcript.txt",
   },
 
   // ── v1.2.0 additions ──────────────────────────────────────────────────────

@@ -466,6 +466,7 @@ const REGISTRY: Record<string, Renderer> = {
     "video-converter": Convert,
     "gif-to-mp4":     Convert,
     "audio-converter": Convert,
+    "transcribe-audio": Convert,
     "ocr-pdf":        Ocr,
     "image-ocr":      Ocr,
     "highlight-pdf":  Highlight,
@@ -475,6 +476,7 @@ const REGISTRY: Record<string, Renderer> = {
     "sanitize-pdf":   Lock,
     "unlock-pdf":     Unlock,
     "summarize-pdf":  Summarize,
+    "chat-with-pdf":  Summarize,
     "smart-redact":   Lock,
     // Non-PDF
     "image-compressor": ImageCompress,

@@ -2,17 +2,21 @@
  * RemoveExifUI — scrub EXIF / XMP metadata from a batch of images.
  * Workshop: signal-green dropzone, batch file list with per-file metadata
  * preview chips, privacy receipt.
+ * Multi-file via useMultiFileProcessor — one request per image; several
+ * results download as one ZIP.
  */
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Loader2, AlertCircle, X, Image as ImageIcon, CheckCircle2, RotateCcw, DatabaseZap, MapPin } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { processAndDownload, processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { Loader2, AlertCircle, X, Image as ImageIcon, CheckCircle2, RotateCcw, DatabaseZap, MapPin, Download } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 
 type ExifProbe = { hasExif: boolean; hasXmp: boolean; hasGps: boolean };
-type ExifFile = { id: string; name: string; size: string; raw: File; probe?: ExifProbe };
-let fileId = 0;
 
 const STRIPPED = ["GPS coordinates", "Camera model", "Lens info", "Timestamps", "Software fingerprint"];
+
+const isImg = (f: File) => /\.(jpe?g|png|webp|tiff?)$/i.test(f.name);
 
 /**
  * Cheap-and-cheerful sniff: scan the first 256 KB for the JPEG EXIF marker,
@@ -43,62 +47,76 @@ async function probeExif(file: File): Promise<ExifProbe> {
 }
 
 export function RemoveExifUI() {
-    const [files, setFiles] = useState<ExifFile[]>([]);
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
+    const proc = useMultiFileProcessor();
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
-    const addFiles = (fl: FileList) => {
-        const next: ExifFile[] = Array.from(fl)
-            .filter(f => /\.(jpe?g|png|webp|tiff?)$/i.test(f.name))
-            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
-        if (next.length) { setFiles(prev => [...prev, ...next]); setStatus("idle"); setError(null); }
-    };
-    const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-
-    // Probe each newly added file once. The result is cached on the row.
+    // Probe each newly added file once. Results are cached by queue-entry id.
+    const [probes, setProbes] = useState<Record<string, ExifProbe>>({});
+    const probesRef = useRef<Record<string, ExifProbe>>({});
+    probesRef.current = probes;
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            for (const f of files) {
-                if (f.probe) continue;
-                const probe = await probeExif(f.raw);
+            for (const e of proc.entries) {
+                if (probesRef.current[e.id]) continue;
+                const probe = await probeExif(e.file);
                 if (cancelled) return;
-                setFiles(prev => prev.map(x => x.id === f.id ? { ...x, probe } : x));
+                setProbes(prev => prev[e.id] ? prev : { ...prev, [e.id]: probe });
             }
         })();
         return () => { cancelled = true; };
-    }, [files]);
+    }, [proc.entries]);
 
-    const canProcess = files.length > 0 && status !== "processing";
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async () => {
-        if (!files.length) return;
-        setStatus("processing"); setError(null);
-        try {
-            if (files.length === 1) {
-                await processAndDownload("/remove-exif", files[0].raw, `clean_${files[0].name}`);
-            } else {
-                await processFilesAndDownload("/remove-exif", files.map(f => f.raw), buildOutputFilename(files[0]?.raw.name, "clean", "zip"));
-            }
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't strip EXIF from those images."));
-            setStatus("idle");
+    // Same naming as before: "clean_<original name>".
+    const outNameFor = useCallback((name: string) => `clean_${name}`, []);
+
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, outNameFor(done[0].name));
+            return;
         }
-    }, [files]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: outNameFor(e.name),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), buildOutputFilename(done[0].name, "clean", "zip"));
+        })();
+    }, [proc.entries, outNameFor]);
+
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/remove-exif",
+            outputSuffix: "clean",
+            outputExt: "jpg",
+        }, retry);
+        setPhase("done");
+    }, [proc]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            downloadResults();
+        }
+    }, [phase, proc.doneCount, downloadResults]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
     }, [canProcess, process]);
 
-    if (status === "done") return (
+    if (phase === "done") return (
         <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
             <div className="relative p-7 sm:p-9 animate-corner-extend">
                 <CornerMarks />
@@ -109,14 +127,43 @@ export function RemoveExifUI() {
                     <div className="flex-1 min-w-0">
                         <p className="section-mark mb-2">EXIF stripped</p>
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{files.length}</span> image{files.length !== 1 && "s"} cleaned
+                            <span className="italic text-accent">{proc.doneCount}</span> image{proc.doneCount !== 1 && "s"} cleaned{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}
                         </h2>
-                        <button
-                            onClick={() => { setFiles([]); setStatus("idle"); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Clean more
-                        </button>
+                        {proc.doneCount > 0 && (
+                            <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                {proc.doneCount > 1 ? "ZIP downloaded" : "Downloaded"}
+                            </p>
+                        )}
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {proc.doneCount > 0 && (
+                                <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                    <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                </button>
+                            )}
+                            {proc.failedCount > 0 && (
+                                <button
+                                    onClick={() => { downloadedRef.current = false; void process(true); }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                >
+                                    Retry {proc.failedCount} failed
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                <RotateCcw size={12} /> Clean more
+                            </button>
+                        </div>
+                        {proc.failedCount > 0 && (
+                            <div className="mt-4 space-y-1.5">
+                                {proc.entries.filter(e => e.status === "failed").map(e => (
+                                    <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
+                                        <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
+                                    </p>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -128,7 +175,7 @@ export function RemoveExifUI() {
             <div
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isImg); }}
                 onClick={() => ref.current?.click()}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button" tabIndex={0} aria-label="Upload images"
@@ -138,30 +185,30 @@ export function RemoveExifUI() {
                 )}
             >
                 <CornerMarks />
-                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.tiff" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.tiff" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isImg); e.target.value = ""; }} />
                 <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
                     <DatabaseZap size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more images" : "Select images to scrub"}</p>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{proc.entries.length ? "Add more images" : "Select images to scrub"}</p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">JPEG · PNG · WebP · TIFF · multi-file batch</p>
             </div>
 
-            {files.length > 0 && (
+            {proc.entries.length > 0 && (
                 <>
                     <div className="space-y-2">
-                        {files.map((f, i) => {
-                            const probed = f.probe;
+                        {proc.entries.map((e, i) => {
+                            const probed = probes[e.id];
                             const clean = probed && !probed.hasExif && !probed.hasXmp && !probed.hasGps;
                             return (
-                                <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                                <div key={e.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
                                     <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                     <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                                         <ImageIcon size={15} className="text-accent" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
+                                        <p className="text-[14px] font-medium text-foreground truncate">{e.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                            <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">{formatFileSize(e.size)}</span>
                                             {!probed && <span className="font-medium text-[11px] tracking-wider text-muted-foreground">scanning…</span>}
                                             {probed?.hasExif && (
                                                 <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300">EXIF</span>
@@ -177,9 +224,23 @@ export function RemoveExifUI() {
                                             {clean && (
                                                 <span className="font-medium inline-flex items-center h-4 px-1.5 rounded text-[9.5px] tracking-wider bg-accent/15 text-accent">Clean</span>
                                             )}
+                                            {e.status === "running" && (
+                                                <span className="font-medium inline-flex items-center gap-1 text-[9.5px] tracking-wider text-accent"><Loader2 size={10} className="animate-spin" /> Running</span>
+                                            )}
+                                            {e.status === "done" && (
+                                                <span className="font-medium inline-flex items-center gap-1 text-[9.5px] tracking-wider text-accent"><CheckCircle2 size={10} /> Done</span>
+                                            )}
+                                            {e.status === "failed" && (
+                                                <span className="font-medium inline-flex items-center gap-1 text-[9.5px] tracking-wider text-destructive" title={e.error || ""}><AlertCircle size={10} /> Failed{e.error ? ` · ${e.error}` : ""}</span>
+                                            )}
                                         </div>
                                     </div>
-                                    <button onClick={() => removeFile(f.id)} className="h-8 w-8 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label={`Remove ${f.name}`}>
+                                    <button
+                                        onClick={() => proc.removeFile(e.id)}
+                                        disabled={phase === "processing"}
+                                        className="h-8 w-8 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30"
+                                        aria-label={`Remove ${e.name}`}
+                                    >
                                         <X size={13} />
                                     </button>
                                 </div>
@@ -201,15 +262,11 @@ export function RemoveExifUI() {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3 flex-wrap">
-                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Stripping…</> : <><DatabaseZap size={13} /> Remove EXIF from {files.length > 1 ? `${files.length} images` : "image"}</>}
+                        <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Stripping… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><DatabaseZap size={13} /> Remove EXIF from {proc.entries.length > 1 ? `${proc.entries.length} images` : "image"}</>}
                         </button>
                         {canProcess && (
                             <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>

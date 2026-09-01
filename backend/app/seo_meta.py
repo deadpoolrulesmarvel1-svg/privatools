@@ -7,6 +7,7 @@ executing JavaScript.
 """
 from __future__ import annotations
 import json
+import logging
 import re
 from datetime import date
 from functools import lru_cache
@@ -31,18 +32,45 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
-        "PrivaTools privacy policy: files processed in isolated temporary storage and deleted on "
-        "response. No account needed, no ads; anonymous pageview telemetry only. Updated May 15, 2026.",
+        "PrivaTools privacy policy: local-first tools, isolated temporary processing deleted on "
+        "response, on-device AI models, and bring-your-own-key AI that talks to your provider "
+        "directly — never through us. Updated September 1, 2026.",
     ),
     "/security": (
         "Security & Trust — PrivaTools",
-        "PrivaTools security, threat model, transparency, GDPR rights, and vulnerability reporting "
-        "details for the privacy-first file tool suite.",
+        "Security and threat model as verifiable promises: local tools upload nothing, server tools "
+        "disclose themselves first, AI keys go only to your provider under a scoped "
+        "content-security policy — every claim ships with the check that proves it.",
     ),
     "/terms": (
         "Terms of Service — PrivaTools",
         "Terms of service for PrivaTools — open-source under MIT license, no account "
         "required, no warranty. You retain rights to your files.",
+    ),
+    "/support": (
+        "Support — PrivaTools",
+        "Owner-funded means owner-answered: report a bug, ask a privacy question, or check "
+        "the status page. A person reads every message — no ticket maze, no chatbot.",
+    ),
+    "/status": (
+        "Status — PrivaTools",
+        "Live status for PrivaTools processing paths — local tools always work in your "
+        "browser; this page tracks the server-backed ones honestly.",
+    ),
+    "/account": (
+        "Account — PrivaTools",
+        "The optional developer account: API keys and quota, nothing else. Every tool on "
+        "PrivaTools works without an account.",
+    ),
+    "/account/keys": (
+        "API Keys — PrivaTools",
+        "Create and manage PrivaTools developer API keys. Accounts exist only for the API — "
+        "the tools themselves never ask for one.",
+    ),
+    "/my-stuff/vault": (
+        "Password Vault — PrivaTools",
+        "Saved PDF passwords, encrypted on this device with a key your browser will not "
+        "export. Import, review, or erase them — nothing syncs, nothing uploads.",
     ),
     "/my-stuff": (
         "My Stuff — PrivaTools",
@@ -51,8 +79,9 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     ),
     "/about": (
         "About PrivaTools — How We Handle Your Files | Privacy-First",
-        "How PrivaTools processes your files with zero-knowledge architecture. Files "
-        "are processed and immediately deleted — never stored or shared. 100% open source.",
+        "Owner-funded, open-source file tools built on one rule: your documents are yours. "
+        "Browser-first processing, disclosed server fallback, and AI without surrender — "
+        "on-device models or your own API key, never our middleman.",
     ),
     "/batch": (
         "Batch Process Files — Apply Tools to Many Files | PrivaTools",
@@ -220,12 +249,80 @@ _STATIC_META: dict[str, tuple[str, str]] = {
 # known page (indexed) or unknown (noindex + 404). /my-stuff is a per-device
 # management screen with no content value — surfacing it in search results
 # would be confusing, and it must also stay out of the sitemap.
-NOINDEX_PATHS: frozenset[str] = frozenset({"/my-stuff"})
+NOINDEX_PATHS: frozenset[str] = frozenset({
+    "/my-stuff",
+    "/my-stuff/vault",
+    "/account",
+    "/account/keys",
+})
 
 # ---------------------------------------------------------------------------
 # Blog post metadata  (slug → post info dict)
 # ---------------------------------------------------------------------------
 _BLOG_POSTS: dict[str, dict] = {
+    "transcribe-audio-free-no-upload": {
+        "title": "Transcribe Audio to Text Free — Without Uploading the Recording",
+        "description": "Run OpenAI's Whisper model inside your browser to transcribe meetings, interviews, and voice notes for free — the recording never uploads. Timestamps, .txt and .srt export, an own-key option for higher accuracy, and the honest limits of both paths.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["AI", "Audio", "Privacy", "How-To"],
+    },
+    "ocr-scanned-pdf-free-three-ways": {
+        "title": "OCR a Scanned PDF Free: Three Engines, and When Each Wins",
+        "description": "PrivaTools OCR PDF ships three engines: server Tesseract with searchable-PDF output, in-browser tesseract.js where nothing uploads, and vision AI through your own key for hard scans. A decision guide, with a trade-off table.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["PDF", "OCR", "AI", "How-To"],
+    },
+    "translate-pdf-free-private": {
+        "title": "Translate a PDF for Free — Without Uploading It",
+        "description": "PrivaTools Translate PDF runs OPUS-MT translation models inside your browser — about 107 MB per language pair, downloaded once — or translates between 30 languages through your own AI key with automatic source detection. What each path sends, and the one Save-as-PDF caveat.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["PDF", "AI", "Privacy", "How-To"],
+    },
+    "bring-your-own-ai-key-guide": {
+        "title": "Bring Your Own AI Key: The 10-Minute Setup Guide",
+        "description": "What bring-your-own-key means, where all eight supported providers issue API keys, the self-hosted Ollama path, where the key is stored, what tasks really cost, and how to verify with DevTools that requests go straight from your browser to your provider.",
+        "publishedAt": "2026-09-01",
+        "readTime": "9 min read",
+        "tags": ["AI", "Privacy", "How-To"],
+    },
+    "batch-process-files-free": {
+        "title": "Batch-Process Files for Free: 25 at a Time, No Quotas",
+        "description": "Around 160 of PrivaTools' 221 tools take up to 25 files per run — per-file status, retry-failed, one ZIP. The /batch page swallows folder drops, /pipeline chains tools into one pass, and none of it is metered. How it works, honestly.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["Productivity", "PDF", "Image", "How-To"],
+    },
+    "chatpdf-alternatives-private": {
+        "title": "ChatPDF Alternatives That Don't Keep Your Documents",
+        "description": "Hosted chat-with-PDF services work by holding your file: upload, retention, their model, a subscription above the free tier. Here are the private alternatives — bring-your-own-key chat, an on-device summarizer, or a model on your own machine — with honest pros for both sides.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["AI", "PDF", "Comparison", "Privacy"],
+    },
+    "chat-with-pdf-free-private": {
+        "title": "How to Chat With a PDF for Free — Without Uploading It",
+        "description": "Ask questions about any PDF using your own AI key: the text is extracted in your browser and each question goes straight to the provider you choose, never through PrivaTools. Costs, honest limits, and how it compares with hosted chat services.",
+        "publishedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["AI", "PDF", "Privacy", "How-To"],
+    },
+    "ai-pdf-tools-no-upload-byok": {
+        "title": "AI PDF Tools, No Upload Required: Your Own Key or On-Device Models",
+        "description": "PrivaTools runs AI two ways without an upload middleman: your own API key, sent browser-to-provider, or free on-device models that download once and then work offline. What each tool uses, model sizes, and how to verify it all in DevTools.",
+        "publishedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["AI", "Privacy", "Engineering"],
+    },
+    "remove-background-without-uploading": {
+        "title": "Remove an Image Background Without Uploading It Anywhere",
+        "description": "PrivaTools' Background Remover can run the RMBG-1.4 model in your browser — a ~44 MB one-time download that then works offline — with a server engine as the no-download alternative. How that compares with remove.bg's upload model.",
+        "publishedAt": "2026-09-01",
+        "readTime": "6 min read",
+        "tags": ["Image", "AI", "Privacy", "How-To"],
+    },
     "compress-pdf-without-losing-quality": {
         "title": "How to Compress a PDF Without Losing Quality",
         "description": "Learn how to reduce PDF file size by up to 90% without visible quality loss. Three methods compared: online tools, desktop apps, and command-line.",
@@ -331,6 +428,59 @@ _BLOG_POSTS: dict[str, dict] = {
         "readTime": "8 min read",
         "tags": ["JWT", "Developer", "Security", "How-To"],
     },
+    "how-local-first-works": {
+        "title": "How Local-First File Tools Actually Work",
+        "description": "Your browser can parse, render and rewrite most file formats on its own. Where the local/server line really sits — and why some jobs still need one.",
+        "publishedAt": "2026-08-14",
+        "readTime": "6 min read",
+        "tags": ["Engineering", "Privacy"],
+    },
+    "what-deleted-means": {
+        "title": "What \u201cDeleted After Use\u201d Means on Our Servers",
+        "description": "A promise you can't verify from a network tab deserves a precise definition. This is ours, mechanism by mechanism.",
+        "publishedAt": "2026-07-02",
+        "readTime": "4 min read",
+        "tags": ["Trust", "Privacy"],
+    },
+    "reading-privacy-policies": {
+        "title": "Reading a File Tool\u2019s Privacy Policy in 60 Seconds",
+        "description": "Four questions cut through any policy: where files go, how long they stay, who else runs code on the page, and what's behind the free tier.",
+        "publishedAt": "2026-05-21",
+        "readTime": "5 min read",
+        "tags": ["Guides", "Privacy"],
+    },
+    "privatools-vs-ilovepdf": {
+        "title": "PrivaTools vs iLovePDF (2026): The Fine Print, Compared",
+        "description": "iLovePDF is the biggest name in online PDF tools. We compared free tiers, file handling, limits and privacy line by line — here's where each one wins.",
+        "publishedAt": "2026-08-20",
+        "updatedAt": "2026-09-01",
+        "readTime": "8 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-smallpdf": {
+        "title": "PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope",
+        "description": "Smallpdf pioneered the clean one-task-one-page PDF site. We compared its free tier, limits and file handling against PrivaTools, line by line.",
+        "publishedAt": "2026-08-24",
+        "updatedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-sejda": {
+        "title": "PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question",
+        "description": "Sejda's PDF editor is the best free one on the web — for three tasks an hour. We compared its limits, retention and privacy with PrivaTools.",
+        "publishedAt": "2026-08-27",
+        "updatedAt": "2026-09-01",
+        "readTime": "7 min read",
+        "tags": ["Comparison", "PDF"],
+    },
+    "privatools-vs-ihatepdf": {
+        "title": "PrivaTools vs ihatepdf (2026): When Both Sides Are Private",
+        "description": "ihatepdf processes everything in your browser — the same privacy bet we make. So the comparison comes down to catalogue depth, heavy jobs and the details.",
+        "publishedAt": "2026-08-30",
+        "updatedAt": "2026-09-01",
+        "readTime": "6 min read",
+        "tags": ["Comparison", "PDF"],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -358,7 +508,13 @@ def _load_blog_bodies(_mtime_ns: int) -> dict[str, dict]:
     try:
         if _BLOG_JSON.exists():
             with _BLOG_JSON.open("r", encoding="utf-8") as _f:
-                return {p["slug"]: p for p in json.load(_f)}
+                data = {p["slug"]: p for p in json.load(_f)}
+            if len(data) != len(_BLOG_POSTS):
+                logging.getLogger(__name__).warning(
+                    "blog-content.json carries %d posts but _BLOG_POSTS has %d — "
+                    "the difference gets title-only SSR (rebuild the frontend)",
+                    len(data), len(_BLOG_POSTS))
+            return data
     except Exception:
         # Missing or malformed blog-content.json must not crash the app — fall
         # back to the lighter title-only SSR rendering.
@@ -435,7 +591,7 @@ _POPULARITY: dict[str, int] = {
     "pdf-to-long-image": 146,
     # ── PDF: advanced ──────────────────────────────────────────────────
     "ocr-pdf": 160, "compare-pdf": 161, "fill-form": 162, "extract-images": 163,
-    "summarize-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
+    "summarize-pdf": 164, "chat-with-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
     "nup": 167, "overlay": 168, "alternate-mix": 169, "form-creator": 170,
     "pdf-to-pdfa": 171,
     # ── non-PDF: image ─────────────────────────────────────────────────
@@ -449,7 +605,7 @@ _POPULARITY: dict[str, int] = {
     "generate-favicon": 236, "qr-reader": 237, "video-to-gif": 238,
     # ── non-PDF: video-audio ───────────────────────────────────────────
     "mp4-to-mp3": 250, "compress-video": 251, "video-converter": 252,
-    "mov-to-mp4": 253, "trim-media": 254, "audio-converter": 255,
+    "mov-to-mp4": 253, "trim-media": 254, "audio-converter": 255, "transcribe-audio": 255,
     "extract-audio": 256, "m4a-to-mp3": 257, "avi-to-mp4": 258,
     "webm-to-mp4": 259, "mp4-to-webm": 260, "gif-to-mp4": 261,
     "video-to-pdf": 262, "video-resizer": 263, "video-thumbnail": 264,
@@ -626,6 +782,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "overlay":          "Upload a background PDF and a foreground PDF — download a copy with foreground stamped over every background page.",
     "alternate-mix":    "Upload two PDFs and download a copy that interleaves their pages (1A, 1B, 2A, 2B…) — useful for un-imposing two-sided scans.",
     "summarize-pdf":    "Upload a PDF, click Summarize, and read the summary right on the page — DistilBART runs entirely in your browser by default, no upload. Optionally bring your own AI key for a stronger model.",
+    "chat-with-pdf":    "Drop a PDF, add your own AI key once, and ask questions in plain language — the text is extracted in your browser and each question goes straight to your provider, never through our servers.",
     # ── To PDF: high-volume converters ─────────────────────────────────
     "excel-to-pdf":     "Upload an .xlsx and download a PDF copy with the same formatting — works for multi-sheet workbooks.",
     "pptx-to-pdf-convert":"Upload a .pptx and download a one-slide-per-page PDF — perfect for handouts.",
@@ -658,6 +815,7 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "video-to-pdf":     "Upload a video and download a PDF where each page is a frame sampled at your chosen interval — great for highlight reels.",
     "video-to-gif":     "Upload a short video (MP4/MOV/WebM) and download an animated GIF — pick FPS and width.",
     "audio-converter":  "Upload an audio file and pick a target format (MP3/WAV/OGG/FLAC/AAC) + bitrate — FFmpeg converts server-side.",
+    "transcribe-audio": "Drop a recording and click Transcribe — Whisper runs in your browser by default (downloads once, then offline), or use your own OpenAI/Groq key for higher accuracy. Download the transcript as text or SRT subtitles.",
     "video-merge":      "Upload 2+ videos and download a single merged video — concatenates in upload order.",
     "audio-merge":      "Upload 2+ audio files and download a single merged track — concatenates in upload order.",
     "extract-audio":    "Upload a video file and download just the audio track — pick MP3, WAV, AAC, or FLAC.",
@@ -886,6 +1044,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly, so the document is not uploaded anywhere. Optionally use your own OpenAI, Anthropic or Gemini key for a stronger model; the text then goes straight from your browser to that provider and still never through our servers."),
+    "chat-with-pdf":  ("Chat with PDF (AI)",  "Chat with a PDF online free — ask questions and get answers grounded in the document. Text extraction happens in your browser and questions go directly to the AI provider you choose with your own API key (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, or self-hosted). The PDF never touches our servers."),
     "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free. Emails, phone numbers, SSNs and card numbers are always found in your browser by pattern matching. Names and addresses are found by a local BERT-NER model, or optionally by your own AI key — and anything the pattern pass already found is masked before any text is sent. You review every suggestion before the backend permanently applies the approved redactions."),
     # v1.2.0 additions
     "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
@@ -945,6 +1104,7 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "url-encoder":        ("URL Encoder / Decoder", "Encode or decode URLs online for free — percent-encode strings for use in query parameters, or decode %20/%26/etc back to readable text. Runs entirely in your browser. For JWT decoding, use the dedicated JWT Decoder."),
     # v1.1.0 / v1.2.0 additions
     "audio-converter":    ("Audio Converter",    "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported."),
+    "transcribe-audio":   ("Transcribe Audio (AI)", "Transcribe audio to text online free — OpenAI Whisper runs entirely in your browser via WebAssembly, so meetings and voice notes are never uploaded. Optionally use your own OpenAI or Groq key for higher accuracy; the audio then goes straight from your browser to that provider. Timestamps, plain text, and SRT subtitles included."),
     "image-upscaler":     ("Image Upscaler",     "Upscale images online for free — enlarge photos by 2x or 4x using high-quality Lanczos resampling. Supports JPG, PNG, and WebP. Perfect for improving resolution of small images, thumbnails, or screenshots."),
     "heic-to-png":        ("HEIC to PNG",        "Convert HEIC to PNG online for free — change Apple's High Efficiency Image format (the default for iPhone photos) to PNG, which every browser and editor can open. Free, private, no sign-up."),
     "webp-to-jpg":        ("WebP to JPG",        "Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately."),
@@ -1608,6 +1768,25 @@ _NOT_FOUND_META: tuple[str, str] = (
 )
 
 
+# The tool total is derived, never written down — the site once advertised a
+# count it didn't ship. Patch the two module-top literals that predate the
+# registries being defined.
+_TOTAL_TOOLS = len(_PDF_TOOLS) + len(_NONPDF_TOOLS)
+_STATIC_META["/"] = (
+    _STATIC_META["/"][0],
+    f"{_TOTAL_TOOLS} free, open-source file tools for PDF, image, video, audio, and developer "
+    "work. AI two private ways — on-device models or your own API key. Browser-only when "
+    "possible; isolated temporary processing when needed.",
+)
+_NOT_FOUND_META = (_NOT_FOUND_META[0], _NOT_FOUND_META[1].replace("213", str(_TOTAL_TOOLS)))
+# Compare-page descriptions predate the registries too; normalise every stale
+# hand-written count to the derived one.
+_STATIC_META = {
+    k: (t, d.replace("213 tools", f"{_TOTAL_TOOLS} tools")
+            .replace("213 privacy-first tools", f"{_TOTAL_TOOLS} privacy-first tools"))
+    for k, (t, d) in _STATIC_META.items()
+}
+
 @lru_cache(maxsize=512)
 def get_meta_for_path(path: str) -> tuple[str, str]:
     """Return (title, description) for the given URL path.
@@ -1646,6 +1825,13 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
     if path.startswith("/blog/"):
         if path in _STATIC_META:
             return _STATIC_META[path]
+        # Fall back to the post registry so a post never needs a second,
+        # hand-maintained _STATIC_META entry — the drift that shipped seven
+        # sitemap-advertised posts with a 404 title on an HTTP-200 page.
+        slug = path.removeprefix("/blog/")
+        post = _BLOG_POSTS.get(slug)
+        if post:
+            return (f"{post['title']} | PrivaTools", post["description"])
         return _NOT_FOUND_META
 
     # /compare/<slug>
@@ -1748,7 +1934,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "name": "PrivaTools",
                     "description": description,
                     "inLanguage": "en",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                     "potentialAction": {
                         "@type": "SearchAction",
                         "target": {"@type": "EntryPoint", "urlTemplate": f"{BASE_URL}/?q={{search_term_string}}"},
@@ -2098,7 +2284,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "name": "PrivaTools",
                     "url": BASE_URL,
                 },
-                "publisher": {"@id": f"{BASE_URL}/#organization"},
+                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 "mainEntityOfPage": {
                     "@type": "WebPage",
                     "@id": canonical_url,
@@ -2162,19 +2348,18 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 # Use the published date for dateModified unless the body has
                 # been updated. Google penalises dateModified inflation that
                 # isn't matched by real content changes.
-                "dateModified": post.get("dateModified") or post["publishedAt"],
+                "dateModified": post.get("dateModified") or post.get("updatedAt") or post["publishedAt"],
                 "inLanguage": "en",
                 "articleSection": "Blog",
                 "keywords": ", ".join(post.get("tags", [])),
                 "author": {
                     "@type": "Person",
                     "@id": f"{BASE_URL}/about#author",
-                    "name": post.get("author") or "PrivaTools Team",
+                    "name": post.get("author") or "Lakshya Lodha",
                     "url": f"{BASE_URL}/about",
                     "sameAs": ["https://github.com/deadpoolrulesmarvel1-svg/privatools"],
-                    "worksFor": {"@id": f"{BASE_URL}/#organization"},
                 },
-                "publisher": {"@id": f"{BASE_URL}/#organization"},
+                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 "mainEntityOfPage": {
                     "@type": "WebPage",
                     "@id": canonical_url,
@@ -2225,7 +2410,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "description": description,
                     "url": canonical_url,
                     "inLanguage": "en",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                     "blogPost": [
                         {
                             "@type": "BlogPosting",
@@ -2321,7 +2506,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "datePublished": "2026-03-15",
                     "dateModified": "2026-03-29" if path == "/privacy" else "2026-03-29",
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2344,7 +2529,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "applicationCategory": "BusinessApplication",
                     "operatingSystem": "Any (browser-based)",
                     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2413,6 +2598,8 @@ _COMPARE_DATA: dict[str, dict] = {
     "smallpdf": {"name": "Smallpdf", "rating": "3", "rating_note": "2 tasks/day limit + cloud upload", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (21 tools, PDF only)"}},
     "adobe-acrobat": {"name": "Adobe Acrobat Online", "rating": "4", "rating_note": "excellent features but $23/mo + cloud", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "sejda": {"name": "Sejda PDF", "rating": "3.5", "rating_note": "3 tasks/hour limit", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
+    "tinywow": {"name": "TinyWow", "rating": "3.5", "rating_note": "free with ads + CAPTCHA", "features": {"Free to use": "Yes (ads + CAPTCHA)", "No account required": "Yes", "No file size limits": "No (500 MB)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded, deleted after 1 hour)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "Yes (PDF, image, video, AI writing)"}},
+    "ihatepdf": {"name": "ihatepdf.cv", "rating": "4.0", "rating_note": "browser-local, PDF only", "features": {"Free to use": "Yes (donation-funded)", "No account required": "Yes", "No file size limits": "Limited by device memory", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "Yes (never uploaded)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "pdf24": {"name": "PDF24", "rating": "4", "rating_note": "generous free tier — cloud upload only deduction", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "foxit": {"name": "Foxit PDF", "rating": "3", "rating_note": "paywall + cloud upload", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
     "lightpdf": {"name": "LightPDF", "rating": "2.5", "rating_note": "aggressive paywall + cloud upload", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF + basic image)"}},

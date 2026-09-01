@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-03-22",
     readTime: "8 min read",
     tldr:
-      "In 2026: PrivaTools (100% free, open source, 219 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+      "In 2026: PrivaTools (100% free, open source, 221 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
     relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
@@ -172,7 +172,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Best Overall for Privacy + Tool Count</h2>
-<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 219 tools (PDF, image, video, audio, developer)</p>
+<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 200+ (PDF, image, video, audio, developer)</p>
 <p>PrivaTools is open source (MIT license), self-hostable, and covers the most tool categories of any free suite tested. It handles PDF operations, image processing, video tools, and developer utilities — all in one place. Files are processed on the server and immediately deleted.</p>
 <p><strong>Strengths:</strong> No task limits, no ads, no watermarks, open-source and auditable. Covers tools that most PDF suites don't touch (video compression, developer utilities, archive tools).</p>
 <p><strong>Weaknesses:</strong> Server-side processing (not fully client-side). Newer service with a smaller community than established alternatives.</p>
@@ -751,7 +751,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "PrivaTools Team",
     tldr:
-      "Top iLovePDF alternatives in 2026: PrivaTools (219 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+      "Top iLovePDF alternatives in 2026: PrivaTools (221 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
     relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `
@@ -769,7 +769,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Most Tools, Truly Free, Open Source</h2>
-<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 219 tools</p>
+<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 221 tools</p>
 <p>PrivaTools is the comprehensive open-source alternative. It includes everything iLovePDF does (merge, split, compress, convert, OCR, sign, redact) and a lot it doesn't (video tools, audio tools, AI summarization in your browser, smart redaction with NER, JWT decoder, regex tester). The entire stack is MIT-licensed; you can audit the code or self-host it on Docker.</p>
 <p>Files are processed in an isolated container and deleted immediately on response — no retention period, no upload caps beyond 500 MB per file, no watermarks, no ads, no account ever.</p>
 <p><strong>Best for:</strong> Privacy-conscious users, professionals handling confidential documents, organizations wanting on-premises file tooling.</p>
@@ -821,7 +821,7 @@ export const blogPosts: BlogPost[] = [
     <tr><th>Tool</th><th>Free?</th><th>Account?</th><th>Privacy</th><th>Tools</th></tr>
   </thead>
   <tbody>
-    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>219 tools</td></tr>
+    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>221 tools</td></tr>
     <tr><td>Stirling-PDF</td><td>Yes (self-host)</td><td>No</td><td>You host</td><td>~50</td></tr>
     <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Uploaded</td><td>95+</td></tr>
     <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>2hr retention</td><td>~35</td></tr>
@@ -1287,6 +1287,785 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 <h3>Is it safe to log JWT payloads in my server logs?</h3>
 <p>It's safer to log the <code>sub</code> claim (user ID) and the <code>jti</code> claim (token ID) but NOT the full token. The full token would let anyone with log access impersonate the user.</p>
     `,
+  },
+  {
+    slug: "how-local-first-works",
+    title: "How Local-First File Tools Actually Work",
+    description:
+      "Your browser can parse, render and rewrite most file formats on its own. Where the local/server line really sits — and why some jobs still need one.",
+    publishedAt: "2026-08-14",
+    readTime: "6 min read",
+    tldr:
+      "Most file operations — merging PDFs, converting images, rewriting metadata — are pure computation your browser can do locally, so the file never leaves your machine. Only jobs needing native code (full OCR models, office-suite conversion, heavy video transcodes) require a server, and an honest tool tells you which is which before you add a file.",
+    relatedTools: ["merge-pdf", "image-converter", "strip-metadata", "ocr-pdf"],
+    tags: ["Engineering", "Privacy"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Most of what a file tool does — parsing pages, reordering them, rewriting metadata, re-encoding an image — is computation, and your browser is a very capable computer. When you merge two PDFs on <a href="/tool/merge-pdf">our merge tool</a>, a library running in your tab reads both files from memory, builds a new document, and hands it back to you. No network request exists in that story, which is why the network tab stays empty.</p>
+
+<h2>What a browser can genuinely do</h2>
+<p>Modern browsers ship a full PDF object model, image codecs, WebAssembly, and workers with near-native throughput. That covers the overwhelming majority of everyday file work:</p>
+<ul>
+  <li><strong>PDF structure work</strong> — merge, split, reorder, rotate, delete pages, stamp text, fill forms. These rewrite the document tree; no pixel math required.</li>
+  <li><strong>Image work</strong> — resize, crop, convert between formats, strip EXIF. Codecs compiled to WebAssembly run at speeds users can't distinguish from a server.</li>
+  <li><strong>Text and developer work</strong> — hashing, encoding, formatting, diffing. These were never a server's job to begin with.</li>
+</ul>
+<p>When a tool in this class "uploads" your file anyway, that is an architecture choice made for the operator's benefit — telemetry, lock-in, upsell — not a technical requirement.</p>
+
+<h2>The honest boundary</h2>
+<p>Some work needs native code the browser can't carry. Full OCR models with language packs, faithful office-suite conversion (a headless LibreOffice is a gigabyte of layout engine), and heavy video transcodes all outgrow what can reasonably ship to a tab. Those tools <em>should</em> exist — refusing to build them just sends people to services that pretend everything is local.</p>
+<p>Our rule for that class: say so up front, before a file is added; run the job in isolated temporary storage on a disclosed server; delete everything when the job ends. The tool page carries an amber "uses our server" chip precisely so you never find out after the fact.</p>
+
+<h2>How to verify any of this</h2>
+<p>Don't take a tool's word for it — including ours. Open your browser's developer tools, watch the network panel, and run the tool on a scrap file. A local-first tool produces zero upload requests. A cloud tool produces a POST with your file in it within seconds. Sixty seconds of looking beats any privacy policy.</p>
+
+<h2>The rule we build by</h2>
+<p>If a job can run on your device, it must. The server is a fallback we disclose, never a default we hide. That single rule decides more about a file tool's privacy than every policy page combined — because it removes the need to trust anyone with the files that never left.</p>
+`,
+  },
+  {
+    slug: "what-deleted-means",
+    title: "What “Deleted After Use” Means on Our Servers",
+    description:
+      "A promise you can't verify from a network tab deserves a precise definition. This is ours, mechanism by mechanism.",
+    publishedAt: "2026-07-02",
+    readTime: "4 min read",
+    tldr:
+      "For PrivaTools server jobs, a file exists exactly as long as the job does: written to isolated temporary storage, processed, streamed back, removed. No results bucket, no retention window, no recoverable copy — and most of the catalogue never touches a server at all.",
+    relatedTools: ["ocr-pdf", "pdf-to-word", "compress-pdf"],
+    tags: ["Trust", "Privacy"],
+    author: "Lakshya Lodha",
+    body: `
+<p>"We delete your files" is the least verifiable claim on the internet. You can watch a network tab prove a local tool uploads nothing; you cannot watch a server's disk. So a promise about server-side deletion deserves a precise, mechanical definition — here is ours.</p>
+
+<h2>The lifecycle of a server job</h2>
+<ol>
+  <li>Your file is written to <strong>isolated temporary storage</strong> — a per-request working directory on our one disclosed server (Mumbai, India), on a volume that exists for scratch work.</li>
+  <li>The tool processes it there. Nothing about the job is written to any other volume, database, or log — filenames included.</li>
+  <li>The result streams back to your browser in the same response.</li>
+  <li>The working directory is removed. A janitor process additionally sweeps the temp volume by age as a belt-and-braces measure, so even a crashed job's leftovers don't outlive it for long.</li>
+</ol>
+<p>There is no results bucket, no "keep for 2 hours so you can re-download" window, and no copy we could recover later — even if you asked us to. Re-running a tool re-uploads the file because we genuinely don't have it.</p>
+
+<h2>What we deliberately don't have</h2>
+<ul>
+  <li><strong>No third-party storage.</strong> Files never touch S3, GCS, or any cloud bucket. One server, one temp volume.</li>
+  <li><strong>No content logging.</strong> Request logs carry tool, timing and status — never file contents or names.</li>
+  <li><strong>No third-party analytics anywhere</strong> — one first-party pageview count (opt-out honored), and nothing that could tie a person to a document.</li>
+</ul>
+
+<h2>The better answer is not needing the promise</h2>
+<p>We'd rather you not have to trust any of this — which is why most of the catalogue runs locally in your browser, and why every tool that doesn't says so before you add a file. When the file never leaves your machine, "deleted after use" isn't a promise. It's just true by construction.</p>
+`,
+  },
+  {
+    slug: "reading-privacy-policies",
+    title: "Reading a File Tool’s Privacy Policy in 60 Seconds",
+    description:
+      "Four questions cut through any policy: where files go, how long they stay, who else runs code on the page, and what's behind the free tier.",
+    publishedAt: "2026-05-21",
+    readTime: "5 min read",
+    tldr:
+      "Skip the preamble and ask four things of any file tool: Where do files go? How long do they stay? Whose code runs on the page? What does 'free' actually include? The answers — usually buried mid-policy — tell you who the product really serves.",
+    relatedTools: ["strip-metadata", "compress-pdf"],
+    tags: ["Guides", "Privacy"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Privacy policies are written to be skimmed past. But for a site that handles your documents, four specific answers matter more than every other paragraph combined — and you can find all four in about a minute with Ctrl-F.</p>
+
+<h2>1. Where do files go?</h2>
+<p>Search for <em>"upload"</em>, <em>"process"</em>, <em>"server"</em>. If uploading is the default, everything else in the policy is damage control. The best answer is that most files never leave your browser at all — and a tool that works that way will usually say so loudly, because it's the hard part.</p>
+
+<h2>2. How long do they stay?</h2>
+<p>Search for <em>"delete"</em>, <em>"retain"</em>, <em>"hours"</em>. "Deleted after N hours" is a retention policy, not deletion — your file sits on their disk for that whole window, downloadable by anyone with the link or the access. The honest gold standard is per-job deletion: the file exists only while it's being processed.</p>
+
+<h2>3. Whose code runs on the page?</h2>
+<p>Search for <em>"third party"</em>, <em>"analytics"</em>, <em>"partners"</em>. Analytics scripts and unpinned CDN-loaded tools see more than most policies admit — a script injected into the page while you hold a sensitive document is inside the room, whatever the data-sharing section says. A strict content-security policy and self-hosted code are the structural fix.</p>
+
+<h2>4. What does "free" actually include?</h2>
+<p>Search for <em>"premium"</em>, <em>"limit"</em>, <em>"tasks"</em>. Daily task caps and Pro-gated quality settings tell you who the product is really for: the free tier is the funnel, and your documents are the foot traffic. Free-with-no-catch does exist, but it needs a different funding model — ours is simply that the owner pays for it.</p>
+
+<h2>Ask these four of us, too</h2>
+<p>Our answers: local-first by default; server jobs deleted per-job; no third-party scripts on tool pages; free means the whole catalogue, no caps. And because answers are cheap, the <a href="/security">Trust page</a> shows you how to verify each one from your own browser.</p>
+`,
+  },
+  {
+    slug: "privatools-vs-ilovepdf",
+    title: "PrivaTools vs iLovePDF (2026): The Fine Print, Compared",
+    description:
+      "iLovePDF is the biggest name in online PDF tools. We compared free tiers, file handling, limits and privacy line by line — here's where each one wins.",
+    publishedAt: "2026-08-20",
+    updatedAt: "2026-09-01",
+    readTime: "8 min read",
+    tldr:
+      "iLovePDF is a polished, mature suite whose free tier has task limits, Premium-gated settings, and server-side processing with time-limited retention. PrivaTools is fully free with no caps, runs most tools in your browser so files never upload, and deletes server-job files per-job. Choose iLovePDF for its desktop/mobile apps and workflow ecosystem; choose PrivaTools when price, limits, or file privacy decide it.",
+    relatedTools: ["merge-pdf", "compress-pdf", "pdf-to-word", "edit-pdf"],
+    tags: ["Comparison", "PDF"],
+    author: "Lakshya Lodha",
+    body: `
+<p>iLovePDF is probably the first name anyone meets when they search for a PDF tool, and it earns much of that position: the suite is mature, fast, and pleasant to use. This comparison isn't about pretending otherwise. It's about the fine print — what the free tier actually includes, where your file physically goes, and how long it stays there — checked against each site's own public pages in August 2026.</p>
+
+<h2>The short verdict</h2>
+<p><strong>Choose iLovePDF</strong> if you want native desktop and mobile apps, a large workflow ecosystem, and don't mind an account and Premium for the heavier settings. <strong>Choose PrivaTools</strong> if you want every tool free without caps, or you're handling documents that shouldn't be uploaded anywhere at all.</p>
+
+<h2>Side by side</h2>
+<table>
+  <thead><tr><th>On the free tier</th><th>PrivaTools</th><th>iLovePDF</th></tr></thead>
+  <tbody>
+    <tr><td>Price for everything</td><td>Free, all of it</td><td>Freemium — Premium tier for full access</td></tr>
+    <tr><td>Task limits</td><td>None</td><td>Limits on some tools</td></tr>
+    <tr><td>Settings behind paywall</td><td>Never</td><td>Some (e.g. stronger compression)</td></tr>
+    <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Retention</td><td>Deleted per-job</td><td>Time-limited retention window</td></tr>
+    <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
+  </tbody>
+</table>
+
+<h2>Where your file actually goes</h2>
+<p>This is the deepest difference, because it isn't a pricing decision — it's architecture. iLovePDF processes files on its servers: every merge, every compression, every conversion means your document travels to their infrastructure and lives there for the retention window their policy describes. That's a normal, defensible design; it's how almost every tool site works.</p>
+<p>PrivaTools inverts the default. A merge, split, rotate or image conversion runs <em>in your browser tab</em> — open the network panel while using <a href="/tool/merge-pdf">Merge PDF</a> and you'll watch nothing upload. Only jobs that genuinely need native code (OCR, office conversion, heavy video) use our one disclosed server, marked with an amber chip before you add a file, and deleted when the job ends.</p>
+<p>For a holiday itinerary, this difference is academic. For a medical record, a term sheet, or an unreleased manuscript, it's the whole decision.</p>
+
+<h2>What does the free tier actually include?</h2>
+<p>iLovePDF's free tier is generous for casual use, but it is a funnel by design: some tools carry task limits, the strongest compression and OCR settings sit behind Premium, and batch sizes are capped. None of that is hidden — it's just easy to miss until the dialog appears mid-task.</p>
+<p>PrivaTools has no premium tier to funnel toward. Every tool in the catalogue, every setting, batch and pipeline included, is free with a 500&nbsp;MB per-file cap and no daily quota. The trade is transparency about why: the site is owner-funded and sells nothing, which also means no team of hundreds and no SLA — <a href="/status">the status page</a> says exactly what "best effort" means.</p>
+
+<h2>Where iLovePDF is simply better</h2>
+<p>Honesty cuts both ways. iLovePDF ships real desktop apps for Windows and Mac and full mobile apps — if you need offline batch work inside a corporate machine's policies, that's a genuine advantage (our answer, an installable PWA with cached tools, is lighter but younger). Its Workflows product automates multi-step jobs with a team behind it. And its sheer brand ubiquity means tutorials for everything.</p>
+
+<h2>The bottom line</h2>
+<p>Both suites will merge your PDF in five seconds. The differences live in the fine print: what free includes, and where the file spends those five seconds. If those two lines matter to you, that's the comparison — and it's why our <a href="/compare">comparison page</a> checks every cell against each competitor's own public pages, dated, so you can verify them yourself.</p>
+<p><em>Sources: ilovepdf.com public tool, pricing and policy pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
+`,
+  },
+  {
+    slug: "privatools-vs-smallpdf",
+    title: "PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope",
+    description:
+      "Smallpdf pioneered the clean one-task-one-page PDF site. We compared its free tier, limits and file handling against PrivaTools, line by line.",
+    publishedAt: "2026-08-24",
+    updatedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "Smallpdf is the most polished PDF suite on the web, but its free tier caps daily tasks and gates stronger compression behind Pro, and every file processes on its servers with time-limited retention. PrivaTools is uncapped and free, local-first so most files never upload, with per-job deletion for server tools. Pick Smallpdf for polish and integrations; pick PrivaTools for zero limits and files that stay on your machine.",
+    relatedTools: ["compress-pdf", "pdf-to-word", "esign-pdf", "merge-pdf"],
+    tags: ["Comparison", "PDF"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Smallpdf more or less invented the modern PDF-tool website: one task per page, a big friendly dropzone, and an interface calm enough to trust. Twenty-something tools later it remains the reference for polish. The question this comparison answers is narrower: what does its free tier actually let you do, and what happens to your file when you drop it — versus doing the same job on PrivaTools. Everything below was checked against each site's own public pages in August 2026.</p>
+
+<h2>The short verdict</h2>
+<p><strong>Choose Smallpdf</strong> for its refined editor, e-signing workflow, and integrations (Dropbox, Google Drive, browser extensions) — if the daily free-task cap fits your usage or Pro fits your budget. <strong>Choose PrivaTools</strong> when you'd hit those caps, need a setting Smallpdf gates behind Pro, or are handling files that shouldn't leave your machine.</p>
+
+<h2>Side by side</h2>
+<table>
+  <thead><tr><th>On the free tier</th><th>PrivaTools</th><th>Smallpdf</th></tr></thead>
+  <tbody>
+    <tr><td>Price for everything</td><td>Free, all of it</td><td>Freemium — Pro tier</td></tr>
+    <tr><td>Daily task limits</td><td>None</td><td>Limited free tasks</td></tr>
+    <tr><td>Settings behind paywall</td><td>Never</td><td>Moderate &amp; Strong compression are Pro</td></tr>
+    <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Retention</td><td>Deleted per-job</td><td>Time-limited</td></tr>
+    <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
+  </tbody>
+</table>
+
+<h2>What does compression cost on each?</h2>
+<p>Compression is Smallpdf's signature tool, and it's excellent — but the free tier offers its basic level, with Moderate and Strong compression marked Pro. That's a legitimate business model; it's also the exact pattern worth learning to spot, because the setting you actually came for is the one behind the gate.</p>
+<p><a href="/tool/compress-pdf">PrivaTools compression</a> exposes every level to everyone — the model isn't a funnel, so there's nothing to gate. The same applies across the catalogue: if a tool has a setting, you have the setting.</p>
+
+<h2>Where do your files go — and what does the meter cost?</h2>
+<p>Smallpdf processes on its servers with a time-limited retention window, and meters free usage per day. Neither is sinister — but a meter changes how a tool feels: every task spends something. PrivaTools has no meter to spend and, for most tools, no upload to weigh: browser-local jobs leave the network panel empty, and the server-backed minority delete per-job on one disclosed machine.</p>
+
+<h2>Where Smallpdf is simply better</h2>
+<p>Its e-sign product is a genuinely complete signing workflow with an audit trail. Its editor's annotation UX is arguably the smoothest in the category. Cloud-storage integrations are first-class, and the mobile apps are mature. If your documents already live in Drive and polish is the priority, Smallpdf is a fine answer — this page exists for the days the meter, the gate, or the upload is the thing that matters.</p>
+
+<h2>The bottom line</h2>
+<p>Smallpdf sells convenience and finish, and prices them honestly. PrivaTools removes the price and, wherever physics allows, removes the upload too. Check both claims yourself — their pricing page, and our <a href="/security">network-tab test</a> — and the right tool for your Tuesday becomes obvious.</p>
+<p><em>Sources: smallpdf.com public tool, pricing and policy pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
+`,
+  },
+  {
+    slug: "privatools-vs-sejda",
+    title: "PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question",
+    description:
+      "Sejda's PDF editor is the best free one on the web — for three tasks an hour. We compared its limits, retention and privacy with PrivaTools.",
+    publishedAt: "2026-08-27",
+    updatedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "Sejda offers the web's best free PDF editor with unusually transparent limits: 3 tasks per hour, 200 pages/50 MB per file, files deleted after 2 hours. PrivaTools has no task caps, a 500 MB limit, browser-local processing for most tools and per-job deletion for the rest. Use Sejda for occasional heavy editing; use PrivaTools for volume, larger files, or documents that shouldn't upload.",
+    relatedTools: ["edit-pdf", "compress-pdf", "split-pdf", "fill-form"],
+    tags: ["Comparison", "PDF"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Sejda deserves more credit than it gets. Its web PDF editor — real text editing, not annotation overlays — is the best free one available, and its limits are stated with a transparency most competitors avoid: three tasks per hour, up to 200 pages or 50&nbsp;MB per document, files deleted after two hours. This comparison takes that honesty seriously and measures both sides with the same ruler, from each site's own public pages as of August 2026.</p>
+
+<h2>The short verdict</h2>
+<p><strong>Choose Sejda</strong> when you need its genuinely excellent in-document text editing a few times a week and your files fit its caps. <strong>Choose PrivaTools</strong> for anything high-volume or large, for batch and pipeline work, or when a file shouldn't spend two hours on someone's server.</p>
+
+<h2>Side by side</h2>
+<table>
+  <thead><tr><th>On the free tier</th><th>PrivaTools</th><th>Sejda</th></tr></thead>
+  <tbody>
+    <tr><td>Price for everything</td><td>Free, all of it</td><td>Freemium — daily caps, paid lifts them</td></tr>
+    <tr><td>Task limits</td><td>None</td><td>3 tasks / hour</td></tr>
+    <tr><td>File size cap</td><td>500 MB per file</td><td>50 MB / 200 pages</td></tr>
+    <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Retention</td><td>Deleted per-job</td><td>“Deleted after 2 hours”</td></tr>
+    <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
+  </tbody>
+</table>
+
+<h2>What three tasks an hour really means</h2>
+<p>A task meter is fine until the moment it isn't: a scanned contract that needs splitting, rotating, compressing and a signature blows through an hour's allowance in one sitting. Sejda's meter is honest about being a meter — but volume work is simply outside its free tier's design. PrivaTools doesn't meter; <a href="/batch">batch</a> runs one tool across a folder of files, and <a href="/pipeline">pipeline</a> chains steps in one pass, both free.</p>
+
+<h2>“Deleted after 2 hours” vs deleted after the job</h2>
+<p>Sejda states its retention plainly, and two hours is short by industry standards. It is still a window: for that period your document exists on their infrastructure. PrivaTools' server-backed tools delete per-job — the file exists only while being processed — and the majority of the catalogue never uploads at all, which is the only retention policy that needs no trust: watch the network tab and see for yourself.</p>
+
+<h2>Where Sejda is simply better</h2>
+<p>The editor. Editing existing text inside a PDF — matching fonts, reflowing a line — is hard, and Sejda's implementation is the best free one on the web; our own <a href="/tool/edit-pdf">Edit PDF</a> covers overlay-style edits, whiteout, shapes and stamps, but for deep in-place text surgery Sejda wins today. Its desktop app also mirrors the web suite for offline work. Credit where due.</p>
+
+<h2>The bottom line</h2>
+<p>Sejda is what a fair freemium product looks like: real capability, plainly stated caps. PrivaTools is what a no-tier product looks like: everything free, and the privacy question answered structurally instead of contractually. Occasional deep edits — Sejda. Everything, every day, without uploads — that's what we built.</p>
+<p><em>Sources: sejda.com public tool, pricing and policy pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
+`,
+  },
+  {
+    slug: "privatools-vs-ihatepdf",
+    title: "PrivaTools vs ihatepdf (2026): When Both Sides Are Private",
+    description:
+      "ihatepdf processes everything in your browser — the same privacy bet we make. So the comparison comes down to catalogue depth, heavy jobs and the details.",
+    publishedAt: "2026-08-30",
+    updatedAt: "2026-09-01",
+    readTime: "6 min read",
+    tldr:
+      "ihatepdf is a genuinely private, free, browser-only PDF suite — files never upload by its stated, network-tab-verifiable design, the same architecture PrivaTools uses for most tools. The differences: PrivaTools spans 200+ tools across PDF, image, video, audio and developer work, handles server-class jobs (OCR, office conversion) with disclosed per-job deletion, loads no third-party scripts, and adds batch, pipelines and an installable offline app.",
+    relatedTools: ["merge-pdf", "ocr-pdf", "pdf-to-word", "image-compressor"],
+    tags: ["Comparison", "PDF"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Most comparisons on this blog contrast a local-first architecture with an upload-everything one. This one can't: ihatepdf processes files in your browser, exactly the way most of our catalogue does. Files never reach its servers — a claim you can verify in its network tab the same way you can in ours. When both sides make the same privacy bet, the comparison moves to what's built on top of it. As always, everything here comes from each site's public pages as of August 2026.</p>
+
+<h2>The short verdict</h2>
+<p><strong>ihatepdf</strong> is a clean, free, honest browser-only PDF toolkit — if your needs fit inside "PDF jobs a browser can do," it serves them well. <strong>PrivaTools</strong> covers that same ground and then keeps going: 221 tools across file types, server-class jobs done with disclosed per-job deletion, batch and pipeline automation, and no third-party scripts.</p>
+
+<h2>Side by side</h2>
+<table>
+  <thead><tr><th></th><th>PrivaTools</th><th>ihatepdf</th></tr></thead>
+  <tbody>
+    <tr><td>Price</td><td>Free, all of it</td><td>Free</td></tr>
+    <tr><td>Task limits</td><td>None</td><td>None</td></tr>
+    <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Stays in browser</td></tr>
+    <tr><td>Heavy jobs (OCR, office conversion)</td><td>Yes — server-backed, deleted per-job</td><td>Limited to what a browser can do</td></tr>
+    <tr><td>Beyond PDF</td><td>Image, video, audio, archive, developer tools</td><td>PDF-focused</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
+    <tr><td>Automation</td><td>Batch + multi-step pipelines</td><td>Per-tool</td></tr>
+  </tbody>
+</table>
+
+<h2>What can a browser-only suite not do?</h2>
+<p>Committing to never touching a server is a clean promise with a real cost: some jobs just don't fit. Accurate OCR needs full recognition models; converting a .docx to a faithful PDF needs an actual office layout engine; a 4K video transcode would set a laptop's fans on fire. A browser-only suite must either skip those tools or ship diminished versions of them.</p>
+<p>Our answer is a middle path: keep everything local that can be local, and run the exceptions on <a href="/security">one disclosed server</a> with per-job deletion — labeled with an amber chip before you ever add a file. You always know which kind of tool you're holding.</p>
+
+<h2>How much further does the catalogue go?</h2>
+<p>PrivaTools' catalogue runs past two hundred tools: alongside the PDF suite sit image conversion and compression, video and audio work, archives, and a bench of developer utilities — one bookmark instead of five. Two smaller distinctions worth naming plainly: our pages load <strong>no third-party scripts</strong> — the only telemetry is a first-party pageview count that honors DNT/GPC and an opt-out (ihatepdf loads standard third-party analytics — normal, but a script on the page is a script on the page), and the whole site installs as an offline-capable app with cached tools.</p>
+
+<h2>Respect where due</h2>
+<p>ihatepdf demonstrates the point this whole site is built on: browser-local file tools are practical, fast and free to run, which is exactly why upload-first suites deserve the scrutiny. We consider it the most honest of our competitors — this comparison exists because "which private one?" is a question people actually ask, not because one of us is hiding something.</p>
+
+<h2>The bottom line</h2>
+<p>If both tools do your job locally, use whichever feels better — you've already won. The days PrivaTools earns the bookmark are the ones that need OCR at 2am, a folder of HEICs converted, a pipeline run on twelve contracts, or simply a page with no third-party scripts watching you work.</p>
+<p><em>Sources: ihatepdf.cv public pages, read August 2026. Corrections welcome via <a href="/support">Support</a>.</em></p>
+`,
+  },
+  {
+    slug: "chat-with-pdf-free-private",
+    title: "How to Chat With a PDF for Free — Without Uploading It",
+    description:
+      "Ask questions about any PDF using your own AI key: the text is extracted in your browser and each question goes straight to the provider you choose, never through PrivaTools. Costs, honest limits, and how it compares with hosted chat services.",
+    publishedAt: "2026-09-01",
+    readTime: "8 min read",
+    tldr:
+      "PrivaTools Chat with PDF extracts the text in your browser with pdf.js and sends each question straight to the AI provider you pick, using your own API key — free, no subscription, no middleman holding your document. It needs a selectable text layer (run OCR on scans first) and reads the first ~100,000 characters.",
+    relatedTools: ["chat-with-pdf", "ocr-pdf", "summarize-pdf", "pdf-to-text"],
+    tags: ["AI", "PDF", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>"Chat with a PDF" is one of the most-searched file tasks of 2026, and nearly every site offering it works the same way: you upload the document to their servers, their backend calls an AI model, and a subscription meter decides how many questions you get. <a href="/tool/chat-with-pdf">PrivaTools Chat with PDF</a> inverts that design. The text is extracted inside your browser, each question travels straight from your tab to the AI provider you chose, and the meter is your own API account — which, for a typical question, means a fraction of a cent rather than a monthly plan.</p>
+
+<h2>How does chatting with a PDF work without an upload middleman?</h2>
+<p>PrivaTools Chat with PDF is built on a bring-your-own-key (BYOK) architecture. When you add a PDF, Mozilla's pdf.js — the same engine Firefox uses to display PDFs — extracts the text layer page by page inside the browser tab. When you ask a question, the browser sends that text and your question directly to the AI provider you configured: Anthropic, OpenAI, Google Gemini, Mistral, Groq, Together AI, DeepSeek, OpenRouter, or any self-hosted OpenAI-compatible endpoint such as Ollama. The request carries your own API key, which is stored encrypted at rest on your device, with a session-only mode for borrowed machines. PrivaTools servers never receive the document, the question, or the key — there is deliberately no server fallback for this tool, because a conversational answer needs a real LLM and we don't proxy documents. Follow-up questions keep recent turns of the conversation, so you can dig into an answer naturally.</p>
+<p>One detail worth knowing: the document is passed to the model inside a delimited fence with an instruction that whatever appears inside is data, not direction. A PDF containing text like "ignore previous instructions" gets quoted, not obeyed.</p>
+
+<h2>What does it cost to chat with a PDF this way?</h2>
+<p>The tool is free — no account, no task meter, no premium tier. What you pay is your provider's normal API rate for the tokens each question uses, billed to your own account. In practice that is startlingly small: a question against a full-length contract typically costs a fraction of a cent on current budget-tier models, and at most a few cents on frontier models. Some providers offer free API tiers, which work here too, and pointing the self-hosted option at Ollama on your own machine makes the marginal cost zero.</p>
+<p>Compare the hosted model: a chat-with-PDF subscription bills the same every month whether you ask three questions or three hundred. With your own key you pay per question asked, and for individual use the arithmetic rarely adds up to a dollar a month.</p>
+
+<h2>Why is bring-your-own-key more private than a hosted chat service?</h2>
+<p>With a hosted chat-with-PDF service, your document passes through — and usually rests on — a middleman's infrastructure: they receive the file, keep it around to answer follow-up questions, and their privacy policy governs retention, staff access, and whether your content improves their models. Bring-your-own-key removes the middleman entirely. The only parties are your browser and the AI provider you chose, under the API terms of your own account — terms you or your company may already have vetted for other work. There is no second retention policy stacked on top, no extra set of servers holding a copy, and nothing for PrivaTools to see, store, or train on. And if even one provider is one too many, the self-hosted option sends the text to an endpoint on your own machine, where it never crosses the internet at all.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tool/chat-with-pdf">Chat with PDF</a>.</li>
+  <li>Paste an API key once. The AI hub in the top bar manages keys for every provider and stores them encrypted on your device.</li>
+  <li>Drop your PDF — extraction runs in the tab with a per-page progress bar.</li>
+  <li>Ask anything: deadlines, obligations, definitions, "summarize section 4", "what does clause 7 mean for the tenant". Follow-ups keep the thread.</li>
+  <li>Copy out any answer, or clear the chat and load the next document.</li>
+</ol>
+
+<h2>What are the honest limits?</h2>
+<ul>
+  <li><strong>It needs a text layer.</strong> pdf.js can only extract text that exists as text. A scanned PDF is photographs of pages — run it through <a href="/tool/ocr-pdf">OCR PDF</a> first, then chat with the result. The tool detects the situation and says so rather than answering from nothing.</li>
+  <li><strong>Very long documents are truncated.</strong> The model receives the first ~100,000 characters — roughly 60–100 pages of typical text. When a document runs longer, the tool tells the model it is seeing only the beginning, and instructs it to flag, rather than guess, when an answer may sit past the cutoff.</li>
+  <li><strong>You need a key.</strong> There is no bundled model behind this tool — that is the design, not a gap: routing your document through PrivaTools servers to reach an LLM would undo the entire privacy story. If you want zero setup, <a href="/tool/summarize-pdf">Summarize PDF</a> ships a free on-device model.</li>
+  <li><strong>Answers are only as good as the model you picked.</strong> A small free-tier model will miss nuance a frontier model catches. Same tool, your choice of brain.</li>
+</ul>
+
+<h2>How does it compare with ChatPDF, Adobe AI Assistant, and Humata?</h2>
+<p>These services answer the same need with a different architecture: hosted processing, their choice of model, and a subscription above the free tier. We can't audit their internals, so the table sticks to each vendor's own published design rather than guessed numbers.</p>
+<table>
+  <thead><tr><th></th><th>PrivaTools Chat with PDF</th><th>ChatPDF</th><th>Adobe AI Assistant</th><th>Humata</th></tr></thead>
+  <tbody>
+    <tr><td>Where the PDF goes</td><td>Text extracted in your tab; questions go only to the provider you chose</td><td>Uploaded to their servers</td><td>Processed in Adobe's cloud</td><td>Uploaded to their cloud</td></tr>
+    <tr><td>Price model</td><td>Free tool; you pay your provider per question</td><td>Free tier with limits, subscription above it</td><td>Paid add-on subscription on top of Acrobat</td><td>Free tier with limits, subscription tiers above</td></tr>
+    <tr><td>Who picks the model</td><td>You — eight hosted providers, or self-hosted</td><td>They do</td><td>Adobe does</td><td>They do</td></tr>
+    <tr><td>Account required</td><td>No</td><td>For full use</td><td>Yes (Adobe ID)</td><td>Yes</td></tr>
+  </tbody>
+</table>
+<p>None of this makes the hosted services dishonest — subscriptions fund real engineering, and Adobe's assistant is genuinely well integrated with Acrobat. The difference is structural: they are services your document must visit; this is a tool your document passes through on its way to a provider you already trust.</p>
+
+<h2>The bottom line</h2>
+<p>If you're going to let an AI read a document, the list of parties who see it matters more than any feature. With bring-your-own-key chat, that list has one entry — the provider you chose — and the bill is your API meter, not another subscription. Bring a key, drop a PDF, ask.</p>
+<p><a href="/tool/chat-with-pdf">Chat with your PDF now — free, no account, straight to your provider →</a></p>
+`,
+  },
+  {
+    slug: "ai-pdf-tools-no-upload-byok",
+    title: "AI PDF Tools, No Upload Required: Your Own Key or On-Device Models",
+    description:
+      "PrivaTools runs AI two ways without an upload middleman: your own API key, sent browser-to-provider, or free on-device models that download once and then work offline. What each tool uses, model sizes, and how to verify it all in DevTools.",
+    publishedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "There are two ways to run AI on a document privately: bring your own API key, so text goes straight from your browser to a provider you already trust, or run a free on-device model that downloads once and then works offline. PrivaTools' five AI tools use both; the AI hub in the top bar manages keys and models.",
+    relatedTools: ["chat-with-pdf", "summarize-pdf", "translate-pdf", "smart-redact", "remove-background"],
+    tags: ["AI", "Privacy", "Engineering"],
+    author: "Lakshya Lodha",
+    body: `
+<p>The typical "AI PDF tool" is an upload box with a model behind it: your document goes to the vendor's servers, their backend calls the AI, and their privacy policy — not physics — is what stands between your contract and someone else's training run. PrivaTools takes a different approach, and it isn't one trick but two. This page explains both, because knowing which one a tool uses is the whole privacy story.</p>
+
+<h2>What are the two ways to run AI privately?</h2>
+<p><strong>Way one: bring your own key (BYOK).</strong> You paste an API key from a provider you already trust — Anthropic, OpenAI, Google Gemini, Mistral, Groq, Together AI, DeepSeek, OpenRouter, or a self-hosted OpenAI-compatible endpoint such as Ollama. The key is stored encrypted at rest on your device, and every request goes directly from your browser to that provider. PrivaTools never proxies the call, so there is no middleman server that could log, retain, or train on the text: the parties involved are your browser and your provider, full stop.</p>
+<p><strong>Way two: on-device models.</strong> The tool downloads a free, open model into the browser's cache — once — and runs it inside the tab with WebAssembly. After that download it works offline: the document is processed on your own CPU, no key, no account, no per-use cost.</p>
+<p>Both are managed from one place: the <strong>AI hub</strong> in the top bar. Its first tab holds keys per provider, with a session-only mode for borrowed machines; its second lists every on-device model with its real size on this device, a download button so you can fetch weights ahead of a flight, and a remove button that frees the space.</p>
+
+<h2>Which PrivaTools tools use which?</h2>
+<table>
+  <thead><tr><th>Tool</th><th>Free on-device engine</th><th>With your own key</th></tr></thead>
+  <tbody>
+    <tr><td><a href="/tool/chat-with-pdf">Chat with PDF</a></td><td>— (a real conversation needs a full LLM)</td><td>Any provider answers questions about the document</td></tr>
+    <tr><td><a href="/tool/summarize-pdf">Summarize PDF</a></td><td>DistilBART summarizer (English)</td><td>Stronger frontier-model summaries</td></tr>
+    <tr><td><a href="/tool/translate-pdf">Translate PDF</a></td><td>OPUS-MT — English to and from 24 languages</td><td>Any language, source auto-detected</td></tr>
+    <tr><td><a href="/tool/smart-redact">Smart Redact</a></td><td>Regex passes + a BERT NER model find PII locally</td><td>Better name and organisation coverage</td></tr>
+    <tr><td><a href="/tools/remove-background">Remove Background</a></td><td>RMBG-1.4 matting model</td><td>— (its alternative is our server engine)</td></tr>
+  </tbody>
+</table>
+<p>Smart Redact deserves a plain sentence, because it layers the two ways deliberately. Its regex passes — emails, phone numbers, SSNs, card numbers — always run locally, with no model and no network. If you opt into a key for better name coverage, the values those local passes already caught are masked out of the text before anything is sent: the tool that hunts your most sensitive strings is built so those exact strings are the ones a provider never receives. Applying the redactions is its one server step — the PDF and your approved list go to the isolated backend so PyMuPDF can remove the content for real, permanently, and the job's files are deleted when it ends.</p>
+
+<h2>How big are the on-device models?</h2>
+<p>Model weights are the cost of way two, and it is a one-time cost per device. Everything downloads from the Hugging Face CDN the first time a tool needs it (or ahead of time from the AI hub), lands in the browser's cache, and stays until you remove it:</p>
+<table>
+  <thead><tr><th>Model</th><th>Powers</th><th>One-time download</th></tr></thead>
+  <tbody>
+    <tr><td>DistilBART CNN</td><td>Summarize PDF</td><td>~250&nbsp;MB</td></tr>
+    <tr><td>BERT NER</td><td>Smart Redact's name/organisation detection</td><td>~250&nbsp;MB</td></tr>
+    <tr><td>OPUS-MT</td><td>Translate PDF</td><td>~107&nbsp;MB per language pair</td></tr>
+    <tr><td>RMBG-1.4</td><td>Remove Background</td><td>~44&nbsp;MB</td></tr>
+  </tbody>
+</table>
+<p>The AI hub reports the true size of everything cached and deletes any model in one click. None of it needs an account, because the cache belongs to your browser profile, not to us.</p>
+
+<h2>When should you pick which?</h2>
+<p>Pick the <strong>on-device engine</strong> when the document must not travel: it is free, works offline after the first download, and needs no key. Its honest ceiling is quality and language — DistilBART summarizes English only, small models miss nuance a frontier model catches, and a phone with little storage may not want 250&nbsp;MB of weights.</p>
+<p>Pick <strong>your own key</strong> when quality or language coverage matters more, when you already pay a provider whose data terms you've vetted, or when the job outgrows a small model. It costs whatever your provider bills for the tokens — typically a fraction of a cent per operation — and the text does leave the tab: to that one provider, and no one else.</p>
+<p>Pick <strong>a self-hosted endpoint</strong> when you want both at once: point the key panel at Ollama on your own machine and you get bigger-than-browser models with traffic that ends at localhost.</p>
+
+<h2>How do you verify any of this in DevTools?</h2>
+<p>Don't take this article's word for it — the network panel is the audit. Open your browser's developer tools, switch to the Network tab, and run the tool on a scrap file. An on-device tool shows the model download on first run — requests to huggingface.co — and after that, processing produces no request carrying your document; switch to airplane mode and it still works. A BYOK tool shows exactly one destination when you ask it to run: your provider's API domain, such as api.anthropic.com or api.openai.com, or your own server's address if you self-host. A server-backed PrivaTools tool shows a request to privatools.me — and tells you so before you add the file, with an amber chip on the tool page. Sixty seconds of watching that panel beats every privacy policy ever written, ours included.</p>
+
+<h2>The bottom line</h2>
+<p>"AI" and "private" stopped being opposites the moment models could run from a browser cache or answer to your own key. The right question for any AI file tool in 2026 is the one this page answers for ours: <em>who, exactly, receives my document?</em> Here the answer is either "no one" or "the provider you chose" — and the network panel will show you which, live.</p>
+`,
+  },
+  {
+    slug: "remove-background-without-uploading",
+    title: "Remove an Image Background Without Uploading It Anywhere",
+    description:
+      "PrivaTools' Background Remover can run the RMBG-1.4 model in your browser — a ~44 MB one-time download that then works offline — with a server engine as the no-download alternative. How that compares with remove.bg's upload model.",
+    publishedAt: "2026-09-01",
+    readTime: "6 min read",
+    tldr:
+      "PrivaTools removes image backgrounds two ways: on this device, where the RMBG-1.4 model (~44 MB, downloaded once) runs in your browser and then works offline, or on our server with no download, processed in isolation and deleted after the job. Both are free at full resolution — unlike upload-based services whose free tiers limit output resolution.",
+    relatedTools: ["remove-background", "image-converter", "image-compressor", "remove-exif"],
+    tags: ["Image", "AI", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Product shots, profile photos, passport pictures, design cutouts — background removal is the most-reached-for AI image job there is, and the famous way to do it is to upload your photo to a service and download the cutout. That trade is no longer necessary. <a href="/tools/remove-background">PrivaTools' Background Remover</a> can run the model in your browser: the photo stays on your machine, and after a one-time download the tool works with no connection at all.</p>
+
+<h2>How does background removal run in a browser?</h2>
+<p>The on-device engine uses RMBG-1.4, an open background-removal model from BRIA, running inside the tab through WebAssembly. The first time you choose "On this device", the ~44&nbsp;MB model downloads from the Hugging Face CDN and is cached by your browser — the same download-once arrangement PrivaTools uses for its summarizer, translator, and PII detector. From then on the pipeline is entirely local: the image is scaled to the model's 1024×1024 working resolution, the model predicts a matte — a per-pixel map of subject versus background — and that matte is composited into the original image's alpha channel at the photo's full resolution. The result is a PNG with real transparency, computed on your own hardware. Turn the network off after the first download and the tool keeps working, which is also the simplest proof of where the work happens.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tools/remove-background">Background Remover</a>.</li>
+  <li>Choose where the AI runs: <strong>On our server</strong> (no download, fastest first run) or <strong>On this device</strong> (one ~44&nbsp;MB download, then offline).</li>
+  <li>Drop JPEG, PNG, or WebP images — several at once if you like, each with its own status.</li>
+  <li>Download the results: one image saves as a transparent PNG; several pack into a single ZIP.</li>
+</ol>
+
+<h2>When is the server engine the better choice?</h2>
+<p>The server engine runs a U²-Net-family model on our backend, and it earns its place three ways. First run speed: there is no 44&nbsp;MB download, so the first cutout arrives sooner. Low-powered devices: matte prediction is real CPU work, and an older phone or a storage-tight laptop is happier letting the server carry it. And difficult images: the two engines are genuinely different models, so tricky edges — flyaway hair, fur, glass — can come out differently; when one leaves a rough edge, trying the other is free and often settles it. Choosing the server does mean the photo travels to our one disclosed server — the tool says exactly that before you add a file — where it is processed in isolated temporary storage and deleted when the job ends. No account, no retention window, no third-party cloud.</p>
+
+<h2>How does this compare with remove.bg?</h2>
+<p>remove.bg is the category's household name, and its quality reputation is earned. The differences are architecture and pricing model, so the table sticks to each side's own published design — no guessed numbers.</p>
+<table>
+  <thead><tr><th></th><th>PrivaTools Background Remover</th><th>remove.bg</th></tr></thead>
+  <tbody>
+    <tr><td>Where the photo goes</td><td>Stays on your device (browser engine), or one disclosed server with per-job deletion</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Price</td><td>Free — both engines, full resolution</td><td>Free tier limits output resolution; full resolution is tied to paid credits and subscriptions</td></tr>
+    <tr><td>Account</td><td>None</td><td>Required for full-resolution work</td></tr>
+    <tr><td>Works offline</td><td>Yes, after the one-time model download</td><td>No</td></tr>
+    <tr><td>Ecosystem</td><td>Part of a free 200-plus-tool file suite</td><td>API, desktop apps, and design-tool plugins</td></tr>
+  </tbody>
+</table>
+<p>Where remove.bg is simply better: integrations and specialisation. Its API, desktop apps, and design-tool plugins slot into production workflows, and years of tuning exactly one job show in its consistency across awkward subjects. If you process hundreds of non-sensitive product shots inside a design pipeline, it is a reasonable choice. The days this page exists for are the other ones: a photo you'd rather not upload, a batch you'd rather not meter, or full resolution without a plan.</p>
+
+<h2>What about the metadata in your photos?</h2>
+<p>Whatever happens to the cutout, the original photo still carries its EXIF block — capture time, camera model, sometimes GPS coordinates. If originals are heading anywhere public, strip them with <a href="/tools/remove-exif">Remove EXIF</a> first. And when the cutout needs a different format or a smaller file, <a href="/tools/image-converter">Image Converter</a> and <a href="/tools/image-compressor">Image Compressor</a> finish the job — no account for any of it, like everything else here.</p>
+
+<h2>The bottom line</h2>
+<p>Background removal was one of the last everyday image jobs that seemed to require someone else's cloud. It doesn't anymore: a 44&nbsp;MB model in your browser cache does the work on your machine, free and offline, with a server engine one click away for the days you'd rather skip the download. The photo only travels if you pick the engine that travels.</p>
+<p><a href="/tools/remove-background">Remove a background now — free, full resolution, no account →</a></p>
+`,
+  },
+  {
+    slug: "transcribe-audio-free-no-upload",
+    title: "Transcribe Audio to Text Free — Without Uploading the Recording",
+    description:
+      "Run OpenAI's Whisper model inside your browser to transcribe meetings, interviews, and voice notes for free — the recording never uploads. Timestamps, .txt and .srt export, an own-key option for higher accuracy, and the honest limits of both paths.",
+    publishedAt: "2026-09-01",
+    readTime: "8 min read",
+    tldr:
+      "Open PrivaTools Transcribe Audio, choose the free on-device engine, and OpenAI's Whisper model — Tiny at ~41 MB or Base at ~74 MB — transcribes the recording inside your browser with timestamps, exporting .txt or .srt. Nothing uploads. For higher accuracy, add your own OpenAI or Groq key and the audio goes browser-to-provider directly.",
+    relatedTools: ["transcribe-audio", "audio-trim", "audio-converter", "subtitle-converter"],
+    tags: ["AI", "Audio", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Transcription is the file task with the most to leak: interviews under embargo, medical dictation, legal notes, a founder thinking out loud. The famous services all answer it the same way — upload the audio to their cloud, wait, and trust. <a href="/tools/transcribe-audio">PrivaTools Transcribe Audio</a> answers it differently: a speech-recognition model downloads into your browser once, the recording is transcribed on your own machine, and the only thing that ever moves over the network is the model coming down.</p>
+
+<h2>How does transcription run in your browser?</h2>
+<p>PrivaTools Transcribe Audio runs OpenAI's Whisper speech-recognition model inside the browser tab through transformers.js — the same WebAssembly arrangement that powers the site's summarizer and translator. The first time you transcribe, the model downloads once from the Hugging Face CDN — ~41&nbsp;MB for Whisper Tiny, ~74&nbsp;MB for Whisper Base — and is cached by your browser; the AI hub in the top bar shows the real size and removes it in one click. From then on the pipeline is entirely local: the Web Audio API decodes your file to 16&nbsp;kHz mono, the model reads it in 30-second chunks with a five-second overlap so words at chunk borders aren't cut, and every segment arrives with start and end timestamps. The recording itself never leaves the tab — turn the connection off after the first download and transcription keeps working, which is also the simplest proof.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tools/transcribe-audio">Transcribe Audio</a>.</li>
+  <li>Choose the engine: <strong>On this device</strong> (free, Whisper in the browser) or <strong>Your own key</strong> (higher accuracy through a provider you choose).</li>
+  <li>For on-device, pick a model size — Tiny (~41&nbsp;MB) or Base (~74&nbsp;MB). The download happens once and is cached.</li>
+  <li>Drop the audio — anything your browser can decode: MP3, WAV, M4A, OGG and friends.</li>
+  <li>Read the transcript with timestamps, copy it, or download it as .txt or .srt.</li>
+</ol>
+
+<h2>Tiny or Base — which Whisper model should you pick?</h2>
+<p>Start with Tiny. At ~41&nbsp;MB it downloads fastest, transcribes fastest, and handles clearly recorded speech — a phone memo, a podcast, a quiet meeting — well enough that you may never switch. Base, at ~74&nbsp;MB, is noticeably better where Tiny stumbles: accents, crosstalk, room echo, quieter voices. Both are cached after the first download and both work offline afterwards, so the practical answer is to try Tiny on a real recording and step up only if the transcript makes you wince. The models sit alongside the site's other on-device AI in the AI hub in the top bar, which shows their true size on this device and deletes either in one click.</p>
+
+<h2>How do you get subtitles out of a recording?</h2>
+<p>Because Whisper emits start and end times for every segment, the tool can hand you a ready-made <strong>.srt subtitle file</strong> instead of a wall of text — one numbered cue per segment, standard enough to drop straight into a video editor, a media player, or a caption uploader. For video, pull the soundtrack out first with <a href="/tools/extract-audio">Extract Audio</a>, transcribe it, then attach the result with <a href="/tools/add-subtitles">Add Subtitles to Video</a>. If a player insists on VTT or another format, <a href="/tools/subtitle-converter">Subtitle Converter</a> switches between them — in the browser, like the rest of the chain.</p>
+
+<h2>When should you use your own API key instead?</h2>
+<p>The Tiny and Base models are the small end of the Whisper family, and honesty requires saying so: a hosted frontier transcription model will beat them on names, jargon, heavy accents, and messy audio. That is what the tool's second engine is for. Add your own API key — OpenAI, Groq, or any self-hosted OpenAI-compatible server — and the audio goes directly from your browser to that provider's transcription API, never through PrivaTools. The key is stored encrypted on your device, the bill is your provider's normal API rate on your own account, and the privacy trade is explicit: one provider you chose sees the audio, instead of no one. It is the right choice when accuracy matters more than absolute locality — publishing an interview, minuting a meeting that matters — and the wrong one for audio that must not travel at all.</p>
+
+<h2>What are the honest limits?</h2>
+<ul>
+  <li><strong>Long recordings are slow locally.</strong> Whisper in a browser runs on your CPU: expect processing time on the order of the recording's own length, not seconds. A ten-minute memo is fine; a three-hour board meeting is a job to start before lunch — or a case for the key engine.</li>
+  <li><strong>Provider APIs cap uploads around 25&nbsp;MB.</strong> The hosted transcription endpoints reject larger files, so trim long recordings with <a href="/tools/audio-trim">Audio Trimmer</a> or shrink them to a compact format with <a href="/tools/audio-converter">Audio Converter</a> first. The on-device engine has no such cap — only your patience.</li>
+  <li><strong>No speaker labels.</strong> Whisper transcribes what was said, not who said it. Services built around meetings do diarisation; this tool does not pretend to.</li>
+  <li><strong>Small models miss things.</strong> Product names, technical terms, and thick accents are where Tiny and Base show their size, and English is their strongest language. The transcript is editable text — read it before you ship it.</li>
+</ul>
+
+<h2>How does this compare with Otter.ai-style hosted transcription?</h2>
+<p>Otter and its peers are meeting products, not just transcribers, and the comparison should say so plainly. The table sticks to how each side is designed — no guessed numbers.</p>
+<table>
+  <thead><tr><th></th><th>PrivaTools Transcribe Audio</th><th>Hosted services (Otter-style)</th></tr></thead>
+  <tbody>
+    <tr><td>Where the audio goes</td><td>Stays in your browser — or browser-to-provider with your own key</td><td>Uploaded to their cloud</td></tr>
+    <tr><td>Price model</td><td>Free on-device; own key billed at your provider's API rate</td><td>Subscription; free plans metered in transcription minutes</td></tr>
+    <tr><td>Account</td><td>None</td><td>Required</td></tr>
+    <tr><td>Works offline</td><td>Yes, after the one-time model download</td><td>No</td></tr>
+    <tr><td>Speaker labels &amp; meeting bots</td><td>No</td><td>Yes — their real specialty</td></tr>
+  </tbody>
+</table>
+<p>If you live in meetings and want an assistant that joins calls, labels speakers, and files summaries into a workspace, the hosted products earn their subscription. If what you have is a recording and what you want is the text — without the recording joining a corpus somewhere — a model in your own browser answers the question with no counterparty at all.</p>
+
+<h2>The bottom line</h2>
+<p>Speech-to-text was the classic "sorry, that needs the cloud" feature, and it simply isn't true anymore. A ~41&nbsp;MB model in your browser cache turns recordings into timestamped, exportable text with nobody listening in, and your own API key is one paste away when a harder recording needs a bigger model. Either way, the subscription is not part of the deal.</p>
+<p><a href="/tools/transcribe-audio">Transcribe a recording now — free, no account, nothing uploads →</a></p>
+`,
+  },
+  {
+    slug: "ocr-scanned-pdf-free-three-ways",
+    title: "OCR a Scanned PDF Free: Three Engines, and When Each Wins",
+    description:
+      "PrivaTools OCR PDF ships three engines: server Tesseract with searchable-PDF output, in-browser tesseract.js where nothing uploads, and vision AI through your own key for hard scans. A decision guide, with a trade-off table.",
+    publishedAt: "2026-09-01",
+    readTime: "8 min read",
+    tldr:
+      "PrivaTools OCRs scanned PDFs three ways, all free: the default server engine (Tesseract — multi-file queue, searchable-PDF output, deleted per job), an in-browser engine (tesseract.js — nothing uploads, text output), and a vision-AI engine that reads hard scans with your own GPT-4o, Claude, or Gemini-class key. Pick by scan quality and privacy need.",
+    relatedTools: ["ocr-pdf", "image-ocr", "pdf-to-text", "chat-with-pdf"],
+    tags: ["PDF", "OCR", "AI", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>A scanned PDF is photographs of paper wearing a .pdf extension: you can look at it, but you cannot search it, copy from it, or feed it to anything that reads text. OCR fixes that — and because no single OCR approach wins on every document, <a href="/tool/ocr-pdf">PrivaTools OCR PDF</a> ships three engines behind one page. This guide is the decision: which engine, for which scan, and why.</p>
+
+<h2>What are the three engines?</h2>
+<p>No single OCR approach wins on every scan, which is why one tool page holds three genuinely different machines. The default <strong>server engine</strong> runs Tesseract in PrivaTools' isolated backend: it takes a queue of files, reads seventeen installed languages, offers 150/200/300 DPI precision presets, and is the only engine that outputs a searchable PDF — your original scan with an invisible text layer underneath, so it still looks like the paper but behaves like text. The <strong>in-browser engine</strong> runs tesseract.js inside your tab through WebAssembly: language data downloads once from a CDN and caches locally, page images never upload, and the output is the extracted text. The <strong>vision-AI engine</strong> sends page images to a GPT-4o, Claude, or Gemini-class model using your own API key — dramatically better on hard scans, with pages travelling browser-to-provider and never through PrivaTools.</p>
+
+<h2>When does the server engine win?</h2>
+<p>Most of the time, which is why it is the default. It is the only engine that produces a <strong>searchable PDF</strong> — for archiving, filing, or anything a human still needs to view as the original page, that output format settles the question by itself. It is also the volume engine: files process as a queue with per-file status and retry, big documents run without the 50-page cap the client-side engines carry, and three DPI presets (Fast at 150, Balanced at 200, Precise at 300) trade speed against fidelity on low-quality scans. The trade is stated on the page before you add a file: the PDF travels to PrivaTools' one disclosed server, is processed in isolated temporary storage, and is deleted when the job ends — no account, no retention window, no third-party cloud.</p>
+
+<h2>When does the in-browser engine win?</h2>
+<p>When the document must not travel, full stop. Medical records, unredacted contracts, anything under NDA: the in-browser engine renders each page locally at roughly 144&nbsp;DPI, runs Tesseract compiled to WebAssembly on them inside your tab, and never sends a page image anywhere. The only network traffic is infrastructure — the OCR engine itself and the language pack you pick download from a CDN on first use, then cache, so the second run needs nothing new. The costs are real and worth stating: it reads one file at a time, up to 50 pages per run, output is text rather than a searchable PDF, and it is the slowest of the three on long documents. For a page you could not email, that is usually a fine price.</p>
+
+<h2>When does the vision-AI engine win?</h2>
+<p>On the scans the other two lose: handwriting, skewed phone photos of paper, coffee-stained fax-era copies, dense tables, mixed-language pages. Tesseract reads print; a vision model reads the page the way you do. Paste your own API key — Anthropic, OpenAI, Google Gemini, or any of the eight supported providers — and each page image goes directly from your browser to that provider, never through PrivaTools, billed at your provider's normal rate on your own account. Accuracy on hard material is in a different class; the trade is that a provider you chose sees the pages, and output is text rather than a searchable PDF. For genuinely difficult one-off documents, it is the engine that actually works.</p>
+
+<h2>Side by side</h2>
+<table>
+  <thead><tr><th></th><th>Server (default)</th><th>In-browser</th><th>Vision AI (your key)</th></tr></thead>
+  <tbody>
+    <tr><td>Do pages upload?</td><td>Yes — one disclosed server, deleted per job</td><td>No — OCR runs in your tab</td><td>To your chosen provider only</td></tr>
+    <tr><td>Accuracy class</td><td>Solid on clean print</td><td>Same Tesseract family, slower</td><td>Best — handles handwriting and messy scans</td></tr>
+    <tr><td>Searchable-PDF output</td><td>Yes</td><td>No — text only</td><td>No — text only</td></tr>
+    <tr><td>Languages</td><td>17 installed packs</td><td>Packs download once, then cached</td><td>Whatever the model reads — effectively very broad</td></tr>
+    <tr><td>Files per run</td><td>Multi-file queue, no page cap</td><td>One file, up to 50 pages</td><td>One file, up to 50 pages</td></tr>
+    <tr><td>Cost</td><td>Free</td><td>Free</td><td>Free tool; provider bills your key</td></tr>
+  </tbody>
+</table>
+
+<h2>What should you do with a really hard scan?</h2>
+<p>Work up the ladder. First rerun the server engine on the Precise preset — 300&nbsp;DPI rescues more marginal scans than people expect, especially small print and light toner. If the text still comes back garbled, the scan is probably beyond pattern-matching OCR: switch to the vision engine and let a model that understands layout read it. If the source is a photo rather than a PDF — a whiteboard, a receipt, a book page — <a href="/tools/image-ocr">Image OCR</a> offers the same three-engine choice for single images. And once any engine has given the document real text, the rest of the toolbox opens: pull clean text with <a href="/tool/pdf-to-text">PDF to Text</a>, interrogate it with <a href="/tool/chat-with-pdf">Chat with PDF</a>, or hand it to <a href="/tool/translate-pdf">Translate PDF</a>.</p>
+
+<h2>The bottom line</h2>
+<p>OCR stopped being one technology, and treating it as one setting is why scanned PDFs still defeat people. Clean scans in volume want the server engine and its searchable PDFs. Documents that cannot travel want Tesseract running in your own tab. The genuinely hard scans want a vision model on your own key. All three live on one free page, and the page tells you what each one does with your file before you drop it.</p>
+<p><a href="/tool/ocr-pdf">OCR a scanned PDF now — free, three engines, no account →</a></p>
+`,
+  },
+  {
+    slug: "translate-pdf-free-private",
+    title: "Translate a PDF for Free — Without Uploading It",
+    description:
+      "PrivaTools Translate PDF runs OPUS-MT translation models inside your browser — about 107 MB per language pair, downloaded once — or translates between 30 languages through your own AI key with automatic source detection. What each path sends, and the one Save-as-PDF caveat.",
+    publishedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "PrivaTools Translate PDF extracts text with pdf.js and translates it on your device with OPUS-MT models — ~107 MB per language pair, downloaded once, English-centric pairs, free. Your own AI key unlocks 30 languages in any direction with source auto-detect. Only the optional Save-as-PDF step sends text to a server — the translation, never the original file.",
+    relatedTools: ["translate-pdf", "ocr-pdf", "summarize-pdf", "chat-with-pdf"],
+    tags: ["PDF", "AI", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Document translation is a strange corner of the free-tools market: Foxit, Nitro, LightPDF, and TinyWow all offer it, and all of them do it by sending your document to their servers. <a href="/tool/translate-pdf">PrivaTools Translate PDF</a> does the work in the opposite place. The text is extracted in your browser, a translation model runs in your browser, and the result appears in your browser — the document you dropped never leaves your machine.</p>
+
+<h2>How does a PDF get translated inside a browser?</h2>
+<p>The pipeline has three local stages. Mozilla's pdf.js — the engine Firefox uses to display PDFs — extracts the text layer in the tab. That text is chunked so sentences stay intact, then fed through an OPUS-MT model: open translation models from the Helsinki-NLP research group, converted to ONNX and run through transformers.js on WebAssembly, the same arrangement behind the site's summarizer and transcriber. Each language pair is its own model, roughly 107&nbsp;MB, downloaded from the Hugging Face CDN the first time you use that pair and cached by your browser afterwards — the AI hub in the top bar shows what is installed and frees the space in one click. After that download the pair works offline, costs nothing per run, and involves no account and no API key. Translation quality is what a compact specialist model delivers: strong on straightforward prose, more literal than a frontier LLM on idiom.</p>
+
+<h2>Which language pairs are free on-device?</h2>
+<p>The on-device catalogue is English-centric and deliberately asymmetric, because the models are: 24 languages translate into English — including Japanese, Korean, Polish, Turkish, and Thai — and English translates out into 19, across the major European languages plus Arabic, Hindi, Chinese, Vietnamese, and Indonesian. A pair appears in the picker only if its model actually exists with verified weights, because a direction that fails after a 107&nbsp;MB download is the worst possible way to find out. The same honesty explains what is missing: non-English pairs like German to French are not offered on-device, since they would need two chained models with compounded errors. That job belongs to the other engine.</p>
+
+<h2>What does your own AI key add?</h2>
+<p>Paste an API key from any of the eight supported providers — or a self-hosted OpenAI-compatible endpoint such as Ollama — and the translation engine changes character. The language list grows to 30, any direction, German to French included, and the source language is detected automatically, so a document you cannot identify is itself a fair input. Idiom, tone, and terminology come out the way a frontier model renders them rather than a compact specialist model. The text travels browser-to-provider directly — PrivaTools is not in the path — and the cost is your provider's normal token rate on your own account, which for typical documents is small change rather than a subscription.</p>
+
+<h2>Step by step</h2>
+<ol>
+  <li>Open <a href="/tool/translate-pdf">Translate PDF</a>.</li>
+  <li>Pick the engine: on-device OPUS-MT (free) or your own key (30 languages, auto-detect).</li>
+  <li>Drop the PDF. On-device, choose source and target; the model downloads on first use with a progress bar.</li>
+  <li>Read the translation, copy it, or download it as text.</li>
+  <li>Optionally, click <strong>Save as PDF</strong> for a typeset PDF — read the caveat below first.</li>
+</ol>
+
+<h2>What does Save as PDF actually send?</h2>
+<p>Everything up to the final step happens on your device: extraction, the model run, the translated text, and the copy button all live in the tab. The one exception is explicit and opt-in. The browser bundle ships no PDF writer, so the <strong>Save as PDF</strong> button posts the translated text to PrivaTools' text-to-PDF renderer — the same isolated backend other server tools use, with per-job deletion — and returns a typeset PDF. What that request contains is the translation you are looking at, and nothing else: the original document is never part of it, and if you skip the button, the request never exists at all. The tool says this at the point of use rather than burying it in a policy page. If even translated text should not travel, use the copy button or the text download and the job ends entirely on your machine.</p>
+
+<h2>What are the honest limits?</h2>
+<ul>
+  <li><strong>It needs a text layer.</strong> A scanned PDF is pictures of words; run it through <a href="/tool/ocr-pdf">OCR PDF</a> first, then translate the result.</li>
+  <li><strong>Output is translated text, not a re-typeset lookalike.</strong> The tool translates the document's words; it does not rebuild fonts, columns, and figures in place. For reading and working, that is usually the point — for print-faithful layout in another language, you are in professional-DTP territory, not free-tool territory.</li>
+  <li><strong>Compact models are literal.</strong> OPUS-MT handles contracts, manuals, and correspondence well; marketing copy and idiom read better through the key engine — or through <a href="/tool/chat-with-pdf">Chat with PDF</a>, which can translate and explain in the same conversation.</li>
+  <li><strong>Pairs add up on disk.</strong> Each on-device pair is ~107&nbsp;MB. The AI hub lists every cached model with its real size and removes any of them in one click.</li>
+</ul>
+
+<h2>The bottom line</h2>
+<p>Translation was the file task everyone assumed needed a cloud — the models were too big, the languages too many. The honest sentence is now shorter: a 107&nbsp;MB model in your browser translates the common pairs free and offline, your own key covers 30 languages when coverage or nuance matters, and the original document stays on your machine in both cases. Read the one caveat, then stop uploading things just to read them.</p>
+<p><a href="/tool/translate-pdf">Translate a PDF now — free, on-device, no account →</a></p>
+`,
+  },
+  {
+    slug: "bring-your-own-ai-key-guide",
+    title: "Bring Your Own AI Key: The 10-Minute Setup Guide",
+    description:
+      "What bring-your-own-key means, where all eight supported providers issue API keys, the self-hosted Ollama path, where the key is stored, what tasks really cost, and how to verify with DevTools that requests go straight from your browser to your provider.",
+    publishedAt: "2026-09-01",
+    readTime: "9 min read",
+    tldr:
+      "Bring your own key means PrivaTools' AI tools run on an API key you created at a provider you already trust. Paste it once into the AI hub; it is stored encrypted on your device, every request goes browser-to-provider directly, and a typical task costs a fraction of a cent on your own meter instead of a subscription.",
+    relatedTools: ["chat-with-pdf", "summarize-pdf", "translate-pdf", "smart-redact", "ocr-pdf"],
+    tags: ["AI", "Privacy", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Every AI subscription is the same bet: that you will use enough of it, every month, to beat the meter. For file tasks — summarize this, translate that, read this scan — the arithmetic rarely works, and the subscription usually rides along with an upload. There is a third way between paying monthly and running everything locally: bring your own key. Ten minutes of setup, and the AI tools on this site run on your own account, at your chosen provider, with no middleman. Here is the whole thing, start to finish.</p>
+
+<h2>What does bring your own key actually mean?</h2>
+<p>Bring your own key (BYOK) means the AI features on this site run on an API key you created yourself, at a provider you already trust — instead of on a bundled model behind our servers. Paste the key once into the AI hub in the top bar and it is stored encrypted at rest on your device; from then on, every AI request travels directly from your browser to that provider's API. PrivaTools is not in the path: there is no proxy server that could log the text, no second privacy policy stacked on your provider's, and nothing for us to retain or train on. The parties who see your document are exactly the parties you chose — one hosted provider, or none at all if you point the same panel at a model running on your own machine. That is the whole idea, and the network tab can verify it.</p>
+
+<h2>Why is it cheaper than a subscription?</h2>
+<p>Because API pricing is metered by the token — a unit of text — and file tasks use surprisingly few of them. Summarizing a report, translating a letter, asking a contract a question: on current budget-tier models each of these typically costs a fraction of a cent, and even frontier models put most single-document tasks at a few cents. You pay exactly that, exactly when you use it, and nothing in the months you don't. A subscription charges the same whether you touched it or not; a key charges for the work. Several providers even run free API tiers with rate limits, which work here unchanged — and the self-hosted path below takes the marginal cost to zero. For an individual's document workload, it is genuinely hard to spend a dollar a month.</p>
+
+<h2>Where does each provider issue keys?</h2>
+<p>Every provider follows the same shape: create an account, open the console, generate a key, copy it once. Plain-text addresses, no affiliate anything:</p>
+<table>
+  <thead><tr><th>Provider</th><th>Keys are issued at</th></tr></thead>
+  <tbody>
+    <tr><td>Anthropic (Claude)</td><td>console.anthropic.com/settings/keys</td></tr>
+    <tr><td>OpenAI</td><td>platform.openai.com/api-keys</td></tr>
+    <tr><td>Google Gemini</td><td>aistudio.google.com/apikey</td></tr>
+    <tr><td>OpenRouter</td><td>openrouter.ai/keys</td></tr>
+    <tr><td>Groq</td><td>console.groq.com/keys</td></tr>
+    <tr><td>Mistral</td><td>console.mistral.ai</td></tr>
+    <tr><td>DeepSeek</td><td>platform.deepseek.com</td></tr>
+    <tr><td>Together AI</td><td>api.together.ai</td></tr>
+  </tbody>
+</table>
+<p>OpenRouter deserves a footnote: it routes to many models from many labs, so one key there is the closest thing to a universal key. Groq and Google are popular starting points because both run free tiers at the time of writing.</p>
+
+<h2>The ten-minute setup, step by step</h2>
+<ol>
+  <li>Create a key at your provider (table above). Most consoles ask for billing details; some free tiers don't.</li>
+  <li>Open the <strong>AI hub</strong> in the top bar of any PrivaTools page — the same panel that manages the on-device models.</li>
+  <li>Pick the provider, paste the key, choose a model. Done: every AI tool on the site now sees it.</li>
+  <li>On a shared or borrowed machine, switch on <strong>session-only mode</strong> first — the key is then held for the current session and never saved to the device; close the tab and it is gone.</li>
+  <li>Open <a href="/tool/chat-with-pdf">Chat with PDF</a>, drop any PDF, and ask it something. If an answer comes back, you are wired up.</li>
+</ol>
+
+<h2>What about self-hosted models — Ollama and friends?</h2>
+<p>The ninth entry in the provider list is not a company: any server that speaks the OpenAI-compatible API works, which covers Ollama, vLLM, LM Studio, and most of the self-hosting ecosystem. Run Ollama on your own machine, point the AI hub at your local address, and the provider receiving your documents is your own hardware — traffic ends at localhost, marginal cost is zero, and it works with no internet connection at all. It is the option for the strictest reading of private: bigger models than a browser tab can hold, with the party count at zero.</p>
+
+<h2>Where does the key live, and what is the honest caveat?</h2>
+<p>The key is stored on your device, encrypted at rest with the same wrapping-key arrangement the site's password vault uses, and it never appears in a URL. The honest caveat, which the interface states rather than papers over: an API key cannot be locked away as thoroughly as a vault password, because it has to be readable to go into a request header when you run a task. Encrypted on your device at rest; readable at the moment of use. If that trade is wrong for a machine you don't control, session-only mode exists, and the hub deletes any stored key in one click. Rotating or revoking the key at your provider's console works instantly too — it is your key, at your account, under your control.</p>
+
+<h2>How do you verify it with DevTools?</h2>
+<p>Open your browser's developer tools, switch to the Network tab, and run any AI task. You should see exactly one destination for the request that carries your text: your provider's API domain — api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, or your own server's address if you self-host. No privatools.me request carrying the document, no third-party scripts, no beacon. Two details reward the close reader: the key rides in a request header, never in the URL, and the site's Content-Security-Policy permits connections to AI providers only on the AI tool pages themselves — on every other page of the site, the browser is instructed to refuse those origins outright. A policy you can read in the response headers beats a promise in a policy page.</p>
+
+<h2>Which PrivaTools tools use the key?</h2>
+<ul>
+  <li><a href="/tool/chat-with-pdf">Chat with PDF</a> — ask questions of any text-layer PDF; built key-only by design.</li>
+  <li><a href="/tool/summarize-pdf">Summarize PDF</a> — frontier-quality summaries; a free on-device model is the alternative.</li>
+  <li><a href="/tool/translate-pdf">Translate PDF</a> — 30 languages with source auto-detect; on-device pairs are the alternative.</li>
+  <li><a href="/tool/smart-redact">Smart Redact</a> — better name and organisation coverage; the local detection passes run regardless, and values they catch are masked out before anything is sent.</li>
+  <li><a href="/tool/ocr-pdf">OCR PDF</a> and <a href="/tools/image-ocr">Image OCR</a> — vision-model reading for hard scans.</li>
+  <li><a href="/tools/transcribe-audio">Transcribe Audio</a> — provider transcription APIs (OpenAI, Groq, or self-hosted) beyond the in-browser Whisper models.</li>
+</ul>
+
+<h2>The bottom line</h2>
+<p>Bring-your-own-key is the unglamorous answer to the AI-subscription question: pay your model provider for tokens, keep the middleman count at zero, and let the network tab audit the whole story. Ten minutes, one paste, and the meter finally belongs to you.</p>
+<p><a href="/tool/chat-with-pdf">Set up a key and try it on a PDF — free, no account →</a></p>
+`,
+  },
+  {
+    slug: "batch-process-files-free",
+    title: "Batch-Process Files for Free: 25 at a Time, No Quotas",
+    description:
+      "Around 160 of PrivaTools' 221 tools take up to 25 files per run — per-file status, retry-failed, one ZIP. The /batch page swallows folder drops, /pipeline chains tools into one pass, and none of it is metered. How it works, honestly.",
+    publishedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "Around 160 of PrivaTools' 221 tools accept up to 25 files per run, with per-file status, a retry-failed button, and one ZIP download — free, no quotas, no account. The /batch page handles bigger folder drops through any batchable tool, and /pipeline chains steps so one drop runs several tools in sequence.",
+    relatedTools: ["compress-pdf", "batch-compress-pdf", "image-compressor", "image-converter"],
+    tags: ["Productivity", "PDF", "Image", "How-To"],
+    author: "Lakshya Lodha",
+    body: `
+<p>The moment a file task becomes twenty file tasks is the moment most free tools stop being free: a meter appears, a subscription is suggested, or you feed a queue one file at a time like a parking meter. PrivaTools took the opposite bet — volume is the normal case. Most tools on the site take a stack of files in one run, a dedicated <a href="/batch">batch page</a> takes folders, and a <a href="/pipeline">pipeline builder</a> chains tools together. None of it is metered, and none of it needs an account.</p>
+
+<h2>How does multi-file processing work on a normal tool page?</h2>
+<p>Around 160 of PrivaTools' 221 tools accept up to 25 files in one run, straight on the tool page. Drop them together and each file becomes a row with its own status — queued, running, done, or failed — processed a few at a time so a big queue doesn't stampede the server. When everything finishes, one file downloads directly, and several package into a single ZIP; there is no meter deciding whether you have runs left, because there is no meter. A failed file doesn't sink the batch either: successful results stay put, and a retry button reruns only the failures. The whole arrangement is free, with no account, no watermark, and no daily quota — the hard limits are 25 files per run, the 500&nbsp;MB size cap per file, and nothing else. For the days 25 isn't enough, keep reading.</p>
+
+<h2>What happens when one file out of twenty fails?</h2>
+<p>The thing that should happen: nothing, to the other nineteen. Each file carries its own status and its own error message, so a password-protected straggler or a corrupt download fails alone, visibly, with the reason attached. The finished results stay exactly where they are, and the <strong>Retry failed</strong> button reruns only the failures — fix the file, or simply try again on a flaky connection, without re-processing the ones that worked. It is a small design decision that determines whether batch tools are trustworthy: an all-or-nothing batch that dies at file 19 of 20 teaches you to process files one at a time, which defeats the point of having a batch tool at all.</p>
+
+<h2>When should you use the /batch page instead?</h2>
+<p>When the drop is bigger than a tool page comfortably holds, or when choosing the tool is the step you want last. The <a href="/batch">Batch</a> page is a CI-style dashboard: pick any one of the batchable tools — compression, conversion, rotation, watermarking, metadata stripping, and most other per-file jobs across PDF and image alike — then drag a whole folder onto it. Every file becomes a row with live status, failures retry individually, runs can go parallel or one-by-one, and a recent-batches panel remembers what you ran. Converting a phone's worth of HEICs with <a href="/tools/heic-to-jpg">HEIC to JPG</a>, shrinking a quarter's scans with <a href="/tool/compress-pdf">Compress PDF</a>, squeezing a website's images with <a href="/tools/image-compressor">Image Compressor</a> — folder in, ZIP out.</p>
+
+<h2>How do pipelines chain tools together?</h2>
+<p>Batch runs one tool across many files; <a href="/pipeline">Pipeline</a> runs many tools in sequence. You assemble the chain visually — file in, step 01, step 02, step 03, result out — dragging steps to reorder them, and the classic example is contract prep: <a href="/tool/merge-pdf">merge</a> → <a href="/tool/compress-pdf">compress</a> → <a href="/tool/watermark">watermark</a> → <a href="/tool/sign-pdf">sign</a>, one click, one output. Chains save under a name and reload later, so a team's document routine becomes a button rather than a checklist. Between the two pages the whole shape of repetitive file work is covered: same tool, many files — or many tools, one flow.</p>
+
+<h2>How do quota-based suites handle the same job?</h2>
+<p>By design, differently: the freemium model needs the meter. Task allowances per day or per hour — Sejda, to its credit, states its cap plainly at 3 tasks per hour — with a subscription to lift them; some ad-funded suites add a CAPTCHA in front of every task; and because those suites are upload-first, a 25-file batch means 25 files resting on someone else's infrastructure under someone else's retention policy. None of this is villainy — servers cost money, and meters are how freemium funds them — but it does mean the free tier is specifically not built for the day you arrive with a folder. That day is the one this page is about.</p>
+
+<h2>Why is it free with no quotas — what is the catch?</h2>
+<p>The unexciting answer is architecture. Most PrivaTools tools do their work in your browser, so your batch spends your CPU, not ours — quotas exist to protect servers, and for those tools there is no server to protect. The tools that do need one run on a single disclosed server with per-job deletion, funded as part of the project rather than per task. The pages load no third-party scripts and carry no ads, so there is no engagement math pushing toward meters either. The limits that do exist are physical and stated: 25 files per run on tool pages, 500&nbsp;MB per file, and your own machine's patience on the biggest local jobs.</p>
+
+<h2>The bottom line</h2>
+<p>Volume is where file tools reveal their real pricing model. Here the answer stays the same at one file or twenty-five: free, per-file status, retry what failed, one ZIP at the end — with <a href="/batch">/batch</a> when it is a folder and <a href="/pipeline">/pipeline</a> when it is a process. Bring the whole stack.</p>
+<p><a href="/batch">Run a batch now — free, no quotas, no account →</a></p>
+`,
+  },
+  {
+    slug: "chatpdf-alternatives-private",
+    title: "ChatPDF Alternatives That Don't Keep Your Documents",
+    description:
+      "Hosted chat-with-PDF services work by holding your file: upload, retention, their model, a subscription above the free tier. Here are the private alternatives — bring-your-own-key chat, an on-device summarizer, or a model on your own machine — with honest pros for both sides.",
+    publishedAt: "2026-09-01",
+    readTime: "7 min read",
+    tldr:
+      "ChatPDF-style services hold your document: it uploads to their servers, stays for follow-up questions, and a subscription sits above the free tier. The private alternative keeps the file out of a middleman's hands: PrivaTools Chat with PDF extracts text in your browser and sends questions straight to an AI provider you choose — or to a model on your own machine.",
+    relatedTools: ["chat-with-pdf", "summarize-pdf", "ocr-pdf", "translate-pdf"],
+    tags: ["AI", "PDF", "Comparison", "Privacy"],
+    author: "Lakshya Lodha",
+    body: `
+<p>Search for "chat with PDF" and the results are a crowd of near-identical services: ChatPDF, Humata, AskYourPDF, and dozens more. They work, and people like them — but every one of them works by taking custody of your document. If the documents you want to interrogate are contracts, medical records, or anything a client trusted you with, "works" is only half the question. This page maps the alternatives that answer the other half, and stays honest about what the hosted services still do better.</p>
+
+<h2>How do hosted chat-with-PDF services actually work?</h2>
+<p>Every hosted chat-with-PDF service — ChatPDF, Humata, AskYourPDF, and the many lookalikes — is built on the same wrapper architecture. You upload the document to their servers; they index it and keep it so follow-up questions work across sessions; their backend forwards your questions to an AI model they selected; and a free tier with limits sits under a subscription that lifts them. None of that is a scandal — it is simply what the design requires — but it means your document now lives under a second company's retention policy, staff-access rules, and terms about model training, stacked on top of whatever the underlying AI provider does. The product you are paying for is convenience plus custody: they hold your file so that you need no setup. A private alternative is any design that delivers the chat without the custody.</p>
+
+<h2>What is genuinely good about the hosted model?</h2>
+<p>Credit where due, because it is real. Zero setup: no API key, no configuration — sign up and drop a file. Persistence: documents and chat history follow your account across devices, which custody is what makes possible. Long documents: hosted services index your file and retrieve the relevant parts per question, so a 500-page manual is comfortable territory. And polish: dedicated apps, integrations, team features. For public documents — manuals, textbooks, published research — the custody trade costs you little and the convenience is genuine. The problem is narrower than the marketing on either side admits: it is specifically the documents that should not rest on a third party's infrastructure, which for anyone who works with clients is most of the interesting ones.</p>
+
+<h2>What does a private alternative look like?</h2>
+<p>Any design that delivers the chat without the custody. <a href="/tool/chat-with-pdf">PrivaTools Chat with PDF</a> does it with bring-your-own-key architecture: the PDF's text is extracted inside your browser tab with pdf.js, and each question travels directly from your browser to an AI provider you configured with your own API key — Anthropic, OpenAI, Google Gemini, Mistral, Groq, Together AI, DeepSeek, OpenRouter, or a self-hosted endpoint. PrivaTools servers never receive the document, the question, or the key; there is no second company holding your file, and no subscription — you pay your provider's per-token rate, typically a fraction of a cent per question. The strictest version points the same tool at Ollama on your own machine, where the provider is your own hardware and nothing crosses the internet. And when the job is a summary rather than a conversation, <a href="/tool/summarize-pdf">Summarize PDF</a> runs a free model entirely on-device — no key at all.</p>
+
+<h2>Side by side: custody versus your own key</h2>
+<p>Architecture, not a scoreboard — we cannot audit anyone's internals, so the table sticks to each model's own published design, with no guessed quotas or prices.</p>
+<table>
+  <thead><tr><th></th><th>Hosted chat services</th><th>PrivaTools Chat with PDF</th><th>Self-hosted (Ollama)</th></tr></thead>
+  <tbody>
+    <tr><td>Where the document goes</td><td>Uploaded to their servers</td><td>Text extracted in your tab; questions go only to your chosen provider</td><td>Nowhere — stays on your machine</td></tr>
+    <tr><td>Who holds it afterwards</td><td>They do, under their retention policy</td><td>No one — PrivaTools stores nothing server-side</td><td>You do</td></tr>
+    <tr><td>Who picks the model</td><td>They do</td><td>You — eight providers, or your own endpoint</td><td>You</td></tr>
+    <tr><td>Price model</td><td>Free tier with limits; subscription above it</td><td>Free tool; your provider bills per question</td><td>Free; your hardware does the work</td></tr>
+    <tr><td>Account</td><td>Yes</td><td>No</td><td>No</td></tr>
+    <tr><td>Setup</td><td>None — their real advantage</td><td>Paste an API key once (~10 minutes)</td><td>Install and run a local model</td></tr>
+  </tbody>
+</table>
+
+<h2>What trade-offs do you accept by going private?</h2>
+<p>Four honest ones. You need a key: ten minutes once, but a real step — the <a href="/blog/bring-your-own-ai-key-guide">setup guide</a> walks through every provider. The PDF needs a text layer: scanned documents go through <a href="/tool/ocr-pdf">OCR PDF</a> first, where hosted services often OCR silently for you. Very long documents are truncated: the model sees roughly the first 100,000 characters — about 60–100 pages — and is instructed to say so rather than guess past the cutoff, whereas hosted retrieval pipelines handle 500-page documents gracefully. And there is no synced history: conversations are not stored on anyone's account, because there is no account — which is precisely the feature, seen from the other side.</p>
+
+<h2>The bottom line</h2>
+<p>The chat-with-PDF category quietly bundles two products: the AI conversation, and the custody of your document. The hosted services sell them together and are genuinely convenient; the private alternatives unbundle them. Ask your questions through your own key — or your own machine — and the list of parties holding your document drops to the one you chose, or to zero. For the documents that made you hesitate before uploading, that is the whole point.</p>
+<p><a href="/tool/chat-with-pdf">Chat with a PDF privately — free, no account, no middleman →</a></p>
+`,
   },
 ];
 

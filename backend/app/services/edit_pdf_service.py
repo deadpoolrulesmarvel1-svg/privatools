@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import math
 
 import pikepdf
 from reportlab.lib.colors import Color
@@ -103,6 +104,57 @@ def edit_pdf(input_path: str, edits: list) -> str:
                     c.setStrokeColor(Color(r, g, b))
                     c.setLineWidth(stroke_width)
                     c.line(x1, y1, x2, y2)
+
+                elif edit_type == "arrow":
+                    x1 = float(edit.get("x1", 0))
+                    y1 = float(edit.get("y1", 0))
+                    x2 = float(edit.get("x2", 100))
+                    y2 = float(edit.get("y2", 0))
+                    color = edit.get("color", "#000000")
+                    stroke_width = float(edit.get("stroke_width", 2))
+                    r, g, b = _hex_to_rgb(color)
+                    c.setStrokeColor(Color(r, g, b))
+                    c.setFillColor(Color(r, g, b))
+                    c.setLineWidth(stroke_width)
+                    c.setLineCap(1)
+                    ang = math.atan2(y2 - y1, x2 - x1)
+                    head = max(10.0, stroke_width * 4)
+                    # Shaft stops inside the head so the tip stays sharp.
+                    sx = x2 - head * 0.6 * math.cos(ang)
+                    sy = y2 - head * 0.6 * math.sin(ang)
+                    c.line(x1, y1, sx, sy)
+                    hx1 = x2 - head * math.cos(ang - 0.42)
+                    hy1 = y2 - head * math.sin(ang - 0.42)
+                    hx2 = x2 - head * math.cos(ang + 0.42)
+                    hy2 = y2 - head * math.sin(ang + 0.42)
+                    path = c.beginPath()
+                    path.moveTo(x2, y2)
+                    path.lineTo(hx1, hy1)
+                    path.lineTo(hx2, hy2)
+                    path.close()
+                    c.drawPath(path, stroke=0, fill=1)
+
+                elif edit_type == "pen":
+                    raw_points = edit.get("points") or []
+                    color = edit.get("color", "#000000")
+                    stroke_width = float(edit.get("stroke_width", 2))
+                    points = []
+                    for pt in raw_points[:2000]:
+                        try:
+                            points.append((float(pt[0]), float(pt[1])))
+                        except (TypeError, ValueError, IndexError):
+                            continue
+                    if len(points) >= 2:
+                        r, g, b = _hex_to_rgb(color)
+                        c.setStrokeColor(Color(r, g, b))
+                        c.setLineWidth(stroke_width)
+                        c.setLineCap(1)
+                        c.setLineJoin(1)
+                        path = c.beginPath()
+                        path.moveTo(*points[0])
+                        for pt in points[1:]:
+                            path.lineTo(*pt)
+                        c.drawPath(path, stroke=1, fill=0)
 
                 elif edit_type == "highlight":
                     hx = float(edit.get("x", 0))

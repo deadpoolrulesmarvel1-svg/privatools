@@ -16,6 +16,7 @@
  * binding — the generated JSX renders `{v.realToolUI}` like any other value.
  */
 import React, { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
@@ -27,6 +28,14 @@ const NON_PDF_COUNT = nonPdfTools.length;
 const ToolUI = lazy(() =>
     import("@/pages/ToolPage").then((m) => ({ default: m.ToolUI })),
 );
+// Non-PDF slugs have their own dedicated switch — routing them through the
+// PDF one silently served GenericUI (a file dropzone) for text tools like
+// the hash generator, and the queue-converted image/AV components never
+// mounted in a skin at all.
+const NonPdfToolUI = lazy(() =>
+    import("@/pages/NonPdfToolPage").then((m) => ({ default: m.ToolUI })),
+);
+const NON_PDF_SLUGS = new Set(nonPdfTools.map((t) => t.slug));
 
 const BY_SLUG = new Map(
     [...tools, ...nonPdfTools].map((t) => [t.slug, t]),
@@ -87,17 +96,27 @@ export function withRealTools(Base, config) {
                 realToolUI: (
                     <Suspense
                         fallback={
-                            <div style={{ padding: "24px 0", opacity: 0.65, fontSize: 13 }}>
-                                Loading {tool.name}…
+                            <div style={{ padding: "24px 0", display: "grid", gap: 12 }} aria-label={`Loading ${tool.name}`}>
+                                <Skeleton className="h-44 w-full rounded-[14px]" />
+                                <Skeleton className="h-4 w-56" />
                             </div>
                         }
                     >
-                        <ToolUI
-                            slug={tool.slug}
-                            toolName={tool.name}
-                            outputLabel={tool.outputLabel ?? "file"}
-                            accepts={tool.accepts ?? ""}
-                        />
+                        {NON_PDF_SLUGS.has(tool.slug) ? (
+                            <NonPdfToolUI
+                                slug={tool.slug}
+                                toolName={tool.name}
+                                outputLabel={tool.outputLabel ?? "file"}
+                                accepts={tool.accepts ?? ""}
+                            />
+                        ) : (
+                            <ToolUI
+                                slug={tool.slug}
+                                toolName={tool.name}
+                                outputLabel={tool.outputLabel ?? "file"}
+                                accepts={tool.accepts ?? ""}
+                            />
+                        )}
                     </Suspense>
                 ),
             };

@@ -77,3 +77,24 @@ export async function listConfigured(): Promise<string[]> {
     const keys = await db.keys("secrets");
     return keys.filter((k) => k.startsWith(PREFIX)).map((k) => k.slice(PREFIX.length));
 }
+
+/* ── Base URLs ──
+   Only the self-hosted provider needs one. It is configuration, not secret
+   material, so plain localStorage is fine — and synchronous reads let call
+   sites thread it without another await. */
+const BASE_URL_PREFIX = "privatools.byok.baseurl.";
+
+export function saveBaseUrl(providerId: string, url: string): void {
+    try {
+        if (url.trim()) localStorage.setItem(BASE_URL_PREFIX + providerId, url.trim());
+        else localStorage.removeItem(BASE_URL_PREFIX + providerId);
+    } catch { /* storage unavailable — session-only entry */ }
+}
+
+export function getBaseUrl(providerId: string): string | undefined {
+    try {
+        return localStorage.getItem(BASE_URL_PREFIX + providerId) || undefined;
+    } catch {
+        return undefined;
+    }
+}

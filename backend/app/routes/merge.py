@@ -103,7 +103,7 @@ async def merge_pdfs(
                     status_code=400,
                     detail=f"File {file.filename or 'unknown'} is empty",
                 )
-            validate_pdf_content(content)
+            validate_pdf_content(content, filename=file.filename)
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))

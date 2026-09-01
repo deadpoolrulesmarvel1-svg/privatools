@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="dark light" />
-    <!-- Preload the two self-hosted Fraunces weights painted above the fold. -->
-    <link rel="preload" as="font" type="font/woff2" crossorigin media="(min-width: 1024px)"
-          href="/fonts/fraunces-latin-400-normal.woff2" />
-    <link rel="preload" as="font" type="font/woff2" crossorigin media="(min-width: 1024px)"
-          href="/fonts/fraunces-latin-700-normal.woff2" />
+    <!-- Preload the faces painted above the fold: Manrope carries the body,
+         Bricolage the headline. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="/fonts/skins/manrope-400-73389ca9.ce093b341d.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="/fonts/bricolage-grotesque-latin-700-normal.woff2" />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts.">
     <meta name="author" content="PrivaTools" />
-    <meta name="theme-color" content="#060606" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F1113" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta property="og:title" content="PrivaTools — Free, Open-Source Privacy-First File Tools">
     <meta property="og:description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated backend processing when needed.">
@@ -28,7 +29,7 @@
     <meta name="twitter:title" content="PrivaTools — Free, Open-Source Privacy-First File Tools">
     <meta name="twitter:description" content="Free, open-source file tools. Browser-only when possible; isolated backend processing when needed.">
     <meta name="twitter:image" content="https://privatools.me/og-image.png">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B0000' stroke-width='2.5'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect width='22' height='22' rx='5' fill='%230F1113'/%3E%3Cg fill='none' stroke='%2338D392' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' transform='translate(2.2,2.2) scale(0.8)'%3E%3Cpath d='M11 2 L19 6 V11 C19 15.5 15.6 19 11 20 C6.4 19 3 15.5 3 11 V6 Z'/%3E%3Cpath d='M7.5 11 L10 13.5 L14.5 8.5'/%3E%3C/g%3E%3C/svg%3E" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="search" type="application/opensearchdescription+xml" title="PrivaTools" href="/opensearch.xml" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
@@ -39,68 +40,53 @@
         top: 18px;
         left: 16px;
         pointer-events: none;
-        font-family: "Bricolage Grotesque", Archivo, system-ui, sans-serif;
+        font-family: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
         font-size: 20px;
         line-height: 1;
         font-weight: 700;
         letter-spacing: -0.03em;
-        color: hsl(var(--foreground, 216 19% 5%));
+        color: #15191B;
       }
-      #prepaint-brand em { font-style: normal; }
-      /* The prepaint brand exists only to paint something before hydration. It is
-         position:fixed, so it cannot track a centred max-width header across all
-         viewports — matching it by hand drifts and shows up as a doubled logo.
-         AppShell sets .app-ready on mount and it retires. */
+      #prepaint-brand em { font-style: normal; color: #0C7E56; }
+      /* The prepaint brand exists only to paint something before hydration.
+         SkinAppHost sets .app-ready on mount and it retires. */
       .app-ready #prepaint-brand { display: none; }
-      /* Without this a dark-mode visitor gets a white flash before hydration. */
+      #prepaint-shell { background: #FAFAF8; color: #15191B; }
+      #prepaint-shell header { border-bottom: 1px solid #E7E5DF; }
+      /* Dark, once the pre-paint script has resolved the stored choice… */
+      html[data-theme="midnight"] #prepaint-shell { background: #000000; color: #F2F3F5; }
+      html[data-theme="midnight"] #prepaint-brand { color: #F2F3F5; }
+      html[data-theme="midnight"] #prepaint-brand em { color: #3EE39C; }
+      html[data-theme="dark"] #prepaint-brand { color: #E8EAED; }
+      html[data-theme="dark"] #prepaint-brand em { color: #38D392; }
+      html[data-theme="dark"] #prepaint-shell { background: #0F1113; color: #E8EAED; }
+      html[data-theme="dark"] #prepaint-shell header { border-bottom-color: #22262B; }
+      /* …and before it has run at all (or with JS off). */
       @media (prefers-color-scheme: dark) {
-        #prepaint-brand { color: #e9ecf1; }
-        #prepaint-shell { background: #060606; color: #eef5f6; }
-        #prepaint-shell header { border-bottom-color: #262626; }
+        html:not([data-theme]) #prepaint-brand { color: #E8EAED; }
+        html:not([data-theme]) #prepaint-brand em { color: #38D392; }
+        html:not([data-theme]) #prepaint-shell { background: #0F1113; color: #E8EAED; }
+        html:not([data-theme]) #prepaint-shell header { border-bottom-color: #22262B; }
       }
       @media (min-width: 640px) {
         #prepaint-brand { left: 24px; }
       }
-      @media (max-width: 1023px) and (pointer: coarse) {
-        #prepaint-brand { left: 68px; }
-      }
     </style>
 
       <script>
-      /* Pre-paint theme + skin. Runs before <body> renders so a stored choice
-         never flashes the default palette first. Mirrors lib/skins.ts:
-         `signature` owns :root and therefore carries no data-skin attribute. */
+      /* Pre-paint theme. Runs before <body> renders so a stored choice never
+         flashes the other palette first. Mirrors lib/skinTheme.ts: Daylight
+         paints from `data-theme` on <html>; `system` resolves against the OS. */
       (function () {
         try {
           var d = document.documentElement;
-          var skin = window.localStorage.getItem('privatools_skin');
-          if (skin && skin !== 'signature' &&
-              ['aurora', 'carbon', 'structured'].indexOf(skin) !== -1) {
-            d.setAttribute('data-skin', skin);
+          var pref = null;
+          try { pref = window.localStorage.getItem('privatools.daylight.theme'); } catch (e) {}
+          if (pref !== 'light' && pref !== 'dark' && pref !== 'midnight') {
+            pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
           }
-          var t = window.localStorage.getItem('privatools_theme');
-          if (t === 'dark' || t === 'light') {
-            d.classList.add(t);
-            d.classList.remove(t === 'dark' ? 'light' : 'dark');
-          }
-          /* The ported designs run on `data-theme` and each keeps its own key.
-             They apply it in componentDidMount, which is after first paint, so
-             without this a visitor who chose light saw the dark palette flash
-             on every load. Resolve it here instead. */
-          if (skin === 'aurora' || skin === 'carbon' || skin === 'structured') {
-            var pref = null;
-            if (skin === 'aurora') pref = window.localStorage.getItem('pt-theme');
-            else if (skin === 'carbon') pref = window.localStorage.getItem('pt.theme');
-            else {
-              var raw = window.localStorage.getItem('privatools.local.v1');
-              if (raw) pref = (JSON.parse(raw) || {}).theme;
-            }
-            if (pref === 'system') {
-              pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-            }
-            if (pref === 'dark' || pref === 'light') d.setAttribute('data-theme', pref);
-          }
-        } catch (e) { /* private mode — fall through to defaults */ }
+          d.setAttribute('data-theme', pref);
+        } catch (e) { /* private mode — the CSS media fallback covers it */ }
       })();
     </script>
 </head>
@@ -112,8 +98,8 @@
     <a id="prepaint-skip" href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
     <div id="prepaint-brand" aria-hidden="true">Priva<em>tools</em></div>
     <div id="root">
-      <div id="prepaint-shell" style="min-height:100vh;background:#ffffff;color:#0b0d10;font-family:Archivo,system-ui,sans-serif">
-        <header style="height:56px;border-bottom:1px solid #e4e8ef"></header>
+      <div id="prepaint-shell" style="min-height:100vh;font-family:Manrope,system-ui,sans-serif">
+        <header style="height:56px"></header>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

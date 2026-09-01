@@ -4,7 +4,8 @@
 
 **Every file task, done privately.**
 
-214 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
+221 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
+AI two private ways: on-device models that download once into your browser, or your own API key going straight to the provider.
 Zero uploads to third parties. No account needed. No watermarks. No premium tier.
 
 [![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
@@ -25,11 +26,13 @@ Zero uploads to third parties. No account needed. No watermarks. No premium tier
 | **Truly free** | 100%, no quota | Limited free / paid tier |
 | **No account** | Just open and use | Email / sign-up required |
 | **Privacy** | Files processed in an isolated container, deleted on response; many tools never leave your browser | Uploaded to vendor cloud |
-| **Tool count** | **214** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
+| **Tool count** | **221** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
+| **On-device AI** | 6 models (summarize, PII detection, translation, background removal, 2× Whisper speech-to-text) download once into the browser cache, then run offline — nothing uploads | Cloud APIs |
+| **Bring your own AI key** | Chat with PDF, vision OCR, translation, redaction, transcription through *your* Anthropic/OpenAI/Gemini/Groq/Mistral/OpenRouter/DeepSeek/Together or self-hosted key — requests go browser → provider, never through PrivaTools | Not offered |
+| **Batch everywhere** | ~160 tools take up to 25 files per run: per-file status, retry failed, one ZIP | Batch is a paid feature |
 | **Pipeline** | Chain Merge → Compress → Watermark → Sign in one click | Not offered free |
 | **Self-hostable** | `docker compose up --build` | No |
 | **Open source** | MIT — fork, modify, deploy | Proprietary |
-| **In-browser AI** | Summarize PDF + Smart Redact run via WebAssembly — no upload | Cloud APIs |
 
 ---
 
@@ -79,81 +82,38 @@ sudo apt install tesseract-ocr ffmpeg qpdf libreoffice
 
 ---
 
-## 🛠️ All Tools (214)
+## 🛠️ All Tools (221)
 
-### 📄 PDF Tools (101)
+Counts come straight from the tool registry (2026-09-01) — the full, always-current catalogue lives at [privatools.me/tools](https://privatools.me/tools).
 
-<details>
-<summary><b>Organize & manage (12)</b></summary>
+| Family | Count | What's inside |
+|---|---|---|
+| 📄 **PDF — organize** | 12 | Merge, Split (by size/bookmarks/text/half), Organize, Delete/Extract Pages, Reverse, Booklet, Alternate Mix, Repair |
+| 📄 **PDF — edit** | 17 | Edit PDF (text, ink pen, arrows, shapes, images, whiteout, layers panel), Sign & E-Sign, Watermark + Remove Watermark, Stamp, Header/Footer, Page Numbers, Bates, Bookmarks, Forms, Hyperlinks, Highlight, Annotate |
+| 📄 **PDF — optimize** | 12 | Compress (9 profiles + target size), Web Optimize, Flatten, Grayscale, Deskew, Crop, Auto Crop, Resize, Rotate, Remove Blank Pages, Invert Colors |
+| 📄 **PDF — security** | 13 | Protect, Unlock (vault auto-try), Redact, Smart Redact (AI), Sanitize, Strip Metadata, Permissions, Verify Signature, Metadata Editor |
+| 📄 **PDF — convert to** | 22 | Images/HTML/URL/Office/ODT/TXT/Markdown/CSV/EPUB/RTF/JSON/XML → PDF |
+| 📄 **PDF — convert from** | 17 | PDF → images/Word/Excel/PPTX/Text/HTML/RTF/EPUB/Markdown/PDF-A, Extract Tables & Images, Long Image |
+| 📄 **PDF — advanced** | 14 | **Chat with PDF (AI)**, Summarize (AI), **Translate (AI)**, OCR (3 engines), Compare, N-up, Overlay, PDF/A Validator, Page Counter |
+| 🖼️ **Images** | 40 | Compress, Convert, Resize & Crop, **Remove Background (on-device AI)**, Upscale, Watermark ± removal, EXIF scrub/view, **Image OCR (3 engines)**, Collage, Favicon, QR/Barcode, HEIC/WebP/TIFF/BMP/GIF ↔ JPG/PNG |
+| 🎬 **Video & Audio** | 44 | Convert, Resize, Merge, Trim, GIF ↔ MP4, Mute/Reverse/Speed, Compress, Extract Audio, **Transcribe Audio (AI, on-device Whisper or your key)**, Subtitles (convert + burn), thumbnails |
+| 💻 **Developer & Text** | 26 | JSON/XML/YAML/CSV converters, Markdown ↔ HTML, Diff, Counter, Base64, Hashes, JWT, Regex, Timestamps, UUID/Password generators, Case, Colors |
+| 📦 **Archive & Office** | 4 | Extract Archive, Create ZIP, office document tools |
 
-Merge PDF · Split PDF · Split by Bookmarks · Split by Size · Split in Half · Organize Pages · Delete Pages · Extract Pages · Reverse PDF · Booklet PDF · Alternate Mix · Repair PDF
+### 🤖 AI, two private ways
 
-</details>
+**On-device models** — download once from the Hugging Face CDN into the browser cache, then work on every visit, even offline. No key, no account, nothing uploads. Managed from the **AI hub** in the top bar (install, sizes, remove):
 
-<details>
-<summary><b>Edit content (16)</b></summary>
+| Model | Powers | Size |
+|---|---|---|
+| DistilBART CNN 6-6 | Summarize PDF | ~250 MB |
+| BERT-base-NER | Smart Redact PII detection | ~250 MB |
+| OPUS-MT (per language pair) | Translate PDF | ~107 MB |
+| RMBG-1.4 | Remove Background | ~44 MB |
+| Whisper tiny / base | Transcribe Audio | ~41 / ~74 MB |
+| tesseract.js + language packs | OCR PDF · Image OCR | few MB per language |
 
-Edit PDF · Sign PDF · E-Sign PDF · Watermark · Stamp PDF · Header/Footer · Page Numbers · Bates Numbering · Bookmarks · Fill Form · Form Creator · Add Hyperlinks · Highlight PDF · Whiteout PDF · Annotate PDF · Add Shapes
-
-</details>
-
-<details>
-<summary><b>Optimize & fix (12)</b></summary>
-
-Compress · Web Optimize · Flatten · Grayscale · Deskew · Crop · Auto Crop · Resize · Rotate · Remove Blank Pages · Invert Colors · Batch Compress
-
-</details>
-
-<details>
-<summary><b>Security & privacy (11)</b></summary>
-
-Protect · Unlock · Redact · Smart Redact (AI/NER) · Sanitize · Strip Metadata · Delete Annotations · Permissions · Verify Signature · Add Attachment · Metadata Editor
-
-</details>
-
-<details>
-<summary><b>Convert to PDF (22)</b></summary>
-
-JPG → PDF · PNG → PDF · HEIC → PDF · WebP → PDF · TIFF → PDF · BMP → PDF · GIF → PDF · SVG → PDF · Image → PDF (generic) · HTML → PDF · URL → PDF · Word → PDF · Excel → PDF · PowerPoint → PDF · ODT → PDF · TXT → PDF · Markdown → PDF · CSV → PDF · EPUB → PDF · RTF → PDF · JSON → PDF · XML → PDF
-
-</details>
-
-<details>
-<summary><b>Convert from PDF (16)</b></summary>
-
-PDF → JPG · PDF → PNG · PDF → TIFF · PDF → BMP · PDF → GIF · PDF → SVG · PDF → Image (generic) · PDF → Word · PDF → Excel · PDF → PPTX · PDF → Text · PDF → HTML · PDF → RTF · PDF → EPUB · PDF → Markdown · Extract Tables
-
-</details>
-
-<details>
-<summary><b>Advanced (12)</b></summary>
-
-OCR · Compare · QR Code · NUP · PDF/A Convert · PDF/A Validator · Split by Text · Transparent Background · Summarize PDF (browser AI) · Extract Images · PDF Page Counter · Page-by-Page Extract
-
-</details>
-
-### 🖼️ Image Tools (33)
-
-Image Compressor · Image Converter · Resize & Crop · Image Watermark · Remove Background (local AI) · Image Upscaler · Remove EXIF · View EXIF · Rotate Image · Flip Image · Pixelate / Blur Image · Image Color Palette · Image OCR · Merge Images · Photo Collage · Favicon Generator · Barcode Generator · QR Reader · SVG → PNG · HEIC → JPG · HEIC → PNG · WebP → JPG · WebP → PNG · JPG → PNG · PNG → JPG · JPG → WebP · PNG → WebP · TIFF → JPG · TIFF → PNG · BMP → JPG · BMP → PNG · GIF → JPG · GIF → PNG
-
-### 🎬 Video & Audio (23)
-
-Video Converter (MP4/WebM/MOV/AVI/MKV) · Video Resizer · Video Merge · Video Thumbnail · Video to GIF · Video to PDF · Mute Video · Reverse Video · Video Speed Changer (0.25× – 4×) · Compress Video · Extract Audio · Audio Converter · Audio Merge · Audio Trimmer · Trim Media · GIF → MP4 · MP4 → MP3 · M4A → MP3 · MOV → MP4 · AVI → MP4 · WebM → MP4 · MP4 → WebM · Subtitle Converter · Burn Subtitles
-
-### 💻 Developer & Text (18)
-
-JSON / XML Formatter · CSV ↔ JSON · YAML ↔ JSON · Markdown ↔ HTML · Case Converter · Text Diff · Word Counter · Base64 Encode/Decode · Hash Generator (MD5 / SHA-1 / SHA-256 / SHA-512) · JWT Decoder · Regex Tester · Timestamp Converter · URL Encoder · Color Converter (HEX ↔ RGB ↔ HSL) · UUID Generator (v4 + v7) · Password Generator · Lorem Ipsum
-
-### 📦 Archive (2)
-
-Extract Archive · Create ZIP
-
-### 🤖 Browser-only AI (no upload)
-
-- **Summarize PDF** — `distilbart-cnn-12-6` running via @huggingface/transformers + WebAssembly. ~250 MB model downloaded once and cached.
-- **Smart Redact** — `BERT-base-NER` auto-detects names, emails, phones, SSNs entirely in-browser. Combined with manual rectangle redaction.
-
----
+**Bring your own key (BYOK)** — paste an API key once (encrypted on-device, never sent to PrivaTools) and five tools use frontier models: **Chat with PDF**, **Summarize**, **Translate** (any language), **Smart Redact** NER, **Transcribe Audio** — plus **vision OCR** on both OCR tools for hard scans. Eight hosted providers (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, DeepSeek, Together) plus any self-hosted OpenAI-compatible endpoint (Ollama, vLLM). Every request goes **browser → provider directly**; the page's Content-Security-Policy only permits provider egress on the pages that actually use a key.
 
 ## 📊 Compare & guides
 
@@ -167,6 +127,9 @@ In-depth guides on the [blog](https://privatools.me/blog):
 - [10 Best iLovePDF Alternatives in 2026](https://privatools.me/blog/ilovepdf-alternatives-2026)
 - [How to Compress a PDF Without Losing Quality](https://privatools.me/blog/compress-pdf-without-losing-quality)
 - [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
+- [How to Chat With a PDF for Free — Without Uploading It](https://privatools.me/blog/chat-with-pdf-free-private)
+- [AI PDF Tools, No Upload Required: Your Own Key or On-Device Models](https://privatools.me/blog/ai-pdf-tools-no-upload-byok)
+- [Remove an Image Background Without Uploading It Anywhere](https://privatools.me/blog/remove-background-without-uploading)
 
 ---
 
@@ -220,9 +183,13 @@ Developer clients live under `packages/`:
 - CLI: `npx --no-install privatools --help`
 - Browser extension: load `packages/extension` unpacked in a Manifest V3 browser
 
-### Batch
+### Multi-file, everywhere
 
-Apply one tool to many files at once. Drop 50 PDFs into Batch Compress, get a ZIP of compressed outputs back. Available at `/batch`.
+Roughly 160 tools accept up to 25 files directly on the tool page — same settings applied to each, bounded concurrency, per-file status rows, retry-failed, and a single ZIP (one file keeps the classic direct download). The dedicated `/batch` page still handles the "drop 50 PDFs" case with drag-reordering.
+
+### The AI hub
+
+The **AI** button in the top bar opens one dialog for everything AI: manage the encrypted provider keys (BYOK) and see, pre-download, or delete the on-device models with their true cached sizes — introspected live from the browser cache, so it can't lie.
 
 ---
 
@@ -265,7 +232,7 @@ privatools/
 │   │   │   ├── CommandPalette.tsx  # ⌘K with multi-token fuzzy scoring
 │   │   │   ├── EditorialMasthead.tsx, EditorialFooter.tsx
 │   │   │   └── ...
-│   │   ├── data/             # tools.ts (101 PDF) + non-pdf-tools.ts (112) + blog.ts (15)
+│   │   ├── data/             # tools.ts (107 PDF) + non-pdf-tools.ts (114) + blog.ts (25 posts)
 │   │   ├── hooks/            # useHistory, useTheme, useUxHelpers
 │   │   ├── pages/            # Index, ToolPage, NonPdfToolPage, Pipeline, Batch, Blog, Compare, About, ...
 │   │   └── lib/              # API client, output filename helpers, error mapping
@@ -290,7 +257,7 @@ PrivaTools ships with serious AI / answer-engine optimisation:
 - **SSR meta + JSON-LD** for every route via Python middleware (Organization, WebSite, SoftwareApplication, BreadcrumbList, HowTo, FAQPage, BlogPosting, Article+Review, AboutPage, CollectionPage, ItemList, SpeakableSpecification)
 - **`speakable` CSS-selector targets** on every TL;DR and FAQ so voice assistants and featured-snippet pickers get a clean read-aloud target
 - **`llms.txt` + `llms-full.txt`** — auto-generated index and full corpus for AI crawlers (ChatGPT, Claude, Perplexity, Gemini)
-- **HowTo + FAQ schema** on every one of the 214 tools
+- **HowTo + FAQ schema** on every one of the 221 tools
 - **Dynamic OG images** per route via `/api/og-image?p=<path>`
 - **robots.txt** explicitly allows 21 AI crawlers and blocks aggressive ones
 
@@ -348,7 +315,7 @@ Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO en
 
 ### Guidelines
 
-- **Privacy first** — never add external API calls that send file content off-server
+- **Privacy first** — the server never sends file content to third parties. The one sanctioned exception is BYOK, and it lives entirely in the browser: the client may call the user's *chosen* AI provider with the user's *own* key, directly, with CSP scoping that egress to the specific tool pages that use it
 - **Test before PR** — `python -m pytest backend/tests -q` for backend, `npm run build && npm test` for frontend
 - **Match the style** — follow existing patterns in similar tools
 - **Update docs** — add a CHANGELOG entry and a TLDR in `seo_meta.py`
@@ -362,7 +329,9 @@ Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`, a TLDR + SEO en
 - ✅ **No account, sign-up, email or payment needed to use any tool**
 - ✅ **No watermarks, no daily quota, no premium tier**
 - ✅ **500 MB upload limit per file**, unlimited files per day
-- ✅ AI runs via WebAssembly **in your browser** — no third-party AI APIs
+- ✅ Default AI runs via WebAssembly **in your browser** — models download once, cache locally, and work offline; no third-party AI APIs are involved
+- ✅ Optional **bring-your-own-key** AI sends requests from **your browser straight to the provider you chose**, authenticated with your key (stored encrypted on your device) — PrivaTools is never in the path, and CSP confines provider egress to the AI tool pages
+- ✅ Saved PDF passwords live in a **device-local encrypted vault** (WebCrypto, non-extractable key) — never synced, never uploaded
 - ✅ The public demo at privatools.me uses **anonymous GA4 pageview telemetry only** (IP-anonymized; blockable by any extension). No other trackers, no ad networks, no behavioural profiling
 - ✅ **Open source under MIT** — audit `backend/app/utils/cleanup.py` and `backend/app/main.py` yourself
 

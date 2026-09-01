@@ -2,7 +2,7 @@ import {
   FileText, Merge, Scissors, BookOpen, Layout, Trash2, Download,
   PenTool, Stamp, AlignLeft, Hash, Tag, Bookmark,
   Minimize2, Layers, ScanLine, Wrench, Maximize2, RotateCw, Palette, Crop,
-  Shield, Unlock, EyeOff, DatabaseZap, MessageSquareOff, Info,
+  Shield, Unlock, EyeOff, DatabaseZap, MessageSquareOff, MessagesSquare, Info,
   Code, Image, FileBox,
   Table, FileImage, Presentation, Type, FileOutput,
   Shuffle, GitCompare, ImageDown, FormInput, Grid2x2, ScanText, Copy, QrCode, Archive,
@@ -25,6 +25,8 @@ export interface Tool {
   /** Lower = shown earlier in the UI. Reflects relative search demand. */
   popularity?: number;
   clientOnly?: boolean;
+  /** Tool can optionally use the visitor's own AI API key (BYOK). */
+  byok?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -74,7 +76,7 @@ const _toolsRaw: Tool[] = [
   },
   {
     slug: "split-in-half", icon: ScissorsSquare, name: "Split in Half",
-    description: "Split each page in half — for two-up scans &amp; booklets",
+    description: "Split each page in half — for two-up scans & booklets",
     longDescription: "Split each PDF page in half down the middle (or across the middle) — perfect for un-imposing scanned booklets, two-up scans, and side-by-side documents that need to be one page per side. Choose vertical (left+right) or horizontal (top+bottom).",
     synonyms: "two columns down middle horizontal vertical",
     popularity: 20,
@@ -694,7 +696,7 @@ const _toolsRaw: Tool[] = [
     longDescription: "Summarize PDF online with AI — without uploading. By default PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server. If you would rather use a stronger model, you can supply your own API key — then the text goes straight from your browser to that provider, still never through us. Choose short, medium, or long summaries. First load of the on-device model downloads ~250 MB and caches it for next time.",
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
-    category: "advanced", clientOnly: true, accepts: ".pdf", outputLabel: "summary.txt",
+    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "summary.txt",
   },
   {
     slug: "smart-redact", icon: ShieldCheck, name: "Smart Redact (AI)",
@@ -702,7 +704,15 @@ const _toolsRaw: Tool[] = [
     longDescription: "Smart Redact PDF online with AI — regex passes always run in your browser, catching emails, phone numbers, SSNs and card numbers with no model and no network. Names and organisations are found either by a local NER model, so nothing leaves the tab, or by your own AI key for far better coverage — in which case the values the regex pass already found are masked out before any text is sent. Review the suggestions, uncheck anything you want to keep, then the PDF and chosen strings are sent for real PyMuPDF redaction — permanent removal, not just a black overlay.",
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
-    category: "security", clientOnly: false, accepts: ".pdf", outputLabel: "redacted.pdf",
+    category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
+  },
+  {
+    slug: "chat-with-pdf", icon: MessagesSquare, name: "Chat with PDF (AI)",
+    description: "Ask questions about a PDF — answered with your own AI key",
+    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, or your own self-hosted endpoint), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions keep the conversation's context.",
+    synonyms: "ask pdf chat document ai question answer chatpdf talk",
+    popularity: 30,
+    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
   },
   {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",
@@ -798,10 +808,10 @@ const _toolsRaw: Tool[] = [
   {
     slug: "translate-pdf", icon: Languages, name: "Translate PDF",
     description: "Translate a PDF without uploading it",
-    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic, Hindi and Russian. No account, no API key, no watermarks. First run downloads the translation model once and caches it.",
+    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages on the free on-device model, or any language with your own AI key (optional) — the text then goes straight from your browser to that provider, never through us. No account, no watermarks. First run of the on-device model downloads it once and caches it.",
     synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
     popularity: 45,
-    clientOnly: true,
+    clientOnly: true, byok: true,
     category: "advanced", accepts: ".pdf", outputLabel: "translated text",
   },
 

@@ -1,11 +1,14 @@
 /**
  * VideoToGifUI — convert video to GIF with FPS + width controls.
+ * Multi-file via useMultiFileProcessor (same FPS/width applied to every video).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Film } from "lucide-react";
-import { friendlyError } from "@/lib/utils";
-import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, CheckCircle2, RotateCcw, Film, Download } from "lucide-react";
+import { downloadBlob, buildOutputFilename } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
 import { FileUploadZone } from "./FileUploadZone";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const VIDEO_TO_GIF_DEFAULTS: { fps: number; width: number } = {
@@ -18,83 +21,143 @@ export function VideoToGifUI() {
     const { fps, width } = config;
     const setFps = useCallback((v: React.SetStateAction<typeof VIDEO_TO_GIF_DEFAULTS["fps"]>) => setField("fps", v), [setField]);
     const setWidth = useCallback((v: React.SetStateAction<typeof VIDEO_TO_GIF_DEFAULTS["width"]>) => setField("width", v), [setField]);
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
 
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const canProcess = !!file && status !== "processing";
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
     // Rough GIF size estimate. GIF is hard to predict but a reasonable rule of
     // thumb is bytes ≈ pixels-per-frame * frames * 0.3 (palette + LZW saves a
     // lot but we want to be conservative). We don't know the duration without
     // probing the video so we cap at "per second" with a heuristic note.
     const estimate = useMemo(() => {
-        if (!file) return null;
+        if (proc.entries.length === 0) return null;
         const height = Math.round(width * 9 / 16); // assume 16:9 — best we can do without metadata
         const pxPerFrame = width * height;
         const bytesPerSec = pxPerFrame * fps * 0.3;
         const mbPerSec = bytesPerSec / (1024 * 1024);
         return mbPerSec;
-    }, [file, fps, width]);
+    }, [proc.entries.length, fps, width]);
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try {
-            await processAndDownload("/video-to-gif", file, buildOutputFilename(file.name, null, "gif"), { fps, width });
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't convert that video."));
-            setStatus("idle");
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/video-to-gif",
+            outputSuffix: null,
+            outputExt: "gif",
+            params: { fps, width },
+        }, retry);
+        setPhase("done");
+    }, [proc, fps, width]);
+
+    // The backend answers with a generic `output.gif` name; the old UI named
+    // downloads after the source file (`stem.gif`). Keep that: build names
+    // client-side. N=1 → direct blob, N>1 → zip.
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, buildOutputFilename(done[0].name, null, "gif"));
+            return;
         }
-    }, [file, fps, width]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: buildOutputFilename(e.name, null, "gif"),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), "archive_gif.zip");
+        })();
+    }, [proc.entries]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            downloadResults();
+        }
+    }, [phase, proc.doneCount, downloadResults]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
     }, [canProcess, process]);
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">GIF rendered</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{fps} fps</span> · {width} px wide
-                        </h2>
-                        <button
-                            onClick={() => { setFile(null); setStatus("idle"); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Convert another
-                        </button>
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">{proc.doneCount === 1 ? "GIF rendered" : "GIFs rendered"}</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> GIF{proc.doneCount === 1 ? "" : "s"} at {fps} fps · {width} px{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <><span className="italic text-accent">{fps} fps</span> · {width} px wide</>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "File downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                                >
+                                    <RotateCcw size={12} /> Convert another
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
             <FileUploadZone
-                file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                file={null}
+                multiple
+                onFilesSelect={files => proc.addFiles(files)}
+                onFileSelect={f => proc.addFiles([f])}
+                onClear={proc.clearAll}
                 accept=".mp4,.webm,.avi,.mov"
-                label="Drop video to convert"
+                label={proc.entries.length ? "Add more files" : "Drop video to convert"}
                 hint="MP4 · WebM · AVI · MOV"
             />
-            {file && (
+            {proc.entries.length > 0 && (
                 <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span>GIF settings</span>
@@ -133,14 +196,11 @@ export function VideoToGifUI() {
                             </div>
                         </div>
                     </div>
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
                     <div className="flex items-center gap-3 flex-wrap">
-                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rendering…</> : <><Film size={13} /> Convert to GIF</>}
+                        <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Rendering… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Film size={13} /> Convert to GIF{proc.entries.length > 1 ? ` — ${proc.entries.length} files` : ""}</>}
                         </button>
                         {canProcess && (
                             <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>

@@ -25,7 +25,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
-import { getKey } from "@/lib/byok/keyStore";
+import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { findEntitiesWithByok } from "@/lib/byok/redactTask";
 import { ByokError } from "@/lib/byok/errors";
@@ -254,6 +254,7 @@ export function SmartRedactUI() {
                 const found = await findEntitiesWithByok({
                     providerId: byok.provider,
                     apiKey,
+                    baseUrl: getBaseUrl(byok.provider),
                     model: byokModel || providerById(byok.provider)?.models[0] || "",
                     text,
                     knownPii: regexHits.map(h => h.text),

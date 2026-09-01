@@ -104,6 +104,7 @@ const LazySplitByTextUI = lazyNamed(() => import("@/components/tool-ui/SplitByTe
 const LazyHighlightUI = lazyNamed(() => import("@/components/tool-ui/HighlightUI"), "HighlightUI");
 const LazySummarizePdfUI = lazyNamed(() => import("@/components/tool-ui/SummarizePdfUI"), "SummarizePdfUI");
 const LazySmartRedactUI = lazyNamed(() => import("@/components/tool-ui/SmartRedactUI"), "SmartRedactUI");
+const LazyChatPdfUI = lazyNamed(() => import("@/components/tool-ui/ChatPdfUI"), "ChatPdfUI");
 const LazyHtmlToPdfUI = lazyNamed(() => import("@/components/tool-ui/HtmlToPdfUI"), "HtmlToPdfUI");
 const LazyCropUI = lazyNamed(() => import("@/components/tool-ui/CropUI"), "CropUI");
 const LazyPdfToTextUI = lazyNamed(() => import("@/components/tool-ui/PdfToTextUI"), "PdfToTextUI");
@@ -342,6 +343,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "highlight-pdf": return <LazyHighlightUI />;
     case "summarize-pdf": return <LazySummarizePdfUI />;
     case "smart-redact": return <LazySmartRedactUI />;
+    case "chat-with-pdf": return <LazyChatPdfUI />;
     case "html-to-pdf": return <LazyHtmlToPdfUI />;
     case "markdown-to-pdf": return <LazyMarkdownToPdfUI />;
     case "csv-to-pdf": return <LazyCsvToPdfUI />;
@@ -452,7 +454,7 @@ export default function ToolPage() {
 
           <div className="flex items-start gap-4">
             {/* Tool icon */}
-            {/* The category's colour, not a neutral tile. With 219 tools across a
+            {/* The category's colour, not a neutral tile. With 220 tools across a
                 dozen families, colour tells you where you are before you read. */}
             <span
               className="hidden sm:inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white shadow-[0_10px_26px_-12px_var(--tool-hue)]"

@@ -119,16 +119,9 @@ export default function MyStuffPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Back
-      </Link>
 
       <header className="mt-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="flex items-center gap-3 font-display text-[34px] font-bold tracking-[-0.025em] sm:text-[42px]">
           <HardDrive className="h-6 w-6 text-accent" aria-hidden="true" />
           My Stuff
         </h1>

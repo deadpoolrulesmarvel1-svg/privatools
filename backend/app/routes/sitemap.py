@@ -51,7 +51,7 @@ PDF_TOOLS = [
     "odt-to-pdf",
     "pdf-to-tiff", "pdf-to-bmp", "pdf-to-gif", "pdf-to-svg",
     "split-in-half", "highlight-pdf", "summarize-pdf",
-    "smart-redact",
+    "smart-redact", "chat-with-pdf",
     # Round-O additions
     "pdf-to-jpg", "pdf-to-png", "pdf-to-long-image",
     # v1.2.0 PDF additions
@@ -84,7 +84,7 @@ NON_PDF_TOOLS = [
     "remove-background", "svg-to-png", "image-watermark", "remove-image-watermark",
     "generate-favicon", "make-collage", "generate-barcode",
     "url-to-pdf", "qr-reader", "merge-images",
-    "image-upscaler", "audio-converter",
+    "image-upscaler", "audio-converter", "transcribe-audio",
     # v1.2.0 additions
     "webp-to-jpg", "webp-to-png", "heic-to-png", "view-exif",
     "jwt-decoder", "regex-tester", "timestamp-converter",
@@ -157,6 +157,22 @@ BLOG_POSTS: dict[str, str] = {
     "online-pdf-tools-tracking-you": "2026-05-15",
     "heic-conversion-guide-2026": "2026-05-15",
     "decode-jwt-tokens-safely-guide": "2026-05-15",
+    # August 2026 batch — the Daylight essays and the head-to-head comparisons.
+    "reading-privacy-policies": "2026-05-21",
+    "what-deleted-means": "2026-07-02",
+    "how-local-first-works": "2026-08-14",
+    "privatools-vs-ilovepdf": "2026-08-20",
+    "privatools-vs-smallpdf": "2026-08-24",
+    "privatools-vs-sejda": "2026-08-27",
+    "privatools-vs-ihatepdf": "2026-08-30",    "chat-with-pdf-free-private": "2026-09-01",
+    "ai-pdf-tools-no-upload-byok": "2026-09-01",
+    "remove-background-without-uploading": "2026-09-01",
+    "transcribe-audio-free-no-upload": "2026-09-01",
+    "ocr-scanned-pdf-free-three-ways": "2026-09-01",
+    "translate-pdf-free-private": "2026-09-01",
+    "bring-your-own-ai-key-guide": "2026-09-01",
+    "batch-process-files-free": "2026-09-01",
+    "chatpdf-alternatives-private": "2026-09-01",
 }
 
 BASE_URL = "https://privatools.me"
@@ -232,6 +248,9 @@ def _build_sitemap_xml(today_iso: str) -> bytes:
     xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
     xml += _entry(f"{BASE_URL}/batch", today_iso, "0.7", "weekly")
     xml += _entry(f"{BASE_URL}/pipeline", today_iso, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/security", today_iso, "0.6", "monthly")
+    xml += _entry(f"{BASE_URL}/support", today_iso, "0.4", "monthly")
+    xml += _entry(f"{BASE_URL}/status", today_iso, "0.3", "weekly")
     xml += _entry(f"{BASE_URL}/compare", today_iso, "0.7", "monthly")
     xml += _entry(f"{BASE_URL}/blog", today_iso, "0.8", "weekly")
     # All-tools directory hub — a high-value internal-linking surface. Like the

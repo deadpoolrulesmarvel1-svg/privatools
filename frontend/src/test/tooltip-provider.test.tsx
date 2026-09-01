@@ -63,7 +63,9 @@ describe("TooltipProvider", () => {
     });
     expect(consumers.length).toBeGreaterThan(0);
     for (const f of consumers) {
-      expect(f).toMatch(/[/\\](components|pages)[/\\]/);
+      // skins/ is Daylight — mounted by AppShell, which App.tsx wraps in
+      // AppProviders, so its tooltips share the same root provider.
+      expect(f).toMatch(/[/\\](components|pages|skins)[/\\]/);
     }
   });
 });
