@@ -43,9 +43,36 @@ export function clerkLoadFailed(): boolean {
 export const CLERK_BLOCKED_MESSAGE =
     "Sign-in could not load. A browser extension or network filter is blocking clerk.privatools.me — allow it and reload the page. Every tool on the site works without an account.";
 
+/** Callers parked in whenClerkReady, released as soon as the instance lands. */
+let waiters: ((c: ClerkInstance | null) => void)[] = [];
+
 /** Set by <ClerkBridge>. Not for general use. */
 export function setClerkInstance(next: ClerkInstance | null): void {
     instance = next;
+    if (next) for (const w of waiters.splice(0)) w(next);
+}
+
+/**
+ * The instance once it exists, rather than whatever is there this millisecond.
+ *
+ * <ClerkBridge> parks the instance from an effect, so anything reading it in a
+ * componentDidMount can easily run first. That race made a signed-in visitor
+ * look signed out: `me()` threw, the caller treated it as the ordinary
+ * logged-out case, and nothing ever asked again.
+ *
+ * Resolves null when Clerk is not configured, when the script was blocked, or
+ * when it simply never arrives — every caller must handle that.
+ */
+export function whenClerkReady(timeoutMs = 15_000): Promise<ClerkInstance | null> {
+    if (instance) return Promise.resolve(instance);
+    if (!isClerkEnabled() || loadFailed) return Promise.resolve(null);
+    return new Promise((resolve) => {
+        waiters.push(resolve);
+        setTimeout(() => {
+            const i = waiters.indexOf(resolve);
+            if (i >= 0) { waiters.splice(i, 1); resolve(instance); }
+        }, timeoutMs);
+    });
 }
 
 /**

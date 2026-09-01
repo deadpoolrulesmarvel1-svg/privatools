@@ -194,6 +194,32 @@ export const clerkAccountApi = {
         }
     },
 
+    /**
+     * Finish an OAuth round trip.
+     *
+     * `authenticateWithRedirect` sends the visitor to GitHub and GitHub back to
+     * us; the handshake is only completed by calling this on the page they land
+     * on. Nothing did, so signing in with GitHub always ended silently back at
+     * a signed-out form.
+     *
+     * The fallback URLs are what turn a first-time GitHub user into a sign-up:
+     * the attempt starts as a sign-in, finds no account, and Clerk transfers it
+     * only if it has somewhere to send the result.
+     */
+    completeSocialRedirect: async (): Promise<void> => {
+        const clerk = requireClerkClient();
+        const here = `${window.location.origin}/account`;
+        try {
+            await clerk.handleRedirectCallback({
+                signInFallbackRedirectUrl: here,
+                signUpFallbackRedirectUrl: here,
+                continueSignUpUrl: here,
+            });
+        } catch (err) {
+            throw readable(err);
+        }
+    },
+
     logout: async (): Promise<{ ok: true }> => {
         await requireClerk().signOut();
         return { ok: true };

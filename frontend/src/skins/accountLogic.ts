@@ -288,6 +288,7 @@ export type AccountApi = Omit<typeof localAccountApi, "register"> & {
     >;
     verifyEmailCode(code: string): Promise<{ user: AccountUser }>;
     signInWithSocial(provider: SocialProvider): Promise<void>;
+    completeSocialRedirect(): Promise<void>;
     startPasswordReset(email: string): Promise<{ ok: true }>;
     finishPasswordReset(code: string, newPassword: string): Promise<{ ok: true }>;
 };
@@ -302,6 +303,8 @@ const localOnlyStubs = {
     startPasswordReset: () => notWithLocalAuth("Password reset by email"),
     finishPasswordReset: () => notWithLocalAuth("Password reset by email"),
     signInWithSocial: () => notWithLocalAuth("Signing in with Google, GitHub or Apple"),
+    // Never reached without Clerk: nothing redirects, so nothing returns.
+    completeSocialRedirect: () => Promise.resolve(),
 };
 
 export const accountApi = new Proxy({} as AccountApi, {

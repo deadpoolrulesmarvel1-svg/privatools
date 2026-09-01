@@ -17,7 +17,7 @@ import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     MIN_PASSWORD_LENGTH, ACCOUNT_COPY, EMAIL_RESET,
 } from "./accountLogic";
-import { CLERK_BLOCKED_MESSAGE, clerkLoadFailed } from "@/lib/clerk/instance";
+import { CLERK_BLOCKED_MESSAGE, clerkLoadFailed, whenClerkReady } from "@/lib/clerk/instance";
 
 /**
  * @param Base    the generated component
@@ -46,11 +46,7 @@ export function withAccounts(Base, config) {
             // The block usually happens before this route is even opened, so
             // check the flag as well as listening for the event.
             if (clerkLoadFailed()) this._onClerkBlocked();
-            // Resolves any existing session before first paint of the route, so
-            // it does not flash the signed-out form at someone already signed in.
-            accountApi.me()
-                .then(({ user }) => { this._setAcct({ user }); this._loadKeys(); })
-                .catch(() => { /* signed out is the normal case */ });
+            this._bootAccount();
         }
 
         componentWillUnmount() {
@@ -72,6 +68,44 @@ export function withAccounts(Base, config) {
          * one. `replace`, not `assign`: the broken URL should not sit in the
          * back button.
          */
+        /**
+         * Settle who is signed in, once Clerk can actually answer.
+         *
+         * Two things had to move here. Clerk is parked from an effect, so
+         * calling `me()` straight out of componentDidMount could beat it and
+         * report a signed-in visitor as signed out, permanently. And a visitor
+         * coming back from GitHub arrives with the handshake half-finished:
+         * it completes only if this page asks it to.
+         */
+        _bootAccount = async () => {
+            if (EMAIL_RESET) {
+                const clerk = await whenClerkReady();
+                if (!clerk) {
+                    if (clerkLoadFailed()) this._onClerkBlocked();
+                    return;
+                }
+                // A half-finished attempt lives on the client, not in the URL:
+                // Clerk does not reliably hand back a query parameter to key
+                // off, so ask the sign-in/sign-up resources whether one is
+                // mid-flight. The query check stays as a second signal.
+                const pending = Boolean(
+                    clerk.client?.signIn?.status || clerk.client?.signUp?.status,
+                );
+                if (!clerk.user && (pending || /[?&]__clerk/.test(location.search))) {
+                    try {
+                        await accountApi.completeSocialRedirect();
+                        // Clerk leaves its bookkeeping in the address bar.
+                        history.replaceState(null, "", location.pathname + location.hash);
+                    } catch (err) {
+                        this._setAcct({ busy: false, error: err.message });
+                    }
+                }
+            }
+            accountApi.me()
+                .then(({ user }) => { this._setAcct({ user }); this._loadKeys(); })
+                .catch(() => { /* signed out is the normal case */ });
+        };
+
         _ensureAccountPath = () => {
             if (typeof location === "undefined") return;
             const m = /^#\/account(\/keys)?\/?$/.exec(location.hash || "");
