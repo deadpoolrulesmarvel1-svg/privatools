@@ -357,6 +357,7 @@ _BLOG_POSTS: dict[str, dict] = {
         "title": "PrivaTools vs iLovePDF (2026): The Fine Print, Compared",
         "description": "iLovePDF is the biggest name in online PDF tools. We compared free tiers, file handling, limits and privacy line by line — here's where each one wins.",
         "publishedAt": "2026-08-20",
+        "updatedAt": "2026-09-01",
         "readTime": "8 min read",
         "tags": ["Comparison", "PDF"],
     },
@@ -364,6 +365,7 @@ _BLOG_POSTS: dict[str, dict] = {
         "title": "PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope",
         "description": "Smallpdf pioneered the clean one-task-one-page PDF site. We compared its free tier, limits and file handling against PrivaTools, line by line.",
         "publishedAt": "2026-08-24",
+        "updatedAt": "2026-09-01",
         "readTime": "7 min read",
         "tags": ["Comparison", "PDF"],
     },
@@ -371,6 +373,7 @@ _BLOG_POSTS: dict[str, dict] = {
         "title": "PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question",
         "description": "Sejda's PDF editor is the best free one on the web — for three tasks an hour. We compared its limits, retention and privacy with PrivaTools.",
         "publishedAt": "2026-08-27",
+        "updatedAt": "2026-09-01",
         "readTime": "7 min read",
         "tags": ["Comparison", "PDF"],
     },
@@ -378,6 +381,7 @@ _BLOG_POSTS: dict[str, dict] = {
         "title": "PrivaTools vs ihatepdf (2026): When Both Sides Are Private",
         "description": "ihatepdf processes everything in your browser — the same privacy bet we make. So the comparison comes down to catalogue depth, heavy jobs and the details.",
         "publishedAt": "2026-08-30",
+        "updatedAt": "2026-09-01",
         "readTime": "6 min read",
         "tags": ["Comparison", "PDF"],
     },
@@ -2236,7 +2240,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 # Use the published date for dateModified unless the body has
                 # been updated. Google penalises dateModified inflation that
                 # isn't matched by real content changes.
-                "dateModified": post.get("dateModified") or post["publishedAt"],
+                "dateModified": post.get("dateModified") or post.get("updatedAt") or post["publishedAt"],
                 "inLanguage": "en",
                 "articleSection": "Blog",
                 "keywords": ", ".join(post.get("tags", [])),

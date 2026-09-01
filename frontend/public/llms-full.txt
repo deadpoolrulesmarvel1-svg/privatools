@@ -74,7 +74,7 @@ Split large PDFs into smaller files by maximum file size. Perfect for email atta
 #### Split in Half
 URL: https://privatools.me/tool/split-in-half
 
-Split each page in half — for two-up scans &amp; booklets
+Split each page in half — for two-up scans & booklets
 
 Split each PDF page in half down the middle (or across the middle) — perfect for un-imposing scanned booklets, two-up scans, and side-by-side documents that need to be one page per side. Choose vertical (left+right) or horizontal (top+bottom).
 

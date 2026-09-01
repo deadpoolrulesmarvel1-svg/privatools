@@ -1427,7 +1427,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 <p>PrivaTools inverts the default. A merge, split, rotate or image conversion runs <em>in your browser tab</em> — open the network panel while using <a href="/tool/merge-pdf">Merge PDF</a> and you'll watch nothing upload. Only jobs that genuinely need native code (OCR, office conversion, heavy video) use our one disclosed server, marked with an amber chip before you add a file, and deleted when the job ends.</p>
 <p>For a holiday itinerary, this difference is academic. For a medical record, a term sheet, or an unreleased manuscript, it's the whole decision.</p>
 
-<h2>Free tier, honestly measured</h2>
+<h2>What does the free tier actually include?</h2>
 <p>iLovePDF's free tier is generous for casual use, but it is a funnel by design: some tools carry task limits, the strongest compression and OCR settings sit behind Premium, and batch sizes are capped. None of that is hidden — it's just easy to miss until the dialog appears mid-task.</p>
 <p>PrivaTools has no premium tier to funnel toward. Every tool in the catalogue, every setting, batch and pipeline included, is free with a 500&nbsp;MB per-file cap and no daily quota. The trade is transparency about why: the site is owner-funded and sells nothing, which also means no team of hundreds and no SLA — <a href="/status">the status page</a> says exactly what "best effort" means.</p>
 
@@ -1472,11 +1472,11 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
   </tbody>
 </table>
 
-<h2>The compression example</h2>
+<h2>What does compression cost on each?</h2>
 <p>Compression is Smallpdf's signature tool, and it's excellent — but the free tier offers its basic level, with Moderate and Strong compression marked Pro. That's a legitimate business model; it's also the exact pattern worth learning to spot, because the setting you actually came for is the one behind the gate.</p>
 <p><a href="/tool/compress-pdf">PrivaTools compression</a> exposes every level to everyone — the model isn't a funnel, so there's nothing to gate. The same applies across the catalogue: if a tool has a setting, you have the setting.</p>
 
-<h2>Files, servers and the daily meter</h2>
+<h2>Where do your files go — and what does the meter cost?</h2>
 <p>Smallpdf processes on its servers with a time-limited retention window, and meters free usage per day. Neither is sinister — but a meter changes how a tool feels: every task spends something. PrivaTools has no meter to spend and, for most tools, no upload to weigh: browser-local jobs leave the network panel empty, and the server-backed minority delete per-job on one disclosed machine.</p>
 
 <h2>Where Smallpdf is simply better</h2>
@@ -1567,11 +1567,11 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
   </tbody>
 </table>
 
-<h2>The browser-only ceiling</h2>
+<h2>What can a browser-only suite not do?</h2>
 <p>Committing to never touching a server is a clean promise with a real cost: some jobs just don't fit. Accurate OCR needs full recognition models; converting a .docx to a faithful PDF needs an actual office layout engine; a 4K video transcode would set a laptop's fans on fire. A browser-only suite must either skip those tools or ship diminished versions of them.</p>
 <p>Our answer is a middle path: keep everything local that can be local, and run the exceptions on <a href="/security">one disclosed server</a> with per-job deletion — labeled with an amber chip before you ever add a file. You always know which kind of tool you're holding.</p>
 
-<h2>Breadth, and the small print</h2>
+<h2>How much further does the catalogue go?</h2>
 <p>PrivaTools' catalogue runs past two hundred tools: alongside the PDF suite sit image conversion and compression, video and audio work, archives, and a bench of developer utilities — one bookmark instead of five. Two smaller distinctions worth naming plainly: our pages load <strong>no third-party scripts</strong> — the only telemetry is a first-party pageview count that honors DNT/GPC and an opt-out (ihatepdf loads standard third-party analytics — normal, but a script on the page is a script on the page), and the whole site installs as an offline-capable app with cached tools.</p>
 
 <h2>Respect where due</h2>
