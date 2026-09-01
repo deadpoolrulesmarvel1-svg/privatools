@@ -561,6 +561,16 @@ const CSS = `
 .dl-hintl { font-size:12px; color:var(--dl-faint); }
 .dl-err { background:color-mix(in srgb, var(--dl-red) 10%, var(--dl-card)); border:1px solid color-mix(in srgb, var(--dl-red) 35%, var(--dl-rule)); color:var(--dl-red); border-radius:10px; padding:10px 14px; font-size:13px; margin:8px 0; }
 .dl-authwrap { display:grid; grid-template-columns:440px minmax(0,1fr); gap:56px; align-items:start; padding-top:56px; max-width:1020px; }
+.dl-root .dl-authfacts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:26px 0 6px; max-width:34em; }
+.dl-root .dl-authfacts > div { border:1px solid var(--dl-rule); border-radius:12px; padding:12px 14px; background:var(--dl-card); }
+.dl-root .dl-authfacts b { display:block; font-size:20px; font-weight:700; letter-spacing:-0.02em; color:var(--dl-ink); }
+.dl-root .dl-authfacts span { display:block; font-size:12px; color:var(--dl-muted); margin-top:2px; }
+.dl-root .dl-authstep { font-size:11.5px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); margin:26px 0 8px; }
+.dl-root .dl-authcode { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:12px; padding:14px 16px; overflow-x:auto; max-width:34em; }
+.dl-root .dl-authcode code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.7; color:var(--dl-ink); white-space:pre; }
+.dl-root .dl-authlinks { display:flex; flex-wrap:wrap; gap:18px; margin-top:22px; }
+.dl-root .dl-authlinks a { font-size:13.5px; font-weight:600; color:var(--dl-green); }
+.dl-root .dl-authnote { font-size:12.5px; color:var(--dl-muted); margin-top:22px; max-width:34em; line-height:1.6; padding-top:16px; border-top:1px solid var(--dl-rule); }
 @media (max-width: 900px) { .dl-authwrap { grid-template-columns:1fr; } }
 .dl-authcard { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
@@ -1932,6 +1942,29 @@ export default class DaylightSkinApp extends React.Component {
                                 Accounts exist for one thing: the developer API — keys, quota and nothing else. No login
                                 wall will ever appear in front of a download, and files sent through the API follow the
                                 same rules as the site: processed in isolation, deleted after use.
+                            </p>
+
+                            <div className="dl-authfacts">
+                                <div><b>{TOTAL}</b><span>tools, all free</span></div>
+                                <div><b>500</b><span>cost units / day</span></div>
+                                <div><b>250 MB</b><span>per key, per day</span></div>
+                                <div><b>0</b><span>files retained</span></div>
+                            </div>
+
+                            <p className="dl-authstep">Call it in one line once you have a key</p>
+                            <pre className="dl-authcode"><code>{`curl -X POST https://privatools.me/api/v1/compress \\
+  -H "X-API-Key: pk_…" \\
+  -F files=@in.pdf -F level=recommended -o out.pdf`}</code></pre>
+
+                            <div className="dl-authlinks">
+                                <a href="/api-docs">API reference →</a>
+                                <a href="#/security">How we handle files →</a>
+                                <a href="#/tools">Browse all {TOTAL} tools →</a>
+                            </div>
+
+                            <p className="dl-authnote">
+                                No password-reset email exists — signup hands you a one-time recovery code, and that code
+                                is the only way back in. Keep it somewhere safe.
                             </p>
                         </div>
                     </div>
