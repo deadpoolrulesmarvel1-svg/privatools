@@ -74,7 +74,7 @@ const _toolsRaw: Tool[] = [
   },
   {
     slug: "split-in-half", icon: ScissorsSquare, name: "Split in Half",
-    description: "Split each page in half — for two-up scans &amp; booklets",
+    description: "Split each page in half — for two-up scans & booklets",
     longDescription: "Split each PDF page in half down the middle (or across the middle) — perfect for un-imposing scanned booklets, two-up scans, and side-by-side documents that need to be one page per side. Choose vertical (left+right) or horizontal (top+bottom).",
     synonyms: "two columns down middle horizontal vertical",
     popularity: 20,

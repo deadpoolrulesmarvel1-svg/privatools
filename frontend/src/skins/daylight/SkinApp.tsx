@@ -50,6 +50,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast as sonnerToast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -281,23 +284,11 @@ const CSS = `
 }
 .dl-h { font-weight:700; letter-spacing:-.022em; text-wrap:balance; line-height:1.05; }
 
-.dl-btn { display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:11px;
-  padding:14px 26px; font-size:15px; font-weight:600; transition:transform 160ms var(--dl-eo), background .18s, border-color .18s, box-shadow .18s; }
-.dl-btn:active { transform:scale(.97); }
-.dl-root .dl-btn-primary { background:var(--dl-green); color:var(--dl-on-accent); }
-.dl-root .dl-btn-primary:hover { background:var(--dl-green-deep); box-shadow:var(--dl-sh1); }
-.dl-root .dl-btn-primary:disabled { opacity:.55; cursor:default; }
-.dl-root .dl-btn-ghost { background:var(--dl-card); color:var(--dl-ink); border:1px solid var(--dl-rule-mid); }
-.dl-root .dl-btn-ghost:hover { border-color:var(--dl-faint); box-shadow:var(--dl-sh1); }
-.dl-root .dl-btn-ink { background:var(--dl-ink); color:var(--dl-paper); }
-.dl-root .dl-btn-quiet { background:none; color:var(--dl-muted); padding:10px 14px; }
-.dl-root .dl-btn-quiet:hover { color:var(--dl-ink); }
 .dl-eyebrow { font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--dl-green); font-weight:600; }
 .dl-sec { padding-top:104px; }
 .dl-sec-head { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
 .dl-sec-title { font-weight:700; font-size:29px; letter-spacing:-.02em; }
 .dl-sec-sub { font-size:15px; color:var(--dl-muted); margin-top:5px; }
-@keyframes dlRise { from { opacity:0; transform:translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { .dl-root * { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
 /* nav */
@@ -460,9 +451,6 @@ const CSS = `
 .dl-chip.on { background:var(--dl-ink); border-color:var(--dl-ink); color:var(--dl-paper); }
 .dl-chip.on .n { color:color-mix(in srgb, var(--dl-paper) 70%, transparent); }
 .dl-count { font-size:13px; color:var(--dl-faint); margin-left:auto; white-space:nowrap; }
-.dl-seg { display:flex; background:var(--dl-card2); border-radius:9px; padding:3px; gap:2px; flex:none; }
-.dl-seg button { border-radius:7px; padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--dl-muted); }
-.dl-seg button.on { background:var(--dl-card); color:var(--dl-ink); box-shadow:var(--dl-sh1); }
 .dl-catsec { padding-top:10px; padding-bottom:30px; }
 .dl-catsec h2 { font-weight:700; font-size:19px; letter-spacing:-.01em; display:flex; align-items:center; gap:11px; padding-bottom:12px; border-bottom:2px solid color-mix(in srgb, var(--dl-cc) 32%, var(--dl-rule)); }
 .dl-catsec h2 .ic { width:30px; height:30px; border-radius:9px; background:color-mix(in srgb, var(--dl-cc) 13%, var(--dl-card)); display:flex; align-items:center; justify-content:center; color:var(--dl-cc); }
@@ -495,9 +483,6 @@ const CSS = `
 .dl-toolhead h1 { font-weight:700; font-size:clamp(36px, 4.2vw, 52px); letter-spacing:-.022em; line-height:1.05; margin:12px 0; }
 .dl-toolhead .desc { font-size:16.5px; color:var(--dl-muted); max-width:40em; }
 .dl-tchips { display:flex; gap:9px; flex-wrap:wrap; margin-top:18px; }
-.dl-tchip { display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:6px 14px; font-size:12.5px; font-weight:500; background:var(--dl-card); border:1px solid var(--dl-rule); color:var(--dl-muted); }
-.dl-tchip.green { background:var(--dl-wash); border-color:transparent; color:var(--dl-green); font-weight:600; }
-.dl-tchip.warn { background:var(--dl-amber-wash); border-color:transparent; color:var(--dl-amber); font-weight:600; }
 .dl-toolui { margin-top:26px; }
 .dl-toolfine { margin:14px 2px 0; max-width:760px; font-size:12.5px; line-height:1.6; color:var(--dl-mut); }
 .dl-nf { padding-top:36px; }
@@ -531,8 +516,7 @@ const CSS = `
 .dl-claimlink:hover { text-decoration:underline; }
 .dl-factr b { color:var(--dl-ink); font-weight:600; text-align:right; }
 .dl-facts .fine { font-size:12.5px; color:var(--dl-muted); margin:2px 0 10px; }
-.dl-facts .dl-btn { display:block; text-align:left; padding:9px 14px; font-size:13px; margin-top:8px; }
-.dl-doclist { margin:0 0 8px; padding-left:2px; list-style:none; }
+.dl-facts .dl-doclist { margin:0 0 8px; padding-left:2px; list-style:none; }
 .dl-doclist li { position:relative; padding:3px 0 3px 22px; color:var(--dl-muted); font-size:14.5px; line-height:1.65; }
 .dl-doclist li::before { content:""; position:absolute; left:2px; top:13px; width:7px; height:7px; border-radius:50%; background:var(--dl-green); opacity:.75; }
 .dl-doc { max-width:72ch; padding-top:8px; }
@@ -555,9 +539,6 @@ const CSS = `
 .dl-authcard { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
 .dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; }
-.dl-modes { display:flex; background:var(--dl-card2); border-radius:9px; padding:3px; gap:2px; margin-bottom:8px; }
-.dl-modes button { flex:1; border-radius:7px; padding:8px 0; font-size:12.5px; font-weight:600; color:var(--dl-muted); }
-.dl-modes button.on { background:var(--dl-card); color:var(--dl-ink); box-shadow:var(--dl-sh1); }
 .dl-reccode { background:var(--dl-wash); border:1px solid color-mix(in srgb, var(--dl-green) 30%, var(--dl-rule)); border-radius:12px; padding:16px 18px; margin-top:12px; }
 .dl-reccode code { display:block; font-family:ui-monospace, Menlo, monospace; font-size:15px; letter-spacing:.04em; background:var(--dl-card); border:1px dashed var(--dl-rule-mid); border-radius:8px; padding:10px 12px; margin:10px 0; word-break:break-all; }
 .dl-keyrow { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:12px; align-items:center; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:11px; padding:12px 16px; font-size:13.5px; }
@@ -568,7 +549,6 @@ const CSS = `
   .dl-keyrow > *:nth-child(4) { grid-column:2 / -1; justify-self:start; }
 }
 .dl-keyrow .kd { color:var(--dl-faint); font-size:12px; white-space:nowrap; }
-.dl-tag { font-size:10px; font-weight:700; letter-spacing:.06em; color:var(--dl-green); background:var(--dl-wash); border-radius:6px; padding:3px 7px; flex:none; }
 .dl-fresh { background:var(--dl-amber-wash); border:1px solid color-mix(in srgb, var(--dl-amber) 35%, var(--dl-rule)); border-radius:12px; padding:14px 16px; margin:10px 0; font-size:13px; }
 .dl-fresh code { display:block; font-family:ui-monospace, Menlo, monospace; font-size:13.5px; background:var(--dl-card); border-radius:8px; padding:9px 11px; margin-top:8px; word-break:break-all; }
 
@@ -632,8 +612,7 @@ const CSS = `
 .dl-reprow b { font-size:14.5px; }
 .dl-reprow p { font-size:13px; color:var(--dl-muted); margin-top:3px; }
 .dl-root .dl-reprow p a { color:var(--dl-green); font-weight:600; }
-.dl-reprow .dl-btn { padding:10px 18px; font-size:13.5px; flex:none; }
-.dl-supcta { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:24px; }
+.dl-reprow .dl-supcta { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:24px; }
 .dl-supcta span { font-size:13px; color:var(--dl-muted); max-width:32ch; }
 .dl-vsteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-top:30px; }
 @media (max-width: 860px) { .dl-vsteps { grid-template-columns:1fr; } }
@@ -753,7 +732,6 @@ const CSS = `
 .dl-sysdock b { font-weight:600; }
 .dl-sysdock span { color:var(--dl-faint); }
 @media (max-width: 980px) { .dl-sysdock { display:none; } }
-.dl-toast { position:fixed; left:50%; bottom:30px; transform:translateX(-50%); background:var(--dl-band); color:var(--dl-band-ink); border-radius:12px; padding:12px 22px; font-size:14px; box-shadow:var(--dl-sh2); z-index:70; animation:dlRise .25s var(--dl-eo); }
 .dl-tabbar { display:none; }
 @media (max-width: 720px) {
   .dl-root { padding-bottom:76px; }
@@ -1015,17 +993,17 @@ export default class DaylightSkinApp extends React.Component {
                         Search {TOTAL} tools…
                         <kbd>⌘K</kbd>
                     </button>
-                    <button className="dl-iconbtn" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
+                    <Tooltip><TooltipTrigger asChild><button className="dl-iconbtn" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
                         <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                    </button>
+                    </button></TooltipTrigger><TooltipContent>Search — ⌘K</TooltipContent></Tooltip>
                     <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="#/account">{a.user ? "Account" : "Sign in"}</a>
-                    <button className="dl-themebtn" onClick={this.cycleTheme} title={`Theme: ${this.state.themeMode}`} aria-label={`Theme: ${this.state.themeMode}`}>
+                    <Tooltip><TooltipTrigger asChild><button className="dl-themebtn" onClick={this.cycleTheme} aria-label={`Theme: ${this.state.themeMode}`}>
                         {this.state.themeMode === "light"
                             ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.6" stroke="currentColor" strokeWidth="1.6" /><path d="M9 1.5 V3.5 M9 14.5 V16.5 M1.5 9 H3.5 M14.5 9 H16.5 M3.7 3.7 L5.1 5.1 M12.9 12.9 L14.3 14.3 M14.3 3.7 L12.9 5.1 M5.1 12.9 L3.7 14.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                             : this.state.themeMode === "dark"
                                 ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15 10.8 A6.5 6.5 0 1 1 7.2 3 A5.2 5.2 0 0 0 15 10.8 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
                                 : <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.4" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2.6 A6.4 6.4 0 0 1 9 15.4 Z" fill="currentColor" /></svg>}
-                    </button>
+                    </button></TooltipTrigger><TooltipContent>Theme: {this.state.themeMode} — click to cycle</TooltipContent></Tooltip>
                 </div>
             </header>
         );
@@ -1123,6 +1101,11 @@ export default class DaylightSkinApp extends React.Component {
         };
         this._raf.push(requestAnimationFrame(tick));
     };
+
+    /** The mixins guard destructive calls with a press-twice latch; the
+     *  AlertDialogs below ARE the confirmation, so arm the latch and fire. */
+    _acctDeleteNow = () => { this._setAcct({ confirmingDelete: true }); this._timers.push(setTimeout(() => this._acctDelete(), 30)); };
+    _vaultClearNow = () => { this._setVault({ confirmingClear: true }); this._timers.push(setTimeout(() => this._vaultClear(), 30)); };
 
     _installApp = async () => {
         if (this.state.isApp) { this.say("You’re already in the installed app."); return; }
@@ -1485,10 +1468,12 @@ export default class DaylightSkinApp extends React.Component {
                             })}
                         </div>
                         <span className="dl-count">Showing {shown} of {TOTAL} tools</span>
-                        <div className="dl-seg">
-                            <button className={idxView === "tiles" ? "on" : ""} onClick={() => this.setState({ idxView: "tiles" })}>Tiles</button>
-                            <button className={idxView === "compact" ? "on" : ""} onClick={() => this.setState({ idxView: "compact" })}>Compact</button>
-                        </div>
+                        <Tabs value={idxView} onValueChange={(v) => this.setState({ idxView: v })}>
+                            <TabsList className="h-9">
+                                <TabsTrigger value="tiles">Tiles</TabsTrigger>
+                                <TabsTrigger value="compact">Compact</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
                     </div>
                 </div>
                 <div style={{ paddingTop: 18 }}>
@@ -1683,16 +1668,42 @@ export default class DaylightSkinApp extends React.Component {
                                         <span style={{ display: "flex", gap: 2 }}>
                                             <button className={buttonVariants({ variant: "ghost", size: "sm" })}
                                                 onClick={() => { this._vaultCopy(en.id); this.say("Copied — decrypted on this device only."); }}>Copy</button>
-                                            <button className={buttonVariants({ variant: "ghost", size: "sm" })}
-                                                onClick={() => this._vaultDelete(en.id)} aria-label={`Delete ${en.label}`}>Delete</button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "sm" })} aria-label={`Delete ${en.label}`}>Delete</AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete “{en.label}”?</AlertDialogTitle>
+                                                        <AlertDialogDescription>This entry is removed from the vault on this device. There is no copy to restore it from.</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Keep it</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => this._vaultDelete(en.id)}>Delete entry</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </span>
                                     </div>
                                 ))}
                         </div>
                         {entries.length > 0 && (
-                            <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 14 }} onClick={this._vaultClear}>
-                                {vlt.confirmingClear ? "Press again to erase everything" : "Clear the vault"}
-                            </button>
+                            <AlertDialog>
+                                <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 14 }}>
+                                    Clear the vault
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Erase every stored password?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            The vault is deleted from this device. There is no copy anywhere —
+                                            that is the point — so there is also no way to get them back.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Keep them</AlertDialogCancel>
+                                        <AlertDialogAction onClick={this._vaultClearNow}>Erase everything</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         )}
                     </div>
                     <aside className="dl-panel">
@@ -1747,12 +1758,13 @@ export default class DaylightSkinApp extends React.Component {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Logo size={30} /></div>
                             <h2>{a.mode === "signup" ? "Create your account" : a.mode === "recover" ? "Recover your account" : "Sign in to PrivaTools"}</h2>
                             <p className="sub">Only the developer API needs this — every tool works without an account.</p>
-                            <div className="dl-modes" role="tablist">
-                                {[["signin", "Sign in"], ["signup", "Sign up"]].map(([m, l]) => (
-                                    <button key={m} className={a.mode === m ? "on" : ""} role="tab" aria-selected={a.mode === m}
-                                        onClick={() => this._setAcct({ mode: m, error: "" })}>{l}</button>
-                                ))}
-                            </div>
+                            <Tabs value={a.mode === "signup" ? "signup" : "signin"}
+                                onValueChange={(m) => this._setAcct({ mode: m, error: "" })}>
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="signin">Sign in</TabsTrigger>
+                                    <TabsTrigger value="signup">Sign up</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
                             {a.error && <div className="dl-err" role="alert">{a.error}</div>}
                             {a.needsEmailCode ? (
                                 <form onSubmit={this._acctVerifyEmail}>
@@ -1903,10 +1915,24 @@ export default class DaylightSkinApp extends React.Component {
                         Removes the account and revokes every API key immediately. Your files were never
                         stored, so there is nothing else to erase.
                     </p>
-                    <button className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12, color: "var(--dl-red)" }}
-                        disabled={a.busy} onClick={this._acctDelete}>
-                        {a.confirmingDelete ? "Press again to delete for good" : "Delete account"}
-                    </button>
+                    <AlertDialog>
+                        <AlertDialogTrigger className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12, color: "var(--dl-red)" }} disabled={a.busy}>
+                            Delete account
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this account for good?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    The account and every API key are removed immediately. Your files were
+                                    never stored, so there is nothing else to erase — and nothing to recover.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Keep my account</AlertDialogCancel>
+                                <AlertDialogAction onClick={this._acctDeleteNow}>Delete for good</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
         );
