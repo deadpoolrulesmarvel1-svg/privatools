@@ -1418,7 +1418,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
     <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
     <tr><td>Retention</td><td>Deleted per-job</td><td>Time-limited retention window</td></tr>
     <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
-    <tr><td>Trackers &amp; ads</td><td>None</td><td>Analytics</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
   </tbody>
 </table>
 
@@ -1468,7 +1468,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
     <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
     <tr><td>Retention</td><td>Deleted per-job</td><td>Time-limited</td></tr>
     <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
-    <tr><td>Trackers &amp; ads</td><td>None</td><td>Analytics</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
   </tbody>
 </table>
 
@@ -1516,7 +1516,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
     <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Uploaded to their servers</td></tr>
     <tr><td>Retention</td><td>Deleted per-job</td><td>“Deleted after 2 hours”</td></tr>
     <tr><td>Account walls</td><td>Never for tools</td><td>For some features</td></tr>
-    <tr><td>Trackers &amp; ads</td><td>None</td><td>Analytics</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
   </tbody>
 </table>
 
@@ -1562,7 +1562,7 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
     <tr><td>Where files go</td><td>Local-first; disclosed server for heavy jobs</td><td>Stays in browser</td></tr>
     <tr><td>Heavy jobs (OCR, office conversion)</td><td>Yes — server-backed, deleted per-job</td><td>Limited to what a browser can do</td></tr>
     <tr><td>Beyond PDF</td><td>Image, video, audio, archive, developer tools</td><td>PDF-focused</td></tr>
-    <tr><td>Trackers &amp; ads</td><td>None</td><td>Analytics</td></tr>
+    <tr><td>Ads &amp; third-party scripts</td><td>None</td><td>Analytics</td></tr>
     <tr><td>Automation</td><td>Batch + multi-step pipelines</td><td>Per-tool</td></tr>
   </tbody>
 </table>
