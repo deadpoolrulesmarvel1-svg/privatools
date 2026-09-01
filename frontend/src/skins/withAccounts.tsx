@@ -15,7 +15,7 @@
 import { mergeNavItem } from "./navInject";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
-    MIN_PASSWORD_LENGTH, ACCOUNT_COPY,
+    MIN_PASSWORD_LENGTH, ACCOUNT_COPY, EMAIL_RESET,
 } from "./accountLogic";
 
 /**
@@ -122,11 +122,38 @@ export function withAccounts(Base, config) {
                 .catch((err) => this._setAcct({ busy: false, error: err.message }));
         };
 
-        /** Reset a password with the code issued at signup. */
+        /**
+         * Reset a password. Two very different flows behind one submit:
+         *
+         * - Local auth: one call with the recovery code issued at signup.
+         * - Clerk: stage one emails a code, stage two redeems it. Clerk has no
+         *   `recover` — calling it would throw — so the branch is not cosmetic.
+         *   `finishPasswordReset` activates the session, so success here IS a
+         *   sign-in, not a return to the form.
+         */
         _acctRecover = (event) => {
             if (event && event.preventDefault) event.preventDefault();
-            const { email, recoveryInput, password } = this.state.acct;
+            const { email, recoveryInput, password, resetEmailSent } = this.state.acct;
             this._setAcct({ busy: true, error: "" });
+            if (EMAIL_RESET && !resetEmailSent) {
+                accountApi.startPasswordReset(email)
+                    .then(() => this._setAcct({ busy: false, resetEmailSent: true, error: "" }))
+                    .catch((err) => this._setAcct({ busy: false, error: err.message }));
+                return;
+            }
+            if (EMAIL_RESET) {
+                accountApi.finishPasswordReset(recoveryInput, password)
+                    .then(() => accountApi.me())
+                    .then(({ user }) => {
+                        this._setAcct({
+                            busy: false, password: "", recoveryInput: "", error: "",
+                            mode: "signin", resetEmailSent: false, user,
+                        });
+                        this._loadKeys();
+                    })
+                    .catch((err) => this._setAcct({ busy: false, error: err.message }));
+                return;
+            }
             accountApi.recover(email, recoveryInput, password)
                 .then(({ recovery_code }) => this._setAcct({
                     busy: false, password: "", recoveryInput: "", error: "",

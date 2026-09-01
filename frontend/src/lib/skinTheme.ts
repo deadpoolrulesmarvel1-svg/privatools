@@ -33,9 +33,12 @@ export function readThemeChoice(skin: SkinId): ThemeChoice {
         const spec = KEYS[skin];
         if (!spec) return "system";
         const v = localStorage.getItem(spec.key);
-        return v === "light" || v === "dark" || v === "midnight" || v === "system" ? v : "system";
+        // Light is the default for first-time visitors — a product decision, not
+        // an accident: the brand reads best on paper. "system" survives only as
+        // an explicit choice from the theme cycle.
+        return v === "light" || v === "dark" || v === "midnight" || v === "system" ? v : "light";
     } catch {
-        return "system";
+        return "light";
     }
 }
 

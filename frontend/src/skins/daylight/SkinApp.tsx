@@ -38,7 +38,7 @@ import React from "react";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import {
-    ACCOUNT_COPY, MIN_PASSWORD_LENGTH, SOCIAL_SIGN_IN, describeKey, strengthOf,
+    ACCOUNT_COPY, MIN_PASSWORD_LENGTH, SOCIAL_SIGN_IN, EMAIL_RESET, describeKey, strengthOf,
 } from "../accountLogic";
 import { describeEntry, vaultApi } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
@@ -46,6 +46,7 @@ import { blogPosts } from "@/data/blog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AiHubDialog } from "@/components/byok/AiHubDialog";
@@ -330,6 +331,7 @@ const CSS = `
 @media (max-width: 640px) { .dl-navcta { display:none; } }
 
 /* hero */
+.dl-root .dl-herobadge { margin-bottom:4px; font-weight:600; }
 .dl-hero { display:grid; grid-template-columns:minmax(0,1.12fr) 340px; gap:64px; align-items:center; padding:80px 0 0; position:relative; }
 .dl-hero::before { content:""; position:absolute; top:-120px; left:-160px; width:640px; height:520px; border-radius:50%; background:radial-gradient(closest-side, color-mix(in srgb, var(--dl-green) 9%, transparent), transparent 72%); pointer-events:none; }
 .dl-hero > * { position:relative; }
@@ -369,11 +371,18 @@ const CSS = `
 .dl-sugrow { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
 @media (max-width: 860px) { .dl-sugrow { grid-template-columns:1fr; } }
 
-.dl-stats { display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--dl-rule); border-bottom:1px solid var(--dl-rule); margin-top:64px; padding:24px 0; flex-wrap:wrap; gap:8px 0; }
-.dl-stat { display:flex; align-items:baseline; gap:12px; padding:4px 18px 4px 0; }
-.dl-stat b { font-weight:700; font-size:clamp(34px, 3.6vw, 52px); letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; }
+.dl-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin-top:64px; border:1px solid var(--dl-rule-soft); border-radius:16px; background:var(--dl-card); box-shadow:var(--dl-sh1); overflow:hidden; }
+.dl-stat { display:flex; flex-direction:column; gap:6px; padding:22px 26px 20px; border-left:1px solid var(--dl-rule); }
+.dl-stat:first-child { border-left:0; }
+@media (max-width: 800px) {
+  .dl-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dl-stat { padding:18px 20px 16px; }
+  .dl-stat:nth-child(3) { border-left:0; }
+  .dl-stat:nth-child(n+3) { border-top:1px solid var(--dl-rule); }
+}
+.dl-stat b { font-weight:750; font-size:clamp(30px, 3vw, 40px); letter-spacing:-.03em; line-height:1.1; font-variant-numeric:tabular-nums; }
 .dl-stat b small { font-size:.45em; font-weight:700; }
-.dl-stat .cap { font-size:13px; color:var(--dl-muted); max-width:13em; line-height:1.35; }
+.dl-stat .cap { font-size:11px; font-weight:650; letter-spacing:0.07em; text-transform:uppercase; color:var(--dl-muted); }
 
 .dl-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:13px; }
 @media (max-width: 980px) { .dl-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
@@ -382,6 +391,8 @@ const CSS = `
   display:flex; flex-direction:column; gap:7px; color:var(--dl-ink); position:relative; transition:transform 180ms var(--dl-eo), box-shadow .18s, border-color .18s; }
 @media (hover:hover) and (pointer:fine) {
   .dl-root .dl-card:hover { transform:translateY(-2px); box-shadow:var(--dl-sh2); border-color:var(--dl-rule-mid); color:var(--dl-ink); }
+  .dl-root .dl-card:active { transform:translateY(0) scale(0.988); }
+  .dl-root .dl-ccard:active { transform:translateY(0) scale(0.988); }
   .dl-root .dl-card:hover .arr { opacity:1; transform:none; }
 }
 .dl-card:active { transform:scale(.98); }
@@ -413,12 +424,13 @@ const CSS = `
 .dl-vmock .vr b { color:var(--dl-ink); font-weight:600; }
 .dl-vmock .vr span:last-child { margin-left:auto; font-size:11px; color:var(--dl-faint); }
 
-.dl-why { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:13px; }
-@media (max-width: 900px) { .dl-why { grid-template-columns:1fr; } }
-.dl-why > div { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:16px; padding:26px 28px; }
-.dl-why .usual { font-size:13px; color:var(--dl-faint); text-decoration:line-through; text-decoration-color:var(--dl-red); text-decoration-thickness:1.5px; }
-.dl-why b.h { font-weight:700; font-size:20px; letter-spacing:-.015em; display:block; margin:8px 0 6px; }
-.dl-why p { font-size:13.5px; color:var(--dl-muted); line-height:1.6; }
+.dl-whypanel { border:1px solid var(--dl-rule-soft); border-radius:16px; background:var(--dl-card); box-shadow:var(--dl-sh1); overflow:hidden; }
+.dl-whypanel .row { display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.6fr); gap:10px 48px; padding:24px 30px; border-top:1px solid var(--dl-rule); align-items:start; }
+.dl-whypanel .row:first-child { border-top:0; }
+@media (max-width: 800px) { .dl-whypanel .row { grid-template-columns:1fr; padding:20px 22px; } }
+.dl-whypanel .usual { font-size:14px; font-weight:550; color:var(--dl-faint); text-decoration:line-through; text-decoration-color:var(--dl-red); text-decoration-thickness:1.5px; padding-top:2px; }
+.dl-whypanel b { font-size:15.5px; font-weight:700; letter-spacing:-.01em; }
+.dl-whypanel p { font-size:13.5px; color:var(--dl-muted); line-height:1.6; margin-top:5px; max-width:46em; }
 
 .dl-claims { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:0 28px; border-top:1px solid var(--dl-rule); padding-top:28px; }
 @media (max-width: 900px) { .dl-claims { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 28px; } }
@@ -561,32 +573,58 @@ const CSS = `
 .dl-hintl { font-size:12px; color:var(--dl-faint); }
 .dl-err { background:color-mix(in srgb, var(--dl-red) 10%, var(--dl-card)); border:1px solid color-mix(in srgb, var(--dl-red) 35%, var(--dl-rule)); color:var(--dl-red); border-radius:10px; padding:10px 14px; font-size:13px; margin:8px 0; }
 .dl-authwrap { display:grid; grid-template-columns:440px minmax(0,1fr); gap:56px; align-items:start; padding-top:56px; max-width:1020px; }
-.dl-root .dl-authfacts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:26px 0 6px; max-width:34em; }
-.dl-root .dl-authfacts > div { border:1px solid var(--dl-rule); border-radius:12px; padding:12px 14px; background:var(--dl-card); }
-.dl-root .dl-authfacts b { display:block; font-size:20px; font-weight:700; letter-spacing:-0.02em; color:var(--dl-ink); }
-.dl-root .dl-authfacts span { display:block; font-size:12px; color:var(--dl-muted); margin-top:2px; }
+.dl-root .dl-authfacts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:26px 0 6px; max-width:34em; border:1px solid var(--dl-rule-soft); border-radius:14px; background:var(--dl-card); box-shadow:var(--dl-sh1); overflow:hidden; }
+.dl-root .dl-authfacts > div { padding:16px 20px 14px; border-top:1px solid var(--dl-rule); }
+.dl-root .dl-authfacts > div:nth-child(-n+2) { border-top:0; }
+.dl-root .dl-authfacts > div:nth-child(2n) { border-left:1px solid var(--dl-rule); }
+.dl-root .dl-authfacts b { display:block; font-size:27px; font-weight:750; letter-spacing:-0.03em; color:var(--dl-ink); font-variant-numeric:tabular-nums; line-height:1.15; }
+.dl-root .dl-authfacts span { display:block; font-size:11px; font-weight:650; letter-spacing:0.07em; text-transform:uppercase; color:var(--dl-muted); margin-top:4px; }
 .dl-root .dl-authstep { font-size:11.5px; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--dl-muted); margin:26px 0 8px; }
 .dl-root .dl-authcode { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:12px; padding:14px 16px; overflow-x:auto; max-width:34em; }
+.dl-root .dl-codewrap { border:1px solid var(--dl-rule-soft); border-radius:12px; max-width:34em; min-width:0; overflow:hidden; background:var(--dl-card); box-shadow:var(--dl-sh1); }
+.dl-root .dl-authwrap > * { min-width:0; }
+.dl-root .dl-codewrap header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:7px 8px 7px 16px; border-bottom:1px solid var(--dl-rule); background:var(--dl-paper-2); }
+.dl-root .dl-codewrap header > span { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; font-weight:600; color:var(--dl-muted); }
+.dl-root .dl-codewrap .dl-authcode { border:0; border-radius:0; box-shadow:none; max-width:none; }
+.dl-root .dl-copybtn { height:26px; padding:0 11px; border-radius:7px; border:1px solid var(--dl-rule-mid); background:var(--dl-card); color:var(--dl-ink); font-size:11.5px; font-weight:650; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
+.dl-root .dl-copybtn:hover { background:var(--dl-paper-2); }
+.dl-root .dl-copybtn:active { transform:scale(0.96); }
+.dl-root .dl-copybtn.done { color:var(--dl-green); border-color:color-mix(in srgb, var(--dl-green) 45%, var(--dl-rule)); }
 .dl-root .dl-authcode code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.7; color:var(--dl-ink); white-space:pre; }
 .dl-root .dl-authlinks { display:flex; flex-wrap:wrap; gap:18px; margin-top:22px; }
 .dl-root .dl-authlinks a { font-size:13.5px; font-weight:600; color:var(--dl-green); }
 .dl-root .dl-authnote { font-size:12.5px; color:var(--dl-muted); margin-top:22px; max-width:34em; line-height:1.6; padding-top:16px; border-top:1px solid var(--dl-rule); }
 @media (max-width: 900px) { .dl-authwrap { grid-template-columns:1fr; } }
-.dl-authcard { background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
+.dl-authcard { position:relative; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh2); border-radius:18px; padding:32px 32px 24px; display:flex; flex-direction:column; gap:6px; }
 .dl-authcard h2 { font-weight:700; font-size:23px; letter-spacing:-.015em; text-align:center; }
 .dl-authcard .sub { font-size:13.5px; color:var(--dl-muted); margin:4px 0 10px; text-align:center; line-height:1.55; }
 .dl-root .dl-authcard form { display:flex; flex-direction:column; gap:16px; margin-top:14px; }
 .dl-root .dl-authcard .dl-field { display:flex; flex-direction:column; gap:6px; }
 .dl-root .dl-authsubmit { width:100%; height:44px; font-size:14.5px; margin-top:2px; }
-.dl-root .dl-pwmeter { display:flex; gap:4px; margin-top:8px; }
+.dl-root .dl-pwmeter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.dl-root .dl-pwmeter .bars { display:flex; gap:4px; flex:1; }
 .dl-root .dl-pwmeter i { flex:1; height:3px; border-radius:2px; background:var(--dl-rule-mid); transition:background-color 220ms ease; }
+.dl-root .dl-pwmeter .lvl { font-size:11.5px; font-weight:650; color:var(--dl-muted); }
+.dl-root .dl-inputwrap { position:relative; }
+.dl-root .dl-inputwrap input { padding-right:42px; }
+.dl-root .dl-pweye { position:absolute; top:50%; right:5px; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; width:32px; height:32px; border:0; background:transparent; color:var(--dl-muted); cursor:pointer; border-radius:8px; transition:color 160ms ease, background-color 160ms ease; }
+.dl-root .dl-pweye:hover { color:var(--dl-ink); background:var(--dl-paper-2); }
+.dl-root .dl-pweye svg { width:17px; height:17px; }
+.dl-root .dl-sentline { font-size:13.5px; color:var(--dl-muted); line-height:1.55; }
+.dl-root .dl-sentline b { color:var(--dl-ink); font-weight:650; }
+.dl-root .dl-marks { display:contents; }
+.dl-root .dl-marks i { position:absolute; width:13px; height:13px; border:0 solid var(--dl-rule-strong); opacity:0.8; pointer-events:none; }
+.dl-root .dl-marks i:nth-child(1) { top:-7px; left:-7px; border-top-width:1.5px; border-left-width:1.5px; }
+.dl-root .dl-marks i:nth-child(2) { top:-7px; right:-7px; border-top-width:1.5px; border-right-width:1.5px; }
+.dl-root .dl-marks i:nth-child(3) { bottom:-7px; left:-7px; border-bottom-width:1.5px; border-left-width:1.5px; }
+.dl-root .dl-marks i:nth-child(4) { bottom:-7px; right:-7px; border-bottom-width:1.5px; border-right-width:1.5px; }
 .dl-root .dl-pwmeter i.on-1 { background:#D9534F; }
 .dl-root .dl-pwmeter i.on-2 { background:#E0A03A; }
 .dl-root .dl-pwmeter i.on-3 { background:var(--dl-green); }
 .dl-root .dl-pwrow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:7px; }
 .dl-root .dl-pwrow label { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--dl-muted); font-weight:500; cursor:pointer; }
 .dl-root .dl-pwrow .lvl { font-size:12px; font-weight:650; color:var(--dl-muted); }
-.dl-root .dl-social { display:flex; flex-direction:column; gap:9px; margin-top:4px; }
+.dl-root .dl-social { display:flex; flex-direction:column; gap:9px; margin-top:16px; }
 .dl-root .dl-social button { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; height:42px; border-radius:11px; border:1px solid var(--dl-rule-mid); background:var(--dl-card); color:var(--dl-ink); font-size:14px; font-weight:600; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .dl-root .dl-social button:hover { background:var(--dl-paper-2); border-color:var(--dl-rule-strong); }
 .dl-root .dl-social button:active { transform:scale(0.985); }
@@ -1341,12 +1379,12 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-wrap">
                 <div className="dl-hero">
                     <div>
-                        <div className="dl-eyebrow">{TOTAL} free file tools · no sign-up</div>
+                        <Badge variant="outline" className="dl-herobadge">{TOTAL} free file tools · no sign-up</Badge>
                         <h1>Drop any file.<br />Keep it <em>private.</em></h1>
                         <p className="sub">We’ll show you every tool that can handle it — and nothing uploads until you choose one. No account, no watermark, no tricks.</p>
                         <div style={{ display: "flex", gap: 13, flexWrap: "wrap" }}>
-                            <a className={buttonVariants()} href="#/tool/merge-pdf">Try Merge PDF</a>
-                            <a className={buttonVariants({ variant: "outline" })} href="#/tools">Browse all {TOTAL}</a>
+                            <a className={buttonVariants({ size: "lg" })} href="#/tool/merge-pdf">Try Merge PDF</a>
+                            <a className={buttonVariants({ variant: "outline", size: "lg" })} href="#/tools">Browse all {TOTAL}</a>
                         </div>
                         <p className="dl-hint">Or just drop a file anywhere on this page — PDFs, images, video, audio, code, archives · up to 500&nbsp;MB each</p>
                     </div>
@@ -1467,10 +1505,16 @@ export default class DaylightSkinApp extends React.Component {
                     <div className="dl-sec-head">
                         <div><h2 className="dl-sec-title">The usual catches, removed</h2><p className="dl-sec-sub">What free-tool sites normally do — and what happens here instead</p></div>
                     </div>
-                    <div className="dl-why">
-                        <div><span className="usual">Free tier adds a watermark</span><b className="h">Clean output, always</b><p>No stamp in your corner, no upsell page between you and your file. The download is just your file.</p></div>
-                        <div><span className="usual">2 tasks per day, then pay</span><b className="h">No meters running</b><p>No daily limits, no file counters, no “premium” queue. The two-hundredth file is treated like the first.</p></div>
-                        <div><span className="usual">Sign up to download</span><b className="h">No account wall</b><p>There is nothing to sign up for. Arrive, do the work, leave — the site doesn’t know who you are.</p></div>
+                    <div className="dl-whypanel">
+                        {[["Free tier adds a watermark", "Clean output, always", "No stamp in your corner, no upsell page between you and your file. The download is just your file."],
+                        ["2 tasks per day, then pay", "No meters running", "No daily limits, no file counters, no “premium” queue. The two-hundredth file is treated like the first."],
+                        ["Sign up to download", "No account wall", "There is nothing to sign up for. Arrive, do the work, leave — the site doesn’t know who you are."]]
+                            .map(([usual, h, body]) => (
+                                <div className="row" key={h}>
+                                    <span className="usual">{usual}</span>
+                                    <div><b>{h}</b><p>{body}</p></div>
+                                </div>
+                            ))}
                     </div>
                 </section>
 
@@ -1884,16 +1928,33 @@ export default class DaylightSkinApp extends React.Component {
 
         const strength = a.mode !== "signin" && a.password ? strengthOf(a.password) : null;
 
+        const curlExample = `curl -X POST https://privatools.me/api/v1/compress \\
+  -H "X-API-Key: pk_…" \\
+  -F files=@in.pdf -F level=recommended -o out.pdf`;
+        const curlCopied = !!this.state.curlCopied;
+        const copyCurl = () => {
+            // writeText rejects asynchronously when the clipboard is denied, so a
+            // sync try/catch misses it and the global error toast fires. Only
+            // claim "Copied" once the promise resolves; stay quiet otherwise —
+            // the text is selectable either way.
+            navigator.clipboard.writeText(curlExample).then(() => {
+                clearTimeout(this._curlT);
+                this.setState({ curlCopied: true });
+                this._curlT = setTimeout(() => this.setState({ curlCopied: false }), 1600);
+            }).catch(() => {});
+        };
+
         if (!a.user) {
             return (
                 <div className="dl-wrap">
                     <div className="dl-authwrap">
                         <div className="dl-authcard">
+                            <span className="dl-marks" aria-hidden="true"><i /><i /><i /><i /></span>
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Logo size={30} /></div>
                             <h2>{a.mode === "signup" ? "Create your account" : a.mode === "recover" ? "Recover your account" : "Sign in to PrivaTools"}</h2>
                             <p className="sub">Only the developer API needs this — every tool works without an account.</p>
                             <Tabs value={a.mode === "signup" ? "signup" : "signin"}
-                                onValueChange={(m) => this._setAcct({ mode: m, error: "" })}>
+                                onValueChange={(m) => this._setAcct({ mode: m, error: "", resetEmailSent: false })}>
                                 <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="signin">Sign in</TabsTrigger>
                                     <TabsTrigger value="signup">Sign up</TabsTrigger>
@@ -1902,83 +1963,137 @@ export default class DaylightSkinApp extends React.Component {
                             {a.error && <div className="dl-err" role="alert">{a.error}</div>}
                             {a.needsEmailCode ? (
                                 <form onSubmit={this._acctVerifyEmail}>
-                                    <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>We emailed a code to <b>{a.email}</b>. Enter it to finish signing up.</p>
+                                    <p className="dl-sentline">We emailed a code to <b>{a.email}</b>. Enter it to finish signing up.</p>
                                     <div className="dl-field">
                                         <Label htmlFor="dl-code">Email code</Label>
-                                        <Input id="dl-code"  value={a.emailCode}
-                                            onChange={(e) => this._setAcct({ emailCode: e.target.value, error: "" })} autoComplete="one-time-code" />
+                                        <InputOTP id="dl-code" maxLength={6} value={a.emailCode} autoComplete="one-time-code"
+                                            onChange={(v) => this._setAcct({ emailCode: v, error: "" })}>
+                                            <InputOTPGroup>
+                                                {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} />)}
+                                            </InputOTPGroup>
+                                        </InputOTP>
                                     </div>
                                     <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
                                         {a.busy ? "Checking…" : "Verify"}
                                     </button>
                                 </form>
                             ) : (
-                                <form onSubmit={this._acctSubmit}>
-                                    <div className="dl-field">
-                                        <Label htmlFor="dl-email">Email</Label>
-                                        <Input id="dl-email"  type="email" required value={a.email}
-                                            onChange={(e) => this._setAcct({ email: e.target.value, error: "" })} autoComplete="email" />
-                                    </div>
-                                    {a.mode === "recover" && (
-                                        <div className="dl-field">
-                                            <Label htmlFor="dl-rec">Recovery code</Label>
-                                            <Input id="dl-rec"  required value={acctRecoveryInput}
-                                                onChange={(e) => this._setAcct({ recoveryInput: e.target.value, error: "" })} />
-                                            <span className="dl-hintl">The code shown once at signup — it’s the only way back in.</span>
-                                        </div>
+                                <>
+                                    {SOCIAL_SIGN_IN.length > 0 && a.mode !== "recover" && (
+                                        <>
+                                            <div className="dl-social">
+                                                <button type="button" onClick={() => this._acctSocial("google")} disabled={a.busy}>
+                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
+                                                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z" />
+                                                        <path fill="#FBBC05" d="M3.96 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z" />
+                                                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" />
+                                                    </svg>
+                                                    Continue with Google
+                                                </button>
+                                                <button type="button" onClick={() => this._acctSocial("github")} disabled={a.busy}>
+                                                    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                                                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                                                    </svg>
+                                                    Continue with GitHub
+                                                </button>
+                                            </div>
+                                            <div className="dl-authdiv"><span>or continue with email</span></div>
+                                        </>
                                     )}
-                                    <div className="dl-field">
-                                        <Label htmlFor="dl-pass">{a.mode === "recover" ? "New password" : "Password"}</Label>
-                                        <Input id="dl-pass"  type={a.showPassword ? "text" : "password"} required
-                                            minLength={a.mode === "signin" ? undefined : MIN_PASSWORD_LENGTH}
-                                            value={a.password}
-                                            onChange={(e) => this._setAcct({ password: e.target.value, error: "" })}
-                                            autoComplete={a.mode === "signin" ? "current-password" : "new-password"} />
-                                        {strength && (
-                                            <div className="dl-pwmeter" aria-hidden="true">
-                                                {[1, 2, 3].map((n) => (
-                                                    <i key={n} className={strength.score >= n ? `on-${strength.score}` : ""} />
-                                                ))}
+                                    <form onSubmit={this._acctSubmit}>
+                                        {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent ? (
+                                            <p className="dl-sentline">We emailed a code to <b>{a.email}</b>. Enter it below with your new password.</p>
+                                        ) : (
+                                            <div className="dl-field">
+                                                <Label htmlFor="dl-email">Email</Label>
+                                                <Input id="dl-email" type="email" required value={a.email}
+                                                    onChange={(e) => this._setAcct({ email: e.target.value, error: "" })} autoComplete="email" />
                                             </div>
                                         )}
-                                        <div className="dl-pwrow">
-                                            <label>
-                                                <input type="checkbox" checked={!!a.showPassword}
-                                                    onChange={(e) => this._setAcct({ showPassword: e.target.checked })} /> Show password
-                                            </label>
-                                            {strength && <span className="lvl">{strength.label}</span>}
-                                        </div>
-                                    </div>
-                                    <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
-                                        {a.busy ? "Working…" : a.mode === "signup" ? "Create account" : a.mode === "recover" ? "Reset password" : "Sign in"}
-                                    </button>
-                                </form>
-                            )}
-                            {SOCIAL_SIGN_IN.length > 0 && a.mode !== "recover" && !a.needsEmailCode && (
-                                <>
-                                    <div className="dl-authdiv"><span>or</span></div>
-                                    <div className="dl-social">
-                                        <button type="button" onClick={() => this._acctSocial("google")} disabled={a.busy}>
-                                            <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
-                                                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z" />
-                                                <path fill="#FBBC05" d="M3.96 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z" />
-                                                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" />
-                                            </svg>
-                                            Continue with Google
+                                        {a.mode === "recover" && !EMAIL_RESET && (
+                                            <div className="dl-field">
+                                                <Label htmlFor="dl-rec">Recovery code</Label>
+                                                <Input id="dl-rec" required value={acctRecoveryInput}
+                                                    onChange={(e) => this._setAcct({ recoveryInput: e.target.value, error: "" })} />
+                                                <span className="dl-hintl">The code shown once at signup — it’s the only way back in.</span>
+                                            </div>
+                                        )}
+                                        {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent && (
+                                            <div className="dl-field">
+                                                <Label htmlFor="dl-rec">Code from the email</Label>
+                                                <InputOTP id="dl-rec" maxLength={6} value={acctRecoveryInput} autoComplete="one-time-code"
+                                                    onChange={(v) => this._setAcct({ recoveryInput: v, error: "" })}>
+                                                    <InputOTPGroup>
+                                                        {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} />)}
+                                                    </InputOTPGroup>
+                                                </InputOTP>
+                                            </div>
+                                        )}
+                                        {!(a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent) && (
+                                            <div className="dl-field">
+                                                <Label htmlFor="dl-pass">{a.mode === "recover" ? "New password" : "Password"}</Label>
+                                                <div className="dl-inputwrap">
+                                                    <Input id="dl-pass" type={a.showPassword ? "text" : "password"} required
+                                                        minLength={a.mode === "signin" ? undefined : MIN_PASSWORD_LENGTH}
+                                                        value={a.password}
+                                                        onChange={(e) => this._setAcct({ password: e.target.value, error: "" })}
+                                                        autoComplete={a.mode === "signin" ? "current-password" : "new-password"} />
+                                                    <button type="button" className="dl-pweye" onClick={() => this._setAcct({ showPassword: !a.showPassword })}
+                                                        aria-label={a.showPassword ? "Hide password" : "Show password"} aria-pressed={!!a.showPassword}>
+                                                        {a.showPassword ? (
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M2 12s3.5-6.5 10-6.5c2.04 0 3.82.64 5.3 1.55M22 12s-3.5 6.5-10 6.5c-2.04 0-3.82-.64-5.3-1.55" />
+                                                                <path d="M4 4l16 16" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" />
+                                                                <circle cx="12" cy="12" r="2.8" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                {strength && (
+                                                    <div className="dl-pwmeter">
+                                                        <span className="bars" aria-hidden="true">
+                                                            {[1, 2, 3].map((n) => (
+                                                                <i key={n} className={strength.score >= n ? `on-${strength.score}` : ""} />
+                                                            ))}
+                                                        </span>
+                                                        <span className="lvl">{strength.label}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent && (
+                                            <span className="dl-hintl">We’ll email a six-digit code so you can set a new password.</span>
+                                        )}
+                                        <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
+                                            {a.busy
+                                                ? (a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent ? "Sending…" : "Working…")
+                                                : a.mode === "signup" ? "Create account"
+                                                : a.mode === "recover" ? (EMAIL_RESET && !a.resetEmailSent ? "Email me a reset code" : "Reset password")
+                                                : "Sign in"}
                                         </button>
-                                        <button type="button" onClick={() => this._acctSocial("github")} disabled={a.busy}>
-                                            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-                                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-                                            </svg>
-                                            Continue with GitHub
-                                        </button>
-                                    </div>
+                                        {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent && (
+                                            <button type="button" className={buttonVariants({ variant: "ghost", size: "sm" })}
+                                                onClick={() => this._setAcct({ resetEmailSent: false, error: "" })}>
+                                                Didn’t get it? Send another code
+                                            </button>
+                                        )}
+                                    </form>
                                 </>
                             )}
                             {a.mode !== "recover" && !a.needsEmailCode && (
                                 <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 10 }} onClick={acctShowRecover}>
-                                    Lost your password? Recover with your code
+                                    {EMAIL_RESET ? "Forgot your password?" : "Lost your password? Recover with your code"}
+                                </button>
+                            )}
+                            {a.mode === "recover" && !a.needsEmailCode && (
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 10 }}
+                                    onClick={() => this._setAcct({ mode: "signin", error: "", resetEmailSent: false })}>
+                                    ← Back to sign in
                                 </button>
                             )}
                             <p className="dl-note" style={{ textAlign: "center" }}>
@@ -2002,9 +2117,15 @@ export default class DaylightSkinApp extends React.Component {
                             </div>
 
                             <p className="dl-authstep">Call it in one line once you have a key</p>
-                            <pre className="dl-authcode"><code>{`curl -X POST https://privatools.me/api/v1/compress \\
-  -H "X-API-Key: pk_…" \\
-  -F files=@in.pdf -F level=recommended -o out.pdf`}</code></pre>
+                            <div className="dl-codewrap">
+                                <header>
+                                    <span>POST /api/v1/compress</span>
+                                    <button type="button" className={curlCopied ? "dl-copybtn done" : "dl-copybtn"} onClick={copyCurl}>
+                                        {curlCopied ? "✓ Copied" : "Copy"}
+                                    </button>
+                                </header>
+                                <pre className="dl-authcode"><code>{curlExample}</code></pre>
+                            </div>
 
                             <div className="dl-authlinks">
                                 <a href="/api-docs">API reference →</a>
@@ -2013,8 +2134,7 @@ export default class DaylightSkinApp extends React.Component {
                             </div>
 
                             <p className="dl-authnote">
-                                No password-reset email exists — signup hands you a one-time recovery code, and that code
-                                is the only way back in. Keep it somewhere safe.
+                                <b>{ACCOUNT_COPY.storageHeading}</b> {ACCOUNT_COPY.storage}
                             </p>
                         </div>
                     </div>

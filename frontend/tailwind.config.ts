@@ -110,6 +110,10 @@ export default {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
+        "caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" },
+        },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
@@ -132,6 +136,7 @@ export default {
         },
       },
       animation: {
+        "caret-blink": "caret-blink 1.2s ease-out infinite",
         "fade-up": "fade-up 0.6s ease-out forwards",
         "fade-in": "fade-in 0.4s ease-out forwards",
         "scale-in": "scale-in 0.25s ease-out forwards",

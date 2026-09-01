@@ -82,8 +82,10 @@
           var d = document.documentElement;
           var pref = null;
           try { pref = window.localStorage.getItem('privatools.daylight.theme'); } catch (e) {}
-          if (pref !== 'light' && pref !== 'dark' && pref !== 'midnight') {
+          if (pref === 'system') {
             pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          } else if (pref !== 'light' && pref !== 'dark' && pref !== 'midnight') {
+            pref = 'light';
           }
           d.setAttribute('data-theme', pref);
         } catch (e) { /* private mode — the CSS media fallback covers it */ }

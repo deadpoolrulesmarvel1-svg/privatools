@@ -30,7 +30,17 @@ const BASE = "/api";
 function readable(err: unknown): Error {
     const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
     const first = e?.errors?.[0];
-    return new Error(first?.longMessage || first?.message || e?.message || "Something went wrong.");
+    const msg = first?.longMessage || first?.message || e?.message || "Something went wrong.";
+    // clerk-js failing to arrive is almost always an ad blocker eating the
+    // script (or, once, a certificate mid-issue). Its own message names
+    // internals; say something a visitor can act on instead.
+    if (/failed to load/i.test(msg) && /clerk|script/i.test(msg)) {
+        return new Error(
+            "The sign-in service couldn\u2019t load. If you use an ad blocker or "
+            + "privacy extension, allow clerk.privatools.me and reload the page.",
+        );
+    }
+    return new Error(msg);
 }
 
 function toAccountUser(user: {

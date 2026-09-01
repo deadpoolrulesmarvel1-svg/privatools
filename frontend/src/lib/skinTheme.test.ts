@@ -26,10 +26,10 @@ describe("persistence", () => {
         expect(readThemeChoice("daylight")).toBe("dark");
     });
 
-    it("falls back to system for an unset or corrupt value", () => {
-        expect(readThemeChoice("daylight")).toBe("system");
+    it("falls back to light for an unset or corrupt value", () => {
+        expect(readThemeChoice("daylight")).toBe("light");
         localStorage.setItem("privatools.daylight.theme", "chartreuse");
-        expect(readThemeChoice("daylight")).toBe("system");
+        expect(readThemeChoice("daylight")).toBe("light");
     });
 });
 

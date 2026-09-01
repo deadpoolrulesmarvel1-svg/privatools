@@ -88,6 +88,13 @@ export const ACCOUNT_COPY = isClerkEnabled()
  * throwing.
  */
 export const SOCIAL_SIGN_IN = isClerkEnabled() ? SOCIAL_PROVIDERS : [];
+
+/**
+ * Whether password recovery goes through an emailed code (Clerk) or the
+ * recovery code issued at signup (local auth). Markup branches on this —
+ * the two flows ask for different things in a different order.
+ */
+export const EMAIL_RESET = isClerkEnabled();
 export type { SocialProvider };
 
 export const MIN_PASSWORD_LENGTH = isClerkEnabled() ? 15 : 10;
@@ -168,6 +175,8 @@ export interface AccountState {
      */
     needsEmailCode: boolean;
     emailCode: string;
+    /** Clerk recover only: the reset code has been emailed; show stage two. */
+    resetEmailSent: boolean;
 }
 
 export const initialAccountState: AccountState = {
@@ -175,7 +184,7 @@ export const initialAccountState: AccountState = {
     user: null, keys: [], freshKey: "", confirmingDelete: false,
     recoveryCode: "", recoverySaved: false, showPassword: false, recoveryInput: "",
     rotating: false, rotatePassword: "",
-    needsEmailCode: false, emailCode: "",
+    needsEmailCode: false, emailCode: "", resetEmailSent: false,
 };
 
 const BASE = "/api";
