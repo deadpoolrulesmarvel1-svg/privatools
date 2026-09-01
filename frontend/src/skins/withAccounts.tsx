@@ -95,7 +95,17 @@ export function withAccounts(Base, config) {
                 // callback against a finished flow is what bounces the visitor
                 // to the hosted portal. Check both.
                 const alreadyIn = Boolean(clerk.user || clerk.session);
-                if (returning && !alreadyIn) {
+                // And the verification must still be live. A page that has seen
+                // an earlier attempt keeps a spent one around — status
+                // "expired", strategy still oauth_github — and handing that to
+                // handleRedirectCallback fails, on which Clerk navigates to its
+                // hosted portal. So a stale marker in a bookmarked URL was
+                // enough to throw someone off the site entirely.
+                const LIVE = ["transferable", "verified", "unverified"];
+                const live = (v) => Boolean(v && LIVE.includes(v.status));
+                const pending = live(clerk.client?.signIn?.firstFactorVerification)
+                    || live(clerk.client?.signUp?.verifications?.externalAccount);
+                if (returning && !alreadyIn && pending) {
                     try {
                         await accountApi.completeSocialRedirect();
                         // Clerk leaves its bookkeeping in the address bar.
