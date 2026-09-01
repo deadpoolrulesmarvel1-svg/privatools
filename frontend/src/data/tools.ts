@@ -25,6 +25,8 @@ export interface Tool {
   /** Lower = shown earlier in the UI. Reflects relative search demand. */
   popularity?: number;
   clientOnly?: boolean;
+  /** Tool can optionally use the visitor's own AI API key (BYOK). */
+  byok?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -694,7 +696,7 @@ const _toolsRaw: Tool[] = [
     longDescription: "Summarize PDF online with AI — without uploading. By default PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server. If you would rather use a stronger model, you can supply your own API key — then the text goes straight from your browser to that provider, still never through us. Choose short, medium, or long summaries. First load of the on-device model downloads ~250 MB and caches it for next time.",
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
-    category: "advanced", clientOnly: true, accepts: ".pdf", outputLabel: "summary.txt",
+    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "summary.txt",
   },
   {
     slug: "smart-redact", icon: ShieldCheck, name: "Smart Redact (AI)",
@@ -702,7 +704,7 @@ const _toolsRaw: Tool[] = [
     longDescription: "Smart Redact PDF online with AI — regex passes always run in your browser, catching emails, phone numbers, SSNs and card numbers with no model and no network. Names and organisations are found either by a local NER model, so nothing leaves the tab, or by your own AI key for far better coverage — in which case the values the regex pass already found are masked out before any text is sent. Review the suggestions, uncheck anything you want to keep, then the PDF and chosen strings are sent for real PyMuPDF redaction — permanent removal, not just a black overlay.",
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
-    category: "security", clientOnly: false, accepts: ".pdf", outputLabel: "redacted.pdf",
+    category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
   },
   {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",

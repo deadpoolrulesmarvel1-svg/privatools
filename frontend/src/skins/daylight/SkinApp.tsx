@@ -1632,6 +1632,7 @@ export default class DaylightSkinApp extends React.Component {
                                 {tool.clientOnly
                                     ? <Badge variant="wash" className="dl-tchip">Runs on your device · nothing uploads</Badge>
                                     : <Badge variant="warn" className="dl-tchip">Uses our server · deleted after</Badge>}
+                                {tool.byok && <Badge variant="wash" className="dl-tchip">Bring your own AI key · optional</Badge>}
                                 <Badge variant="outline" className="dl-tchip">500 MB per file</Badge>
                                 <Badge variant="outline" className="dl-tchip">No retention</Badge>
                                 <Badge variant="outline" className="dl-tchip">Free, no account</Badge>
