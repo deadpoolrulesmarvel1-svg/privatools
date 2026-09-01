@@ -2,11 +2,15 @@
  * InvertColorsUI — invert PDF colors for dark mode reading.
  *
  * Mode picker (Full vs Night), DPI picker, workshop dropzone.
+ * Multi-file via useMultiFileProcessor — same mode/DPI applied to every PDF.
  */
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Loader2, AlertCircle, Moon, Sun, CheckCircle2, X, FileText, Download, RotateCcw } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { Loader2, AlertCircle, Moon, Sun, CheckCircle2, Download, RotateCcw, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { downloadBlob, buildOutputFilename } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const INVERT_COLORS_DEFAULTS: { mode: "full" | "night"; dpi: number } = {
@@ -14,113 +18,163 @@ const INVERT_COLORS_DEFAULTS: { mode: "full" | "night"; dpi: number } = {
     dpi: 150,
 };
 
+const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+
 export function InvertColorsUI() {
     const [config, , { setField }] = useToolDefaults("invert-colors", INVERT_COLORS_DEFAULTS);
     const { mode, dpi } = config;
     const setMode = useCallback((v: React.SetStateAction<typeof INVERT_COLORS_DEFAULTS["mode"]>) => setField("mode", v), [setField]);
     const setDpi = useCallback((v: React.SetStateAction<typeof INVERT_COLORS_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
 
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
-    const outputName = file ? buildOutputFilename(file.name, "inverted", "pdf") : "inverted.pdf";
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing");
-        setError(null);
-        try {
-            const res = await uploadFile("/invert-colors", file, { dpi, mode });
-            const blob = await res.blob();
-            setResultBlob(blob);
-            downloadBlob(blob, outputName);
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't invert colors on that PDF."));
-            setStatus("idle");
+    // Same naming as before: "<stem>_inverted.pdf". The server sends a generic
+    // "inverted.pdf" so we name client-side.
+    const outNameFor = useCallback((name: string) => buildOutputFilename(name, "inverted", "pdf"), []);
+
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, outNameFor(done[0].name));
+            return;
         }
-    }, [file, dpi, mode, outputName]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: outNameFor(e.name),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), "archive_inverted.zip");
+        })();
+    }, [proc.entries, outNameFor]);
+
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/invert-colors",
+            outputSuffix: "inverted",
+            outputExt: "pdf",
+            params: { dpi, mode },
+        }, retry);
+        setPhase("done");
+    }, [proc, dpi, mode]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            downloadResults();
+        }
+    }, [phase, proc.doneCount, downloadResults]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && status === "idle") {
-                e.preventDefault(); process();
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess && phase === "idle") {
+                e.preventDefault(); void process(false);
             }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
-    }, [file, status, process]);
+    }, [canProcess, phase, process]);
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks accent />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Colors inverted</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{mode === "night" ? "Night-mode" : "Inverted"}</span> PDF downloaded
-                        </h2>
-                        <div className="mt-5 flex flex-wrap gap-2">
-                            <button onClick={() => resultBlob && downloadBlob(resultBlob, outputName)} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                <Download size={13} /> Download again
-                            </button>
-                            <button onClick={() => { setFile(null); setStatus("idle"); setResultBlob(null); }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60">
-                                <RotateCcw size={12} /> Process another
-                            </button>
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks accent />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Colors inverted</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti || proc.doneCount === 0
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> PDF{proc.doneCount === 1 ? "" : "s"} inverted{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <><span className="italic text-accent">{mode === "night" ? "Night-mode" : "Inverted"}</span> PDF downloaded</>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60">
+                                    <RotateCcw size={12} /> Process another
+                                </button>
+                            </div>
+                            {proc.failedCount > 0 && (
+                                <div className="mt-4 space-y-1.5">
+                                    {proc.entries.filter(e => e.status === "failed").map(e => (
+                                        <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
+                                            <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
-            {!file ? (
-                <div
-                    onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                    onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }}
-                    onClick={() => ref.current?.click()}
-                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Upload PDF"
-                    className={cn(
-                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                        drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                    )}
-                >
-                    <CornerMarks />
-                    <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
-                    <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                        <Moon size={20} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop a PDF to invert colors</p>
-                    <p className="font-medium text-[11.5px] text-muted-foreground">Dark mode for any document</p>
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
+                onClick={() => ref.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload PDFs"
+                className={cn(
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
+                )}
+            >
+                <CornerMarks />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
+                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
+                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Moon size={20} className="text-accent" strokeWidth={1.75} />}
                 </div>
-            ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                    <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                        <FileText size={16} className="text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
-                    </div>
-                    <button onClick={() => setFile(null)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove file">
-                        <X size={13} />
-                    </button>
-                </div>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {proc.entries.length ? "Add more PDFs" : "Drop PDFs to invert colors"}
+                </p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Dark mode for any document · several files become a ZIP</p>
+            </div>
+
+            {proc.entries.length > 0 && (
+                <MultiFileQueue
+                    entries={proc.entries}
+                    reorderable={false}
+                    onRemove={proc.removeFile}
+                    onReorder={proc.reorder}
+                    onClearAll={proc.clearAll}
+                    onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                    busy={phase === "processing"}
+                />
             )}
 
             {/* Mode + DPI */}
@@ -196,18 +250,14 @@ export function InvertColorsUI() {
                 </div>
             </div>
 
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />{error}
-                </div>
-            )}
-
-            {file && (
+            {proc.entries.length > 0 && (
                 <div className="flex items-center gap-3">
-                    <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                        {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Inverting…</> : <><Download size={13} /> Invert colors</>}
+                    <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        {phase === "processing"
+                            ? <><Loader2 size={13} className="animate-spin" /> Inverting… ({proc.doneCount}/{proc.entries.length})</>
+                            : <><Download size={13} /> Invert colors{proc.entries.length > 1 ? ` — ${proc.entries.length} PDFs` : ""}</>}
                     </button>
-                    {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    {phase === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                 </div>
             )}
         </div>

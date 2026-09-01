@@ -1,74 +1,153 @@
 /**
- * MetadataUI — read or write the Title / Author / Subject / Keywords of a PDF.
+ * MetadataUI — read or write the Title / Author / Subject / Keywords of PDFs.
  * Workshop: read view shows lab-report rows · write view shows form inputs.
+ * Multi-file via useMultiFileProcessor — the SAME values are written to every
+ * queued PDF; the "View" tab reads (and prefills from) the FIRST file.
  */
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, CheckCircle2, AlertCircle, FileSearch, Pencil, RotateCcw, ArrowRight } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, CheckCircle2, AlertCircle, FileSearch, Pencil, RotateCcw, ArrowRight, Download } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, uploadFileGetJson, downloadBlob } from "@/lib/api";
+import { uploadFileGetJson } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 export function MetadataUI() {
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
     const [mode, setMode] = useState<"read" | "write">("read");
     const [meta, setMeta] = useState<Record<string, string> | null>(null);
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [subject, setSubject] = useState("");
     const [keywords, setKeywords] = useState("");
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    // Read (single request against the first file) and write (queue run)
+    // have independent lifecycles.
+    const [readState, setReadState] = useState<"idle" | "processing" | "done">("idle");
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
 
+    const first = proc.entries[0];
+    const firstId = first?.id;
+    const isMulti = proc.entries.length > 1;
+    const processing = readState === "processing" || phase === "processing";
+
+    // The lab report / prefill belongs to the FIRST file — drop it if that
+    // file changes (removed, replaced) so we never show stale values.
+    useEffect(() => {
+        setMeta(null);
+        setReadState("idle");
+    }, [firstId]);
+
     const readMeta = useCallback(async () => {
-        if (!file) return;
-        setState("processing"); setError(null);
+        const entry = proc.entries[0];
+        if (!entry) return;
+        setReadState("processing"); setError(null);
         try {
-            const data = await uploadFileGetJson<Record<string, string>>("/metadata", file);
+            const data = await uploadFileGetJson<Record<string, string>>("/metadata", entry.file);
             setMeta(data);
             setTitle(data.title || ""); setAuthor(data.author || "");
             setSubject(data.subject || ""); setKeywords(data.keywords || "");
-            setState("done");
+            setReadState("done");
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't read the PDF metadata."));
-            setState("idle");
+            setReadState("idle");
         }
-    }, [file]);
+    }, [proc.entries]);
 
-    const writeMeta = useCallback(async () => {
-        if (!file) return;
-        setState("processing"); setError(null);
-        try {
-            const res = await uploadFile("/metadata/update", file, { title, author, subject, keywords });
-            const blob = await res.blob();
-            downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_metadata.pdf`);
-            setState("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't update the PDF metadata."));
-            setState("idle");
+    const writeMeta = useCallback(async (retry = false) => {
+        setPhase("processing"); setError(null);
+        await proc.run({
+            endpoint: "/metadata/update",
+            outputSuffix: "metadata",
+            outputExt: "pdf",
+            params: { title, author, subject, keywords },
+        }, retry);
+        setPhase("done");
+    }, [proc, title, author, subject, keywords]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_metadata");
         }
-    }, [file, title, author, subject, keywords]);
+    }, [phase, proc]);
 
     // Cmd+Enter to submit
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && state !== "processing") {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && proc.entries.length > 0 && !processing) {
                 e.preventDefault();
-                if (mode === "read") readMeta(); else writeMeta();
+                if (mode === "read") void readMeta(); else void writeMeta(false);
             }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
-    }, [file, mode, state, readMeta, writeMeta]);
+    }, [proc.entries.length, mode, processing, readMeta, writeMeta]);
 
-    if (state === "done" && mode === "read" && meta) return (
+    if (phase === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Metadata updated</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            {isMulti
+                                ? <><span className="italic text-accent">Document info</span> rewritten in <span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                : <><span className="italic text-accent">Document info</span> rewritten</>}
+                        </h2>
+                        {proc.doneCount > 0 && (
+                            <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                {proc.doneCount > 1 ? "ZIP downloaded · same values written to every file" : "PDF downloaded"}
+                            </p>
+                        )}
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {proc.doneCount > 0 && (
+                                <button
+                                    onClick={() => proc.downloadAll("archive_metadata")}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
+                                >
+                                    <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                </button>
+                            )}
+                            {proc.failedCount > 0 && (
+                                <button
+                                    onClick={() => { downloadedRef.current = false; void writeMeta(true); }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                >
+                                    Retry {proc.failedCount} failed
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { proc.reset(); setPhase("idle"); setReadState("idle"); setMeta(null); setMode("read"); downloadedRef.current = false; }}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                <RotateCcw size={12} /> Process another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (readState === "done" && mode === "read" && meta) return (
         <div className="space-y-4 animate-fade-up">
             <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
                 <div className="font-medium px-5 py-3 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between text-[11.5px]">
                     <span className="text-accent">Lab report — metadata</span>
                     <span className="text-muted-foreground">{Object.keys(meta).length} fields</span>
                 </div>
+                {isMulti && (
+                    <div className="px-5 py-2 border-b border-border/40 font-mono text-[10.5px] tracking-wide text-muted-foreground truncate">
+                        From {first?.name} — the first of {proc.entries.length} queued files
+                    </div>
+                )}
                 <div className="p-5 space-y-2">
                     {Object.entries(meta).map(([k, v]) => (
                         <div key={k} className="grid grid-cols-[140px_1fr] gap-3 py-2 border-b border-border/40 last:border-0">
@@ -80,13 +159,13 @@ export function MetadataUI() {
             </div>
             <div className="flex flex-wrap gap-2">
                 <button
-                    onClick={() => { setMode("write"); setState("idle"); }}
+                    onClick={() => { setMode("write"); setReadState("idle"); }}
                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
                 >
                     <Pencil size={12} /> Edit metadata
                 </button>
                 <button
-                    onClick={() => { setFile(null); setState("idle"); setMeta(null); }}
+                    onClick={() => { proc.reset(); setReadState("idle"); setMeta(null); }}
                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                 >
                     <RotateCcw size={12} /> New file
@@ -95,44 +174,31 @@ export function MetadataUI() {
         </div>
     );
 
-    if (state === "done" && mode === "write") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Metadata updated</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">Document info</span> rewritten
-                        </h2>
-                        <button
-                            onClick={() => { setFile(null); setState("idle"); setMeta(null); setMode("read"); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Process another
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
         <div className="space-y-4">
             <FileUploadZone
-                file={file}
-                onFileSelect={f => { setFile(f); setMeta(null); }}
-                onClear={() => { setFile(null); setMeta(null); }}
+                file={null}
+                onFileSelect={f => proc.addFiles([f])}
+                onFilesSelect={fs => proc.addFiles(fs)}
+                onClear={proc.clearAll}
+                multiple
                 accept=".pdf"
-                label="Drop PDF to inspect metadata"
+                label={proc.entries.length ? "Add more files" : "Drop PDFs to inspect metadata"}
                 hint="View or edit Title · Author · Subject · Keywords"
             />
 
-            {file && (
+            {proc.entries.length > 0 && (
                 <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void writeMeta(true); }}
+                        busy={phase === "processing"}
+                    />
+
                     <div role="tablist" aria-label="Metadata operation" className="grid grid-cols-2 gap-1 p-1 rounded-md border border-border bg-paper-2/40">
                         {(["read", "write"] as const).map(m => (
                             <button
@@ -150,6 +216,12 @@ export function MetadataUI() {
                             </button>
                         ))}
                     </div>
+
+                    {mode === "read" && isMulti && (
+                        <p className="font-medium text-[11.5px] text-muted-foreground px-1">
+                            View reads the first file — {first?.name}
+                        </p>
+                    )}
 
                     {mode === "write" && (
                         <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
@@ -191,6 +263,11 @@ export function MetadataUI() {
                                         </div>
                                     );
                                 })}
+                                {isMulti && (
+                                    <p className="font-medium text-[11px] text-muted-foreground">
+                                        These values are written to all {proc.entries.length} files{meta ? <> · "current" shows the first file</> : null}.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
@@ -202,12 +279,12 @@ export function MetadataUI() {
                     )}
 
                     <div className="flex items-center gap-3">
-                        <button onClick={mode === "read" ? readMeta : writeMeta} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {state === "processing"
-                                ? <><Loader2 size={13} className="animate-spin" /> Processing…</>
-                                : mode === "read" ? <><FileSearch size={13} /> Read metadata</> : <><Pencil size={13} /> Update metadata</>}
+                        <button onClick={() => { if (mode === "read") void readMeta(); else void writeMeta(false); }} disabled={processing} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {processing
+                                ? <><Loader2 size={13} className="animate-spin" /> Processing…{phase === "processing" ? ` (${proc.doneCount}/${proc.entries.length})` : ""}</>
+                                : mode === "read" ? <><FileSearch size={13} /> Read metadata</> : <><Pencil size={13} /> Update metadata{isMulti ? ` — ${proc.entries.length} PDFs` : ""}</>}
                         </button>
-                        {state !== "processing" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {!processing && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { Upload, Loader2, CheckCircle2, AlertCircle, RotateCcw, Download } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 // Tesseract language packs actually installed in the production image — keep
 // in sync with the `tesseract-ocr-*` packages in /Dockerfile.
@@ -27,12 +28,12 @@ export function OcrUI() {
     const { lang, dpi } = config;
     const setLang = useCallback((v: React.SetStateAction<typeof OCR_DEFAULTS["lang"]>) => setField("lang", v), [setField]);
     const setDpi = useCallback((v: React.SetStateAction<typeof OCR_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
-  const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
+  const proc = useMultiFileProcessor();
 
   const [output, setOutput] = useState<"json" | "txt" | "searchable_pdf">("json");
-  const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [extractedText, setExtractedText] = useState("");
+  const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+  // Per-file extracted text, keyed by queue entry id (json output only).
+  const [texts, setTexts] = useState<Record<string, string>>({});
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
 
@@ -60,125 +61,169 @@ export function OcrUI() {
     { id: "ara", label: "Arabic" }, { id: "heb", label: "Hebrew" },
   ];
 
-  const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
+  const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+  const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-  const canProcess = !!file && state !== "processing";
+  const process = useCallback(async (retry = false) => {
+    setPhase("processing");
+    await proc.run({
+      endpoint: "/ocr",
+      // json → text shown inline, nothing downloaded; txt → per-file .txt;
+      // searchable_pdf → per-file *_searchable.pdf. Server Content-Disposition
+      // (when present) still wins over the built name.
+      outputSuffix: output === "searchable_pdf" ? "searchable" : null,
+      outputExt: output === "searchable_pdf" ? "pdf" : output === "txt" ? "txt" : "json",
+      params: { lang, output, dpi },
+    }, retry);
+    setPhase("done");
+  }, [proc, lang, output, dpi]);
 
-  const process = useCallback(async () => {
-    if (!file) return;
-    setState("processing"); setError(null);
-    try {
-      const res = await uploadFile("/ocr", file.raw, { lang, output, dpi });
-      if (output === "json") {
-        const data = await res.json();
-        setExtractedText(data.text || "");
-      } else {
-        const blob = await res.blob();
-        const filename = output === "txt" ? "extracted_text.txt" : "searchable.pdf";
-        downloadBlob(blob, filename);
-        setExtractedText("");
+  // json output: read each done entry's JSON body and pull out `text`.
+  useEffect(() => {
+    if (phase !== "done" || output !== "json") return;
+    let cancelled = false;
+    const done = proc.entries.filter(e => e.status === "done" && e.blob);
+    Promise.all(done.map(async e => {
+      try {
+        const data = JSON.parse(await e.blob!.text()) as { text?: string };
+        return [e.id, data.text || ""] as const;
+      } catch {
+        return [e.id, ""] as const;
       }
-      setState("done");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "OCR failed";
-      setError(friendlyError(msg, "OCR couldn't read this PDF."));
-      setState("idle");
+    })).then(pairs => { if (!cancelled) setTexts(Object.fromEntries(pairs)); });
+    return () => { cancelled = true; };
+  }, [phase, output, proc.entries]);
+
+  // txt / searchable_pdf: auto-download once (single file direct, several as ZIP).
+  const downloadedRef = useRef(false);
+  useEffect(() => {
+    if (phase === "done" && !downloadedRef.current && proc.doneCount > 0 && output !== "json") {
+      downloadedRef.current = true;
+      proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable");
     }
-  }, [file, lang, output, dpi]);
+  }, [phase, proc, output]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [canProcess, process]);
 
-  if (state === "done") return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-        <div className="relative p-7">
-          <CornerMarks accent />
-          <div className="flex items-start gap-5">
-            <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-              <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="section-mark mb-2">OCR complete</p>
-              <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                {output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDF</span> created.</> : <><span className="italic text-accent">Text</span> extracted.</>}
-              </h2>
+  if (phase === "done") {
+    const isMulti = proc.entries.length > 1;
+    const doneEntries = proc.entries.filter(e => e.status === "done");
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+          <div className="relative p-7">
+            <CornerMarks accent />
+            <div className="flex items-start gap-5">
+              <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="section-mark mb-2">OCR complete</p>
+                <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                  {isMulti
+                    ? <>{output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDFs</span></> : <><span className="italic text-accent">Text</span> extracted</>} · <span className="italic text-accent">{proc.doneCount}</span> of {proc.entries.length}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                    : output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDF</span> created.</> : <><span className="italic text-accent">Text</span> extracted.</>}
+                </h2>
+                {output !== "json" && proc.doneCount > 0 && (
+                  <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                    {proc.doneCount > 1 ? "ZIP downloaded" : "Downloaded"}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Per-file extracted text panels (json output) */}
+        {output === "json" && doneEntries.map(e => {
+          const text = texts[e.id] ?? "";
+          if (!text) return null;
+          return (
+            <div key={e.id} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="font-medium flex items-center justify-between gap-3 px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+                <span className="truncate min-w-0">{isMulti ? <>{e.name} · </> : <>Extracted text · </>}{text.length.toLocaleString()} chars</span>
+                <button onClick={() => navigator.clipboard.writeText(text)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors shrink-0">
+                  Copy
+                </button>
+              </div>
+              <pre className="font-mono text-[13px] text-foreground whitespace-pre-wrap max-h-80 overflow-y-auto p-4">{text}</pre>
+            </div>
+          );
+        })}
+
+        <div className="flex flex-wrap gap-2">
+          {output !== "json" && proc.doneCount > 0 && (
+            <button
+              onClick={() => proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable")}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
+            >
+              <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+            </button>
+          )}
+          {proc.failedCount > 0 && (
+            <button
+              onClick={() => { downloadedRef.current = false; void process(true); }}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+            >
+              Retry {proc.failedCount} failed
+            </button>
+          )}
+          <button
+            onClick={() => { proc.reset(); setPhase("idle"); setTexts({}); downloadedRef.current = false; }}
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+          >
+            <RotateCcw size={12} /> OCR another file
+          </button>
         </div>
       </div>
-      {extractedText && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="font-medium flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-            <span>Extracted text · {extractedText.length.toLocaleString()} chars</span>
-            <button onClick={() => navigator.clipboard.writeText(extractedText)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-              Copy
-            </button>
-          </div>
-          <pre className="font-mono text-[13px] text-foreground whitespace-pre-wrap max-h-80 overflow-y-auto p-4">{extractedText}</pre>
-        </div>
-      )}
-      <button
-        onClick={() => { setFile(null); setState("idle"); setExtractedText(""); }}
-        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-      >
-        OCR another file
-      </button>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {!file ? (
-        <div
-          onDragOver={e => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-          onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-          className={cn(
-            "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-            drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-          )}
-        >
-          <CornerMarks />
-          <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
-          <div className={cn(
-            "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
-            drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
-          )}>
-            <Upload size={20} className="text-accent" strokeWidth={1.75} />
-          </div>
-          <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Select a scanned PDF</p>
-          <p className="font-medium text-[11.5px] text-muted-foreground">{langs.length}+ languages supported · Tesseract on-server</p>
+      <div
+        onDragOver={e => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
+        onClick={() => ref.current?.click()}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload files"
+        className={cn(
+          "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+          drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
+        )}
+      >
+        <CornerMarks />
+        <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
+        <div className={cn(
+          "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+          drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+        )}>
+          <Upload size={20} className="text-accent" strokeWidth={1.75} />
         </div>
-      ) : (
+        <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{proc.entries.length ? "Add more files" : "Select scanned PDFs"}</p>
+        <p className="font-medium text-[11.5px] text-muted-foreground">{langs.length}+ languages supported · Tesseract on-server · same settings for every file</p>
+      </div>
+
+      {proc.entries.length > 0 && (
         <>
-          {/* File card */}
-          <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-            <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-              <FileText size={16} className="text-accent" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-              <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{file.size}</p>
-            </div>
-            <button
-              onClick={() => setFile(null)}
-              className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-              aria-label="Remove file"
-            >
-              <X size={13} />
-            </button>
-          </div>
+          <MultiFileQueue
+            entries={proc.entries}
+            reorderable={false}
+            onRemove={proc.removeFile}
+            onReorder={proc.reorder}
+            onClearAll={proc.clearAll}
+            onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+            busy={phase === "processing"}
+          />
 
           {/* Options */}
           <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -269,17 +314,11 @@ export function OcrUI() {
             </div>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-              <AlertCircle size={13} className="shrink-0" />{error}
-            </div>
-          )}
-
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-              {state === "processing"
-                ? <><Loader2 size={13} className="animate-spin" /> Extracting text…</>
-                : <>Run OCR</>}
+            <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+              {phase === "processing"
+                ? <><Loader2 size={13} className="animate-spin" /> Extracting text… ({proc.doneCount}/{proc.entries.length})</>
+                : <>Run OCR{proc.entries.length > 1 ? ` — ${proc.entries.length} PDFs` : ""}</>}
             </button>
             {canProcess && (
               <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>

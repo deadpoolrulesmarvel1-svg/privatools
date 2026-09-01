@@ -28,6 +28,14 @@ const NON_PDF_COUNT = nonPdfTools.length;
 const ToolUI = lazy(() =>
     import("@/pages/ToolPage").then((m) => ({ default: m.ToolUI })),
 );
+// Non-PDF slugs have their own dedicated switch — routing them through the
+// PDF one silently served GenericUI (a file dropzone) for text tools like
+// the hash generator, and the queue-converted image/AV components never
+// mounted in a skin at all.
+const NonPdfToolUI = lazy(() =>
+    import("@/pages/NonPdfToolPage").then((m) => ({ default: m.ToolUI })),
+);
+const NON_PDF_SLUGS = new Set(nonPdfTools.map((t) => t.slug));
 
 const BY_SLUG = new Map(
     [...tools, ...nonPdfTools].map((t) => [t.slug, t]),
@@ -94,12 +102,21 @@ export function withRealTools(Base, config) {
                             </div>
                         }
                     >
-                        <ToolUI
-                            slug={tool.slug}
-                            toolName={tool.name}
-                            outputLabel={tool.outputLabel ?? "file"}
-                            accepts={tool.accepts ?? ""}
-                        />
+                        {NON_PDF_SLUGS.has(tool.slug) ? (
+                            <NonPdfToolUI
+                                slug={tool.slug}
+                                toolName={tool.name}
+                                outputLabel={tool.outputLabel ?? "file"}
+                                accepts={tool.accepts ?? ""}
+                            />
+                        ) : (
+                            <ToolUI
+                                slug={tool.slug}
+                                toolName={tool.name}
+                                outputLabel={tool.outputLabel ?? "file"}
+                                accepts={tool.accepts ?? ""}
+                            />
+                        )}
                     </Suspense>
                 ),
             };

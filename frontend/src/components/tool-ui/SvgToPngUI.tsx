@@ -2,11 +2,15 @@
  * SvgToPngUI — rasterize SVG to PNG at 1x / 2x / 3x / 4x scale.
  * Workshop: scale picker with px hint, download CTA. Shows output pixel
  * dimensions by parsing the SVG viewBox / width / height.
+ * Multi-file via useMultiFileProcessor — same scale applied to every SVG.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Download, Scaling } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { downloadBlob } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 import { FileUploadZone } from "./FileUploadZone";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
@@ -21,21 +25,22 @@ const SVG_TO_PNG_DEFAULTS: { scale: number } = {
     scale: 2,
 };
 
+const isSvg = (f: File) => f.name.toLowerCase().endsWith(".svg");
+
 export function SvgToPngUI() {
     const [config, , { setField }] = useToolDefaults("svg-to-png", SVG_TO_PNG_DEFAULTS);
     const { scale } = config;
     const setScale = useCallback((v: React.SetStateAction<typeof SVG_TO_PNG_DEFAULTS["scale"]>) => setField("scale", v), [setField]);
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
 
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [svgDims, setSvgDims] = useState<{ w: number; h: number } | null>(null);
 
-    // Read the SVG, parse width/height (or fall back to the viewBox) so we can
-    // tell the user what the rasterized output will measure.
+    // Read the first SVG, parse width/height (or fall back to the viewBox) so
+    // we can tell the user what the rasterized output will measure.
+    const firstFile = proc.entries[0]?.file ?? null;
     useEffect(() => {
-        if (!file) { setSvgDims(null); return; }
+        if (!firstFile) { setSvgDims(null); return; }
         const reader = new FileReader();
         reader.onload = () => {
             const text = String(reader.result || "");
@@ -54,30 +59,53 @@ export function SvgToPngUI() {
                 setSvgDims(null);
             }
         };
-        reader.readAsText(file);
-    }, [file]);
+        reader.readAsText(firstFile);
+    }, [firstFile]);
 
-    const canProcess = !!file && status !== "processing";
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try {
-            const res = await uploadFile("/svg-to-png", file, { scale });
-            const blob = await res.blob();
-            setResultBlob(blob);
-            setStatus("done");
-            downloadBlob(blob, file.name.replace(/\.svg$/i, ".png") || "converted.png");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't rasterize that SVG."));
-            setStatus("idle");
+    // Same naming as the single-file tool: swap .svg for .png. The server
+    // sends a generic "converted.png" so we name client-side.
+    const outNameFor = useCallback((name: string) => name.replace(/\.svg$/i, ".png") || "converted.png", []);
+
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, outNameFor(done[0].name));
+            return;
         }
-    }, [file, scale]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: outNameFor(e.name),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), "archive_png.zip");
+        })();
+    }, [proc.entries, outNameFor]);
+
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/svg-to-png",
+            outputSuffix: null,
+            outputExt: "png",
+            params: { scale },
+        }, retry);
+        setPhase("done");
+    }, [proc, scale]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            downloadResults();
+        }
+    }, [phase, proc.doneCount, downloadResults]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); void process(false); }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
@@ -86,54 +114,95 @@ export function SvgToPngUI() {
     const outW = svgDims ? Math.round(svgDims.w * scale) : null;
     const outH = svgDims ? Math.round(svgDims.h * scale) : null;
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Rasterized</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            SVG → <span className="italic text-accent">{scale}× PNG</span>
-                        </h2>
-                        <div className="mt-5 flex flex-wrap gap-2">
-                            <button onClick={() => resultBlob && file && downloadBlob(resultBlob, file.name.replace(/\.svg$/i, ".png"))} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                <Download size={13} /> Download PNG
-                            </button>
-                            <button
-                                onClick={() => { setFile(null); setStatus("idle"); setResultBlob(null); }}
-                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                            >
-                                <RotateCcw size={12} /> Convert another
-                            </button>
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Rasterized</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti || proc.doneCount === 0
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> SVG{proc.doneCount === 1 ? "" : "s"} rasterized at {scale}×{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <>SVG → <span className="italic text-accent">{scale}× PNG</span></>}
+                            </h2>
+                            {proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PNG downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "PNG"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                                >
+                                    <RotateCcw size={12} /> Convert another
+                                </button>
+                            </div>
+                            {proc.failedCount > 0 && (
+                                <div className="mt-4 space-y-1.5">
+                                    {proc.entries.filter(e => e.status === "failed").map(e => (
+                                        <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
+                                            <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
             <FileUploadZone
-                file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                file={null}
+                multiple
+                onFilesSelect={files => proc.addFiles(files, isSvg)}
+                onFileSelect={f => proc.addFiles([f], isSvg)}
+                onClear={proc.clearAll}
                 accept=".svg"
-                label="Drop SVG file"
-                hint="Rasterize to PNG at chosen scale"
+                label={proc.entries.length ? "Add more files" : "Drop SVG files"}
+                hint="Rasterize to PNG at chosen scale · several files become a ZIP"
             />
 
-            {file && (
+            {proc.entries.length > 0 && (
                 <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
+
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span>Output scale</span>
                             {outW !== null && outH !== null && (
-                                <span className="text-accent tabular-nums">{outW}×{outH} px</span>
+                                <span className="text-accent tabular-nums">{outW}×{outH} px{proc.entries.length > 1 ? " · first file" : ""}</span>
                             )}
                         </div>
                         <div className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -162,15 +231,11 @@ export function SvgToPngUI() {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3 flex-wrap">
-                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Rasterizing…</> : <><Scaling size={13} /> Convert at {scale}×</>}
+                        <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Rasterizing… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Scaling size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} SVGs ` : ""}at {scale}×</>}
                         </button>
                         {canProcess && (
                             <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>

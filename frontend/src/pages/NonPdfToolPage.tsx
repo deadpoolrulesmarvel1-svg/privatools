@@ -159,7 +159,7 @@ function ToolLoadingCard() {
   );
 }
 
-function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
+export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
     case "image-compressor": return <LazyImageCompressorUI />;
     case "image-converter": return <LazyImageConverterUI />;

@@ -2,22 +2,26 @@
  * CompressUI — shrink one or many PDFs.
  * Workshop: dropzone, intensity meter, level cards with live estimated savings,
  * Cmd+Enter, corner-marked success state with before/after bars.
+ * Multi-file via useMultiFileProcessor — same level applied to every PDF, with
+ * per-file before/after sizes read off each response's X-Compressed-Size header.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Minimize2, RotateCcw, Undo2, Copy, Sparkles, Info } from "lucide-react";
+import { Upload, Download, Loader2, CheckCircle2, Minimize2, RotateCcw, Undo2, Sparkles, Info } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename, formatErrorForClipboard } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { formatFileSize, MAX_FILE_SIZE_LABEL, buildOutputFilename } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoff } from "@/lib/file-handoff";
 import { ResultHandoff } from "./ResultHandoff";
+import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 type Level =
     | "light" | "recommended" | "extreme" | "custom"
@@ -26,8 +30,6 @@ type Level =
     | "email" | "print" | "archive" | "web"
     // Client-side only — sends level=custom plus target_size_mb.
     | "target";
-type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
-let fileId = 0;
 
 const levels: { id: Level; label: string; desc: string; saving: string; intensity: number }[] = [
     { id: "light",       label: "Light",       desc: "Minimal quality loss",                              saving: "~20% smaller", intensity: 25 },
@@ -59,8 +61,14 @@ const COMPRESS_DEFAULTS = {
     targetMb: 10,
 };
 
+/** Per-file compressed size: the X-Compressed-Size response header when the
+ *  server sent one, otherwise the result blob's own size. */
+function compressedBytesOf(e: FileEntry): number {
+    return parseInt(e.headers?.["x-compressed-size"] || "0") || e.blob?.size || 0;
+}
+
 export function CompressUI() {
-    const [files, setFiles] = useState<CompressFile[]>([]);
+    const proc = useMultiFileProcessor();
     // Form config persists across refreshes (file picks intentionally don't).
     const [config, setConfig, { restored, reset: resetConfig }] = useToolDefaults("compress-pdf", COMPRESS_DEFAULTS, { legacyKey: "compress" });
     const { level, customQuality, customMaxDim, targetMb } = config;
@@ -68,17 +76,11 @@ export function CompressUI() {
     const setTargetMb = (v: number) => setConfig(c => ({ ...c, targetMb: v }));
     const setCustomQuality = (v: number) => setConfig(c => ({ ...c, customQuality: v }));
     const setCustomMaxDim = (v: number) => setConfig(c => ({ ...c, customMaxDim: v }));
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [errorObj, setErrorObj] = useState<unknown>(null);
-    const [retryNote, setRetryNote] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-    const [compressedSize, setCompressedSize] = useState<number>(0);
-    // null when target mode wasn't used. false means even the harshest
-    // setting overshot — said out loud rather than quietly missing.
-    const [targetMet, setTargetMet] = useState<boolean | null>(null);
     const ref = useRef<HTMLInputElement>(null);
+
+    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
     // Show "Restored previous settings" toast once on mount if we loaded non-default values.
     useEffect(() => {
@@ -91,18 +93,6 @@ export function CompressUI() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const addFiles = useCallback((fl: FileList | File[]) => {
-        const arr = Array.from(fl);
-        const newFiles: CompressFile[] = arr
-            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
-            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), bytes: f.size, raw: f }));
-        if (newFiles.length) {
-            setFiles(prev => [...prev, ...newFiles]);
-            setState("idle");
-            setError(null);
-        }
-    }, []);
-
     /** Load the bundled sample PDF and pre-fill the dropzone. Used by the
      *  "Try with a sample file" button and by the FirstRunWelcome handoff. */
     const [loadingSample, setLoadingSample] = useState(false);
@@ -111,7 +101,7 @@ export function CompressUI() {
         setLoadingSample(true);
         try {
             const file = await loadSamplePdf();
-            addFiles([file]);
+            proc.addFiles([file], isPdfOnly);
             toast.message("Sample PDF loaded", { description: "1-page demo — process it like any of your own files.", duration: 2400 });
         } catch (e) {
             console.error(e);
@@ -119,19 +109,19 @@ export function CompressUI() {
         } finally {
             setLoadingSample(false);
         }
-    }, [loadingSample, addFiles]);
+    }, [loadingSample, proc]);
 
     useEffect(() => {
         let cancelled = false;
         consumeFileHandoff("compress-pdf").then(file => {
-            if (!cancelled && file) addFiles([file]);
+            if (!cancelled && file) proc.addFiles([file], isPdfOnly);
         });
         return () => { cancelled = true; };
-    }, [addFiles]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [proc.addFiles]);
 
-    const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-    const totalBytes = files.reduce((s, f) => s + f.bytes, 0);
-    const canProcess = files.length > 0 && state !== "processing";
+    const totalBytes = proc.entries.reduce((s, e) => s + e.size, 0);
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
     // Live estimated output size (front-end heuristic, server may differ)
     const estimatedSavingFraction = level === "target" ? 0.5 : level === "custom"
@@ -140,92 +130,69 @@ export function CompressUI() {
         : SAVINGS_BY_LEVEL[level];
     const estimatedOutputBytes = Math.max(1024, Math.round(totalBytes * (1 - estimatedSavingFraction)));
 
-    const process = useCallback(async () => {
-        if (!files.length) return;
-        setState("processing");
-        setError(null);
-        setErrorObj(null);
-        setRetryNote(null);
-        const onRetry = (attempt: number, total: number) => {
-            setRetryNote(`Retrying… (attempt ${attempt} of ${total})`);
-        };
-        try {
-            const params: Record<string, string | number> = { level };
-            if (level === "custom") {
-                params.jpeg_quality = customQuality;
-                params.max_image_dim = customMaxDim;
-            }
-            if (level === "target") {
-                // The server searches for the lightest setting that fits, so it
-                // takes the target rather than a quality figure.
-                params.level = "custom";
-                params.target_size_mb = targetMb;
-            }
-            if (files.length === 1) {
-                const res = await uploadFile("/compress", files[0].raw, params, {
-                    onRetry,
-                    timeoutMs: 120_000,  // compress on large PDFs can be slow; allow 2min
-                });
-                const blob = await res.blob();
-                const cSize = parseInt(res.headers.get("X-Compressed-Size") || "0") || blob.size;
-                setCompressedSize(cSize);
-                const met = res.headers.get("X-Target-Met");
-                setTargetMet(met === null ? null : met === "true");
-                setResultBlob(blob);
-                setState("done");
-                emitToolSuccess("Compress PDF");
-                const base = files[0].name.replace(/\.pdf$/i, "");
-                downloadBlob(blob, `${base}_compressed.pdf`);
-            } else {
-                await processFilesAndDownload(
-                    "/compress",
-                    files.map(f => f.raw),
-                    buildOutputFilename(files[0]?.name, "compressed", "zip"),
-                    params,
-                    undefined,
-                    undefined,
-                    { onRetry, timeoutMs: 180_000 },
-                );
-                setCompressedSize(0);
-                setTargetMet(null);
-                setResultBlob(null);
-                setState("done");
-                emitToolSuccess("Compress PDF");
-            }
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Compression failed";
-            setError(friendlyError(msg, "Compression failed."));
-            setErrorObj(e);
-            setState("idle");
-        } finally {
-            setRetryNote(null);
+    const process = useCallback(async (retry = false) => {
+        const params: Record<string, string | number> = { level };
+        if (level === "custom") {
+            params.jpeg_quality = customQuality;
+            params.max_image_dim = customMaxDim;
         }
-    }, [files, level, customQuality, customMaxDim, targetMb]);
+        if (level === "target") {
+            // The server searches for the lightest setting that fits, so it
+            // takes the target rather than a quality figure.
+            params.level = "custom";
+            params.target_size_mb = targetMb;
+        }
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/compress",
+            outputSuffix: "compressed",
+            outputExt: "pdf",
+            params,
+            // Large PDFs can legitimately take minutes; the hook default (60s)
+            // would abort them mid-flight.
+            uploadOptions: { timeoutMs: 180_000 },
+        }, retry);
+        setPhase("done");
+    }, [proc, level, customQuality, customMaxDim, targetMb]);
 
-    const copyErrorToClipboard = useCallback(() => {
-        const blob = formatErrorForClipboard(errorObj ?? error, "Compress PDF");
-        navigator.clipboard?.writeText(blob).then(() => {
-            toast.success("Error details copied", { duration: 2000 });
-        }).catch(() => {
-            toast.error("Couldn't access clipboard");
-        });
-    }, [errorObj, error]);
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            emitToolSuccess("Compress PDF");
+            proc.downloadAll("archive_compressed");
+        }
+    }, [phase, proc]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
                 e.preventDefault();
-                process();
+                void process(false);
             }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    if (state === "done") {
-        const savings = files.length === 1 && compressedSize > 0 ? Math.round((1 - compressedSize / totalBytes) * 100) : 0;
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        const doneEntries = proc.entries.filter(e => e.status === "done");
+        const first = proc.entries[0];
+        const singleDone = !isMulti && first?.status === "done" ? first : null;
+
+        // Single-file before/after — read off the response headers exactly as before.
+        const compressedSize = singleDone ? compressedBytesOf(singleDone) : 0;
+        const met = singleDone?.headers?.["x-target-met"];
+        const targetMet = met === undefined || met === null ? null : met === "true";
         const targetMissed = targetMet === false;
-        const compressedBarWidth = compressedSize > 0 ? Math.max(5, Math.round((compressedSize / totalBytes) * 100)) : 0;
+        const origBytes = singleDone?.size ?? 0;
+        const savings = compressedSize > 0 && origBytes > 0 ? Math.round((1 - compressedSize / origBytes) * 100) : 0;
+        const compressedBarWidth = compressedSize > 0 && origBytes > 0 ? Math.max(5, Math.round((compressedSize / origBytes) * 100)) : 0;
+
+        // Multi-file: per-file deltas + totals.
+        const doneOrigTotal = doneEntries.reduce((s, e) => s + e.size, 0);
+        const doneOutTotal = doneEntries.reduce((s, e) => s + compressedBytesOf(e), 0);
 
         return (
             <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
@@ -243,19 +210,19 @@ export function CompressUI() {
                                         Couldn&apos;t reach {targetMb} MB — this is the smallest we could make it
                                     </span>
                                 )}
-                                {files.length === 1 && compressedSize > 0 ? (
+                                {singleDone && compressedSize > 0 ? (
                                     <>Smaller by <span className="italic text-accent">{savings}%</span></>
                                 ) : (
-                                    <><span className="italic text-accent">{files.length}</span> PDFs compressed</>
+                                    <><span className="italic text-accent">{proc.doneCount}</span> PDF{proc.doneCount === 1 ? "" : "s"} compressed{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
                                 )}
                             </h2>
 
-                            {files.length === 1 && compressedSize > 0 && (
+                            {singleDone && compressedSize > 0 && (
                                 <div className="mt-4 space-y-2.5 max-w-md">
                                     <div>
                                         <div className="font-medium flex items-center justify-between text-[11.5px] mb-1">
                                             <span className="text-muted-foreground">Original</span>
-                                            <span className="text-muted-foreground tabular-nums">{files[0].size}</span>
+                                            <span className="text-muted-foreground tabular-nums">{formatFileSize(origBytes)}</span>
                                         </div>
                                         <div className="h-2 rounded-full bg-paper-2 overflow-hidden">
                                             <div className="h-full rounded-full bg-muted-foreground/60" style={{ width: "100%" }} />
@@ -273,26 +240,65 @@ export function CompressUI() {
                                 </div>
                             )}
 
+                            {/* Per-file before/after — the X-Compressed-Size header
+                                each response carried, one row per PDF. */}
+                            {isMulti && doneEntries.length > 0 && (
+                                <div className="mt-4 max-w-md space-y-1.5">
+                                    {doneEntries.map(e => {
+                                        const out = compressedBytesOf(e);
+                                        const pct = out > 0 && e.size > 0 ? Math.round((1 - out / e.size) * 100) : 0;
+                                        const missed = e.headers?.["x-target-met"] === "false";
+                                        return (
+                                            <div key={e.id} className="flex items-center justify-between gap-3 py-1 border-b border-border/40 last:border-0">
+                                                <span className="truncate min-w-0 text-[12px] font-medium text-foreground">{e.name}</span>
+                                                <span className="font-mono text-[10.5px] tracking-wide tabular-nums text-muted-foreground shrink-0">
+                                                    {formatFileSize(e.size)} → <span className="text-accent font-semibold">{formatFileSize(out)}</span>
+                                                    <span className={cn("ml-1.5", pct > 0 ? "text-accent" : "text-muted-foreground")}>−{Math.max(0, pct)}%</span>
+                                                    {missed && <span className="ml-1.5 text-copper">target missed</span>}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                    {doneOutTotal > 0 && (
+                                        <div className="flex items-center justify-between gap-3 pt-1">
+                                            <span className="font-medium text-[11.5px] text-muted-foreground">Total</span>
+                                            <span className="font-mono text-[10.5px] tracking-wide tabular-nums text-muted-foreground">
+                                                {formatFileSize(doneOrigTotal)} → <span className="text-accent font-semibold">{formatFileSize(doneOutTotal)}</span>
+                                                {doneOrigTotal > 0 && <span className="ml-1.5 text-accent">−{Math.max(0, Math.round((1 - doneOutTotal / doneOrigTotal) * 100))}%</span>}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="mt-5 flex flex-wrap gap-2">
-                                {resultBlob && (
+                                {proc.doneCount > 0 && (
                                     <button
-                                        onClick={() => { const base = files[0].name.replace(/\.pdf$/i, ""); downloadBlob(resultBlob, `${base}_compressed.pdf`); }}
+                                        onClick={() => proc.downloadAll("archive_compressed")}
                                         className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90 transition-opacity"
                                     >
-                                        <Download size={13} /> Download again
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
                                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                                 >
                                     <RotateCcw size={12} /> Compress more
                                 </button>
                             </div>
-                            {files.length === 1 && (
+                            {singleDone && (
                                 <ResultHandoff
-                                    blob={resultBlob}
-                                    filename={`${files[0].name.replace(/\.pdf$/i, "")}_compressed.pdf`}
+                                    blob={singleDone.blob ?? null}
+                                    filename={singleDone.outName || buildOutputFilename(singleDone.name, "compressed", "pdf")}
                                     fromSlug="compress-pdf"
                                 />
                             )}
@@ -309,7 +315,7 @@ export function CompressUI() {
             <div
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
                 onClick={() => ref.current?.click()}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
                 role="button"
@@ -323,7 +329,7 @@ export function CompressUI() {
                 )}
             >
                 <CornerMarks />
-                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
                 <div className={cn(
                     "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
                     drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
@@ -331,7 +337,7 @@ export function CompressUI() {
                     <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {files.length ? "Add more PDFs" : "Select PDFs to compress"}
+                    {proc.entries.length ? "Add more files" : "Select PDFs to compress"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground mt-1">
                     Drag &amp; drop or click · Multi-file OK · Max {MAX_FILE_SIZE_LABEL} each
@@ -340,7 +346,7 @@ export function CompressUI() {
 
             {/* Try with sample affordance — only shows before any file has been picked
                 so the dropzone still leads. Loads /samples/sample.pdf and pre-fills. */}
-            {files.length === 0 && (
+            {proc.entries.length === 0 && (
                 <div className="flex items-center justify-center">
                     <button
                         type="button"
@@ -357,30 +363,18 @@ export function CompressUI() {
                 </div>
             )}
 
-            {files.length > 0 && (
+            {proc.entries.length > 0 && (
                 <>
-                    {/* File list */}
-                    <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-                        {files.map(f => (
-                            <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/25">
-                                    <FileText size={14} className="text-accent" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-wide text-muted-foreground">{f.size}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => removeFile(f.id)}
-                                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-colors"
-                                    aria-label="Remove file"
-                                >
-                                    <X size={13} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                    {/* File queue */}
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
 
                     {/* Level picker */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -495,6 +489,7 @@ export function CompressUI() {
                                     that fits, so the file isn't squeezed more than it needs to be.
                                     If the target can't be reached you'll get the smallest version we
                                     could make, and we'll say so.
+                                    {proc.entries.length > 1 && <> Each file is targeted at {targetMb} MB individually.</>}
                                 </p>
                             </div>
                         )}
@@ -540,42 +535,17 @@ export function CompressUI() {
                         )}
                     </div>
 
-                    {/* Retry note — shown only while a retry is scheduled */}
-                    {retryNote && state === "processing" && (
-                        <div className="flex items-center gap-2 rounded-lg border border-copper/30 bg-copper-soft/30 px-3 py-2 text-[12.5px] text-foreground">
-                            <Loader2 size={12} className="animate-spin text-copper" />
-                            <span className="font-medium text-[11.5px] text-copper">{retryNote}</span>
-                        </div>
-                    )}
-
-                    {/* Error */}
-                    {error && (
-                        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                            <span className="flex-1">{error}</span>
-                            <button
-                                type="button"
-                                onClick={copyErrorToClipboard}
-                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
-                                aria-label="Copy error details to clipboard"
-                                title="Copy error details for a bug report"
-                            >
-                                <Copy size={10} /> Copy error
-                            </button>
-                        </div>
-                    )}
-
                     {/* Action */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <button
                             type="button"
-                            onClick={process}
+                            onClick={() => void process(false)}
                             disabled={!canProcess}
                             className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {state === "processing"
-                                ? <><Loader2 size={13} className="animate-spin" /> Compressing…</>
-                                : <><Minimize2 size={13} /> Compress {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Compressing… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Minimize2 size={13} /> Compress {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
                         </button>
                         {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
                         <button

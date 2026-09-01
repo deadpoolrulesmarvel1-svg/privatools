@@ -1,12 +1,15 @@
 /**
  * TransparentBackgroundUI — make near-white pixels transparent.
  * Workshop: sliders inside lab-card, signal-green CTA.
+ * Multi-file via useMultiFileProcessor (same threshold/DPI applied to every PDF).
  */
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Eraser, Download } from "lucide-react";
-import { friendlyError } from "@/lib/utils";
-import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, CheckCircle2, RotateCcw, Eraser, Download } from "lucide-react";
+import { downloadBlob, buildOutputFilename } from "@/lib/api";
+import { buildZip } from "@/lib/zip";
 import { FileUploadZone } from "./FileUploadZone";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const TRANSPARENT_BACKGROUND_DEFAULTS: { threshold: number; dpi: number } = {
@@ -19,71 +22,132 @@ export function TransparentBackgroundUI() {
     const { threshold, dpi } = config;
     const setThreshold = useCallback((v: React.SetStateAction<typeof TRANSPARENT_BACKGROUND_DEFAULTS["threshold"]>) => setField("threshold", v), [setField]);
     const setDpi = useCallback((v: React.SetStateAction<typeof TRANSPARENT_BACKGROUND_DEFAULTS["dpi"]>) => setField("dpi", v), [setField]);
-    const [file, setFile] = useState<File | null>(null);
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
+    const proc = useMultiFileProcessor();
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try {
-            await processAndDownload("/transparent-background", file, buildOutputFilename(file.name, "transparent", "pdf"), { threshold, dpi });
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't make that background transparent."));
-            setStatus("idle");
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/transparent-background",
+            outputSuffix: "transparent",
+            outputExt: "pdf",
+            params: { threshold, dpi },
+        }, retry);
+        setPhase("done");
+    }, [proc, threshold, dpi]);
+
+    // The backend answers with a generic `transparent.pdf` name; the old UI
+    // named downloads after the source file (`stem_transparent.pdf`). Keep
+    // that: build names client-side. N=1 → direct blob, N>1 → zip.
+    const downloadResults = useCallback(() => {
+        const done = proc.entries.filter(e => e.status === "done" && e.blob);
+        if (done.length === 0) return;
+        if (done.length === 1) {
+            downloadBlob(done[0].blob!, buildOutputFilename(done[0].name, "transparent", "pdf"));
+            return;
         }
-    }, [file, threshold, dpi]);
+        void (async () => {
+            const items = await Promise.all(done.map(async e => ({
+                name: buildOutputFilename(e.name, "transparent", "pdf"),
+                data: new Uint8Array(await e.blob!.arrayBuffer()),
+            })));
+            downloadBlob(buildZip(items), "archive_transparent.zip");
+        })();
+    }, [proc.entries]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            downloadResults();
+        }
+    }, [phase, proc.doneCount, downloadResults]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && status === "idle") {
-                e.preventDefault(); process();
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && proc.entries.length > 0 && phase === "idle") {
+                e.preventDefault(); void process(false);
             }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
-    }, [file, status, process]);
+    }, [proc.entries.length, phase, process]);
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Background removed</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">Transparent</span> PDF downloaded
-                        </h2>
-                        <button
-                            onClick={() => { setFile(null); setStatus("idle"); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Process another
-                        </button>
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Background removed</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> transparent PDF{proc.doneCount === 1 ? "" : "s"}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <><span className="italic text-accent">Transparent</span> PDF downloaded</>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                                >
+                                    <RotateCcw size={12} /> Process another
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
         <div className="space-y-4">
             <FileUploadZone
-                file={file}
-                onFileSelect={setFile}
-                onClear={() => { setFile(null); setStatus("idle"); }}
+                file={null}
+                multiple
+                onFilesSelect={files => proc.addFiles(files)}
+                onFileSelect={f => proc.addFiles([f])}
+                onClear={proc.clearAll}
                 accept=".pdf"
-                label="Drop PDF to make background transparent"
+                label={proc.entries.length ? "Add more files" : "Drop PDF to make background transparent"}
                 hint="Convert near-white pixels to transparent"
             />
 
-            {file && (
+            {proc.entries.length > 0 && (
                 <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                             Options
@@ -124,17 +188,13 @@ export function TransparentBackgroundUI() {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3">
-                        <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : <><Eraser size={13} /> Remove background <Download size={13} /></>}
+                        <button onClick={() => void process(false)} disabled={phase === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Processing… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Eraser size={13} /> Remove background{proc.entries.length > 1 ? ` — ${proc.entries.length} files` : ""} <Download size={13} /></>}
                         </button>
-                        {status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                        {phase === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
                     </div>
                 </>
             )}

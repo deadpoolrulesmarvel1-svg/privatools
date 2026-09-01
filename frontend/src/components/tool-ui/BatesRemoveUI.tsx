@@ -8,52 +8,68 @@
  * would defeat the exercise. Matching is confined to the page margins and to
  * text shaped like a Bates number, which is why the prefix/suffix hints matter
  * — supplying them turns a shape match into an exact one.
+ *
+ * Multi-file via useMultiFileProcessor — the same pattern is applied to every
+ * PDF; the per-file X-Bates-Removed header is summed for the summary.
  */
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, AlertCircle, CheckCircle2, Eraser, RotateCcw, Info } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob } from "@/lib/api";
-import { FileUploadZone } from "./FileUploadZone";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, AlertCircle, CheckCircle2, Eraser, RotateCcw, Info, Download, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 export function BatesRemoveUI() {
-    const [file, setFile] = useState<File | null>(null);
+    const proc = useMultiFileProcessor();
     const [prefix, setPrefix] = useState("");
     const [suffix, setSuffix] = useState("");
     const [digits, setDigits] = useState(6);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [removed, setRemoved] = useState<number | null>(null);
+    const [drag, setDrag] = useState(false);
+    const ref = useRef<HTMLInputElement>(null);
 
-    const process = useCallback(async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try {
-            const res = await uploadFile("/bates-remove", file, { prefix, suffix, digits });
-            const count = Number(res.headers.get("X-Bates-Removed") ?? "0");
-            setRemoved(Number.isFinite(count) ? count : 0);
-            downloadBlob(await res.blob(), file.name.replace(/\.pdf$/i, "") + "_bates_removed.pdf");
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't remove the Bates numbers."));
-            setStatus("idle");
+    const canProcess = proc.entries.length > 0 && status !== "processing";
+    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+
+    const process = useCallback(async (retry = false) => {
+        setStatus("processing");
+        await proc.run({
+            endpoint: "/bates-remove",
+            outputSuffix: "bates_removed",
+            outputExt: "pdf",
+            params: { prefix, suffix, digits },
+        }, retry);
+        setStatus("done");
+    }, [proc, prefix, suffix, digits]);
+
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (status === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_bates_removed");
         }
-    }, [file, prefix, suffix, digits]);
+    }, [status, proc]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && status === "idle") {
-                e.preventDefault(); void process();
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess && status === "idle") {
+                e.preventDefault(); void process(false);
             }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
-    }, [file, status, process]);
+    }, [canProcess, status, process]);
 
-    const reset = () => { setFile(null); setStatus("idle"); setRemoved(null); setError(null); };
+    const restart = () => { proc.reset(); setStatus("idle"); downloadedRef.current = false; };
 
     if (status === "done") {
-        const nothingMatched = removed === 0;
+        const isMulti = proc.entries.length > 1;
+        // Per-file removal counts come back on the X-Bates-Removed header.
+        const removed = proc.entries.reduce((sum, e) => {
+            if (e.status !== "done") return sum;
+            const n = Number(e.headers?.["x-bates-removed"] ?? "0");
+            return sum + (Number.isFinite(n) ? n : 0);
+        }, 0);
+        const nothingMatched = proc.doneCount > 0 && removed === 0;
         return (
             <div className={cn(
                 "rounded-2xl border overflow-hidden animate-fade-up",
@@ -74,18 +90,43 @@ export function BatesRemoveUI() {
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight">
                                 {nothingMatched
                                     ? "No Bates numbers found"
-                                    : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
+                                    : isMulti
+                                        ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                        : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
                             </h2>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
                                 {nothingMatched
                                     ? "Nothing in the page margins matched the pattern. Try giving the prefix or suffix the stamps actually use."
                                     : "Redacted, not covered — the text is gone from the file."}
+                                {proc.doneCount > 0 && <> {proc.doneCount > 1 ? "ZIP downloaded." : "PDF downloaded."}</>}
                             </p>
-                            <div className="mt-5">
-                                <button onClick={reset} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={() => proc.downloadAll("archive_bates_removed")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button onClick={restart} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
                                     <RotateCcw size={12} /> Remove from another
                                 </button>
                             </div>
+                            {proc.failedCount > 0 && (
+                                <div className="mt-4 space-y-1.5">
+                                    {proc.entries.filter(e => e.status === "failed").map(e => (
+                                        <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
+                                            <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -95,19 +136,43 @@ export function BatesRemoveUI() {
 
     return (
         <div className="space-y-4">
-            <FileUploadZone
-                file={file}
-                onFileSelect={setFile}
-                onClear={reset}
-                accept=".pdf"
-                label="Drop PDF to remove Bates numbers"
-                hint="Only text in the page margins is touched · up to 500 MB"
-            />
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive" role="alert">
-                    <AlertCircle size={13} className="shrink-0" />{error}
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
+                onClick={() => ref.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload PDFs"
+                className={cn(
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
+                )}
+            >
+                <CornerMarks />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files?.length) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
+                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
+                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Eraser size={20} className="text-accent" strokeWidth={1.75} />}
                 </div>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {proc.entries.length ? "Add more PDFs" : "Drop PDFs to remove Bates numbers"}
+                </p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">
+                    Only text in the page margins is touched · up to 500 MB each · several files become a ZIP
+                </p>
+            </div>
+
+            {proc.entries.length > 0 && (
+                <MultiFileQueue
+                    entries={proc.entries}
+                    reorderable={false}
+                    onRemove={proc.removeFile}
+                    onReorder={proc.reorder}
+                    onClearAll={proc.clearAll}
+                    onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                    busy={status === "processing"}
+                />
             )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -148,13 +213,25 @@ export function BatesRemoveUI() {
             </div>
 
             <div className="flex items-center gap-3">
-                <button onClick={process} disabled={!file || status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                     {status === "processing"
-                        ? <><Loader2 size={13} className="animate-spin" /> Removing…</>
-                        : <><Eraser size={13} /> Remove Bates numbers</>}
+                        ? <><Loader2 size={13} className="animate-spin" /> Removing… ({proc.doneCount}/{proc.entries.length})</>
+                        : <><Eraser size={13} /> Remove Bates numbers{proc.entries.length > 1 ? ` — ${proc.entries.length} files` : ""}</>}
                 </button>
-                {file && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                {canProcess && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
             </div>
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

@@ -22,7 +22,7 @@
  *     "N=1 → blob, N>1 → zip" branching so most call sites stay tiny.
  */
 import { useCallback, useRef, useState } from "react";
-import { uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
+import { uploadFile, downloadBlob, buildOutputFilename, type UploadOptions } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { friendlyError } from "@/lib/utils";
 
@@ -55,6 +55,8 @@ export interface ProcessOptions {
     outputSuffix: string | null;
     /** Concurrency cap. Default 3. */
     concurrency?: number;
+    /** Per-upload options (timeout, retries) passed through to uploadFile. */
+    uploadOptions?: UploadOptions;
 }
 
 export interface UseMultiFileProcessorResult {
@@ -165,7 +167,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                 mutate(prev => prev.map(x => x.id === id ? { ...x, status: "running" } : x));
 
                 try {
-                    const res = await uploadFile(opts.endpoint, file as File, opts.params);
+                    const res = await uploadFile(opts.endpoint, file as File, opts.params, opts.uploadOptions);
                     const blob = await res.blob();
                     // Pull server-supplied filename if present; otherwise build one.
                     const cd = res.headers.get("Content-Disposition") || "";
