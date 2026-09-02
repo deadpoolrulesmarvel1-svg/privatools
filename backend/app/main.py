@@ -329,6 +329,19 @@ _CLERK_FAPI_ORIGIN = _clerk_fapi_origin(_CLERK_PUBLISHABLE_KEY)
 _CLERK_BOT_HOSTS = ["https://challenges.cloudflare.com", "https://*.protect.clerk.com"]
 
 
+_LEGACY_PATHS = {
+    # Non-PDF tools addressed with the PDF prefix.
+    "/tool/heic-to-jpg": "/tools/heic-to-jpg",
+    "/tool/remove-exif": "/tools/remove-exif",
+    "/tool/audio-converter": "/tools/audio-converter",
+    "/tool/image-upscaler": "/tools/image-upscaler",
+    # Renamed slug.
+    "/tool/e-sign-pdf": "/tool/esign-pdf",
+    # Never a route; the batch page is /batch.
+    "/batchprocess": "/batch",
+}
+
+
 def _is_clerk_path(path: str) -> bool:
     """Only the account pages get Clerk's origins.
 
@@ -497,6 +510,17 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         suffix = Path(path).suffix.lower()
         if suffix in _STATIC_EXTENSIONS:
             return await call_next(request)
+
+        # URLs Google still holds that never existed here, or moved. Every one
+        # is a real 404 in Search Console with crawl history behind it, so a
+        # 301 recovers the equity instead of throwing it away.
+        #
+        # Four of them are the /tool/ vs /tools/ split: PDF tools live under
+        # /tool/<slug> and everything else under /tools/<slug>, and these were
+        # published, linked or guessed under the wrong one.
+        moved = _LEGACY_PATHS.get(path)
+        if moved:
+            return RedirectResponse(url=moved, status_code=301)
 
         # Canonicalize trailing slashes — 301 to the non-slashed version so
         # Google doesn't see /about and /about/ as two URLs with two different
