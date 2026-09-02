@@ -13,6 +13,28 @@
 "a": "No — temporary input/output, deleted after the download response."
 }
 ],
+"accessibility-check": [
+{
+"q": "Does passing this check make my PDF legally compliant?",
+"a": "No, and no automated tool can tell you that. A checker verifies the machine-testable requirements: whether the document is tagged, declares a language, has a title, and carries alternative text on images. Whether that alt text is actually useful, or the reading order makes sense, is a human judgement. Treat a clean report as the floor, not the finish line."
+},
+{
+"q": "What is the difference between PDF/UA and WCAG here?",
+"a": "PDF/UA is the standard written specifically for PDF structure. WCAG is the general accessibility standard and applies to PDFs as documents people have to read. They overlap heavily, so the report covers both rather than making you run two tools."
+},
+{
+"q": "Why does my scanned PDF fail almost everything?",
+"a": "A scan is a picture of a page. There is no text layer, no tag tree, and nothing for a screen reader to announce. Run OCR first to add real text, then check again."
+},
+{
+"q": "Is my document uploaded to be checked?",
+"a": "It is processed in the same isolated temporary storage every server-side tool here uses, then deleted after the response. It is never kept, never inspected, and never used for training."
+},
+{
+"q": "Can it fix the problems it finds?",
+"a": "No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known."
+}
+],
 "add-attachment": [
 {
 "q": "What's the difference between an attachment and embedding?",
@@ -221,6 +243,28 @@
 {
 "q": "Does it survive redaction?",
 "a": "Yes — Bates numbers are stamped directly onto the page content, so they remain after redaction (unless the redaction rectangle covers them)."
+}
+],
+"bates-remove": [
+{
+"q": "Will this remove numbering added by another program?",
+"a": "Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way."
+},
+{
+"q": "Why do I have to type the prefix and digits?",
+"a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. Describing the format is what keeps the removal surgical."
+},
+{
+"q": "Does removing Bates numbers change the rest of the page?",
+"a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched, and the file on your device is never modified."
+},
+{
+"q": "Can I renumber after removing?",
+"a": "Yes. Strip the old stamps here, then use Bates Numbering to apply a fresh sequence with whatever prefix and starting number you need."
+},
+{
+"q": "Is it free and account-free?",
+"a": "Yes. No account, no watermark, no daily cap, the same as every other tool on the site."
 }
 ],
 "bmp-to-jpg": [
@@ -1891,6 +1935,28 @@
 "a": "Free with no daily limit (iLovePDF caps free use to 2 tasks/day), no account required, and no watermark on the output JPGs. The conversion is the same poppler-based pipeline used by Linux distributions, just exposed without a paywall."
 }
 ],
+"pdf-to-long-image": [
+{
+"q": "Why would I want one tall image instead of a PDF?",
+"a": "Because some places will not take a PDF. Chat apps, image-only uploaders, social posts and some ticketing systems accept an image and nothing else. A single tall PNG shows the whole document without asking anyone to download a file."
+},
+{
+"q": "Should I choose PNG or JPG?",
+"a": "PNG for text, screenshots and line art, where it stays sharp and lossless. JPG for scans and photographs, where it produces a far smaller file at quality 90. A long text document saved as JPG will show fringing around the letters."
+},
+{
+"q": "What resolution are the pages rendered at?",
+"a": "100 DPI, which keeps a normal page readable while stopping a long document from becoming an unusable image. A 30-page document produces an image roughly 30,000 pixels tall."
+},
+{
+"q": "What happens if my pages are different sizes?",
+"a": "The canvas takes the width of the widest page and every narrower page is centred on it, so a document mixing portrait and landscape stays aligned instead of stepping left and right."
+},
+{
+"q": "Is there a page limit?",
+"a": "No hard limit, but very long documents produce images some software will refuse to open. If you hit that, split the PDF first and stitch each part separately."
+}
+],
 "pdf-to-markdown": [
 {
 "q": "How accurate is the structural detection?",
@@ -2291,6 +2357,50 @@
 {
 "q": "Why should I remove EXIF data?",
 "a": "EXIF data can contain your GPS location, device identifiers, and timestamps. Removing it before sharing photos online protects your privacy."
+}
+],
+"remove-image-watermark": [
+{
+"q": "How does the removal actually work?",
+"a": "The selected area is reconstructed from the pixels surrounding it. Nothing underneath the watermark was ever stored, so the result is a plausible fill, not a recovery of hidden detail."
+},
+{
+"q": "When does it look convincing?",
+"a": "Over flat or gently textured backgrounds such as sky, walls, paper or a blurred backdrop. Over fine detail, faces or text, the reconstruction will be visible under any real scrutiny."
+},
+{
+"q": "Which formats can I use?",
+"a": "JPG, PNG and WebP. Transparency is preserved where the source format has it."
+},
+{
+"q": "Does the image leave my device?",
+"a": "Only to the same isolated processing container every server-side tool here uses, and it is deleted after the response. It is never stored, never inspected, and never used for training."
+},
+{
+"q": "Is it legal to remove a watermark?",
+"a": "That depends entirely on the image. A watermark is usually an ownership mark, and stripping one from a stock photo or someone else's work to avoid licensing it is copyright infringement. Use this on your own images, or where you hold the rights."
+}
+],
+"remove-watermark": [
+{
+"q": "What kind of watermarks can this actually remove?",
+"a": "Watermarks that exist as objects in the PDF: repeated text like DRAFT or CONFIDENTIAL, and image stamps placed on each page. Those can be identified and deleted cleanly. A watermark flattened into a scanned page is part of the image and this tool will not find it."
+},
+{
+"q": "Why does it show me candidates instead of removing everything?",
+"a": "Because the repeated object on your page might be a logo, a letterhead or a footer you want to keep. The tool finds what behaves like a watermark and lets you decide, rather than silently stripping page furniture."
+},
+{
+"q": "Will the rest of the page survive?",
+"a": "Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and your original file is never modified."
+},
+{
+"q": "My watermark is part of a scan. What now?",
+"a": "Rasterised watermarks need pixel repair, not object removal. Convert the page to an image and use Remove Image Watermark, accepting that the repair is a reconstruction rather than a perfect recovery."
+},
+{
+"q": "Should I remove a watermark from a document I did not create?",
+"a": "Only where you have the right to. A watermark is often a copyright or confidentiality marker, and removing one from someone else's document can be a legal problem regardless of how easy a tool makes it."
 }
 ],
 "repair-pdf": [
@@ -2821,6 +2931,28 @@
 {
 "q": "How long a recording can it handle?",
 "a": "Locally: limited by your machine's memory and patience — hour-long recordings work but take a while on the tiny model. Provider APIs typically cap uploads around 25 MB, roughly 25 minutes of MP3; trim or split longer recordings first."
+}
+],
+"translate-pdf": [
+{
+"q": "Is my PDF uploaded anywhere?",
+"a": "No. This is the one translation tool here that runs entirely in your browser. The text is extracted locally, the model runs on your device, and the document never reaches a server, ours or anyone else's."
+},
+{
+"q": "Why does the first translation take a while?",
+"a": "Because the model for that language pair downloads once, the first time you use it. After that it is cached in your browser and works on every later visit, including offline."
+},
+{
+"q": "How good is the translation?",
+"a": "Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. That is the deliberate trade: privacy over polish."
+},
+{
+"q": "Does it keep the original layout?",
+"a": "Text is translated, not typeset. Expect the meaning to carry over and the formatting to be simplified, especially where translated text runs longer than the original."
+},
+{
+"q": "Which languages are supported?",
+"a": "The common pairs, downloaded per direction as you pick them. Each pair is its own model, so translating English to French does not also fetch French to English."
 }
 ],
 "transparent-background": [

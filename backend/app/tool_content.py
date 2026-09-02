@@ -977,6 +977,143 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Read live stats", "text": "Word count, character count (with/without spaces), sentence count, paragraph count, reading time at 200 wpm."},
         {"name": "Optional metrics", "text": "Average word length, longest word, most-frequent words."},
     ],
+
+    # ── filled in 2026-09-02: these tools shipped without How-To steps, which
+    # made them the thinnest pages on the site. ──────────────────────
+    "aac-to-mp3": [
+        {"name": 'Upload an AAC file', "text": 'Drop an .aac or .m4a file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. AAC and MP3 are both lossy, so this is a transcode rather than a lossless change: encode at 192 kbps or higher if the source was already compressed. MP3 is the safer choice for car stereos, gym equipment and older players that never learned AAC.'},
+    ],
+    "flac-to-mp3": [
+        {"name": 'Upload a FLAC file', "text": 'Drop a .flac file. FLAC is lossless, so the source is the best possible input for an encode.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 5–10x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy.'},
+    ],
+    "mp3-to-aac": [
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. It is worth doing for Apple devices and for streaming, not for archiving.'},
+    ],
+    "mp3-to-flac": [
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. FLAC wraps the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality.'},
+    ],
+    "mp3-to-ogg": [
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate.'},
+    ],
+    "mp3-to-wav": [
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB.'},
+    ],
+    "ogg-to-mp3": [
+        {"name": 'Upload an Ogg file', "text": 'Drop an .ogg or .oga file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation.'},
+    ],
+    "wav-to-flac": [
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality.'},
+    ],
+    "wav-to-mp3": [
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file. Uncompressed audio is the ideal source for an encode.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one.'},
+    ],
+    "wav-to-ogg": [
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows.'},
+    ],
+    "avi-to-webm": [
+        {"name": 'Upload an AVI file', "text": 'Drop an .avi file up to 500 MB. AVI is a legacy container, often carrying DivX or Xvid video.'},
+        {"name": 'Convert and download', "text": 'Click Convert. The video is re-encoded as VP9 WebM, which plays natively in modern browsers and is usually far smaller than the AVI it replaces.'},
+    ],
+    "mkv-to-mp4": [
+        {"name": 'Upload an MKV file', "text": 'Drop an .mkv file. Matroska commonly holds H.264 or H.265 video.'},
+        {"name": 'Convert and download', "text": 'Click Convert. MP4 is the container Safari, iOS, Windows and most TVs expect. Where the codecs already suit MP4 this is largely a container change, so quality is preserved.'},
+    ],
+    "mkv-to-webm": [
+        {"name": 'Upload an MKV file', "text": 'Drop an .mkv file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all.'},
+    ],
+    "mov-to-gif": [
+        {"name": 'Upload a MOV clip', "text": 'Drop a .mov file. Short clips work best; GIF has no audio and no real compression.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size.'},
+    ],
+    "mov-to-mkv": [
+        {"name": 'Upload a MOV file', "text": 'Drop a .mov file from QuickTime, an iPhone or a camera.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Matroska holds multiple audio and subtitle tracks comfortably, which makes it a better archive container than MOV.'},
+    ],
+    "mov-to-webm": [
+        {"name": 'Upload a MOV file', "text": 'Drop a .mov file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime.'},
+    ],
+    "mp4-to-avi": [
+        {"name": 'Upload an MP4', "text": 'Drop an .mp4 file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; the container is less efficient and the file will usually grow.'},
+    ],
+    "mp4-to-mov": [
+        {"name": 'Upload an MP4', "text": 'Drop an .mp4 file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. MOV is what QuickTime, Final Cut Pro and much of the macOS video world prefer. The video stream is preserved where the codecs allow.'},
+    ],
+    "webm-to-gif": [
+        {"name": 'Upload a WebM clip', "text": 'Drop a .webm file. Keep it short — every GIF frame is stored as its own image.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
+    ],
+    "webm-to-mov": [
+        {"name": 'Upload a WebM file', "text": 'Drop a .webm file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM.'},
+    ],
+    "jpg-to-bmp": [
+        {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else.'},
+    ],
+    "jpg-to-tiff": [
+        {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation.'},
+    ],
+    "png-to-bmp": [
+        {"name": 'Upload a PNG', "text": 'Drop a .png file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters.'},
+    ],
+    "png-to-tiff": [
+        {"name": 'Upload a PNG', "text": 'Drop a .png file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG.'},
+    ],
+    "webp-to-bmp": [
+        {"name": 'Upload a WebP image', "text": 'Drop a .webp file.'},
+        {"name": 'Convert and download', "text": 'Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it.'},
+    ],
+    "webp-to-tiff": [
+        {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
+        {"name": 'Convert and download', "text": 'Click Convert. TIFF preserves transparency and is accepted by archival and prepress software that has no idea what WebP is.'},
+    ],
+    "pdf-to-long-image": [
+        {"name": 'Upload the PDF', "text": 'Select a PDF up to 500 MB. Every page is rendered, so long documents make very tall images.'},
+        {"name": 'Pick a format', "text": 'PNG is lossless and best for text and line art; JPG is saved at quality 90 and produces a much smaller file for scanned or photographic pages.'},
+        {"name": 'Download the stitched image', "text": 'Pages are rendered at 100 DPI and joined top to bottom on a white canvas. Pages narrower than the widest one are centred, so a mixed-size document stays aligned.'},
+    ],
+    "bates-remove": [
+        {"name": 'Upload the stamped PDF', "text": 'Select a PDF that carries Bates numbering applied by PrivaTools or another tool.'},
+        {"name": 'Describe the stamp', "text": 'Give the prefix, digit count and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone.'},
+        {"name": 'Download the clean PDF', "text": 'The matching stamps are removed and the rest of the page is untouched. The original on your device is never modified.'},
+    ],
+    "accessibility-check": [
+        {"name": 'Upload the PDF', "text": 'Select the PDF you need to audit. Tagged, untagged, scanned and born-digital files are all accepted.'},
+        {"name": 'Run the audit', "text": 'The document is checked against PDF/UA and WCAG expectations: tag structure, document language, title metadata, and alternative text on images.'},
+        {"name": 'Read the report', "text": 'Each finding names the requirement it relates to, so you can fix the document at source. The report is advice, not a legal certification.'},
+    ],
+    "remove-watermark": [
+        {"name": 'Upload the watermarked PDF', "text": 'Select a PDF that carries a visible watermark.'},
+        {"name": 'Review the candidates', "text": 'The tool scans the page content for repeated text and image objects that behave like watermarks, and lists what it found.'},
+        {"name": 'Remove and download', "text": 'Confirm which candidates to strip. Only those objects are removed, so the rest of the page survives intact. A watermark burned into a scanned image is part of the picture and cannot be lifted this way — use Remove Image Watermark for that.'},
+    ],
+    "remove-image-watermark": [
+        {"name": 'Upload the image', "text": 'Drop a JPG, PNG or WebP that carries a watermark.'},
+        {"name": 'Mark the watermark', "text": 'Select the area covering it. The tool reconstructs that region from the pixels around it.'},
+        {"name": 'Download the result', "text": 'Works best on watermarks over flat or gently textured backgrounds. Over busy detail the repair will be visible — and only remove watermarks from images you have the right to alter.'},
+    ],
+    "translate-pdf": [
+        {"name": 'Open the tool and pick your languages', "text": 'Choose a source and target language. The matching translation model downloads once into this browser the first time you use that pair.'},
+        {"name": 'Upload the PDF', "text": 'Select the PDF. The text is extracted in your browser; the file itself is never uploaded.'},
+        {"name": 'Translate and download', "text": 'Translation runs on your device through the downloaded model, so the document never reaches a server — the reason this tool exists rather than pointing you at a cloud translator.'},
+    ],
 }
 
 
@@ -2029,6 +2166,50 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What counts as a word?", "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."},
         {"q": "How is reading time calculated?", "a": "Word count ÷ 200 words per minute (average adult reading speed for non-fiction). Adjust for technical content (slower) or casual reading (faster)."},
         {"q": "Is my text saved?", "a": "No — everything runs in your browser and persists only in this session."},
+    ],
+
+    # ── filled in 2026-09-02 alongside the missing How-To steps ──────
+    "accessibility-check": [
+        {"q": 'Does passing this check make my PDF legally compliant?', "a": 'No, and no automated tool can tell you that. A checker verifies the machine-testable requirements: whether the document is tagged, declares a language, has a title, and carries alternative text on images. Whether that alt text is actually useful, or the reading order makes sense, is a human judgement. Treat a clean report as the floor, not the finish line.'},
+        {"q": 'What is the difference between PDF/UA and WCAG here?', "a": 'PDF/UA is the standard written specifically for PDF structure. WCAG is the general accessibility standard and applies to PDFs as documents people have to read. They overlap heavily, so the report covers both rather than making you run two tools.'},
+        {"q": 'Why does my scanned PDF fail almost everything?', "a": 'A scan is a picture of a page. There is no text layer, no tag tree, and nothing for a screen reader to announce. Run OCR first to add real text, then check again.'},
+        {"q": 'Is my document uploaded to be checked?', "a": 'It is processed in the same isolated temporary storage every server-side tool here uses, then deleted after the response. It is never kept, never inspected, and never used for training.'},
+        {"q": 'Can it fix the problems it finds?', "a": 'No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known.'},
+    ],
+    "bates-remove": [
+        {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way.'},
+        {"q": 'Why do I have to type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. Describing the format is what keeps the removal surgical.'},
+        {"q": 'Does removing Bates numbers change the rest of the page?', "a": 'No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched, and the file on your device is never modified.'},
+        {"q": 'Can I renumber after removing?', "a": 'Yes. Strip the old stamps here, then use Bates Numbering to apply a fresh sequence with whatever prefix and starting number you need.'},
+        {"q": 'Is it free and account-free?', "a": 'Yes. No account, no watermark, no daily cap, the same as every other tool on the site.'},
+    ],
+    "pdf-to-long-image": [
+        {"q": 'Why would I want one tall image instead of a PDF?', "a": 'Because some places will not take a PDF. Chat apps, image-only uploaders, social posts and some ticketing systems accept an image and nothing else. A single tall PNG shows the whole document without asking anyone to download a file.'},
+        {"q": 'Should I choose PNG or JPG?', "a": 'PNG for text, screenshots and line art, where it stays sharp and lossless. JPG for scans and photographs, where it produces a far smaller file at quality 90. A long text document saved as JPG will show fringing around the letters.'},
+        {"q": 'What resolution are the pages rendered at?', "a": '100 DPI, which keeps a normal page readable while stopping a long document from becoming an unusable image. A 30-page document produces an image roughly 30,000 pixels tall.'},
+        {"q": 'What happens if my pages are different sizes?', "a": 'The canvas takes the width of the widest page and every narrower page is centred on it, so a document mixing portrait and landscape stays aligned instead of stepping left and right.'},
+        {"q": 'Is there a page limit?', "a": 'No hard limit, but very long documents produce images some software will refuse to open. If you hit that, split the PDF first and stitch each part separately.'},
+    ],
+    "remove-watermark": [
+        {"q": 'What kind of watermarks can this actually remove?', "a": 'Watermarks that exist as objects in the PDF: repeated text like DRAFT or CONFIDENTIAL, and image stamps placed on each page. Those can be identified and deleted cleanly. A watermark flattened into a scanned page is part of the image and this tool will not find it.'},
+        {"q": 'Why does it show me candidates instead of removing everything?', "a": 'Because the repeated object on your page might be a logo, a letterhead or a footer you want to keep. The tool finds what behaves like a watermark and lets you decide, rather than silently stripping page furniture.'},
+        {"q": 'Will the rest of the page survive?', "a": 'Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and your original file is never modified.'},
+        {"q": 'My watermark is part of a scan. What now?', "a": 'Rasterised watermarks need pixel repair, not object removal. Convert the page to an image and use Remove Image Watermark, accepting that the repair is a reconstruction rather than a perfect recovery.'},
+        {"q": 'Should I remove a watermark from a document I did not create?', "a": "Only where you have the right to. A watermark is often a copyright or confidentiality marker, and removing one from someone else's document can be a legal problem regardless of how easy a tool makes it."},
+    ],
+    "remove-image-watermark": [
+        {"q": 'How does the removal actually work?', "a": 'The selected area is reconstructed from the pixels surrounding it. Nothing underneath the watermark was ever stored, so the result is a plausible fill, not a recovery of hidden detail.'},
+        {"q": 'When does it look convincing?', "a": 'Over flat or gently textured backgrounds such as sky, walls, paper or a blurred backdrop. Over fine detail, faces or text, the reconstruction will be visible under any real scrutiny.'},
+        {"q": 'Which formats can I use?', "a": 'JPG, PNG and WebP. Transparency is preserved where the source format has it.'},
+        {"q": 'Does the image leave my device?', "a": 'Only to the same isolated processing container every server-side tool here uses, and it is deleted after the response. It is never stored, never inspected, and never used for training.'},
+        {"q": 'Is it legal to remove a watermark?', "a": "That depends entirely on the image. A watermark is usually an ownership mark, and stripping one from a stock photo or someone else's work to avoid licensing it is copyright infringement. Use this on your own images, or where you hold the rights."},
+    ],
+    "translate-pdf": [
+        {"q": 'Is my PDF uploaded anywhere?', "a": "No. This is the one translation tool here that runs entirely in your browser. The text is extracted locally, the model runs on your device, and the document never reaches a server, ours or anyone else's."},
+        {"q": 'Why does the first translation take a while?', "a": 'Because the model for that language pair downloads once, the first time you use it. After that it is cached in your browser and works on every later visit, including offline.'},
+        {"q": 'How good is the translation?', "a": 'Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. That is the deliberate trade: privacy over polish.'},
+        {"q": 'Does it keep the original layout?', "a": 'Text is translated, not typeset. Expect the meaning to carry over and the formatting to be simplified, especially where translated text runs longer than the original.'},
+        {"q": 'Which languages are supported?', "a": 'The common pairs, downloaded per direction as you pick them. Each pair is its own model, so translating English to French does not also fetch French to English.'},
     ],
 }
 
