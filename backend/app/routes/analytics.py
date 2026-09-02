@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,6 +26,12 @@ class AnalyticsPageview(BaseModel):
     title: str | None = Field(default=None, max_length=160)
     referrer: str | None = Field(default=None, max_length=512)
     client_id: str | None = Field(default=None, max_length=96)
+    # GA4 fills Realtime from events alone, but leaves every standard report
+    # empty unless the event carries a session and some engagement time. We
+    # sent neither, so page views arrived, showed up in Realtime, and never
+    # reached Traffic acquisition or Pages and screens.
+    session_id: str | None = Field(default=None, max_length=32)
+    engagement_time_msec: int | None = Field(default=None, ge=0, le=3_600_000)
 
 
 def _clean_path(path: str | None) -> str:
@@ -33,6 +40,22 @@ def _clean_path(path: str | None) -> str:
         return "/"
     # Keep aggregate page metrics from accidentally carrying share/query data.
     return value.split("?", 1)[0].split("#", 1)[0][:512] or "/"
+
+
+_SESSION_ID_RE = re.compile(r"^[0-9]{6,20}$")
+
+
+def _clean_session_id(value: str | None) -> str:
+    """A GA4 session id is a numeric timestamp; anything else gets replaced.
+
+    Falling back to a fresh id is deliberate: a missing or malformed session
+    would otherwise drop the event out of every standard report, which is the
+    exact failure this whole field exists to prevent.
+    """
+    v = (value or "").strip()
+    if _SESSION_ID_RE.fullmatch(v):
+        return v
+    return str(int(time.time()))
 
 
 def _clean_text(value: str | None, limit: int) -> str | None:
@@ -70,6 +93,10 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
     params: dict[str, Any] = {
         "page_location": f"{_PUBLIC_BASE_URL}{path}",
         "page_path": path,
+        # Both are required for a Measurement Protocol event to count towards
+        # users, sessions and engagement rather than only appearing in Realtime.
+        "session_id": _clean_session_id(pageview.session_id),
+        "engagement_time_msec": pageview.engagement_time_msec or 100,
     }
     title = _clean_text(pageview.title, 160)
     referrer = _clean_referrer(pageview.referrer)

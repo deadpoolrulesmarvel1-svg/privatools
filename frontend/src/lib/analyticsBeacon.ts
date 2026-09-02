@@ -15,7 +15,10 @@
 import { readAnalyticsPrivacyPreference } from "./analyticsPrivacy";
 
 const CLIENT_ID_KEY = "pt-analytics-cid";
+const SESSION_KEY = "pt-analytics-session";
 const ENDPOINT = "/api/analytics/pageview";
+/** GA4's own definition of a session: 30 minutes of inactivity ends it. */
+const SESSION_IDLE_MS = 30 * 60 * 1000;
 
 /**
  * A random id, kept in localStorage so repeat visits count as one browser.
@@ -74,6 +77,38 @@ function currentPath(): string {
     return normalise(hash.startsWith("/") ? hash : window.location.pathname);
 }
 
+/**
+ * A GA4 session id, rolled after 30 minutes of inactivity.
+ *
+ * Without one, and without engagement_time_msec below, GA4 accepts the event
+ * and shows it in Realtime but never counts it towards users, sessions or
+ * engagement — so every standard report stays empty while the data appears to
+ * be arriving. It is the most expensive silent failure in Measurement
+ * Protocol, because everything looks like it is working.
+ */
+function sessionId(): string {
+    const now = Date.now();
+    const fresh = () => String(Math.floor(now / 1000));
+    try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (raw) {
+            const [id, last] = raw.split(":");
+            if (id && Number(last) && now - Number(last) < SESSION_IDLE_MS) {
+                sessionStorage.setItem(SESSION_KEY, `${id}:${now}`);
+                return id;
+            }
+        }
+        const made = fresh();
+        sessionStorage.setItem(SESSION_KEY, `${made}:${now}`);
+        return made;
+    } catch {
+        return fresh();
+    }
+}
+
+/** When this page-view began, so engagement time is a real number. */
+let viewStartedAt = Date.now();
+
 /** The last path sent, so a re-render does not count twice. */
 let lastPath = "";
 
@@ -85,11 +120,17 @@ export function sendPageview(path?: string): void {
     if (clean === lastPath) return;
     lastPath = clean;
 
+    const now = Date.now();
+    const engaged = Math.min(Math.max(now - viewStartedAt, 100), 3_600_000);
+    viewStartedAt = now;
+
     const body = JSON.stringify({
         path: clean,
         title: document.title.slice(0, 160) || null,
         referrer: document.referrer || null,
         client_id: clientId(),
+        session_id: sessionId(),
+        engagement_time_msec: engaged,
     });
 
     try {
