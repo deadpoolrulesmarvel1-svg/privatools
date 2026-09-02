@@ -1,0 +1,153 @@
+name: Production monitor
+
+# The container has a healthcheck and the VM has a deploy timer, but nothing
+# watched privatools.me from outside it. If nginx died, the VM ran out of disk,
+# a certificate expired, or a deploy shipped a subtly broken tool, the first
+# report would have come from a user — assuming one bothered.
+#
+# This runs a real conversion rather than pinging a health endpoint, because
+# "the process is alive" and "the product works" are different claims and only
+# the second one matters.
+
+on:
+  schedule:
+    # Every 30 minutes. GitHub delays scheduled runs under load, so treat the
+    # cadence as approximate; this is a smoke alarm, not an SLA monitor.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write        # so a failure can open an issue that emails the owner
+
+concurrency:
+  group: production-monitor
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Probe production
+    runs-on: ubuntu-latest
+    steps:
+      - name: The site answers at all
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 https://privatools.me/)
+          echo "homepage: $code"
+          test "$code" = "200"
+
+      - name: Dependencies the tools actually need are healthy
+        run: |
+          body=$(curl -sS --max-time 20 https://privatools.me/readyz)
+          echo "$body"
+          echo "$body" | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)
+          assert d.get("status") == "ready", f"status is {d.get(\"status\")}"
+          bad = [k for k, v in d.get("checks", {}).items() if not v]
+          assert not bad, f"failing dependency checks: {bad}"
+          print("all dependency checks pass")
+          '
+
+      - name: A real tool produces a real file
+        run: |
+          # Two minimal, valid one-page PDFs, built here so the probe carries no
+          # fixture and no dependency of its own.
+          python3 - <<'PY'
+          def pdf(text: str) -> bytes:
+              objs = [
+                  b"<< /Type /Catalog /Pages 2 0 R >>",
+                  b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+                  b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] "
+                  b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+                  b"<< /Length %d >>\nstream\nBT /F1 12 Tf 20 100 Td (%s) Tj ET\nendstream"
+                  % (44 + len(text), text.encode()),
+                  b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+              ]
+              out = bytearray(b"%PDF-1.4\n")
+              offsets = []
+              for i, o in enumerate(objs, 1):
+                  offsets.append(len(out))
+                  out += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+              xref = len(out)
+              out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+              for off in offsets:
+                  out += b"%010d 00000 n \n" % off
+              out += (b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n"
+                      % (len(objs) + 1, xref))
+              return bytes(out)
+
+          open("a.pdf", "wb").write(pdf("probe a"))
+          open("b.pdf", "wb").write(pdf("probe b"))
+          PY
+
+          code=$(curl -sS --max-time 60 -o merged.pdf -w '%{http_code}' \
+            -F "files=@a.pdf;type=application/pdf" \
+            -F "files=@b.pdf;type=application/pdf" \
+            https://privatools.me/api/merge)
+          echo "merge: HTTP $code"
+          test "$code" = "200"
+
+          # A 200 with an error body would pass a status check, so verify the
+          # bytes are a PDF and that merging actually produced two pages.
+          head -c 5 merged.pdf | grep -q '%PDF' || { echo "not a PDF:"; head -c 300 merged.pdf; exit 1; }
+          pages=$(grep -ac '/Type[[:space:]]*/Page[^s]' merged.pdf || true)
+          echo "merged size: $(wc -c < merged.pdf) bytes, page objects: $pages"
+          test "$(wc -c < merged.pdf)" -gt 400
+
+      - name: Security headers that the product publicly promises
+        run: |
+          h=$(curl -sSI --max-time 20 https://privatools.me/account)
+          echo "$h" | grep -qi 'content-security-policy' || { echo "no CSP on /account"; exit 1; }
+          echo "$h" | grep -qi 'clerk.privatools.me' || { echo "sign-in CSP regressed"; exit 1; }
+          # And the scoping the site claims: no identity provider on tool pages.
+          # Written as an if, not `grep && exit`: steps run under `bash -e`, so a
+          # grep that correctly finds nothing returns 1 and would fail the step
+          # every single run — a monitor that always alerts is worse than none.
+          if curl -sSI --max-time 20 https://privatools.me/tool/merge-pdf | grep -qi 'clerk.privatools.me'; then
+            echo "CSP scoping regressed: a tool page can reach the identity provider"
+            exit 1
+          fi
+          echo "CSP present on /account and correctly absent on tool pages"
+
+      - name: Discovery surfaces still resolve
+        run: |
+          for p in /sitemap.xml /robots.txt /llms.txt; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://privatools.me$p")
+            echo "$p: $code"
+            test "$code" = "200"
+          done
+
+      - name: Raise an issue if anything above failed
+        if: failure()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const title = "Production monitor failed";
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The scheduled production probe failed at ${new Date().toISOString()}.`,
+              ``,
+              `Run: ${url}`,
+              ``,
+              `This probe runs a real PDF merge against privatools.me, so a failure`,
+              `usually means the product is genuinely broken for users rather than`,
+              `that a health endpoint is flaky. Check the failing step above.`,
+            ].join("\n");
+
+            // Reuse one issue rather than filing a new one every 30 minutes
+            // during an outage.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "monitor",
+            });
+            if (existing.data.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.data[0].number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["monitor"],
+              });
+            }
