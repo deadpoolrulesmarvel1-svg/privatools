@@ -51,6 +51,13 @@ services:
       # would put a real credential somewhere nothing reads it.
       - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY:-}
       - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET:-}
+      # GA4, both optional. The server-side beacon in routes/analytics.py is a
+      # no-op unless both are present, which is why setting only the secret in
+      # the VM's .env changed nothing: compose reads .env for substitution
+      # here, it does not hand it to the container. Without this line the app
+      # never saw the value at all.
+      - GA4_MEASUREMENT_ID=${GA4_MEASUREMENT_ID:-}
+      - GA4_API_SECRET=${GA4_API_SECRET:-}
     restart: unless-stopped
     # Bound container stdout/stderr on disk. The default json-file driver is
     # unbounded — a 5xx storm or a left-on DEBUG session would fill the VM disk,

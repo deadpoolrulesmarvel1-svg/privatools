@@ -5,6 +5,7 @@ import { AppShell } from "./components/AppShell";
 import { AppProviders } from "./components/AppProviders";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useGlobalErrorHandler } from "./hooks/useGlobalErrorHandler";
+import { startPageviewTracking } from "./lib/analyticsBeacon";
 import {
   prefetchRoute,
   loadToolPage,
@@ -116,6 +117,10 @@ function AfterInitialPaint({ children }: { children: React.ReactNode }) {
  *  router so it can use hooks, but renders nothing. */
 function GlobalErrorWire() {
   useGlobalErrorHandler();
+  // Counts the first view and every navigation after it. The endpoint and the
+  // privacy copy describing it both predate this by a long way — nothing was
+  // ever sending, which is the whole reason GA4 showed no traffic.
+  useEffect(() => startPageviewTracking(), []);
   return null;
 }
 

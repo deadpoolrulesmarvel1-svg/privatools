@@ -164,4 +164,11 @@ async def og_image(request: Request, p: str = Query(default="/", alias="p")):
         stale_while_revalidate=86400,  # 1 day
         request=request,
         last_modified=_BOOT_TIME,
+        # These are social preview cards, not pages. Google was crawling one
+        # per tool and filing every one under "Crawled - currently not
+        # indexed": 209 of the 284 URLs in that report, three quarters of an
+        # indexing problem that was never a page problem. noindex keeps them
+        # fetchable — Slack, X and LinkedIn still render previews — while
+        # taking them out of the index entirely.
+        extra_headers={"X-Robots-Tag": "noindex"},
     )
