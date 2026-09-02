@@ -89,10 +89,17 @@ export const ACCOUNT_COPY = isClerkEnabled()
  */
 /**
  * Providers actually configured in the Clerk dashboard, in display order.
- * Google is wired in code but its OAuth credentials are not entered yet —
- * add "google" here the day the Google Cloud client exists and the button
- * reappears. A rendered button for an unconfigured provider errors at click,
- * which is worse than no button.
+ *
+ * GitHub only, and deliberately. Google was considered and dropped: an
+ * unverified Google OAuth app shows "Google hasn't verified this app" before
+ * a visitor may continue, which is a poor first impression anywhere and a
+ * contradiction on a site whose entire argument is that it can be trusted.
+ * Verification is free but slow, so the button stays off rather than shipping
+ * a warning screen.
+ *
+ * The rest of the plumbing is provider-agnostic — adding a provider here is
+ * all it takes once its credentials exist in Clerk. A button for an
+ * unconfigured provider errors on click, which is worse than no button.
  */
 const CONFIGURED_SOCIAL: ReadonlyArray<SocialProvider> = ["github"];
 

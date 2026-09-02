@@ -16,8 +16,18 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
+  # The gate. A v* tag does not trigger test.yml by itself, so the release
+  # calls it: no green suite, no image, no deploy. Costs about two and a half
+  # minutes on top of a build that now takes under two.
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
   docker:
     name: Build, push, and sign image
+    needs: tests
     # The deploy target is aarch64, so arm64 is the image that matters — and on
     # an x86 runner it was the one being emulated through QEMU, which is where
     # a release spent ~20 minutes. GitHub's ARM runners are free on public

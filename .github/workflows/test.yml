@@ -9,6 +9,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Callable so release.yml can gate on it. A tag push does not trigger this
+  # workflow on its own, which is how a release once shipped with the backend
+  # suite failing: CI caught it and nothing stopped the deploy.
+  workflow_call:
 
 permissions:
   contents: read
