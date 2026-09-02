@@ -484,6 +484,10 @@ const CSS = `
   .dl-foot .cols > div:last-child ul { display:grid; grid-template-columns:1fr 1fr; gap:9px 24px; }
 }
 .dl-foot .brand .finstall { margin-top:16px; padding:9px 16px; font-size:13px; gap:8px; }
+.dl-root .dl-social-links { display:flex; gap:18px; margin-top:18px; flex-wrap:wrap; }
+.dl-root .dl-social-links a { display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--dl-muted); font-weight:500; transition:color 160ms ease; }
+.dl-root .dl-social-links a:hover { color:var(--dl-ink); }
+.dl-root .dl-social-links svg { width:14px; height:14px; flex:none; }
 .dl-foot h4 { font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--dl-faint); font-weight:600; margin:0 0 13px; }
 .dl-foot ul { list-style:none; padding:0; display:flex; flex-direction:column; gap:9px; }
 .dl-root .dl-foot ul a { color:var(--dl-muted); font-size:13.5px; }
@@ -1164,6 +1168,22 @@ export default class DaylightSkinApp extends React.Component {
                             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V9 M4 6.5 L7 9.5 L10 6.5 M2 12.5 H12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             Install the app
                         </button>
+                        <div className="dl-social-links">
+                            <a href="https://x.com/Ether_eagle1" target="_blank" rel="me noopener noreferrer"
+                                aria-label="PrivaTools on X">
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                </svg>
+                                @Ether_eagle1
+                            </a>
+                            <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank"
+                                rel="noopener noreferrer" aria-label="PrivaTools on GitHub">
+                                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                                </svg>
+                                Source
+                            </a>
+                        </div>
                     </div>
                     <div><h4>Popular</h4><ul>
                         {POPULAR.slice(0, 5).map((t) => <li key={t.slug}><a href={`#/tool/${t.slug}`}>{t.name}</a></li>)}

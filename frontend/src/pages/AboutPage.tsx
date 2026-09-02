@@ -567,6 +567,19 @@ export default function AboutPage() {
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>
+              <a href="https://x.com/Ether_eagle1" target="_blank" rel="me noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-border bg-paper-2/30 px-4 py-3 hover:border-accent/45 hover:bg-accent/[0.04] transition-colors group">
+                <div className="h-9 w-9 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="text-accent" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[11px] text-muted-foreground">X</p>
+                  <p className="text-[14px] font-medium text-foreground">@Ether_eagle1</p>
+                </div>
+                <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
+              </a>
               <div className="font-medium mt-3 flex flex-wrap gap-2 text-[11.5px]">
                 <Link to="/privacy" className="text-accent hover:opacity-80">Privacy Policy</Link>
                 <span className="text-muted-foreground">·</span>

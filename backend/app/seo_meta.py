@@ -1993,6 +1993,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     # once minted (see docs/GEO-RUNBOOK.md) for full KG linkage.
                     "sameAs": [
                         "https://github.com/deadpoolrulesmarvel1-svg/privatools",
+                        "https://x.com/Ether_eagle1",
                         "https://privatools.me",
                     ],
                     "contactPoint": {
