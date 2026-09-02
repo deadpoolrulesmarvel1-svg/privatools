@@ -37,16 +37,20 @@ jobs:
 
       - name: Dependencies the tools actually need are healthy
         run: |
-          body=$(curl -sS --max-time 20 https://privatools.me/readyz)
-          echo "$body"
-          echo "$body" | python3 -c '
-          import json, sys
-          d = json.load(sys.stdin)
-          assert d.get("status") == "ready", f"status is {d.get(\"status\")}"
+          curl -sS --max-time 20 https://privatools.me/readyz -o readyz.json
+          cat readyz.json; echo
+          # A quoted heredoc, not python3 -c: the inline form needs quotes
+          # escaped through both YAML and the shell, and the escapes reach
+          # Python as backslashes and fail to parse.
+          python3 - <<'PY'
+          import json
+          d = json.load(open("readyz.json"))
+          status = d.get("status")
+          assert status == "ready", "status is " + str(status)
           bad = [k for k, v in d.get("checks", {}).items() if not v]
-          assert not bad, f"failing dependency checks: {bad}"
+          assert not bad, "failing dependency checks: " + ", ".join(bad)
           print("all dependency checks pass")
-          '
+          PY
 
       - name: A real tool produces a real file
         run: |
