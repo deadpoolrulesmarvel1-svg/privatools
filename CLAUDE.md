@@ -26,19 +26,24 @@ learned by getting it wrong first.
 - **OpenSSF Scorecard always fails off `main`** — "Only the default branch main
   is supported". Not a code problem.
 
-## Generated files — never hand-edit
+## Skins: there is only Daylight
 
-`frontend/src/skins/{aurora,carbon,structured}/SkinApp.tsx`,
-`styles/skin-native.css` and `styles/skin-interactions.css` are **build
-artefacts**. Edits are lost on the next generator run.
+The aurora, carbon and structured skins are **gone**, removed when Daylight
+replaced the UI, along with `design-sources/` and the `.dc.html` generator
+pipeline. `SKIN_IDS` in `src/lib/skins.ts` lists one id and the switcher UI
+that offered a choice was deleted with the rest of the dead shell (2026-09-02).
+Anything you read elsewhere about hand-editing generated `SkinApp.tsx` files or
+about correction tables in `dc-convert.mjs` describes a system that no longer
+exists.
 
-Sources are `design-sources/*.dc.html`; generators are
-`frontend/scripts/build-skin-app.mjs` and `extract-native-css.mjs`.
+`frontend/src/skins/daylight/SkinApp.tsx` is now **hand-written and
+authoritative** — edit it directly. It carries `@ts-nocheck`, so tsc will not
+catch a typo in it: grep that the bindings you reference actually exist, and
+run the page before believing it works.
 
-Those generators carry **correction tables**, not just conversion — contrast
-fixes, theme-precedence fixes, attribute maps. Fix a class of defect there, not
-in the output. `dc-convert.mjs` is the converter the build uses;
-`dc-to-jsx.mjs` is a CLI variant that imports from it.
+Still generated, still do not hand-edit: `src/styles/skins.css`, produced by
+`scripts/skin-palettes.mjs` (driven by `build-skins.mjs`) and imported by
+`main.tsx`. Those two scripts are kept for exactly that reason.
 
 Check reproducibility before touching a generator: run it and `diff` the output
 against what is checked in.
