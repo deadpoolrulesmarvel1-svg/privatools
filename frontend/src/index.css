@@ -1222,7 +1222,6 @@ button.btn-accent:focus-visible {
    `:root[…]` rather than `[…]` so this outranks skin-native.css regardless of
    import order. */
 @media (max-width: 480px) {
-  :root[data-skin="aurora"] { --c4: 1fr; }
 }
 
 /* The designs wrap their data tables in a rounded panel that sets
