@@ -982,106 +982,132 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # made them the thinnest pages on the site. ──────────────────────
     "aac-to-mp3": [
         {"name": 'Upload an AAC file', "text": 'Drop an .aac or .m4a file up to 500 MB.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'AAC is decoded and re-encoded as MP3. Both are lossy, so encode at 192 kbps or higher when the source was already compressed.'},
         {"name": 'Convert and download', "text": 'Click Convert. AAC and MP3 are both lossy, so this is a transcode rather than a lossless change: encode at 192 kbps or higher if the source was already compressed. MP3 is the safer choice for car stereos, gym equipment and older players that never learned AAC.'},
     ],
     "flac-to-mp3": [
         {"name": 'Upload a FLAC file', "text": 'Drop a .flac file. FLAC is lossless, so the source is the best possible input for an encode.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'FLAC is lossless, so the encoder is working from the best possible source. Expect roughly a 5-10x size reduction.'},
         {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 5–10x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy.'},
     ],
     "mp3-to-aac": [
         {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another loses a little more each time.'},
         {"name": 'Convert and download', "text": 'Click Convert. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. It is worth doing for Apple devices and for streaming, not for archiving.'},
     ],
     "mp3-to-flac": [
         {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'PrivaTools rewraps via FFmpeg', "text": 'The decoded audio is stored losslessly. Nothing further is lost, and nothing is restored: the output sounds identical to the MP3 and is larger.'},
         {"name": 'Convert and download', "text": 'Click Convert. FLAC wraps the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality.'},
     ],
     "mp3-to-ogg": [
         {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops.'},
         {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate.'},
     ],
     "mp3-to-wav": [
         {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'PrivaTools decodes via FFmpeg', "text": 'The MP3 is decoded to uncompressed PCM, which is what editors, samplers and DAWs want to work from.'},
         {"name": 'Convert and download', "text": 'Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB.'},
     ],
     "ogg-to-mp3": [
         {"name": 'Upload an Ogg file', "text": 'Drop an .ogg or .oga file.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'One more lossy generation, in exchange for a format that plays essentially everywhere.'},
         {"name": 'Convert and download', "text": 'Click Convert. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation.'},
     ],
     "wav-to-flac": [
         {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 500 MB.'},
+        {"name": 'PrivaTools compresses via FFmpeg', "text": 'FLAC is lossless: the audio is bit-for-bit identical to the WAV, typically 40-60% smaller.'},
         {"name": 'Convert and download', "text": 'Click Convert. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality.'},
     ],
     "wav-to-mp3": [
         {"name": 'Upload a WAV file', "text": 'Drop a .wav file. Uncompressed audio is the ideal source for an encode.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Uncompressed source gives the encoder the best possible input. Expect roughly a 10:1 reduction.'},
         {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one.'},
     ],
     "wav-to-ogg": [
         {"name": 'Upload a WAV file', "text": 'Drop a .wav file.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Encoded straight from uncompressed source, so quality is as good as the chosen bitrate allows.'},
         {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows.'},
     ],
     "avi-to-webm": [
         {"name": 'Upload an AVI file', "text": 'Drop an .avi file up to 500 MB. AVI is a legacy container, often carrying DivX or Xvid video.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The legacy stream, often DivX or Xvid, is re-encoded as VP9.'},
         {"name": 'Convert and download', "text": 'Click Convert. The video is re-encoded as VP9 WebM, which plays natively in modern browsers and is usually far smaller than the AVI it replaces.'},
     ],
     "mkv-to-mp4": [
         {"name": 'Upload an MKV file', "text": 'Drop an .mkv file. Matroska commonly holds H.264 or H.265 video.'},
+        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'Where the MKV already holds H.264 or H.265, this is largely a container change and the video is preserved.'},
         {"name": 'Convert and download', "text": 'Click Convert. MP4 is the container Safari, iOS, Windows and most TVs expect. Where the codecs already suit MP4 this is largely a container change, so quality is preserved.'},
     ],
     "mkv-to-webm": [
         {"name": 'Upload an MKV file', "text": 'Drop an .mkv file up to 500 MB.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as VP9, which browsers play natively and MKV never could.'},
         {"name": 'Convert and download', "text": 'Click Convert. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all.'},
     ],
     "mov-to-gif": [
         {"name": 'Upload a MOV clip', "text": 'Drop a .mov file. Short clips work best; GIF has no audio and no real compression.'},
+        {"name": 'PrivaTools samples frames via FFmpeg', "text": 'Frames are sampled and mapped to a 256-colour palette. GIF has no audio and no real compression.'},
         {"name": 'Convert and download', "text": 'Click Convert. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size.'},
     ],
     "mov-to-mkv": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file from QuickTime, an iPhone or a camera.'},
+        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'Streams are moved into Matroska, which holds multiple audio and subtitle tracks comfortably.'},
         {"name": 'Convert and download', "text": 'Click Convert. Matroska holds multiple audio and subtitle tracks comfortably, which makes it a better archive container than MOV.'},
     ],
     "mov-to-webm": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file up to 500 MB.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'VP9 WebM is smaller than the MOV at comparable quality and needs no QuickTime.'},
         {"name": 'Convert and download', "text": 'Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime.'},
     ],
     "mp4-to-avi": [
         {"name": 'Upload an MP4', "text": 'Drop an .mp4 file.'},
+        {"name": 'PrivaTools rewraps via FFmpeg', "text": 'AVI is an older, less efficient container, so the file will usually grow rather than shrink.'},
         {"name": 'Convert and download', "text": 'Click Convert. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; the container is less efficient and the file will usually grow.'},
     ],
     "mp4-to-mov": [
         {"name": 'Upload an MP4', "text": 'Drop an .mp4 file up to 500 MB.'},
+        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'The video stream is preserved where the codecs allow, so quality is unchanged.'},
         {"name": 'Convert and download', "text": 'Click Convert. MOV is what QuickTime, Final Cut Pro and much of the macOS video world prefer. The video stream is preserved where the codecs allow.'},
     ],
     "webm-to-gif": [
         {"name": 'Upload a WebM clip', "text": 'Drop a .webm file. Keep it short — every GIF frame is stored as its own image.'},
+        {"name": 'PrivaTools samples frames via FFmpeg', "text": 'Every GIF frame is stored as its own image, which is why short clips work and long ones do not.'},
         {"name": 'Convert and download', "text": 'Click Convert. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
     ],
     "webm-to-mov": [
         {"name": 'Upload a WebM file', "text": 'Drop a .webm file.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'VP9 is re-encoded into a stream QuickTime and Final Cut will actually open.'},
         {"name": 'Convert and download', "text": 'Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM.'},
     ],
     "jpg-to-bmp": [
         {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'Every pixel is written uncompressed, which is why the output dwarfs the JPG.'},
         {"name": 'Convert and download', "text": 'Click Convert. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else.'},
     ],
     "jpg-to-tiff": [
         {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file up to 500 MB.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'The existing pixels are rewritten into TIFF without a further lossy generation.'},
         {"name": 'Convert and download', "text": 'Click Convert. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation.'},
     ],
     "png-to-bmp": [
         {"name": 'Upload a PNG', "text": 'Drop a .png file.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'BMP has no practical transparency support, so any alpha channel is composited onto white.'},
         {"name": 'Convert and download', "text": 'Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters.'},
     ],
     "png-to-tiff": [
         {"name": 'Upload a PNG', "text": 'Drop a .png file up to 500 MB.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'Both formats are lossless, so the conversion is faithful and the alpha channel survives.'},
         {"name": 'Convert and download', "text": 'Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG.'},
     ],
     "webp-to-bmp": [
         {"name": 'Upload a WebP image', "text": 'Drop a .webp file.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'Uncompressed output, with transparency flattened onto white.'},
         {"name": 'Convert and download', "text": 'Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it.'},
     ],
     "webp-to-tiff": [
         {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'TIFF keeps the alpha channel and is read by archival software that has never heard of WebP.'},
         {"name": 'Convert and download', "text": 'Click Convert. TIFF preserves transparency and is accepted by archival and prepress software that has no idea what WebP is.'},
     ],
     "pdf-to-long-image": [
