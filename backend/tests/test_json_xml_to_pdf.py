@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import codecs
 import json
+import time
 
 import fitz
 import pytest
@@ -92,7 +93,9 @@ def test_json_that_would_print_too_many_lines_is_refused_with_400(client):
 def test_json_over_5_mb_is_refused_as_too_large(client):
     big = json.dumps({"blob": "x" * (5 * 1024 * 1024)}).encode()
     detail = _refusal(_post(client, "json-to-pdf", "big.json", big), 413)
-    assert "5 MB" in detail
+    # The service's wording, not read_upload's "too large", which the page
+    # rewrites into advice to compress the file. The route reads only 5 MB + 1.
+    assert detail == "This JSON file is bigger than 5 MB, the most JSON to PDF takes."
 
 
 # ── XML ─────────────────────────────────────────────────────────────────
@@ -198,7 +201,42 @@ def test_xml_nested_deeper_than_60_levels_is_refused_with_400(client, depth):
     assert detail.startswith("This XML nests more than 60 levels deep.")
 
 
+def test_xml_with_more_elements_than_it_can_print_is_refused_before_building_them(client):
+    """The reviewer's 5 MB file of 1.3 million empty elements took 38 s and
+    600 MB and printed 21,000 pages."""
+    flat = b"<r>" + b"<i/>" * 1_300_000 + b"</r>"
+    detail = _refusal(_post(client, "xml-to-pdf", "flat.xml", flat), 400)
+    assert detail == ("This XML has more than 50,000 elements, and XML to PDF prints at most 50,000 lines, "
+                      "about 800 pages. Split it into smaller files.")
+
+
+def test_xml_that_would_print_more_than_50000_lines_is_refused(client):
+    text = b"<r>" + b"line\n" * 60_000 + b"</r>"
+    detail = _refusal(_post(client, "xml-to-pdf", "lines.xml", text), 400)
+    assert detail.startswith("This XML would print as 60,00")
+    assert detail.endswith("and XML to PDF prints at most 50,000, about 800 pages. Split it into smaller files.")
+
+
+def test_a_real_document_near_the_line_cap_converts(client):
+    """9,000 sitemap entries print as 45,003 lines, about 730 pages."""
+    urls = b"".join(b"<url><loc>https://example.com/p%d</loc><lastmod>2026-09-01</lastmod><priority>0.5</priority></url>" % i
+                    for i in range(9_000))
+    response = _post(client, "xml-to-pdf", "sitemap.xml", b'<?xml version="1.0"?><urlset>' + urls + b"</urlset>")
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as doc:
+        assert 700 < doc.page_count < 760
+
+
+def test_xml_with_a_very_long_line_converts_quickly(client):
+    """Lines were cut to fit by dropping one character at a time and measuring
+    the rest again: 43 s for a 32,000-character line, days for 5 MB."""
+    started = time.monotonic()
+    text = _pdf_text(_post(client, "xml-to-pdf", "long.xml", b"<r>" + b"x" * 40_000 + b"</r>"))
+    assert time.monotonic() - started < 10
+    assert "<r>xxxxxxxx" in text
+
+
 def test_xml_over_5_mb_is_refused_as_too_large(client):
     big = b"<root>" + b"<i>x</i>" * (700 * 1024) + b"</root>"
     detail = _refusal(_post(client, "xml-to-pdf", "big.xml", big), 413)
-    assert "5 MB" in detail
+    assert detail == "This XML file is bigger than 5 MB, the most XML to PDF takes."

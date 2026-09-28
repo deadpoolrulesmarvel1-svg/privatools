@@ -28,6 +28,13 @@ MAX_INPUT_BYTES = 5 * 1024 * 1024
 # Each level is indented 8 points, so a line nested deeper than this would
 # start past the right margin of an A4 page.
 MAX_DEPTH = 60
+# At most this many printed lines, about 800 A4 pages. About that many (a 1 MB
+# file of 10,000 sitemap entries) took 3.5 s and 126 MB to print. Unbounded,
+# a 5 MB file of 1.3 million empty elements took 38 s and 600 MB and printed
+# 21,000 pages. JSON to PDF has the same cap. Every element starts a line, so
+# a file with more elements than this is refused while it is read, before its
+# tree is built.
+MAX_PRINTED_LINES = 50_000
 
 # The refusals below reach the visitor as they are, so they avoid the words
 # the website's friendlyError turns into advice about damaged or locked PDFs
@@ -35,6 +42,10 @@ MAX_DEPTH = 60
 TOO_DEEP = (
     f"This XML nests more than {MAX_DEPTH} levels deep. XML to PDF indents each level, "
     "so deeper lines would start past the right margin of the page."
+)
+TOO_MANY_ELEMENTS = (
+    f"This XML has more than {MAX_PRINTED_LINES:,} elements, and XML to PDF prints at most "
+    f"{MAX_PRINTED_LINES:,} lines, about 800 pages. Split it into smaller files."
 )
 
 
@@ -84,16 +95,21 @@ def _safe_pretty_xml(content: bytes) -> str:
 
     class BoundedBuilder(DefusedExpatBuilderNS):
         """defusedxml's own minidom builder, with the same protections, that
-        stops at the first element nested deeper than MAX_DEPTH: before the
-        rest of the tree is built, and before pretty-printing, which recurses
-        once per level and answered 500 from about 990 levels."""
+        stops at the first element nested deeper than MAX_DEPTH, or past the
+        MAX_PRINTED_LINES-th element: before the rest of the tree is built, and
+        before pretty-printing, which recurses once per level and answered 500
+        from about 990 levels."""
 
         depth = 0
+        elements = 0
 
         def start_element_handler(self, name, attributes):
             self.depth += 1
+            self.elements += 1
             if self.depth > MAX_DEPTH:
                 raise ValidationError(TOO_DEEP)
+            if self.elements > MAX_PRINTED_LINES:
+                raise ValidationError(TOO_MANY_ELEMENTS)
             super().start_element_handler(name, attributes)
 
         def end_element_handler(self, name):
@@ -140,6 +156,13 @@ def xml_to_pdf(input_path: str) -> str:
         )
 
     formatted = _safe_pretty_xml(Path(input_path).read_bytes())
+    lines = formatted.split("\n")
+    printed = sum(1 for line in lines if line.strip())
+    if printed > MAX_PRINTED_LINES:  # text with many line breaks, under the element cap
+        raise ValidationError(
+            f"This XML would print as {printed:,} lines, and XML to PDF prints at most "
+            f"{MAX_PRINTED_LINES:,}, about 800 pages. Split it into smaller files."
+        )
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
@@ -149,8 +172,9 @@ def xml_to_pdf(input_path: str) -> str:
     line_height = 12
 
     c.setFont("Courier", font_size)
+    char_width = c.stringWidth("M", "Courier", font_size)  # Courier is monospaced
 
-    for line in formatted.split("\n"):
+    for line in lines:
         if y < margin:
             c.showPage()
             c.setFont("Courier", font_size)
@@ -170,10 +194,14 @@ def xml_to_pdf(input_path: str) -> str:
         else:
             c.setFillColorRGB(0, 0, 0)
 
-        # Truncate long lines so they don't run off the page.
-        max_w = width - 2 * margin
-        display = stripped.lstrip()
-        while c.stringWidth(display, "Courier", font_size) > max_w and len(display) > 10:
+        # Cut a long line off at the right margin, keeping at least 10
+        # characters. The characters that fit are counted first, because
+        # dropping one at a time and measuring the rest again was quadratic:
+        # 43 s for a 32,000-character line. The loop then only corrects for a
+        # symbol ReportLab draws from another, wider font.
+        room = width - margin - x
+        display = stripped.lstrip()[: max(10, int(room // char_width))]
+        while c.stringWidth(display, "Courier", font_size) > room and len(display) > 10:
             display = display[:-1]
 
         c.drawString(x, y, display)

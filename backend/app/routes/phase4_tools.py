@@ -65,6 +65,16 @@ async def _read_upload(file: UploadFile, *, label: str, max_bytes: int = MAX_SIZ
     return await read_upload(file, label=label, max_bytes=max_bytes)
 
 
+async def _read_at_most(file: UploadFile, *, label: str, max_bytes: int) -> bytes:
+    """The upload, read no further than one byte past `max_bytes`: enough for
+    the service to refuse a file over its cap with its own message, without
+    first reading a 500 MB upload into memory as read_upload does."""
+    data = await file.read(max_bytes + 1)
+    if not data:
+        raise HTTPException(status_code=400, detail=f"{label} is empty.")
+    return data
+
+
 def _cleanup_on_error(*paths: str | Path | None) -> None:
     cleanup_on_error(*paths)
 
@@ -264,7 +274,7 @@ async def json_to_pdf(file: UploadFile = File(...)):
     temp = None
     out = None
     try:
-        content = await _read_upload(file, label="JSON file")
+        content = await _read_at_most(file, label="JSON file", max_bytes=json_to_pdf_service.MAX_INPUT_BYTES)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.json")
         temp.write_bytes(content)
         out = await asyncio.to_thread(json_to_pdf_service.json_to_pdf, str(temp))
@@ -297,7 +307,7 @@ async def xml_to_pdf(file: UploadFile = File(...)):
     temp = None
     out = None
     try:
-        content = await _read_upload(file, label="XML file")
+        content = await _read_at_most(file, label="XML file", max_bytes=xml_to_pdf_service.MAX_INPUT_BYTES)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.xml")
         temp.write_bytes(content)
         out = await asyncio.to_thread(xml_to_pdf_service.xml_to_pdf, str(temp))
