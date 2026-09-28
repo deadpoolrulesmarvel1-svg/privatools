@@ -392,6 +392,7 @@ describe("the contract covers every page that sends a page number", () => {
     const PREVIEW_ONLY: Record<string, string> = {
         "CropUI.tsx": "sends margins, which apply to every page",
         "FillFormUI.tsx": "sends field values by field name",
+        "HiddenTextCheckerUI.tsx": "sends only the file; the pages it marks come from the server, counted from 1",
         "LongImageUI.tsx": "sends a format and a resolution; every page is joined",
         "PdfWatermarkPreview.tsx": "is Watermark's preview; the watermark goes on every page",
         "RemoveWatermarkUI.tsx": "sends the chosen watermark ids; the pages it shows come from the server, counted from 1",
