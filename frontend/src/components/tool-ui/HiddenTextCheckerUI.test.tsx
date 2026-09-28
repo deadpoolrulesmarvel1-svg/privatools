@@ -33,7 +33,10 @@ function reportWith(findings: object[], extra: object = {}) {
     for (const f of findings as { reason: string; words: number }[]) { byReason[f.reason] += 1; wordsByReason[f.reason] += f.words; }
     return {
         pages: 2, pagesChecked: 2, findings, findingsTruncated: false, ocr: [], notes: [],
-        summary: { findings: findings.length, byReason, wordsByReason, pagesWithFindings: [...new Set((findings as { page: number }[]).map(f => f.page))], ocrPages: [] },
+        summary: {
+            findings: findings.length, byReason, wordsByReason, pagesWithFindings: [...new Set((findings as { page: number }[]).map(f => f.page))],
+            ocrPages: [], pagesNotChecked: [], pagesPartlyChecked: [],
+        },
         ...extra,
     };
 }
@@ -62,13 +65,17 @@ describe("the Hidden Text Checker page", () => {
         expect(screen.getByRole("button", { name: /Check for hidden text/ })).toBeDisabled();
         expect(screen.getByText(/uploaded over HTTPS to the PrivaTools server, checked in temporary storage and deleted when the check ends/)).toBeInTheDocument();
         expect(screen.getByText(/The page preview is drawn on your device/)).toBeInTheDocument();
+        // The bounds of a check are stated before anything is sent.
+        expect(screen.getByText(/Up to 500 pages · checked on our server in 90 seconds at most/)).toBeInTheDocument();
+        expect(screen.getByText(/stops after 20 seconds plus 12 for each MB of the file, 90 at most/)).toBeInTheDocument();
     });
 
     it("lists each finding with its reason and exact words, and marks it on the page", async () => {
         await check(reportWith([WHITE, COVERED]));
         const verdict = await screen.findByRole("heading", { level: 2, name: "Hidden text found" });
-        // The report replaces the form, so focus moves to its verdict.
+        // The report replaces the form, so focus moves to its verdict, which is read out with its counts.
         expect(verdict).toHaveFocus();
+        expect(verdict).toHaveAccessibleDescription("2 findings, 15 words, on pages 1 and 2.");
         expect(screen.getByText("2 findings, 15 words, on pages 1 and 2.")).toBeInTheDocument();
         const list = screen.getByRole("list", { name: "Findings" });
         expect(within(list).getAllByRole("listitem")).toHaveLength(2);
@@ -80,6 +87,8 @@ describe("the Hidden Text Checker page", () => {
         expect(marks).toHaveLength(1);
         expect(marks[0]).toHaveAttribute("data-selected", "true");
         expect(Number(marks[0].getAttribute("x"))).toBeCloseTo(0.1 * 612 - 2);
+        // Numbered as in the list.
+        expect(screen.getByLabelText("preview").querySelector(".htc-mark-number text")).toHaveTextContent("1");
         expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "success", files: 1 });
     });
 
@@ -107,18 +116,54 @@ describe("the Hidden Text Checker page", () => {
         expect(within(next).getByRole("listitem")).toHaveTextContent(/^Redact PDF deletes the text under the boxes you draw\./);
     });
 
-    it("downloads the report as text naming the file and each finding", async () => {
-        await check(reportWith([WHITE]));
-        fireEvent.click(await screen.findByRole("button", { name: /Download report/ }));
+    it("downloads the report as text naming the file and each finding, and nothing else of the document", async () => {
+        const ocr = [{ page: 2, text: "Scanned appendix, page two.", truncated: false, words: 4, boxes: [[0, 0, 1, 1]] }];
+        await check(reportWith([WHITE], { ocr }));
+        // The downloads quote the hidden words, so the page says to share them with care.
+        const warning = await screen.findByText(/The report quotes the hidden words, including any under redaction boxes/);
+        const download = screen.getByRole("button", { name: /Download report/ });
+        expect(download).toHaveAccessibleDescription(warning.textContent!);
+        fireEvent.click(download);
         const [blob, name] = mocks.download.mock.calls[0] as [Blob, string];
         expect(name).toBe("resume_hidden-text-report.txt");
         const text = await blob.text();
         expect(text).toContain("File: resume.pdf");
         expect(text).toContain(`"${WHITE.text}"`);
+        expect(text).not.toContain("Scanned appendix");
         fireEvent.click(screen.getByRole("button", { name: /Download JSON/ }));
         const [json, jsonName] = mocks.download.mock.calls[1] as [Blob, string];
         expect(jsonName).toBe("resume_hidden-text-report.json");
-        expect(JSON.parse(await json.text())).toMatchObject({ tool: "hidden-text-checker", file: "resume.pdf", findings: [WHITE] });
+        const parsed = JSON.parse(await json.text());
+        expect(parsed).toMatchObject({ tool: "hidden-text-checker", file: "resume.pdf", findings: [WHITE], ocr: [{ page: 2, words: 4 }] });
+        expect(JSON.stringify(parsed)).not.toContain("Scanned appendix");
+    });
+
+    it("says it couldn't fully check a PDF with a page it could not read, and names the page", async () => {
+        await check(reportWith([], {
+            pagesChecked: 1,
+            notes: ["Page 2 could not be read, so it was not checked. Text on it may still be hidden."],
+            summary: {
+                findings: 0, byReason: {}, wordsByReason: {}, pagesWithFindings: [], ocrPages: [],
+                pagesNotChecked: [2], pagesPartlyChecked: [],
+            },
+        }));
+        const verdict = await screen.findByRole("heading", { level: 2, name: "Couldn't fully check this PDF" });
+        expect(verdict).toHaveAccessibleDescription("No hidden text was found where the checks ran. Page 2 could not be read, so it was not checked.");
+        expect(screen.queryByRole("heading", { name: "No hidden text found" })).toBeNull();
+        expect(screen.getByRole("list", { name: "Notes about this check" })).toHaveTextContent("Page 2 could not be read");
+        fireEvent.click(screen.getByRole("button", { name: /Download report/ }));
+        const text = await (mocks.download.mock.calls[0][0] as Blob).text();
+        expect(text).toContain("Not checked, could not be read: page 2");
+    });
+
+    it("outlines an OCR layer on the preview apart from the findings", async () => {
+        await check(reportWith([WHITE], {
+            ocr: [{ page: 1, text: "Scanned letter, page one.", truncated: false, words: 4, boxes: [[0.05, 0.05, 0.95, 0.9]] }],
+        }));
+        await screen.findByRole("heading", { level: 2, name: "Hidden text found" });
+        const preview = screen.getByLabelText("preview");
+        expect(preview.querySelectorAll("rect.htc-ocr-mark")).toHaveLength(1);
+        expect(preview.querySelectorAll("rect.htc-mark")).toHaveLength(1);
     });
 
     it("reports a clean file without calling it safe, and lists an OCR layer apart", async () => {

@@ -10,9 +10,12 @@
 
 .htc-report { display: grid; gap: 18px; min-width: 0; }
 .htc-verdict { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border-radius: 12px; border: 1px solid hsl(var(--accent) / .35); background: hsl(var(--accent) / .06); }
-.htc-verdict[data-found=true] { border-color: hsl(var(--destructive) / .4); background: hsl(var(--destructive) / .06); }
+.htc-verdict[data-state=found] { border-color: hsl(var(--destructive) / .4); background: hsl(var(--destructive) / .06); }
+/* Couldn't fully check: neither the all-clear nor a finding. */
+.htc-verdict[data-state=incomplete] { border-color: hsl(var(--border-strong)); background: hsl(var(--paper-2)); }
 .htc-verdict-icon { flex-shrink: 0; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; color: hsl(var(--accent)); background: hsl(var(--accent) / .12); }
-.htc-verdict[data-found=true] .htc-verdict-icon { color: hsl(var(--destructive)); background: hsl(var(--destructive) / .12); }
+.htc-verdict[data-state=found] .htc-verdict-icon { color: hsl(var(--destructive)); background: hsl(var(--destructive) / .12); }
+.htc-verdict[data-state=incomplete] .htc-verdict-icon { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
 .htc-verdict .ts-eyebrow { overflow-wrap: anywhere; }
 .htc-verdict h2 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 4px; line-height: 1.25; }
 .htc-verdict h2:focus { outline: none; }
@@ -30,6 +33,11 @@
 .htc-workspace.pdf-coordinate-workspace { padding: 0 !important; }
 .htc-marks .htc-mark { fill: rgba(234, 88, 12, .16); stroke: #c2410c; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: pointer; }
 .htc-marks .htc-mark[data-selected=true] { fill: rgba(220, 38, 38, .2); stroke: #b91c1c; stroke-width: 2.5; stroke-dasharray: 6 3; }
+.htc-marks .htc-mark-number { cursor: pointer; }
+.htc-marks .htc-mark-number rect { fill: #c2410c; }
+.htc-marks .htc-mark-group[data-selected=true] .htc-mark-number rect { fill: #b91c1c; }
+.htc-marks .htc-mark-number text { fill: #fff; font: 700 9px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.htc-marks .htc-ocr-mark { fill: none; stroke: #64748b; stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
 
 .htc-findings ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .htc-finding { display: grid; gap: 8px; padding: 14px; border-radius: 10px; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); min-width: 0; }
@@ -57,6 +65,7 @@
 .htc-next ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; }
 .htc-next a, .htc-caveat a { color: hsl(var(--accent)); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .htc-actions { padding-top: 0; }
+.htc-sharing { margin: -8px 0 0; font-size: 12.5px; line-height: 1.55; color: hsl(var(--foreground)); }
 .htc-caveat { margin: 0; font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
 
 html[data-experience=play] .htc-verdict { border-radius: 18px 18px 30px 18px; box-shadow: 4px 5px 0 hsl(var(--border) / .6); }

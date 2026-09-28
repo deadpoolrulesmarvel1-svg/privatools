@@ -10,7 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Braces, FileText, RotateCcw, ScanEye, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Braces, FileText, RotateCcw, ScanEye, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { buildOutputFilename, downloadBlob, getErrorDetail, getErrorStatus, uploadFileGetJson } from "@/lib/api";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -19,7 +19,7 @@ import { StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import {
-    REASON_LABELS, REASON_ORDER, nextSteps, pageList, reportToText, verdict,
+    REASON_LABELS, REASON_ORDER, SHARING_WARNING, nextSteps, pageList, reportToJson, reportToText, verdict,
     type HiddenReason, type HiddenTextReport,
 } from "./hidden-text-report";
 import "./hidden-text-checker.css";
@@ -28,11 +28,12 @@ const SLUG = "hidden-text-checker";
 
 const CHECKS = [
     "White or same-colour text, and text too faint to see",
-    "Text set to be invisible, or fully transparent",
-    "Text too small to read",
+    "Text set to be invisible, fully transparent, or in a font that draws nothing",
+    "Unicode tag characters, which show as nothing",
+    "Text too small or too squeezed to read",
     "Text off the page or clipped out of view",
-    "Text in layers that are switched off",
-    "Text under a box, shape or image: failed redactions",
+    "Text in layers that are switched off or hidden",
+    "Text under a box, image, marker scribble or █ characters: failed redactions",
     "Hidden comments and form fields, and redactions never applied",
 ];
 
@@ -113,6 +114,7 @@ export function HiddenTextCheckerUI() {
         <h3>Text a reader can't see</h3>
         <ul className="htc-checks">{CHECKS.map(check => <li key={check}>{check}</li>)}</ul>
         <p className="htc-where">Your PDF is uploaded over HTTPS to the PrivaTools server, checked in temporary storage and deleted when the check ends. Nothing in it is changed. The page preview is drawn on your device.</p>
+        <p className="htc-where">A check reads up to 500 pages and stops after 20 seconds plus 12 for each MB of the file, 90 at most. Split a larger PDF with Split PDF first.</p>
         <div className="ts-actions">
             <button type="button" className="ts-primary-button" onClick={() => void run()} disabled={!file || busy}>
                 <ScanEye size={16} aria-hidden="true" /> Check for hidden text
@@ -125,7 +127,7 @@ export function HiddenTextCheckerUI() {
             onClear={() => { setFile(null); setError(null); }}
             accept=".pdf"
             label="Drop a PDF to check for hidden text"
-            hint="Up to 500 pages · checked on our server · your file is not changed"
+            hint="Up to 500 pages · checked on our server in 90 seconds at most · your file is not changed"
         />
         {busy && <StudioProgress
             label={status === "uploading" ? "Uploading your PDF" : "Looking for hidden text"}
@@ -134,6 +136,22 @@ export function HiddenTextCheckerUI() {
         />}
         {error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;
+}
+
+/** A finding's number beside its first mark on the page, as in the list. */
+function MarkNumber({ n, box, width, height, onClick }: {
+    n: number; box: [number, number, number, number]; width: number; height: number; onClick: () => void;
+}) {
+    const label = String(n);
+    const w = 8 + 6 * label.length, h = 13;
+    // Above the mark's left end, or below it when the mark touches the top.
+    const x = Math.min(Math.max(box[0] * width - 2, 0), width - w);
+    const top = box[1] * height - 2 - h - 1;
+    const y = top >= 0 ? top : box[3] * height + 3;
+    return <g className="htc-mark-number" onClick={onClick} aria-hidden="true">
+        <rect x={x} y={y} width={w} height={h} rx={h / 2} />
+        <text x={x + w / 2} y={y + h / 2} dominantBaseline="central" textAnchor="middle">{label}</text>
+    </g>;
 }
 
 function HiddenTextReportView({ report, file, checkedAt, onReset }: {
@@ -182,18 +200,21 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
         buildOutputFilename(file.name, "hidden-text-report", "txt"),
     );
     const downloadJson = () => downloadBlob(
-        new Blob([JSON.stringify({ tool: SLUG, file: file.name, checkedAt: checkedAt.toISOString(), ...report }, null, 2)], { type: "application/json" }),
+        new Blob([reportToJson(report, file.name, checkedAt, SLUG)], { type: "application/json" }),
         buildOutputFilename(file.name, "hidden-text-report", "json"),
     );
 
+    const ocrBoxes = report.ocr.filter(layer => layer.page === page).flatMap(layer => layer.boxes);
     const showPreview = report.findings.length > 0 || report.ocr.length > 0;
+    const Icon = { found: ShieldAlert, clean: ShieldCheck, incomplete: ShieldQuestion }[result.state];
     return <section className="htc-report" aria-labelledby="htc-verdict">
-        <header className="htc-verdict" data-found={result.found}>
-            <span className="htc-verdict-icon" aria-hidden="true">{result.found ? <ShieldAlert size={26} /> : <ShieldCheck size={26} />}</span>
+        <header className="htc-verdict" data-state={result.state}>
+            <span className="htc-verdict-icon" aria-hidden="true"><Icon size={26} /></span>
             <div>
                 <p className="ts-eyebrow">Hidden text report · {file.name}</p>
-                <h2 id="htc-verdict" ref={heading} tabIndex={-1}>{result.title}</h2>
-                <p>{result.detail}</p>
+                {/* The detail is read out with the title when focus lands on it. */}
+                <h2 id="htc-verdict" ref={heading} tabIndex={-1} aria-describedby="htc-verdict-detail">{result.title}</h2>
+                <p id="htc-verdict-detail">{result.detail}</p>
             </div>
         </header>
 
@@ -213,20 +234,28 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
         {showPreview && <div className="pdf-coordinate-workspace htc-workspace">
             <div className="pdf-stage-context" ref={stage}>
                 <PdfPageStage file={file} page={page} onPageChange={setPage} coordinates="shown" overlay={({ width, height }) => <g className="htc-marks">
-                    {marks.map(({ finding, index }) => finding.boxes.map((box, part) => {
-                        // A little room around the words, so small text shows a mark.
-                        const x = box[0] * width - 2, y = box[1] * height - 2;
-                        return <rect key={`${index}-${part}`} className="htc-mark" data-selected={index === selected}
-                            x={x} y={y} width={Math.max((box[2] - box[0]) * width + 4, 5)} height={Math.max((box[3] - box[1]) * height + 4, 5)}
-                            rx={1.5} onClick={() => select(index)}>
-                            <title>{`${index + 1}. ${REASON_LABELS[finding.reason]}: ${finding.text.slice(0, 90)}`}</title>
-                        </rect>;
-                    }))}
+                    {/* Where an OCR layer lies, outlined apart: not hidden text, but invisible all the same. */}
+                    {ocrBoxes.map((box, part) => <rect key={`ocr-${part}`} className="htc-ocr-mark"
+                        x={box[0] * width} y={box[1] * height} width={(box[2] - box[0]) * width} height={(box[3] - box[1]) * height}>
+                        <title>OCR text layer: invisible text that makes a scan searchable</title>
+                    </rect>)}
+                    {marks.map(({ finding, index }) => <g key={index} className="htc-mark-group" data-selected={index === selected}>
+                        {finding.boxes.map((box, part) => {
+                            // A little room around the words, so small text shows a mark.
+                            const x = box[0] * width - 2, y = box[1] * height - 2;
+                            return <rect key={part} className="htc-mark" data-selected={index === selected}
+                                x={x} y={y} width={Math.max((box[2] - box[0]) * width + 4, 5)} height={Math.max((box[3] - box[1]) * height + 4, 5)}
+                                rx={1.5} onClick={() => select(index)}>
+                                <title>{`${index + 1}. ${REASON_LABELS[finding.reason]}: ${finding.text.slice(0, 90)}`}</title>
+                            </rect>;
+                        })}
+                        {finding.boxes[0] && <MarkNumber n={index + 1} box={finding.boxes[0]} width={width} height={height} onClick={() => select(index)} />}
+                    </g>)}
                 </g>} />
-                <p className="pdf-preview-context-note">Marks show where hidden text sits. The words themselves don't show on the page, so the list quotes them.</p>
+                <p className="pdf-preview-context-note">Numbered marks show where hidden text sits, matching the list. The words themselves don't show on the page, so the list quotes them.{ocrBoxes.length > 0 ? " A grey dashed outline shows an OCR text layer." : ""}</p>
             </div>
             <div className="pdf-coordinate-controls htc-findings">
-                {shown.length === 0 && <p className="htc-empty">No hidden text was found. {report.ocr.length > 0 ? "The OCR text layer is listed below." : ""}</p>}
+                {shown.length === 0 && <p className="htc-empty">No hidden text was found{result.state === "incomplete" ? " where the checks ran" : ""}. {report.ocr.length > 0 ? "The OCR text layer is listed below." : ""}</p>}
                 {shown.length > 0 && <ol aria-label="Findings">
                     {shown.map(({ finding, index }) => {
                         const long = finding.text.length > EXCERPT;
@@ -267,11 +296,12 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
         </aside>}
 
         <div className="ts-actions htc-actions">
-            <button type="button" className="ts-primary-button" onClick={downloadText}><FileText size={16} aria-hidden="true" /> Download report</button>
-            <button type="button" className="ts-secondary-button" onClick={downloadJson}><Braces size={16} aria-hidden="true" /> Download JSON</button>
+            <button type="button" className="ts-primary-button" onClick={downloadText} aria-describedby="htc-sharing"><FileText size={16} aria-hidden="true" /> Download report</button>
+            <button type="button" className="ts-secondary-button" onClick={downloadJson} aria-describedby="htc-sharing"><Braces size={16} aria-hidden="true" /> Download JSON</button>
             <button type="button" className="ts-text-button" onClick={onReset}><RotateCcw size={14} aria-hidden="true" /> Check another PDF</button>
         </div>
+        {report.findings.length > 0 && <p className="htc-sharing" id="htc-sharing">{SHARING_WARNING}</p>}
 
-        <p className="htc-caveat">A clean result means none of these checks matched, not that the file is safe in every way. Not checked: attachments, scripts and metadata (<Link to="/tool/sanitize-pdf">Sanitize Document</Link> removes them); letters drawn with a font that shows them as other letters; text hidden by a soft mask or a transparency group's own opacity; pictures of text.</p>
+        <p className="htc-caveat">A clean result means none of these checks matched, not that the file is safe in every way. Not checked: attachments, scripts and metadata (<Link to="/tool/sanitize-pdf">Sanitize Document</Link> removes them); letters drawn with a font that shows them as other letters; text hidden by a soft mask whose shape is never painted; text under a shape that only partly covers each letter; pictures of text.</p>
     </section>;
 }

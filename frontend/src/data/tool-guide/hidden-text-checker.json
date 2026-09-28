@@ -6,21 +6,21 @@
     },
     {
       "name": "Run the check",
-      "text": "Click Check for hidden text. Every page is examined for text a reader cannot see but a program still reads: text set to be invisible or fully transparent, text in the colour of what lies behind it, text too small to read, text off the page or cut away by a clipping path, text in layers that are switched off, text under a box, shape or image drawn over it, text in hidden comments and form fields, and redaction marks that were never applied."
+      "text": "Click Check for hidden text. Every page is examined for text a reader cannot see but a program still reads: text set to be invisible, fully transparent or drawn in a font whose letters draw nothing, Unicode tag characters, text in the colour of what lies behind it or faded or blended away by the group it is drawn in, text too small or too squeezed to read, text off the page or cut away by a clipping path, text in layers that are switched off or hidden, text under a box, image, marker scribble or line of █ characters drawn over it, text in hidden comments and form fields, and redaction marks that were never applied."
     },
     {
       "name": "Read the findings",
-      "text": "Each finding gives the page, the reason and the exact words, and is highlighted on the page preview; the counts show how many of each kind were found. Invisible text over a scanned page image, which OCR software adds so a scan can be searched, is listed separately and is not counted as hidden text."
+      "text": "Each finding gives the page, the reason and the exact words, and is numbered and highlighted on the page preview; the counts show how many of each kind were found. Invisible text over a scanned page image, which OCR software adds so a scan can be searched, is outlined and listed separately and is not counted as hidden text. A page that could not be read, or where some checks could not run, is named, and the result then says the PDF could not be fully checked."
     },
     {
       "name": "Fix it, or keep the report",
-      "text": "Download the report as text or JSON. To remove what was found, use Redact PDF, which deletes the text under the boxes you draw, or Sanitize Document, which removes hidden layers along with scripts and attachments. A clean result means none of these checks matched, not that the file is safe in every way."
+      "text": "Download the report as text or JSON. It holds the findings and nothing else of the document, but it quotes the hidden words, including any under redaction boxes, so share it as carefully as the document. To remove what was found, use Redact PDF, which deletes the text under the boxes you draw, or Sanitize Document, which removes hidden layers along with scripts and attachments. A clean result means none of these checks matched, not that the file is safe in every way."
     }
   ],
   "faq": [
     {
       "q": "How do I find hidden text in a PDF?",
-      "a": "Run the file through this checker. It reads every character the way text extraction does, then tests whether a reader can actually see it: how it is drawn (text render mode 3 or 7 draws nothing), its opacity, its colour against what is drawn behind it, its size, whether it lies on the visible page or inside a clipping path, whether its layer is switched on, and whether a box, shape or image was drawn over it. Where the answer depends on how the page looks, the page is rendered and the words count as hidden only if their area shows no ink at all, so readable text is not reported."
+      "a": "Run the file through this checker. It reads every character the way text extraction does, then tests whether a reader can actually see it: how it is drawn (text render mode 3 or 7 draws nothing, and so does a font with empty letters), its opacity and that of the group it is drawn in, its blend mode, its colour against what is drawn behind it, its size and spacing, whether it lies on the visible page or inside a clipping path, whether its layer is shown, and whether a box, stroke, image or line of block characters was drawn over it. Where the answer depends on how the page looks, the page is rendered and the words count as hidden only if their area shows no ink at all, so readable text is not reported."
     },
     {
       "q": "Can it find hidden AI prompts in a résumé or a paper?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Why is invisible text over my scanned pages listed separately?",
-      "a": "OCR software makes a scan searchable by laying invisible text over the page image, so that text is expected. It is listed as an OCR text layer, with a sample of its words, and is not counted as hidden text. Invisible words that sit over a blank part of the page image, where the picture shows nothing, are reported as hidden text."
+      "a": "OCR software makes a scan searchable by laying invisible text over the page image, so that text is expected. It is outlined on the preview and listed as an OCR text layer, with a sample of its words, and is not counted as hidden text; the downloaded report gives only its page and word count. Invisible words that sit over a blank part of the page image, where the picture shows nothing, are reported as hidden text, and so is invisible text over a photo or a chart on a page of ordinary text."
     },
     {
       "q": "Why does it report text nobody meant to hide?",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Does a clean result mean the PDF is safe?",
-      "a": "No. It means none of these checks matched. The checker does not look inside attachments, scripts or metadata, cannot see text drawn with a font whose letters show as different letters, and does not notice text hidden by a soft mask or by a transparency group's own opacity, or under a shape that covers each letter only in part. Sanitize Document removes scripts, attachments and hidden layers, and Strip Metadata removes document properties."
+      "a": "No. It means none of these checks matched. The checker does not look inside attachments, scripts or metadata, cannot see text drawn with a font whose letters show as different letters, and does not notice text hidden by a soft mask whose shape is never painted, or under a shape that covers each letter only in part. A page it could not read is named, and the result then says it could not fully check the PDF instead of giving the all-clear. Sanitize Document removes scripts, attachments and hidden layers, and Strip Metadata removes document properties."
     },
     {
       "q": "Is my PDF uploaded?",
@@ -48,7 +48,7 @@
     },
     {
       "q": "What are the limits?",
-      "a": "Up to 500 pages and 500 MB per file, and 90 seconds of checking; split a longer document with Split PDF and check the parts. Password-protected PDFs must be unlocked first, and the site's fair-use rate limits apply."
+      "a": "Up to 500 pages and 500 MB per file. A check stops after 20 seconds plus 12 for each MB of the file, 90 seconds at most; split a longer document with Split PDF and check the parts. Password-protected PDFs must be unlocked first, and the site's fair-use rate limits apply."
     }
   ]
 }
