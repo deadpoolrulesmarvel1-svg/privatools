@@ -25,10 +25,17 @@ from ..utils.filenames import temp_output
 
 # Cap input size so a multi-GB XML file can't pin the worker.
 MAX_INPUT_BYTES = 5 * 1024 * 1024
+# Each level is indented 8 points, so a line nested deeper than this would
+# start past the right margin of an A4 page.
+MAX_DEPTH = 60
 
 # The refusals below reach the visitor as they are, so they avoid the words
 # the website's friendlyError turns into advice about damaged or locked PDFs
 # ("malformed", "corrupt", "password", "too large", ...).
+TOO_DEEP = (
+    f"This XML nests more than {MAX_DEPTH} levels deep. XML to PDF indents each level, "
+    "so deeper lines would start past the right margin of the page."
+)
 
 
 # XML's EncName production, from the declaration at the start of the file.
@@ -69,14 +76,34 @@ def _safe_pretty_xml(content: bytes) -> str:
     """
     try:
         from defusedxml import DefusedXmlException
-        from defusedxml.minidom import parseString
+        from defusedxml.expatbuilder import DefusedExpatBuilderNS
     except ImportError as exc:
         raise DependencyError(
             "defusedxml is required for XML processing. Install with: pip install defusedxml"
         ) from exc
 
+    class BoundedBuilder(DefusedExpatBuilderNS):
+        """defusedxml's own minidom builder, with the same protections, that
+        stops at the first element nested deeper than MAX_DEPTH: before the
+        rest of the tree is built, and before pretty-printing, which recurses
+        once per level and answered 500 from about 990 levels."""
+
+        depth = 0
+
+        def start_element_handler(self, name, attributes):
+            self.depth += 1
+            if self.depth > MAX_DEPTH:
+                raise ValidationError(TOO_DEEP)
+            super().start_element_handler(name, attributes)
+
+        def end_element_handler(self, name):
+            self.depth -= 1
+            super().end_element_handler(name)
+
     try:
-        dom = parseString(_parser_input(content))
+        # The same defaults as defusedxml.minidom.parseString.
+        builder = BoundedBuilder(forbid_dtd=False, forbid_entities=True, forbid_external=True)
+        dom = builder.parseString(_parser_input(content))
     except DefusedXmlException as exc:
         raise ValidationError(
             "This XML declares entities in its DOCTYPE, or refers to outside files, which XML to PDF "
@@ -97,7 +124,10 @@ def _safe_pretty_xml(content: bytes) -> str:
         what = f"text in {declared}, the encoding this file declares" if declared else "the encoding this file declares"
         raise ValidationError(f"XML to PDF cannot read {what}. Save it as UTF-8 and try again.") from exc
 
-    return dom.toprettyxml(indent="  ")
+    try:
+        return dom.toprettyxml(indent="  ")
+    except RecursionError as exc:  # not reachable within MAX_DEPTH; kept as a backstop
+        raise ValidationError(TOO_DEEP) from exc
 
 
 def xml_to_pdf(input_path: str) -> str:

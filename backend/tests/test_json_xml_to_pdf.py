@@ -182,6 +182,22 @@ def test_xml_that_names_an_outside_dtd_does_not_get_it_read(client, tmp_path):
     assert "TEXT-FROM-THE-DTD" not in text
 
 
+def _nested(depth: int) -> bytes:
+    return b"<a>" * depth + b"x" + b"</a>" * depth
+
+
+def test_xml_nested_60_levels_deep_converts(client):
+    assert "x" in _pdf_text(_post(client, "xml-to-pdf", "deep.xml", _nested(60)))
+
+
+@pytest.mark.parametrize("depth", [61, 1_000, 100_000])
+def test_xml_nested_deeper_than_60_levels_is_refused_with_400(client, depth):
+    """From about 990 levels this answered 500, when pretty-printing ran out
+    of recursion; beyond 60 the lines would start past the right margin."""
+    detail = _refusal(_post(client, "xml-to-pdf", "deep.xml", _nested(depth)), 400)
+    assert detail.startswith("This XML nests more than 60 levels deep.")
+
+
 def test_xml_over_5_mb_is_refused_as_too_large(client):
     big = b"<root>" + b"<i>x</i>" * (700 * 1024) + b"</root>"
     detail = _refusal(_post(client, "xml-to-pdf", "big.xml", big), 413)
