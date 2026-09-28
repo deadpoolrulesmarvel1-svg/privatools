@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -39,14 +40,17 @@ def _load(input_path: str):
             f"This JSON file is bigger than {MAX_INPUT_BYTES // (1024 * 1024)} MB, the most JSON to PDF takes."
         )
     try:
-        with open(input_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        # Given bytes, json works out the encoding itself: UTF-8 with or
+        # without a byte order mark (Windows tools often write one), UTF-16
+        # (what Windows PowerShell 5.1's > and Out-File write) or UTF-32.
+        # Reading the file as UTF-8 text refused all but BOM-less UTF-8.
+        return json.loads(Path(input_path).read_bytes())
     except json.JSONDecodeError as exc:
         raise ValidationError(
             f"This file is not valid JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}."
         ) from exc
     except UnicodeDecodeError as exc:
-        raise ValidationError("This file is not valid JSON: it is not UTF-8 text.") from exc
+        raise ValidationError("This file is not valid JSON: it is not text in UTF-8, UTF-16 or UTF-32.") from exc
     except RecursionError as exc:  # thousands of levels, before _validate_depth can say so
         raise ValidationError(TOO_DEEP) from exc
 

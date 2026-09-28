@@ -10,7 +10,10 @@ of silently parsing with an unsafe library.
 
 from __future__ import annotations
 
+import codecs
 import os
+import re
+from pathlib import Path
 from xml.parsers.expat import ExpatError
 from xml.parsers.expat import errors as expat_errors
 
@@ -28,8 +31,23 @@ MAX_INPUT_BYTES = 5 * 1024 * 1024
 # ("malformed", "corrupt", "password", "too large", ...).
 
 
-def _safe_pretty_xml(content: str) -> str:
-    """Parse and pretty-print XML *safely* — defusedxml only."""
+# XML's EncName production, from the declaration at the start of the file.
+_ENCODING_DECLARATION = re.compile(rb"""^<\?xml[^>]*?\sencoding\s*=\s*["']([A-Za-z][A-Za-z0-9._-]{0,39})["']""")
+
+
+def _declared_encoding(content: bytes) -> str | None:
+    match = _ENCODING_DECLARATION.match(content.removeprefix(codecs.BOM_UTF8))
+    return match.group(1).decode("ascii") if match else None
+
+
+def _safe_pretty_xml(content: bytes) -> str:
+    """Parse and pretty-print XML *safely* — defusedxml only.
+
+    Given bytes, expat reads the file the way the XML specification says: a
+    byte order mark, else the encoding the declaration names, else UTF-8. It
+    reads UTF-8, UTF-16 and single-byte encodings such as ISO-8859-1 and
+    Windows-1252. Decoding the file as UTF-8 first refused all but UTF-8.
+    """
     try:
         from defusedxml import DefusedXmlException
         from defusedxml.minidom import parseString
@@ -51,6 +69,14 @@ def _safe_pretty_xml(content: str) -> str:
         raise ValidationError(
             f"This XML could not be read: {reason}, at line {exc.lineno}, column {exc.offset + 1}."
         ) from exc
+    except (LookupError, ValueError) as exc:
+        # An encoding pyexpat cannot read: one Python does not know
+        # (LookupError), or a multi-byte one other than UTF-8 and UTF-16, such
+        # as Shift_JIS (ValueError). DefusedXmlException is a ValueError too,
+        # so it has to stay above.
+        declared = _declared_encoding(content)
+        what = f"text in {declared}, the encoding this file declares" if declared else "the encoding this file declares"
+        raise ValidationError(f"XML to PDF cannot read {what}. Save it as UTF-8 and try again.") from exc
 
     return dom.toprettyxml(indent="  ")
 
@@ -64,11 +90,7 @@ def xml_to_pdf(input_path: str) -> str:
             f"This XML file is bigger than {MAX_INPUT_BYTES // (1024 * 1024)} MB, the most XML to PDF takes."
         )
 
-    try:
-        with open(input_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except UnicodeDecodeError as exc:
-        raise ValidationError("This XML file is not UTF-8 text.") from exc
+    formatted = _safe_pretty_xml(Path(input_path).read_bytes())
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
@@ -78,8 +100,6 @@ def xml_to_pdf(input_path: str) -> str:
     line_height = 12
 
     c.setFont("Courier", font_size)
-
-    formatted = _safe_pretty_xml(content)
 
     for line in formatted.split("\n"):
         if y < margin:
