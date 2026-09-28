@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, open_pdf_document, remove_files, validate_pdf_content
 from ..utils.exceptions import ToolError
-from ..utils.render import safe_get_pixmap
+from ..utils.render import fitted_zoom, safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,9 +24,11 @@ def _invert_page(args: tuple) -> tuple:
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     page = doc[0]
     w, h = page.rect.width, page.rect.height
-    pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
+    zoom = fitted_zoom(page, dpi / 72)  # a page too large for the cap: the most that fits
+    pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
     pix.invert_irect(pix.irect)
     png_bytes = pix.tobytes("png")
+    del pix
     doc.close()
     return (idx, w, h, png_bytes)
 
@@ -42,10 +44,12 @@ def _invert(input_path: str, dpi: int) -> str:
         # Few pages — direct sequential (avoids overhead)
         doc = fitz.open()
         for page in src:
-            pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
+            zoom = fitted_zoom(page, dpi / 72)  # a page too large for the cap: the most that fits
+            pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
             pix.invert_irect(pix.irect)
             new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, pixmap=pix)
+            del pix  # before the next page is drawn: one page's pixels at a time
         out_path = str(get_temp_path(f"inverted_{uuid.uuid4().hex}.pdf"))
         doc.save(out_path, deflate=True, garbage=4)
         doc.close()

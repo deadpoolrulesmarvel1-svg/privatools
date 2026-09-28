@@ -10,7 +10,7 @@ from PIL import Image
 from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
-from ..utils.render import safe_get_pixmap
+from ..utils.render import fitted_zoom, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -74,17 +74,21 @@ def _detect_and_deskew_page(args: tuple) -> tuple:
         page = doc[0]
 
         # Ultra-low DPI for detection
-        detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
+        detect = fitted_zoom(page, 0.4)
+        detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
         angle = _detect_skew_angle_fast(detect_pix)
 
         if abs(angle) <= 0.3:
             return (idx, None, True)  # Keep original page
 
         # Render at 100 DPI and rotate
-        pix = safe_get_pixmap(page, matrix=fitz.Matrix(100 / 72, 100 / 72))
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        zoom = fitted_zoom(page, 100 / 72)  # a page too large for the cap: the most that fits
+        pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+        del pix
         rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                              resample=Image.Resampling.BICUBIC)
+        del img
 
         img_buf = io.BytesIO()
         rotated.save(img_buf, format="PNG")
@@ -111,14 +115,18 @@ def deskew(input_path: str) -> str:
             dst = fitz.open()
             try:
                 for page in src:
-                    detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
+                    detect = fitted_zoom(page, 0.4)
+                    detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
                     angle = _detect_skew_angle_fast(detect_pix)
 
                     if abs(angle) > 0.3:
-                        pix = safe_get_pixmap(page, matrix=fitz.Matrix(200 / 72, 200 / 72))
-                        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                        zoom = fitted_zoom(page, 200 / 72)
+                        pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
+                        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+                        del pix
                         rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                                              resample=Image.Resampling.BICUBIC)
+                        del img
                         img_buf = io.BytesIO()
                         rotated.save(img_buf, format="PNG")
                         new_page = dst.new_page(width=page.rect.width, height=page.rect.height)

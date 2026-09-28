@@ -299,7 +299,7 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "deskewed.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/deskew-pdf",
     "priority": 0.6
   },
@@ -699,7 +699,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-image",
     "priority": 0.6
   },
@@ -747,7 +747,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-bmp",
     "priority": 0.6
   },
@@ -763,7 +763,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-gif",
     "priority": 0.6
   },
@@ -795,7 +795,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-jpg",
     "priority": 0.8
   },
@@ -811,7 +811,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-png",
     "priority": 0.6
   },
@@ -1489,7 +1489,7 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "inverted.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/invert-colors",
     "priority": 0.6
   },

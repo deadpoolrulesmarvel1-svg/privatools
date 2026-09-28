@@ -14,6 +14,7 @@ rejects anything over the cap BEFORE allocating. Use it instead of
 
 from __future__ import annotations
 
+import math
 import os
 
 import fitz  # PyMuPDF
@@ -60,6 +61,23 @@ def estimate_pixmap_pixels(page: "fitz.Page", *, matrix=None, dpi=None) -> float
     else:
         sx = sy = 1.0
     return (rect.width * sx) * (rect.height * sy)
+
+
+def fitted_zoom(page: "fitz.Page", zoom: float) -> float:
+    """`zoom`, or the largest zoom below it at which the page still renders
+    within MAX_PIXMAP_PIXELS.
+
+    For tools that render one page at a time and release it: a page too large
+    for the cap at the resolution asked for (a photo made into a page the size
+    of its pixels, a poster) is drawn at the largest size that fits instead of
+    failing. Every other page gets exactly `zoom`. Paths that hold every
+    rendered page at once keep safe_get_pixmap's refusal.
+    """
+    area = page.rect.width * page.rect.height
+    if area <= 0 or area * zoom * zoom <= MAX_PIXMAP_PIXELS:
+        return zoom
+    # A hair under the exact fit, so float rounding cannot tip it over the cap.
+    return math.sqrt(MAX_PIXMAP_PIXELS / area) * 0.999
 
 
 def safe_get_pixmap(page: "fitz.Page", *, matrix=None, dpi=None, **kwargs):

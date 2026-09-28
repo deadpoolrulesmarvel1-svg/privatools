@@ -259,7 +259,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "straighten skew tilt rotate angle scan",
     popularity: 56,
     category: "optimize", accepts: ".pdf", outputLabel: "deskewed.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "repair-pdf", icon: Wrench, name: "Repair PDF",
@@ -540,7 +540,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "jpg png screenshot picture",
     popularity: 132,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-long-image", icon: FileImage, name: "PDF to Long Image",
@@ -573,7 +573,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "bitmap windows render convert",
     popularity: 144,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-gif", icon: FileImage, name: "PDF to GIF",
@@ -584,7 +584,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "gif render frame convert",
     popularity: 145,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-svg", icon: FileImage, name: "PDF to SVG",
@@ -606,7 +606,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert jpg jpeg image picture",
     popularity: 131,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-png", icon: FileImage, name: "PDF to PNG",
@@ -617,7 +617,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert png transparent picture",
     popularity: 134,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-pptx", icon: Presentation, name: "PDF to PowerPoint",
@@ -1087,7 +1087,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
 
   {
