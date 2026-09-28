@@ -17,6 +17,13 @@ export interface Provider {
     label: string;
     /** Scheme + host, exactly as it must appear in CSP connect-src. */
     origin: string;
+    /**
+     * Where an OpenAI-shaped provider serves its API under `origin`, when that
+     * is not /v1. Groq serves it under /openai/v1 and OpenRouter under
+     * /api/v1; both answer 404 at /v1, which is where every request to them
+     * went until 2026-09-28, whatever the key.
+     */
+    apiPath?: string;
     shape: ProviderShape;
     /** Default models; users may type any model id. */
     models: string[];
@@ -70,11 +77,11 @@ export const PROVIDERS: Provider[] = [
         keysUrl: "https://aistudio.google.com/apikey",
     },
     {
-        id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai",
+        id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai", apiPath: "/api/v1",
         shape: "openai", models: ["auto"], keysUrl: "https://openrouter.ai/keys",
     },
     {
-        id: "groq", label: "Groq", origin: "https://api.groq.com",
+        id: "groq", label: "Groq", origin: "https://api.groq.com", apiPath: "/openai/v1",
         shape: "openai", models: ["llama-3.3-70b-versatile"], keysUrl: "https://console.groq.com/keys",
     },
     {
@@ -110,18 +117,24 @@ function customBaseUrl(value: string): string {
     return url.href.replace(/\/+$/, "").replace(/\/v1$/, "");
 }
 
-function baseFor(p: Provider, input: CompleteInput): string {
+function baseFor(p: Provider, baseUrl: string | undefined): string {
     if (p.customBaseUrl) {
         // Never guess a default here. Silently picking one would send the
         // user's key to a host they did not choose.
-        if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`);
-        return customBaseUrl(input.baseUrl);
+        if (!baseUrl) throw new Error(`${p.label} needs a base URL`);
+        return customBaseUrl(baseUrl);
     }
     return p.origin;
 }
 
+/** What an OpenAI-shaped provider's endpoints hang off, such as
+ *  https://api.openai.com/v1 or https://api.groq.com/openai/v1. */
+function openAiRoot(p: Provider, baseUrl: string | undefined): string {
+    return p.customBaseUrl ? `${baseFor(p, baseUrl)}/v1` : `${p.origin}${p.apiPath ?? "/v1"}`;
+}
+
 export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest {
-    const base = baseFor(p, input);
+    const base = baseFor(p, input.baseUrl);
     const maxTokens = input.maxTokens ?? 4096;
 
     if (p.shape === "anthropic") {
@@ -174,7 +187,7 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
     }
 
     return {
-        url: `${base}/v1/chat/completions`,
+        url: `${openAiRoot(p, input.baseUrl)}/chat/completions`,
         headers: { "content-type": "application/json", authorization: `Bearer ${input.apiKey}` },
         body: JSON.stringify({
             model: input.model, max_tokens: maxTokens,
@@ -221,15 +234,13 @@ export function buildTranscribeRequest(
     if (!supportsTranscription(p)) {
         throw new Error(`${p.label} has no OpenAI-style transcription endpoint`);
     }
-    const base = p.customBaseUrl
-        ? (() => { if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`); return customBaseUrl(input.baseUrl); })()
-        : p.origin;
+    const root = openAiRoot(p, input.baseUrl);
     const body = new FormData();
     body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));
     body.append("model", input.model);
     body.append("response_format", "text");
     return {
-        url: `${base}/v1/audio/transcriptions`,
+        url: `${root}/audio/transcriptions`,
         // No content-type: the browser sets the multipart boundary itself.
         headers: { authorization: `Bearer ${input.apiKey}` },
         body,

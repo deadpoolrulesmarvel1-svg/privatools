@@ -1,5 +1,42 @@
 import { describe, expect, it } from "vitest";
-import { PROVIDERS, buildRequest, parseResponse, providerById } from "./providers";
+import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, providerById } from "./providers";
+
+/**
+ * Where each provider serves its API, from its own documentation. Checked on
+ * 2026-09-28 with a dummy key: each address below answers 401 (key refused),
+ * and Groq's and OpenRouter's old /v1 addresses answered 404, so every
+ * request to those two providers failed whatever the key.
+ */
+const CHAT_ENDPOINTS: Record<string, string> = {
+  anthropic: "https://api.anthropic.com/v1/messages",
+  openai: "https://api.openai.com/v1/chat/completions",
+  gemini: "https://generativelanguage.googleapis.com/v1beta/models/some-model:generateContent",
+  openrouter: "https://openrouter.ai/api/v1/chat/completions",
+  groq: "https://api.groq.com/openai/v1/chat/completions",
+  together: "https://api.together.xyz/v1/chat/completions",
+  mistral: "https://api.mistral.ai/v1/chat/completions",
+  deepseek: "https://api.deepseek.com/v1/chat/completions",
+};
+
+describe("provider endpoints", () => {
+  it.each(Object.entries(CHAT_ENDPOINTS))("%s requests go to its documented endpoint", (id, endpoint) => {
+    const req = buildRequest(providerById(id)!, { apiKey: "k", model: "some-model", messages: [{ role: "user", content: "hi" }] });
+    expect(req.url).toBe(endpoint);
+  });
+
+  it("every hosted provider has its endpoint checked here", () => {
+    const hosted = PROVIDERS.filter(p => !p.customBaseUrl).map(p => p.id).sort();
+    expect(Object.keys(CHAT_ENDPOINTS).sort()).toEqual(hosted);
+  });
+
+  it("sends a transcription to the provider's own API path", () => {
+    const file = new Blob(["x"], { type: "audio/wav" });
+    expect(buildTranscribeRequest(providerById("groq")!, { apiKey: "k", model: "whisper-large-v3", file }).url)
+      .toBe("https://api.groq.com/openai/v1/audio/transcriptions");
+    expect(buildTranscribeRequest(providerById("openai")!, { apiKey: "k", model: "whisper-1", file }).url)
+      .toBe("https://api.openai.com/v1/audio/transcriptions");
+  });
+});
 
 describe("provider registry", () => {
   it("every provider declares an https origin, or loopback for local models", () => {
