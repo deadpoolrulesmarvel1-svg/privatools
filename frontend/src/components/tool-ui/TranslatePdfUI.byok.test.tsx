@@ -105,6 +105,16 @@ describe("Translate PDF says whether the key or PrivaTools is at fault", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("That key was rejected");
     });
 
+    it("tells someone whose OpenAI request the browser cannot read to check the key first", async () => {
+        // OpenAI answers a refused key without Access-Control-Allow-Origin
+        // (checked 2026-09-28), so the browser reports only a failed fetch.
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+        await translateWith("openai");
+        const alert = await screen.findByRole("alert");
+        expect(alert).toHaveTextContent("check the key on OpenAI's site first");
+        expect(alert).not.toHaveTextContent("Couldn't reach the server");
+    });
+
     it("counts a saved key it cannot read as the provider set-up, not a browser fault", async () => {
         const runs: unknown[] = [];
         const record = (event: Event) => runs.push((event as CustomEvent).detail);

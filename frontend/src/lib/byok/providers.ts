@@ -35,6 +35,13 @@ export interface Provider {
     /** True when the user supplies the base URL (local or self-hosted). */
     customBaseUrl?: boolean;
     keysUrl?: string;
+    /**
+     * True when the provider refuses a key without CORS headers, so the
+     * browser reports only a failed request and the page cannot read why.
+     * OpenAI's 401 carries no Access-Control-Allow-Origin, though its
+     * preflight does (checked 2026-09-28).
+     */
+    refusalsUnreadable?: boolean;
 }
 
 /** A message part — plain text, or an inline image for vision models. */
@@ -74,7 +81,7 @@ export const PROVIDERS: Provider[] = [
     {
         id: "openai", label: "OpenAI", origin: "https://api.openai.com",
         shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "o3-mini"],
-        keysUrl: "https://platform.openai.com/api-keys",
+        keysUrl: "https://platform.openai.com/api-keys", refusalsUnreadable: true,
     },
     {
         id: "gemini", label: "Google Gemini", origin: "https://generativelanguage.googleapis.com",

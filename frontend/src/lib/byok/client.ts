@@ -9,7 +9,7 @@
 import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
     buildRequest, buildTranscribeRequest, parseResponse, parseTranscribeResponse,
-    providerById, supportsTranscription, TRANSCRIBE_MODELS, type Message,
+    providerById, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
 } from "./providers";
 import { redact, registerSecret } from "./redact";
 
@@ -53,7 +53,7 @@ export async function complete(args: CompleteArgs): Promise<string> {
         // is the more useful guess: "check your connection" sends someone to
         // debug the wrong thing, and this path is only reachable for a
         // provider that was already configured.
-        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider.label));
+        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider));
     }
 
     if (!res.ok) throw await refusal(res, { label: provider.label, model: args.model, customEndpoint: provider.customBaseUrl });
@@ -95,7 +95,7 @@ export async function transcribe(args: TranscribeArgs): Promise<string> {
         res = await fetch(req.url, { method: "POST", headers: req.headers, body: req.body, signal: args.signal });
     } catch (err) {
         if ((err as Error)?.name === "AbortError") throw new ByokError("Aborted", "aborted", "Cancelled.");
-        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider.label));
+        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider));
     }
     if (!res.ok) throw await refusal(res, { label: provider.label, model, customEndpoint: provider.customBaseUrl });
     return parseTranscribeResponse(await res.text()).trim();
@@ -114,7 +114,15 @@ async function refusal(res: Response, context: RequestContext): Promise<ByokErro
 
 /** Worded without "network" or "connection": the pages' generic rewording
  *  (friendlyError) turns those into "Couldn't reach the server", which
- *  would send the visitor to look for a PrivaTools outage. */
-function blockedMessage(label: string): string {
-    return `The browser blocked the request to ${label}, or it got no answer. If you are using a custom endpoint it is probably not on the allowed list; otherwise check that this device is online and that no extension or filtering proxy is stopping the request. PrivaTools will not route your key or your file through its own server as a workaround.`;
+ *  would send the visitor to look for a PrivaTools outage.
+ *
+ *  A provider that refuses a key without CORS headers (OpenAI) produces the
+ *  same failed request as a blocked one, so for it the key comes first. */
+function blockedMessage(provider: Provider): string {
+    const noProxy = " PrivaTools will not route your key or your file through its own server as a workaround.";
+    const { label } = provider;
+    if (provider.refusalsUnreadable) {
+        return `The browser could not read ${label}'s answer. ${label} answers that way when it refuses the key, so check the key on ${label}'s site first. If it is correct and active, check that this device is online and that no extension or filtering proxy is stopping the request.${noProxy}`;
+    }
+    return `The browser blocked the request to ${label}, or it got no answer. If you are using a custom endpoint it is probably not on the allowed list; otherwise check that this device is online and that no extension or filtering proxy is stopping the request.${noProxy}`;
 }

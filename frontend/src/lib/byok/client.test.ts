@@ -91,6 +91,19 @@ describe("what a refusal says", () => {
       .rejects.toMatchObject({ kind: "BadModel", userMessage: expect.stringContaining('OpenAI refused the model "gpt-9"') });
   });
 
+  it("leads with the key when OpenAI's answer cannot be read, since that is how it refuses a key", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    let shown = "";
+    try {
+      await complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "gpt-4o", messages: [] });
+    } catch (e) {
+      shown = (e as ByokError).userMessage;
+    }
+    expect(shown).toMatch(/^The browser could not read OpenAI's answer\./);
+    expect(shown).toContain("check the key on OpenAI's site first");
+    expect(friendlyError(shown)).toBe(shown);
+  });
+
   it("keeps a blocked request's explanation through the pages' generic rewording", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
     let shown = "";
