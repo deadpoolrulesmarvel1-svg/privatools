@@ -7,12 +7,12 @@ lost objects, and PyMuPDF's insert_pdf refuses to copy a page from it
 Image and Invert Colors on their multi-page paths copy pages that way, so
 they answered such a file with a 500 ("Processing failed. Please try
 again."), while Auto Crop, N-Up and PDF to EPUB, which only read it, worked.
-Now, when copying fails that way, qpdf rebuilds the file, which drops those
-references, and the tool runs once more on the rebuilt copy; a file qpdf
-cannot rebuild either is refused with a 400 that says it is damaged. qpdf
-leaves out the pages whose page object was lost. A page whose object
-survived but whose content was cut short is kept with what could be read,
-which can be nothing: a blank page.
+Now, when a tool fails on MuPDF's repair of such a file, qpdf rebuilds the
+file, which drops those references, and the tool runs once more on the
+rebuilt copy; a file qpdf cannot rebuild either is refused with a 400 that
+says it is damaged. qpdf leaves out the pages whose page object was lost. A
+page whose object survived but whose content was cut short is kept with what
+could be read, which can be nothing: a blank page.
 
 Nothing is checked before the tool runs. A first version scanned every
 object for references to lost objects: its pattern went quadratic on a long
@@ -69,8 +69,19 @@ DAMAGED = {
 
 
 def _surviving_pages(data: bytes) -> int:
-    with pikepdf.open(io.BytesIO(data)) as pdf:
+    """The pages of qpdf's rebuild, which a tool runs on when it fails on
+    MuPDF's repair."""
+    from backend.app.utils.cleanup import _rebuilt_by_qpdf
+
+    with pikepdf.open(io.BytesIO(_rebuilt_by_qpdf(data))) as pdf:
         return len(pdf.pages)
+
+
+def _ink(page) -> float:
+    """How dark the page is drawn, on average (0 for a blank page)."""
+    pix = page.get_pixmap(dpi=24, colorspace=fitz.csGRAY)
+    return 255 - sum(pix.samples) / len(pix.samples)
+
 
 ROUTES = {
     "split-in-half": ("/api/split-in-half", {"direction": "vertical"}),
@@ -128,8 +139,9 @@ def test_a_pdf_too_damaged_to_rebuild_is_refused_as_damaged(client, tool):
     assert "damaged" in resp.json()["detail"] or "corrupt" in resp.json()["detail"]
 
 
-def test_process_pdf_rebuilds_only_when_copying_fails():
+def test_process_pdf_rebuilds_a_repaired_file_only_after_a_library_failure():
     from backend.app.utils.cleanup import process_pdf
+    from backend.app.utils.exceptions import PdfCorruptError, ValidationError
 
     def copy_all(doc):
         seen.append((doc.is_repaired, len(doc)))
@@ -149,13 +161,28 @@ def test_process_pdf_rebuilds_only_when_copying_fails():
 
     seen.clear()
 
-    def other_failure(doc):
-        seen.append(doc.is_repaired)
+    def library_failure(doc):
+        seen.append(len(doc))
         raise RuntimeError("something else")
 
+    with pytest.raises(PdfCorruptError, match="damaged"):
+        process_pdf(damaged, library_failure)
+    assert seen == [3, 2]  # once more on qpdf's rebuild, then refused as damaged
+
+    seen.clear()
     with pytest.raises(RuntimeError, match="something else"):
-        process_pdf(damaged, other_failure)
-    assert seen == [True]  # not retried: only a lost object is
+        process_pdf(_whole(2), library_failure)
+    assert seen == [2]  # an intact file is never retried
+
+    seen.clear()
+
+    def refusal(doc):
+        seen.append(len(doc))
+        raise ValidationError("an answer, not damage")
+
+    with pytest.raises(ValidationError):
+        process_pdf(damaged, refusal)
+    assert seen == [3]  # a ToolError is never retried
 
 
 def test_a_file_qpdf_cannot_rebuild_is_refused_as_damaged(monkeypatch):
@@ -201,3 +228,57 @@ def test_crafted_files_cost_no_more_than_opening_them(client, tool, crafted):
     assert resp.status_code == 200, (tool, crafted, resp.status_code, resp.text[:200])
     # Generous for a loaded CI runner: each takes well under a second here.
     assert took < 10, (tool, crafted, took)
+
+
+# ── the last page's object lost, the pages before it whole ────────────────
+# Cut right after the objects of page 2, so page 3's object is gone while the
+# page tree still lists it. MuPDF's repair shows it as a blank Letter page,
+# and copies it, but reading anything of it fails with "bad xref". Split in
+# Half reads each page's /Rotate, and answered 400 "bad xref" where main
+# answered 200; any library failure on a repaired file now gets one more run
+# on qpdf's rebuild, not only a failed copy. The rebuild leaves page 3 out.
+LOST_PAGE = {"scan-3p-cut-at-70pc": lambda: _cut(_whole(3, scanned=True), 0.7)}
+
+
+def test_the_lost_page_fixture_copies_but_its_last_page_cannot_be_read():
+    from backend.app.utils.page_space import settle_rotation
+
+    for name, make in LOST_PAGE.items():
+        doc = fitz.open(stream=make(), filetype="pdf")
+        assert doc.is_repaired and len(doc) == 3, name
+        fitz.open().insert_pdf(doc)  # the copy is fine
+        settle_rotation(doc[0], {})
+        settle_rotation(doc[1], {})
+        with pytest.raises(ValueError, match="bad xref"):
+            settle_rotation(doc[2], {})
+
+
+def test_the_rebuild_keeps_the_object_the_file_ends_with():
+    """qpdf's reconstruction dropped the last object of a file that ends right
+    after it, here page 2's content: page 2 came out blank. Given the file
+    with an end-of-file line after it, qpdf keeps it."""
+    from backend.app.utils.cleanup import _rebuilt_by_qpdf
+
+    data = LOST_PAGE["scan-3p-cut-at-70pc"]()
+    assert data.endswith(b"endobj\n")
+    repaired = fitz.open(stream=data, filetype="pdf")
+    rebuilt = fitz.open(stream=_rebuilt_by_qpdf(data), filetype="pdf")
+    assert len(rebuilt) == 2
+    for n in range(2):
+        assert _ink(rebuilt[n]) > 1, n
+        assert abs(_ink(rebuilt[n]) - _ink(repaired[n])) < 0.5, n
+
+
+@pytest.mark.parametrize("damaged", sorted(LOST_PAGE))
+@pytest.mark.parametrize("tool", sorted(ROUTES))
+def test_a_pdf_whose_last_page_object_was_lost_is_processed(client, tool, damaged):
+    data = LOST_PAGE[damaged]()
+    route, form = ROUTES[tool]
+    resp = client.post(route, files={"file": ("download.pdf", data, "application/pdf")}, data=form)
+    assert resp.status_code == 200, (tool, damaged, resp.status_code, resp.text[:200])
+    if tool == "split-in-half":
+        # It reads each page's /Rotate, so it runs again on qpdf's rebuild:
+        # the two whole pages, each half drawn.
+        out = fitz.open(stream=resp.content, filetype="pdf")
+        assert len(out) == 2 * _surviving_pages(data) == 4
+        assert all(_ink(page) > 1 for page in out), [_ink(page) for page in out]

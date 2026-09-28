@@ -287,10 +287,6 @@ _DAMAGED_PDF = (
     "This PDF is damaged, most likely cut short by an interrupted download. "
     "Download it again, or fix it with Repair PDF, then try again."
 )
-# What PyMuPDF raises when it copies a page that refers to an object the file
-# does not have (MuPDF's pdf_graft_mapped_object: "source object number out of
-# range").
-_LOST_OBJECT = "object number out of range"
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -302,16 +298,32 @@ def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
     be nothing: a blank page where MuPDF's own repair may still have shown part
     of it. Streams are copied as they are, never decoded, and the XMP metadata
     is left alone (pikepdf's version update fails on a broken /Metadata).
+
+    qpdf is given the file with an end-of-file line after it. Its
+    reconstruction drops the object a file ends with when nothing follows that
+    object's "endobj" ("EOF after endobj"), so a file cut right after a
+    complete object lost that object as well: in one, the content of its last
+    surviving page, which came out blank where MuPDF drew it.
     """
     import io
+    import shutil
 
     import pikepdf
 
     try:
-        with pikepdf.open(io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else source) as pdf:
-            out = io.BytesIO()
+        data = io.BytesIO()
+        if isinstance(source, (bytes, bytearray)):
+            data.write(source)
+        else:
+            with open(source, "rb") as f:
+                shutil.copyfileobj(f, data)
+        data.write(b"\n%%EOF\n")
+        data.seek(0)
+        out = io.BytesIO()
+        with pikepdf.open(data) as pdf:
             pdf.save(out, fix_metadata_version=False, stream_decode_level=pikepdf.StreamDecodeLevel.none)
-            return out.getvalue()
+        data.close()
+        return out.getvalue()
     except (pikepdf.PdfError, OSError, ValueError, RuntimeError):
         return None
 
@@ -358,11 +370,16 @@ def process_pdf(source: str | bytes, work):
 
     A PDF cut short, as by an interrupted download, opens repaired: MuPDF finds
     the objects that survived and draws each page with what it still has. But
-    it keeps the references to the objects that were lost, and PyMuPDF refuses
-    to copy a page that has one ("source object number out of range"). When
-    work fails that way on a repaired file, qpdf rebuilds the file, dropping
-    those references, and work runs once more on the rebuilt copy. A file qpdf
-    cannot rebuild, or that has no page left, is refused as damaged (400).
+    it keeps the references to the objects that were lost: PyMuPDF refuses to
+    copy a page that has one ("source object number out of range"), and a page
+    whose own object was lost, but which the page tree still lists, is shown
+    blank and fails with "bad xref" when anything of it, such as its /Rotate,
+    is read. So when work fails on a repaired file with an error from the
+    library (RuntimeError or ValueError), qpdf rebuilds the file, dropping
+    those references and such pages, and work runs once more on the rebuilt
+    copy. A file qpdf cannot rebuild, that has no page left, or that fails
+    again is refused as damaged (400). A ToolError, such as a render budget
+    refusal, is an answer, not damage: it is never retried.
 
     Nothing is checked in advance, so an intact file costs nothing extra. An
     earlier version scanned every object for such references first: that cost
@@ -375,23 +392,22 @@ def process_pdf(source: str | bytes, work):
     doc = open_pdf_document(source)
     try:
         return work(doc)
-    except RuntimeError as exc:
-        if not (doc.is_repaired and _LOST_OBJECT in str(exc)):
+    except (RuntimeError, ValueError) as exc:
+        if not doc.is_repaired:
             raise
+        failure = exc  # damage MuPDF's repair left behind: one more run on qpdf's rebuild
     finally:
         doc.close()
     rebuilt = _rebuilt_by_qpdf(source)
     if rebuilt is None:
-        raise PdfCorruptError(_DAMAGED_PDF)
+        raise PdfCorruptError(_DAMAGED_PDF) from failure
     try:
         doc = open_pdf_document(rebuilt)
     except ValidationError as exc:  # no page survived
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     try:
         return work(doc)
-    except RuntimeError as exc:
-        if _LOST_OBJECT in str(exc):
-            raise PdfCorruptError(_DAMAGED_PDF) from exc
-        raise
+    except (RuntimeError, ValueError) as exc:  # the rebuild did not help
+        raise PdfCorruptError(_DAMAGED_PDF) from exc
     finally:
         doc.close()
