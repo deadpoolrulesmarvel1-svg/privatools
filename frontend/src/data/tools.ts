@@ -9,7 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
-  ArrowDownUp, BookOpenCheck, Accessibility, Languages,
+  ArrowDownUp, BookOpenCheck, Accessibility, Languages, ScanEye,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -1160,6 +1160,17 @@ const _toolsRaw: Tool[] = [
     popularity: 78,
     category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
     lastReviewed: "2026-09-24",
+  },
+  {
+    slug: "hidden-text-checker", icon: ScanEye, name: "Hidden Text Checker",
+    description: "Find text in a PDF that readers can't see",
+    longDescription: "Find hidden text in a PDF online for free: text a reader can't see but search, copy and paste, screening software and AI models still read. It finds text set to be invisible or fully transparent, text in the colour of what lies behind it (white on white), text too small to read, text off the page or clipped away, text in layers that are switched off, text under a box, shape or image drawn over it (a redaction that left the words in the file), text in hidden comments and form fields, and redaction marks that were never applied. Each finding gives the page, the reason and the exact words, highlighted on a preview of the page, and the report downloads as text or JSON. Invisible text over scanned pages, which OCR adds, is listed separately. A clean result means none of these checks matched, not that the file is safe in every way. The PDF is checked on our server in temporary storage, up to 500 pages, and is not changed.",
+    seoTitle: "Find Hidden Text in a PDF – AI Prompts, Failed Redactions",
+    metaDescription: "Check a PDF for text people cannot see but software reads: hidden AI prompts in résumés, and redactions that left the words in the file. Free, no sign-up.",
+    synonyms: "hidden text detector finder invisible text white text show hidden text prompt injection hidden prompt resume cv ai prompt redaction checker check redaction failed redaction black box text under box hidden layer",
+    popularity: 62,
+    category: "security", accepts: ".pdf", outputLabel: "report",
+    lastReviewed: "2026-09-28",
   },
 
   // ── Page Order ─────────────────────────────────────────────────────────────

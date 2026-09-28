@@ -66,6 +66,7 @@ from .routes import (
     developer,
     analytics,
     accessibility,
+    hidden_text,
 )
 from .routes import accounts as accounts_routes
 from .routes import clerk_webhook as clerk_webhook_routes
@@ -904,6 +905,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(accounts_routes.router, prefix="/api")
 app.include_router(clerk_webhook_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
+app.include_router(hidden_text.router, prefix="/api")
 
 # Sitemap + OG image
 
@@ -984,6 +986,7 @@ api_v1.mount(app, [
     remove_watermark.router,
     developer.router,
     accessibility.router,
+    hidden_text.router,
 ])
 
 from .api_v1.jobs import router as api_job_router  # noqa: E402
