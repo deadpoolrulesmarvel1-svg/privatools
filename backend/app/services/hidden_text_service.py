@@ -28,11 +28,13 @@ from ..utils.exceptions import FileTooLargeError, ProcessingError, ToolTimeoutEr
 logger = logging.getLogger(__name__)
 
 _WORKER = Path(__file__).with_name("_hidden_text_worker.py")
-# A dense 500-page document takes about 20 seconds of CPU on the dev VM. The
-# limit stays well inside the 120-second request timeout, which includes the
+# On the dev VM's ARM core, the class production runs on, an ordinary page
+# takes 30 to 50 ms of CPU and 500 dense pages of 7,000 characters about 50 s.
+# The limit stays inside the 120-second request timeout, which includes the
 # upload.
 TIME_LIMIT_SECONDS = 90
-# The worker's own limit on pages; the route states it in its documentation.
+# The worker's own limit on pages (a test holds the two equal); the API
+# catalog states it.
 MAX_PAGES = 500
 _MAX_OUTPUT_BYTES = 10 * 1024 * 1024
 

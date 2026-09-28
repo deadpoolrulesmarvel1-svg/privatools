@@ -66,7 +66,9 @@ describe("the Hidden Text Checker page", () => {
 
     it("lists each finding with its reason and exact words, and marks it on the page", async () => {
         await check(reportWith([WHITE, COVERED]));
-        expect(await screen.findByRole("heading", { level: 2, name: "Hidden text found" })).toBeInTheDocument();
+        const verdict = await screen.findByRole("heading", { level: 2, name: "Hidden text found" });
+        // The report replaces the form, so focus moves to its verdict.
+        expect(verdict).toHaveFocus();
         expect(screen.getByText("2 findings, 15 words, on pages 1 and 2.")).toBeInTheDocument();
         const list = screen.getByRole("list", { name: "Findings" });
         expect(within(list).getAllByRole("listitem")).toHaveLength(2);

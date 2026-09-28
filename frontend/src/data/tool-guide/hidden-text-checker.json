@@ -35,6 +35,10 @@
       "a": "OCR software makes a scan searchable by laying invisible text over the page image, so that text is expected. It is listed as an OCR text layer, with a sample of its words, and is not counted as hidden text. Invisible words that sit over a blank part of the page image, where the picture shows nothing, are reported as hidden text."
     },
     {
+      "q": "Why does it report text nobody meant to hide?",
+      "a": "Some hidden text is harmless. A web page saved as PDF can carry a link meant only for screen readers, such as \"Skip to main content\", clipped out of view, and white text can be leftover formatting. The checker reports what is in the file and why a reader cannot see it; whether it matters is for you to decide."
+    },
+    {
       "q": "Does a clean result mean the PDF is safe?",
       "a": "No. It means none of these checks matched. The checker does not look inside attachments, scripts or metadata, cannot see text drawn with a font whose letters show as different letters, and does not notice text hidden by a soft mask or by a transparency group's own opacity, or under a shape that covers each letter only in part. Sanitize Document removes scripts, attachments and hidden layers, and Strip Metadata removes document properties."
     },

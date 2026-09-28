@@ -144,6 +144,9 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
     const [page, setPage] = useState(report.findings[0]?.page ?? report.ocr[0]?.page ?? 1);
     const [expanded, setExpanded] = useState<Set<number>>(new Set());
     const stage = useRef<HTMLDivElement>(null);
+    const heading = useRef<HTMLHeadingElement>(null);
+    // The report replaces the form: take focus to its verdict, so it is read out.
+    useEffect(() => { heading.current?.focus(); }, []);
     const result = verdict(report);
     const steps = nextSteps(report);
     const reasons = REASON_ORDER.filter(reason => report.summary.byReason[reason] > 0);
@@ -189,13 +192,13 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
             <span className="htc-verdict-icon" aria-hidden="true">{result.found ? <ShieldAlert size={26} /> : <ShieldCheck size={26} />}</span>
             <div>
                 <p className="ts-eyebrow">Hidden text report · {file.name}</p>
-                <h2 id="htc-verdict">{result.title}</h2>
+                <h2 id="htc-verdict" ref={heading} tabIndex={-1}>{result.title}</h2>
                 <p>{result.detail}</p>
             </div>
         </header>
 
         {report.notes.length > 0 && <ul className="htc-notes" aria-label="Notes about this check">
-            {report.notes.map(note => <li key={note}>{note}</li>)}
+            {report.notes.map((note, index) => <li key={index}>{note}</li>)}
         </ul>}
 
         {reasons.length > 0 && <div className="htc-filters" role="group" aria-label="Show findings by reason">
@@ -220,7 +223,7 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
                         </rect>;
                     }))}
                 </g>} />
-                <p className="pdf-preview-context-note">Marks show where hidden text sits. The words themselves don't show on the page; they are listed beside it.</p>
+                <p className="pdf-preview-context-note">Marks show where hidden text sits. The words themselves don't show on the page, so the list quotes them.</p>
             </div>
             <div className="pdf-coordinate-controls htc-findings">
                 {shown.length === 0 && <p className="htc-empty">No hidden text was found. {report.ocr.length > 0 ? "The OCR text layer is listed below." : ""}</p>}
