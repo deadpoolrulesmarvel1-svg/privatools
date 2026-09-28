@@ -25,7 +25,12 @@ export interface Provider {
      */
     apiPath?: string;
     shape: ProviderShape;
-    /** Default models; users may type any model id. */
+    /**
+     * Suggested model ids; users may type any other. The first is what every
+     * page sends when the model box is left empty, so it must be one the
+     * provider still serves: a shut-down default fails every such request
+     * (Gemini 2.0 Flash, shut down 2026-06-01, did until 2026-09-28).
+     */
     models: string[];
     /** True when the user supplies the base URL (local or self-hosted). */
     customBaseUrl?: boolean;
@@ -63,7 +68,7 @@ const ANTHROPIC_VERSION = "2023-06-01";
 export const PROVIDERS: Provider[] = [
     {
         id: "anthropic", label: "Anthropic (Claude)", origin: "https://api.anthropic.com",
-        shape: "anthropic", models: ["claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5"],
+        shape: "anthropic", models: ["claude-sonnet-4-5", "claude-haiku-4-5"],
         keysUrl: "https://console.anthropic.com/settings/keys",
     },
     {
@@ -73,12 +78,14 @@ export const PROVIDERS: Provider[] = [
     },
     {
         id: "gemini", label: "Google Gemini", origin: "https://generativelanguage.googleapis.com",
-        shape: "gemini", models: ["gemini-2.0-flash", "gemini-2.0-pro"],
+        // Google's advice for new projects since 2026-09-18, when it limited
+        // the 2.5 models to accounts that had already used them.
+        shape: "gemini", models: ["gemini-3.8-flash", "gemini-3.5-flash-lite"],
         keysUrl: "https://aistudio.google.com/apikey",
     },
     {
         id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai", apiPath: "/api/v1",
-        shape: "openai", models: ["auto"], keysUrl: "https://openrouter.ai/keys",
+        shape: "openai", models: ["openrouter/auto"], keysUrl: "https://openrouter.ai/keys",
     },
     {
         id: "groq", label: "Groq", origin: "https://api.groq.com", apiPath: "/openai/v1",
@@ -86,7 +93,7 @@ export const PROVIDERS: Provider[] = [
     },
     {
         id: "together", label: "Together AI", origin: "https://api.together.xyz",
-        shape: "openai", models: ["meta-llama/Llama-3-70b-chat-hf"],
+        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
     },
     {
         id: "mistral", label: "Mistral", origin: "https://api.mistral.ai",
@@ -94,7 +101,7 @@ export const PROVIDERS: Provider[] = [
     },
     {
         id: "deepseek", label: "DeepSeek", origin: "https://api.deepseek.com",
-        shape: "openai", models: ["deepseek-chat"],
+        shape: "openai", models: ["deepseek-flash"],
     },
     {
         id: "openai-compatible", label: "Local or self-hosted (OpenAI-compatible)",

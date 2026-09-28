@@ -29,6 +29,30 @@ describe("provider endpoints", () => {
     expect(Object.keys(CHAT_ENDPOINTS).sort()).toEqual(hosted);
   });
 
+  /**
+   * Model ids a provider no longer serves, or never served. The pages send the
+   * provider's first model when the visitor leaves the model box empty, so a
+   * dead default fails every such run. Sources, read 2026-09-28: Google's
+   * Gemini API changelog (2.0 Flash shut down 2026-06-01; 2.0 Pro was never a
+   * stable id), DeepSeek's changelog (deepseek-chat and deepseek-reasoner
+   * discontinued 2026-07-24), OpenRouter's model list (its router is
+   * openrouter/auto; "auto" is no model), Together's serverless model list,
+   * and Anthropic's deprecations page (Opus 4.1 retired 2026-08-05).
+   */
+  const NOT_SERVED: Record<string, string[]> = {
+    gemini: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-pro"],
+    deepseek: ["deepseek-chat", "deepseek-reasoner"],
+    openrouter: ["auto"],
+    together: ["meta-llama/Llama-3-70b-chat-hf"],
+    anthropic: ["claude-opus-4-1"],
+  };
+
+  it.each(Object.entries(NOT_SERVED))("%s offers no model it has shut down", (id, gone) => {
+    const models = providerById(id)!.models;
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) expect(gone).not.toContain(model);
+  });
+
   it("sends a transcription to the provider's own API path", () => {
     const file = new Blob(["x"], { type: "audio/wav" });
     expect(buildTranscribeRequest(providerById("groq")!, { apiKey: "k", model: "whisper-large-v3", file }).url)

@@ -260,7 +260,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "chat-with-pdf": [
         {"name": "Open your PDF", "text": "Select a text-based PDF. Its text is extracted in your browser; a scanned PDF needs OCR PDF first, because there is no text to read."},
-        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."},
+        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. The options are Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. With a hosted provider, leave the model box empty to use the suggested model or type any other model your account offers; for your own server, type the name of the model it runs."},
         {"name": "Ask your question", "text": "Type a question about the document. The question and the document's text go from your browser directly to the provider you chose."},
         {"name": "Read and follow up", "text": "Read the answer and ask follow-ups. Check anything important against the document itself."},
     ],
