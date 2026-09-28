@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, process_pdf, remove_files, validate_pdf_content
 from ..utils.exceptions import ToolError
-from ..utils.render import fitted_zoom, safe_get_pixmap
+from ..utils.render import plan_renders, safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,11 +20,10 @@ def _invert_page(args: tuple) -> tuple:
     """Invert a single page. Returns (index, width, height, png_bytes)."""
     import fitz
 
-    idx, page_bytes, dpi = args
+    idx, page_bytes, zoom = args
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     page = doc[0]
     w, h = page.rect.width, page.rect.height
-    zoom = fitted_zoom(page, dpi / 72)  # a page too large for the cap: the most that fits
     pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
     pix.invert_irect(pix.irect)
     png_bytes = pix.tobytes("png")
@@ -42,12 +41,16 @@ def _invert_doc(src, dpi: int) -> str:
     import fitz
 
     page_count = len(src)
+    # Each page's zoom: the DPI asked for, or less for a page too large for the
+    # pixel cap; the whole request held to its render budget first.
+    zooms = plan_renders(src, dpi / 72, advice=(
+        "Choose a lower quality, or split the PDF and invert the parts separately."))
 
     if page_count <= 2:
         # Few pages — direct sequential (avoids overhead)
         doc = fitz.open()
         for page in src:
-            zoom = fitted_zoom(page, dpi / 72)  # a page too large for the cap: the most that fits
+            zoom = zooms[page.number]
             pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
             pix.invert_irect(pix.irect)
             new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
@@ -66,7 +69,7 @@ def _invert_doc(src, dpi: int) -> str:
         page_pdfs.append(single.tobytes())
         single.close()
 
-    tasks = [(i, pb, dpi) for i, pb in enumerate(page_pdfs)]
+    tasks = [(i, pb, zooms[i]) for i, pb in enumerate(page_pdfs)]
 
     results = [None] * page_count
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:

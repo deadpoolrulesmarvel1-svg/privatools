@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the deskewed PDF",
-      "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or at the largest size within 100 megapixels, for a page too big for that); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."
+      "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or smaller, for a page that would take more than 16 megapixels); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."
     }
   ],
   "faq": [
@@ -21,6 +21,10 @@
     {
       "q": "Will deskew add white margins?",
       "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."
+    },
+    {
+      "q": "How long a PDF can I deskew?",
+      "a": "Up to 500 MB, and pages adding up to 400 megapixels at the resolution it straightens them at, which is about 400 A4 pages. The pages are counted before any work starts, whether or not they turn out tilted; a longer PDF is refused with a message saying so, so split it and deskew the parts."
     },
     {
       "q": "Should I deskew before or after OCR?",

@@ -20,7 +20,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, process_pdf
-from ..utils.render import fitted_zoom, safe_get_pixmap
+from ..utils.render import plan_renders, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,10 @@ _MAX_WORKERS = min(max(1, (os.cpu_count() or 2) - 1), 4)
 
 def _render_and_save(args: tuple) -> str:
     """Render a single page and save as image. Returns the saved path."""
-    page_bytes, dpi, pil_format, ext, idx = args
+    page_bytes, zoom, pil_format, ext, idx = args
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     try:
         page = doc[0]
-        zoom = fitted_zoom(page, dpi / 72)  # a page too large for the cap: the most that fits
         pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
         # A view of the pixels, not a copy: PIL makes the one copy it keeps.
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
@@ -108,8 +107,14 @@ def _pdf_to_images(doc: fitz.Document, fmt: str, dpi: int, started: float, input
             )
             return str(out_path)
 
+        # Each page's zoom: the DPI asked for, or less for a page too large for
+        # the pixel cap; the whole request held to its render budget first.
+        zooms = plan_renders(doc, dpi / 72, advice=(
+            "Split the PDF and convert the parts separately, or choose a lower "
+            "resolution in PDF to Image."))
+
         if page_count == 1:
-            zoom = fitted_zoom(doc[0], dpi / 72)
+            zoom = zooms[0]
             pix = safe_get_pixmap(doc[0], matrix=fitz.Matrix(zoom, zoom))
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
             del pix
@@ -129,7 +134,7 @@ def _pdf_to_images(doc: fitz.Document, fmt: str, dpi: int, started: float, input
 
         if page_count <= 3:
             for i, page in enumerate(doc):
-                zoom = fitted_zoom(page, dpi / 72)
+                zoom = zooms[i]
                 pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
                 del pix
@@ -146,7 +151,7 @@ def _pdf_to_images(doc: fitz.Document, fmt: str, dpi: int, started: float, input
                 page_pdfs.append(single.tobytes())
                 single.close()
 
-            tasks = [(pb, dpi, pil_format, ext, i) for i, pb in enumerate(page_pdfs)]
+            tasks = [(pb, zooms[i], pil_format, ext, i) for i, pb in enumerate(page_pdfs)]
 
             with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
                 image_paths = list(pool.map(_render_and_save, tasks))

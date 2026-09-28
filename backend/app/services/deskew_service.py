@@ -10,11 +10,25 @@ from PIL import Image
 from ..utils.cleanup import process_pdf
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
-from ..utils.render import fitted_zoom, safe_get_pixmap
+from ..utils.render import fitted_zoom, plan_renders, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
 _MAX_WORKERS = min(os.cpu_count() or 2, 4)
+
+# Skew is measured on a small grey copy of each page, drawn at 0.4 zoom and at
+# most this large (an A2 page is 0.32 megapixels at 0.4 zoom): the measurement
+# loops over its pixels in Python, 14 times.
+_DETECT_MAX_PIXELS = 500_000
+# A tilted page is replaced by a picture of it, turned. Drawing, turning and
+# saving that picture costs about 0.35 s of CPU a megapixel, five times what
+# PDF to PNG spends, so a page is drawn at most this large (A2 at 200 DPI is
+# 15.5 megapixels) and a request gets 20% of the render budget: 400
+# megapixels, about 420 A4 pages at 100 DPI, or about two and a half minutes of
+# CPU. It is counted before anything is drawn, for every page as if tilted.
+_STRAIGHTEN_MAX_PIXELS = 16_000_000
+_BUDGET_SHARE = 0.2
+_BUDGET_ADVICE = "Split the PDF and deskew the parts separately."
 
 
 def _detect_skew_angle_fast(pix: fitz.Pixmap) -> float:
@@ -67,22 +81,21 @@ def _detect_skew_angle_fast(pix: fitz.Pixmap) -> float:
 
 def _detect_and_deskew_page(args: tuple) -> tuple:
     """Detect skew and deskew a single page. Returns (idx, pdf_bytes_or_None, needs_original)."""
-    idx, page_bytes = args
+    idx, page_bytes, zoom = args
 
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     try:
         page = doc[0]
 
         # Ultra-low DPI for detection
-        detect = fitted_zoom(page, 0.4)
+        detect = fitted_zoom(page, 0.4, _DETECT_MAX_PIXELS)
         detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
         angle = _detect_skew_angle_fast(detect_pix)
 
         if abs(angle) <= 0.3:
             return (idx, None, True)  # Keep original page
 
-        # Render at 100 DPI and rotate
-        zoom = fitted_zoom(page, 100 / 72)  # a page too large for the cap: the most that fits
+        # Render at 100 DPI (the planned zoom) and rotate
         pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
         del pix
@@ -110,18 +123,22 @@ def _deskew(src: fitz.Document) -> str:
     output_path = temp_output("deskewed", "pdf")
     page_count = len(src)
     logger.info("deskew: start pages=%d", page_count)
+    # A tilted page is drawn at 200 DPI in a file of one or two pages, and at
+    # 100 DPI otherwise; less for a page larger than _STRAIGHTEN_MAX_PIXELS.
+    zooms = plan_renders(src, (200 if page_count <= 2 else 100) / 72, advice=_BUDGET_ADVICE,
+                         max_pixels=_STRAIGHTEN_MAX_PIXELS, share=_BUDGET_SHARE)
 
     if page_count <= 2:
         # Few pages — direct sequential
         dst = fitz.open()
         try:
             for page in src:
-                detect = fitted_zoom(page, 0.4)
+                detect = fitted_zoom(page, 0.4, _DETECT_MAX_PIXELS)
                 detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
                 angle = _detect_skew_angle_fast(detect_pix)
 
                 if abs(angle) > 0.3:
-                    zoom = fitted_zoom(page, 200 / 72)
+                    zoom = zooms[page.number]
                     pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
                     img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
                     del pix
@@ -152,7 +169,7 @@ def _deskew(src: fitz.Document) -> str:
         finally:
             single.close()
 
-    tasks = [(i, pb) for i, pb in enumerate(page_pdfs)]
+    tasks = [(i, pb, zooms[i]) for i, pb in enumerate(page_pdfs)]
 
     results: list = [None] * page_count
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:

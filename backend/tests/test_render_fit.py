@@ -89,7 +89,9 @@ def test_pdf_to_image_renders_normal_pages_as_before(client, small_cap):
 def test_the_multi_page_tiff_still_refuses_an_oversized_page_with_a_400(client, small_cap):
     resp = _post(client, "/api/pdf-to-image", _pdf(2, 1500, 1000), {"format": "tiff", "dpi": "200"})
     assert resp.status_code == 400, resp.text[:200]
-    assert "too large to render" in resp.json()["detail"]
+    detail = resp.json()["detail"]
+    assert "bigger than the server can draw" in detail
+    assert "too large" not in detail  # the page's friendlyError would say "compress it"
 
 
 def _embedded_pixels(pdf: bytes) -> list[int]:
@@ -117,3 +119,73 @@ def test_deskew_straightens_an_oversized_tilted_page_within_the_cap(client, smal
     sizes = _embedded_pixels(resp.content)
     assert len(sizes) == pages  # every page was tilted, so every page became a picture
     assert all(s <= CAP * 1.2 for s in sizes), sizes  # the turned picture is a little larger than the render
+
+
+# ── the request's render budget ────────────────────────────────────────────
+# Fitting an oversized page instead of refusing it took away the only brake
+# on a crafted file: a 68 KB upload of two 50-megapixel photo pages cost
+# Deskew 55.7 s of CPU and 2.1 GB. Every tool that fits pages now counts the
+# whole request against a budget of megapixels before drawing anything.
+
+def _pages(n: int, width: float = 612, height: float = 792, *, tilt: float = 0.0) -> bytes:
+    return _pdf(n, width, height, tilt=tilt)
+
+
+# (route, form, budget share, megapixels a Letter page costs at the tool's DPI)
+BUDGETED = {
+    "pdf-to-png": ("/api/pdf-to-image", {"format": "png", "dpi": "150"}, 1.0, 2.10),
+    "invert-colors": ("/api/invert-colors", {"dpi": "150"}, 1.0, 2.10),
+    "deskew-pdf": ("/api/deskew", {}, 0.2, 0.935),  # 100 DPI above two pages
+}
+
+
+@pytest.mark.parametrize("tool", sorted(BUDGETED))
+def test_a_request_over_the_budget_is_refused_before_drawing(client, monkeypatch, tool):
+    route, form, share, per_page = BUDGETED[tool]
+    # Three pages need 3 x per_page megapixels: set the tool's share to 80% of that.
+    monkeypatch.setattr(render, "RENDER_BUDGET_MP", 3 * per_page / share * 0.8)
+    resp = _post(client, route, _pages(3), form)
+    assert resp.status_code == 422, (tool, resp.status_code, resp.text[:200])
+    detail = resp.json()["detail"]
+    assert "megapixels of drawing" in detail and "one request can draw up to" in detail, detail
+    assert "too large" not in detail
+
+
+@pytest.mark.parametrize("tool", sorted(BUDGETED))
+def test_a_request_within_the_budget_is_drawn(client, monkeypatch, tool):
+    route, form, share, per_page = BUDGETED[tool]
+    monkeypatch.setattr(render, "RENDER_BUDGET_MP", 3 * per_page / share * 1.2)
+    resp = _post(client, route, _pages(3), form)
+    assert resp.status_code == 200, (tool, resp.status_code, resp.text[:200])
+
+
+def test_the_default_budget_passes_real_scans(client):
+    """At the default 2,000 megapixels, 40 A4 pages at 600 DPI (1,392 MP) are
+    planned without a refusal; the plan is checked, not drawn."""
+    doc = fitz.open()
+    for _ in range(40):
+        doc.new_page(width=595, height=842)
+    zooms = render.plan_renders(doc, 600 / 72, advice="")
+    assert zooms == [600 / 72] * 40
+
+
+# ── Deskew: lower ceilings ─────────────────────────────────────────────────
+
+def test_deskew_straightens_a_page_within_its_own_ceiling(client, monkeypatch):
+    from backend.app.services import deskew_service
+
+    monkeypatch.setattr(deskew_service, "_STRAIGHTEN_MAX_PIXELS", 1_500_000)
+    resp = _post(client, "/api/deskew", _pdf(3, 2200, 1600, tilt=3), {})
+    assert resp.status_code == 200, resp.text[:200]
+    sizes = _embedded_pixels(resp.content)
+    assert len(sizes) == 3
+    # The turned picture is a little larger than the page drawn.
+    assert all(s <= 1_500_000 * 1.2 for s in sizes), sizes
+
+
+def test_deskew_measures_skew_on_a_small_copy(monkeypatch):
+    from backend.app.services import deskew_service
+
+    doc = fitz.open(stream=_pdf(1, 8000, 6000), filetype="pdf")
+    zoom = render.fitted_zoom(doc[0], 0.4, deskew_service._DETECT_MAX_PIXELS)
+    assert doc[0].rect.width * doc[0].rect.height * zoom * zoom <= deskew_service._DETECT_MAX_PIXELS

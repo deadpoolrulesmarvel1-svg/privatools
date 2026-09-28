@@ -6,7 +6,7 @@
     },
     {
       "name": "Check the output settings",
-      "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."
+      "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."
     },
     {
       "name": "Add more PDFs (optional)",

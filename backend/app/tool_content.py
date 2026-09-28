@@ -174,7 +174,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-image": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. The queue lists each file with its size."},
-        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection. A page too big for 100 megapixels at the resolution you choose, such as a large poster at 300 DPI, is rendered at the largest size that fits."},
+        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection. A page too big for 100 megapixels at the resolution you choose, such as a large poster at 300 DPI, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all: about 900 A4 pages at 150 DPI, or 230 at 300 DPI; split a longer PDF first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes a separate image file: a multi-page PDF downloads as a ZIP of images and a one-page PDF as a single image. Several PDFs arrive together in one ZIP."},
     ],
 
@@ -603,7 +603,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"name": "Upload a scanned PDF", "text": "Drop a scanned PDF up to 500 MB. Works best on documents where text lines are visible."},
         {"name": "PrivaTools detects skew per page", "text": "The algorithm tries rotations of up to about 6° either way, in half-degree steps, on a low-resolution copy of each page and picks the angle at which the lines of text run straightest."},
-        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or at the largest size within 100 megapixels, for a page too big for that); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
+        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or smaller, for a page that would take more than 16 megapixels); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
     ],
     "esign-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document to sign, up to 500 MB."},
@@ -653,7 +653,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI). A page too big for 100 megapixels at that resolution is rendered at the largest size that fits."},
+        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI). A page too big for 100 megapixels at that resolution is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages at Balanced; split a longer PDF first."},
         {"name": "Download the inverted PDF", "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."},
     ],
     "jpg-to-pdf": [
@@ -701,7 +701,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-bmp": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of BMPs", "text": "Each page becomes one 24-bit BMP file, and a multi-page PDF downloads as a ZIP. BMP is uncompressed so files are LARGE — about 6.5 MB for each A4 page."},
     ],
     "pdf-to-epub": [
@@ -711,12 +711,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-gif": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of GIFs", "text": "Each page becomes one GIF file, and a multi-page PDF downloads as a ZIP. Useful for embedding PDF previews in legacy systems."},
     ],
     "pdf-to-jpg": [
         {"name": "Drop your PDF", "text": "Upload a PDF up to 500 MB. It is processed in isolated temporary per-request storage for the conversion, and response cleanup removes the job's temporary files after your download is sent."},
-        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."},
+        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Add more PDFs (optional)", "text": "Queue up to 25 PDFs. Each one is converted separately and gets its own download, and Download all bundles the results into one ZIP."},
         {"name": "Need only some pages?", "text": "Every page is converted. To convert only some, pull them into a smaller PDF with Extract Pages first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes one JPG. Multi-page PDFs return as a ZIP; single-page PDFs return as a single JPG file."},
@@ -728,7 +728,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-png": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of PNGs", "text": "Each page becomes one PNG file with lossless compression, and a multi-page PDF downloads as a ZIP. Pages are rendered onto a white background, so the PNGs have no transparency."},
     ],
     "pdf-to-pptx": [
@@ -1953,6 +1953,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"q": "My scans look fine — should I run deskew?", "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."},
         {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."},
+        {"q": "How long a PDF can I deskew?", "a": "Up to 500 MB, and pages adding up to 400 megapixels at the resolution it straightens them at, which is about 400 A4 pages. The pages are counted before any work starts, whether or not they turn out tilted; a longer PDF is refused with a message saying so, so split it and deskew the parts."},
         {"q": "Should I deskew before or after OCR?", "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."},
     ],
     "esign-pdf": [

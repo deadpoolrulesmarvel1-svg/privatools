@@ -6,7 +6,7 @@
     },
     {
       "name": "Convert",
-      "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits."
+      "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."
     },
     {
       "name": "Download a ZIP of GIFs",
