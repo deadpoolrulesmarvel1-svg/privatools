@@ -272,11 +272,82 @@ def _display_size(path: str) -> tuple[int, int]:
     return width - width % 2, height - height % 2
 
 
+# What phones record, and what an MP4 carries as it is.
+_COPYABLE_VIDEO = {"h264", "hevc"}
+_COPYABLE_AUDIO = {"aac"}
+_VIDEO_KEYS = ("codec_name", "profile", "level", "width", "height", "pix_fmt", "sample_aspect_ratio",
+               "field_order", "color_range", "color_space", "color_transfer", "color_primaries",
+               "time_base", "extradata_hash")
+_AUDIO_KEYS = ("codec_name", "profile", "sample_rate", "channels", "channel_layout", "time_base",
+               "extradata_hash")
+
+
+def _copy_signature(path: str) -> tuple | None:
+    """What has to be the same in every clip for a merge to join them as they
+    are: the streams, in the same order; the video's codec set-up down to its
+    parameter sets (the extradata hash), frame size, pixels, colours, time
+    base and display rotation; and the audio's format. None for a clip that
+    cannot go into an MP4 as it is, such as VP9 or one with two audio tracks.
+    """
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_streams", "-show_data_hash", "sha256", "-of", "json", path],
+            capture_output=True, timeout=15, text=True, check=True,
+        )
+        streams = json.loads(result.stdout)["streams"]
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError, KeyError):
+        return None
+    video = [s for s in streams if s.get("codec_type") == "video"]
+    audio = [s for s in streams if s.get("codec_type") == "audio"]
+    if len(video) != 1 or len(audio) > 1 or video[0].get("codec_name") not in _COPYABLE_VIDEO:
+        return None
+    if audio and audio[0].get("codec_name") not in _COPYABLE_AUDIO:
+        return None
+    rotation = next((entry["rotation"] for entry in video[0].get("side_data_list", []) if "rotation" in entry), 0)
+    return (
+        tuple(s.get("codec_type") for s in streams),
+        tuple(video[0].get(key) for key in _VIDEO_KEYS),
+        rotation,
+        tuple(audio[0].get(key) for key in _AUDIO_KEYS) if audio else None,
+    )
+
+
+def _merge_by_copy(input_paths: list[str], *, hevc: bool) -> str:
+    """Join clips of one encoding with the concat demuxer, copying their
+    streams: no quality lost, and seconds of work at any length. Re-encoding
+    one minute of 1080p30 took 111 CPU-seconds (v2.7.5 image), so a merge of
+    more than about three minutes ran out of FFmpeg's 180 s on the
+    production container; copying the same minute took 0.3.
+    """
+    output_path = temp_output("video_merge", "mp4")
+    work_dir = tempfile.mkdtemp(prefix="video_merge_")
+    try:
+        listing = Path(work_dir) / "clips.txt"
+        # The concat list quotes each path; a quote inside one is written '\''.
+        listing.write_text("".join(
+            "file '" + os.path.abspath(path).replace("'", "'\\''") + "'\n" for path in input_paths
+        ))
+        _run_ffmpeg([
+            "-f", "concat", "-safe", "0", "-i", str(listing),
+            "-map", "0:v:0", "-map", "0:a:0?", "-c", "copy",
+            # Apple's players open HEVC in an MP4 only under the hvc1 tag.
+            *(["-tag:v", "hvc1"] if hevc else []),
+            "-movflags", "+faststart", str(output_path),
+        ])
+    except Exception:
+        Path(output_path).unlink(missing_ok=True)
+        raise
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+    return str(output_path)
+
+
 def video_merge(input_paths: list[str]) -> str:
-    """Concatenate multiple videos using ffmpeg's concat filter (re-encodes
-    once for compatibility — concat demuxer would be faster but only works
-    when every input has identical codecs/dimensions, which uploaded clips
-    rarely do).
+    """Concatenate videos into one MP4.
+
+    Clips recorded the same way, as one phone's clips usually are, are joined
+    as they are (see _merge_by_copy). Any other mix goes through ffmpeg's
+    concat filter and is re-encoded once as H.264 and AAC.
 
     Handles mixed audio-presence inputs by padding video-only clips with a
     silent audio track at concat time, so the user never gets the cryptic
@@ -289,6 +360,15 @@ def video_merge(input_paths: list[str]) -> str:
         raise ValidationError("Need at least 2 videos to merge.")
     if len(input_paths) > 20:
         raise ValidationError("Too many videos to merge in one call (max 20).")
+
+    signatures = [_copy_signature(p) for p in input_paths]
+    if signatures[0] is not None and len(set(signatures)) == 1:
+        try:
+            return _merge_by_copy(input_paths, hevc=signatures[0][1][0] == "hevc")
+        except ValidationError:
+            # FFmpeg refused to join them as they are; re-encoding still can.
+            logger.warning("video-merge: joining by copy failed, re-encoding", exc_info=True)
+
     output_path = temp_output("video_merge", "mp4")
     n = len(input_paths)
 

@@ -219,13 +219,13 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "video-merge", icon: Merge, name: "Merge Videos",
     description: "Concatenate multiple videos into one",
-    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips of other sizes are scaled to fit the first clip's frame. Re-encodes once for broad playback compatibility.",
+    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips recorded the same way, as one phone's clips usually are, are joined as they are, with no re-encoding and no loss of quality. Any other mix is re-encoded once, with each clip scaled to fit the first clip's frame.",
     seoTitle: "Merge Video Files Online Free – Combine Clips Seamlessly",
-    metaDescription: "Concatenate multiple MP4, MOV, WebM, or MKV clips into one video file with a single re-encode for smooth playback. Files are processed and then removed.",
+    metaDescription: "Concatenate MP4, MOV, WebM, or MKV clips into one video, joining clips from the same phone without re-encoding. Files are processed and then removed.",
     synonyms: "join combine concat videos",
     popularity: 66,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "merged.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "audio-merge", icon: Merge, name: "Merge Audio",
