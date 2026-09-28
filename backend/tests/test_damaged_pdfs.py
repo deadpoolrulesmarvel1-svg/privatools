@@ -269,6 +269,21 @@ def test_the_rebuild_keeps_the_object_the_file_ends_with():
         assert abs(_ink(rebuilt[n]) - _ink(repaired[n])) < 0.5, n
 
 
+def test_the_rebuild_reads_a_copy_on_disk_and_removes_it(monkeypatch, tmp_path):
+    """The copy that carries the end-of-file line is a temporary file, so an
+    upload is not held in memory; it is removed whether qpdf can rebuild the
+    file or not."""
+    from backend.app.utils import cleanup
+
+    monkeypatch.setattr(cleanup, "TEMP_DIR", tmp_path)
+    upload = tmp_path / "upload.pdf"
+    upload.write_bytes(LOST_PAGE["scan-3p-cut-at-70pc"]())
+    rebuilt = cleanup._rebuilt_by_qpdf(str(upload))
+    assert rebuilt is not None and len(fitz.open(stream=rebuilt, filetype="pdf")) == 2
+    assert cleanup._rebuilt_by_qpdf(b"%PDF-1.7\nnothing a PDF needs\n") is None
+    assert [p.name for p in tmp_path.iterdir()] == ["upload.pdf"]
+
+
 @pytest.mark.parametrize("damaged", sorted(LOST_PAGE))
 @pytest.mark.parametrize("tool", sorted(ROUTES))
 def test_a_pdf_whose_last_page_object_was_lost_is_processed(client, tool, damaged):
