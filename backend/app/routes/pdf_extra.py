@@ -191,7 +191,37 @@ def _parse_form_fields(raw: str) -> list[dict]:
 # An EPUB's pages are XHTML, which e-readers parse as XML. PyMuPDF's page HTML
 # is HTML: it leaves <img> open, so a page with a picture made the whole book
 # fail to parse, and it gives every page's box id="page0".
-_OPEN_IMG = re.compile(r"<img\b([^>]*?)\s*/?>")
+
+
+def _close_img_tags(markup: str) -> str:
+    """`markup` with every <img ...> written as <img .../>.
+
+    A plain scan, one pass: the first version, a regular expression with a
+    lazy match next to optional whitespace, took 24 s on "<img" followed by
+    40,000 spaces (PyMuPDF writes these tags itself, so a PDF cannot produce
+    that, but nothing here should depend on it).
+    """
+    parts, pos = [], 0
+    while True:
+        start = markup.find("<img", pos)
+        if start < 0:
+            break
+        after = markup[start + 4:start + 5]
+        if after and (after.isalnum() or after in "_-"):  # "<imgx": not an img tag
+            parts.append(markup[pos:start + 4])
+            pos = start + 4
+            continue
+        end = markup.find(">", start)
+        if end < 0:
+            break
+        tag = markup[start:end].rstrip()
+        if tag.endswith("/"):
+            tag = tag[:-1].rstrip()
+        parts.append(markup[pos:start])
+        parts.append(tag + "/>")
+        pos = end + 1
+    parts.append(markup[pos:])
+    return "".join(parts)
 
 
 def _parses_as_xhtml(fragment: str) -> bool:
@@ -208,7 +238,7 @@ def _page_xhtml(page, number: int) -> str:
     own. A page that still does not parse falls back to PyMuPDF's plain XHTML
     for that page (text and pictures without the styling), then to its text."""
     page_id = f'id="page{number}-body"'
-    markup = _OPEN_IMG.sub(r"<img\1/>", page.get_text("html")).replace('id="page0"', page_id, 1)
+    markup = _close_img_tags(page.get_text("html")).replace('id="page0"', page_id, 1)
     if _parses_as_xhtml(markup):
         return markup
     plain = page.get_text("xhtml").replace('id="page0"', page_id, 1)

@@ -20,6 +20,7 @@ inherited from the page tree.
 from __future__ import annotations
 
 import io
+import time
 
 import fitz  # PyMuPDF
 import pikepdf
@@ -183,3 +184,56 @@ def test_an_invalid_direction_is_refused(client):
     resp = client.post("/api/split-in-half", files={"file": ("a.pdf", doc.tobytes(), "application/pdf")},
                        data={"direction": "diagonal"})
     assert resp.status_code == 400
+
+
+def _chain(depth: int, rotates: dict[int, int] | None = None, page_rotates: dict[int, int] | None = None) -> bytes:
+    """A page tree built as a chain: /Pages node k holds page k and node k+1,
+    so page k is k levels down. `rotates` puts a /Rotate on some nodes,
+    `page_rotates` on some pages."""
+    rotates, page_rotates = rotates or {}, page_rotates or {}
+    with pikepdf.new() as pdf:
+        content = pdf.make_stream(b"BT /F1 12 Tf 72 720 Td (x) Tj ET")
+        nodes = [pdf.Root.Pages]
+        nodes[0].Kids = pikepdf.Array()
+        for level in range(depth):
+            page = pdf.make_indirect(pikepdf.Dictionary(
+                Type=pikepdf.Name.Page, MediaBox=[0, 0, 612, 792], Contents=content, Parent=nodes[-1]))
+            if level in page_rotates:
+                page.Rotate = page_rotates[level]
+            nodes[-1].Kids.append(page)
+            if level < depth - 1:
+                child = pdf.make_indirect(pikepdf.Dictionary(
+                    Type=pikepdf.Name.Pages, Kids=pikepdf.Array(), Parent=nodes[-1], Count=0))
+                nodes[-1].Kids.append(child)
+                nodes.append(child)
+        for level, node in enumerate(nodes):
+            node.Count = depth - level
+            if level in rotates:
+                node.Rotate = rotates[level]
+        out = io.BytesIO()
+        pdf.save(out)
+        return out.getvalue()
+
+
+def test_the_remembered_rotate_walk_reads_every_page_as_the_plain_one():
+    from backend.app.utils.page_space import _raw_rotate_fitz
+
+    data = _chain(12, rotates={0: 90, 4: 180, 5: -90, 9: 80}, page_rotates={2: 270, 7: 0, 10: 450})
+    doc = fitz.open(stream=data, filetype="pdf")
+    plain = [_raw_rotate_fitz(doc[i]) for i in range(len(doc))]
+    assert plain == [90, 90, 270, 90, 180, -90, -90, 0, -90, 80, 450, 80]
+    for order in (range(len(doc)), reversed(range(len(doc)))):
+        inherited: dict = {}
+        assert {i: _raw_rotate_fitz(doc[i], inherited) for i in order} == dict(enumerate(plain))
+
+
+def test_a_deep_page_tree_is_walked_once():
+    from backend.app.utils.page_space import _raw_rotate_fitz
+
+    doc = fitz.open(stream=_chain(1000), filetype="pdf")
+    inherited: dict = {}
+    started = time.perf_counter()
+    for i in range(len(doc)):
+        _raw_rotate_fitz(doc[i], inherited)
+    # Without the dict, 11 s: each page walks the chain above it.
+    assert time.perf_counter() - started < 3

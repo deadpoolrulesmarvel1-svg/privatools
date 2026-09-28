@@ -72,12 +72,13 @@ def split_in_half(input_path: str, direction: str = "vertical") -> str:
 
     src = open_pdf_document(input_path, copying=True)
     out = fitz.open()
+    inherited: dict = {}  # each /Pages node's /Rotate, walked once for all pages
     try:
         for page_idx in range(len(src)):
             page = src[page_idx]
             # Written the way pdf.js reads it, on the page itself, so the copies
             # carry a /Rotate every viewer shows the same way.
-            rotation = settle_rotation(page)
+            rotation = settle_rotation(page, inherited)
             area = visible_area(page)
             for half in halves(area, rotation, direction):
                 # insert_pdf copies the whole page, with its inherited MediaBox,

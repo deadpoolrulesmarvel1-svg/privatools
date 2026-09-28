@@ -77,21 +77,39 @@ def _number(kind: str, text: str) -> object:
     return None
 
 
-def _raw_rotate_fitz(page: fitz.Page) -> object:
-    """The nearest /Rotate on the page or up its page tree, as written."""
+def _raw_rotate_fitz(page: fitz.Page, inherited: dict | None = None) -> object:
+    """The nearest /Rotate on the page or up its page tree, as written.
+
+    `inherited`, when given, remembers what each /Pages node passes down, so
+    a caller that asks for every page of a document walks each node once. The
+    walk is otherwise as deep as the tree for every page: on a page tree built
+    as a chain, 1,000 pages cost 11 s.
+    """
     doc = page.parent
-    xref, seen = page.xref, set()
+    xref, seen, above = page.xref, set(), []
+    result = None
     while xref and xref not in seen:
+        if inherited is not None and above and xref in inherited:
+            result = inherited[xref]
+            break
         seen.add(xref)
+        above.append(xref)
         kind, value = doc.xref_get_key(xref, "Rotate")
         if kind == "xref":  # an indirect object: a number, or anything else (read as 0)
             text = doc.xref_object(int(value.split()[0]), compressed=True).strip()
-            return _number("int" if text.lstrip("+-").isdigit() else "float", text)
+            result = _number("int" if text.lstrip("+-").isdigit() else "float", text)
+            break
         if kind != "null":
-            return _number(kind, value)
+            result = _number(kind, value)
+            break
         kind, value = doc.xref_get_key(xref, "Parent")
         xref = int(value.split()[0]) if kind == "xref" else 0
-    return None
+    if inherited is not None:
+        # Every /Pages node walked passes this value down (the page itself is
+        # not remembered: settle_rotation may change its own /Rotate).
+        for node in above[1:]:
+            inherited[node] = result
+    return result
 
 
 def _raw_rotate_pikepdf(page: pikepdf.Page) -> object:
@@ -107,11 +125,11 @@ def _raw_rotate_pikepdf(page: pikepdf.Page) -> object:
     return None
 
 
-def _raw_rotate(page: fitz.Page | pikepdf.Page) -> object:
-    return _raw_rotate_fitz(page) if isinstance(page, fitz.Page) else _raw_rotate_pikepdf(page)
+def _raw_rotate(page: fitz.Page | pikepdf.Page, inherited: dict | None = None) -> object:
+    return _raw_rotate_fitz(page, inherited) if isinstance(page, fitz.Page) else _raw_rotate_pikepdf(page)
 
 
-def settle_rotation(page: fitz.Page | pikepdf.Page) -> int:
+def settle_rotation(page: fitz.Page | pikepdf.Page, inherited: dict | None = None) -> int:
     """Write the page's /Rotate the way pdf.js reads it, when the file says it
     another way; return it (0, 90, 180 or 270).
 
@@ -120,8 +138,11 @@ def settle_rotation(page: fitz.Page | pikepdf.Page) -> int:
     was. Otherwise the page gets its own /Rotate: -90 becomes 270, 450 becomes
     90, 80 becomes 0. That is how the preview showed it, and after this every
     viewer shows it that way too.
+
+    `inherited`: a dict the caller keeps for one PyMuPDF document while it
+    settles many of its pages (see _raw_rotate_fitz).
     """
-    raw = _raw_rotate(page)
+    raw = _raw_rotate(page, inherited)
     rotation = rotation_as_shown(raw)
     if (raw is None and rotation == 0) or (type(raw) is int and raw == rotation):
         return rotation

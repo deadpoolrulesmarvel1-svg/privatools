@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import re
+import time
 import uuid
 import zipfile
 from xml.etree import ElementTree as ET
@@ -112,3 +113,23 @@ def test_a_page_whose_html_does_not_parse_falls_back_to_plain_xhtml():
     xhtml = _page_xhtml(Page(), 7)
     ET.fromstring(f'<div xmlns="http://www.w3.org/1999/xhtml">{xhtml}</div>')
     assert 'id="page7-body"' in xhtml and "Broken entity" in xhtml
+
+
+def test_img_tags_are_closed_in_one_pass():
+    from backend.app.routes.pdf_extra import _close_img_tags
+
+    cases = {
+        '<p>a</p><img src="x">': '<p>a</p><img src="x"/>',
+        '<img src="x"/>': '<img src="x"/>',
+        '<img src="x" />': '<img src="x"/>',
+        '<img\nstyle="s"\nsrc="data:image/png;base64,\nAAAA/BBB=">': '<img\nstyle="s"\nsrc="data:image/png;base64,\nAAAA/BBB="/>',
+        "<imgx>kept</imgx>": "<imgx>kept</imgx>",
+        "text <img src=unfinished": "text <img src=unfinished",
+    }
+    for given, expected in cases.items():
+        assert _close_img_tags(given) == expected, given
+    # Crafted: the regular expression it replaces took 24 s on the first.
+    for crafted in ("<img" + " " * 200_000, "<img" * 50_000, "<img " + "/ " * 100_000):
+        started = time.perf_counter()
+        _close_img_tags(crafted)
+        assert time.perf_counter() - started < 2
