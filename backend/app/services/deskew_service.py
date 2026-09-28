@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import fitz  # PyMuPDF
 from PIL import Image
 
-from ..utils.cleanup import open_pdf_document
+from ..utils.cleanup import process_pdf
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
 from ..utils.render import fitted_zoom, safe_get_pixmap
@@ -103,81 +103,80 @@ def _detect_and_deskew_page(args: tuple) -> tuple:
 
 def deskew(input_path: str) -> str:
     """Deskew PDF pages using parallel skew detection."""
+    return process_pdf(input_path, _deskew)
+
+
+def _deskew(src: fitz.Document) -> str:
     output_path = temp_output("deskewed", "pdf")
+    page_count = len(src)
+    logger.info("deskew: start pages=%d", page_count)
 
-    src = open_pdf_document(input_path, copying=True)
-    try:
-        page_count = len(src)
-        logger.info("deskew: start pages=%d", page_count)
-
-        if page_count <= 2:
-            # Few pages — direct sequential
-            dst = fitz.open()
-            try:
-                for page in src:
-                    detect = fitted_zoom(page, 0.4)
-                    detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
-                    angle = _detect_skew_angle_fast(detect_pix)
-
-                    if abs(angle) > 0.3:
-                        zoom = fitted_zoom(page, 200 / 72)
-                        pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
-                        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
-                        del pix
-                        rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
-                                             resample=Image.Resampling.BICUBIC)
-                        del img
-                        img_buf = io.BytesIO()
-                        rotated.save(img_buf, format="PNG")
-                        new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
-                        new_page.insert_image(new_page.rect, stream=img_buf.getvalue())
-                    else:
-                        dst.insert_pdf(src, from_page=page.number, to_page=page.number)
-
-                if len(dst) == 0:
-                    raise ProcessingError("No pages found in PDF")
-                dst.save(str(output_path), garbage=4, deflate=True)
-            finally:
-                dst.close()
-            return str(output_path)
-
-        # Multi-page — parallel processing
-        page_pdfs = []
-        for i in range(page_count):
-            single = fitz.open()
-            try:
-                single.insert_pdf(src, from_page=i, to_page=i)
-                page_pdfs.append(single.tobytes())
-            finally:
-                single.close()
-
-        tasks = [(i, pb) for i, pb in enumerate(page_pdfs)]
-
-        results: list = [None] * page_count
-        with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
-            for idx, data, needs_original in pool.map(_detect_and_deskew_page, tasks):
-                results[idx] = (data, needs_original)
-
-        # Assemble — reuse `src` for original-page inserts so we don't open
-        # the input twice (was a small leak: src_copy never got closed on
-        # an exception thrown during dst.new_page).
+    if page_count <= 2:
+        # Few pages — direct sequential
         dst = fitz.open()
         try:
-            for i, (data, needs_original) in enumerate(results):
-                if needs_original:
-                    dst.insert_pdf(src, from_page=i, to_page=i)
+            for page in src:
+                detect = fitted_zoom(page, 0.4)
+                detect_pix = safe_get_pixmap(page, matrix=fitz.Matrix(detect, detect), colorspace=fitz.csGRAY)
+                angle = _detect_skew_angle_fast(detect_pix)
+
+                if abs(angle) > 0.3:
+                    zoom = fitted_zoom(page, 200 / 72)
+                    pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+                    del pix
+                    rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
+                                         resample=Image.Resampling.BICUBIC)
+                    del img
+                    img_buf = io.BytesIO()
+                    rotated.save(img_buf, format="PNG")
+                    new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
+                    new_page.insert_image(new_page.rect, stream=img_buf.getvalue())
                 else:
-                    w, h, png_bytes = data
-                    new_page = dst.new_page(width=w, height=h)
-                    new_page.insert_image(new_page.rect, stream=png_bytes)
+                    dst.insert_pdf(src, from_page=page.number, to_page=page.number)
 
             if len(dst) == 0:
                 raise ProcessingError("No pages found in PDF")
-
             dst.save(str(output_path), garbage=4, deflate=True)
         finally:
             dst.close()
+        return str(output_path)
+
+    # Multi-page — parallel processing
+    page_pdfs = []
+    for i in range(page_count):
+        single = fitz.open()
+        try:
+            single.insert_pdf(src, from_page=i, to_page=i)
+            page_pdfs.append(single.tobytes())
+        finally:
+            single.close()
+
+    tasks = [(i, pb) for i, pb in enumerate(page_pdfs)]
+
+    results: list = [None] * page_count
+    with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
+        for idx, data, needs_original in pool.map(_detect_and_deskew_page, tasks):
+            results[idx] = (data, needs_original)
+
+    # Assemble — reuse `src` for original-page inserts so we don't open
+    # the input twice (was a small leak: src_copy never got closed on
+    # an exception thrown during dst.new_page).
+    dst = fitz.open()
+    try:
+        for i, (data, needs_original) in enumerate(results):
+            if needs_original:
+                dst.insert_pdf(src, from_page=i, to_page=i)
+            else:
+                w, h, png_bytes = data
+                new_page = dst.new_page(width=w, height=h)
+                new_page.insert_image(new_page.rect, stream=png_bytes)
+
+        if len(dst) == 0:
+            raise ProcessingError("No pages found in PDF")
+
+        dst.save(str(output_path), garbage=4, deflate=True)
     finally:
-        src.close()
+        dst.close()
 
     return str(output_path)

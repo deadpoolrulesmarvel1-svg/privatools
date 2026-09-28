@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import fitz  # PyMuPDF
 
-from ..utils.cleanup import open_pdf_document
+from ..utils.cleanup import process_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_space import pdf_box, settle_rotation, visible_area
@@ -68,9 +68,11 @@ def split_in_half(input_path: str, direction: str = "vertical") -> str:
             f"direction must be one of: {', '.join(sorted(VALID_DIRECTIONS))}"
         )
 
-    output_path = temp_output("split_half", "pdf")
+    return process_pdf(input_path, lambda src: _split(src, direction))
 
-    src = open_pdf_document(input_path, copying=True)
+
+def _split(src: fitz.Document, direction: str) -> str:
+    output_path = temp_output("split_half", "pdf")
     out = fitz.open()
     inherited: dict = {}  # each /Pages node's /Rotate, walked once for all pages
     try:
@@ -90,6 +92,5 @@ def split_in_half(input_path: str, direction: str = "vertical") -> str:
         out.save(str(output_path), garbage=4, deflate=True)
     finally:
         out.close()
-        src.close()
 
     return str(output_path)

@@ -19,7 +19,7 @@ from typing import List
 import fitz  # PyMuPDF
 from PIL import Image
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, process_pdf
 from ..utils.render import fitted_zoom, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,10 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     except OSError:
         input_size = 0
 
-    doc = open_pdf_document(input_path, copying=True)  # pages are copied to render them in parallel
+    return process_pdf(input_path, lambda doc: _pdf_to_images(doc, fmt, dpi, started, input_size))
 
+
+def _pdf_to_images(doc: fitz.Document, fmt: str, dpi: int, started: float, input_size: int) -> str:
     fmt_lower = fmt.lower()
     pil_format = "JPEG" if fmt_lower in ("jpeg", "jpg") else fmt_lower.upper()
     ext = "jpg" if fmt_lower in ("jpeg", "jpg") else ("tif" if fmt_lower in _MULTIPAGE_FORMATS else fmt_lower)
@@ -156,8 +158,6 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
             except OSError:
                 pass
         raise
-    finally:
-        doc.close()
 
     zip_path = get_temp_path(f"images_{uuid.uuid4().hex}.zip")
     try:
