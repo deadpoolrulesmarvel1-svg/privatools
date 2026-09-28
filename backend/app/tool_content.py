@@ -707,7 +707,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "pdf-to-epub": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Works best on simple, text-heavy PDFs."},
         {"name": "PrivaTools copies the text and images", "text": "Each page is exported with PyMuPDF: every line of text keeps its font size, bold, italics and color, and images are embedded. All pages go into a single section; headings, lists and chapters are not detected."},
-        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, and the file lacks the navigation document the EPUB 3 standard requires, so check it in your e-book app before relying on it."},
+        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, so check it in your e-book app before relying on it. The book's contents list has one entry for each page."},
     ],
     "pdf-to-gif": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
@@ -2071,7 +2071,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "pdf-to-epub": [
         {"q": "How accurate is the EPUB compared to the PDF?", "a": "The text comes across line by line, in the order it is stored in the PDF, with its font sizes, bold, italics and colors. Headings, lists and chapters are not detected, and multi-column layouts, footnotes, and figure captions may need cleanup in an e-book editor such as calibre."},
         {"q": "Does it preserve images?", "a": "Yes — images are embedded inside the page as inline data, at the resolution stored in the PDF, rather than as separate image files in the EPUB."},
-        {"q": "Will the table of contents work?", "a": "No table of contents is created, even when the PDF has bookmarks: the whole document is a single section of the book."},
+        {"q": "Will the table of contents work?", "a": "The contents list has one entry for each page of the PDF, Page 1 onwards, so you can jump to a page. The PDF's bookmarks are not carried over, and the whole document is a single section of the book."},
     ],
     "pdf-to-gif": [
         {"q": "Will the GIFs look good?", "a": "GIF's 256-color palette quantizes the page. Text remains readable but gradients and photos show banding. Use PNG for higher quality."},

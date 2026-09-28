@@ -1,13 +1,16 @@
 import asyncio
 import csv
+import html as html_text
 import io
 import json
 import logging
 import os
 import re
 import tempfile
+import time
 import uuid
 import zipfile
+from xml.etree import ElementTree
 
 import fitz
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -185,6 +188,57 @@ def _parse_form_fields(raw: str) -> list[dict]:
     return normalized
 
 
+# An EPUB's pages are XHTML, which e-readers parse as XML. PyMuPDF's page HTML
+# is HTML: it leaves <img> open, so a page with a picture made the whole book
+# fail to parse, and it gives every page's box id="page0".
+_OPEN_IMG = re.compile(r"<img\b([^>]*?)\s*/?>")
+
+
+def _parses_as_xhtml(fragment: str) -> bool:
+    try:
+        ElementTree.fromstring(f'<div xmlns="http://www.w3.org/1999/xhtml">{fragment}</div>')
+    except ElementTree.ParseError:
+        return False
+    return True
+
+
+def _page_xhtml(page, number: int) -> str:
+    """One page as XHTML: PyMuPDF's page HTML (text with its sizes, bold,
+    italics and colours, and pictures) with <img> closed and a page id of its
+    own. A page that still does not parse falls back to PyMuPDF's plain XHTML
+    for that page (text and pictures without the styling), then to its text."""
+    page_id = f'id="page{number}-body"'
+    markup = _OPEN_IMG.sub(r"<img\1/>", page.get_text("html")).replace('id="page0"', page_id, 1)
+    if _parses_as_xhtml(markup):
+        return markup
+    plain = page.get_text("xhtml").replace('id="page0"', page_id, 1)
+    if _parses_as_xhtml(plain):
+        return plain
+    return f"<div {page_id}><p>{html_text.escape(page.get_text('text'))}</p></div>"
+
+
+def _epub_nav(pages: int) -> str:
+    """The navigation document EPUB 3 requires: one entry for each page."""
+    items = "".join(f'<li><a href="content.xhtml#page{n}">Page {n}</a></li>' for n in range(1, pages + 1))
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">'
+        "<head><title>Contents</title></head><body>"
+        f'<nav epub:type="toc" id="toc"><h1>Contents</h1><ol>{items}</ol></nav>'
+        "</body></html>"
+    )
+
+
+def _epub_package() -> str:
+    modified = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:{uuid.uuid4()}</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">{modified}</meta></metadata>
+<manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
+<spine><itemref idref="content"/></spine>
+</package>"""
+
+
 @router.post("/pdf-to-epub")
 async def pdf_to_epub(file: UploadFile = File(...)):
     """Convert PDF to simple EPUB by extracting text per page."""
@@ -202,10 +256,11 @@ async def pdf_to_epub(file: UploadFile = File(...)):
         def _work(out_path: str) -> None:
             doc = _open_pdf(data)
             try:
+                if len(doc) == 0:
+                    raise HTTPException(status_code=400, detail="This PDF has no pages.")
                 pages_html: list[str] = []
                 for i, page in enumerate(doc):
-                    text = page.get_text("html")
-                    pages_html.append(f'<div id="page{i + 1}">{text}</div>')
+                    pages_html.append(f'<div id="page{i + 1}">{_page_xhtml(page, i + 1)}</div>')
 
                 with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
                     archive.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
@@ -213,17 +268,14 @@ async def pdf_to_epub(file: UploadFile = File(...)):
                         "META-INF/container.xml",
                         '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
                     )
-                    content_html = f'<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Converted PDF</title></head><body>{"".join(pages_html)}</body></html>'
-                    archive.writestr("content.xhtml", content_html)
-                    archive.writestr(
-                        "content.opf",
-                        """<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
-<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:{uuid.uuid4()}</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language></metadata>
-<manifest><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
-<spine><itemref idref="content"/></spine>
-</package>""",
+                    content_html = (
+                        '<?xml version="1.0" encoding="utf-8"?>\n'
+                        '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Converted PDF</title></head>'
+                        f'<body>{"".join(pages_html)}</body></html>'
                     )
+                    archive.writestr("content.xhtml", content_html)
+                    archive.writestr("nav.xhtml", _epub_nav(len(pages_html)))
+                    archive.writestr("content.opf", _epub_package())
             finally:
                 doc.close()
 

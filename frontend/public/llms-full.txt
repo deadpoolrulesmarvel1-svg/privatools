@@ -555,7 +555,7 @@ URL: https://privatools.me/tool/pdf-to-epub
 
 Convert a PDF into the EPUB format for e-readers
 
-Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.
+Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.
 
 ### Markdown / Config to PDF
 

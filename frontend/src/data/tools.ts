@@ -782,13 +782,13 @@ const _toolsRaw: Tool[] = [
   {
     slug: "pdf-to-epub", icon: BookMarked, name: "PDF to EPUB",
     description: "Convert a PDF into the EPUB format for e-readers",
-    longDescription: "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.",
+    longDescription: "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.",
     seoTitle: "Convert PDF to EPUB Online – Basic E-Book File",
     metaDescription: "Turn a PDF into a basic EPUB e-book file that keeps the text and images of every page, in page order. Free conversion, no sign-up needed.",
     synonyms: "ebook kindle reader book",
     popularity: 141,
     category: "from-pdf", accepts: ".pdf", outputLabel: "book.epub",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "markdown-to-pdf", icon: Code2, name: "Markdown / Config to PDF",
