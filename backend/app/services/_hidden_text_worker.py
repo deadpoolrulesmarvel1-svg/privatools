@@ -780,7 +780,8 @@ def _rects(drawing: dict) -> list[tuple[float, float, float, float]] | None:
 def _read_areas(page: fitz.Page) -> tuple[list[_Area] | None, list, list[_Group]]:
     """Filled shapes, thick strokes, images and gradients in drawing order, the
     page's drawing log, and its transparency groups. The areas are None when
-    the page draws more than MAX_PAGE_DRAWINGS things with an area."""
+    the page draws more than MAX_PAGE_DRAWINGS things with an area, or holds
+    more than that many shapes and transparency groups together."""
     log = page.get_bboxlog()
     if len(log) > MAX_PAGE_CALLS:
         return None, log, []
@@ -798,6 +799,8 @@ def _read_areas(page: fitz.Page) -> tuple[list[_Area] | None, list, list[_Group]
             blend = str(d.get("blendmode") or "")
             if opacity < 0.999 or blend not in _NORMAL_BLENDS:
                 groups.append(_Group(x0, y0, x1, y1, int(d.get("level") or 0), opacity, blend))
+                if drawn + len(groups) > MAX_PAGE_DRAWINGS:
+                    return None, log, []
             continue
         seqno = d.get("seqno")
         if seqno is not None:
@@ -899,19 +902,20 @@ def _drawn_by_font(glyphs: list[_Glyph], log: list, areas: list[_Area]) -> None:
             a.owned = True
 
 
-def _apply_groups(glyphs: list[_Glyph], groups: list[_Group]) -> None:
+def _apply_groups(glyphs: list[_Glyph], groups: list[_Group], width: float, height: float) -> None:
     """Give each character the opacity and blend mode of the groups around it.
 
     A group's content is known only by where the group lies, so everything
     inside its box counts as inside it. Text that is not really in the group
     still shows, and the pixel test clears it.
     """
+    grid = _Grid(groups, width, height)
     for g in glyphs:
         if g.blank:
             continue
         cx, cy = g.centre
         level = -1
-        for group in groups:
+        for group in grid.at(cx, cy):
             if group.x0 <= cx <= group.x1 and group.y0 <= cy <= group.y1:
                 g.group_alpha *= max(0.0, min(1.0, group.opacity))
                 if group.blend not in _NORMAL_BLENDS and group.level >= level:
@@ -1776,7 +1780,7 @@ def analyse_page(page: fitz.Page, page_no: int, rotation: int = 0, everything_pa
     if areas is not None:
         areas.extend(_block_covers(glyphs))
     if groups:
-        _apply_groups(glyphs, groups)
+        _apply_groups(glyphs, groups, frame.width, frame.height)
     # Without the shapes (too many, or their order unknown), text is still
     # checked against the bare page, and pixels still decide.
     grid = _Grid(areas or [], frame.width, frame.height)
