@@ -6,7 +6,7 @@
     },
     {
       "name": "Configure output settings",
-      "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection."
+      "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection. A page too big for 100 megapixels at the resolution you choose, such as a large poster at 300 DPI, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all: about 900 A4 pages at 150 DPI, or 230 at 300 DPI; split a longer PDF first."
     },
     {
       "name": "Convert and download",

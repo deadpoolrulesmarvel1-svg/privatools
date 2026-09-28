@@ -18,6 +18,8 @@ interface PdfaResult {
 // Map common heuristic notes to plain-English explanations.
 // Matches by lowercase substring — order matters (most-specific first).
 const NOTE_EXPLANATIONS: { match: string; explain: string }[] = [
+    { match: "no title", explain: "PDF/A does not require a title, but archives usually ask for one to identify the document. You can set it with the Metadata tool." },
+    { match: "no author", explain: "PDF/A does not require an author, but archives usually ask who made the document. You can set it with the Metadata tool." },
     { match: "encrypt", explain: "PDF/A forbids encryption — archival files must remain decryptable indefinitely." },
     { match: "javascript", explain: "Embedded JavaScript can break in future PDF readers and is not allowed in PDF/A." },
     { match: "embedded file", explain: "Generic attachments aren't allowed in PDF/A-1; PDF/A-3 permits them but most archives forbid them." },

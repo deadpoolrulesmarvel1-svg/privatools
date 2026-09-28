@@ -174,7 +174,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-image": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. The queue lists each file with its size."},
-        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection."},
+        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection. A page too big for 100 megapixels at the resolution you choose, such as a large poster at 300 DPI, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all: about 900 A4 pages at 150 DPI, or 230 at 300 DPI; split a longer PDF first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes a separate image file: a multi-page PDF downloads as a ZIP of images and a one-page PDF as a single image. Several PDFs arrive together in one ZIP."},
     ],
 
@@ -280,12 +280,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "split-in-half": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."},
-        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its bottom half followed by its top half."},
-        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original."},
+        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its top half followed by its bottom half. Both follow the page as it is shown, so a spread that a scanner stored turned sideways is still cut into its left and right pages."},
+        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original. Each new page is the whole original page with its visible area set to one half, so the other half's content is still in the file, out of view."},
     ],
     "pdf-to-svg": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."},
-        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG, which currently downloads with a .zip name, so rename it to .svg."},
+        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG."},
     ],
     "pdf-to-html": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. Each page is exported with PyMuPDF's HTML exporter, which keeps the text, images and font styles."},
@@ -603,7 +603,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"name": "Upload a scanned PDF", "text": "Drop a scanned PDF up to 500 MB. Works best on documents where text lines are visible."},
         {"name": "PrivaTools detects skew per page", "text": "The algorithm tries rotations of up to about 6° either way, in half-degree steps, on a low-resolution copy of each page and picks the angle at which the lines of text run straightest."},
-        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise; the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
+        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or smaller, for a page that would take more than 16 megapixels); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
     ],
     "esign-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document to sign, up to 500 MB."},
@@ -653,7 +653,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI)."},
+        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI). A page too big for 100 megapixels at that resolution is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages at Balanced; split a longer PDF first."},
         {"name": "Download the inverted PDF", "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."},
     ],
     "jpg-to-pdf": [
@@ -701,22 +701,22 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-bmp": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of BMPs", "text": "Each page becomes one 24-bit BMP file, and a multi-page PDF downloads as a ZIP. BMP is uncompressed so files are LARGE — about 6.5 MB for each A4 page."},
     ],
     "pdf-to-epub": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Works best on simple, text-heavy PDFs."},
         {"name": "PrivaTools copies the text and images", "text": "Each page is exported with PyMuPDF: every line of text keeps its font size, bold, italics and color, and images are embedded. All pages go into a single section; headings, lists and chapters are not detected."},
-        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, and the file lacks the navigation document the EPUB 3 standard requires, so check it in your e-book app before relying on it."},
+        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, so check it in your e-book app before relying on it. The book's contents list has one entry for each page."},
     ],
     "pdf-to-gif": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of GIFs", "text": "Each page becomes one GIF file, and a multi-page PDF downloads as a ZIP. Useful for embedding PDF previews in legacy systems."},
     ],
     "pdf-to-jpg": [
         {"name": "Drop your PDF", "text": "Upload a PDF up to 500 MB. It is processed in isolated temporary per-request storage for the conversion, and response cleanup removes the job's temporary files after your download is sent."},
-        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image."},
+        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Add more PDFs (optional)", "text": "Queue up to 25 PDFs. Each one is converted separately and gets its own download, and Download all bundles the results into one ZIP."},
         {"name": "Need only some pages?", "text": "Every page is converted. To convert only some, pull them into a smaller PDF with Extract Pages first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes one JPG. Multi-page PDFs return as a ZIP; single-page PDFs return as a single JPG file."},
@@ -728,12 +728,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-png": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of PNGs", "text": "Each page becomes one PNG file with lossless compression, and a multi-page PDF downloads as a ZIP. Pages are rendered onto a white background, so the PNGs have no transparency."},
     ],
     "pdf-to-pptx": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). No text boxes are created, so the text is part of the picture."},
+        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI (or at the largest size within 100 megapixels, for a page too big for that) and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). One request can draw up to 2,000 megapixels in all, about 500 A4 pages; split a longer PDF first. No text boxes are created, so the text is part of the picture."},
         {"name": "Download the .pptx file", "text": "Open in PowerPoint / Keynote / Google Slides to present it, or to add your own titles, notes and slides around the page pictures."},
     ],
     "pdf-to-tiff": [
@@ -822,7 +822,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF. Only the pixels are copied, so camera, author and location details in the TIFF tags are removed."},
     ],
     "transparent-background": [
-        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
+        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300). A page larger than 25 megapixels at that DPI (A3 at 300 DPI is 17) is drawn at the largest size within 25 megapixels, and one request can draw up to 400 megapixels in all, about 200 A4 pages at 144 DPI; split a longer PDF first."},
         {"name": "Set threshold", "text": "Set how close to pure white a pixel must be to count as background, from 180 to 255 (245 by default). A pixel whose red, green and blue values are all at or above the threshold becomes transparent."},
         {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."},
     ],
@@ -1173,6 +1173,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Upload the PDF', "text": 'Select the PDF you need to audit. Tagged, untagged, scanned and born-digital files are all accepted.'},
         {"name": 'Run the audit', "text": 'The document is checked against PDF/UA and WCAG expectations: tag structure, document language, title metadata, and alternative text on images.'},
         {"name": 'Read the report', "text": 'Each finding names the requirement it relates to, so you can fix the document at source. The report is advice, not a legal certification.'},
+    ],
+    "hidden-text-checker": [
+        {"name": "Add the PDF", "text": "Drop or select a PDF of up to 500 pages and 500 MB, such as a résumé or paper you are screening, or a redacted document before you share it. It is uploaded over HTTPS and checked on the PrivaTools server in isolated temporary per-request storage. The page preview is drawn on your device."},
+        {"name": "Run the check", "text": "Click Check for hidden text. Every page is examined for text a reader cannot see but a program still reads: text set to be invisible, fully transparent or drawn in a font whose letters draw nothing, Unicode tag characters, text in the colour of what lies behind it or faded or blended away by the group it is drawn in, text too small or too squeezed to read, text off the page or cut away by a clipping path, text in layers that are switched off or hidden, text under a box, image, marker scribble or line of █ characters drawn over it, text in hidden comments and form fields, and redaction marks that were never applied."},
+        {"name": "Read the findings", "text": "Each finding gives the page, the reason and the exact words, and is numbered and highlighted on the page preview; the counts show how many of each kind were found. Invisible text over a scanned page image, which OCR software adds so a scan can be searched, is outlined and listed separately and is not counted as hidden text. A page that could not be read, or where some checks could not run, is named, and the result then says the PDF could not be fully checked."},
+        {"name": "Fix it, or keep the report", "text": "Download the report as text or JSON. It holds the findings and nothing else of the document, but it quotes the hidden words, including any under redaction boxes, so share it as carefully as the document. To remove what was found, use Redact PDF, which deletes the text under the boxes you draw, or Sanitize Document, which removes hidden layers along with scripts and attachments. A clean result means none of these checks matched, not that the file is safe in every way."},
     ],
     "remove-watermark": [
         {"name": 'Upload the watermarked PDF', "text": 'Select a PDF that carries a visible watermark.'},
@@ -1526,14 +1532,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "split-in-half": [
         {"q": "What is this for?", "a": "Scans of open books and magazines, where each scanned sheet holds two pages side by side. Cutting them apart gives a document that reads one page at a time, which suits phones, e-readers and OCR."},
         {"q": "Which direction should I choose?", "a": "Vertical for a two-page spread scanned side by side, which is the usual case. Horizontal for sheets where the two halves are stacked, such as some forms or tickets printed two to a page."},
-        {"q": "Does it cut exactly down the middle?", "a": "Yes, it splits each page into two equal halves of the full page. If the spread was scanned off-centre, a little of one page may appear on the other. Cropping first does not help: the cut ignores any crop set with Crop PDF or Auto Crop, and the cropped-off edges come back."},
-        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, for each original page in turn — so a correctly scanned book reads in order. A horizontal cut puts each page's bottom half first; for top-then-bottom order, run Reverse PDF before and after splitting."},
+        {"q": "Does it cut exactly down the middle?", "a": "Yes: each page is cut into two equal halves of what shows, which is the page after any crop. If the spread was scanned off-centre, crop it first with Crop PDF so the fold sits in the middle; the cut follows the crop."},
+        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, top then bottom for a horizontal one, for each original page in turn — so a correctly scanned book reads in order."},
         {"q": "Does it reduce image quality?", "a": "No resampling is involved in the cut itself; each half shows the same content at the same resolution as the original page."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "pdf-to-svg": [
         {"q": "What kind of PDFs convert best?", "a": "Vector PDFs (drawn in Illustrator, Inkscape, Figma, LaTeX, etc.) convert into editable vector SVGs. Scanned/raster PDFs become SVGs containing embedded images."},
-        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file, which currently downloads with a .zip name, so rename it to .svg."},
+        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file."},
         {"q": "Can I edit the SVGs after?", "a": "Yes. Open them in any vector editor (Illustrator, Inkscape, Figma) to edit shapes and paths. Text is converted to outlines, so it keeps its exact look but cannot be edited as text, and links are not kept."},
     ],
     "pdf-to-html": [
@@ -1953,6 +1959,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"q": "My scans look fine — should I run deskew?", "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."},
         {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."},
+        {"q": "How long a PDF can I deskew?", "a": "Up to 500 MB, and pages adding up to 400 megapixels at the resolution it straightens them at, which is about 400 A4 pages. The pages are counted before any work starts, whether or not they turn out tilted; a longer PDF is refused with a message saying so, so split it and deskew the parts."},
         {"q": "Should I deskew before or after OCR?", "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."},
     ],
     "esign-pdf": [
@@ -2071,7 +2078,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "pdf-to-epub": [
         {"q": "How accurate is the EPUB compared to the PDF?", "a": "The text comes across line by line, in the order it is stored in the PDF, with its font sizes, bold, italics and colors. Headings, lists and chapters are not detected, and multi-column layouts, footnotes, and figure captions may need cleanup in an e-book editor such as calibre."},
         {"q": "Does it preserve images?", "a": "Yes — images are embedded inside the page as inline data, at the resolution stored in the PDF, rather than as separate image files in the EPUB."},
-        {"q": "Will the table of contents work?", "a": "No table of contents is created, even when the PDF has bookmarks: the whole document is a single section of the book."},
+        {"q": "Will the table of contents work?", "a": "The contents list has one entry for each page of the PDF, Page 1 onwards, so you can jump to a page. The PDF's bookmarks are not carried over, and the whole document is a single section of the book."},
     ],
     "pdf-to-gif": [
         {"q": "Will the GIFs look good?", "a": "GIF's 256-color palette quantizes the page. Text remains readable but gradients and photos show banding. Use PNG for higher quality."},
@@ -2084,7 +2091,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How long does it take?", "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end, depending on how complex the pages are."},
         {"q": "What happens to a confidential PDF after I upload it?", "a": "The PDF is uploaded over HTTPS and rendered in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated JPGs after the result is sent, and a background sweep clears anything left behind by an interrupted request."},
         {"q": "What resolution are the JPGs?", "a": "150 DPI, which makes an A4 page about 1240 x 1755 pixels, plenty for on-screen viewing and social-media sharing. For 72 DPI thumbnails or 300 DPI print copies, use PDF to Image, which lets you choose."},
-        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG, which currently downloads with a .zip name, so rename it to .jpg."},
+        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG."},
         {"q": "What's the file size limit?", "a": "Up to 500 MB per file on the hosted site. Each page becomes its own JPG, so a very long document produces a large ZIP and can hit the request timeout; split the PDF first if that happens. Fair-use rate limits apply."},
         {"q": "Do the JPGs carry a watermark or need an account?", "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions."},
     ],
@@ -2445,6 +2452,16 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": 'Why does my scanned PDF fail almost everything?', "a": 'A scan is a picture of a page. There is no text layer, no tag tree, and nothing for a screen reader to announce. Run OCR first to add real text, then check again.'},
         {"q": "Is my document uploaded to be checked?", "a": "Yes. It is uploaded over HTTPS and checked in the same isolated temporary per-request storage every server tool here uses. Response cleanup removes the job's temporary files after the report is sent, and a background sweep clears anything left behind by an interrupted request. The document is not added to an account or used for model training."},
         {"q": 'Can it fix the problems it finds?', "a": 'No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known.'},
+    ],
+    "hidden-text-checker": [
+        {"q": "How do I find hidden text in a PDF?", "a": "Run the file through this checker. It reads every character the way text extraction does, then tests whether a reader can actually see it: how it is drawn (text render mode 3 or 7 draws nothing, and so does a font with empty letters), its opacity and that of the group it is drawn in, its blend mode, its colour against what is drawn behind it, its size and spacing, whether it lies on the visible page or inside a clipping path, whether its layer is shown, and whether a box, stroke, image or line of block characters was drawn over it. Where the answer depends on how the page looks, the page is rendered and the words count as hidden only if their area shows no ink at all, so readable text is not reported."},
+        {"q": "Can it find hidden AI prompts in a résumé or a paper?", "a": "Yes, when they are hidden in any of the ways it checks. Instructions such as \"ignore all previous instructions\" have been hidden in résumés and papers as white or tiny text, where screening software and AI models read them but people do not. The checker shows each hidden passage and its exact words. It cannot tell whether hidden text is malicious, only that it is there, so read it and decide; white text can also be leftover formatting."},
+        {"q": "How do I check whether a redacted PDF is really redacted?", "a": "Check the redacted file before you share it. A black box drawn over text hides it from the eye but leaves the words in the file, where copying, search and AI tools still find them; the checker reports those words as text under a shape or image. Areas marked for redaction but never applied are reported too, as is text under a picture of the page laid on top. A real redaction removes the text, so nothing is found under the box. Redact PDF removes the text under the boxes you draw."},
+        {"q": "Why is invisible text over my scanned pages listed separately?", "a": "OCR software makes a scan searchable by laying invisible text over the page image, so that text is expected. It is outlined on the preview and listed as an OCR text layer, with a sample of its words, and is not counted as hidden text; the downloaded report gives only its page and word count. Invisible words that sit over a blank part of the page image, where the picture shows nothing, are reported as hidden text, and so is invisible text over a photo or a chart on a page of ordinary text."},
+        {"q": "Why does it report text nobody meant to hide?", "a": "Some hidden text is harmless. A web page saved as PDF can carry a link meant only for screen readers, such as \"Skip to main content\", clipped out of view, and white text can be leftover formatting. The checker reports what is in the file and why a reader cannot see it; whether it matters is for you to decide."},
+        {"q": "Does a clean result mean the PDF is safe?", "a": "No. It means none of these checks matched. The checker does not look inside attachments, scripts or metadata, cannot see text drawn with a font whose letters show as different letters, and does not notice text hidden by a soft mask whose shape is never painted, or under a shape that covers each letter only in part. A page it could not read is named, and the result then says it could not fully check the PDF instead of giving the all-clear. Sanitize Document removes scripts, attachments and hidden layers, and Strip Metadata removes document properties."},
+        {"q": "Is my PDF uploaded?", "a": "Yes. The check runs on the PrivaTools server, because it needs the drawing order, colour and opacity of every character, which the PDF engine in your browser does not report. The file is uploaded over HTTPS, checked in isolated temporary per-request storage by a separate process with memory and time limits, and deleted when the check ends; a background sweep clears anything an interrupted request leaves behind. The report is sent back to you and not stored. Your file is not changed."},
+        {"q": "What are the limits?", "a": "Up to 500 pages and 500 MB per file. A check stops after 20 seconds plus 12 for each MB of the file, 90 seconds at most; split a longer document with Split PDF and check the parts. Password-protected PDFs must be unlocked first, and the site's fair-use rate limits apply."},
     ],
     "bates-remove": [
         {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as page text and you can describe their shape: prefix, digit count, suffix. A stamp added as a stamp annotation or a form field is found but cannot be removed, and the page says so. A number printed into a scanned image can only be found through the scan\'s OCR text: then the text is removed and the picture under it whitened.'},

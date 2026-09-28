@@ -75,7 +75,7 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split-in-half.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/split-in-half",
     "priority": 0.6
   },
@@ -299,7 +299,7 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "deskewed.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/deskew-pdf",
     "priority": 0.6
   },
@@ -699,7 +699,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-image",
     "priority": 0.6
   },
@@ -747,7 +747,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-bmp",
     "priority": 0.6
   },
@@ -763,7 +763,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-gif",
     "priority": 0.6
   },
@@ -779,7 +779,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-svg",
     "priority": 0.6
   },
@@ -795,7 +795,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-jpg",
     "priority": 0.8
   },
@@ -811,7 +811,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-png",
     "priority": 0.6
   },
@@ -827,7 +827,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "slides.pptx",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-pptx",
     "priority": 0.6
   },
@@ -1043,7 +1043,7 @@
     "slug": "pdf-to-epub",
     "name": "PDF to EPUB",
     "description": "Convert a PDF into the EPUB format for e-readers",
-    "longDescription": "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.",
+    "longDescription": "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.",
     "seoTitle": "Convert PDF to EPUB Online – Basic E-Book File",
     "metaDescription": "Turn a PDF into a basic EPUB e-book file that keeps the text and images of every page, in page order. Free conversion, no sign-up needed.",
     "synonyms": "ebook kindle reader book",
@@ -1051,7 +1051,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "book.epub",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-epub",
     "priority": 0.6
   },
@@ -1473,7 +1473,7 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "transparent.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/transparent-background",
     "priority": 0.6
   },
@@ -1489,7 +1489,7 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "inverted.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/invert-colors",
     "priority": 0.6
   },
@@ -1590,6 +1590,22 @@
     "lastReviewed": "2026-09-24",
     "path": "/tool/sanitize-pdf",
     "priority": 0.6
+  },
+  {
+    "slug": "hidden-text-checker",
+    "name": "Hidden Text Checker",
+    "description": "Find text in a PDF that readers can't see",
+    "longDescription": "Find hidden text in a PDF online for free: text a reader can't see but search, copy and paste, screening software and AI models still read. It finds text set to be invisible or fully transparent, text in the colour of what lies behind it (white on white), text too small to read, text off the page or clipped away, text in layers that are switched off, text under a box, shape or image drawn over it (a redaction that left the words in the file), text in hidden comments and form fields, and redaction marks that were never applied. Each finding gives the page, the reason and the exact words, highlighted on a preview of the page, and the report downloads as text or JSON. Invisible text over scanned pages, which OCR adds, is listed separately. A clean result means none of these checks matched, not that the file is safe in every way. The PDF is checked on our server in temporary storage, up to 500 pages, and is not changed.",
+    "seoTitle": "Find Hidden Text in a PDF – AI Prompts, Failed Redactions",
+    "metaDescription": "Check a PDF for text people cannot see but software reads: hidden AI prompts in résumés, and redactions that left the words in the file. Free, no sign-up.",
+    "synonyms": "hidden text detector finder invisible text white text show hidden text prompt injection hidden prompt resume cv ai prompt redaction checker check redaction failed redaction black box text under box hidden layer",
+    "popularity": 62,
+    "category": "security",
+    "accepts": ".pdf",
+    "outputLabel": "report",
+    "lastReviewed": "2026-09-28",
+    "path": "/tool/hidden-text-checker",
+    "priority": 0.8
   },
   {
     "slug": "reverse-pdf",
