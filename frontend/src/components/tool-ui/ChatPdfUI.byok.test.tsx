@@ -71,4 +71,11 @@ describe("Chat with PDF through Groq and OpenRouter", () => {
         expect(alert).toHaveTextContent("That key was rejected");
         expect(alert).not.toHaveTextContent(DUMMY_KEY);
     });
+
+    it("does not report a request the browser blocked as a PrivaTools outage", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+        const alert = await askWith("groq");
+        expect(alert).toHaveTextContent("The browser blocked the request to Groq");
+        expect(alert).not.toHaveTextContent("Couldn't reach the server");
+    });
 });

@@ -6,7 +6,7 @@
  * are only auditable if there is exactly one place to check.
  */
 
-import { ByokError, classifyHttpStatus } from "./errors";
+import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
     buildRequest, buildTranscribeRequest, parseResponse, parseTranscribeResponse,
     providerById, supportsTranscription, TRANSCRIBE_MODELS, type Message,
@@ -53,14 +53,10 @@ export async function complete(args: CompleteArgs): Promise<string> {
         // is the more useful guess: "check your connection" sends someone to
         // debug the wrong thing, and this path is only reachable for a
         // provider that was already configured.
-        throw new ByokError(
-            "CspBlocked",
-            `fetch failed: ${String(redact((err as Error).message))}`,
-            `The browser blocked the request to ${provider.label}. If you are using a custom endpoint it is probably not on the allowed list; otherwise check whether something on your network is intercepting it. PrivaTools will not route your key or your file through its own server as a workaround.`,
-        );
+        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider.label));
     }
 
-    if (!res.ok) throw classifyHttpStatus(res.status);
+    if (!res.ok) throw await refusal(res, { label: provider.label, model: args.model, customEndpoint: provider.customBaseUrl });
 
     const json = await res.json().catch(() => ({}));
     const text = parseResponse(provider, json);
@@ -99,9 +95,26 @@ export async function transcribe(args: TranscribeArgs): Promise<string> {
         res = await fetch(req.url, { method: "POST", headers: req.headers, body: req.body, signal: args.signal });
     } catch (err) {
         if ((err as Error)?.name === "AbortError") throw new ByokError("Aborted", "aborted", "Cancelled.");
-        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`,
-            `The browser blocked the request to ${provider.label}. If you are using a custom endpoint it is probably not on the allowed list; otherwise check whether something on your network is intercepting it.`);
+        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider.label));
     }
-    if (!res.ok) throw classifyHttpStatus(res.status);
+    if (!res.ok) throw await refusal(res, { label: provider.label, model, customEndpoint: provider.customBaseUrl });
     return parseTranscribeResponse(await res.text()).trim();
+}
+
+/**
+ * The error for a request the provider refused. Its body is read only to tell
+ * a bad key, an unknown model and an oversized request apart; the thrown
+ * error never carries it (see classifyHttpStatus).
+ */
+async function refusal(res: Response, context: RequestContext): Promise<ByokError> {
+    let body = "";
+    try { body = await res.text(); } catch { /* the status alone still classifies it */ }
+    return classifyHttpStatus(res.status, body, context);
+}
+
+/** Worded without "network" or "connection": the pages' generic rewording
+ *  (friendlyError) turns those into "Couldn't reach the server", which
+ *  would send the visitor to look for a PrivaTools outage. */
+function blockedMessage(label: string): string {
+    return `The browser blocked the request to ${label}, or it got no answer. If you are using a custom endpoint it is probably not on the allowed list; otherwise check that this device is online and that no extension or filtering proxy is stopping the request. PrivaTools will not route your key or your file through its own server as a workaround.`;
 }

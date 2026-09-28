@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { friendlyError } from "@/lib/utils";
 import { complete } from "./client";
 import type { ByokError } from "./errors";
 
@@ -9,6 +10,7 @@ function mockFetch(status: number, body: unknown) {
     ok: status >= 200 && status < 300,
     status,
     json: async () => body,
+    text: async () => JSON.stringify(body),
   } as unknown as Response);
 }
 
@@ -73,6 +75,32 @@ describe("complete", () => {
     } catch (e) {
       expect((e as ByokError).userMessage.toLowerCase()).toContain("will not route");
     }
+  });
+});
+
+describe("what a refusal says", () => {
+  it("reports a Gemini key Google refuses with a 400 as a rejected key", async () => {
+    mockFetch(400, { error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT", details: [{ reason: "API_KEY_INVALID" }] } });
+    await expect(complete({ providerId: "gemini", apiKey: "AIza-dummy-value", model: "gemini-3.8-flash", messages: [{ role: "user", content: "hi" }] }))
+      .rejects.toMatchObject({ kind: "BadKey" });
+  });
+
+  it("names the model a provider refused", async () => {
+    mockFetch(404, { error: { message: "The model `gpt-9` does not exist or you do not have access to it.", code: "model_not_found" } });
+    await expect(complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "gpt-9", messages: [{ role: "user", content: "hi" }] }))
+      .rejects.toMatchObject({ kind: "BadModel", userMessage: expect.stringContaining('OpenAI refused the model "gpt-9"') });
+  });
+
+  it("keeps a blocked request's explanation through the pages' generic rewording", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    let shown = "";
+    try {
+      await complete({ providerId: "groq", apiKey: "gsk-dummy-value", model: "m", messages: [] });
+    } catch (e) {
+      shown = (e as ByokError).userMessage;
+    }
+    expect(shown).toContain("blocked the request to Groq");
+    expect(friendlyError(shown)).toBe(shown);
   });
 });
 
