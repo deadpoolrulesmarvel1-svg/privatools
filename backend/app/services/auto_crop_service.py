@@ -20,7 +20,6 @@ from __future__ import annotations
 import fitz  # PyMuPDF
 
 from ..utils.cleanup import open_pdf_document
-from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_space import pdf_box, visible_area
 
@@ -59,8 +58,6 @@ def auto_crop(content: bytes) -> str:
     output_path = temp_output("cropped", "pdf")
     doc = open_pdf_document(content)
     try:
-        if len(doc) == 0:
-            raise ValidationError("This PDF has no pages.")
         for page in doc:
             box = content_crop(page)
             if box is not None:

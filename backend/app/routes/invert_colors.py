@@ -37,7 +37,7 @@ def _invert(input_path: str, dpi: int) -> str:
     """CPU-heavy pixmap inversion — processes pages in parallel."""
     import fitz
 
-    src = open_pdf_document(input_path)
+    src = open_pdf_document(input_path, copying=True)  # pages are copied to invert them in parallel
     page_count = len(src)
 
     if page_count <= 2:

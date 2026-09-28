@@ -63,7 +63,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     except OSError:
         input_size = 0
 
-    doc = open_pdf_document(input_path)
+    doc = open_pdf_document(input_path, copying=True)  # pages are copied to render them in parallel
 
     fmt_lower = fmt.lower()
     pil_format = "JPEG" if fmt_lower in ("jpeg", "jpg") else fmt_lower.upper()

@@ -70,7 +70,7 @@ def split_in_half(input_path: str, direction: str = "vertical") -> str:
 
     output_path = temp_output("split_half", "pdf")
 
-    src = open_pdf_document(input_path)
+    src = open_pdf_document(input_path, copying=True)
     out = fitz.open()
     try:
         for page_idx in range(len(src)):

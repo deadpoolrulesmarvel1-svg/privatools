@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import time
 from collections import deque
@@ -283,30 +284,89 @@ def safe_open_pdf(path: str, **kwargs):
         raise ValueError("This PDF appears to be corrupt or invalid.") from exc
 
 
-def open_pdf_document(source: str | bytes):
+_DAMAGED_PDF = (
+    "This PDF is damaged, most likely cut short by an interrupted download. "
+    "Download it again, or fix it with Repair PDF, then try again."
+)
+_REFERENCE = re.compile(r"(\d+)\s+\d+\s+R\b")
+
+
+def _dangling_references(doc) -> bool:
+    """Whether an object refers to an object number past the end of the
+    cross-reference table. That is what a PDF cut short keeps after MuPDF
+    repairs it, and what PyMuPDF's insert_pdf refuses to copy ("source object
+    number out of range"). Reads object dictionaries only, not streams."""
+    count = doc.xref_length()
+    for xref in range(1, count):
+        try:
+            text = doc.xref_object(xref, compressed=True)
+        except Exception:  # an object MuPDF cannot read at all: nothing to follow
+            continue
+        if any(int(match.group(1)) >= count for match in _REFERENCE.finditer(text)):
+            return True
+    return False
+
+
+def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
+    """The PDF as qpdf rebuilds it, with references to lost objects dropped
+    and the pages that no longer exist left out; None if qpdf cannot."""
+    import io
+
+    import pikepdf
+
+    try:
+        with pikepdf.open(io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else source) as pdf:
+            out = io.BytesIO()
+            pdf.save(out)
+            return out.getvalue()
+    except (pikepdf.PdfError, OSError, ValueError):
+        return None
+
+
+def open_pdf_document(source: str | bytes, *, copying: bool = False):
     """Open a PDF with PyMuPDF, or raise the error its visitor should see.
 
     PyMuPDF opens a PDF that needs a password without complaint and fails only
     when a page is read, with "document closed or encrypted". Routes that
     turn every unexpected exception into a 500 answered that as a server
     fault, so the visitor saw "Processing failed. Please try again." and tried
-    again. This raises PdfEncryptedError for such a file and PdfCorruptError
-    for one PyMuPDF cannot read at all; the global handler answers both with a
-    400 that says what to do. A PDF with only an owner password (restrictions,
-    nothing needed to open it) opens as before. Takes a path or the bytes.
+    again. This raises PdfEncryptedError for such a file, and PdfCorruptError
+    for one PyMuPDF cannot read or that has no page it can read; the global
+    handler answers both with a 400 that says what to do. A PDF with only an
+    owner password (restrictions, nothing needed to open it) opens as before.
+    Takes a path or the bytes.
+
+    `copying`: the caller copies pages with insert_pdf. A PDF cut short opens
+    repaired, but copying its pages fails on references to the objects it
+    lost; such a file is rebuilt with qpdf first, which keeps the pages that
+    still exist. A file MuPDF repaired that copies fine is left as it is.
     """
     import fitz  # PyMuPDF
 
-    from .exceptions import PdfCorruptError, PdfEncryptedError
+    from .exceptions import PdfCorruptError, PdfEncryptedError, ValidationError
 
-    try:
-        if isinstance(source, (bytes, bytearray)):
-            doc = fitz.open(stream=source, filetype="pdf")
-        else:
-            doc = fitz.open(source)
-    except fitz.FileDataError as exc:
-        raise PdfCorruptError() from exc
+    def open_(data: str | bytes):
+        try:
+            if isinstance(data, (bytes, bytearray)):
+                return fitz.open(stream=data, filetype="pdf")
+            return fitz.open(data)
+        except fitz.FileDataError as exc:
+            raise PdfCorruptError() from exc
+
+    doc = open_(source)
     if doc.needs_pass:
         doc.close()
         raise PdfEncryptedError()
+    if copying and doc.is_repaired and _dangling_references(doc):
+        doc.close()
+        rebuilt = _rebuilt_by_qpdf(source)
+        if rebuilt is None:
+            raise PdfCorruptError(_DAMAGED_PDF)
+        doc = open_(rebuilt)
+    if len(doc) == 0:
+        repaired = doc.is_repaired
+        doc.close()
+        if repaired:
+            raise PdfCorruptError(_DAMAGED_PDF)
+        raise ValidationError("This PDF has no pages.")
     return doc

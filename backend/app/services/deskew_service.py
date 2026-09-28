@@ -105,7 +105,7 @@ def deskew(input_path: str) -> str:
     """Deskew PDF pages using parallel skew detection."""
     output_path = temp_output("deskewed", "pdf")
 
-    src = open_pdf_document(input_path)
+    src = open_pdf_document(input_path, copying=True)
     try:
         page_count = len(src)
         logger.info("deskew: start pages=%d", page_count)
