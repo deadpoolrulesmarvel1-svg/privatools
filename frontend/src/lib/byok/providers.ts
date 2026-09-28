@@ -95,8 +95,10 @@ export const PROVIDERS: Provider[] = [
         shape: "openai", models: ["openrouter/auto"], keysUrl: "https://openrouter.ai/keys",
     },
     {
+        // Groq's named replacement for Llama 3.3 70B, which it shut down for
+        // free and developer plans on 2026-08-16 (Enterprise only since).
         id: "groq", label: "Groq", origin: "https://api.groq.com", apiPath: "/openai/v1",
-        shape: "openai", models: ["llama-3.3-70b-versatile"], keysUrl: "https://console.groq.com/keys",
+        shape: "openai", models: ["openai/gpt-oss-120b"], keysUrl: "https://console.groq.com/keys",
     },
     {
         id: "together", label: "Together AI", origin: "https://api.together.xyz",

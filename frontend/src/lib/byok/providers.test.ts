@@ -3,9 +3,10 @@ import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, provide
 
 /**
  * Where each provider serves its API, from its own documentation. Checked on
- * 2026-09-28 with a dummy key: each address below answers 401 (key refused),
- * and Groq's and OpenRouter's old /v1 addresses answered 404, so every
- * request to those two providers failed whatever the key.
+ * 2026-09-28 with a dummy key: each address below refuses the key (401, or
+ * 400 API_KEY_INVALID from Gemini), and Groq's and OpenRouter's old /v1
+ * addresses answered 404, so every request to those two providers failed
+ * whatever the key.
  */
 const CHAT_ENDPOINTS: Record<string, string> = {
   anthropic: "https://api.anthropic.com/v1/messages",
@@ -37,7 +38,10 @@ describe("provider endpoints", () => {
    * stable id), DeepSeek's changelog (deepseek-chat and deepseek-reasoner
    * discontinued 2026-07-24), OpenRouter's model list (its router is
    * openrouter/auto; "auto" is no model), Together's serverless model list,
-   * and Anthropic's deprecations page (Opus 4.1 retired 2026-08-05).
+   * Anthropic's deprecations page (Opus 4.1 retired 2026-08-05), and Groq's
+   * deprecations and models pages (Llama 3.3 70B and 3.1 8B shut down
+   * 2026-08-16 for free and developer plans, which BYOK visitors hold; the
+   * models page lists them for Enterprise only).
    */
   const NOT_SERVED: Record<string, string[]> = {
     gemini: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-pro"],
@@ -45,6 +49,7 @@ describe("provider endpoints", () => {
     openrouter: ["auto"],
     together: ["meta-llama/Llama-3-70b-chat-hf"],
     anthropic: ["claude-opus-4-1"],
+    groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
   };
 
   it.each(Object.entries(NOT_SERVED))("%s offers no model it has shut down", (id, gone) => {

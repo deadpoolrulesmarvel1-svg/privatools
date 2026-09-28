@@ -31,6 +31,7 @@ const OPENAI_SHAPED: Record<string, string> = {
     deepseek: "https://api.deepseek.com/v1/chat/completions",
     openrouter: "https://openrouter.ai/api/v1/chat/completions",
     together: "https://api.together.xyz/v1/chat/completions",
+    groq: "https://api.groq.com/openai/v1/chat/completions",
 };
 const GEMINI = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/([^:]+):generateContent$/;
 
@@ -40,6 +41,8 @@ const SERVED: Record<string, string[]> = {
     deepseek: ["deepseek-flash", "deepseek-v4-pro"],
     openrouter: ["openrouter/auto", "openrouter/free"],
     together: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
+    // On the free and developer plans; Llama 3.3 70B is Enterprise-only since 2026-08-16.
+    groq: ["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
 };
 
 /** How each one refuses a model it does not serve, in the shape its API uses. */
@@ -48,6 +51,7 @@ const NO_SUCH_MODEL: Record<string, (model: string) => [number, unknown]> = {
     deepseek: () => [400, { error: { message: "Model Not Exist", type: "invalid_request_error", param: null, code: "invalid_request_error" } }],
     openrouter: model => [400, { error: { message: `${model} is not a valid model ID`, code: 400 } }],
     together: model => [404, { error: { message: `Unable to access model ${model}. Please visit https://api.together.ai/models to view the list of supported models.`, type: "invalid_request_error", code: "model_not_available" } }],
+    groq: model => [400, { error: { message: `The model \`${model}\` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.`, type: "invalid_request_error", code: "model_decommissioned" } }],
 };
 
 function reply(status: number, body: unknown): Response {
