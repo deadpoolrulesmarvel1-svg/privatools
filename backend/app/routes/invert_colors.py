@@ -6,8 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
-from ..utils.render import safe_get_pixmap
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, process_pdf, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
+from ..utils.render import plan_renders, safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,36 +20,45 @@ def _invert_page(args: tuple) -> tuple:
     """Invert a single page. Returns (index, width, height, png_bytes)."""
     import fitz
 
-    idx, page_bytes, dpi = args
+    idx, page_bytes, zoom = args
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     page = doc[0]
     w, h = page.rect.width, page.rect.height
-    pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
+    pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
     pix.invert_irect(pix.irect)
     png_bytes = pix.tobytes("png")
+    del pix
     doc.close()
     return (idx, w, h, png_bytes)
 
 
 def _invert(input_path: str, dpi: int) -> str:
     """CPU-heavy pixmap inversion — processes pages in parallel."""
+    return process_pdf(input_path, lambda src: _invert_doc(src, dpi))
+
+
+def _invert_doc(src, dpi: int) -> str:
     import fitz
 
-    src = fitz.open(input_path)
     page_count = len(src)
+    # Each page's zoom: the DPI asked for, or less for a page too large for the
+    # pixel cap; the whole request held to its render budget first.
+    zooms = plan_renders(src, dpi / 72, advice=(
+        "Choose a lower quality, or split the PDF and invert the parts separately."))
 
     if page_count <= 2:
         # Few pages — direct sequential (avoids overhead)
         doc = fitz.open()
         for page in src:
-            pix = safe_get_pixmap(page, matrix=fitz.Matrix(dpi / 72, dpi / 72))
+            zoom = zooms[page.number]
+            pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
             pix.invert_irect(pix.irect)
             new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, pixmap=pix)
+            del pix  # before the next page is drawn: one page's pixels at a time
         out_path = str(get_temp_path(f"inverted_{uuid.uuid4().hex}.pdf"))
         doc.save(out_path, deflate=True, garbage=4)
         doc.close()
-        src.close()
         return out_path
 
     # Extract individual page PDFs for parallel processing
@@ -58,9 +68,8 @@ def _invert(input_path: str, dpi: int) -> str:
         single.insert_pdf(src, from_page=i, to_page=i)
         page_pdfs.append(single.tobytes())
         single.close()
-    src.close()
 
-    tasks = [(i, pb, dpi) for i, pb in enumerate(page_pdfs)]
+    tasks = [(i, pb, zooms[i]) for i, pb in enumerate(page_pdfs)]
 
     results = [None] * page_count
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
@@ -109,7 +118,9 @@ async def invert_colors(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a password-protected or unreadable PDF) goes to the
+        # global handler, which answers with its own status and wording.
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

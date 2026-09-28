@@ -48,21 +48,33 @@ async def pdfa_validator(file: UploadFile = File(...)):
             standard = ""
             is_pdfa = False
 
-            xml_meta = doc.get_xml_metadata() if hasattr(doc, "get_xml_metadata") else ""
-            xml_meta_lower = str(xml_meta).lower()
+            try:
+                xml_meta = doc.get_xml_metadata()
+            except Exception:
+                # /Metadata that is not a stream (a dictionary or an array
+                # where the XMP packet belongs): MuPDF refuses to read it.
+                xml_meta = None
+            xml_meta_lower = str(xml_meta or "").lower()
             if "pdfaid" in xml_meta_lower or "pdfa" in xml_meta_lower:
                 is_pdfa = True
                 standard = "PDF/A (detected)"
+            elif xml_meta is None:
+                errors.append(
+                    "The XMP metadata could not be read, so no PDF/A identifier was "
+                    "found. Convert it via the PDF→PDF/A tool to write new metadata."
+                )
             else:
                 errors.append(
                     "PDF/A identifier not found in XMP metadata — this looks like a "
                     "regular PDF, not PDF/A. Convert it via the PDF→PDF/A tool first."
                 )
 
+            # PDF/A does not require a title or an author; this check looks for
+            # them because archives usually ask for both.
             if not meta.get("title"):
-                errors.append("Missing title metadata (required for PDF/A)")
+                errors.append("No title in the document's metadata")
             if not meta.get("author"):
-                errors.append("Missing author metadata (required for PDF/A)")
+                errors.append("No author in the document's metadata")
             if doc.is_encrypted:
                 errors.append("Encrypted PDFs cannot be PDF/A compliant")
 

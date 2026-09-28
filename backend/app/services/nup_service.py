@@ -2,6 +2,7 @@ import math
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
 
@@ -17,7 +18,7 @@ def nup(input_path: str, pages_per_sheet: int = 2) -> str:
     cols = math.ceil(math.sqrt(pages_per_sheet))
     rows = math.ceil(pages_per_sheet / cols)
 
-    src = fitz.open(input_path)
+    src = open_pdf_document(input_path)  # a PDF without pages: 400 "This PDF has no pages."
     dst = fitz.open()
     try:
         cell_w = A4_W / cols
