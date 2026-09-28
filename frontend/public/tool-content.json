@@ -75,7 +75,7 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split-in-half.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/split-in-half",
     "priority": 0.6
   },

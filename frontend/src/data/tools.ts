@@ -101,7 +101,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "two columns down middle horizontal vertical",
     popularity: 20,
     category: "organize", accepts: ".pdf", outputLabel: "split-in-half.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "organize-pages", icon: Layout, name: "Organize Pages",

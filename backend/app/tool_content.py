@@ -280,8 +280,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "split-in-half": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."},
-        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its bottom half followed by its top half."},
-        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original."},
+        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its top half followed by its bottom half. Both follow the page as it is shown, so a spread that a scanner stored turned sideways is still cut into its left and right pages."},
+        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original. Each new page is the whole original page with its visible area set to one half, so the other half's content is still in the file, out of view."},
     ],
     "pdf-to-svg": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."},
@@ -1526,8 +1526,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "split-in-half": [
         {"q": "What is this for?", "a": "Scans of open books and magazines, where each scanned sheet holds two pages side by side. Cutting them apart gives a document that reads one page at a time, which suits phones, e-readers and OCR."},
         {"q": "Which direction should I choose?", "a": "Vertical for a two-page spread scanned side by side, which is the usual case. Horizontal for sheets where the two halves are stacked, such as some forms or tickets printed two to a page."},
-        {"q": "Does it cut exactly down the middle?", "a": "Yes, it splits each page into two equal halves of the full page. If the spread was scanned off-centre, a little of one page may appear on the other. Cropping first does not help: the cut ignores any crop set with Crop PDF or Auto Crop, and the cropped-off edges come back."},
-        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, for each original page in turn — so a correctly scanned book reads in order. A horizontal cut puts each page's bottom half first; for top-then-bottom order, run Reverse PDF before and after splitting."},
+        {"q": "Does it cut exactly down the middle?", "a": "Yes: each page is cut into two equal halves of what shows, which is the page after any crop. If the spread was scanned off-centre, crop it first with Crop PDF so the fold sits in the middle; the cut follows the crop."},
+        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, top then bottom for a horizontal one, for each original page in turn — so a correctly scanned book reads in order."},
         {"q": "Does it reduce image quality?", "a": "No resampling is involved in the cut itself; each half shows the same content at the same resolution as the original page."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
