@@ -187,7 +187,7 @@ _BLOG_POSTS: dict[str, dict] = {
     },
     "batch-process-files-free": {
         "title": "Batch-Process Files for Free: 25 at a Time, No Quotas",
-        "description": "Around 160 of PrivaTools' 221 tools take up to 25 files per run — per-file status, retry-failed, one ZIP. The /batch page swallows folder drops, /pipeline chains tools into one pass, and none of it is metered. How it works, honestly.",
+        "description": "Around 160 of PrivaTools' 222 tools take up to 25 files per run — per-file status, retry-failed, one ZIP. The /batch page swallows folder drops, /pipeline chains tools into one pass, and none of it is metered. How it works, honestly.",
         "publishedAt": "2026-09-01",
         "readTime": "7 min read",
         "tags": ["Productivity", "PDF", "Image", "How-To"],

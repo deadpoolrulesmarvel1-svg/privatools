@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 222 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -166,6 +166,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Background Remover](https://privatools.me/tools/remove-background): Make backgrounds transparent with browser or server AI
 - [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
 - [Remove Image Watermark](https://privatools.me/tools/remove-image-watermark): Erase a watermark from a photo or graphic
+- [Gemini Watermark Remover](https://privatools.me/tools/gemini-watermark-remover): Take the visible Gemini sparkle off AI-generated images
 - [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
 - [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from PNG, JPG, WebP, or BMP images
 - [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid

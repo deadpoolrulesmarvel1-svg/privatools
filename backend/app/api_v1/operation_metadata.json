@@ -1523,6 +1523,11 @@
       "slug": "json-to-csv-schema",
       "name": "JSON to CSV Schema",
       "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "gemini-watermark-remover",
+      "name": "Gemini Watermark Remover",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
     }
   ]
 }

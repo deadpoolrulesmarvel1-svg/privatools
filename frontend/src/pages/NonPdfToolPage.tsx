@@ -33,6 +33,7 @@ function lazyNamed<T extends AnyModule, K extends keyof T>(
 }
 
 const LazyRemoveImageWatermarkUI = lazyNamed(() => import("@/components/tool-ui/MediaInspectors"), "RemoveImageWatermarkUI");
+const LazyGeminiWatermarkUI = lazyNamed(() => import("@/components/tool-ui/GeminiWatermarkUI"), "GeminiWatermarkUI");
 const LazyViewExifUI = lazyNamed(() => import("@/components/tool-ui/MediaInspectors"), "ViewExifUI");
 const LazyImageCompressorUI = lazyNamed(() => import("@/components/tool-ui/ImageCompressorUI"), "ImageCompressorUI");
 const LazyImageConverterUI = lazyNamed(() => import("@/components/tool-ui/ImageConverterUI"), "ImageConverterUI");
@@ -167,6 +168,7 @@ function ToolLoadingCard() {
 export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
     case "remove-image-watermark": return <LazyRemoveImageWatermarkUI />;
+    case "gemini-watermark-remover": return <LazyGeminiWatermarkUI />;
     case "view-exif": return <LazyViewExifUI />;
     case "image-compressor": return <LazyImageCompressorUI />;
     case "image-converter": return <LazyImageConverterUI />;

@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Add your Gemini images",
+      "text": "Drop or choose one or more PNG, JPEG or WebP images, ideally the files exactly as Gemini or Nano Banana saved them. They are read inside this browser tab and are not uploaded."
+    },
+    {
+      "name": "Remove the sparkle",
+      "text": "Click Remove sparkle. Each image is first checked for the logo at the positions Gemini uses. Where it is found, Gemini's blend is reversed pixel by pixel with calibrated masks; an image without it is left exactly as it was and marked as unchanged."
+    },
+    {
+      "name": "Check the corner and download",
+      "text": "Compare the before and after, with the corner enlarged, then download. Several cleaned images come as one ZIP. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it remove SynthID?",
+      "a": "No. SynthID is Google's invisible watermark: it is spread through the whole picture rather than drawn in one place, and it is designed to survive edits. This tool does not look for it, weaken it or remove it. It takes off only the visible sparkle logo, so SynthID stays in the image."
+    },
+    {
+      "q": "Is it lossless?",
+      "a": "For PNG and lossless WebP, yes. Only the pixels under the sparkle change, and every other pixel in the file is exactly as it was. Under the logo, reversing Gemini's blend recovers the original as closely as the calibrated masks match the logo; in our tests, within one level of brightness out of 255. JPEG and lossy WebP have to be compressed again when they are saved, at quality 95, so the whole picture changes very slightly, as it would with any edit."
+    },
+    {
+      "q": "Is my image uploaded?",
+      "a": "No. The image is read, cleaned and saved again inside your browser tab; it is not sent to PrivaTools or to anyone else. You can watch your browser's network panel while it runs to check."
+    },
+    {
+      "q": "Which Gemini versions and image sizes does it handle?",
+      "a": "The layouts documented by the two open-source projects whose calibrated masks it uses. Before Gemini 3.5, the logo was 48 px, 32 px from the right and bottom edges, on images of 1024 px or less, and 96 px, 64 px in, when both sides were larger. In the current layout, used since Gemini 3.5 and captured in May 2026, large images carry a paler 96 px logo 192 px in, and smaller ones a 36 px logo, or a 48 px one on free-tier half-size images, whose position shifts with the aspect ratio. Copies that were resized, cropped or screenshotted after download usually are not recognised."
+    },
+    {
+      "q": "What if no watermark is found?",
+      "a": "The image is left exactly as it was, marked 'No Gemini sparkle found', and not included in the download, since your original is already the right file. That happens with images that never had the sparkle, with copies resized or cropped after download, and sometimes where the logo sits over busy detail or a nearly white corner, where it is also hardest to see. The tool only removes a logo it has found, so a white shape in the corner of an ordinary photo is left alone."
+    },
+    {
+      "q": "Why can a faint outline remain?",
+      "a": "Removal is exact on the file Gemini saved. If the image was compressed again afterwards, for example saved as JPEG by an app or sent through a messaging app, its pixels no longer match the logo's calibrated opacity exactly, and a faint trace of the outline can remain. Start from the original download where you can."
+    },
+    {
+      "q": "What happens to the file's metadata?",
+      "a": "It is kept. EXIF, XMP and PNG text data, the colour profile, and any Content Credentials (C2PA) or AI labels already in the file are copied into the new file unchanged; the tool adds no label of its own and takes none out. Because the pixels change, a Content Credentials check may report that the image was edited after it was signed. The only things not carried over describe the old encoding rather than the picture: a JPEG's Adobe colour-transform and multi-picture markers and any CMYK or greyscale colour profile, and an indexed PNG's palette, which is saved as full colour. A JPEG's EXIF orientation is set to upright, because the picture is saved upright."
+    },
+    {
+      "q": "Is it allowed to remove the Gemini watermark?",
+      "a": "That depends on the terms you use Gemini under and on how you use the image. Google itself leaves the visible logo off images on some paid plans, and SynthID stays in the image either way. Follow each platform's rules for labelling AI images, and do not use a cleaned image to pass an AI picture off as a real photo, for example as evidence in a complaint, a refund claim or a news story."
+    }
+  ]
+}

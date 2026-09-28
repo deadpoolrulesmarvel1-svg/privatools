@@ -1,0 +1,10 @@
+/* Gemini Watermark Remover: the enlarged corner under the comparison. Uses the media studio's tokens. */
+.gw-zoom{margin:16px 0 0;padding:16px 18px;border:1px solid var(--pt-line);border-radius:20px;background:var(--pt-surface)}
+.gw-zoom-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:720px}
+.gw-zoom-pair>div{display:grid;gap:8px;min-width:0}
+.gw-zoom-view{display:block;width:100%;aspect-ratio:1;border-radius:12px;border:1px solid var(--pt-line);background-color:var(--pt-panel);background-repeat:no-repeat;image-rendering:pixelated}
+.gw-zoom-pair small{font-size:10px;color:var(--pt-muted)}
+.gw-zoom figcaption{margin-top:12px;font-size:11px;line-height:1.6;color:var(--pt-muted)}
+.gw-workspace .ms-file-shelf article[data-outcome='not-found'] small{color:var(--pt-muted);font-style:italic}
+html[data-experience='play'] .gw-zoom{border-radius:26px;box-shadow:0 4px 0 var(--pt-line)}
+@media(max-width:760px){.gw-zoom{padding:12px}.gw-zoom-pair{gap:10px}}
