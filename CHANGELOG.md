@@ -10,6 +10,17 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.6] — 2026-09-28 — PDF tools that stop failing on locked, turned, cropped, oversized and damaged files
+
+### Tools
+
+- A password-protected PDF gets a clear "this PDF needs its password" message instead of "Processing failed", in PDF to Image, Invert Colors, Deskew, PDF to EPUB, PDF to PowerPoint, Transparent Background, PDF to Long Image and the other tools this release touches. A PDF with no pages, or one too damaged to read, is refused with a message saying so, instead of an empty result. (#291)
+- Split in Half cuts each page as it is shown, including turned and cropped pages and pages whose box doesn't start at the corner, which used to fail; a horizontal cut now puts the top half first. (#291)
+- Auto Crop works on scans stored turned and on pages with an offset box, and crops already-cropped pages correctly. (#291)
+- Pages larger than the render limit are drawn at the largest size that fits instead of failing, and each request has a processing budget, so a small file can't demand hours of work; a request past it is refused with a message. (#291)
+- A PDF cut short by an interrupted download is rebuilt and processed with the pages that survive. (#291)
+- PDF to EPUB writes books e-readers open, pictures included, each with its own identifier. The PDF/A Validator no longer calls a document title required, and reports unreadable XMP metadata instead of failing. A one-page PDF to Image download is named as an image, not a ZIP. N-up refuses a PDF with no pages instead of failing. (#291)
+
 ## [2.7.5] — 2026-09-25 — Bates numbers that are really removed, and a count you can trust
 
 ### Tools
