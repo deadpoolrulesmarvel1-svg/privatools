@@ -907,11 +907,59 @@ def ink_scribble() -> bytes:
 
 
 def block_characters() -> bytes:
-    """S8: the secret overtyped with a line of full-block characters (U+2588) drawn after it."""
+    """S8: the secret overtyped with a line of full-block characters (U+2588) drawn after it, in a
+    Type 3 font that paints its own glyphs (d0), which MuPDF draws as shapes and reports as invisible text."""
     font = lambda pdf: _type3_font(pdf, BOX_GLYPH, {code: "█" for code in range(32, 127)})  # noqa: E731
     width = fitz.get_text_length(SECRET, "helv", 11)
     blocks = "#" * (int(width / 5.5) + 2)
     return _pdf(_body() + _tj(72, 400, SECRET, 11) + _tj(71, 400, blocks, 11, font="F3"), fonts={"F3": font})
+
+
+def _block_font() -> bytes:
+    """A TrueType font whose one glyph is a full block (U+2588), 600 units wide and from the
+    descender to the ascender, as in the fonts Word and browsers use."""
+    from fontTools.fontBuilder import FontBuilder
+    from fontTools.pens.ttGlyphPen import TTGlyphPen
+
+    builder = FontBuilder(1000, isTTF=True)
+    builder.setupGlyphOrder([".notdef", "block"])
+    builder.setupCharacterMap({0x2588: "block"})
+    pen = TTGlyphPen(None)
+    pen.moveTo((0, -250))
+    pen.lineTo((0, 800))
+    pen.lineTo((600, 800))
+    pen.lineTo((600, -250))
+    pen.closePath()
+    builder.setupGlyf({".notdef": TTGlyphPen(None).glyph(), "block": pen.glyph()})
+    builder.setupHorizontalMetrics({".notdef": (600, 0), "block": (600, 0)})
+    builder.setupHorizontalHeader(ascent=800, descent=-250)
+    builder.setupNameTable({"familyName": "Blocks", "styleName": "Regular"})
+    builder.setupOS2(sTypoAscender=800, sTypoDescender=-250, usWinAscent=800, usWinDescent=250)
+    builder.setupPost()
+    out = io.BytesIO()
+    builder.save(out)
+    return out.getvalue()
+
+
+def _typed_blocks(over_secret: bool) -> bytes:
+    doc = fitz.open()
+    page = doc.new_page(width=WIDTH, height=HEIGHT)
+    page.insert_text((72, 90), VISIBLE, fontsize=11)
+    page.insert_font(fontname="blocks", fontbuffer=_block_font())
+    if over_secret:
+        page.insert_text((72, 200), f"Name: {SECRET}. Filed in March.", fontsize=11)
+        box = page.search_for(SECRET)[0]
+        page.insert_text((box.x0 - 1, 202.5), "█" * (int(box.width / 7.8) + 2), fontsize=13, fontname="blocks")
+    else:
+        page.insert_text((72, 200), "Share:", fontsize=11)
+        page.insert_text((110, 202.5), "█" * 8, fontsize=13, fontname="blocks")
+    return _save(doc)
+
+
+def block_characters_truetype() -> bytes:
+    """S8: the secret overtyped with full blocks from a TrueType font. Neighbouring glyphs leave a
+    faint seam where they meet, which is not the words' ink."""
+    return _typed_blocks(over_secret=True)
 
 
 def soft_mask_black() -> bytes:
@@ -946,6 +994,7 @@ REVIEW_CASES = {
     "tiny-text-gradient-band-below": (tiny_text_gradient_band_below, "tiny", PAYLOAD),
     "ink-scribble": (ink_scribble, "covered", SECRET),
     "block-characters": (block_characters, "covered", SECRET),
+    "block-characters-truetype": (block_characters_truetype, "covered", SECRET),
     "soft-mask-black": (soft_mask_black, "any", PAYLOAD),
 }
 
@@ -974,9 +1023,15 @@ def white_halo_labels() -> bytes:
 
 
 def visible_block_characters() -> bytes:
-    """A line of block characters on its own, as a bar in a text chart: nothing under it."""
+    """A line of block characters on its own, as a bar in a text chart: nothing under it. The
+    Type 3 font paints its own glyphs (d0), so MuPDF reports this visible bar as invisible text."""
     font = lambda pdf: _type3_font(pdf, BOX_GLYPH, {code: "█" for code in range(32, 127)})  # noqa: E731
     return _pdf(_body() + _tj(72, 400, "Share: ", 11) + _tj(110, 400, "########", 11, font="F3"), fonts={"F3": font})
+
+
+def visible_block_characters_truetype() -> bytes:
+    """The same bar from a TrueType font."""
+    return _typed_blocks(over_secret=False)
 
 
 REVIEW_CONTROLS = {
@@ -984,6 +1039,7 @@ REVIEW_CONTROLS = {
     "faint-group-watermark": faint_group_watermark,
     "white-halo-labels": white_halo_labels,
     "visible-block-characters": visible_block_characters,
+    "visible-block-characters-truetype": visible_block_characters_truetype,
 }
 
 
