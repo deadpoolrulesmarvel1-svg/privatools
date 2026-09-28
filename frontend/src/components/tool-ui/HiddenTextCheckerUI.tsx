@@ -8,7 +8,7 @@
  * JSON. It never says more than the report does: a clean result means only
  * that none of the checks matched.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Braces, FileText, RotateCcw, ScanEye, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
@@ -143,14 +143,28 @@ function MarkNumber({ n, box, width, height, onClick }: {
     n: number; box: [number, number, number, number]; width: number; height: number; onClick: () => void;
 }) {
     const label = String(n);
-    const w = 8 + 6 * label.length, h = 13;
+    const ref = useRef<SVGGElement>(null);
+    // Page units per screen pixel: the preview scales the page to fit, and the
+    // number keeps the same size on a phone as on a desktop.
+    const [unit, setUnit] = useState(1);
+    useLayoutEffect(() => {
+        const measure = () => {
+            const ctm = ref.current?.ownerSVGElement?.getScreenCTM?.();
+            if (ctm && ctm.a > 0) setUnit(1 / ctm.a);
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    }, [width, height]);
+    const h = 16 * unit;
+    const w = h * (0.6 + 0.45 * label.length);
     // Above the mark's left end, or below it when the mark touches the top.
     const x = Math.min(Math.max(box[0] * width - 2, 0), width - w);
     const top = box[1] * height - 2 - h - 1;
     const y = top >= 0 ? top : box[3] * height + 3;
-    return <g className="htc-mark-number" onClick={onClick} aria-hidden="true">
+    return <g ref={ref} className="htc-mark-number" onClick={onClick} aria-hidden="true">
         <rect x={x} y={y} width={w} height={h} rx={h / 2} />
-        <text x={x + w / 2} y={y + h / 2} dominantBaseline="central" textAnchor="middle">{label}</text>
+        <text x={x + w / 2} y={y + h / 2} fontSize={h * 0.68} dominantBaseline="central" textAnchor="middle">{label}</text>
     </g>;
 }
 
