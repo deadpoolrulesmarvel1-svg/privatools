@@ -26,6 +26,7 @@ from ..services import (
     xml_to_pdf_service,
 )
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import read_upload, cleanup_on_error, pdf_page_count, require_item_pages, MAX_SIZE
 
 router = APIRouter()
@@ -272,7 +273,9 @@ async def json_to_pdf(file: UploadFile = File(...)):
     except JSONDecodeError:
         _cleanup_on_error(temp, out)
         raise HTTPException(status_code=400, detail="Invalid JSON file")
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # The service's refusals (400 bad JSON, 413 over 5 MB) carry their own
+        # status; the catch-all below once turned every one into a 500.
         _cleanup_on_error(temp, out)
         raise
     except ValueError as exc:
@@ -300,7 +303,9 @@ async def xml_to_pdf(file: UploadFile = File(...)):
         out = await asyncio.to_thread(xml_to_pdf_service.xml_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # The service's refusals (400 not well-formed, 413 over 5 MB) carry
+        # their own status; the catch-all below once turned every one into a 500.
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:

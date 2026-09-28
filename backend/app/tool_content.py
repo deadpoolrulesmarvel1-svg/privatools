@@ -1356,7 +1356,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are external stylesheets and images included?", "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."},
     ],
     "xml-to-pdf": [
-        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
+        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
         {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."},
     ],
@@ -1366,7 +1366,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the first row treated as a header?", "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."},
     ],
     "json-to-pdf": [
-        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."},
+        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page names the problem and where it is, such as a trailing comma at line 12, column 5. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."},
         {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."},
         {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],

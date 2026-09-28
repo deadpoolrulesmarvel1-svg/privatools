@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "What XML schemas are supported?",
-      "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."
+      "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."
     },
     {
       "q": "Is syntax highlighting included?",

@@ -11,20 +11,27 @@ of silently parsing with an unsafe library.
 from __future__ import annotations
 
 import os
+from xml.parsers.expat import ExpatError
+from xml.parsers.expat import errors as expat_errors
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from ..utils.exceptions import DependencyError, ValidationError
+from ..utils.exceptions import DependencyError, FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
 
 # Cap input size so a multi-GB XML file can't pin the worker.
 MAX_INPUT_BYTES = 5 * 1024 * 1024
 
+# The refusals below reach the visitor as they are, so they avoid the words
+# the website's friendlyError turns into advice about damaged or locked PDFs
+# ("malformed", "corrupt", "password", "too large", ...).
+
 
 def _safe_pretty_xml(content: str) -> str:
     """Parse and pretty-print XML *safely* — defusedxml only."""
     try:
+        from defusedxml import DefusedXmlException
         from defusedxml.minidom import parseString
     except ImportError as exc:
         raise DependencyError(
@@ -33,8 +40,17 @@ def _safe_pretty_xml(content: str) -> str:
 
     try:
         dom = parseString(content)
-    except Exception as exc:
-        raise ValidationError(f"XML is malformed or unsafe to parse: {exc}") from exc
+    except DefusedXmlException as exc:
+        raise ValidationError(
+            "This XML declares entities in its DOCTYPE, or refers to outside files, which XML to PDF "
+            "does not follow, for safety. Remove those declarations and what refers to them, then try again."
+        ) from exc
+    except ExpatError as exc:
+        # expat counts columns from 0; editors show them from 1.
+        reason = expat_errors.messages.get(exc.code, "not well-formed")
+        raise ValidationError(
+            f"This XML could not be read: {reason}, at line {exc.lineno}, column {exc.offset + 1}."
+        ) from exc
 
     return dom.toprettyxml(indent="  ")
 
@@ -44,12 +60,15 @@ def xml_to_pdf(input_path: str) -> str:
     output_path = temp_output("xml", "pdf")
 
     if os.path.getsize(input_path) > MAX_INPUT_BYTES:
-        raise ValidationError(
-            f"XML file too large (> {MAX_INPUT_BYTES // (1024 * 1024)} MB)."
+        raise FileTooLargeError(
+            f"This XML file is bigger than {MAX_INPUT_BYTES // (1024 * 1024)} MB, the most XML to PDF takes."
         )
 
-    with open(input_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    try:
+        with open(input_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except UnicodeDecodeError as exc:
+        raise ValidationError("This XML file is not UTF-8 text.") from exc
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4

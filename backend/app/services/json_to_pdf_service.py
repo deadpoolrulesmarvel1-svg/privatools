@@ -4,7 +4,7 @@ import os
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from ..utils.exceptions import ValidationError
+from ..utils.exceptions import FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
 
 # Caps to keep one request from spinning up an unbounded ReportLab canvas.
@@ -12,15 +12,18 @@ MAX_INPUT_BYTES = 5 * 1024 * 1024     # 5 MB JSON file
 MAX_DEPTH = 25                         # arbitrary nesting cap
 MAX_PRETTY_LINES = 50_000              # ~5,000 PDF pages worst-case
 
+# The refusals below reach the visitor as they are, so they avoid the words
+# the website's friendlyError turns into advice about damaged or locked PDFs
+# ("malformed", "corrupt", "password", "too large", ...).
+TOO_DEEP = f"This JSON nests deeper than {MAX_DEPTH} levels, too deep to print."
+
 
 def _validate_depth(obj, depth: int = 0) -> None:
     """Raise :class:`ValidationError` if the JSON tree nests more than MAX_DEPTH levels —
     protects ReportLab from generating a comically long PDF.
     """
     if depth > MAX_DEPTH:
-        raise ValidationError(
-            f"JSON nests deeper than {MAX_DEPTH} levels — too deep to render."
-        )
+        raise ValidationError(TOO_DEEP)
     if isinstance(obj, dict):
         for v in obj.values():
             _validate_depth(v, depth + 1)
@@ -29,22 +32,30 @@ def _validate_depth(obj, depth: int = 0) -> None:
             _validate_depth(v, depth + 1)
 
 
-def json_to_pdf(input_path: str) -> str:
-    """Convert a JSON file to a formatted PDF."""
-    output_path = temp_output("json", "pdf")
-
+def _load(input_path: str):
+    """The parsed JSON, or a refusal that says what is wrong with the file."""
     if os.path.getsize(input_path) > MAX_INPUT_BYTES:
-        raise ValidationError(
-            f"JSON file too large (>{MAX_INPUT_BYTES // (1024 * 1024)} MB)."
+        raise FileTooLargeError(
+            f"This JSON file is bigger than {MAX_INPUT_BYTES // (1024 * 1024)} MB, the most JSON to PDF takes."
         )
-
     try:
         with open(input_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            return json.load(f)
     except json.JSONDecodeError as exc:
-        raise ValidationError(f"Invalid JSON: {exc.msg}") from exc
+        raise ValidationError(
+            f"This file is not valid JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}."
+        ) from exc
+    except UnicodeDecodeError as exc:
+        raise ValidationError("This file is not valid JSON: it is not UTF-8 text.") from exc
+    except RecursionError as exc:  # thousands of levels, before _validate_depth can say so
+        raise ValidationError(TOO_DEEP) from exc
 
+
+def json_to_pdf(input_path: str) -> str:
+    """Convert a JSON file to a formatted PDF."""
+    data = _load(input_path)
     _validate_depth(data)
+    output_path = temp_output("json", "pdf")
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
@@ -60,8 +71,8 @@ def json_to_pdf(input_path: str) -> str:
     lines = formatted.split("\n")
     if len(lines) > MAX_PRETTY_LINES:
         raise ValidationError(
-            f"JSON would render {len(lines):,} lines (cap {MAX_PRETTY_LINES:,}) — "
-            "consider trimming the input."
+            f"This JSON would print as {len(lines):,} lines, and JSON to PDF prints at most "
+            f"{MAX_PRETTY_LINES:,}. Split it into smaller files."
         )
 
     for line in lines:

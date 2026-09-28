@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Is JSON validated before conversion?",
-      "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."
+      "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page names the problem and where it is, such as a trailing comma at line 12, column 5. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."
     },
     {
       "q": "How are nested objects displayed?",
