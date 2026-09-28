@@ -9,6 +9,7 @@ from __future__ import annotations
 import fitz  # PyMuPDF
 from PIL import Image
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
 from ..utils.render import safe_get_pixmap
@@ -30,11 +31,12 @@ def pdf_to_long_image(input_path: str, fmt: str = "png", dpi: int = 100) -> str:
     pil_fmt, ext = _FORMATS[fmt]
     dpi = max(36, min(200, int(dpi)))
 
-    doc = fitz.open(input_path)
+    # A PDF that needs a password, cannot be read or has no pages is refused
+    # with a 400 in the site's own words (PyMuPDF's is "document closed or
+    # encrypted").
+    doc = open_pdf_document(input_path)
     try:
         n = doc.page_count
-        if n == 0:
-            raise ProcessingError("PDF has no pages")
         if n > _MAX_PAGES:
             raise ProcessingError(f"PDF has too many pages to stitch (max {_MAX_PAGES})")
 

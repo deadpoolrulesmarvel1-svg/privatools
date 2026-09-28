@@ -19,8 +19,8 @@ from typing import List
 import fitz  # PyMuPDF
 from PIL import Image
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
-from ..utils.render import safe_get_pixmap
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, process_pdf
+from ..utils.render import plan_renders, safe_get_pixmap
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +31,14 @@ _MAX_WORKERS = min(max(1, (os.cpu_count() or 2) - 1), 4)
 
 def _render_and_save(args: tuple) -> str:
     """Render a single page and save as image. Returns the saved path."""
-    page_bytes, dpi, pil_format, ext, idx = args
+    page_bytes, zoom, pil_format, ext, idx = args
     doc = fitz.open(stream=page_bytes, filetype="pdf")
     try:
         page = doc[0]
-        mat = fitz.Matrix(dpi / 72, dpi / 72)
-        pix = safe_get_pixmap(page, matrix=mat)
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
+        # A view of the pixels, not a copy: PIL makes the one copy it keeps.
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+        del pix
     finally:
         doc.close()
     img_path = get_temp_path(f"page_{idx + 1}_{uuid.uuid4().hex}.{ext}")
@@ -61,8 +62,10 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     except OSError:
         input_size = 0
 
-    doc = fitz.open(input_path)
+    return process_pdf(input_path, lambda doc: _pdf_to_images(doc, fmt, dpi, started, input_size))
 
+
+def _pdf_to_images(doc: fitz.Document, fmt: str, dpi: int, started: float, input_size: int) -> str:
     fmt_lower = fmt.lower()
     pil_format = "JPEG" if fmt_lower in ("jpeg", "jpg") else fmt_lower.upper()
     ext = "jpg" if fmt_lower in ("jpeg", "jpg") else ("tif" if fmt_lower in _MULTIPAGE_FORMATS else fmt_lower)
@@ -76,6 +79,8 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     image_paths: List[str] = []
     try:
         # ── Multi-page TIFF: render every page, save all into one TIFF ────
+        # Every page is held in memory until the TIFF is written, so a page
+        # too large for the render cap is refused here rather than fitted.
         if fmt_lower in _MULTIPAGE_FORMATS:
             pages_pil: list[Image.Image] = []
             for page in doc:
@@ -102,12 +107,20 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
             )
             return str(out_path)
 
+        # Each page's zoom: the DPI asked for, or less for a page too large for
+        # the pixel cap; the whole request held to its render budget first.
+        zooms = plan_renders(doc, dpi / 72, advice=(
+            "Split the PDF and convert the parts separately, or choose a lower "
+            "resolution in PDF to Image."))
+
         if page_count == 1:
-            mat = fitz.Matrix(dpi / 72, dpi / 72)
-            pix = safe_get_pixmap(doc[0], matrix=mat)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            zoom = zooms[0]
+            pix = safe_get_pixmap(doc[0], matrix=fitz.Matrix(zoom, zoom))
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+            del pix
             img_path = get_temp_path(f"page_1_{uuid.uuid4().hex}.{ext}")
             img.save(str(img_path), pil_format)
+            del img
             duration_ms = int((time.monotonic() - started) * 1000)
             try:
                 out_size = os.path.getsize(img_path)
@@ -121,11 +134,13 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
 
         if page_count <= 3:
             for i, page in enumerate(doc):
-                mat = fitz.Matrix(dpi / 72, dpi / 72)
-                pix = safe_get_pixmap(page, matrix=mat)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                zoom = zooms[i]
+                pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom))
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+                del pix
                 img_path = get_temp_path(f"page_{i + 1}_{uuid.uuid4().hex}.{ext}")
                 img.save(str(img_path), pil_format)
+                del img  # before the next page is drawn: one page's pixels at a time
                 image_paths.append(str(img_path))
         else:
             # Multi-page — parallel render + save.
@@ -136,7 +151,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
                 page_pdfs.append(single.tobytes())
                 single.close()
 
-            tasks = [(pb, dpi, pil_format, ext, i) for i, pb in enumerate(page_pdfs)]
+            tasks = [(pb, zooms[i], pil_format, ext, i) for i, pb in enumerate(page_pdfs)]
 
             with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
                 image_paths = list(pool.map(_render_and_save, tasks))
@@ -148,8 +163,6 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
             except OSError:
                 pass
         raise
-    finally:
-        doc.close()
 
     zip_path = get_temp_path(f"images_{uuid.uuid4().hex}.zip")
     try:

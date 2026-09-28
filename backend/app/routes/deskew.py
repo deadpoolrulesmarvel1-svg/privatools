@@ -8,6 +8,7 @@ from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import deskew_service
 from ..utils.concurrency import run_bounded
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -29,7 +30,9 @@ async def deskew(request: Request, file: UploadFile = File(...)):
         output_path = await run_bounded(deskew_service.deskew, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(path=output_path, filename="deskewed.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a password-protected or unreadable PDF) goes to the
+        # global handler, which answers with its own status and wording.
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

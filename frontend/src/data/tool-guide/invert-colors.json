@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose DPI for rendering",
-      "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI)."
+      "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI). A page too big for 100 megapixels at that resolution is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages at Balanced; split a longer PDF first."
     },
     {
       "name": "Download the inverted PDF",
