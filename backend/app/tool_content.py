@@ -2402,6 +2402,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Do the videos need the same resolution?", "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
+        {"q": "How long can the merged video be?", "a": "FFmpeg has 180 seconds to join the clips, and it re-encodes every frame, so what fits depends on the total length and frame size: on the PrivaTools server, about three minutes of 1080p video in all, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The whole upload must also fit in 500 MB, and the route takes 5 requests a minute per IP address."},
     ],
     "video-resizer": [
         {"q": "What size will my video be?", "a": "The height is exactly the preset and the width keeps the proportions, rounded to an even number. A 1920×1080 clip becomes 1280×720 at 720p, 854×480 at 480p and 426×240 at 240p; a 640×480 clip becomes 960×720 at 720p."},

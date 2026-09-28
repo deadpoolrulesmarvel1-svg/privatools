@@ -238,6 +238,30 @@ def test_video_merge_rounds_an_odd_first_clip_down_to_an_even_frame(client, merg
     assert frame_size(info) == (320, 180)
 
 
+def test_video_merge_past_ffmpegs_time_limit_answers_504(client, merge_clips, monkeypatch):
+    """Three minutes of 1080p reach FFmpeg's 180 s limit in the v2.7.5 image
+    on production's 1.8 CPUs, and the route answered that with a 500, so the
+    page said "Processing failed. Please try again." """
+    real_run = subprocess.run
+
+    def ffmpeg_out_of_time(command, *args, **kwargs):
+        if command and command[0] == "ffmpeg":
+            raise subprocess.TimeoutExpired(command, kwargs.get("timeout"))
+        return real_run(command, *args, **kwargs)  # ffprobe still answers
+
+    monkeypatch.setattr(subprocess, "run", ffmpeg_out_of_time)
+    response = merge(client, merge_clips["wide"], merge_clips["small"])
+    assert response.status_code == 504, response.text
+
+
+def test_video_merge_of_a_file_that_is_no_video_answers_400(client, merge_clips, tmp_path):
+    notes = tmp_path / "notes.mp4"
+    notes.write_bytes(b"Meeting notes, saved with the wrong name.")
+    response = merge(client, notes, merge_clips["wide"])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "Could not read the frame size of the first video."
+
+
 def child_cpu_seconds():
     usage = resource.getrusage(resource.RUSAGE_CHILDREN)
     return usage.ru_utime + usage.ru_stime
