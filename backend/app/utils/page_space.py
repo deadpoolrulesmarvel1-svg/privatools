@@ -194,6 +194,34 @@ def markup_quad(page: fitz.Page, rect: fitz.Rect) -> fitz.Quad:
     return _QUAD_ALONG[direction](fitz.Rect(rect))
 
 
+def visible_area(page: fitz.Page) -> tuple[float, float, float, float]:
+    """The page's visible area in PDF user space (x0, y0, x1, y1, y up): its
+    CropBox within its MediaBox, or the MediaBox when there is no CropBox or
+    the two do not overlap. The PyMuPDF counterpart of shown_area's area.
+
+    PyMuPDF gives the MediaBox as written (normalised) and the CropBox
+    measured down from the MediaBox's top edge; its text and image positions
+    are measured from this area's top-left corner, on the page before /Rotate.
+    """
+    media = page.mediabox
+    crop = page.cropbox
+    x0, y0 = max(media.x0, crop.x0), max(media.y0, media.y1 - crop.y1)
+    x1, y1 = min(media.x1, crop.x1), min(media.y1, media.y1 - crop.y0)
+    if x1 - x0 <= 0 or y1 - y0 <= 0:
+        return (media.x0, media.y0, media.x1, media.y1)
+    return (x0, y0, x1, y1)
+
+
+def pdf_box(box: tuple[float, float, float, float]) -> str:
+    """A box as a PDF array for PyMuPDF's xref_set_key, e.g. "[0 40.5 612 792]":
+    no exponent, at most four decimals."""
+    def number(value: float) -> str:
+        text = f"{value:.4f}".rstrip("0").rstrip(".")
+        return "0" if text in ("", "-0") else text
+
+    return "[" + " ".join(number(v) for v in box) + "]"
+
+
 def shown_area(page: pikepdf.Page) -> tuple[pikepdf.Rectangle, float, float]:
     """Where and how big `page` is shown: its visible area (CropBox within
     MediaBox, in PDF units) and that area's width and height as shown, after

@@ -26,25 +26,11 @@ import fitz  # PyMuPDF
 from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
-from ..utils.page_space import settle_rotation
+from ..utils.page_space import pdf_box, settle_rotation, visible_area
 
 VALID_DIRECTIONS = {"vertical", "horizontal"}
 
 Box = tuple[float, float, float, float]  # x0, y0, x1, y1 in PDF user space (y up)
-
-
-def visible_area(page: fitz.Page) -> Box:
-    """The page's visible area in PDF user space: its CropBox within its
-    MediaBox, or the MediaBox when there is no CropBox or the two do not
-    overlap. PyMuPDF gives the MediaBox as written (normalised) and the
-    CropBox measured down from the MediaBox's top edge."""
-    media = page.mediabox
-    crop = page.cropbox
-    x0, y0 = max(media.x0, crop.x0), max(media.y0, media.y1 - crop.y1)
-    x1, y1 = min(media.x1, crop.x1), min(media.y1, media.y1 - crop.y0)
-    if x1 - x0 <= 0 or y1 - y0 <= 0:
-        return (media.x0, media.y0, media.x1, media.y1)
-    return (x0, y0, x1, y1)
 
 
 def halves(area: Box, rotation: int, direction: str) -> tuple[Box, Box]:
@@ -65,15 +51,10 @@ def halves(area: Box, rotation: int, direction: str) -> tuple[Box, Box]:
     return {0: (high_y, low_y), 90: (low_x, high_x), 180: (low_y, high_y), 270: (high_x, low_x)}[rotation]
 
 
-def _number(value: float) -> str:
-    text = f"{value:.4f}".rstrip("0").rstrip(".")
-    return "0" if text in ("", "-0") else text
-
-
 def _set_boxes(doc: fitz.Document, xref: int, box: Box) -> None:
     """Make `box` the page's MediaBox and CropBox, and its Trim, Bleed and
     Art boxes where the page has them: each half is a finished page."""
-    array = "[" + " ".join(_number(v) for v in box) + "]"
+    array = pdf_box(box)
     doc.xref_set_key(xref, "MediaBox", array)
     doc.xref_set_key(xref, "CropBox", array)
     for key in ("TrimBox", "BleedBox", "ArtBox"):
