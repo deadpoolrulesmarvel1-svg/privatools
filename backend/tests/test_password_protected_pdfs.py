@@ -50,6 +50,10 @@ ROUTES = {
     "nup": ("/api/nup", {"pages_per_sheet": "2"}),
     "add-hyperlinks": ("/api/add-hyperlinks", {}),
     "transparent-background": ("/api/transparent-background", {}),
+    # Fix round 1: PDF to PowerPoint answered 500, and PDF to Long Image a
+    # 400 in MuPDF's words ("document closed or encrypted").
+    "pdf-to-pptx": ("/api/pdf-to-pptx", {}),
+    "pdf-to-long-image": ("/api/pdf-to-long-image", {"format": "png", "dpi": "36"}),
 }
 
 

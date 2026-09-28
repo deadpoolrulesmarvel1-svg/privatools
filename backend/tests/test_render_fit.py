@@ -135,6 +135,8 @@ def _pages(n: int, width: float = 612, height: float = 792, *, tilt: float = 0.0
 BUDGETED = {
     "pdf-to-png": ("/api/pdf-to-image", {"format": "png", "dpi": "150"}, 1.0, 2.10),
     "invert-colors": ("/api/invert-colors", {"dpi": "150"}, 1.0, 2.10),
+    "pdf-to-pptx": ("/api/pdf-to-pptx", {}, 1.0, 3.74),
+    "transparent-background": ("/api/transparent-background", {"dpi": "144"}, 0.2, 1.94),
     "deskew-pdf": ("/api/deskew", {}, 0.2, 0.935),  # 100 DPI above two pages
 }
 
@@ -189,3 +191,60 @@ def test_deskew_measures_skew_on_a_small_copy(monkeypatch):
     doc = fitz.open(stream=_pdf(1, 8000, 6000), filetype="pdf")
     zoom = render.fitted_zoom(doc[0], 0.4, deskew_service._DETECT_MAX_PIXELS)
     assert doc[0].rect.width * doc[0].rect.height * zoom * zoom <= deskew_service._DETECT_MAX_PIXELS
+
+
+# ── Transparent Background and PDF to PowerPoint fit oversized pages too ──
+
+def test_transparent_background_keeps_its_alpha_rule(client):
+    """Transparent where every channel reaches the threshold, opaque
+    elsewhere: the rule of the per-pixel loop it replaces, on whole channels."""
+    from PIL import Image as PILImage
+
+    doc = fitz.open()
+    page = doc.new_page(width=200, height=100)
+    page.draw_rect(fitz.Rect(0, 0, 100, 100), color=None, fill=(1, 1, 1))  # white: transparent
+    page.draw_rect(fitz.Rect(100, 0, 150, 100), color=None, fill=(0.97, 0.97, 0.90))  # blue channel low: opaque
+    page.draw_rect(fitz.Rect(150, 0, 200, 100), color=None, fill=(0, 0, 0))  # black: opaque
+    resp = client.post("/api/transparent-background", files={"file": ("a.pdf", doc.tobytes(), "application/pdf")},
+                       data={"dpi": "72", "threshold": "245"})
+    assert resp.status_code == 200, resp.text[:200]
+    out = fitz.open(stream=resp.content, filetype="pdf")
+    xref = out[0].get_images(full=True)[0][0]
+    image = PILImage.open(io.BytesIO(out.extract_image(xref)["image"]))
+    smask = out[0].get_images(full=True)[0][1]
+    alpha = PILImage.open(io.BytesIO(out.extract_image(smask)["image"])) if smask else image.getchannel("A")
+    w = alpha.width
+    assert alpha.getpixel((w // 4, 50)) == 0
+    assert alpha.getpixel((w * 5 // 8, 50)) == 255
+    assert alpha.getpixel((w * 7 // 8, 50)) == 255
+
+
+def test_transparent_background_fits_an_oversized_page(client, small_cap):
+    resp = _post(client, "/api/transparent-background", _pdf(1, 1500, 1000), {"dpi": "144"})
+    assert resp.status_code == 200, resp.text[:200]
+    sizes = _embedded_pixels(resp.content)
+    assert len(sizes) == 1 and 0.98 * CAP <= sizes[0] <= CAP * 1.01, sizes
+
+
+def test_transparent_background_draws_a_page_within_its_own_ceiling(client, monkeypatch):
+    from backend.app.routes import pdf_extra
+
+    monkeypatch.setattr(pdf_extra, "_TRANSPARENT_MAX_PIXELS", 1_500_000)
+    resp = _post(client, "/api/transparent-background", _pdf(1, 2000, 1500), {"dpi": "72"})  # 3 MP at 72 DPI
+    assert resp.status_code == 200, resp.text[:200]
+    sizes = _embedded_pixels(resp.content)
+    assert len(sizes) == 1 and 0.98 * 1_500_000 <= sizes[0] <= 1_500_000, sizes
+
+
+def test_pdf_to_pptx_fits_an_oversized_page(client, small_cap):
+    import zipfile
+
+    resp = _post(client, "/api/pdf-to-pptx", _pdf(2, 1500, 1000), {})
+    assert resp.status_code == 200, resp.text[:200]
+    with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+        pictures = [zf.read(n) for n in zf.namelist() if n.startswith("ppt/media/")]
+    assert len(pictures) == 2
+    for data in pictures:
+        w, h = Image.open(io.BytesIO(data)).size
+        assert 0.98 * CAP <= w * h <= CAP * 1.01, (w, h)
+

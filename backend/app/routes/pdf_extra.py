@@ -15,13 +15,13 @@ from xml.etree import ElementTree
 import fitz
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from PIL import Image
+from PIL import Image, ImageChops
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import remove_files, validate_pdf_content
-from ..utils.exceptions import PdfEncryptedError
+from ..utils.exceptions import PdfEncryptedError, ToolError
 from ..utils.page_space import drawing_unturned
-from ..utils.render import safe_get_pixmap
+from ..utils.render import plan_renders, safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -822,6 +822,13 @@ def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, fiel
     page.add_widget(widget)
 
 
+# A page is held as RGB, as RGBA and as channels while its transparency is
+# worked out, then as a PNG and MuPDF's copy of it: two 100-megapixel pages
+# peaked at 2.5 GB. 25 megapixels covers A3 at 300 DPI (17.4); a larger page
+# is drawn at the largest size within it.
+_TRANSPARENT_MAX_PIXELS = 25_000_000
+
+
 @router.post("/transparent-background")
 async def transparent_background(
     file: UploadFile = File(...),
@@ -847,18 +854,31 @@ async def transparent_background(
                 if len(src_doc) == 0:
                     raise HTTPException(status_code=400, detail="PDF has no pages")
 
-                matrix = fitz.Matrix(dpi / 72, dpi / 72)
+                # The DPI asked for, or less for a page larger than
+                # _TRANSPARENT_MAX_PIXELS; the whole request held to a fifth of
+                # the render budget (400 megapixels, about 200 A4 pages at 144
+                # DPI): saving an optimised PNG with an alpha channel costs about
+                # 0.3 s of CPU a megapixel, as much as Deskew spends.
+                zooms = plan_renders(src_doc, dpi / 72, share=0.2, max_pixels=_TRANSPARENT_MAX_PIXELS, advice=(
+                    "Choose a lower resolution, or split the PDF and convert the parts separately."))
 
                 for page in src_doc:
-                    pix = safe_get_pixmap(page, matrix=matrix, alpha=False)
-                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    zoom = zooms[page.number]
+                    pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom), alpha=False)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+                    del pix
+                    # Transparent where every channel reaches the threshold, as
+                    # before, but computed on whole channels: the per-pixel
+                    # Python list this replaces took 6 s and 300 MB for one A4
+                    # page at 144 DPI, and about 15 GB for a 100-megapixel page.
+                    red, green, blue = img.split()
+                    alpha = ImageChops.darker(ImageChops.darker(red, green), blue).point(
+                        lambda value: 0 if value >= threshold else 255)
+                    del red, green, blue
                     rgba = img.convert("RGBA")
-                    rgb_data = list(img.getdata())
-                    rgba_data = [
-                        (r, g, b, 0 if (r >= threshold and g >= threshold and b >= threshold) else 255)
-                        for (r, g, b) in rgb_data
-                    ]
-                    rgba.putdata(rgba_data)
+                    del img
+                    rgba.putalpha(alpha)
+                    del alpha
 
                     png_bytes = io.BytesIO()
                     rgba.save(png_bytes, format="PNG", optimize=True)
@@ -875,7 +895,9 @@ async def transparent_background(
 
         cleanup = BackgroundTask(remove_files, tmp.name)
         return FileResponse(tmp.name, media_type="application/pdf", filename="transparent.pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a page too large to draw, a request over its render
+        # budget) goes to the global handler with its own status and wording.
         if tmp is not None:
             remove_files(tmp.name)
         raise

@@ -733,7 +733,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-pptx": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). No text boxes are created, so the text is part of the picture."},
+        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI (or at the largest size within 100 megapixels, for a page too big for that) and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). One request can draw up to 2,000 megapixels in all, about 500 A4 pages; split a longer PDF first. No text boxes are created, so the text is part of the picture."},
         {"name": "Download the .pptx file", "text": "Open in PowerPoint / Keynote / Google Slides to present it, or to add your own titles, notes and slides around the page pictures."},
     ],
     "pdf-to-tiff": [
@@ -822,7 +822,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF. Only the pixels are copied, so camera, author and location details in the TIFF tags are removed."},
     ],
     "transparent-background": [
-        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
+        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300). A page larger than 25 megapixels at that DPI (A3 at 300 DPI is 17) is drawn at the largest size within 25 megapixels, and one request can draw up to 400 megapixels in all, about 200 A4 pages at 144 DPI; split a longer PDF first."},
         {"name": "Set threshold", "text": "Set how close to pure white a pixel must be to count as background, from 180 to 255 (245 by default). A pixel whose red, green and blue values are all at or above the threshold becomes transparent."},
         {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."},
     ],

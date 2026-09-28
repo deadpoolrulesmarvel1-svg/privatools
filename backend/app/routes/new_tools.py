@@ -607,6 +607,12 @@ async def pdf_to_long_image_endpoint(
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ToolError:
+        # A password-protected, unreadable or empty PDF, or a page too large
+        # to draw: the global handler answers with the error's own status.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except Exception:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)

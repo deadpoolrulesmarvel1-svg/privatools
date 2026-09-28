@@ -827,7 +827,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "slides.pptx",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-pptx",
     "priority": 0.6
   },
@@ -1473,7 +1473,7 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "transparent.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/transparent-background",
     "priority": 0.6
   },

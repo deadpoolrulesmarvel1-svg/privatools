@@ -628,7 +628,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "powerpoint slides presentation",
     popularity: 135,
     category: "from-pdf", accepts: ".pdf", outputLabel: "slides.pptx",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-text", icon: Type, name: "PDF to Text",
@@ -1076,7 +1076,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "alpha clear see through transparency",
     popularity: 44,
     category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "invert-colors", icon: Moon, name: "Invert Colors",
