@@ -221,6 +221,15 @@ def test_the_route_reports_hidden_text_and_is_not_cached(client):
     assert body["findings"][0]["text"] == PAYLOAD
 
 
+def test_the_route_finds_text_in_a_layer_that_is_switched_off(client):
+    """Through the worker process, which reads the upload from its file."""
+    resp = post(client, HIDDEN_CASES["hidden-layer-indirect"][0]())
+    assert resp.status_code == 200
+    finding = resp.json()["findings"][0]
+    assert finding["reason"] == "hidden-layer" and finding["text"] == PAYLOAD
+    assert "Reviewer notes" in finding["detail"]
+
+
 def test_the_route_keeps_no_copy_of_the_upload(client):
     before = set(cleanup.TEMP_DIR.glob("hidden_text_*")) if cleanup.TEMP_DIR.exists() else set()
     assert post(client, HIDDEN_CASES["black-box"][0]()).status_code == 200

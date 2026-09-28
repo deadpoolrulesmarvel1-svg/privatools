@@ -354,8 +354,9 @@ class _Glyph:
         self.reason, self.detail, self.confirm = reason, detail, confirm
 
 
-def _key(char: str, x: float, y: float) -> tuple[str, float, float]:
-    return char, round(x, 1), round(y, 1)
+def _key(char: str, x: float, y: float) -> tuple[str, int, int]:
+    """Which character at which place, to a tenth of a point."""
+    return char, round(x * 10), round(y * 10)
 
 
 def _char(unicode: int) -> str | None:
@@ -370,9 +371,9 @@ def _is_blank(char: str) -> bool:
     return char.isspace() or unicodedata.category(char) in ("Cc", "Cf", "Zs")
 
 
-def _stext_glyphs(page: fitz.Page, flags: int = _TEXT_FLAGS) -> list[_Glyph]:
+def _stext_glyphs(page: fitz.Page, flags: int = _TEXT_FLAGS, textpage=None) -> list[_Glyph]:
     """The characters MuPDF extracts from the page, in reading order."""
-    textpage = page.get_textpage(clip=_EVERYWHERE, flags=flags)
+    textpage = textpage or page.get_textpage(clip=_EVERYWHERE, flags=flags)
     glyphs: list[_Glyph] = []
     line_no = 0
     for block in textpage.extractRAWDICT()["blocks"]:
@@ -394,9 +395,8 @@ def _stext_glyphs(page: fitz.Page, flags: int = _TEXT_FLAGS) -> list[_Glyph]:
     return glyphs
 
 
-def _stext_keys(page: fitz.Page, flags: int) -> Counter:
+def _stext_keys(textpage) -> Counter:
     """How many times MuPDF extracts each character at each place."""
-    textpage = page.get_textpage(clip=_EVERYWHERE, flags=flags)
     keys: Counter = Counter()
     for block in textpage.extractRAWDICT()["blocks"]:
         for line in block.get("lines", ()):
@@ -422,23 +422,27 @@ def _read_glyphs(page: fitz.Page) -> tuple[list[_Glyph], Counter]:
     Also returns how many times each character position was extracted, before
     anything was dropped, for comparison with the copy with every layer on.
     """
-    glyphs = _stext_glyphs(page)
+    textpage = page.get_textpage(clip=_EVERYWHERE, flags=_TEXT_FLAGS)
+    glyphs = _stext_glyphs(page, textpage=textpage)
     extracted = Counter(g.key for g in glyphs)
     if not glyphs:
         return glyphs, extracted
 
     # A clipping path that leaves no part of a character is where the
-    # extraction that honours clipping drops it.
-    kept = _stext_keys(page, _TEXT_FLAGS | fitz.TEXT_CLIP)
-    for g in glyphs:
-        if kept[g.key] > 0:
-            kept[g.key] -= 1
-        else:
-            g.clipped = True
+    # extraction that honours clipping drops it. The same text from both
+    # means nothing was dropped, which is most pages.
+    clipping = page.get_textpage(clip=_EVERYWHERE, flags=_TEXT_FLAGS | fitz.TEXT_CLIP)
+    if clipping.extractText() != textpage.extractText():
+        kept = _stext_keys(clipping)
+        for g in glyphs:
+            if kept[g.key] > 0:
+                kept[g.key] -= 1
+            else:
+                g.clipped = True
     glyphs = _drop_clip_copies(glyphs)
 
     # Each traced character: (order, seqno, kind, layer, colour, opacity, size, bbox, origin).
-    trace: dict[tuple[str, float, float], list[tuple]] = defaultdict(list)
+    trace: dict[tuple[str, int, int], list[tuple]] = defaultdict(list)
     order = 0
     for span in page.get_texttrace():
         kind = span.get("type")
@@ -687,8 +691,24 @@ def _cover(g: _Glyph, candidates: list[_Area]) -> _Area | None:
     return first
 
 
-def _same_colour_limit(g: _Glyph) -> float:
-    return SAME_COLOUR_DELTA_E_LARGE if g.size >= LARGE_TEXT_POINTS else SAME_COLOUR_DELTA_E
+@functools.lru_cache(maxsize=65536)
+def _colour_verdict(colour: tuple, alpha: float, stroke: tuple | None, background: tuple,
+                    large: bool, bare_page: bool) -> tuple[str, str, tuple] | None:
+    """Whether text of this colour, opacity and stroke can be told from this
+    background: None when it can, else its reason, detail and pixel test."""
+    limit = SAME_COLOUR_DELTA_E_LARGE if large else SAME_COLOUR_DELTA_E
+    effective = tuple(alpha * c + (1 - alpha) * b for c, b in zip(colour, background))
+    if stroke is not None and _delta_e(stroke, background) >= limit:
+        return None
+    if _delta_e(effective, background) >= limit:
+        return None
+    on = f"a {_describe_colour(background)} " + ("page" if bare_page else "background")
+    if alpha < 0.999 and _delta_e(colour, background) >= limit:
+        return TRANSPARENT, f"{round(alpha * 100)}% opacity on {on}", ("colour", _hex(background))
+    text = _describe_colour(colour)
+    detail = (f"{text} text on {on}" if text != _hex(colour) or text == _describe_colour(background)
+              else f"text coloured {text} on {on}")
+    return SAME_COLOUR, detail, ("colour", _hex(colour), _hex(background))
 
 
 def _tiny(g: _Glyph) -> bool:
@@ -740,17 +760,10 @@ def _classify(g: _Glyph, frame: _Frame, grid: _Grid | None) -> None:
                           ("blend", source.index if source else -1))
                 return
         else:
-            limit = _same_colour_limit(g)
-            effective = tuple(g.alpha * c + (1 - g.alpha) * b for c, b in zip(g.colour, background))
-            stroke_hidden = g.stroke_colour is None or _delta_e(g.stroke_colour, background) < limit
-            if stroke_hidden and _delta_e(effective, background) < limit:
-                on = f"a {_describe_colour(background)} " + ("page" if source is None else "background")
-                if g.alpha < 0.999 and _delta_e(g.colour, background) >= limit:
-                    g.set(TRANSPARENT, f"{round(g.alpha * 100)}% opacity on {on}", ("colour", _hex(background)))
-                else:
-                    text = _describe_colour(g.colour)
-                    g.set(SAME_COLOUR, f"{text} text on {on}" if text != _hex(g.colour) or text == _describe_colour(background)
-                          else f"text coloured {text} on {on}", ("colour", _hex(g.colour), _hex(background)))
+            verdict = _colour_verdict(g.colour, g.alpha, g.stroke_colour, background,
+                                      g.size >= LARGE_TEXT_POINTS, source is None)
+            if verdict is not None:
+                g.set(*verdict)
                 return
     if _tiny(g):
         g.set(TINY, _tiny_detail(g))
@@ -1205,7 +1218,7 @@ def _hidden_layer_glyphs(extracted: Counter, page: fitz.Page) -> list[_Glyph]:
     extra = _drop_clip_copies(extra)
     if all(g.blank for g in extra):
         return []
-    layers: dict[tuple[str, float, float], str] = {}
+    layers: dict[tuple[str, int, int], str] = {}
     for span in page.get_texttrace():
         if not span.get("layer"):
             continue
@@ -1381,7 +1394,10 @@ def _all_layers_on(doc: fitz.Document) -> fitz.Document | None:
     if not groups or all(info.get("on") for info in groups.values()):
         return None
     every = " ".join(f"{xref} 0 R" for xref in groups)
-    copy = fitz.open("pdf", doc.tobytes(garbage=0))
+    # From the file itself when there is one: the copy is then written out
+    # once, to be read again with the new settings, not twice.
+    source = doc.name if doc.name and os.path.isfile(doc.name) else None
+    copy = fitz.open(source, filetype="pdf") if source else fitz.open("pdf", doc.tobytes(garbage=0))
     # A key path through an indirect object would not reach it, so write to
     # the dictionary itself.
     owner, key = copy.pdf_catalog(), "OCProperties/D"
