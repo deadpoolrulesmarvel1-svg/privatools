@@ -6,7 +6,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG, which currently downloads with a .zip name, so rename it to .svg."
+      "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG."
     }
   ],
   "faq": [
@@ -16,7 +16,7 @@
     },
     {
       "q": "How many SVG files come back?",
-      "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file, which currently downloads with a .zip name, so rename it to .svg."
+      "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file."
     },
     {
       "q": "Can I edit the SVGs after?",

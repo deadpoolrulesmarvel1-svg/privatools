@@ -285,7 +285,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-svg": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."},
-        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG, which currently downloads with a .zip name, so rename it to .svg."},
+        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG."},
     ],
     "pdf-to-html": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. Each page is exported with PyMuPDF's HTML exporter, which keeps the text, images and font styles."},
@@ -1533,7 +1533,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-svg": [
         {"q": "What kind of PDFs convert best?", "a": "Vector PDFs (drawn in Illustrator, Inkscape, Figma, LaTeX, etc.) convert into editable vector SVGs. Scanned/raster PDFs become SVGs containing embedded images."},
-        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file, which currently downloads with a .zip name, so rename it to .svg."},
+        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file."},
         {"q": "Can I edit the SVGs after?", "a": "Yes. Open them in any vector editor (Illustrator, Inkscape, Figma) to edit shapes and paths. Text is converted to outlines, so it keeps its exact look but cannot be edited as text, and links are not kept."},
     ],
     "pdf-to-html": [
@@ -2084,7 +2084,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How long does it take?", "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end, depending on how complex the pages are."},
         {"q": "What happens to a confidential PDF after I upload it?", "a": "The PDF is uploaded over HTTPS and rendered in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated JPGs after the result is sent, and a background sweep clears anything left behind by an interrupted request."},
         {"q": "What resolution are the JPGs?", "a": "150 DPI, which makes an A4 page about 1240 x 1755 pixels, plenty for on-screen viewing and social-media sharing. For 72 DPI thumbnails or 300 DPI print copies, use PDF to Image, which lets you choose."},
-        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG, which currently downloads with a .zip name, so rename it to .jpg."},
+        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG."},
         {"q": "What's the file size limit?", "a": "Up to 500 MB per file on the hosted site. Each page becomes its own JPG, so a very long document produces a large ZIP and can hit the request timeout; split the PDF first if that happens. Fair-use rate limits apply."},
         {"q": "Do the JPGs carry a watermark or need an account?", "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions."},
     ],

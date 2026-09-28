@@ -135,6 +135,9 @@ const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/webp": ".webp",
   "image/gif": ".gif",
+  "image/bmp": ".bmp",
+  "image/svg+xml": ".svg",
+  "image/tiff": ".tif",
   "image/x-icon": ".ico",
   "video/mp4": ".mp4",
   "audio/mpeg": ".mp3",
@@ -173,4 +176,14 @@ export function guessExtensionFromContentType(contentType: string | null): strin
 
   const normalized = contentType.split(";")[0].trim().toLowerCase();
   return CONTENT_TYPE_EXTENSION_MAP[normalized] ?? null;
+}
+
+/** A page that plans a ZIP of pages (PDF to PNG, JPG, BMP, GIF or SVG) gets a
+ *  single image back for a one-page PDF. Name it by the answer's type, so a
+ *  PNG is not saved as "<file>_pages.zip"; any other name is left alone. */
+export function plannedNameForAnswer(planned: string, contentType: string | null): string {
+  if (!planned.toLowerCase().endsWith(".zip")) return planned;
+  const ext = guessExtensionFromContentType(contentType);
+  if (!ext || ext === ".zip") return planned;
+  return planned.slice(0, -".zip".length) + ext;
 }

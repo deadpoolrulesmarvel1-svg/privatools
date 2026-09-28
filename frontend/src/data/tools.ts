@@ -595,7 +595,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "vector scalable graphics",
     popularity: 143,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-jpg", icon: FileImage, name: "PDF to JPG",

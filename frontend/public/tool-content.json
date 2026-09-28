@@ -779,7 +779,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-28",
     "path": "/tool/pdf-to-svg",
     "priority": 0.6
   },
