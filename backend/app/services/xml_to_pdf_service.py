@@ -40,13 +40,32 @@ def _declared_encoding(content: bytes) -> str | None:
     return match.group(1).decode("ascii") if match else None
 
 
+def _parser_input(content: bytes) -> bytes | str:
+    """What expat is given: the text when the bytes are valid UTF-8, else the bytes.
+
+    Valid UTF-8 is read as UTF-8 whatever the declaration says. A declaration
+    naming the wrong encoding is common (a file saved as UTF-8 that kept an old
+    "ISO-8859-1" line); followed literally it turned "Café" into "CafÃ©", and
+    expat cannot load "utf8", the spelling Python's own xml.etree writes. A
+    UTF-16 byte order mark, or the zero bytes UTF-16 and UTF-32 put near the
+    start, sends the bytes to expat, which reads UTF-16 by itself. So does text
+    that is not valid UTF-8: it is in the one-byte encoding its declaration
+    names, such as ISO-8859-1 or Windows-1252, and expat follows that.
+    """
+    if content[:2] in (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE) or b"\x00" in content[:4]:
+        return content
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return content
+
+
 def _safe_pretty_xml(content: bytes) -> str:
     """Parse and pretty-print XML *safely* — defusedxml only.
 
-    Given bytes, expat reads the file the way the XML specification says: a
-    byte order mark, else the encoding the declaration names, else UTF-8. It
-    reads UTF-8, UTF-16 and single-byte encodings such as ISO-8859-1 and
-    Windows-1252. Decoding the file as UTF-8 first refused all but UTF-8.
+    Reads UTF-8, UTF-16 and one-byte encodings such as ISO-8859-1 and
+    Windows-1252 (see _parser_input). Decoding every file as UTF-8, as this
+    once did, refused all but UTF-8.
     """
     try:
         from defusedxml import DefusedXmlException
@@ -57,7 +76,7 @@ def _safe_pretty_xml(content: bytes) -> str:
         ) from exc
 
     try:
-        dom = parseString(content)
+        dom = parseString(_parser_input(content))
     except DefusedXmlException as exc:
         raise ValidationError(
             "This XML declares entities in its DOCTYPE, or refers to outside files, which XML to PDF "

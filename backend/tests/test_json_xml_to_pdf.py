@@ -114,9 +114,28 @@ def test_xml_in_the_encoding_it_declares_converts(client, encoded):
 
 
 @pytest.mark.parametrize(
+    "declared",
+    [
+        pytest.param("ISO-8859-1", id="declares iso-8859-1"),
+        pytest.param("windows-1252", id="declares windows-1252"),
+        # What Python's own xml.etree writes when asked for encoding="utf8".
+        pytest.param("utf8", id="declares utf8"),
+        pytest.param("UTF-16", id="declares utf-16 but has no byte order mark"),
+    ],
+)
+def test_xml_whose_bytes_are_utf8_is_read_as_utf8_whatever_it_declares(client, declared):
+    """A declaration that names the wrong encoding is common, and valid UTF-8
+    bytes are almost never meant as anything else: followed literally, the
+    first two garbled "Café" into "CafÃ©" and the last two were refused."""
+    text = _pdf_text(_post(client, "xml-to-pdf", "catalog.xml", CATALOG.format(encoding=declared).encode("utf-8")))
+    assert "Café crème" in text
+
+
+@pytest.mark.parametrize(
     ("encoded", "declared"),
     [
-        pytest.param(b'<?xml version="1.0" encoding="x-no-such-charset"?>\n<a>b</a>\n', "x-no-such-charset", id="unknown"),
+        # Not valid UTF-8 (\xe9), so the declaration is what the text would have to be read by.
+        pytest.param(b'<?xml version="1.0" encoding="x-no-such-charset"?>\n<a>caf\xe9</a>\n', "x-no-such-charset", id="unknown"),
         # pyexpat reads UTF-8, UTF-16 and single-byte encodings, not these.
         pytest.param('<?xml version="1.0" encoding="Shift_JIS"?>\n<a>東京</a>\n'.encode("shift_jis"), "Shift_JIS", id="multi-byte"),
     ],
@@ -124,6 +143,11 @@ def test_xml_in_the_encoding_it_declares_converts(client, encoded):
 def test_xml_in_an_encoding_the_parser_cannot_read_is_refused_with_400(client, encoded, declared):
     detail = _refusal(_post(client, "xml-to-pdf", "odd.xml", encoded), 400)
     assert detail == f"XML to PDF cannot read text in {declared}, the encoding this file declares. Save it as UTF-8 and try again."
+
+
+def test_xml_with_an_unknown_encoding_label_but_utf8_text_converts(client):
+    xml = '<?xml version="1.0" encoding="x-no-such-charset"?>\n<a>Café</a>\n'.encode("utf-8")
+    assert "Café" in _pdf_text(_post(client, "xml-to-pdf", "odd.xml", xml))
 
 
 def test_malformed_xml_is_refused_with_400_saying_where(client):
