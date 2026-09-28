@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.7] — 2026-09-28 — Hidden Text Checker
+
+### New tool
+
+- Hidden Text Checker finds text a PDF hides from readers but machines still read: invisible text, text with zero opacity or the same colour as what lies behind it, text too small to read, text outside the visible page, text in switched-off layers, text under filled shapes or pictures (a failed redaction), hidden comments and form fields, blank glyphs, and Unicode tag characters. It is for screening résumés, papers and contracts for hidden AI prompts, and for checking a redacted document before you share it. Each finding is marked on the page and listed with its text and reason, and the report can be downloaded. The PDF is checked on the server in an isolated, time- and memory-limited process and deleted when the check ends; a file it can't fully check says so and names the pages. The page lists what it can't detect. (#294)
+
 ## [2.7.6] — 2026-09-28 — PDF tools that stop failing on locked, turned, cropped, oversized and damaged files
 
 ### Tools
