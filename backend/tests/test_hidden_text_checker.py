@@ -22,7 +22,10 @@ from backend.app.services import hidden_text_service
 from backend.app.utils import cleanup
 from backend.app.utils.page_space import rotation_as_shown
 from backend.tests.hidden_text_pdfs import (
-    CONTROL_CASES, HIDDEN_CASES, OCR_CONTROLS, PAYLOAD, SECRET, VISIBLE, encrypted, many_pages,
+    CONTROL_CASES, HIDDEN_CASES, LINES, OCR_CONTROLS, PAYLOAD, PDFTEX_PROMPT, REDACTED_NAMES, REVIEW_CASES,
+    REVIEW_CONTROLS, SECRET, VISIBLE, black_shading_tight, encrypted, many_pages, pdftex_prompt,
+    soft_mask_black, type3_tag_characters, unreadable_only_page, unreadable_second_page,
+    white_prompt_many_strokes,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -168,7 +171,8 @@ def test_a_page_drawing_too_many_shapes_is_checked_for_the_rest_and_says_so():
     pdf.save(out)
     report = check(out.getvalue())
     assert [f["reason"] for f in report["findings"]] == ["invisible"]
-    assert any("too many shapes" in note for note in report["notes"])
+    assert report["summary"]["pagesPartlyChecked"] == [1]
+    assert any("text under shapes was not checked" in note for note in report["notes"])
 
 
 def test_findings_quote_long_text_only_up_to_the_limit():
@@ -192,6 +196,71 @@ def test_a_long_finding_marks_at_most_the_box_limit():
     finding = check(doc.tobytes())["findings"][0]
     assert finding["words"] == 3 * (worker.MAX_FINDING_BOXES + 20)
     assert len(finding["boxes"]) == worker.MAX_FINDING_BOXES
+
+
+# ── Cases from the first review, each missed or mislabelled before ──────────
+
+@pytest.mark.parametrize("name", sorted(REVIEW_CASES))
+def test_each_case_from_the_review_is_found(name):
+    builder, reason, needle = REVIEW_CASES[name]
+    report = check(builder())
+    hits = [f for f in report["findings"] if needle in f["text"] and reason in ("any", f["reason"])]
+    assert hits, report["findings"]
+    visible = [f for f in report["findings"] if VISIBLE in f["text"] or LINES[0] in f["text"]]
+    assert not visible
+
+
+@pytest.mark.parametrize("name", sorted(REVIEW_CONTROLS))
+def test_ordinary_content_from_the_review_is_not_reported(name):
+    report = check(REVIEW_CONTROLS[name]())
+    assert report["findings"] == [] and report["ocr"] == []
+    assert report["summary"]["pagesNotChecked"] == [] and report["summary"]["pagesPartlyChecked"] == []
+
+
+def test_every_name_under_tight_black_shading_is_reported_whole():
+    """The shading starts at each name's first letter and ends at its last, the way Word and
+    Chromium draw a black background: its anti-aliased edge must not count as the words' ink."""
+    findings = check(black_shading_tight())["findings"]
+    assert sorted(f["text"] for f in findings) == sorted(REDACTED_NAMES)
+    assert {f["reason"] for f in findings} == {"same-colour"}
+
+
+def test_a_page_that_cannot_be_read_is_named_and_no_clean_note_is_given():
+    report = check(unreadable_second_page())
+    assert report["pages"] == 2 and report["pagesChecked"] == 1
+    assert report["summary"]["pagesNotChecked"] == [2]
+    assert any("Page 2 could not be read" in note for note in report["notes"])
+    assert not any("No text was found" in note for note in report["notes"])
+
+
+def test_a_pdf_whose_pages_cannot_be_read_is_refused():
+    with pytest.raises(worker.Refusal) as refused:
+        check(unreadable_only_page())
+    assert refused.value.kind == "unreadable"
+
+
+def test_a_page_past_the_drawing_limit_is_checked_for_colour_and_named_as_partly_checked():
+    report = check(white_prompt_many_strokes())
+    assert [f["reason"] for f in report["findings"]] == ["same-colour"]
+    assert report["summary"]["pagesPartlyChecked"] == [1]
+    assert any("text under shapes was not checked" in note for note in report["notes"])
+
+
+def test_words_set_apart_by_kerning_keep_their_spaces():
+    finding = check(pdftex_prompt())["findings"][0]
+    assert finding["text"] == PDFTEX_PROMPT
+    assert finding["words"] == 12
+
+
+def test_tag_characters_are_decoded_so_the_hidden_words_can_be_read():
+    finding = check(type3_tag_characters())["findings"][0]
+    assert finding["text"] == PAYLOAD
+    assert "tag characters" in finding["detail"]
+
+
+def test_text_hidden_by_a_soft_mask_is_not_said_to_be_on_a_black_background():
+    finding = check(soft_mask_black())["findings"][0]
+    assert "black" not in finding["detail"]
 
 
 def test_rotation_is_read_as_the_preview_reads_it():
@@ -261,6 +330,19 @@ def test_an_unreadable_pdf_is_refused(client):
     assert "corrupt" in detail or "no pages" in detail
 
 
+def test_a_pdf_whose_pages_cannot_be_read_is_answered_with_a_400(client):
+    resp = post(client, unreadable_only_page())
+    assert resp.status_code == 400
+    assert "could not be read" in resp.json()["detail"]
+
+
+def test_the_time_limit_grows_with_the_file_up_to_the_most_allowed():
+    """A small file gets a short limit, so one cannot hold a heavy slot for long."""
+    small, large = hidden_text_service.time_limit(80_000), hidden_text_service.time_limit(8_000_000)
+    assert 20 <= small < 25
+    assert large == hidden_text_service.TIME_LIMIT_MAX_SECONDS == 90
+
+
 def test_too_many_pages_is_refused_with_the_count_and_the_limit(client):
     started = time.monotonic()
     resp = post(client, many_pages(worker.MAX_PAGES + 1))
@@ -279,7 +361,7 @@ def _stub_worker(tmp_path, monkeypatch, body: str) -> None:
 
 def test_a_check_that_never_finishes_is_stopped(client, monkeypatch, tmp_path):
     _stub_worker(tmp_path, monkeypatch, "import time\ntime.sleep(600)\n")
-    monkeypatch.setattr(hidden_text_service, "TIME_LIMIT_SECONDS", 1)
+    monkeypatch.setattr(hidden_text_service, "time_limit", lambda size: 1)
     started = time.monotonic()
     resp = post(client, HIDDEN_CASES["tiny"][0]())
     # The global handler words every 5xx itself; the page explains the limit.

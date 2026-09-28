@@ -44,7 +44,7 @@ async def hidden_text_checker(request: Request, file: UploadFile = File(...)):
     try:
         await stream_upload_to_disk(file, path, label="PDF", validate=validate_pdf_content)
         # A wait for the bounded worker process, which is stopped after
-        # TIME_LIMIT_SECONDS; the heavy pool keeps the waits bounded too.
+        # time_limit(size) seconds; the heavy pool keeps the waits bounded too.
         report = await run_bounded(hidden_text_service.check_hidden_text, str(path))
     except HTTPException:
         raise
