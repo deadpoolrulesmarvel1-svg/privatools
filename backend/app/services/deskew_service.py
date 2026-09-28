@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import fitz  # PyMuPDF
 from PIL import Image
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ProcessingError
 from ..utils.filenames import temp_output
 from ..utils.render import safe_get_pixmap
@@ -100,7 +101,7 @@ def deskew(input_path: str) -> str:
     """Deskew PDF pages using parallel skew detection."""
     output_path = temp_output("deskewed", "pdf")
 
-    src = fitz.open(input_path)
+    src = open_pdf_document(input_path)
     try:
         page_count = len(src)
         logger.info("deskew: start pages=%d", page_count)

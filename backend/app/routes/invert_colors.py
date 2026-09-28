@@ -6,7 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, open_pdf_document, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.render import safe_get_pixmap
 
 router = APIRouter()
@@ -34,7 +35,7 @@ def _invert(input_path: str, dpi: int) -> str:
     """CPU-heavy pixmap inversion — processes pages in parallel."""
     import fitz
 
-    src = fitz.open(input_path)
+    src = open_pdf_document(input_path)
     page_count = len(src)
 
     if page_count <= 2:
@@ -109,7 +110,9 @@ async def invert_colors(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a password-protected or unreadable PDF) goes to the
+        # global handler, which answers with its own status and wording.
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

@@ -78,6 +78,13 @@ async def split_in_half_endpoint(
             media_type="application/pdf",
             background=cleanup,
         )
+    except ToolError:
+        # A password-protected or unreadable PDF: the global handler answers
+        # with the error's own status and wording.
+        remove_files(str(temp_path))
+        if output_path:
+            remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path:

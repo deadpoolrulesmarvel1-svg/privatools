@@ -19,7 +19,7 @@ from typing import List
 import fitz  # PyMuPDF
 from PIL import Image
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
 from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def pdf_to_images(input_path: str, fmt: str = "jpeg", dpi: int = 150) -> str:
     except OSError:
         input_size = 0
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
 
     fmt_lower = fmt.lower()
     pil_format = "JPEG" if fmt_lower in ("jpeg", "jpg") else fmt_lower.upper()

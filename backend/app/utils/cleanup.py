@@ -281,3 +281,32 @@ def safe_open_pdf(path: str, **kwargs):
     except pikepdf.PdfError as exc:
         # Corrupt / malformed — wrap so the global handler maps to 400.
         raise ValueError("This PDF appears to be corrupt or invalid.") from exc
+
+
+def open_pdf_document(source: str | bytes):
+    """Open a PDF with PyMuPDF, or raise the error its visitor should see.
+
+    PyMuPDF opens a PDF that needs a password without complaint and fails only
+    when a page is read, with "document closed or encrypted". Routes that
+    turn every unexpected exception into a 500 answered that as a server
+    fault, so the visitor saw "Processing failed. Please try again." and tried
+    again. This raises PdfEncryptedError for such a file and PdfCorruptError
+    for one PyMuPDF cannot read at all; the global handler answers both with a
+    400 that says what to do. A PDF with only an owner password (restrictions,
+    nothing needed to open it) opens as before. Takes a path or the bytes.
+    """
+    import fitz  # PyMuPDF
+
+    from .exceptions import PdfCorruptError, PdfEncryptedError
+
+    try:
+        if isinstance(source, (bytes, bytearray)):
+            doc = fitz.open(stream=source, filetype="pdf")
+        else:
+            doc = fitz.open(source)
+    except fitz.FileDataError as exc:
+        raise PdfCorruptError() from exc
+    if doc.needs_pass:
+        doc.close()
+        raise PdfEncryptedError()
+    return doc

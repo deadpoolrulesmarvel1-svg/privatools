@@ -16,6 +16,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import remove_files, validate_pdf_content
+from ..utils.exceptions import PdfEncryptedError
 from ..utils.page_space import drawing_unturned
 from ..utils.render import safe_get_pixmap
 
@@ -37,9 +38,15 @@ async def _read_upload(file: UploadFile, max_bytes: int, label: str) -> bytes:
 
 def _open_pdf(data: bytes) -> fitz.Document:
     try:
-        return fitz.open(stream=data, filetype="pdf")
+        doc = fitz.open(stream=data, filetype="pdf")
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
+    if doc.needs_pass:
+        # PyMuPDF opens it, then fails on the first page it reads, which the
+        # routes here answered as a 500 ("Processing failed").
+        doc.close()
+        raise HTTPException(status_code=400, detail=PdfEncryptedError.default_detail)
+    return doc
 
 
 class _TempPath:

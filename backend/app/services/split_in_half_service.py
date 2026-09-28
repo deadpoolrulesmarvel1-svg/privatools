@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 
@@ -31,7 +32,7 @@ def split_in_half(input_path: str, direction: str = "vertical") -> str:
 
     output_path = temp_output("split_half", "pdf")
 
-    src = fitz.open(input_path)
+    src = open_pdf_document(input_path)
     out = fitz.open()
     try:
         for page_idx in range(len(src)):
