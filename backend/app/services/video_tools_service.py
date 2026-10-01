@@ -349,8 +349,9 @@ def _copy_plan(path: str) -> tuple[tuple, dict] | None:
 
 
 def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -> str:
-    """Join clips of one encoding by copying their video, which costs seconds
-    at any length and loses nothing. Re-encoding one minute of 1080p30 took
+    """Join clips of one encoding by copying their video, which loses nothing
+    and costs little: re-encoding the sound is most of the work, up to about
+    two minutes per hour of footage. Re-encoding one minute of 1080p30 took
     111 CPU-seconds (v2.7.5 image), so a merge of about three minutes ran out
     of FFmpeg's 180 s on the production container; copying it took 1.5.
 
@@ -360,7 +361,8 @@ def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -
     the picture at every join: 238 ms by clip 10 in Chromium. Here each clip's
     sound is trimmed or padded to exactly its video's length, and the concat
     list gives each clip that same length, so every clip's sound starts with
-    its picture. Only the sound is encoded, once.
+    its picture. Sound that runs on past a clip's video is cut there. Only
+    the sound is encoded, once.
     """
     output_path = temp_output("video_merge", "mp4")
     work_dir = tempfile.mkdtemp(prefix="video_merge_")
@@ -387,8 +389,16 @@ def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -
                               + (f",adelay=delays={lead}S:all=1" if lead > 0 else "")
                               + f",atrim=end_sample={samples},apad=whole_len={samples}[a{k}]")
             joined = "".join(f"[a{k}]" for k in range(len(input_paths)))
+            # The fast AAC coder, which FFmpeg's documentation calls "better
+            # and much faster at higher bitrates" (above 64 kbps). With the
+            # default coder the sound took most of a long merge, at 15 to 35
+            # times real time on a 2-core ARM server like production's, so
+            # FFmpeg's 180 s covered as little as 45 minutes of footage; fast
+            # ran at 29 to 58 times, and a merge of 2 x 5 minutes took 13.8
+            # CPU-s against 27.8.
             args += ["-filter_complex", ";".join(chains) + f";{joined}concat=n={len(input_paths)}:v=0:a=1[a]",
-                     "-map", "0:v:0", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k"]
+                     "-map", "0:v:0", "-map", "[a]", "-c:v", "copy",
+                     "-c:a", "aac", "-aac_coder", "fast", "-b:a", "192k"]
         else:
             args += ["-map", "0:v:0", "-c:v", "copy"]
         _run_ffmpeg([
