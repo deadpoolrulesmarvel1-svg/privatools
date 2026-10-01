@@ -28,12 +28,14 @@ MAX_INPUT_BYTES = 5 * 1024 * 1024
 # Each level is indented 8 points, so a line nested deeper than this would
 # start past the right margin of an A4 page.
 MAX_DEPTH = 60
-# At most this many printed lines, about 800 A4 pages. About that many (a 1 MB
-# file of 10,000 sitemap entries) took 3.5 s and 126 MB to print. Unbounded,
+# At most this many printed lines: about 800 A4 pages at 62 lines a page, as
+# blank lines are not printed. About that many (a 1 MB file of 10,000 sitemap
+# entries with three fields each) took 3.5 s and 126 MB to print. Unbounded,
 # a 5 MB file of 1.3 million empty elements took 38 s and 600 MB and printed
 # 21,000 pages. JSON to PDF has the same cap. Every element starts a line, so
 # a file with more elements than this is refused while it is read, before its
-# tree is built.
+# tree is built; a sitemap whose entries have all four fields takes six lines
+# an entry and reaches the cap at about 8,300 entries.
 MAX_PRINTED_LINES = 50_000
 
 # The refusals below reach the visitor as they are, so they avoid the words
@@ -180,9 +182,13 @@ def xml_to_pdf(input_path: str) -> str:
             c.setFont("Courier", font_size)
             y = height - margin
 
+        # Blank lines are not printed. Re-indenting an indented file leaves its
+        # old indentation behind as whitespace-only lines, two around every
+        # element: given 0.3 of a line each, they made the output look
+        # double-spaced and the 50,000-line cap 1,300 pages, and a file of
+        # line breaks printed hundreds of empty pages.
         stripped = line.rstrip()
         if not stripped:
-            y -= line_height * 0.3
             continue
 
         indent = len(line) - len(line.lstrip())

@@ -9,7 +9,7 @@
 import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
     buildRequest, buildTranscribeRequest, parseResponse, parseTranscribeResponse,
-    providerById, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
+    providerById, stoppedShort, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
 } from "./providers";
 import { redact, registerSecret } from "./redact";
 
@@ -59,6 +59,22 @@ export async function complete(args: CompleteArgs): Promise<string> {
     if (!res.ok) throw await refusal(res, { label: provider.label, model: args.model, customEndpoint: provider.customBaseUrl });
 
     const json = await res.json().catch(() => ({}));
+    // Before the text: what came with a refusal or a cut-off is not an answer.
+    const short = stoppedShort(provider, json);
+    if (short === "declined") {
+        throw new ByokError(
+            "Declined",
+            "model declined (stop_reason refusal)",
+            "Claude declined to answer this request, so there is no answer to show. That was the model's decision, not a fault in your key; rewording the request may help.",
+        );
+    }
+    if (short === "cut-off") {
+        throw new ByokError(
+            "TooLong",
+            "answer stopped at its length limit",
+            "Claude stopped before finishing its answer: it reached the length limit for one request, and the model's thinking counts toward that limit. The unfinished answer is left out. Ask for less at once, such as a shorter document or a narrower question.",
+        );
+    }
     const text = parseResponse(provider, json);
     if (!text.trim()) throw new ByokError("Unknown", "provider returned no text", "The provider returned no answer. Check the model name or try a different model.");
     return text;

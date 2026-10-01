@@ -6,7 +6,7 @@
     },
     {
       "name": "Know the fixed layout",
-      "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."
+      "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. Blank lines are left out. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."
     },
     {
       "name": "Convert and download",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Can I convert large XML files?",
-      "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."
+      "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Every element starts a line, so a sitemap whose entries have all four fields fits about 8,300 entries. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."
     }
   ]
 }

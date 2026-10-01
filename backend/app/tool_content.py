@@ -143,7 +143,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "xml-to-pdf": [
         {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed XML works, including RSS, Atom, and XHTML, in UTF-8, UTF-16 or a one-byte encoding its declaration names, such as ISO-8859-1 or Windows-1252."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. Blank lines are left out. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
@@ -1364,7 +1364,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "xml-to-pdf": [
         {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
-        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."},
+        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Every element starts a line, so a sitemap whose entries have all four fields fits about 8,300 entries. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."},
     ],
     "csv-to-pdf": [
         {"q": "Does the tool auto-detect delimiters?", "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."},

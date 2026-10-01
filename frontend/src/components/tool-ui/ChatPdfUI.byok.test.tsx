@@ -36,7 +36,7 @@ function fakeProvider(endpoint: string) {
     });
 }
 
-async function askWith(providerId: string) {
+async function ask(providerId: string) {
     localStorage.setItem("privatools.byok.provider", providerId);
     await saveKey(providerId, DUMMY_KEY);
     const { container } = render(<ChatPdfUI />);
@@ -47,7 +47,23 @@ async function askWith(providerId: string) {
     await waitFor(() => expect(question).toBeEnabled());
     fireEvent.change(question, { target: { value: "When are the pumps inspected?" } });
     fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+}
+
+async function askWith(providerId: string) {
+    await ask(providerId);
     return screen.findByRole("alert");
+}
+
+/** Anthropic answering 200, as it does for a finished answer, a refusal and
+ *  an answer cut off at max_tokens alike. */
+function claudeAnswers(body: unknown) {
+    return vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: async () => body,
+        text: async () => JSON.stringify(body),
+    } as unknown as Response);
 }
 
 beforeEach(async () => {
@@ -77,5 +93,29 @@ describe("Chat with PDF through Groq and OpenRouter", () => {
         const alert = await askWith("groq");
         expect(alert).toHaveTextContent("The browser blocked the request to Groq");
         expect(alert).not.toHaveTextContent("Couldn't reach the server");
+    });
+});
+
+describe("Chat with PDF through Anthropic", () => {
+    it("asks Sonnet 5.5 at medium effort when the model box is left empty", async () => {
+        const fetch = claudeAnswers({ content: [{ type: "text", text: "On the first Monday of each month." }], stop_reason: "end_turn" });
+        await ask("anthropic");
+        expect(await screen.findByText("On the first Monday of each month.")).toBeInTheDocument();
+        const body = JSON.parse(String((fetch.mock.calls[0][1] as RequestInit).body));
+        expect(body).toMatchObject({ model: "claude-sonnet-5-5", max_tokens: 16000, output_config: { effort: "medium" } });
+    });
+
+    it("says Claude declined, instead of showing no answer", async () => {
+        claudeAnswers({ content: [], stop_reason: "refusal", stop_details: { category: "general_harms", explanation: null } });
+        const alert = await askWith("anthropic");
+        expect(alert).toHaveTextContent("Claude declined to answer this request");
+        expect(alert).not.toHaveTextContent("model name");
+    });
+
+    it("says the answer was cut off, instead of showing part of it as the whole", async () => {
+        claudeAnswers({ content: [{ type: "text", text: "On the first" }], stop_reason: "max_tokens" });
+        const alert = await askWith("anthropic");
+        expect(alert).toHaveTextContent("Claude stopped before finishing its answer");
+        expect(screen.queryByText("On the first")).toBeNull();
     });
 });

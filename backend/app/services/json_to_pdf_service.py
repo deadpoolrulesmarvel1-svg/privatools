@@ -11,7 +11,7 @@ from ..utils.filenames import temp_output
 # Caps to keep one request from spinning up an unbounded ReportLab canvas.
 MAX_INPUT_BYTES = 5 * 1024 * 1024     # 5 MB JSON file
 MAX_DEPTH = 25                         # arbitrary nesting cap
-MAX_PRETTY_LINES = 50_000              # ~5,000 PDF pages worst-case
+MAX_PRETTY_LINES = 50_000              # about 800 A4 pages, at 62 lines a page
 
 # The refusals below reach the visitor as they are, so they avoid the words
 # the website's friendlyError turns into advice about damaged or locked PDFs
