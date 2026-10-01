@@ -341,6 +341,10 @@ def video_merge(input_paths: list[str]) -> str:
             "-filter_complex", filter_complex,
             *map_args,
             *codec_args,
+            # FFmpeg copies the first input's tags by default: where a phone
+            # recorded the clip (GPS location), on what, and when. The frames
+            # are already turned upright, so no rotation tag is needed.
+            "-map_metadata", "-1", "-map_chapters", "-1",
             "-movflags", "+faststart",
             str(output_path),
         ])
