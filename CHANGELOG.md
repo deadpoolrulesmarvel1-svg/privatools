@@ -10,6 +10,19 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.9] — 2026-10-01 — Chat with PDF on every provider, honest conversions, faster video merges
+
+### Tools
+
+- Chat with PDF, Translate PDF and the other bring-your-own-key AI tools work with Groq and OpenRouter, which had answered every request with "not found" since the feature shipped: requests now go to the paths those providers serve. Default models the providers retired are replaced (Gemini, DeepSeek, OpenRouter, Together and Groq), and Claude's default is now Claude Sonnet 5.5, since Sonnet 4.5 retires on 30 November. When a provider refuses the key, the model or the request's size, the page says which; when Claude declines or stops before finishing, the page says so instead of showing a partial answer as a whole one. (#290)
+- JSON to PDF and XML to PDF refuse invalid, oversized or too deeply nested files with a message saying why instead of "Processing failed", read files saved with a byte-order mark, in UTF-16 or in legacy encodings, read valid UTF-8 as UTF-8 whatever the file declares, and no longer double-space indented files. Very large files are bounded so one file can't tie up the server. (#290)
+- Merge Videos no longer copies the first clip's location, device and date tags into the merged video. A merge that runs out of time says so instead of failing silently, and leaves no partial file behind. (#290)
+- Merge Videos joins clips recorded alike (same codec, size and frame rate, from MP4 or MOV) without re-encoding the picture, so long phone videos merge in seconds instead of timing out; sound is re-encoded and aligned at every join. Clips that were trimmed without re-encoding, or that differ, still go through the full re-encode. iPhone clips stay HEVC, which some browsers can't play; the page says so and points to Video Converter for an H.264 copy. (#292)
+
+### Other
+
+- Dependency updates: the CodeQL actions, the Python base image digest, and six frontend packages including Vite 8.3.1 and Vitest 5.0.2. (#297, #298, #299)
+
 ## [2.7.8] — 2026-10-01 — Security updates
 
 ### Other
