@@ -5,7 +5,7 @@ import { alphaFor } from "@/lib/gemini-watermark/alpha";
 import { sparklePlacements, type Family } from "@/lib/gemini-watermark/geometry";
 import { MASK_SOURCES } from "@/lib/gemini-watermark/masks";
 import { decodePng } from "@/lib/gemini-watermark/png";
-import { applySparkle, background, pictureToPng } from "@/test/gemini-fixtures";
+import { applySparkle, background, jpegLike, pictureToPng, solid } from "@/test/gemini-fixtures";
 
 const mocks = vi.hoisted(() => ({ download: vi.fn() }));
 vi.mock("@/lib/api", async original => ({ ...await original<object>(), downloadBlob: mocks.download }));
@@ -49,8 +49,8 @@ describe("Gemini Watermark Remover page", () => {
     });
 
     it("describes where the logo was by size and distance, not by version", () => {
-        expect(placeLabel({ family: "inset-96", size: 48, marginRight: 96, marginBottom: 96, x: 0, y: 0, width: 48, height: 48, gain: 0.6 })).toBe("48 px logo, 96 px from the corner");
-        expect(placeLabel({ family: "proportional", size: 36, marginRight: 71, marginBottom: 72, x: 0, y: 0, width: 36, height: 36, gain: 1 })).toBe("36 px logo, 71 px from the right and 72 px from the bottom");
+        expect(placeLabel({ size: 48, marginRight: 96, marginBottom: 96 })).toBe("48 px logo, 96 px from the corner");
+        expect(placeLabel({ size: 36, marginRight: 71, marginBottom: 72 })).toBe("36 px logo, 71 px from the right and 72 px from the bottom");
     });
 
     it("cleans two watermarked images, leaves a clean one unchanged and downloads only the cleaned pair", async () => {
@@ -99,9 +99,9 @@ describe("Gemini Watermark Remover page", () => {
         await screen.findByRole("heading", { name: "No sparkle found." }, { timeout: 30_000 });
         expect(screen.getByText("Nothing was changed.")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
-        expect(screen.getByText("No Gemini sparkle found at the sizes and places Gemini uses. Nothing was changed.")).toBeInTheDocument();
+        expect(screen.getByText("No Gemini sparkle found at the sizes and places this tool checks. Nothing was changed.")).toBeInTheDocument();
         expect(screen.getByRole("img", { name: "The corner, enlarged" })).toBeInTheDocument();
-        expect(screen.getByText(/If you can see it here, the tool did not recognise this layout/)).toBeInTheDocument();
+        expect(screen.getByText(/If you can see it here, the tool did not find it/)).toBeInTheDocument();
     }, 30_000);
 
     it("reports a file it cannot read without claiming a result", async () => {
@@ -119,5 +119,24 @@ describe("Gemini Watermark Remover page", () => {
         await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 30_000 });
         expect(screen.getByRole("alert")).toHaveTextContent("This PNG file is damaged or incomplete.");
         expect(screen.getByRole("alert")).not.toHaveTextContent(/PDF/);
+    }, 30_000);
+
+    it("leaves a re-compressed copy unchanged rather than claim a removal that would leave a trace", async () => {
+        const runs: unknown[] = [];
+        const listener = (event: Event) => runs.push((event as CustomEvent).detail);
+        window.addEventListener(RUN_EVENT, listener);
+        // The fainter 48 px logo 96 px in, on flat colour, then saved again as JPEG at quality 75 by some app.
+        const image = jpegLike(applySparkle(solid(480, 480, [186, 220, 74]), alphaFor("v1-48", 48), 336, 336, 0.6), 75);
+        const { container } = render(<GeminiWatermarkUI />);
+        choose(container, [new File([pictureToPng(image)], "resaved.png", { type: "image/png" })]);
+        await screen.findByRole("heading", { name: "Not removed cleanly." }, { timeout: 30_000 });
+        expect(screen.getByRole("heading", { name: "Nothing was changed." })).toBeInTheDocument();
+        expect(within(screen.getByLabelText("Your images")).getByText("Sparkle found, but not removed cleanly · left unchanged")).toBeInTheDocument();
+        // It names where the layout puts the logo, not the smaller fit the search settled on.
+        expect(screen.getByText(/A Gemini sparkle was found \(48 px logo, 96 px from the corner\), but removing it would leave a trace that would stand out/)).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "The corner, enlarged" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
+        expect(runs).toEqual([{ mode: "single", outcome: "error", files: 1, errorKind: "browser" }]);
+        window.removeEventListener(RUN_EVENT, listener);
     }, 30_000);
 });

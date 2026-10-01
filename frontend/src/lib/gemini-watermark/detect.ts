@@ -11,8 +11,8 @@
  *
  * The logo's shape comes from the calibrated captures (alpha.ts). Where it
  * sits, how large it is and how strong it is are fitted to each picture,
- * starting from the layouts in geometry.ts. Nothing is changed unless three
- * checks agree.
+ * starting from the layouts in geometry.ts. Nothing is changed unless all
+ * the checks below agree.
  *
  * 1. Is the logo there? Pairs of pixels straddle the logo's outline, one just
  *    inside and one just outside. Where the logo is there, the inside pixel
@@ -35,20 +35,31 @@
  *    standard size, fraction of a pixel that the layout allows is tested.
  *    The fits whose outline matches nearly as well as the best are kept, and
  *    for each the opacity is fitted: the one that leaves no step across the
- *    outline (3), starting from the smooth pairs' median. The fit that then
- *    leaves least behind wins.
- * 3. Is it gone? After the reverse blend, the step left across the outline
- *    and any ridge along it are compared with the same measures taken just
- *    beside the outline, where the logo never was, so the picture's own
- *    texture cancels out. Only a fit that leaves less than a bound set on
- *    real Gemini images is removed. Otherwise the picture is left exactly as
- *    it was, and the result says the logo could not be removed cleanly.
+ *    outline (3), starting from the smooth pairs' median. Of the fits that
+ *    come out clean, the one whose result is smoothest wins.
+ * 3. Is it gone? What the reverse blend would leave is judged four ways
+ *    before anything is written, and a fit must pass all of them:
+ *    - at the fit's own outline: the step left across it and any ridge along
+ *      it, against the same measures taken just beside it, where the logo
+ *      never was, so the picture's own texture cancels out;
+ *    - the same at the outline of the layout's usual logo, which a fit a
+ *      pixel or two smaller than the real logo would leave unremoved;
+ *    - over the logo as a whole (`plateau`): its core, soft edge and a halo
+ *      just outside, quadrant by quadrant, against a smooth surface fitted to
+ *      the picture around it, which sees a faint copy or a thin outline of a
+ *      logo whose edges were softened by a JPEG saved again or a resize;
+ *    - the fitted opacity must lie in the range the layout is drawn with.
+ *    The bounds were set on real Gemini images and copies of them saved
+ *    again as JPEG and resized. A fit over any of them is not written: the
+ *    picture is left exactly as it was, and the result says the logo could
+ *    not be removed cleanly.
  *
  * detect.test.ts holds these checks to white shapes, see-through panels,
- * glare, logos at the wrong opacity, and a busy synthetic picture scanned at
- * every position. Plain correlation with the opacity map was tried first and
- * rejected: white shapes score as high as the logo, and picture detail
- * crossing the logo drags real ones below any useful threshold.
+ * glare, logos at the wrong opacity, re-compressed and resized copies over
+ * flat colour, and a busy synthetic picture scanned at every position. Plain
+ * correlation with the opacity map was tried first and rejected: white
+ * shapes score as high as the logo, and picture detail crossing the logo
+ * drags real ones below any useful threshold.
  *
  * Only the visible logo's pixels are ever changed. Nothing here looks for,
  * reads or alters SynthID or any other invisible or metadata watermark.
@@ -104,7 +115,35 @@ export interface Residue {
     texture: number;
 }
 
-export interface Fit {
+export interface Plateau {
+    /**
+     * Mean brightness left after removal, against a smooth surface fitted to
+     * the picture just around the logo, in levels: the worst of the logo's
+     * core, soft edge and halo, quadrant by quadrant.
+     */
+    bump: number;
+    /** How far the picture around it strays from that surface (root mean square), in levels. */
+    spread: number;
+    /**
+     * How rough the logo's area is after removal: the 99th percentile, over
+     * its pixels, of the largest channel's distance from that channel's
+     * surface, in levels, each scaled back by the 1 / (1 − alpha) the reverse
+     * blend multiplies the picture's own grain by. A thin outline or coloured
+     * speckle shows here.
+     */
+    rough: number;
+    /** The same for the picture around it. */
+    ringRough: number;
+}
+
+/** A logo's size and its distance from the right and bottom edges, in pixels, rounded. */
+export interface Geometry {
+    size: number;
+    marginRight: number;
+    marginBottom: number;
+}
+
+export interface Fit extends Geometry {
     family: Family;
     mask: MaskId;
     /** The logo's box in the whole picture: its top-left corner. */
@@ -114,13 +153,18 @@ export interface Fit {
     map: AlphaMap;
     /** The fitted opacity, as a multiple of the capture's. */
     gain: number;
-    /** The logo's size and its distance from the right and bottom edges, in pixels, rounded. */
-    size: number;
-    marginRight: number;
-    marginBottom: number;
+    /** Where the layout usually puts its logo, which the fit may differ from by a pixel or two. */
+    layout: Geometry;
     evidence: Evidence;
+    /** What removal leaves at the fit's own outline. */
     residue: Residue;
-    /** Whether removal leaves no visible trace by the residue bounds. */
+    /** What removal leaves at the outline of the layout's usual logo. */
+    layoutResidue: Residue;
+    /** What removal leaves over the logo as a whole. */
+    plateau: Plateau;
+    /** Whether the opacity lies in the range that layout is drawn with. */
+    opacityInRange: boolean;
+    /** Whether removal leaves no trace that would stand out, by every check. */
     clean: boolean;
 }
 
@@ -146,7 +190,31 @@ export const THRESHOLDS = {
     /** Residue bounds, in levels: the larger of a floor and a share of the picture's own texture. */
     fill: { floor: 4.5, share: 0.4 },
     edge: { floor: 6, share: 0.5 },
+    /**
+     * What may be left in any region of the logo (see `plateau`), in levels:
+     * the larger of a floor and a share of how far the picture around it
+     * strays from a smooth surface. Over flat colour that is 2 levels. Over
+     * busy detail the surface cannot follow the picture, so the bound grows
+     * with it and the outline checks above decide.
+     */
+    plateau: { floor: 2, share: 2 },
+    /**
+     * How much rougher the logo's area may be after removal than the picture
+     * around it (see `Plateau.rough`), in levels: the larger of a floor and a
+     * share of the picture's own. A thin outline left by a fit a fraction of
+     * a pixel off, or JPEG ringing around a removed logo, shows here.
+     */
+    rough: { floor: 3, share: 1.6 },
+    /**
+     * The fitted opacity must lie within these multiples of the layout's
+     * usual one. Real logos 96 px in fit 0.98–1.19 times it (0.59–0.71 of
+     * the capture); a fit outside the band describes some other logo.
+     */
+    opacity: [0.8, 1.35],
 } as const;
+
+/** The ring around the logo that the plateau check reads: from this many pixels outside its footprint, to this many. */
+const RING = [3, 8] as const;
 
 /** The opacity is searched from 0.8 to 1.25 times the smooth pairs' estimate, halving the interval this many times. */
 const GAIN_RANGE = [0.8, 1.25] as const;
@@ -326,10 +394,16 @@ export function passes(evidence: Evidence): boolean {
  * same measure one pair-length further out. Medians are taken per direction:
  * a wrong opacity moves all four alike (fill), a shifted or wrongly sized
  * fit moves opposite sides apart or leaves a ridge (edge).
+ *
+ * The outline read is the removed logo's own, or another logo's: the
+ * layout's usual one, `at`. A fit a pixel or two smaller than the real logo
+ * leaves its rim outside the fit's outline, where only the larger outline
+ * sees it.
  */
-export function residue(image: RgbaImage, map: AlphaMap, gain: number, x0: number, y0: number): Residue {
+export function residue(image: RgbaImage, map: AlphaMap, gain: number, x0: number, y0: number, at?: Drawn): Residue {
     const { width, height, data } = image;
-    const line = outline(map);
+    const read: Drawn = at ?? { map, gain, x: x0, y: y0 };
+    const line = outline(read.map);
     const after = (x: number, y: number) => restoredBrightness(data, (y * width + x) * 4, opacity(map, gain, x - x0, y - y0));
     const before = (x: number, y: number) => brightness(data, (y * width + x) * 4);
     const fills: number[][] = [[], [], [], []], ridges: number[][] = [[], [], [], []];
@@ -338,12 +412,12 @@ export function residue(image: RgbaImage, map: AlphaMap, gain: number, x0: numbe
         const d = line.direction[k];
         const [dx, dy] = DIRECTIONS[d];
         const s = line.step[k];
-        const ix = x0 + line.ix[k], iy = y0 + line.iy[k];
+        const ix = read.x + line.ix[k], iy = read.y + line.iy[k];
         const ox = ix + dx * s, oy = iy + dy * s;
         // Reads reach two pair-lengths beyond the outside pixel and one inside the inside one.
         const farX = ox + 2 * dx * s, farY = oy + 2 * dy * s, backX = ix - dx * s, backY = iy - dy * s;
         if (Math.min(farX, farY, backX, backY) < 0 || Math.max(farX, backX) >= width || Math.max(farY, backY) >= height) continue;
-        const predicted = opacity(map, gain, line.ix[k], line.iy[k]) * (255 - before(ox, oy));
+        const predicted = opacity(read.map, read.gain, line.ix[k], line.iy[k]) * (255 - before(ox, oy));
         if (predicted < THRESHOLDS.informative) continue;
         const inside = after(ix, iy), outside = after(ox, oy), beyond = after(ox + dx * s, oy + dy * s);
         const fill = inside - outside;
@@ -374,7 +448,169 @@ export function residue(image: RgbaImage, map: AlphaMap, gain: number, x0: numbe
     return { step: (f[0] + f[1] + f[2] + f[3]) / 4, fill, edge, texture: median(textures) };
 }
 
+/** A logo as drawn: its shape, where its box sits in the pixels passed in, and its opacity as a multiple of the shape's. */
+export interface Drawn {
+    map: AlphaMap;
+    x: number;
+    y: number;
+    gain: number;
+}
+
+/**
+ * What removing `removed` leaves over the logo as a whole, region by region:
+ * the mean brightness after removal, against a smooth (quadratic) surface
+ * fitted to a ring of picture just around the footprint (3 to 8 pixels out,
+ * beyond any softened edge). The regions are the removed logo's core, its
+ * soft edge, and a halo 1 to 2 pixels outside it, each in four quadrants, and
+ * the core of the layout's usual logo (`layout`). The worst one counts.
+ *
+ * The outline checks above read steps a few pixels long, so a copy of the
+ * logo whose edges were softened, by a JPEG saved again or a resize, leaves
+ * them nothing to see; and a fit a pixel smaller than the real logo leaves
+ * its rim as a thin outline that their medians dilute. Over flat colour these
+ * regions see both at once. Over busy detail the surface cannot follow the
+ * picture, its spread says so, and the bound grows with it.
+ */
+export function plateau(image: RgbaImage, removed: Drawn, layout?: { map: AlphaMap; x: number; y: number }): Plateau {
+    const { width, height, data } = image;
+    const [inner, outer] = RING;
+    const shapes = layout ? [removed, layout] : [removed];
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    for (const { map, x, y } of shapes) {
+        left = Math.min(left, x); top = Math.min(top, y);
+        right = Math.max(right, x + map.width); bottom = Math.max(bottom, y + map.height);
+    }
+    left = Math.max(0, left - outer); top = Math.max(0, top - outer);
+    right = Math.min(width, right + outer); bottom = Math.min(height, bottom + outer);
+    const w = right - left, h = bottom - top;
+    if (w <= 0 || h <= 0) return { bump: 0, spread: 0, rough: 0, ringRough: 0 };
+    const peaks = shapes.map(({ map }) => map.values.reduce((max, value) => Math.max(max, value), 0));
+    const alphaOf = (k: number, x: number, y: number) => opacity(shapes[k].map, 1, left + x - shapes[k].x, top + y - shapes[k].y);
+    /** Distance from a footprint by 4-neighbour steps: 0 inside it, up to `outer`, -1 beyond. */
+    const distanceFrom = (inside: (x: number, y: number) => boolean) => {
+        const distance = new Int8Array(w * h).fill(-1);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (inside(x, y)) distance[y * w + x] = 0;
+        for (let d = 1; d <= outer; d++) {
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = y * w + x;
+                    if (distance[i] !== -1) continue;
+                    if ((x > 0 && distance[i - 1] === d - 1) || (x + 1 < w && distance[i + 1] === d - 1)
+                        || (y > 0 && distance[i - w] === d - 1) || (y + 1 < h && distance[i + w] === d - 1)) distance[i] = d;
+                }
+            }
+        }
+        return distance;
+    };
+    const fromAll = distanceFrom((x, y) => shapes.some((_, k) => alphaOf(k, x, y) > OUTSIDE));
+    const fromRemoved = layout ? distanceFrom((x, y) => alphaOf(0, x, y) > OUTSIDE) : fromAll;
+    /** The three channels as removal would write them. */
+    const after = (x: number, y: number) => {
+        const i = ((top + y) * width + left + x) * 4;
+        const alpha = opacity(removed.map, removed.gain, left + x - removed.x, top + y - removed.y);
+        return [restore(data[i], alpha), restore(data[i + 1], alpha), restore(data[i + 2], alpha)];
+    };
+    // Least squares for a quadratic surface per channel over the ring, centred on the area so the terms stay well scaled.
+    const cx = w / 2, cy = h / 2, scale = Math.max(w, h) / 2;
+    const terms = (x: number, y: number) => {
+        const u = (x - cx) / scale, v = (y - cy) / scale;
+        return [1, u, v, u * u, u * v, v * v];
+    };
+    const normals = [0, 1, 2].map(() => Array.from({ length: 6 }, () => new Float64Array(7)));
+    const ring: [number, number, number[]][] = [];
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (fromAll[y * w + x] < inner) continue;
+            const values = after(x, y), t = terms(x, y);
+            ring.push([x, y, values]);
+            for (let c = 0; c < 3; c++) {
+                for (let i = 0; i < 6; i++) {
+                    for (let j = 0; j < 6; j++) normals[c][i][j] += t[i] * t[j];
+                    normals[c][i][6] += t[i] * values[c];
+                }
+            }
+        }
+    }
+    if (ring.length < 30) return { bump: 0, spread: Infinity, rough: 0, ringRough: Infinity };
+    const surfaces = normals.map(solve);
+    /** How far each channel lies from its surface. */
+    const offsets = (x: number, y: number, values: number[]) => {
+        const t = terms(x, y);
+        return values.map((value, c) => value - t.reduce((sum, term, i) => sum + term * surfaces[c][i], 0));
+    };
+    let squares = 0;
+    const ringDistances: number[] = [];
+    for (const [x, y, values] of ring) {
+        const d = offsets(x, y, values);
+        squares += ((d[0] + d[1] + d[2]) / 3) ** 2;
+        ringDistances.push(Math.max(Math.abs(d[0]), Math.abs(d[1]), Math.abs(d[2])));
+    }
+    const logoDistances: number[] = [];
+    // Regions 0–3: the removed logo's core by quadrant; 4–7 its soft edge; 8–11 its halo; 12 the layout's core.
+    const sum = new Float64Array(13), count = new Float64Array(13);
+    const midX = removed.x - left + removed.map.width / 2, midY = removed.y - top + removed.map.height / 2;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const value = alphaOf(0, x, y), distance = fromRemoved[y * w + x];
+            const quadrant = (x < midX ? 0 : 1) + (y < midY ? 0 : 2);
+            let region = -1;
+            if (value >= peaks[0] / 2) region = quadrant;
+            else if (value > OUTSIDE) region = 4 + quadrant;
+            else if (distance === 1 || distance === 2) region = 8 + quadrant;
+            const inLayoutCore = layout && alphaOf(1, x, y) >= peaks[1] / 2;
+            if (region < 0 && !inLayoutCore) continue;
+            const d = offsets(x, y, after(x, y));
+            const leftOver = (d[0] + d[1] + d[2]) / 3;
+            if (region >= 0) { sum[region] += leftOver; count[region]++; }
+            if (inLayoutCore) { sum[12] += leftOver; count[12]++; }
+            // The reverse blend multiplies the picture's own grain by 1 / (1 − alpha); scale that back out.
+            const amplified = 1 - Math.min(0.99, value * removed.gain);
+            logoDistances.push(Math.max(Math.abs(d[0]), Math.abs(d[1]), Math.abs(d[2])) * amplified);
+        }
+    }
+    let bump = 0;
+    for (let region = 0; region < 13; region++) {
+        if (count[region] < 12) continue;
+        const mean = sum[region] / count[region];
+        if (Math.abs(mean) > Math.abs(bump)) bump = mean;
+    }
+    return { bump, spread: Math.sqrt(squares / ring.length), rough: percentile(logoDistances, 0.99), ringRough: percentile(ringDistances, 0.99) };
+}
+
+function percentile(values: number[], share: number): number {
+    if (!values.length) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    return sorted[Math.min(sorted.length - 1, Math.floor(share * sorted.length))];
+}
+
+/** Gaussian elimination with partial pivoting on an augmented n × (n + 1) system; a singular one gives zeros. */
+function solve(system: Float64Array[]): number[] {
+    const n = system.length;
+    for (let column = 0; column < n; column++) {
+        let pivot = column;
+        for (let row = column + 1; row < n; row++) if (Math.abs(system[row][column]) > Math.abs(system[pivot][column])) pivot = row;
+        if (Math.abs(system[pivot][column]) < 1e-12) return Array<number>(n).fill(0);
+        [system[column], system[pivot]] = [system[pivot], system[column]];
+        for (let row = column + 1; row < n; row++) {
+            const factor = system[row][column] / system[column][column];
+            for (let k = column; k <= n; k++) system[row][k] -= factor * system[column][k];
+        }
+    }
+    const result = Array<number>(n).fill(0);
+    for (let row = n - 1; row >= 0; row--) {
+        let sum = system[row][n];
+        for (let k = row + 1; k < n; k++) sum -= system[row][k] * result[k];
+        result[row] = sum / system[row][row];
+    }
+    return result;
+}
+
 const limit = ({ floor, share }: { floor: number; share: number }, texture: number) => Math.max(floor, share * texture);
+
+/** Whether what removal leaves over the logo as a whole is within its bounds. */
+export function plateauIsClean(p: Plateau): boolean {
+    return Math.abs(p.bump) <= limit(THRESHOLDS.plateau, p.spread) && p.rough <= limit(THRESHOLDS.rough, p.ringRough);
+}
 
 /** Whether the residue is under both bounds. */
 export function isClean(r: Residue): boolean {
@@ -447,6 +683,43 @@ interface Candidate {
     gain: number;
     residue: Residue;
     badness: number;
+}
+
+/** A candidate with its opacity fitted and every check made on what its removal would leave. */
+interface Checked extends Candidate {
+    layoutResidue: Residue;
+    plateau: Plateau;
+    opacityInRange: boolean;
+    clean: boolean;
+}
+
+/** The layout's usual logo, at its usual opacity, in the pixels passed in. */
+function usual(placement: Placement, frame: Frame): Drawn {
+    if (placement.subpixel) {
+        const placed = placedAlpha(placement.mask, placement.left, placement.top, placement.scaleX, placement.scaleY);
+        return { map: placed.map, x: placed.x - frame.left, y: placed.y - frame.top, gain: placement.gain };
+    }
+    const size = Math.round(MASK_SOURCES[placement.mask].size * placement.scaleX);
+    return { map: alphaFor(placement.mask, size), x: placement.left - frame.left, y: placement.top - frame.top, gain: placement.gain };
+}
+
+/**
+ * Everything removal would leave: at the fit's own outline, at the outline
+ * of the layout's usual logo, and over the logo as a whole; and whether the
+ * fitted opacity lies in the range the layout is drawn with. Only a fit that
+ * passes all four is clean.
+ */
+function check(image: RgbaImage, candidate: Candidate, frame: Frame): Checked {
+    const { variant, gain } = candidate;
+    const removed: Drawn = { map: variant.map, x: variant.x, y: variant.y, gain };
+    const layout = usual(variant.placement, frame);
+    const sameAsLayout = layout.map === variant.map && layout.x === variant.x && layout.y === variant.y;
+    const layoutResidue = sameAsLayout ? candidate.residue : residue(image, variant.map, gain, variant.x, variant.y, layout);
+    const leftOver = plateau(image, removed, sameAsLayout ? undefined : layout);
+    const [low, high] = THRESHOLDS.opacity;
+    const opacityInRange = gain >= low * variant.placement.gain && gain <= high * variant.placement.gain;
+    const clean = opacityInRange && isClean(candidate.residue) && isClean(layoutResidue) && plateauIsClean(leftOver);
+    return { ...candidate, layoutResidue, plateau: leftOver, opacityInRange, clean };
 }
 
 function judge(image: RgbaImage, variant: Variant, evidence: Evidence, gain: number): Candidate {
@@ -539,16 +812,16 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
     found.sort((a, b) => b.evidence.match - a.evidence.match);
     const { family } = found[0].variant.placement, top = found[0].evidence.match;
     const shortlist = found.filter(c => c.variant.placement.family === family && c.evidence.match >= SHORTLIST_MATCH * top).slice(0, SHORTLIST);
-    const fitted = shortlist.map(({ variant, evidence }) => fitOpacity(image, variant, evidence));
-    const clean = fitted.filter(c => isClean(c.residue));
-    let best: Candidate;
+    const fitted = shortlist.map(({ variant, evidence }) => check(image, fitOpacity(image, variant, evidence), frame));
+    const clean = fitted.filter(c => c.clean);
+    let best: Checked;
     if (clean.length) {
         const area = around(clean.map(c => c.variant), image);
         best = clean.reduce((a, b) => roughness(image, b, area) < roughness(image, a, area) ? b : a);
     } else {
         best = fitted.reduce((a, b) => b.badness < a.badness ? b : a);
     }
-    const { variant, evidence, gain, residue: left } = best;
+    const { variant, evidence, gain } = best;
     const box = placementBox({ ...variant.placement, left: variant.left, top: variant.top, scaleX: variant.scaleX, scaleY: variant.scaleY }, frame.width, frame.height);
     return {
         family: variant.placement.family,
@@ -560,9 +833,13 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
         size: box.size,
         marginRight: box.marginRight,
         marginBottom: box.marginBottom,
+        layout: placementBox(variant.placement, frame.width, frame.height),
         evidence,
-        residue: left,
-        clean: isClean(left),
+        residue: best.residue,
+        layoutResidue: best.layoutResidue,
+        plateau: best.plateau,
+        opacityInRange: best.opacityInRange,
+        clean: best.clean,
     };
 }
 

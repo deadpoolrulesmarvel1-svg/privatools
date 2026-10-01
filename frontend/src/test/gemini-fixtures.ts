@@ -64,6 +64,11 @@ function valueNoise(width: number, height: number, seed: number, cell: number, o
     return out;
 }
 
+/** A picture of one flat colour. */
+export function solid(width: number, height: number, [r, g, b]: [number, number, number]): RgbaImage {
+    return fill(width, height, () => [r, g, b]);
+}
+
 export type Background = "flat-navy" | "flat-orange" | "flat-grey" | "flat-black" | "flat-pale" | "gradient" | "noise" | "photo";
 
 export const BACKGROUNDS: Background[] = ["flat-navy", "flat-orange", "flat-grey", "flat-black", "flat-pale", "gradient", "noise", "photo"];
@@ -196,6 +201,137 @@ export function glare(image: RgbaImage, x0: number, y0: number, size: number): R
             const k = 0.85 * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * r * r));
             const i = (y * image.width + x) * 4;
             for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(image.data[i + c] * (1 - k) + 255 * k);
+        }
+    }
+    return out;
+}
+
+// ── Degraded copies: what an app does to an image after Gemini saved it ────
+
+/** The example quantisation tables of the JPEG standard (ITU T.81, Annex K), in row order. */
+const LUMA_TABLE = [
+    16, 11, 10, 16, 24, 40, 51, 61, 12, 12, 14, 19, 26, 58, 60, 55, 14, 13, 16, 24, 40, 57, 69, 56, 14, 17, 22, 29, 51, 87, 80, 62,
+    18, 22, 37, 56, 68, 109, 103, 77, 24, 35, 55, 64, 81, 104, 113, 92, 49, 64, 78, 87, 103, 121, 120, 101, 72, 92, 95, 98, 112, 100, 103, 99,
+];
+const CHROMA_TABLE = [
+    17, 18, 24, 47, 99, 99, 99, 99, 18, 21, 26, 66, 99, 99, 99, 99, 24, 26, 56, 99, 99, 99, 99, 99, 47, 66, 99, 99, 99, 99, 99, 99,
+    ...Array<number>(32).fill(99),
+];
+
+/** A table scaled for a quality from 1 to 100, the way libjpeg scales it. */
+function qualityTable(base: number[], quality: number): number[] {
+    const scale = quality < 50 ? 5000 / quality : 200 - 2 * quality;
+    return base.map(value => Math.min(255, Math.max(1, Math.floor((value * scale + 50) / 100))));
+}
+
+const DCT = Array.from({ length: 8 }, (_, x) => Array.from({ length: 8 }, (_, u) => Math.cos(((2 * x + 1) * u * Math.PI) / 16) * (u === 0 ? Math.SQRT1_2 : 1) / 2));
+
+/** Transform, quantise and transform back one plane in 8 × 8 blocks, in place (values level-shifted by 128). */
+function quantisePlane(plane: Float64Array, width: number, height: number, table: number[]): void {
+    const block = new Float64Array(64), rows = new Float64Array(64), coefficients = new Float64Array(64);
+    for (let by = 0; by < height; by += 8) {
+        for (let bx = 0; bx < width; bx += 8) {
+            // Edge blocks repeat the last row and column, as encoders pad them.
+            for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+                block[y * 8 + x] = plane[Math.min(height - 1, by + y) * width + Math.min(width - 1, bx + x)] - 128;
+            }
+            for (let y = 0; y < 8; y++) for (let u = 0; u < 8; u++) {
+                let sum = 0;
+                for (let x = 0; x < 8; x++) sum += block[y * 8 + x] * DCT[x][u];
+                rows[y * 8 + u] = sum;
+            }
+            for (let v = 0; v < 8; v++) for (let u = 0; u < 8; u++) {
+                let sum = 0;
+                for (let y = 0; y < 8; y++) sum += rows[y * 8 + u] * DCT[y][v];
+                const step = table[v * 8 + u];
+                coefficients[v * 8 + u] = Math.round(sum / step) * step;
+            }
+            for (let v = 0; v < 8; v++) for (let x = 0; x < 8; x++) {
+                let sum = 0;
+                for (let u = 0; u < 8; u++) sum += coefficients[v * 8 + u] * DCT[x][u];
+                rows[v * 8 + x] = sum;
+            }
+            for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+                if (by + y >= height || bx + x >= width) continue;
+                let sum = 0;
+                for (let v = 0; v < 8; v++) sum += rows[v * 8 + x] * DCT[y][v];
+                plane[(by + y) * width + bx + x] = sum + 128;
+            }
+        }
+    }
+}
+
+/**
+ * The picture as a baseline JPEG at this quality would give it back: YCbCr
+ * with 4:2:0 chroma, 8 × 8 blocks quantised with the standard's example
+ * tables. Entropy coding is lossless, so it is left out.
+ */
+export function jpegLike(image: RgbaImage, quality: number): RgbaImage {
+    const { width, height, data } = image;
+    const luma = new Float64Array(width * height);
+    const halfWidth = Math.ceil(width / 2), halfHeight = Math.ceil(height / 2);
+    const cb = new Float64Array(halfWidth * halfHeight), cr = new Float64Array(halfWidth * halfHeight), count = new Float64Array(halfWidth * halfHeight);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4, r = data[i], g = data[i + 1], b = data[i + 2];
+            luma[y * width + x] = 0.299 * r + 0.587 * g + 0.114 * b;
+            const j = (y >> 1) * halfWidth + (x >> 1);
+            cb[j] += -0.168736 * r - 0.331264 * g + 0.5 * b + 128;
+            cr[j] += 0.5 * r - 0.418688 * g - 0.081312 * b + 128;
+            count[j]++;
+        }
+    }
+    for (let j = 0; j < cb.length; j++) { cb[j] /= count[j]; cr[j] /= count[j]; }
+    quantisePlane(luma, width, height, qualityTable(LUMA_TABLE, quality));
+    const chroma = qualityTable(CHROMA_TABLE, quality);
+    quantisePlane(cb, halfWidth, halfHeight, chroma);
+    quantisePlane(cr, halfWidth, halfHeight, chroma);
+    const out = clone(image);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4, j = (y >> 1) * halfWidth + (x >> 1);
+            const lum = luma[y * width + x], blue = cb[j] - 128, red = cr[j] - 128;
+            out.data[i] = Math.round(lum + 1.402 * red);
+            out.data[i + 1] = Math.round(lum - 0.344136 * blue - 0.714136 * red);
+            out.data[i + 2] = Math.round(lum + 1.772 * blue);
+        }
+    }
+    return out;
+}
+
+const sinc = (x: number) => x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+const KERNELS = {
+    /** Linear interpolation: soft, no overshoot. */
+    triangle: { radius: 1, weight: (x: number) => Math.max(0, 1 - Math.abs(x)) },
+    /** Lanczos with three lobes, what most editors offer as their sharpest: it overshoots at edges. */
+    lanczos: { radius: 3, weight: (x: number) => Math.abs(x) < 3 ? sinc(x) * sinc(x / 3) : 0 },
+};
+
+/** The picture scaled by `factor`, with the filter widened to cover every source pixel when it shrinks, as image editors scale. */
+export function resized(image: RgbaImage, factor: number, filter: keyof typeof KERNELS = "triangle"): RgbaImage {
+    const width = Math.round(image.width * factor), height = Math.round(image.height * factor);
+    const out = blank(width, height);
+    const { radius, weight } = KERNELS[filter];
+    const stretch = Math.max(1, 1 / factor), support = radius * stretch;
+    const weights = (size: number, source: number) => Array.from({ length: size }, (_, i) => {
+        const centre = (i + 0.5) / factor - 0.5;
+        const taps: [number, number][] = [];
+        for (let s = Math.floor(centre - support); s <= Math.ceil(centre + support); s++) {
+            const w = weight((s - centre) / stretch);
+            if (w !== 0) taps.push([Math.min(source - 1, Math.max(0, s)), w]);
+        }
+        const total = taps.reduce((sum, [, w]) => sum + w, 0);
+        return taps.map(([s, w]) => [s, w / total] as [number, number]);
+    });
+    const across = weights(width, image.width), down = weights(height, image.height);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const o = (y * width + x) * 4;
+            for (let c = 0; c < 4; c++) {
+                let sum = 0;
+                for (const [sy, wy] of down[y]) for (const [sx, wx] of across[x]) sum += wy * wx * image.data[(sy * image.width + sx) * 4 + c];
+                out.data[o + c] = Math.round(sum);
+            }
         }
     }
     return out;

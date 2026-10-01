@@ -1,7 +1,7 @@
-import type { SparkleFit } from "./png-job";
+import type { Geometry } from "./detect";
 
 /** Where the logo sat, in sizes and distances rather than versions: "48 px logo, 96 px from the corner". */
-export function placeLabel(fit: SparkleFit): string {
+export function placeLabel(fit: Geometry): string {
     const where = fit.marginRight === fit.marginBottom
         ? `${fit.marginRight} px from the corner`
         : `${fit.marginRight} px from the right and ${fit.marginBottom} px from the bottom`;

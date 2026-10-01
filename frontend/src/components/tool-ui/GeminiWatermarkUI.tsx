@@ -69,7 +69,7 @@ function zoomFor(result: SparkleResult): { view: View; caption: string } | null 
         if (!region) return null;
         return {
             view: viewAround(width, height, region.left, region.top, region.width, region.height, 0),
-            caption: "The corner where Gemini puts the sparkle, enlarged. If you can see it here, the tool did not recognise this layout.",
+            caption: "The corner where Gemini puts the sparkle, enlarged. If you can see it here, the tool did not find it.",
         };
     }
     const { x, y, width: w, height: h } = result.fit;
@@ -161,15 +161,15 @@ export function GeminiWatermarkUI() {
     };
 
     const caption = selectedResult?.status === "not-found"
-        ? "No Gemini sparkle found at the sizes and places Gemini uses. Nothing was changed."
+        ? "No Gemini sparkle found at the sizes and places this tool checks. Nothing was changed."
         : selectedResult?.status === "not-clean"
-            ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit)}), but removing it would leave a visible outline, so the image was left as it was.`
+            ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit.layout)}), but removing it would leave a trace that would stand out, so the image was left as it was.`
             : "Original";
 
     const title = !finished ? "Take the sparkle off." : removed.length
         ? `${removed.length} ${removed.length === 1 ? "image" : "images"} cleaned.`
         : proc.failedCount && !notClean.length && !notFound.length ? "Let’s try that again."
-            : notClean.length ? "Nothing was changed." : "No sparkle found.";
+            : notClean.length ? "Not removed cleanly." : "No sparkle found.";
 
     const counts = [
         `${removed.length} cleaned`,

@@ -6,7 +6,7 @@
  *
  * Its result and errors cross the worker boundary, so they are plain data.
  */
-import { findSparkle, removeSparkle, type Fit } from "./detect";
+import { findSparkle, removeSparkle, type Fit, type Geometry } from "./detect";
 import type { Family } from "./geometry";
 import { decodePng, encodePng, PngError, pngSize } from "./png";
 
@@ -14,12 +14,10 @@ import { decodePng, encodePng, PngError, pngSize } from "./png";
 export const MAX_MEGAPIXELS = 50;
 
 /** What was found, in plain numbers. */
-export interface SparkleFit {
+export interface SparkleFit extends Geometry {
     family: Family;
-    /** The logo's size and its distance from the right and bottom edges, in pixels. */
-    size: number;
-    marginRight: number;
-    marginBottom: number;
+    /** Where the layout usually puts its logo; a fit can differ from it by a pixel or two. */
+    layout: Geometry;
     /** The box holding the logo, in the picture's pixels. */
     x: number;
     y: number;
@@ -31,7 +29,7 @@ export interface SparkleFit {
 
 export function describeFit(fit: Fit): SparkleFit {
     return {
-        family: fit.family, size: fit.size, marginRight: fit.marginRight, marginBottom: fit.marginBottom,
+        family: fit.family, size: fit.size, marginRight: fit.marginRight, marginBottom: fit.marginBottom, layout: fit.layout,
         x: fit.x, y: fit.y, width: fit.map.width, height: fit.map.height, gain: fit.gain,
     };
 }

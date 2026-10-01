@@ -14,10 +14,10 @@
  */
 import { describe, expect, it } from "vitest";
 import { alphaFor, placedAlpha, type AlphaMap } from "./alpha";
-import { findSparkle, measure, passes, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
+import { findSparkle, measure, passes, plateau, plateauIsClean, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
 import { sparklePlacements, sparkleRegion, type Family, type Placement } from "./geometry";
 import { MASK_SOURCES, type MaskId } from "./masks";
-import { BACKGROUNDS, SHAPES, applySparkle, background, clone, glare, paintShape, random, veil, type Background } from "@/test/gemini-fixtures";
+import { BACKGROUNDS, SHAPES, applySparkle, background, clone, glare, jpegLike, paintShape, random, resized, solid, veil, type Background } from "@/test/gemini-fixtures";
 
 interface Scene { image: RgbaImage; frame: Frame }
 interface Box { x: number; y: number; width: number; height: number }
@@ -226,6 +226,100 @@ describe("never claiming a removal that leaves a trace", () => {
             expect(neverClaimed(fit) || fit!.mask === "v2-96", `v2-96 shape on ${kind}`).toBe(true);
         }
     }, 60_000);
+});
+
+describe("copies saved again or resized after Gemini made them", () => {
+    /**
+     * Over a flat colour any copy of the logo left behind shows, so these are
+     * the hardest cases for the residue checks. JPEG re-compression softens the
+     * logo's edges; a resize moves them by a fraction of a pixel, and Lanczos
+     * adds an overshoot. Either way the logo no longer matches its calibrated
+     * outline, and a fit can settle on a smaller logo at a lower opacity (or a
+     * stronger one) that leaves no step at its own outline, while a faint copy
+     * of the real logo, or a thin outline of it, remains.
+     */
+    const DEGRADED: [string, (image: RgbaImage) => RgbaImage, number][] = [
+        ["saved as JPEG at quality 95", image => jpegLike(image, 95), 1],
+        ["saved as JPEG at quality 85", image => jpegLike(image, 85), 1],
+        ["saved as JPEG at quality 75", image => jpegLike(image, 75), 1],
+        ["shrunk to 98 % with Lanczos", image => resized(image, 0.98, "lanczos"), 0.98],
+        ["shrunk to 98 % with a linear filter", image => resized(image, 0.98), 0.98],
+    ];
+    const COLOURS: [number, number, number][] = [[186, 220, 74], [128, 128, 128], [230, 200, 160]];
+
+    /**
+     * What a removal left against the flat colour around it: the mean over the
+     * real logo's core and over its footprint, and the largest difference in
+     * any one channel in the footprint or 2 pixels around it (a thin outline).
+     */
+    function leftOver(cleaned: RgbaImage, logo: { map: AlphaMap; x: number; y: number }) {
+        const flat = (4 * cleaned.width + 4) * 4;
+        const lum = (i: number) => (cleaned.data[i] + cleaned.data[i + 1] + cleaned.data[i + 2]) / 3;
+        const peak = logo.map.values.reduce((max, value) => Math.max(max, value), 0);
+        let core = 0, coreCount = 0, footprint = 0, footprintCount = 0, largest = 0;
+        for (let y = -2; y < logo.map.height + 2; y++) {
+            for (let x = -2; x < logo.map.width + 2; x++) {
+                const i = ((logo.y + y) * cleaned.width + logo.x + x) * 4;
+                for (let c = 0; c < 3; c++) largest = Math.max(largest, Math.abs(cleaned.data[i + c] - cleaned.data[flat + c]));
+                const inside = x >= 0 && y >= 0 && x < logo.map.width && y < logo.map.height;
+                const alpha = inside ? logo.map.values[y * logo.map.width + x] : 0;
+                if (alpha < 0.05 * peak) continue;
+                const difference = lum(i) - lum(flat);
+                footprint += difference; footprintCount++;
+                if (alpha >= peak / 2) { core += difference; coreCount++; }
+            }
+        }
+        return { core: core / coreCount, footprint: footprint / footprintCount, largest };
+    }
+
+    it("never reports a removal that leaves a copy or an outline of the logo over flat colour", () => {
+        let found = 0;
+        const claims: string[] = [];
+        for (const [width, height] of [[480, 480], [400, 640]]) {
+            for (const colour of COLOURS) {
+                for (const [label, degrade, factor] of DEGRADED) {
+                    // The whole picture is degraded, so the JPEG blocks and the resize act on it as an app's would.
+                    const marked = degrade(applySparkle(solid(width, height, colour), alphaFor("v1-48", 48), width - 144, height - 144, 0.6));
+                    const fit = findSparkle(marked);
+                    if (!fit) continue;
+                    found++;
+                    if (!fit.clean) continue;
+                    const cleaned = clone(marked);
+                    removeSparkle(cleaned, fit);
+                    const truth = placedAlpha("v1-48", (width - 144) * factor, (height - 144) * factor, factor, factor);
+                    const { core, footprint, largest } = leftOver(cleaned, truth);
+                    // JPEG leaves its own noise of a level or two in flat colour; more than 4 in one channel is something else.
+                    if (Math.abs(core) > 2 || Math.abs(footprint) > 2 || largest > 4) {
+                        claims.push(`${width} × ${height} [${colour}] ${label}: removed as ${fit.size} px at ${fit.marginRight}, opacity ${fit.gain.toFixed(2)}, leaving ${core.toFixed(1)} levels in the core and up to ${largest} in one channel`);
+                    }
+                }
+            }
+        }
+        // The logo is still there to be found in most of them; what matters is what is claimed.
+        expect(found).toBeGreaterThan(20);
+        expect(claims).toEqual([]);
+    }, 120_000);
+
+    it("judges what removal would leave over the logo as a whole, region by region", () => {
+        const [width, height] = [480, 480];
+        const truth = logo(placement(width, height, "inset-96"));
+        const image = applySparkle(solid(width, height, [186, 220, 74]), truth.map, truth.box.x, truth.box.y, truth.gain);
+        const layout = { map: truth.map, x: truth.box.x, y: truth.box.y };
+        const fit = (gain: number, size = 48) => ({ map: alphaFor("v1-48", size), x: truth.box.x + (48 - size) / 2, y: truth.box.y + (48 - size) / 2, gain });
+        // The right logo at its own opacity leaves nothing.
+        const exact = plateau(image, fit(0.6), layout);
+        expect(Math.abs(exact.bump)).toBeLessThan(1);
+        expect(plateauIsClean(exact)).toBe(true);
+        // Too faint a fit leaves a copy of the logo, too strong a one cuts a dark copy in.
+        const faint = plateau(image, fit(0.45), layout);
+        expect(faint.bump).toBeGreaterThan(3);
+        expect(plateauIsClean(faint)).toBe(false);
+        const strong = plateau(image, fit(0.75), layout);
+        expect(strong.bump).toBeLessThan(-3);
+        expect(plateauIsClean(strong)).toBe(false);
+        // A fit 2 px small at the right opacity leaves the real logo's rim, a thin outline.
+        expect(plateauIsClean(plateau(image, fit(0.6, 46), layout))).toBe(false);
+    });
 });
 
 describe("leaving pictures without the sparkle alone", () => {
