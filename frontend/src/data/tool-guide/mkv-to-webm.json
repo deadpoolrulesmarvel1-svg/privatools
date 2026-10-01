@@ -28,7 +28,7 @@
     },
     {
       "q": "Which audio and subtitle tracks are kept?",
-      "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. The title and language tags carry over, while the other audio tracks and any attached fonts are dropped."
+      "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. Each track kept keeps its language tag but not its title, and the other audio tracks and any attached fonts are dropped. Tags on the file itself, such as a location or a recording date, are left out too."
     },
     {
       "q": "Why does an MKV with 5.1 surround sound fail?",

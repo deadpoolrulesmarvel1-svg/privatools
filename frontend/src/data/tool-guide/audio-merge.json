@@ -25,6 +25,10 @@
     {
       "q": "Maximum total length?",
       "a": "The limits apply to what you upload: up to 50 files, and the whole upload has to fit within the 500 MB request limit. A merge that takes longer than three minutes to encode is stopped."
+    },
+    {
+      "q": "Are the files' tags kept?",
+      "a": "No. The title, artist, album, dates and comments are left out of the merged MP3, and so are any location and device details a phone or recorder stored. Chapter markers are left out too, because they would point to the wrong places in the joined file."
     }
   ]
 }

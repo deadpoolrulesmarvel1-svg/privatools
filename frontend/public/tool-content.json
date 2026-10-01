@@ -1843,7 +1843,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "audio.mp3",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/extract-audio",
     "priority": 0.6
   },
@@ -1859,7 +1859,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a",
     "outputLabel": "trimmed file",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/trim-media",
     "priority": 0.6
   },
@@ -1875,7 +1875,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi",
     "outputLabel": "compressed.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/compress-video",
     "priority": 0.6
   },
@@ -1907,7 +1907,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv,.m4v",
     "outputLabel": "converted.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/video-converter",
     "priority": 0.6
   },
@@ -1923,7 +1923,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "video.mp4",
-    "lastReviewed": "2026-09-24",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/video-resizer",
     "priority": 0.6
   },
@@ -1971,7 +1971,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "subtitled.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/add-subtitles",
     "priority": 0.6
   },
@@ -2003,7 +2003,7 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.aac,.flac,.ogg,.m4a",
     "outputLabel": "merged.mp3",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/audio-merge",
     "priority": 0.6
   },
@@ -2464,7 +2464,7 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma",
     "outputLabel": "converted audio",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/audio-converter",
     "priority": 0.6
   },
@@ -2773,7 +2773,7 @@
     "category": "video-audio",
     "accepts": ".m4a",
     "outputLabel": "audio.mp3",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/m4a-to-mp3",
     "priority": 0.6
   },
@@ -2805,7 +2805,7 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "video.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/mov-to-mp4",
     "priority": 0.6
   },
@@ -3173,7 +3173,7 @@
     "category": "video-audio",
     "accepts": ".mkv",
     "outputLabel": "video.webm",
-    "lastReviewed": "2026-09-24",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/mkv-to-webm",
     "priority": 0.6
   },
@@ -3237,7 +3237,7 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "video.mkv",
-    "lastReviewed": "2026-09-24",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/mov-to-mkv",
     "priority": 0.6
   },
@@ -3472,7 +3472,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi,.m4v",
     "outputLabel": "muted.mp4",
-    "lastReviewed": "2026-09-24",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/mute-video",
     "priority": 0.6
   },
@@ -3488,7 +3488,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi",
     "outputLabel": "reversed.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/reverse-video",
     "priority": 0.6
   },
@@ -3504,7 +3504,7 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi",
     "outputLabel": "video.mp4",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/video-speed",
     "priority": 0.6
   },
@@ -3520,7 +3520,7 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.aac,.flac,.ogg,.m4a",
     "outputLabel": "trimmed.mp3",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-01",
     "path": "/tools/audio-trim",
     "priority": 0.6
   },

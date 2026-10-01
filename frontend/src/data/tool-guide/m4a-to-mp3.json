@@ -20,7 +20,7 @@
     },
     {
       "q": "Does it work for iPhone voice memos?",
-      "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."
+      "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here. The memo's tags, such as its title, date and any location or device details, are left out of the MP3."
     }
   ]
 }

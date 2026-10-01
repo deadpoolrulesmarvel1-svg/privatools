@@ -25,6 +25,10 @@
     {
       "q": "How precise is the trimming?",
       "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."
+    },
+    {
+      "q": "Does the trimmed file keep where it was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the device, the recording date, and tags such as the title, artist, album and comments are left out of trimmed video and audio alike. A video a phone stored sideways comes out upright. The sound keeps its language in the formats that store one, and in MP4, MOV, MKV, WebM, MP3 and M4A files the chapter markers inside the cut keep their titles and move with it."
     }
   ]
 }

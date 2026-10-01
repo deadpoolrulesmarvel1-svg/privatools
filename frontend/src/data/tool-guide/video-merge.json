@@ -27,6 +27,10 @@
       "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."
     },
     {
+      "q": "Does the merged video keep where the clips were recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording dates, and tags such as the title and comments are left out, and so are the clips' chapter markers and the language of their sound. Portrait phone clips still play upright: a video kept untouched keeps its rotation, and a re-encoded one is turned upright."
+    },
+    {
       "q": "Will the merged video play everywhere?",
       "a": "Clips recorded alike keep their video untouched, so iPhone clips, which are HEVC (\"High Efficiency\") by default, give an HEVC video. Some browsers, Chromium on Linux among them, and PCs without an HEVC decoder cannot play it: they show a blank picture or refuse the file. Video Converter makes an H.264 copy that plays everywhere. Any other mix of clips comes out as H.264."
     },

@@ -21,6 +21,10 @@
     {
       "q": "Does it preserve audio?",
       "a": "Yes, re-encoded as AAC. If the file has several audio tracks, only one is kept."
+    },
+    {
+      "q": "Is my iPhone's location copied into the MP4?",
+      "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MP4. A portrait clip comes out upright, the sound track keeps its language, and chapter markers keep their place and titles."
     }
   ]
 }

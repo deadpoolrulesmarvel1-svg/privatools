@@ -19,6 +19,7 @@ from pathlib import Path
 
 from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
+from .media_metadata import with_metadata_options
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +41,16 @@ VP9_SPEED = ["-deadline", "realtime", "-cpu-used", "8", "-row-mt", "1"]
 # ─── helpers ─────────────────────────────────────────────────────────────
 
 
-def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | None = None) -> None:
-    """Run ffmpeg with full args list; raise typed exception on failure."""
+def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | None = None,
+                chapters: bool = False) -> None:
+    """Run ffmpeg with full args list; raise typed exception on failure.
+
+    The output leaves out its inputs' tags, such as where a clip was
+    recorded (see media_metadata); `chapters` keeps their chapter markers.
+    """
     try:
         proc = subprocess.run(
-            ["ffmpeg", "-y", "-loglevel", "error", *args],
+            ["ffmpeg", "-y", "-loglevel", "error", *with_metadata_options(args, chapters=chapters)],
             capture_output=True, timeout=timeout, text=True,
             check=False,  # we handle returncode ourselves
             **({"cwd": cwd} if cwd is not None else {}),
@@ -159,7 +165,8 @@ def video_convert(input_path: str, target_format: str) -> str:
         args += ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
                  "-c:a", "aac", "-movflags", "+faststart"]
     args.append(str(output_path))
-    _run_ffmpeg(args)
+    # The same timeline in another format, so its chapter markers still fit.
+    _run_ffmpeg(args, chapters=True)
     return str(output_path)
 
 
@@ -189,7 +196,7 @@ def video_resize(input_path: str, preset: str = "720p") -> str:
         "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
         "-c:a", "aac", "-movflags", "+faststart",
         str(output_path),
-    ])
+    ], chapters=True)
     return str(output_path)
 
 
@@ -401,13 +408,12 @@ def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -
                      "-c:a", "aac", "-aac_coder", "fast", "-b:a", "192k"]
         else:
             args += ["-map", "0:v:0", "-c:v", "copy"]
+        # _run_ffmpeg leaves out the clips' tags, such as where they were
+        # recorded, and their chapters. The rotation is not a tag, and stays.
         _run_ffmpeg([
             *args,
             # Apple's players open HEVC in an MP4 only under the hvc1 tag.
             *(["-tag:v", "hvc1"] if hevc else []),
-            # No tags or chapters from the clips, such as where they were
-            # recorded. The rotation is not a tag, and stays.
-            "-map_metadata", "-1", "-map_chapters", "-1",
             "-movflags", "+faststart", str(output_path),
         ])
     except BaseException:
@@ -493,15 +499,14 @@ def video_merge(input_paths: list[str]) -> str:
         codec_args = ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-an"]
 
     try:
+        # _run_ffmpeg leaves out the first clip's tags, such as where it was
+        # recorded, and its chapters. The frames are already turned upright,
+        # so no rotation tag is needed.
         _run_ffmpeg([
             *inputs,
             "-filter_complex", filter_complex,
             *map_args,
             *codec_args,
-            # FFmpeg copies the first input's tags by default: where a phone
-            # recorded the clip (GPS location), on what, and when. The frames
-            # are already turned upright, so no rotation tag is needed.
-            "-map_metadata", "-1", "-map_chapters", "-1",
             "-movflags", "+faststart",
             str(output_path),
         ])
@@ -558,7 +563,7 @@ def burn_subtitles(video_path: str, srt_path: str) -> str:
             # containing colons/quotes; those must never enter filter syntax.
             with tempfile.TemporaryDirectory(prefix="subtitle_native_") as folder:
                 shutil.copy2(srt_path, Path(folder) / "captions.srt")
-                _run_ffmpeg(["-i", str(Path(video_path).resolve()), "-vf", "subtitles=captions.srt", "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", str(output_path.resolve())], cwd=folder)
+                _run_ffmpeg(["-i", str(Path(video_path).resolve()), "-vf", "subtitles=captions.srt", "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", str(output_path.resolve())], cwd=folder, chapters=True)
         return str(output_path)
     except Exception:
         output_path.unlink(missing_ok=True)
