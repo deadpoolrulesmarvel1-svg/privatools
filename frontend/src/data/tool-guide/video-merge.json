@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the merged video",
-      "text": "FFmpeg joins the clips in that order into one MP4. Clips recorded the same way (H.264 or HEVC video with AAC audio, and the same frame size, rotation and encoder settings, as one phone's clips usually are) are joined as they are, without re-encoding. Any other mix is re-encoded once, as H.264 video and AAC audio."
+      "text": "FFmpeg joins the clips in that order into one MP4. MP4 and MOV clips recorded the same way (H.264 or HEVC video with AAC audio, and the same frame size, rotation and encoder settings, as one phone's clips usually are) keep their video untouched, and their sound is re-encoded so it stays in step with the picture. iPhone clips therefore stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; Video Converter makes an H.264 copy. A clip trimmed without re-encoding, and any other mix, is re-encoded once, as H.264 video and AAC audio."
     }
   ],
   "faq": [
@@ -25,6 +25,10 @@
     {
       "q": "Can I add a transition between clips?",
       "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."
+    },
+    {
+      "q": "Will the merged video play everywhere?",
+      "a": "Clips recorded alike keep their video untouched, so iPhone clips, which are HEVC (\"High Efficiency\") by default, give an HEVC video. Some browsers, and PCs without an HEVC decoder, cannot play it: they show a blank picture or refuse the file. Video Converter makes an H.264 copy that plays everywhere. Any other mix of clips comes out as H.264."
     },
     {
       "q": "How long can the merged video be?",

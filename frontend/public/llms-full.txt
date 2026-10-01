@@ -1019,7 +1019,7 @@ URL: https://privatools.me/tools/video-merge
 
 Concatenate multiple videos into one
 
-Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips recorded the same way, as one phone's clips usually are, are joined as they are, with no re-encoding and no loss of quality. Any other mix is re-encoded once, with each clip scaled to fit the first clip's frame.
+Merge videos online for free — join MP4, MOV, WebM, or MKV clips into one video, one after another. MP4 and MOV clips recorded alike, as one phone's clips usually are, keep their video untouched, so iPhone clips stay HEVC, which some older PCs and browsers cannot play; their sound is re-encoded to stay in step with the picture. Any other mix is re-encoded once as H.264, with each clip scaled to fit the first clip's frame.
 
 ### Merge Audio
 
