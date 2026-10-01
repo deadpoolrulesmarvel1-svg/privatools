@@ -181,6 +181,46 @@ describe("removing the Gemini sparkle", () => {
         }
     }, 60_000);
 
+    it("chooses the same model of a scaled logo, and gives nearly the same result, when the picture carries a level of noise", () => {
+        // A picture Gemini itself scaled fits the model of its own scaling; the Lanczos model of a resized copy
+        // is used only where nothing simpler comes out clean. Chosen on smoothness alone, the two flipped on
+        // ±1 level of noise, and their results differ by several levels in the logo's core.
+        const p = placement(1024, 768, "inset-96", 1);
+        const scene = corner(1024, 768, "gradient", 3);
+        const target = logo(p, { dx: 0.25, dy: -0.5 });
+        const marked = paint(scene, target);
+        const base = findSparkle(marked, scene.frame)!;
+        expect({ family: base.family, kernel: base.kernel, clean: base.clean }).toEqual({ family: "inset-96", kernel: "area", clean: true });
+        const cleaned = clone(marked);
+        removeSparkle(cleaned, base, scene.frame);
+        const peak = target.map.values.reduce((max, value) => Math.max(max, value), 0);
+        for (const seed of [21, 22, 23]) {
+            const next = random(seed);
+            const noisy = clone(marked);
+            const noise = new Int8Array(marked.width * marked.height);
+            for (let i = 0; i < noise.length; i++) {
+                noise[i] = next() < 0.5 ? -1 : 1;
+                for (let c = 0; c < 3; c++) noisy.data[i * 4 + c] = Math.min(255, Math.max(0, marked.data[i * 4 + c] + noise[i]));
+            }
+            const fit = findSparkle(noisy, scene.frame)!;
+            expect({ family: fit.family, kernel: fit.kernel, clean: fit.clean }, `seed ${seed}`).toEqual({ family: "inset-96", kernel: "area", clean: true });
+            const result = clone(noisy);
+            removeSparkle(result, fit, scene.frame);
+            // Against the noise-free result with the same noise added: the core moves by less than 2 levels on average.
+            let sum = 0, count = 0;
+            for (let y = 0; y < target.map.height; y++) {
+                for (let x = 0; x < target.map.width; x++) {
+                    if (target.map.values[y * target.map.width + x] < peak / 2) continue;
+                    const gx = target.box.x - scene.frame.left + x, gy = target.box.y - scene.frame.top + y;
+                    const i = gy * marked.width + gx;
+                    for (let c = 0; c < 3; c++) sum += result.data[i * 4 + c] - (cleaned.data[i * 4 + c] + noise[i]);
+                    count += 3;
+                }
+            }
+            expect(Math.abs(sum / count), `seed ${seed}: core shift`).toBeLessThan(2);
+        }
+    }, 120_000);
+
     it("finds the small logo a few pixels from its formula position, where rounding put it", () => {
         const p = placement(1024, 559, "proportional");
         for (const [dx, dy] of [[2, -1], [-3, 3], [0, 2]]) {

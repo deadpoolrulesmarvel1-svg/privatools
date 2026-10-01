@@ -39,7 +39,7 @@
  *    is fitted: the one that leaves no step across the outline (3), starting
  *    from the smooth pairs' median. Of the fits that come out clean, the one
  *    whose result is smoothest wins.
- * 3. Is it gone? What the reverse blend would leave is judged six ways
+ * 3. Is it gone? What the reverse blend would leave is judged seven ways
  *    before anything is written, and a fit must pass all of them:
  *    - at the fit's own outline: the step left across it and any ridge along
  *      it, against the same measures taken just beside it, where the logo
@@ -57,11 +57,21 @@
  *      edge was softened fits too faint, or a resampled one too strong, and
  *      its core then comes out brighter or darker than the picture in most
  *      directions at once, which the outline steps, zeroed by the fit, miss;
+ *    - across its interior (`interior`), the one general check: any edit to
+ *      the logo's edge, sharpening, blur, JPEG or a resample, biases the
+ *      opacity fitted at that edge and leaves a copy of the logo, dark or
+ *      light, in the interior. Each outline pair reads the picture beyond
+ *      the edge, past any halo, and carries it across to the logo's
+ *      interior; the same reading on clean picture beside the logo says what
+ *      the picture's own structure reads as there. The interior must agree
+ *      over the whole logo, on every side and along the rim, within what the
+ *      picture itself can show;
  *    - the fitted opacity must lie in the range the layout is drawn with.
  *    The bounds were set on real Gemini images, copies of them saved again
- *    as JPEG and resized, and 1,092 cases with a known clean original. A fit
- *    over any of them is not written: the picture is left exactly as it was,
- *    and the result says the logo could not be removed cleanly.
+ *    as JPEG, resized and sharpened, and thousands of cases with a known
+ *    clean original. A fit over any of them is not written: the picture is
+ *    left exactly as it was, and the result says the logo could not be
+ *    removed cleanly.
  *
  * detect.test.ts holds these checks to white shapes, see-through panels,
  * glare, logos at the wrong opacity, re-compressed and resized copies over
@@ -75,7 +85,7 @@
  * reads or alters SynthID or any other invisible or metadata watermark.
  */
 import { alphaFor, placedAlpha, placedLanczos, type AlphaMap, type Kernel } from "./alpha";
-import { placementBox, sparklePlacements, type Family, type Placement } from "./geometry";
+import { isStandardSize, placementBox, sparklePlacements, type Family, type Placement } from "./geometry";
 import { MASK_SOURCES, type MaskId } from "./masks";
 
 export interface RgbaImage {
@@ -159,6 +169,32 @@ export interface Fine {
     ring: number;
 }
 
+/** One reading of the interior (see `interior`): what removal leaves, what clean picture beside the logo reads the same way, and how sure each is. */
+export interface Reading {
+    /** Outline pairs on straight picture that gave a reading. */
+    count: number;
+    /** The median reading, in levels: above 0 where the picture under the logo came out brighter than the picture beyond its outline predicts, below 0 where darker. */
+    left: number;
+    /** The same reading taken on clean picture just beyond the outline, where no logo was: what the picture's own structure reads as. */
+    nullLeft: number;
+    /** The standard error of both medians together, in levels, from their readings' own scatter. */
+    scatter: number;
+}
+
+/**
+ * What removal leaves in the logo's interior, read against the picture
+ * beyond its outline: over the whole logo, side by side, and along the soft
+ * rim. A wrong opacity shows over the whole logo; a fit a fraction of a pixel
+ * off its logo on one side shows on that side; a rim left over shows along
+ * the rim.
+ */
+export interface Interior {
+    whole: Reading;
+    /** By the direction out of the logo (DIRECTIONS); null where too few pairs could be read. */
+    sides: (Reading | null)[];
+    rim: Reading | null;
+}
+
 /** A logo's size and its distance from the right and bottom edges, in pixels, rounded. */
 export interface Geometry {
     size: number;
@@ -191,6 +227,8 @@ export interface Fit extends Geometry {
     fine: Fine;
     /** What removal leaves in the logo's core, direction by direction (see `depthResidue`), in levels. */
     depth: number[];
+    /** What removal leaves in the logo's interior against the picture beyond its outline (see `interior`). */
+    interior: Interior;
     /** Whether the opacity lies in the range that layout is drawn with. */
     opacityInRange: boolean;
     /** Whether the result passes every check; only then is it written. */
@@ -262,6 +300,25 @@ export const THRESHOLDS = {
      * fit over the ceiling describes some other logo.
      */
     opacity: { floor: { "inset-96": 0.9, other: 0.95 }, ceiling: 1.35 },
+    /**
+     * What removal may leave in the logo's interior, read against the
+     * picture beyond the outline (see `interior`), in levels: over the whole
+     * logo (`whole`), on any one side (`side`) and along the soft rim
+     * (`rim`), each the largest of that floor, `share` times what the same
+     * reading finds on clean picture beside the logo plus its own scatter
+     * (wider for a side, read from a quarter of the pairs), and `texture`
+     * times the picture's fine detail around the logo, under which a
+     * remnant does not show. A fit of a resampled copy (a logo scaled after
+     * Gemini drew it, or a picture of a size Gemini does not make) is
+     * modelled only approximately, so its bounds are tighter (`resampled`).
+     * A reading needs `pairs` outline pairs on straight picture; a side
+     * needs `sidePairs`.
+     */
+    interior: {
+        native: { whole: 4, side: 6, rim: 6, texture: 1.3 },
+        resampled: { whole: 3, side: 4, rim: 3, texture: 0.7 },
+        share: { whole: 1.25, side: 1.5, rim: 1.5 }, pairs: 12, sidePairs: 24,
+    },
 } as const;
 
 /** The ring around the logo that the plateau check reads: from this many pixels outside its footprint, to this many. */
@@ -278,6 +335,16 @@ const BLUR = (() => {
 /** The core residue reads this many pixels deeper than the outline's inside pixel, and this many beyond its outside one. */
 const DEPTH = 2;
 const GAP = 1;
+/**
+ * The interior check (see `interior`) reads this many pixels deeper than the
+ * outline's inside pixel, against the picture from this many pixels beyond
+ * its outside one, where a sharpening halo or JPEG ringing no longer reaches.
+ */
+const INSIDE = 2;
+const BEYOND = 2;
+/** The picture outside counts as straight where its steps, over INSIDE pixels, stay under this share of the logo's step, and differ by less than this share. */
+const STRAIGHT = 0.35;
+const CURVED = 0.15;
 
 /** The opacity is searched from 0.8 to 1.25 times the smooth pairs' estimate, halving the interval this many times. */
 const GAIN_RANGE = [0.8, 1.25] as const;
@@ -689,6 +756,105 @@ export function depthResidue(image: RgbaImage, map: AlphaMap, gain: number, x0: 
     return groups.map(values => values.length >= 5 ? median(values) * typical : 0);
 }
 
+/** Readings as shares of the logo's step, with the step itself, for one set of pairs (the real reading and its null). */
+interface Readings {
+    real: number[];
+    nulls: number[];
+    steps: number[];
+}
+
+const newReadings = (): Readings => ({ real: [], nulls: [], steps: [] });
+
+/** The median and the standard error of a median, from the readings' own scatter; neighbouring pairs read the same picture, so three count as one. */
+function summarise(values: number[], typical: number): { median: number; error: number } {
+    const m = median(values);
+    const spread = median(values.map(v => Math.abs(v - m)));
+    return { median: m * typical, error: 1.25 * spread * typical / Math.sqrt(Math.max(1, values.length / 3)) };
+}
+
+function reading(set: Readings, typical: number): Reading {
+    const real = summarise(set.real, typical), nulls = set.nulls.length ? summarise(set.nulls, typical) : { median: 0, error: 0 };
+    return { count: set.real.length, left: real.median, nullLeft: nulls.median, scatter: real.error + nulls.error };
+}
+
+/**
+ * What removing the logo `map` at `gain` from the box at (x0, y0) leaves in
+ * its interior, read against the picture beyond its outline. For each
+ * outline pair (inside core pixel i, first outside pixel o, s pixels apart in
+ * direction u) the picture is read, after the reverse blend, at ref = o +
+ * BEYOND·u, past any halo or ringing an edit left at the edge, and at far =
+ * ref + INSIDE·u; where it is straight there (the two steps small against the
+ * logo's own and alike), the line through ref and far is carried to the
+ * pixel INSIDE deeper than i. What that pixel reads above the line is one
+ * reading, as a share of the logo's step at i. The pixels between i and o
+ * (the soft rim) are read against the same line.
+ *
+ * The same reading is then taken with the whole line of pixels moved outward
+ * by the same distances, so that it reads clean picture beside the logo:
+ * what this picture's own structure reads as, at the same spot and
+ * orientation, with no logo at all. Medians are taken over every pair, by
+ * direction and along the rim; their scatter gives each median's error.
+ *
+ * The outline fit zeroes the step at the outline itself, so a logo whose
+ * edge was sharpened, blurred or resampled fits at the wrong opacity and its
+ * interior comes out darker or brighter than the picture around it; a fit a
+ * fraction of a pixel off its logo does so on one side. The outline checks
+ * cannot see either; this reading can, wherever the picture is straight
+ * enough to carry across the outline.
+ */
+export function interior(image: RgbaImage, map: AlphaMap, gain: number, x0: number, y0: number): Interior {
+    const { width, height, data } = image;
+    const line = outline(map);
+    let peak = 0;
+    for (const value of map.values) peak = Math.max(peak, value);
+    const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < map.width && y < map.height ? map.values[y * map.width + x] : 0;
+    const inImage = (x: number, y: number) => x0 + x >= 0 && y0 + y >= 0 && x0 + x < width && y0 + y < height;
+    const after = (x: number, y: number) => restoredBrightness(data, ((y0 + y) * width + x0 + x) * 4, opacity(map, gain, x, y));
+    const before = (x: number, y: number) => brightness(data, ((y0 + y) * width + x0 + x) * 4);
+    const whole = newReadings(), rim = newReadings();
+    const sides = DIRECTIONS.map(newReadings);
+    for (let k = 0; k < line.count; k++) {
+        const d = line.direction[k];
+        const [dx, dy] = DIRECTIONS[d];
+        const s = line.step[k];
+        const ix = line.ix[k], iy = line.iy[k];
+        if (inMap(ix - dx * INSIDE, iy - dy * INSIDE) < peak / 2) continue;
+        const predicted = opacity(map, gain, ix, iy) * (255 - before(ix + dx * (s + BEYOND), iy + dy * (s + BEYOND)));
+        if (predicted < THRESHOLDS.informative) continue;
+        // The reading on the logo, then the same reading moved out onto clean picture.
+        for (const shift of [0, 2 * INSIDE + s + BEYOND]) {
+            const px = ix + dx * shift, py = iy + dy * shift;
+            const deepX = px - dx * INSIDE, deepY = py - dy * INSIDE;
+            const refX = px + dx * (s + BEYOND), refY = py + dy * (s + BEYOND);
+            const farX = refX + dx * INSIDE, farY = refY + dy * INSIDE;
+            const far2X = farX + dx * INSIDE, far2Y = farY + dy * INSIDE;
+            if (!inImage(deepX, deepY) || !inImage(far2X, far2Y)) continue;
+            if (inMap(refX, refY) > OUTSIDE || inMap(farX, farY) > OUTSIDE || inMap(far2X, far2Y) > OUTSIDE) continue;
+            if (shift && inMap(deepX, deepY) > OUTSIDE) continue;
+            const ref = after(refX, refY), far = after(farX, farY);
+            const outer = ref - far, outer2 = far - after(far2X, far2Y);
+            if (Math.abs(outer) > STRAIGHT * predicted || Math.abs(outer2) > STRAIGHT * predicted || Math.abs(outer - outer2) > CURVED * predicted) continue;
+            const slope = outer / INSIDE;
+            const value = (after(deepX, deepY) - (ref + slope * (s + BEYOND + INSIDE))) / predicted;
+            const into = shift ? "nulls" : "real";
+            whole[into].push(value);
+            sides[d][into].push(value);
+            if (!shift) { whole.steps.push(predicted); sides[d].steps.push(predicted); }
+            for (let j = 1; j < s; j++) {
+                rim[into].push((after(px + dx * j, py + dy * j) - (ref + slope * (s - j + BEYOND))) / predicted);
+                if (!shift) rim.steps.push(predicted);
+            }
+        }
+    }
+    const typical = median(whole.steps);
+    const few = THRESHOLDS.interior;
+    return {
+        whole: reading(whole, typical),
+        sides: sides.map(side => side.real.length >= few.sidePairs ? reading(side, typical) : null),
+        rim: rim.real.length >= few.pairs ? reading(rim, typical) : null,
+    };
+}
+
 /**
  * Fine detail after removing `removed` (see `Fine`): over its footprint and
  * the layout's usual logo's, and FINE_NEAR pixels around them, against a ring
@@ -791,6 +957,25 @@ export function depthIsClean(depth: number[], scaled: boolean): boolean {
     return sorted[2] <= THRESHOLDS.depth.under && (!scaled || -sorted[1] <= THRESHOLDS.depth.over);
 }
 
+/**
+ * Whether what removal leaves in the interior is within its bounds: over the
+ * whole logo, on every side that could be read, and along the rim, each
+ * against what the picture itself reads as beside the logo (plus the
+ * scatter of both readings) and against the picture's fine detail around
+ * the logo (`ring`, see `Fine`), under which a remnant does not show. Too
+ * few straight pairs to read the whole logo is not clean: nothing confirms
+ * it.
+ */
+export function interiorIsClean(i: Interior, ring: number, resampled: boolean): boolean {
+    const t = THRESHOLDS.interior;
+    const bounds = resampled ? t.resampled : t.native;
+    const within = (r: Reading, floor: number, share: number) => Math.abs(r.left) <= Math.max(floor, share * (Math.abs(r.nullLeft) + r.scatter), bounds.texture * ring);
+    if (i.whole.count < t.pairs) return false;
+    return within(i.whole, bounds.whole, t.share.whole)
+        && i.sides.every(side => side === null || within(side, bounds.side, t.share.side))
+        && (i.rim === null || within(i.rim, bounds.rim, t.share.rim));
+}
+
 /** Whether the residue is under both bounds. */
 export function isClean(r: Residue): boolean {
     return r.fill <= limit(THRESHOLDS.fill, r.texture) && r.edge <= limit(THRESHOLDS.edge, r.texture);
@@ -877,6 +1062,7 @@ interface Checked extends Candidate {
     plateau: Plateau;
     fine: Fine;
     depth: number[];
+    interior: Interior;
     opacityInRange: boolean;
     clean: boolean;
 }
@@ -906,9 +1092,10 @@ function usual(placement: Placement, frame: Frame, kernel: Kernel = "area"): Dra
 
 /**
  * Everything removal would leave: at the fit's own outline, at the outline
- * of the layout's usual logo, over the logo as a whole, in its fine detail
- * and in its core; and whether the fitted opacity lies in the range the
- * layout is drawn with. Only a fit that passes all six is clean.
+ * of the layout's usual logo, over the logo as a whole, in its fine detail,
+ * in its core and in its interior against the picture beyond the outline;
+ * and whether the fitted opacity lies in the range the layout is drawn
+ * with. Only a fit that passes all seven is clean.
  */
 function check(image: RgbaImage, candidate: Candidate, frame: Frame): Checked {
     const { variant, gain } = candidate;
@@ -919,10 +1106,12 @@ function check(image: RgbaImage, candidate: Candidate, frame: Frame): Checked {
     const leftOver = plateau(image, removed, sameAsLayout ? undefined : layout);
     const detail = fine(image, removed, sameAsLayout ? undefined : layout);
     const depth = depthResidue(image, variant.map, gain, variant.x, variant.y);
+    const inside = interior(image, variant.map, gain, variant.x, variant.y);
     const opacityInRange = gain >= opacityFloor(variant.placement) * variant.placement.gain && gain <= THRESHOLDS.opacity.ceiling * variant.placement.gain;
+    const resampled = isScaled(variant) || !isStandardSize(frame.width, frame.height);
     const clean = opacityInRange && isClean(candidate.residue) && isClean(layoutResidue) && plateauIsClean(leftOver)
-        && fineIsClean(detail) && depthIsClean(depth, isScaled(variant));
-    return { ...candidate, layoutResidue, plateau: leftOver, fine: detail, depth, opacityInRange, clean };
+        && fineIsClean(detail) && depthIsClean(depth, isScaled(variant)) && interiorIsClean(inside, detail.ring, resampled);
+    return { ...candidate, layoutResidue, plateau: leftOver, fine: detail, depth, interior: inside, opacityInRange, clean };
 }
 
 function judge(image: RgbaImage, variant: Variant, evidence: Evidence, gain: number): Candidate {
@@ -988,14 +1177,37 @@ function roughness(image: RgbaImage, candidate: Candidate, area: Area): number {
     return sum;
 }
 
-const wholeImage = (image: RgbaImage): Frame => ({ width: image.width, height: image.height, left: 0, top: 0 });
+/** The largest reading the interior check sees for a fit, in levels: over the whole logo, on any side or along the rim. */
+function remnant(c: Checked): number {
+    const { whole, sides, rim } = c.interior;
+    return Math.max(Math.abs(whole.left), ...sides.map(side => side ? Math.abs(side.left) : 0), rim ? Math.abs(rim.left) : 0);
+}
 
 /**
- * The logo, fitted, or null when it is not there. Reads pixels and changes
- * nothing. A fit that removal would not leave clean comes back with `clean`
- * false. Positions in the result are in the whole picture's coordinates.
+ * The Lanczos model of a resized copy is chosen over the model of Gemini's own scaling only where its best clean
+ * fit's outline match is higher by more than this. A level of noise moves a match by about 0.02.
  */
-export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)): Fit | null {
+const MODEL_MARGIN = 0.05;
+
+/** 0 for a logo at its layout's own size, 1 for one scaled as Gemini scales, 2 for the Lanczos model of a resized copy. */
+function simplicity(c: Checked): number {
+    return !isScaled(c.variant) ? 0 : c.variant.kernel === "lanczos" ? 2 : 1;
+}
+
+const wholeImage = (image: RgbaImage): Frame => ({ width: image.width, height: image.height, left: 0, top: 0 });
+
+/** Every fit of the best-matching layout that was shortlisted and checked, and whether the logo reads too faint to use any. */
+interface Ranked {
+    fitted: Checked[];
+    faint: boolean;
+}
+
+/**
+ * Where the logo could be, judged: every placement's variants are measured
+ * for the logo's presence, the best-matching layout's are shortlisted and
+ * each shortlisted fit has its opacity fitted and every check made.
+ */
+function rank(image: RgbaImage, frame: Frame): Ranked | null {
     const found: { variant: Variant; evidence: Evidence }[] = [];
     for (const placement of sparklePlacements(frame.width, frame.height)) {
         for (const variant of variants(placement, frame)) {
@@ -1032,14 +1244,69 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
     // softened, or fainter than Gemini draws it), no fit is used: one that reads stronger elsewhere is the wrong one.
     const strongest = fitted.reduce((a, b) => b.evidence.match > a.evidence.match ? b : a);
     const faint = strongest.gain < opacityFloor(strongest.variant.placement) * strongest.variant.placement.gain;
+    return { fitted, faint };
+}
+
+/** One shortlisted fit as `rankFits` reports it, for tests and local tooling. */
+export interface RankedFit extends Geometry {
+    family: Family;
+    kernel?: Kernel;
+    x: number;
+    y: number;
+    match: number;
+    gain: number;
+    clean: boolean;
+    /** The largest interior reading (see `interior`), in levels. */
+    remnant: number;
+    /** 0 for an unscaled fit, 1 for one scaled as Gemini scales, 2 for the Lanczos model. */
+    simplicity: number;
+    /** How rough removal would leave the area holding every clean fit; lower is smoother. */
+    roughness: number;
+    chosen: boolean;
+}
+
+/** Every shortlisted fit, judged, in the order they were checked; empty when the logo is not there. Reads pixels and changes nothing. */
+export function rankFits(image: RgbaImage, frame: Frame = wholeImage(image)): RankedFit[] {
+    const ranked = rank(image, frame);
+    if (!ranked) return [];
+    const chosen = findSparkle(image, frame);
+    const clean = ranked.fitted.filter(c => c.clean);
+    const area = around((clean.length ? clean : ranked.fitted).map(c => c.variant), image);
+    return ranked.fitted.map(c => {
+        const box = placementBox({ ...c.variant.placement, left: c.variant.left, top: c.variant.top, scaleX: c.variant.scaleX, scaleY: c.variant.scaleY }, frame.width, frame.height);
+        return {
+            family: c.variant.placement.family, kernel: c.variant.kernel, x: c.variant.x + frame.left, y: c.variant.y + frame.top, ...box,
+            match: c.evidence.match, gain: c.gain, clean: c.clean, remnant: remnant(c), simplicity: simplicity(c), roughness: roughness(image, c, area),
+            chosen: chosen !== null && chosen.x === c.variant.x + frame.left && chosen.y === c.variant.y + frame.top && chosen.map === c.variant.map && chosen.gain === c.gain,
+        };
+    });
+}
+
+/**
+ * The logo, fitted, or null when it is not there. Reads pixels and changes
+ * nothing. A fit that removal would not leave clean comes back with `clean`
+ * false. Positions in the result are in the whole picture's coordinates.
+ */
+export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)): Fit | null {
+    const ranked = rank(image, frame);
+    if (!ranked) return null;
+    const { fitted, faint } = ranked;
     const clean = faint ? [] : fitted.filter(c => c.clean);
     let best: Checked;
     if (clean.length) {
         // The simplest explanation first: where a logo at its layout's own size, unscaled, comes out clean (a
-        // cropped copy, say), a scaled model that happens to come out smoother does not replace it.
+        // cropped copy, say), a scaled model that happens to come out smoother does not replace it. Among scaled
+        // fits, the Lanczos model of a resized copy is used only where its outline matches clearly better than
+        // the logo as Gemini's own scaling draws it; a choice made on smoothness alone flipped between the two
+        // on a level of noise, and their results differ by several levels. Within the chosen tier the smoothest
+        // result wins: a fit a fraction of a pixel off its logo leaves ridges at the edge that smoothness sees
+        // even over texture, where the interior readings are too noisy to.
         const unscaled = clean.filter(c => !isScaled(c.variant));
+        const bestMatch = (lanczos: boolean) => Math.max(0, ...clean.filter(c => (c.variant.kernel === "lanczos") === lanczos).map(c => c.evidence.match));
+        const kernel: Kernel = bestMatch(true) > bestMatch(false) + MODEL_MARGIN || bestMatch(false) === 0 ? "lanczos" : "area";
+        const tier = unscaled.length ? unscaled : clean.filter(c => (c.variant.kernel === "lanczos") === (kernel === "lanczos"));
         const area = around(clean.map(c => c.variant), image);
-        best = (unscaled.length ? unscaled : clean).reduce((a, b) => roughness(image, b, area) < roughness(image, a, area) ? b : a);
+        best = tier.reduce((a, b) => roughness(image, b, area) < roughness(image, a, area) ? b : a);
     } else {
         best = fitted.reduce((a, b) => b.badness < a.badness ? b : a);
     }
@@ -1063,6 +1330,7 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
         plateau: best.plateau,
         fine: best.fine,
         depth: best.depth,
+        interior: best.interior,
         opacityInRange: best.opacityInRange,
         clean: best.clean && !faint,
     };

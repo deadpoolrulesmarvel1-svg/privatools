@@ -103,7 +103,7 @@ export function background(kind: Background, width: number, height: number, seed
     }
 }
 
-export type Smooth = "shading" | "bokeh" | "clouds";
+export type Smooth = "shading" | "bokeh" | "clouds" | "bands";
 
 export const SMOOTH: Smooth[] = ["shading", "bokeh", "clouds"];
 
@@ -111,8 +111,10 @@ export const SMOOTH: Smooth[] = ["shading", "bokeh", "clouds"];
  * Smooth pictures that vary slowly, where a remnant shows most once the
  * colour is not flat: soft shading with gentle curvature, out-of-focus light
  * (overlapping soft discs 10 to 34 px across, about the logo's size, blurred
- * as a lens would), and low-frequency clouds of about ±20 levels over 64 px.
- * Each carries a fine grain of about 1 level.
+ * as a lens would), low-frequency clouds of about ±20 levels over 64 px, and
+ * soft bands like a horizon or a river bank, a bright band 30 to 60 px wide
+ * with soft edges some 40 levels above its surroundings. Each carries a fine
+ * grain of about 1 level.
  */
 export function smooth(kind: Smooth, width: number, height: number, seed = 1): RgbaImage {
     const next = random(seed + 101);
@@ -150,6 +152,22 @@ export function smooth(kind: Smooth, width: number, height: number, seed = 1): R
             return fill(width, height, (x, y) => {
                 const i = y * width + x;
                 return clamp([150 + 40 * (planes[0][i] - 0.5) + grain(), 120 + 40 * (planes[1][i] - 0.5) + grain(), 100 + 40 * (planes[2][i] - 0.5) + grain()]);
+            });
+        }
+        case "bands": {
+            // Two bright bands crossing the corner, a horizon-like one and a slanted one, with 8 px soft edges.
+            const place = random(seed + 303);
+            const bands = [
+                { at: height * (0.55 + 0.25 * place()), half: 15 + 15 * place(), slope: 0 },
+                { at: width * (0.3 + 0.5 * place()), half: 10 + 10 * place(), slope: 0.6 * (place() - 0.5) },
+            ];
+            return fill(width, height, (x, y) => {
+                let lift = 0;
+                for (const [k, band] of bands.entries()) {
+                    const distance = Math.abs((k === 0 ? y + band.slope * x : x + band.slope * y) - band.at) - band.half;
+                    lift += 40 * (distance <= 0 ? 1 : distance >= 8 ? 0 : 1 - distance / 8);
+                }
+                return clamp([95 + lift + 0.3 * lift * (x / width) + grain(), 85 + lift + grain(), 70 + 0.8 * lift + grain()]);
             });
         }
     }
@@ -374,12 +392,59 @@ export function jpegLike(image: RgbaImage, quality: number): RgbaImage {
 }
 
 const sinc = (x: number) => x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+/** The Keys cubic with a = −0.5, the "bicubic" of Pillow, browsers and most editors: a little overshoot at edges. */
+const keys = (x: number) => {
+    const t = Math.abs(x);
+    return t < 1 ? 1.5 * t * t * t - 2.5 * t * t + 1 : t < 2 ? -0.5 * t * t * t + 2.5 * t * t - 4 * t + 2 : 0;
+};
 const KERNELS = {
     /** Linear interpolation: soft, no overshoot. */
     triangle: { radius: 1, weight: (x: number) => Math.max(0, 1 - Math.abs(x)) },
     /** Lanczos with three lobes, what most editors offer as their sharpest: it overshoots at edges. */
     lanczos: { radius: 3, weight: (x: number) => Math.abs(x) < 3 ? sinc(x) * sinc(x / 3) : 0 },
+    /** Bicubic: between the two, and the default of many apps. */
+    bicubic: { radius: 2, weight: keys },
 };
+
+/**
+ * An unsharp mask, as photo editors and gallery "enhance" buttons sharpen: the
+ * picture plus `amount` (a share, 0.6 for 60 %) of its difference from a
+ * Gaussian blur of `radius` pixels, with no threshold. It steepens every edge,
+ * the logo's included, and leaves a dark halo just outside bright shapes.
+ */
+export function unsharp(image: RgbaImage, radius: number, amount: number): RgbaImage {
+    const { width, height, data } = image;
+    const reach = Math.max(1, Math.ceil(3 * radius));
+    const weights = Array.from({ length: 2 * reach + 1 }, (_, i) => Math.exp(-((i - reach) ** 2) / (2 * radius * radius)));
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    const across = new Float32Array(width * height * 3), blurred = new Float32Array(width * height * 3);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            for (let c = 0; c < 3; c++) {
+                let sum = 0;
+                for (let d = -reach; d <= reach; d++) sum += weights[d + reach] * data[(y * width + Math.min(width - 1, Math.max(0, x + d))) * 4 + c];
+                across[(y * width + x) * 3 + c] = sum / total;
+            }
+        }
+    }
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            for (let c = 0; c < 3; c++) {
+                let sum = 0;
+                for (let d = -reach; d <= reach; d++) sum += weights[d + reach] * across[(Math.min(height - 1, Math.max(0, y + d)) * width + x) * 3 + c];
+                blurred[(y * width + x) * 3 + c] = sum / total;
+            }
+        }
+    }
+    const out = clone(image);
+    for (let i = 0; i < width * height; i++) {
+        for (let c = 0; c < 3; c++) {
+            const value = data[i * 4 + c];
+            out.data[i * 4 + c] = Math.round(Math.min(255, Math.max(0, value + amount * (value - blurred[i * 3 + c]))));
+        }
+    }
+    return out;
+}
 
 /** The picture scaled by `factor`, with the filter widened to cover every source pixel when it shrinks, as image editors scale. */
 export function resized(image: RgbaImage, factor: number, filter: keyof typeof KERNELS = "triangle"): RgbaImage {

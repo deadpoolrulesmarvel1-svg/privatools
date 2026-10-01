@@ -55,7 +55,8 @@ const SIZES_2K_INSET: [number, number][] = [[2048, 2048], [2400, 1792]];
 
 const has = (list: [number, number][], width: number, height: number) => list.some(([w, h]) => w === width && h === height);
 
-function isStandardSize(width: number, height: number): boolean {
+/** Whether Gemini makes pictures of this size: one of its standard output sizes. */
+export function isStandardSize(width: number, height: number): boolean {
     return [SIZES_3X_05K, SIZES_3X_1K, SIZES_3X_2K, SIZES_3X_4K, SIZES_25_1K].some(list => has(list, width, height));
 }
 
