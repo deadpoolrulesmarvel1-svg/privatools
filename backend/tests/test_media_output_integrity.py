@@ -312,6 +312,62 @@ def test_video_merge_reencodes_clips_alike_but_turned_differently(client, media_
     assert colours_at(merged, 3, [(20, 90), (160, 90)], tmp_path) == ["black", "blue"]
 
 
+def flash_and_beep_clip(path, colour, *, seconds=2, flash_at=1.0):
+    """A clip recorded alike to the others: one white frame and a 1 kHz beep
+    start at the same instant, so sound and picture can be lined up."""
+    beep = f"if(between(t,{flash_at},{flash_at + 0.1}),0.8*sin(2*PI*1000*t),0)"
+    video = (f"color=c={colour}:s=160x90:r=30:d={seconds},format=yuv420p,"
+             f"drawbox=c=white:t=fill:enable='between(t,{flash_at},{flash_at + 0.03})'")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", video, "-f", "lavfi", "-i",
+                    f"aevalsrc='{beep}|{beep}':s=48000:d={seconds}", "-c:v", "libx264", "-preset", "ultrafast",
+                    "-c:a", "aac", str(path)], check=True, timeout=60)
+    return path
+
+
+def flash_times(path):
+    """When each white frame is shown."""
+    times = [float(f["best_effort_timestamp_time"]) for f in json.loads(subprocess.check_output(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "frame=best_effort_timestamp_time",
+         "-of", "json", str(path)], timeout=60))["frames"]]
+    luma = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v:0", "-fps_mode", "passthrough",
+                           "-vf", "scale=4:4,format=gray", "-f", "rawvideo", "-"], capture_output=True, timeout=60).stdout
+    return [t for i, t in enumerate(times) if sum(luma[16 * i:16 * i + 16]) / 16 > 200]
+
+
+def beeps_played_back_to_back(path, rate=48000):
+    """When each beep is heard by a player that plays the decoded sound
+    without gaps from its first sample, as browsers do."""
+    first = float(json.loads(subprocess.check_output(
+        ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries",
+         "frame=best_effort_timestamp_time", "-of", "json", str(path)], timeout=60))["frames"][0]["best_effort_timestamp_time"])
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:a:0", "-ac", "1", "-ar", str(rate),
+                          "-f", "s16le", "-acodec", "pcm_s16le", "-"], capture_output=True, timeout=60).stdout
+    samples = memoryview(pcm).cast("h")
+    onsets, quiet = [], rate
+    for i, value in enumerate(samples):
+        if abs(value) > 3000:
+            if quiet > rate // 20:
+                onsets.append(first + i / rate)
+            quiet = 0
+        else:
+            quiet += 1
+    return onsets
+
+
+def test_video_merge_keeps_sound_in_step_with_picture_to_the_last_clip(client, media_fixtures, tmp_path):
+    """Copied as they were, every clip's audio brought its encoder's priming
+    and the few milliseconds it runs past its video, so the sound fell 24 ms
+    further behind at every join: 238 ms by clip 10 in Chromium (review)."""
+    clips = [flash_and_beep_clip(tmp_path / f"c{i}.mp4", colour) for i, colour in
+             enumerate(["red", "blue", "green", "purple", "maroon", "navy"])]
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, *clips), merged)
+    assert video_setup(merged) == video_setup(clips[0])  # the picture is still copied
+    flashes, beeps = flash_times(merged), beeps_played_back_to_back(merged)
+    assert len(flashes) == len(beeps) == 6
+    assert abs(beeps[-1] - flashes[-1]) <= 1 / 30, f"last clip's sound is {1000 * (beeps[-1] - flashes[-1]):.0f} ms off its picture"
+
+
 def test_video_merge_reencodes_when_ffmpeg_will_not_copy(client, media_fixtures, tmp_path, monkeypatch):
     from backend.app.services import video_tools_service
     from backend.app.utils.exceptions import ValidationError

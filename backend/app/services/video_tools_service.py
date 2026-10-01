@@ -285,19 +285,27 @@ _AUDIO_KEYS = ("codec_name", "profile", "sample_rate", "channels", "channel_layo
                "extradata_hash")
 
 
-def _copy_signature(path: str) -> tuple | None:
-    """What has to be the same in every clip for a merge to join them as they
-    are: the streams, in the same order; the video's codec set-up down to its
-    parameter sets (the extradata hash), frame size, pixels, colours, time
-    base and display rotation; and the audio's format. None for a clip that
-    cannot go into an MP4 as it is, such as VP9 or one with two audio tracks.
+def _copy_plan(path: str) -> tuple[tuple, dict] | None:
+    """A clip's copy signature and timing, or None if it must be re-encoded.
+
+    The signature is what has to be the same in every clip for a merge to copy
+    their video: the streams, in the same order; the video's codec set-up down
+    to its parameter sets (the extradata hash), frame size, pixels, colours,
+    time base and display rotation; and the audio's format. The timing is how
+    long the clip's video runs and where its sound starts, which the merge
+    lines each clip's sound up with.
+
+    None for a clip that cannot go into an MP4 as it is, such as VP9 or one
+    with two audio tracks.
     """
     try:
         result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_streams", "-show_data_hash", "sha256", "-of", "json", path],
-            capture_output=True, timeout=15, text=True, check=True,
+            ["ffprobe", "-v", "error", "-show_data_hash", "sha256", "-show_entries",
+             "format=start_time:stream", "-of", "json", path],
+            capture_output=True, timeout=60, text=True, check=True,
         )
-        streams = json.loads(result.stdout)["streams"]
+        info = json.loads(result.stdout)
+        streams, fmt = info["streams"], info["format"]
     except (subprocess.SubprocessError, FileNotFoundError, ValueError, KeyError):
         return None
     video = [s for s in streams if s.get("codec_type") == "video"]
@@ -306,21 +314,37 @@ def _copy_signature(path: str) -> tuple | None:
         return None
     if audio and audio[0].get("codec_name") not in _COPYABLE_AUDIO:
         return None
+    try:
+        file_start = float(fmt["start_time"])
+        video_end = float(video[0]["start_time"]) + float(video[0]["duration"])
+        audio_start = float(audio[0]["start_time"]) if audio else file_start
+    except (KeyError, TypeError, ValueError):
+        return None
     rotation = next((entry["rotation"] for entry in video[0].get("side_data_list", []) if "rotation" in entry), 0)
-    return (
+    signature = (
         tuple(s.get("codec_type") for s in streams),
         tuple(video[0].get(key) for key in _VIDEO_KEYS),
         rotation,
         tuple(audio[0].get(key) for key in _AUDIO_KEYS) if audio else None,
     )
+    timing = {"length": video_end - file_start, "audio_lead": audio_start - file_start,
+              "sample_rate": int(audio[0]["sample_rate"]) if audio else 0}
+    return signature, timing
 
 
-def _merge_by_copy(input_paths: list[str], *, hevc: bool) -> str:
-    """Join clips of one encoding with the concat demuxer, copying their
-    streams: no quality lost, and seconds of work at any length. Re-encoding
-    one minute of 1080p30 took 111 CPU-seconds (v2.7.5 image), so a merge of
-    more than about three minutes ran out of FFmpeg's 180 s on the
-    production container; copying the same minute took 0.3.
+def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -> str:
+    """Join clips of one encoding by copying their video, which costs seconds
+    at any length and loses nothing. Re-encoding one minute of 1080p30 took
+    111 CPU-seconds (v2.7.5 image), so a merge of about three minutes ran out
+    of FFmpeg's 180 s on the production container; copying it took 1.5.
+
+    The sound is rebuilt instead of copied. Copied, each clip's audio kept its
+    encoder's priming and the few milliseconds it runs past its video, which
+    players play back to back, so the sound fell about 24 ms further behind
+    the picture at every join: 238 ms by clip 10 in Chromium. Here each clip's
+    sound is trimmed or padded to exactly its video's length, and the concat
+    list gives each clip that same length, so every clip's sound starts with
+    its picture. Only the sound is encoded, once.
     """
     output_path = temp_output("video_merge", "mp4")
     work_dir = tempfile.mkdtemp(prefix="video_merge_")
@@ -328,16 +352,39 @@ def _merge_by_copy(input_paths: list[str], *, hevc: bool) -> str:
         listing = Path(work_dir) / "clips.txt"
         # The concat list quotes each path; a quote inside one is written '\''.
         listing.write_text("".join(
-            "file '" + os.path.abspath(path).replace("'", "'\\''") + "'\n" for path in input_paths
+            "file '" + os.path.abspath(path).replace("'", "'\\''") + f"'\nduration {timing['length']:.6f}\n"
+            for path, timing in zip(input_paths, timings)
         ))
+        # -copyts: FFmpeg would otherwise shift the copied video so its input's
+        # earliest timestamp is zero, and that is the first clip's discarded
+        # AAC priming packet, so the picture started 21 ms after the rebuilt
+        # sound in every clip.
+        args = ["-copyts", "-f", "concat", "-safe", "0", "-i", str(listing)]
+        rate = timings[0]["sample_rate"]
+        if rate:
+            chains = []
+            for k, (path, timing) in enumerate(zip(input_paths, timings)):
+                args += ["-i", path]
+                samples = round(timing["length"] * rate)
+                lead = round(timing["audio_lead"] * rate)
+                chains.append(f"[{k + 1}:a:0]asetpts=PTS-STARTPTS"
+                              + (f",adelay=delays={lead}S:all=1" if lead > 0 else "")
+                              + f",atrim=end_sample={samples},apad=whole_len={samples}[a{k}]")
+            joined = "".join(f"[a{k}]" for k in range(len(input_paths)))
+            args += ["-filter_complex", ";".join(chains) + f";{joined}concat=n={len(input_paths)}:v=0:a=1[a]",
+                     "-map", "0:v:0", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k"]
+        else:
+            args += ["-map", "0:v:0", "-c:v", "copy"]
         _run_ffmpeg([
-            "-f", "concat", "-safe", "0", "-i", str(listing),
-            "-map", "0:v:0", "-map", "0:a:0?", "-c", "copy",
+            *args,
             # Apple's players open HEVC in an MP4 only under the hvc1 tag.
             *(["-tag:v", "hvc1"] if hevc else []),
+            # No tags or chapters from the clips, such as where they were
+            # recorded. The rotation is not a tag, and stays.
+            "-map_metadata", "-1", "-map_chapters", "-1",
             "-movflags", "+faststart", str(output_path),
         ])
-    except Exception:
+    except BaseException:
         Path(output_path).unlink(missing_ok=True)
         raise
     finally:
@@ -364,10 +411,11 @@ def video_merge(input_paths: list[str]) -> str:
     if len(input_paths) > 20:
         raise ValidationError("Too many videos to merge in one call (max 20).")
 
-    signatures = [_copy_signature(p) for p in input_paths]
-    if signatures[0] is not None and len(set(signatures)) == 1:
+    plans = [_copy_plan(p) for p in input_paths]
+    if all(plans) and len({signature for signature, _ in plans}) == 1:
         try:
-            return _merge_by_copy(input_paths, hevc=signatures[0][1][0] == "hevc")
+            return _merge_by_copy(input_paths, [timing for _, timing in plans],
+                                  hevc=plans[0][0][1][0] == "hevc")
         except ValidationError:
             # FFmpeg refused to join them as they are; re-encoding still can.
             logger.warning("video-merge: joining by copy failed, re-encoding", exc_info=True)
