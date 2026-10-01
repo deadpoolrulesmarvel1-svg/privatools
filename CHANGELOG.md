@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.10] — 2026-10-01 — Media downloads that don't say where they were recorded
+
+### Tools
+
+- Video Converter, Video Resizer, Compress Video, Trim Media, Audio Trim, Mute Video, Video Speed, Reverse Video, Extract Audio, Audio Converter, Merge Audio, Add Subtitles and GIF to MP4 no longer copy a recording's location, device, date or other identifying tags into the file you download. Rotation still applies, audio and subtitle languages are kept, and chapters stay where the timeline is unchanged. Song tags such as title, artist and album are not carried over either; cover art stays in MP3 and FLAC. Every media tool now goes through one shared rule, so new ones get it automatically. (#305)
+
 ## [2.7.9] — 2026-10-01 — Chat with PDF on every provider, honest conversions, faster video merges
 
 ### Tools
