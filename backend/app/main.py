@@ -446,6 +446,9 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
         f"img-src {' '.join(img_src)}; "
+        # Video and audio results are previewed from blob: URLs; without this,
+        # default-src 'self' blocks every media preview.
+        "media-src 'self' blob:; "
         f"connect-src {' '.join(connect_src)}; "
         f"frame-src {' '.join(frame_src)}; "
         "worker-src 'self' blob:; "

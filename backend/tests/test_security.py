@@ -335,6 +335,17 @@ class TestSecurityHeaders:
         )
         assert font_src.strip() == "font-src 'self'"
 
+    def test_media_csp_allows_blob_previews(self, client):
+        # Video and audio results are previewed from blob: URLs. Without a
+        # media-src, default-src 'self' blocked every one of them in production.
+        resp = client.get("/tools/video-converter")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy", "")
+        media_src = next(
+            (directive for directive in csp.split(";") if directive.strip().startswith("media-src")), ""
+        )
+        assert media_src.strip() == "media-src 'self' blob:"
+
     def test_analytics_csp_uses_first_party_proxy(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
