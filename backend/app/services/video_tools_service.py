@@ -285,6 +285,11 @@ _AUDIO_KEYS = ("codec_name", "profile", "sample_rate", "channels", "channel_layo
                "extradata_hash")
 
 
+# More hidden audio than an encoder's priming (Apple's AAC primes 2112 samples,
+# 44 ms at 48 kHz) means part of the sound was cut away without re-encoding.
+_MAX_HIDDEN_AUDIO = 0.1
+
+
 def _copy_plan(path: str) -> tuple[tuple, dict] | None:
     """A clip's copy signature and timing, or None if it must be re-encoded.
 
@@ -296,23 +301,34 @@ def _copy_plan(path: str) -> tuple[tuple, dict] | None:
     lines each clip's sound up with.
 
     None for a clip that cannot go into an MP4 as it is, such as VP9 or one
-    with two audio tracks.
+    with two audio tracks; for anything but an MP4 or MOV, which is what phones
+    record (copied MKV and AVI joins came out with irregular or reversed
+    timestamps); and for a clip trimmed without re-encoding: it keeps the
+    frames and sound before the cut, marked to be discarded (an edit list),
+    and a copy would bring the cut footage back.
     """
     try:
         result = subprocess.run(
             ["ffprobe", "-v", "error", "-show_data_hash", "sha256", "-show_entries",
-             "format=start_time:stream", "-of", "json", path],
+             "format=format_name,start_time:stream:packet=stream_index,flags,duration_time", "-of", "json", path],
             capture_output=True, timeout=60, text=True, check=True,
         )
         info = json.loads(result.stdout)
-        streams, fmt = info["streams"], info["format"]
+        streams, packets, fmt = info["streams"], info.get("packets", []), info["format"]
     except (subprocess.SubprocessError, FileNotFoundError, ValueError, KeyError):
+        return None
+    if "mp4" not in fmt.get("format_name", "").split(","):
         return None
     video = [s for s in streams if s.get("codec_type") == "video"]
     audio = [s for s in streams if s.get("codec_type") == "audio"]
     if len(video) != 1 or len(audio) > 1 or video[0].get("codec_name") not in _COPYABLE_VIDEO:
         return None
     if audio and audio[0].get("codec_name") not in _COPYABLE_AUDIO:
+        return None
+    hidden = [p for p in packets if "D" in p.get("flags", "")]
+    if any(p.get("stream_index") == video[0]["index"] for p in hidden):
+        return None
+    if sum(float(p.get("duration_time") or 0) for p in hidden) > _MAX_HIDDEN_AUDIO:
         return None
     try:
         file_start = float(fmt["start_time"])

@@ -368,6 +368,41 @@ def test_video_merge_keeps_sound_in_step_with_picture_to_the_last_clip(client, m
     assert abs(beeps[-1] - flashes[-1]) <= 1 / 30, f"last clip's sound is {1000 * (beeps[-1] - flashes[-1]):.0f} ms off its picture"
 
 
+def test_video_merge_reencodes_a_clip_trimmed_without_reencoding(client, media_fixtures, tmp_path):
+    """Trimmed by stream copy, a clip keeps the frames before the cut, hidden
+    by an edit list. Copied into a merge, the cut footage came back."""
+    alike = clip_recorded_alike(tmp_path / "alike.mp4", "red")
+    # Encoded as the other clip is, with its only keyframe at the start, so a
+    # cut at 1 s keeps the 30 frames before it, hidden.
+    long = tmp_path / "long.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x180:r=30:d=4,format=yuv420p",
+                    "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=4", "-c:v", "libx264",
+                    "-preset", "ultrafast", "-g", "300", "-c:a", "aac", "-shortest", str(long)], check=True, timeout=60)
+    trimmed = tmp_path / "trimmed.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "1", "-i", str(long), "-c", "copy", str(trimmed)], check=True, timeout=60)
+    assert video_setup(trimmed) == video_setup(alike)  # alike enough to have been joined by copy
+
+    def frames_shown(path):
+        md5s = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v:0", "-fps_mode", "passthrough",
+                                        "-f", "framemd5", "-"], text=True, timeout=60)
+        return sum(1 for line in md5s.splitlines() if line and not line.startswith("#"))
+
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, alike, trimmed), merged)
+    assert frames_shown(merged) == frames_shown(alike) + frames_shown(trimmed)
+
+
+def test_video_merge_copies_only_mp4_and_mov(client, media_fixtures, tmp_path):
+    """A guard: copied MKV joins came out with irregular frame times (review).
+    Phones record MP4 and MOV, and other containers are re-encoded."""
+    red = clip_recorded_alike(tmp_path / "red.mkv", "red")
+    blue = clip_recorded_alike(tmp_path / "blue.mkv", "blue")
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, red, blue), merged)
+    assert video_setup(merged)[2] != video_setup(red)[2]  # re-encoded
+    assert colours_at(merged, 3, [(160, 90)], tmp_path) == ["blue"]
+
+
 def test_video_merge_reencodes_when_ffmpeg_will_not_copy(client, media_fixtures, tmp_path, monkeypatch):
     from backend.app.services import video_tools_service
     from backend.app.utils.exceptions import ValidationError
