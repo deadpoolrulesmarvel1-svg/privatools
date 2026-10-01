@@ -13,6 +13,8 @@ export type ByokErrorKind =
     | "BadKey"
     | "BadModel"
     | "TooLong"
+    /** The model declined to answer (Anthropic's stop_reason "refusal"). */
+    | "Declined"
     | "RateLimited"
     | "NoCredit"
     | "ProviderDown"

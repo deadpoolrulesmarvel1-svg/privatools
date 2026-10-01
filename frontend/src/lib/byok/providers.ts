@@ -72,10 +72,29 @@ export interface PreparedRequest {
 
 const ANTHROPIC_VERSION = "2023-06-01";
 
+/**
+ * Claude's output cap. Sonnet 5.5 thinks before it answers unless told not
+ * to (Opus 5.5 always does; Haiku 4.5 only when asked), and the thinking
+ * counts toward max_tokens, so the cap must leave room for both. 16,000 is
+ * the figure Anthropic's adaptive-thinking examples use; it is a ceiling,
+ * billed only as used, to the visitor's own key.
+ */
+const ANTHROPIC_MAX_TOKENS = 16_000;
+
+/**
+ * Claude models that take an effort level: the supported-models list of
+ * Anthropic's effort documentation (read 2026-10-01), which is Opus 4.5 and
+ * the 4.6 generation onwards. Haiku 4.5 does not support effort, and a
+ * visitor may type any model id, so only ids of that family are sent one.
+ */
+const TAKES_EFFORT = /^claude-(?:(?:opus|sonnet|fable|mythos)-(?:4-[6-9]|[5-9](?:-\d+)?)|opus-4-5|mythos-preview)(?:-\d{8})?$/;
+
 export const PROVIDERS: Provider[] = [
     {
+        // Sonnet 4.5 was deprecated on 2026-09-30 and retires on 2026-11-30;
+        // Anthropic names Sonnet 5.5 as its replacement.
         id: "anthropic", label: "Anthropic (Claude)", origin: "https://api.anthropic.com",
-        shape: "anthropic", models: ["claude-sonnet-4-5", "claude-haiku-4-5"],
+        shape: "anthropic", models: ["claude-sonnet-5-5", "claude-haiku-4-5"],
         keysUrl: "https://console.anthropic.com/settings/keys",
     },
     {
@@ -165,8 +184,15 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
                 // Without this the browser request is rejected outright.
                 "anthropic-dangerous-direct-browser-access": "true",
             },
+            // No temperature, top_p, top_k or thinking budget, which Sonnet
+            // 5.5 answers with a 400, and no assistant prefill.
             body: JSON.stringify({
-                model: input.model, max_tokens: maxTokens,
+                model: input.model, max_tokens: input.maxTokens ?? ANTHROPIC_MAX_TOKENS,
+                // Medium rather than Sonnet 5.5's default of high: these are
+                // document tasks, and less thinking leaves more of the cap
+                // for the answer, sooner and at lower cost. Anthropic's docs
+                // put it inside output_config, not at the top level.
+                ...(TAKES_EFFORT.test(input.model) ? { output_config: { effort: "medium" } } : {}),
                 ...(system ? { system } : {}),
                 messages: rest.map((m) => ({
                     role: m.role,
@@ -231,6 +257,21 @@ export function parseResponse(p: Provider, json: unknown): string {
     }
     const choices = (j.choices ?? []) as Array<{ message?: { content?: string } }>;
     return choices[0]?.message?.content ?? "";
+}
+
+/**
+ * Why an answer is not a whole one, when the provider says so in a successful
+ * response. Anthropic's stop_reason is "refusal" when Claude declined (its
+ * docs say to discard any partial output), and "max_tokens" or
+ * "model_context_window_exceeded" when the answer reached a length limit,
+ * which thinking counts toward, so it can stop before any text at all.
+ */
+export function stoppedShort(p: Provider, json: unknown): "declined" | "cut-off" | undefined {
+    if (p.shape !== "anthropic" || !json || typeof json !== "object") return undefined;
+    const reason = (json as { stop_reason?: unknown }).stop_reason;
+    if (reason === "refusal") return "declined";
+    if (reason === "max_tokens" || reason === "model_context_window_exceeded") return "cut-off";
+    return undefined;
 }
 
 /** Providers whose API exposes OpenAI-style /v1/audio/transcriptions. */
