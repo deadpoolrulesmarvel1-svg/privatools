@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 222 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
