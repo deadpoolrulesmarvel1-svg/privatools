@@ -193,7 +193,7 @@ export interface Fit extends Geometry {
     depth: number[];
     /** Whether the opacity lies in the range that layout is drawn with. */
     opacityInRange: boolean;
-    /** Whether removal leaves no trace that would stand out, by every check. */
+    /** Whether the result passes every check; only then is it written. */
     clean: boolean;
 }
 

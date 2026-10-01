@@ -163,7 +163,7 @@ export function GeminiWatermarkUI() {
     const caption = selectedResult?.status === "not-found"
         ? "No Gemini sparkle found at the sizes and places this tool checks. Nothing was changed."
         : selectedResult?.status === "not-clean"
-            ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit.layout)}), but removing it would leave a trace that would stand out, so the image was left as it was.`
+            ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit.layout)}), but the tool could not confirm that removing it would leave no trace, so the image was left as it was.`
             : "Original";
 
     const title = !finished ? "Take the sparkle off." : removed.length

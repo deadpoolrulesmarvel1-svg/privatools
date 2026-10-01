@@ -133,7 +133,7 @@ describe("Gemini Watermark Remover page", () => {
         expect(screen.getByRole("heading", { name: "Nothing was changed." })).toBeInTheDocument();
         expect(within(screen.getByLabelText("Your images")).getByText("Sparkle found, but not removed cleanly · left unchanged")).toBeInTheDocument();
         // It names where the layout puts the logo, not the smaller fit the search settled on.
-        expect(screen.getByText(/A Gemini sparkle was found \(48 px logo, 96 px from the corner\), but removing it would leave a trace that would stand out/)).toBeInTheDocument();
+        expect(screen.getByText(/A Gemini sparkle was found \(48 px logo, 96 px from the corner\), but the tool could not confirm that removing it would leave no trace/)).toBeInTheDocument();
         expect(screen.getByRole("img", { name: "The corner, enlarged" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
         expect(runs).toEqual([{ mode: "single", outcome: "error", files: 1, errorKind: "browser" }]);

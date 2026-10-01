@@ -1139,7 +1139,7 @@ URL: https://privatools.me/tools/gemini-watermark-remover
 
 Take the visible Gemini sparkle off AI-generated images
 
-Remove the visible Gemini watermark, the sparkle logo in the bottom-right corner of images made with Google Gemini and Nano Banana. It runs in your browser, so nothing is uploaded. Each image is checked for the logo first and the logo's size, position and strength are fitted; then Gemini's blend is reversed pixel by pixel using calibrated masks, and nothing else is touched. Where removal would leave an outline that stands out, the image is left as it was. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95. SynthID, Google's invisible watermark, stays in the image, and the file's metadata is kept.
+Remove the visible Gemini watermark, the sparkle logo in the bottom-right corner of images made with Google Gemini and Nano Banana. It runs in your browser, so nothing is uploaded. Each image is checked for the logo first and the logo's size, position and strength are fitted; then Gemini's blend is reversed pixel by pixel using calibrated masks, and nothing else is touched. The result is checked for an outline or a faint copy of the logo before it is saved; where the tool cannot confirm a clean result, the image is left as it was. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95. SynthID, Google's invisible watermark, stays in the image, and the file's metadata is kept.
 
 ### Image Watermark
 
