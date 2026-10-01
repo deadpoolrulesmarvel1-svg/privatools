@@ -121,6 +121,19 @@ export function withErrorKind<T>(err: T, kind: ToolErrorKind): T {
     return err;
 }
 
+/** Mark an error whose message is already written for the person using the
+ *  tool, so shared engines show it as it is instead of passing it through
+ *  `friendlyError`, whose rewrites assume a PDF (it would call a damaged
+ *  image a damaged PDF). Returns the same error. */
+export function withUserMessage<T>(err: T): T {
+    if (err && typeof err === "object") (err as { __userMessage?: boolean }).__userMessage = true;
+    return err;
+}
+
+export function hasUserMessage(err: unknown): err is Error {
+    return err instanceof Error && (err as { __userMessage?: unknown }).__userMessage === true;
+}
+
 /** Read a JSON response body. A body that is not valid JSON (a proxy's HTML
  *  error page, a truncated answer) is the server's failure, so it is tagged
  *  `server`; anything else, such as a dropped connection, passes through. */

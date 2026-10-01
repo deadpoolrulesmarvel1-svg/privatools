@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useMultiFileProcessor, type ProcessOptions } from "./useMultiFileProcessor";
 import { installNetwork } from "@/test/fake-network";
+import { withUserMessage } from "@/lib/api";
 
 const RUN_EVENT = "privatools:tool-run";
 type Detail = Record<string, unknown>;
@@ -49,6 +50,48 @@ describe("useMultiFileProcessor usage events", () => {
     act(() => result.current.addFiles([file("secret.txt")]));
     await act(() => result.current.run({ endpoint: "/compress", outputExt: "txt", outputSuffix: null, uploadOptions: { retry: { attempts: 0, backoffMs: 1 } } }));
     expect(seen).toEqual([{ mode: "single", outcome: "error", files: 1, errorKind: "rate_limited" }]);
+  });
+
+  it("counts a file returned unchanged as a failure of its kind, while the page shows it as done", async () => {
+    const seen = listen();
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => result.current.addFiles([file("a.png"), file("b.png"), file("c.png")]));
+    await act(() => result.current.run(options(async f => f.name === "a.png"
+      ? { blob: new Blob(["cleaned"]) }
+      : { blob: f, unchanged: f.name === "b.png" ? "bad_input" as const : "browser" as const })));
+    expect(result.current.doneCount).toBe(3);
+    expect(result.current.failedCount).toBe(0);
+    expect(seen).toEqual([{ mode: "single", outcome: "partial", files: 3, errorKind: "bad_input" }]);
+
+    act(() => result.current.reset());
+    act(() => result.current.addFiles([file("d.png")]));
+    await act(() => result.current.run(options(async f => ({ blob: f, unchanged: "bad_input" }))));
+    expect(seen[1]).toEqual({ mode: "single", outcome: "error", files: 1, errorKind: "bad_input" });
+  });
+
+  it("names a real failure's category before an unchanged file's", async () => {
+    const seen = listen();
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => result.current.addFiles([file("a.png"), file("b.png")]));
+    await act(() => result.current.run(options(async f => {
+      if (f.name === "a.png") throw Object.assign(new Error("too big"), { __kind: "too_large" });
+      return { blob: f, unchanged: "bad_input" };
+    })));
+    expect(seen).toEqual([{ mode: "single", outcome: "error", files: 2, errorKind: "too_large" }]);
+  });
+
+  it("shows a message written for people as it is, and rewords others", async () => {
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => result.current.addFiles([file("a.png"), file("b.png")]));
+    await act(() => result.current.run(options(async f => {
+      // "damaged" would otherwise be reworded as a damaged PDF.
+      if (f.name === "a.png") throw withUserMessage(new Error("This PNG file is damaged: a checksum does not match."));
+      throw new Error("file is damaged");
+    })));
+    expect(result.current.entries.map(entry => entry.error)).toEqual([
+      "This PNG file is damaged: a checksum does not match.",
+      "This PDF is damaged. Try the Repair PDF tool first, then come back.",
+    ]);
   });
 
   it("emits nothing when a run has no files to process", async () => {
