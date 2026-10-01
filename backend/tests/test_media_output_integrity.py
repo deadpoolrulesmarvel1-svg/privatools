@@ -243,15 +243,21 @@ def test_video_merge_past_ffmpegs_time_limit_answers_504(client, merge_clips, mo
     on production's 1.8 CPUs, and the route answered that with a 500, so the
     page said "Processing failed. Please try again." """
     real_run = subprocess.run
+    outputs = []
 
     def ffmpeg_out_of_time(command, *args, **kwargs):
         if command and command[0] == "ffmpeg":
+            # FFmpeg has written part of the merge by the time it is stopped:
+            # about 250 MB at the real limit.
+            Path(command[-1]).write_bytes(b"\0" * 1024)
+            outputs.append(Path(command[-1]))
             raise subprocess.TimeoutExpired(command, kwargs.get("timeout"))
         return real_run(command, *args, **kwargs)  # ffprobe still answers
 
     monkeypatch.setattr(subprocess, "run", ffmpeg_out_of_time)
     response = merge(client, merge_clips["wide"], merge_clips["small"])
     assert response.status_code == 504, response.text
+    assert outputs and not any(path.exists() for path in outputs), "the partial merge was left in the temp directory"
 
 
 def test_video_merge_of_a_file_that_is_no_video_answers_400(client, merge_clips, tmp_path):
