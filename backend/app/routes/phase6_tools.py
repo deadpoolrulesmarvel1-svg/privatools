@@ -17,6 +17,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
+from ..services.media_metadata import with_metadata_options
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
 from ..utils.concurrency import run_bounded
 
@@ -163,6 +164,13 @@ async def image_upscaler(
     )
 
 
+def _convert_audio(cmd: list[str]) -> None:
+    # The output leaves out the input's tags, such as a voice memo's title,
+    # date and location (see media_metadata). It is the same sound in another
+    # format, so its chapter markers still fit.
+    subprocess.run(with_metadata_options(cmd, chapters=True), capture_output=True, check=True, timeout=120)
+
+
 @router.post("/audio-converter")
 @limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def audio_converter(
@@ -201,7 +209,7 @@ async def audio_converter(
     cmd.append(str(out_path))
 
     try:
-        await run_bounded(subprocess.run, cmd, capture_output=True, check=True, timeout=120)
+        await run_bounded(_convert_audio, cmd)
     except subprocess.CalledProcessError as exc:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(500, f"Audio conversion failed: {exc.stderr.decode()[:200]}")
