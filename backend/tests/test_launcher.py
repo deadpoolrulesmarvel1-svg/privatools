@@ -83,12 +83,16 @@ def test_drain_and_resume_signals_reach_only_the_job_worker(tmp_path):
         while not all((tmp_path / name).exists() for name in ("web-state", "worker-signals")):
             assert time.monotonic() < deadline
             time.sleep(0.02)
-        process.send_signal(signal.SIGUSR1)
-        process.send_signal(signal.SIGUSR2)
-        deadline = time.monotonic() + 4
-        while (tmp_path / "worker-signals").read_text().split() != ["SIGUSR1", "SIGUSR2"]:
-            assert time.monotonic() < deadline, (tmp_path / "worker-signals").read_text()
-            time.sleep(0.02)
+        # One signal at a time: Python runs the handler of a signal that lands
+        # while another handler is running first, so two sent back to back
+        # were sometimes relayed and recorded in the opposite order. The
+        # deploy never sends them together.
+        for expected in (["SIGUSR1"], ["SIGUSR1", "SIGUSR2"]):
+            process.send_signal(getattr(signal, expected[-1]))
+            deadline = time.monotonic() + 4
+            while (tmp_path / "worker-signals").read_text().split() != expected:
+                assert time.monotonic() < deadline, (tmp_path / "worker-signals").read_text()
+                time.sleep(0.02)
         assert process.poll() is None
         assert (tmp_path / "web-state").read_text() == "started"
         process.send_signal(signal.SIGTERM)
