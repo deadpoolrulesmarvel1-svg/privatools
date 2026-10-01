@@ -22,7 +22,10 @@ from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
 
-FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
+# Seconds. Re-encoding 1080p30 at the veryfast preset costs about 111 CPU-seconds
+# a minute (v2.7.5 image), so on production's 1.8 CPUs this covers a little
+# under three minutes of 1080p, or under a minute of 4K.
+FFMPEG_TIMEOUT = 180
 
 # Supported output formats per tool — kept lower-case for sanity.
 VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}

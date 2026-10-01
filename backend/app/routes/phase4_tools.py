@@ -280,9 +280,6 @@ async def json_to_pdf(file: UploadFile = File(...)):
         out = await asyncio.to_thread(json_to_pdf_service.json_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
-    except JSONDecodeError:
-        _cleanup_on_error(temp, out)
-        raise HTTPException(status_code=400, detail="Invalid JSON file")
     except (HTTPException, ToolError):
         # The service's refusals (400 bad JSON, 413 over 5 MB) carry their own
         # status; the catch-all below once turned every one into a 500.

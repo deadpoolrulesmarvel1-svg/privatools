@@ -53,6 +53,12 @@ def _load(input_path: str):
         raise ValidationError("This file is not valid JSON: it is not text in UTF-8, UTF-16 or UTF-32.") from exc
     except RecursionError as exc:  # thousands of levels, before _validate_depth can say so
         raise ValidationError(TOO_DEEP) from exc
+    except ValueError as exc:
+        # Python refuses to read an integer longer than 4,300 digits, and its
+        # own message tells the reader to call sys.set_int_max_str_digits().
+        raise ValidationError(
+            "This JSON has a number more than 4,300 digits long, which JSON to PDF cannot read."
+        ) from exc
 
 
 def json_to_pdf(input_path: str) -> str:

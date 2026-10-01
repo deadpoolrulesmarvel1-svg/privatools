@@ -74,6 +74,12 @@ def test_json_that_is_not_text_is_refused_with_400(client):
     assert "not valid JSON" in detail
 
 
+def test_json_with_a_number_too_long_to_read_is_refused_in_plain_words(client):
+    """Python's own words ("use sys.set_int_max_str_digits()") reached the page."""
+    detail = _refusal(_post(client, "json-to-pdf", "big-number.json", b"[" + b"7" * 5_000 + b"]"), 400)
+    assert detail == "This JSON has a number more than 4,300 digits long, which JSON to PDF cannot read."
+
+
 def test_empty_json_file_is_refused_with_400(client):
     _refusal(_post(client, "json-to-pdf", "empty.json", b""), 400)
 

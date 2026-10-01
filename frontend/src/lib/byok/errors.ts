@@ -69,8 +69,11 @@ const KEY_REFUSED = /API_KEY_INVALID|API key not valid|invalid api[ _-]?key|inco
 /** A request refused for its size: over the model's context window, or over
  *  what the key may send at once (Groq answers the latter with 413). */
 const TOO_MUCH_TEXT = /context[ _]length|context window|too long|too large|maximum number of tokens|token count|tokens per minute|reduce (?:the length|your message)/i;
-/** A refusal that names the model: missing, retired, or not open to this key. */
-const NAMES_MODEL = /\bmodels?\b|model_not/i;
+/** A refusal that names the model: missing, retired, or not open to this key.
+ *  OpenRouter answers 404 "No endpoints available matching your guardrail
+ *  restrictions and data policy" when the account's privacy settings leave no
+ *  provider for the model; that is the account's settings, not PrivaTools. */
+const NAMES_MODEL = /\bmodels?\b|model_not|no endpoints|data policy|guardrail/i;
 
 export function classifyHttpStatus(status: number, body = "", context: RequestContext = {}): ByokError {
     const label = context.label ?? "The provider";

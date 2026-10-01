@@ -47,6 +47,8 @@ const NO_SUCH_MODEL: [string, number, string][] = [
   ["Together AI", 404, JSON.stringify({ error: { message: "Unable to access model meta-llama/Llama-3-70b-chat-hf. Please visit https://api.together.ai/models to view the list of supported models.", type: "invalid_request_error", code: "model_not_available" } })],
   ["Mistral", 400, JSON.stringify({ object: "error", message: "Invalid model: mistral-9", type: "invalid_model", param: null, code: "1500" })],
   ["DeepSeek", 400, JSON.stringify({ error: { message: "Model Not Exist", type: "invalid_request_error", param: null, code: "invalid_request_error" } })],
+  // OpenRouter, when the account's privacy settings leave no provider for the model.
+  ["OpenRouter", 404, JSON.stringify({ error: { message: "No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy", code: 404 } })],
   ["Local or self-hosted (OpenAI-compatible)", 404, JSON.stringify({ error: "model \"llama9\" not found, try pulling it first" })],
 ];
 
