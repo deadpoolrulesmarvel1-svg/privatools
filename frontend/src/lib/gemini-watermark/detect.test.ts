@@ -13,11 +13,11 @@
  * logo's footprint nothing changes at all.
  */
 import { describe, expect, it } from "vitest";
-import { alphaFor, placedAlpha, type AlphaMap } from "./alpha";
-import { findSparkle, measure, passes, plateau, plateauIsClean, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
+import { alphaFor, placedAlpha, placedLanczos, type AlphaMap, type Kernel } from "./alpha";
+import { depthIsClean, depthResidue, findSparkle, fine, fineIsClean, measure, passes, plateau, plateauIsClean, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
 import { sparklePlacements, sparkleRegion, type Family, type Placement } from "./geometry";
 import { MASK_SOURCES, type MaskId } from "./masks";
-import { BACKGROUNDS, SHAPES, applySparkle, background, clone, glare, jpegLike, paintShape, random, resized, solid, veil, type Background } from "@/test/gemini-fixtures";
+import { BACKGROUNDS, SHAPES, SMOOTH, applySparkle, background, clone, glare, jpegLike, paintShape, random, resized, smooth, solid, veil, type Background } from "@/test/gemini-fixtures";
 
 interface Scene { image: RgbaImage; frame: Frame }
 interface Box { x: number; y: number; width: number; height: number }
@@ -36,10 +36,13 @@ function placement(width: number, height: number, family: Family, which = 0): Pl
 
 interface Logo { map: AlphaMap; box: Box; gain: number }
 
-/** The logo a placement describes, moved by (dx, dy), at `size` px for a native one, at `gain` times the layout's opacity. */
-function logo(p: Placement, { dx = 0, dy = 0, size, gain = 1, mask = p.mask }: { dx?: number; dy?: number; size?: number; gain?: number; mask?: MaskId } = {}): Logo {
+/**
+ * The logo a placement describes, moved by (dx, dy), at `size` px for a native one, at `gain` times the layout's
+ * opacity; a scaled one as Gemini's own scaling draws it, or as a Lanczos resize does (`kernel`).
+ */
+function logo(p: Placement, { dx = 0, dy = 0, size, gain = 1, mask = p.mask, kernel = "area" }: { dx?: number; dy?: number; size?: number; gain?: number; mask?: MaskId; kernel?: Kernel } = {}): Logo {
     if (p.subpixel) {
-        const placed = placedAlpha(mask, p.left + dx, p.top + dy, p.scaleX, p.scaleY);
+        const placed = (kernel === "lanczos" ? placedLanczos : placedAlpha)(mask, p.left + dx, p.top + dy, p.scaleX, p.scaleY);
         return { map: placed.map, box: { x: placed.x, y: placed.y, width: placed.map.width, height: placed.map.height }, gain: p.gain * gain };
     }
     const nominal = Math.round(MASK_SOURCES[p.mask].size * p.scaleX);
@@ -94,6 +97,11 @@ const LAYOUTS: [number, number, Family, number][] = [
 
 /** A logo this faint over near-white adds only a few levels; it may be missed there, but never misjudged. */
 const faintOver = (kind: Background, p: Placement) => kind === "flat-pale" && p.gain < 1;
+/**
+ * Over strong per-pixel grain (standard deviation about 12 levels) the small 36 px logo's core reads too noisily
+ * for the core check to certify, so it may be found and left unchanged; it is still found, as the right layout.
+ */
+const noisySmall = (kind: Background, p: Placement) => kind === "noise" && MASK_SOURCES[p.mask].size * p.scaleX < 40;
 /** Backgrounds where the logo's opacity is fully determined: flat colour well away from white, and a smooth gradient. */
 const DETERMINED: Background[] = ["flat-navy", "flat-orange", "flat-black", "gradient"];
 
@@ -115,8 +123,9 @@ describe("removing the Gemini sparkle", () => {
                 const fit = findSparkle(marked, scene.frame);
                 if (faintOver(kind, p) && fit === null) continue;
                 expect(fit, kind).not.toBeNull();
-                expect(fit!.clean, `${kind} clean`).toBe(true);
                 expect(fit!.family, kind).toBe(family);
+                if (noisySmall(kind, p) && !fit!.clean) continue;
+                expect(fit!.clean, `${kind} clean`).toBe(true);
                 // A scaled logo's box can start a pixel away from where it was drawn: its edge falls between pixels.
                 const slack = p.subpixel ? 1 : 0;
                 expect(Math.abs(fit!.x - target.box.x), `${kind} x`).toBeLessThanOrEqual(slack);
@@ -129,7 +138,8 @@ describe("removing the Gemini sparkle", () => {
 
     it("fits the opacity of a logo fainter or stronger than the layout's usual one", () => {
         const p = placement(1024, 1024, "inset-96");
-        for (const gain of [0.85, 1.15]) {
+        // Real logos 96 px in fit 0.98 to 1.19 times the layout's opacity; under 0.9 times is refused (see below).
+        for (const gain of [0.92, 1.15]) {
             for (const kind of ["photo", "gradient", "flat-navy"] as const) {
                 const scene = corner(1024, 1024, kind, 4);
                 const target = logo(p, { gain });
@@ -154,17 +164,20 @@ describe("removing the Gemini sparkle", () => {
         }
     }, 60_000);
 
-    it("finds the scaled logo a fraction of a pixel from its projected position", () => {
+    it("finds the scaled logo a fraction of a pixel from its projected position, as Gemini scales it or as a Lanczos resize does", () => {
         const p = placement(1024, 768, "inset-96", 1);
-        for (const [dx, dy] of [[-0.5, 0.25], [0.75, -0.5], [0.25, 1]]) {
-            const scene = corner(1024, 768, "gradient", 3);
-            const target = logo(p, { dx, dy });
-            const marked = paint(scene, target);
-            const fit = findSparkle(marked, scene.frame)!;
-            expect({ family: fit.family, clean: fit.clean }, `${dx}, ${dy}`).toEqual({ family: "inset-96", clean: true });
-            expect(Math.abs(fit.size - 41), `${dx}, ${dy} size`).toBeLessThanOrEqual(1);
-            expect(Math.abs(fit.marginRight - (1024 - (p.left + dx) - 48 * p.scaleX)), `${dx}, ${dy} margin`).toBeLessThanOrEqual(1);
-            expectClose("gradient", removeAndCompare(scene, marked, fit, target.box), `${dx}, ${dy}`);
+        for (const kernel of ["area", "lanczos"] as const) {
+            for (const [dx, dy] of [[-0.5, 0.25], [0.75, -0.5], [0.25, 1]]) {
+                const label = `${kernel} ${dx}, ${dy}`;
+                const scene = corner(1024, 768, "gradient", 3);
+                const target = logo(p, { dx, dy, kernel });
+                const marked = paint(scene, target);
+                const fit = findSparkle(marked, scene.frame)!;
+                expect({ family: fit.family, kernel: fit.kernel, clean: fit.clean }, label).toEqual({ family: "inset-96", kernel, clean: true });
+                expect(Math.abs(fit.size - 41), `${label} size`).toBeLessThanOrEqual(1);
+                expect(Math.abs(fit.marginRight - (1024 - (p.left + dx) - 48 * p.scaleX)), `${label} margin`).toBeLessThanOrEqual(1);
+                expectClose("gradient", removeAndCompare(scene, marked, fit, target.box), label);
+            }
         }
     }, 60_000);
 
@@ -200,6 +213,19 @@ describe("removing the Gemini sparkle", () => {
 });
 
 describe("never claiming a removal that leaves a trace", () => {
+    it("does not claim a logo much fainter than the layout's, which is how a softened copy's logo reads", () => {
+        for (const [width, height, family] of [[1024, 1024, "inset-96"], [1024, 1024, "corner-32"]] as const) {
+            const p = placement(width, height, family);
+            for (const gain of family === "inset-96" ? [0.8, 0.85] : [0.85, 0.9]) {
+                for (const kind of ["photo", "flat-navy", "gradient"] as const) {
+                    const scene = corner(width, height, kind, 11);
+                    const fit = findSparkle(paint(scene, logo(p, { gain })), scene.frame);
+                    expect(neverClaimed(fit), `${family} at ${gain}× on ${kind}`).toBe(true);
+                }
+            }
+        }
+    }, 60_000);
+
     it("does not claim a logo much stronger than the layout's", () => {
         for (const [width, height, family, which] of LAYOUTS) {
             const p = placement(width, height, family, which);
@@ -319,6 +345,113 @@ describe("copies saved again or resized after Gemini made them", () => {
         expect(plateauIsClean(strong)).toBe(false);
         // A fit 2 px small at the right opacity leaves the real logo's rim, a thin outline.
         expect(plateauIsClean(plateau(image, fit(0.6, 46), layout))).toBe(false);
+    });
+
+    /**
+     * Over smooth pictures that are not flat, out-of-focus backgrounds and
+     * soft shading, the surface the plateau check fits cannot follow the
+     * picture, so its bounds grow; a remnant there still shows. A 320 px
+     * corner of a 1024 px picture, with the 48 px logo 96 px in (at 0.6 of
+     * the capture) or 32 px in (at the capture's own), degraded as a whole.
+     */
+    const SMOOTH_COPIES: [string, (image: RgbaImage) => RgbaImage, number][] = [
+        ["saved as JPEG at quality 85", image => jpegLike(image, 85), 1],
+        ["saved as JPEG at quality 75", image => jpegLike(image, 75), 1],
+        ["shrunk to 98 % with Lanczos", image => resized(image, 0.98, "lanczos"), 0.98],
+        ["enlarged to 102 % with Lanczos", image => resized(image, 1.02, "lanczos"), 1.02],
+    ];
+    const SMOOTH_LOGOS = [["the 48 px logo 96 px in", 176, 0.6], ["the 48 px logo 32 px in", 240, 1]] as const;
+
+    /** What removal left against the clean picture degraded the same way: mean over the logo's core and soft edge, and the largest difference near it. */
+    function leftAgainst(cleaned: RgbaImage, copy: RgbaImage, cleanCopy: RgbaImage) {
+        const lum = (image: RgbaImage, i: number) => (image.data[i * 4] + image.data[i * 4 + 1] + image.data[i * 4 + 2]) / 3;
+        const n = copy.width * copy.height;
+        let peak = 0;
+        for (let i = 0; i < n; i++) peak = Math.max(peak, lum(copy, i) - lum(cleanCopy, i));
+        let core = 0, coreCount = 0, edge = 0, edgeCount = 0, largest = 0;
+        for (let i = 0; i < n; i++) {
+            const logoAdds = lum(copy, i) - lum(cleanCopy, i), left = lum(cleaned, i) - lum(cleanCopy, i);
+            if (logoAdds > 0.5 * peak) { core += left; coreCount++; } else if (logoAdds > 0.06 * peak) { edge += left; edgeCount++; }
+            if (logoAdds > 0.06 * peak) largest = Math.max(largest, Math.abs(left));
+        }
+        return { core: core / coreCount, edge: edge / edgeCount, largest };
+    }
+
+    /** Out-of-focus light varies most from one picture to the next, so it is drawn four ways. */
+    const smoothScenes = SMOOTH.flatMap(kind => (kind === "bokeh" ? [1, 2, 3, 4] : [3]).map(seed => [kind, seed] as const));
+
+    it("never reports a removal that leaves a copy or an outline of the logo over smooth shading, out-of-focus light or clouds", () => {
+        let found = 0;
+        const claims: string[] = [];
+        for (const [kind, seed] of smoothScenes) {
+            for (const [logoLabel, at, gain] of SMOOTH_LOGOS) {
+                const clean = smooth(kind, 320, 320, seed);
+                const marked = applySparkle(clean, alphaFor("v1-48", 48), at, at, gain);
+                for (const [label, degrade, factor] of SMOOTH_COPIES) {
+                    const copy = degrade(marked), cleanCopy = degrade(clean);
+                    const size = Math.round(1024 * factor);
+                    const frame = { width: size, height: size, left: size - copy.width, top: size - copy.height };
+                    const fit = findSparkle(copy, frame);
+                    if (!fit) continue;
+                    found++;
+                    if (!fit.clean) continue;
+                    const cleaned = clone(copy);
+                    removeSparkle(cleaned, fit, frame);
+                    const left = leftAgainst(cleaned, copy, cleanCopy);
+                    // Over these pictures a remnant of 3 levels, or an outline of 6 in single pixels, is visible.
+                    if (Math.abs(left.core) > 2 || Math.abs(left.edge) > 2 || left.largest > 6) {
+                        claims.push(`${kind} ${seed}, ${logoLabel}, ${label}: removed as ${fit.size} px at opacity ${fit.gain.toFixed(2)}, leaving ${left.core.toFixed(1)} in the core, ${left.edge.toFixed(1)} at the edge, up to ${left.largest.toFixed(0)}`);
+                    }
+                }
+            }
+        }
+        expect(found).toBeGreaterThan(24);
+        expect(claims).toEqual([]);
+    }, 180_000);
+
+    it("still removes the logo from the file Gemini saved over the same smooth pictures, and never leaves a trace", () => {
+        let removed = 0;
+        for (const [kind, seed] of smoothScenes) {
+            for (const [logoLabel, at, gain] of SMOOTH_LOGOS) {
+                const label = `${kind} ${seed}, ${logoLabel}`;
+                const clean = smooth(kind, 320, 320, seed);
+                const marked = applySparkle(clean, alphaFor("v1-48", 48), at, at, gain);
+                const frame = { width: 1024, height: 1024, left: 704, top: 704 };
+                const fit = findSparkle(marked, frame);
+                expect(fit, label).not.toBeNull();
+                // Over out-of-focus light the surface the plateau check fits can stray from the picture by as much
+                // as a remnant would, so a few are left unchanged rather than certified.
+                if (!fit!.clean) continue;
+                removed++;
+                const cleaned = clone(marked);
+                removeSparkle(cleaned, fit!, frame);
+                const left = leftAgainst(cleaned, marked, clean);
+                expect(Math.max(Math.abs(left.core), Math.abs(left.edge)), label).toBeLessThan(0.5);
+                expect(left.largest, label).toBeLessThanOrEqual(2);
+            }
+        }
+        expect(removed).toBeGreaterThanOrEqual(10);
+    }, 60_000);
+
+    it("judges fine detail and the core, direction by direction", () => {
+        const clean = smooth("bokeh", 320, 320, 5);
+        const marked = applySparkle(clean, alphaFor("v1-48", 48), 176, 176, 0.6);
+        const drawn = (gain: number) => ({ map: alphaFor("v1-48", 48), x: 176, y: 176, gain });
+        // The right logo at its own opacity leaves no fine detail beyond the picture's, and nothing in the core.
+        expect(fineIsClean(fine(marked, drawn(0.6)))).toBe(true);
+        const exact = depthResidue(marked, alphaFor("v1-48", 48), 0.6, 176, 176);
+        expect(Math.max(...exact.map(Math.abs))).toBeLessThan(1.5);
+        expect(depthIsClean(exact, true)).toBe(true);
+        // Saved again as JPEG, the same removal leaves the JPEG's ringing around the logo as fine detail.
+        expect(fineIsClean(fine(jpegLike(marked, 75), drawn(0.6)))).toBe(false);
+        // Too faint a removal leaves the core brighter in every direction; too strong, darker, refused on a scaled logo.
+        const faint = depthResidue(marked, alphaFor("v1-48", 48), 0.45, 176, 176);
+        expect(Math.min(...faint)).toBeGreaterThan(3);
+        expect(depthIsClean(faint, false)).toBe(false);
+        const strong = depthResidue(marked, alphaFor("v1-48", 48), 0.75, 176, 176);
+        expect(Math.max(...strong)).toBeLessThan(-2);
+        expect(depthIsClean(strong, true)).toBe(false);
+        expect(depthIsClean(strong, false)).toBe(true);
     });
 });
 

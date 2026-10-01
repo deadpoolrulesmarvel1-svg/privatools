@@ -156,8 +156,12 @@ export interface Region {
     height: number;
 }
 
-/** Pixels the search and the checks read beyond a logo box (the outline pairs reach 3 px out, their controls 6 more). */
-export const REGION_PAD = 14;
+/**
+ * Pixels the search and the checks read beyond a logo box: the fine-detail
+ * ring reaches 10 px out from the logo's footprint and its blur 3 more, and a
+ * Lanczos-scaled logo's footprint starts up to 3 px outside the box.
+ */
+export const REGION_PAD = 16;
 
 /**
  * The corner that holds every placement, with room for the searches and the

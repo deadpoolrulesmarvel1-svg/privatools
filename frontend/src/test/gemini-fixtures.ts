@@ -103,13 +103,87 @@ export function background(kind: Background, width: number, height: number, seed
     }
 }
 
+export type Smooth = "shading" | "bokeh" | "clouds";
+
+export const SMOOTH: Smooth[] = ["shading", "bokeh", "clouds"];
+
+/**
+ * Smooth pictures that vary slowly, where a remnant shows most once the
+ * colour is not flat: soft shading with gentle curvature, out-of-focus light
+ * (overlapping soft discs 10 to 34 px across, about the logo's size, blurred
+ * as a lens would), and low-frequency clouds of about ±20 levels over 64 px.
+ * Each carries a fine grain of about 1 level.
+ */
+export function smooth(kind: Smooth, width: number, height: number, seed = 1): RgbaImage {
+    const next = random(seed + 101);
+    const grain = () => (next() + next() + next() - 1.5) * 2;
+    const clamp = (values: number[]) => values.map(v => Math.round(Math.min(255, Math.max(0, v)))) as [number, number, number];
+    switch (kind) {
+        case "shading": return fill(width, height, (x, y) => {
+            const u = x / width, v = y / height;
+            return clamp([120 + 50 * u - 30 * v * v + grain(), 140 - 40 * u * v + 25 * Math.sin(3 * u) + grain(), 90 + 40 * v + 20 * Math.cos(2.5 * u) + grain()]);
+        });
+        case "bokeh": {
+            const place = random(seed + 202);
+            const discs = Array.from({ length: 60 }, () => ({
+                x: place() * width, y: place() * height, radius: 14 * (0.6 + 0.8 * place()),
+                colour: [place(), place(), place()].map(v => (v - 0.5) * 80),
+            }));
+            const sharp = fill(width, height, (x, y) => {
+                const c = [70, 95, 55];
+                for (const d of discs) {
+                    const t = Math.hypot(x - d.x, y - d.y) / d.radius;
+                    const weight = t < 0.8 ? 1 : t < 1.2 ? (1.2 - t) / 0.4 : 0;
+                    for (let k = 0; k < 3; k++) c[k] += weight * d.colour[k];
+                }
+                return clamp([c[0] + grain(), c[1] + grain(), c[2] + grain()]);
+            });
+            // A lens's blur (a 7 px box, twice), then the sensor's grain on top.
+            const out = boxBlur(boxBlur(sharp, 3), 3);
+            for (let i = 0; i < width * height; i++) {
+                for (let k = 0; k < 3; k++) out.data[i * 4 + k] = Math.min(255, Math.max(0, out.data[i * 4 + k] + Math.round(grain() * 0.75)));
+            }
+            return out;
+        }
+        case "clouds": {
+            const planes = [0, 1, 2].map(k => valueNoise(width, height, seed + 17 * k, 64, 2));
+            return fill(width, height, (x, y) => {
+                const i = y * width + x;
+                return clamp([150 + 40 * (planes[0][i] - 0.5) + grain(), 120 + 40 * (planes[1][i] - 0.5) + grain(), 100 + 40 * (planes[2][i] - 0.5) + grain()]);
+            });
+        }
+    }
+}
+
 export function clone(image: RgbaImage): RgbaImage {
     return { width: image.width, height: image.height, data: new Uint8ClampedArray(image.data) };
 }
 
+/** A box blur `radius` pixels either way, edges repeated, alpha kept. */
+function boxBlur(image: RgbaImage, radius: number): RgbaImage {
+    const { width, height, data } = image;
+    const out = clone(image);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            for (let k = 0; k < 3; k++) {
+                let sum = 0;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const xx = Math.min(width - 1, Math.max(0, x + dx)), yy = Math.min(height - 1, Math.max(0, y + dy));
+                        sum += data[(yy * width + xx) * 4 + k];
+                    }
+                }
+                out.data[(y * width + x) * 4 + k] = Math.round(sum / (2 * radius + 1) ** 2);
+            }
+        }
+    }
+    return out;
+}
+
 /**
  * Lay the logo over the picture the way Gemini does: alpha · 255 + (1 − alpha) · pixel,
- * rounded to 8 bits, with the map's opacity times `gain`.
+ * rounded to 8 bits, with the map's opacity times `gain`. Slightly negative opacity (a
+ * Lanczos-scaled map's overshoot) darkens the pixel, as the scaling would have.
  */
 export function applySparkle(image: RgbaImage, alpha: AlphaMap, x0: number, y0: number, gain = 1): RgbaImage {
     const out = clone(image);
@@ -117,7 +191,7 @@ export function applySparkle(image: RgbaImage, alpha: AlphaMap, x0: number, y0: 
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const a = Math.min(0.99, values[y * width + x] * gain);
-            if (a <= 0) continue;
+            if (a === 0) continue;
             const i = ((y0 + y) * image.width + x0 + x) * 4;
             for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(a * 255 + (1 - a) * image.data[i + c]);
         }

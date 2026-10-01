@@ -20,7 +20,7 @@ import { decodePng } from "./png";
 export interface AlphaMap {
     width: number;
     height: number;
-    /** Opacity from 0 to 1, row after row. */
+    /** Opacity from 0 to 1, row after row (just outside a Lanczos-scaled logo, slightly below 0). */
     values: Float32Array;
 }
 
@@ -154,6 +154,85 @@ export interface Placed {
     /** The integer box that holds the logo. */
     x: number;
     y: number;
+}
+
+/**
+ * How a picture scaled from a standard size is modelled. Gemini's own scaled
+ * pictures fit the averaged ("area") model, which keeps the logo's core right;
+ * a copy resized in an editor or by an app usually went through Lanczos, which
+ * keeps edges sharper and overshoots them slightly.
+ */
+export type Kernel = "area" | "lanczos";
+
+const lanczos3 = (x: number) => {
+    if (x === 0) return 1;
+    if (Math.abs(x) >= 3) return 0;
+    const px = Math.PI * x;
+    return 3 * Math.sin(px) * Math.sin(px / 3) / (px * px);
+};
+
+/**
+ * Lanczos-3 weights for one axis, as an image scaler applies them when a whole
+ * picture is scaled from a standard size: picture position X lies at canvas
+ * position X / scale, capture pixel p is canvas pixel left / scale + p, and
+ * when shrinking the kernel is widened by 1 / scale and normalised over the
+ * canvas pixels it covers.
+ */
+function lanczosSpans(sourceSize: number, scale: number, left: number, start: number, outSize: number): Span[] {
+    const filterScale = Math.max(1, 1 / scale);
+    const support = 3 * filterScale;
+    const canvasLeft = left / scale;
+    const spans: Span[] = [];
+    for (let i = 0; i < outSize; i++) {
+        const center = (start + i + 0.5) / scale;
+        let total = 0;
+        for (let j = Math.floor(center - support) - 1; j <= Math.ceil(center + support) + 1; j++) total += lanczos3((j + 0.5 - center) / filterScale);
+        const first = Math.max(0, Math.floor(center - support - canvasLeft) - 1);
+        const last = Math.min(sourceSize - 1, Math.ceil(center + support - canvasLeft) + 1);
+        const weights: number[] = [];
+        for (let p = first; p <= last; p++) weights.push(lanczos3((canvasLeft + p + 0.5 - center) / filterScale) / total);
+        spans.push({ first, weights });
+    }
+    return spans;
+}
+
+/**
+ * The capture as a picture scaled with Lanczos-3 from a standard size shows
+ * it: the logo drawn on the standard-size picture, then the whole picture
+ * scaled. The box reaches a few pixels beyond the logo, where the kernel's
+ * overshoot leaves slightly negative opacity: the picture there came out a
+ * little darker, and removal puts it back.
+ */
+export function placedLanczos(id: MaskId, left: number, top: number, scaleX: number, scaleY: number): Placed {
+    const base = baseAlpha(id);
+    const reachX = Math.ceil(3 * Math.max(1, scaleX)) + 1, reachY = Math.ceil(3 * Math.max(1, scaleY)) + 1;
+    const x = Math.floor(left + 1e-9) - reachX, y = Math.floor(top + 1e-9) - reachY;
+    const width = Math.ceil(left + base.width * scaleX - 1e-9) + reachX - x;
+    const height = Math.ceil(top + base.height * scaleY - 1e-9) + reachY - y;
+    const key = `L:${id}:${(left - x).toFixed(3)}:${(top - y).toFixed(3)}:${scaleX.toFixed(5)}:${scaleY.toFixed(5)}`;
+    const map = remember(key, () => {
+        const spansX = lanczosSpans(base.width, scaleX, left, x, width);
+        const spansY = lanczosSpans(base.height, scaleY, top, y, height);
+        const rows = new Float32Array(height * base.width);
+        for (let j = 0; j < height; j++) {
+            const { first, weights } = spansY[j];
+            for (let k = 0; k < weights.length; k++) {
+                const w = weights[k], q = first + k;
+                for (let p = 0; p < base.width; p++) rows[j * base.width + p] += w * base.values[q * base.width + p];
+            }
+        }
+        const values = new Float32Array(width * height);
+        for (let j = 0; j < height; j++) {
+            for (let i = 0; i < width; i++) {
+                const { first, weights } = spansX[i];
+                let sum = 0;
+                for (let k = 0; k < weights.length; k++) sum += weights[k] * rows[j * base.width + first + k];
+                values[j * width + i] = Math.abs(sum) < 1e-4 ? 0 : sum;
+            }
+        }
+        return { width, height, values };
+    });
+    return { map, x, y };
 }
 
 /**
