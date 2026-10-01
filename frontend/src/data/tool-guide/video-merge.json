@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the merged video",
-      "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."
+      "text": "FFmpeg joins the clips in that order into one MP4. MP4 and MOV clips recorded the same way (H.264 or HEVC video with AAC audio, and the same frame size, rotation and encoder settings, as one phone's clips usually are) keep their video untouched, and their sound is re-encoded so it stays in step with the picture; sound that runs on past the end of a clip's video is cut there. iPhone clips therefore stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; Video Converter makes an H.264 copy. A clip trimmed without re-encoding, and any other mix, is re-encoded once, as H.264 video and AAC audio."
     }
   ],
   "faq": [
@@ -27,8 +27,12 @@
       "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."
     },
     {
+      "q": "Will the merged video play everywhere?",
+      "a": "Clips recorded alike keep their video untouched, so iPhone clips, which are HEVC (\"High Efficiency\") by default, give an HEVC video. Some browsers, Chromium on Linux among them, and PCs without an HEVC decoder cannot play it: they show a blank picture or refuse the file. Video Converter makes an H.264 copy that plays everywhere. Any other mix of clips comes out as H.264."
+    },
+    {
       "q": "How long can the merged video be?",
-      "a": "FFmpeg has 180 seconds to join the clips, and it re-encodes every frame, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The whole upload must also fit in 500 MB, and the route takes 5 requests a minute per IP address."
+      "a": "Clips whose video is kept untouched have only their sound re-encoded, which takes up to about two minutes per hour of footage, so the 180 seconds of FFmpeg time each merge gets cover about an hour and a half, less while the server is busy; phone video reaches the 500 MB upload limit long before that. A mix that has to be re-encoded gets the same 180 seconds, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The route takes 5 requests a minute per IP address."
     }
   ]
 }

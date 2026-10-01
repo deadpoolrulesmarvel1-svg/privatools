@@ -233,6 +233,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
         fileLabel="videos"
         actionVerb="Merge"
         ordered={true}
+        note="Clips recorded alike, as one phone's clips usually are, keep their video untouched. iPhone clips stay HEVC, which some browsers, Chromium on Linux among them, and PCs without an HEVC decoder cannot play; Video Converter makes an H.264 copy that plays everywhere."
       />;
     // v1.2.0 — browser-only dev utilities
     case "jwt-decoder":         return <LazyJwtDecoderUI />;
