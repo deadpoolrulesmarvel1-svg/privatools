@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.8] — 2026-10-01 — Security updates
+
+### Other
+
+- Security updates for advisories published this week: pyjwt 2.15.0 (CVE-2026-101918) and urllib3 2.8.0 (CVE-2026-97687, CVE-2026-97688, CVE-2026-97689) on the server, and brace-expansion 1.1.21 and 2.1.7 (GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p) in the frontend build. Nothing else changed. (#301)
+
 ## [2.7.7] — 2026-09-28 — Hidden Text Checker
 
 ### New tool
