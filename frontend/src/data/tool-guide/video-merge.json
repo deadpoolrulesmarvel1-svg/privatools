@@ -28,7 +28,7 @@
     },
     {
       "q": "How long can the merged video be?",
-      "a": "Clips joined as they are take seconds at any length that fits in the 500 MB upload. A mix that has to be re-encoded gets 180 seconds of FFmpeg time, so what fits depends on the total length and frame size: on the PrivaTools server, about three minutes of 1080p video in all, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The route takes 5 requests a minute per IP address."
+      "a": "Clips joined as they are take seconds at any length that fits in the 500 MB upload. A mix that has to be re-encoded gets 180 seconds of FFmpeg time, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The route takes 5 requests a minute per IP address."
     }
   ]
 }

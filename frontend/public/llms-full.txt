@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 222 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -555,7 +555,7 @@ URL: https://privatools.me/tool/pdf-to-epub
 
 Convert a PDF into the EPUB format for e-readers
 
-Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.
+Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.
 
 ### Markdown / Config to PDF
 
@@ -820,6 +820,14 @@ URL: https://privatools.me/tool/sanitize-pdf
 Remove scripts, attachments and hidden layers from a PDF
 
 Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript, actions that run by themselves (except opening at a set page), links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.
+
+### Hidden Text Checker
+
+URL: https://privatools.me/tool/hidden-text-checker
+
+Find text in a PDF that readers can't see
+
+Find hidden text in a PDF online for free: text a reader can't see but search, copy and paste, screening software and AI models still read. It finds text set to be invisible or fully transparent, text in the colour of what lies behind it (white on white), text too small to read, text off the page or clipped away, text in layers that are switched off, text under a box, shape or image drawn over it (a redaction that left the words in the file), text in hidden comments and form fields, and redaction marks that were never applied. Each finding gives the page, the reason and the exact words, highlighted on a preview of the page, and the report downloads as text or JSON. Invisible text over scanned pages, which OCR adds, is listed separately. A clean result means none of these checks matched, not that the file is safe in every way. The PDF is checked on our server in temporary storage, up to 500 pages, and is not changed.
 
 ### Reverse PDF
 

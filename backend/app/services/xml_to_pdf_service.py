@@ -25,10 +25,28 @@ from ..utils.filenames import temp_output
 
 # Cap input size so a multi-GB XML file can't pin the worker.
 MAX_INPUT_BYTES = 5 * 1024 * 1024
+# Each level is indented 8 points, so a line nested deeper than this would
+# start past the right margin of an A4 page.
+MAX_DEPTH = 60
+# At most this many printed lines, about 800 A4 pages. About that many (a 1 MB
+# file of 10,000 sitemap entries) took 3.5 s and 126 MB to print. Unbounded,
+# a 5 MB file of 1.3 million empty elements took 38 s and 600 MB and printed
+# 21,000 pages. JSON to PDF has the same cap. Every element starts a line, so
+# a file with more elements than this is refused while it is read, before its
+# tree is built.
+MAX_PRINTED_LINES = 50_000
 
 # The refusals below reach the visitor as they are, so they avoid the words
 # the website's friendlyError turns into advice about damaged or locked PDFs
 # ("malformed", "corrupt", "password", "too large", ...).
+TOO_DEEP = (
+    f"This XML nests more than {MAX_DEPTH} levels deep. XML to PDF indents each level, "
+    "so deeper lines would start past the right margin of the page."
+)
+TOO_MANY_ELEMENTS = (
+    f"This XML has more than {MAX_PRINTED_LINES:,} elements, and XML to PDF prints at most "
+    f"{MAX_PRINTED_LINES:,} lines, about 800 pages. Split it into smaller files."
+)
 
 
 # XML's EncName production, from the declaration at the start of the file.
@@ -40,24 +58,68 @@ def _declared_encoding(content: bytes) -> str | None:
     return match.group(1).decode("ascii") if match else None
 
 
+def _parser_input(content: bytes) -> bytes | str:
+    """What expat is given: the text when the bytes are valid UTF-8, else the bytes.
+
+    Valid UTF-8 is read as UTF-8 whatever the declaration says. A declaration
+    naming the wrong encoding is common (a file saved as UTF-8 that kept an old
+    "ISO-8859-1" line); followed literally it turned "Café" into "CafÃ©", and
+    expat cannot load "utf8", the spelling Python's own xml.etree writes. A
+    UTF-16 byte order mark, or the zero bytes UTF-16 and UTF-32 put near the
+    start, sends the bytes to expat, which reads UTF-16 by itself. So does text
+    that is not valid UTF-8: it is in the one-byte encoding its declaration
+    names, such as ISO-8859-1 or Windows-1252, and expat follows that.
+    """
+    if content[:2] in (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE) or b"\x00" in content[:4]:
+        return content
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return content
+
+
 def _safe_pretty_xml(content: bytes) -> str:
     """Parse and pretty-print XML *safely* — defusedxml only.
 
-    Given bytes, expat reads the file the way the XML specification says: a
-    byte order mark, else the encoding the declaration names, else UTF-8. It
-    reads UTF-8, UTF-16 and single-byte encodings such as ISO-8859-1 and
-    Windows-1252. Decoding the file as UTF-8 first refused all but UTF-8.
+    Reads UTF-8, UTF-16 and one-byte encodings such as ISO-8859-1 and
+    Windows-1252 (see _parser_input). Decoding every file as UTF-8, as this
+    once did, refused all but UTF-8.
     """
     try:
         from defusedxml import DefusedXmlException
-        from defusedxml.minidom import parseString
+        from defusedxml.expatbuilder import DefusedExpatBuilderNS
     except ImportError as exc:
         raise DependencyError(
             "defusedxml is required for XML processing. Install with: pip install defusedxml"
         ) from exc
 
+    class BoundedBuilder(DefusedExpatBuilderNS):
+        """defusedxml's own minidom builder, with the same protections, that
+        stops at the first element nested deeper than MAX_DEPTH, or past the
+        MAX_PRINTED_LINES-th element: before the rest of the tree is built, and
+        before pretty-printing, which recurses once per level and answered 500
+        from about 990 levels."""
+
+        depth = 0
+        elements = 0
+
+        def start_element_handler(self, name, attributes):
+            self.depth += 1
+            self.elements += 1
+            if self.depth > MAX_DEPTH:
+                raise ValidationError(TOO_DEEP)
+            if self.elements > MAX_PRINTED_LINES:
+                raise ValidationError(TOO_MANY_ELEMENTS)
+            super().start_element_handler(name, attributes)
+
+        def end_element_handler(self, name):
+            self.depth -= 1
+            super().end_element_handler(name)
+
     try:
-        dom = parseString(content)
+        # The same defaults as defusedxml.minidom.parseString.
+        builder = BoundedBuilder(forbid_dtd=False, forbid_entities=True, forbid_external=True)
+        dom = builder.parseString(_parser_input(content))
     except DefusedXmlException as exc:
         raise ValidationError(
             "This XML declares entities in its DOCTYPE, or refers to outside files, which XML to PDF "
@@ -78,7 +140,10 @@ def _safe_pretty_xml(content: bytes) -> str:
         what = f"text in {declared}, the encoding this file declares" if declared else "the encoding this file declares"
         raise ValidationError(f"XML to PDF cannot read {what}. Save it as UTF-8 and try again.") from exc
 
-    return dom.toprettyxml(indent="  ")
+    try:
+        return dom.toprettyxml(indent="  ")
+    except RecursionError as exc:  # not reachable within MAX_DEPTH; kept as a backstop
+        raise ValidationError(TOO_DEEP) from exc
 
 
 def xml_to_pdf(input_path: str) -> str:
@@ -91,6 +156,13 @@ def xml_to_pdf(input_path: str) -> str:
         )
 
     formatted = _safe_pretty_xml(Path(input_path).read_bytes())
+    lines = formatted.split("\n")
+    printed = sum(1 for line in lines if line.strip())
+    if printed > MAX_PRINTED_LINES:  # text with many line breaks, under the element cap
+        raise ValidationError(
+            f"This XML would print as {printed:,} lines, and XML to PDF prints at most "
+            f"{MAX_PRINTED_LINES:,}, about 800 pages. Split it into smaller files."
+        )
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
@@ -100,8 +172,9 @@ def xml_to_pdf(input_path: str) -> str:
     line_height = 12
 
     c.setFont("Courier", font_size)
+    char_width = c.stringWidth("M", "Courier", font_size)  # Courier is monospaced
 
-    for line in formatted.split("\n"):
+    for line in lines:
         if y < margin:
             c.showPage()
             c.setFont("Courier", font_size)
@@ -121,10 +194,14 @@ def xml_to_pdf(input_path: str) -> str:
         else:
             c.setFillColorRGB(0, 0, 0)
 
-        # Truncate long lines so they don't run off the page.
-        max_w = width - 2 * margin
-        display = stripped.lstrip()
-        while c.stringWidth(display, "Courier", font_size) > max_w and len(display) > 10:
+        # Cut a long line off at the right margin, keeping at least 10
+        # characters. The characters that fit are counted first, because
+        # dropping one at a time and measuring the rest again was quadratic:
+        # 43 s for a 32,000-character line. The loop then only corrects for a
+        # symbol ReportLab draws from another, wider font.
+        room = width - margin - x
+        display = stripped.lstrip()[: max(10, int(room // char_width))]
+        while c.stringWidth(display, "Courier", font_size) > room and len(display) > 10:
             display = display[:-1]
 
         c.drawString(x, y, display)

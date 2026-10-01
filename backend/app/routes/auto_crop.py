@@ -1,18 +1,17 @@
-import asyncio
 import logging
-import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, Request
 from fastapi.responses import FileResponse
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 
+from ..services import auto_crop_service
 from ..utils.cleanup import (
     ensure_temp_dir,
-    get_temp_path,
     remove_files,
     validate_pdf_content,
 )
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
 from ..utils.concurrency import run_bounded
 
@@ -31,69 +30,11 @@ async def auto_crop(request: Request, file: UploadFile = File(...)):
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    validate_pdf_content(content)
     out_path = None
 
-    def _work():
-        validate_pdf_content(content)
-        import fitz
-
-        doc = None
-        try:
-            try:
-                doc = fitz.open(stream=content, filetype="pdf")
-            except Exception as exc:
-                # PyMuPDF wraps both encrypted-document and corrupt-stream failures here.
-                msg = str(exc).lower()
-                if "password" in msg or "encrypted" in msg:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="PDF is password-protected — unlock it first",
-                    ) from exc
-                raise HTTPException(
-                    status_code=400,
-                    detail="PDF appears corrupt or unreadable",
-                ) from exc
-
-            if doc.needs_pass:
-                raise HTTPException(
-                    status_code=400,
-                    detail="PDF is password-protected — unlock it first",
-                )
-
-            if len(doc) == 0:
-                raise HTTPException(status_code=400, detail="PDF has no pages")
-
-            for page in doc:
-                blocks = page.get_text("dict")["blocks"]
-                if not blocks:
-                    continue
-                rects = [fitz.Rect(b["bbox"]) for b in blocks]
-                union = rects[0]
-                for r in rects[1:]:
-                    union |= r
-                margin = 20
-                crop = fitz.Rect(
-                    max(0, union.x0 - margin),
-                    max(0, union.y0 - margin),
-                    min(page.rect.width, union.x1 + margin),
-                    min(page.rect.height, union.y1 + margin),
-                )
-                page.set_cropbox(crop)
-
-            work_out_path = str(get_temp_path(f"cropped_{uuid.uuid4().hex}.pdf"))
-            doc.save(work_out_path)
-            doc.close()
-            doc = None
-            return work_out_path
-        finally:
-            if doc is not None:
-                try:
-                    doc.close()
-                except Exception:
-                    pass
-
     try:
-        out_path = await run_bounded(_work)
+        out_path = await run_bounded(auto_crop_service.auto_crop, content)
 
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, out_path)
@@ -103,7 +44,9 @@ async def auto_crop(request: Request, file: UploadFile = File(...)):
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A password-protected, unreadable or empty PDF (a ToolError): the
+        # global handler answers with the error's own status and wording.
         if out_path:
             remove_files(out_path)
         raise
@@ -111,15 +54,4 @@ async def auto_crop(request: Request, file: UploadFile = File(...)):
         if out_path:
             remove_files(out_path)
         logger.exception("Unexpected error in /auto-crop")
-        msg = str(exc).lower()
-        if "password" in msg or "encrypted" in msg:
-            raise HTTPException(
-                status_code=400,
-                detail="PDF is password-protected — unlock it first",
-            ) from exc
-        if "corrupt" in msg or "damaged" in msg:
-            raise HTTPException(
-                status_code=400,
-                detail="PDF appears corrupt or unreadable",
-            ) from exc
         raise HTTPException(status_code=500, detail=f"Processing failed: {exc}") from exc

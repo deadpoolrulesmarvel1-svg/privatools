@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 222 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -128,6 +128,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
 - [Verify Digital Signature](https://privatools.me/tool/verify-signature): Check that a PDF's signatures still match the file
 - [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Remove scripts, attachments and hidden layers from a PDF
+- [Hidden Text Checker](https://privatools.me/tool/hidden-text-checker): Find text in a PDF that readers can't see
 - [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
 - [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
 - [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel

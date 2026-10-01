@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload a PDF",
-      "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."
+      "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300). A page larger than 25 megapixels at that DPI (A3 at 300 DPI is 17) is drawn at the largest size within 25 megapixels, and one request can draw up to 400 megapixels in all, about 200 A4 pages at 144 DPI; split a longer PDF first."
     },
     {
       "name": "Set threshold",
