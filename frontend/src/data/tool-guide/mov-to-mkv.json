@@ -32,7 +32,7 @@
     },
     {
       "q": "Is my iPhone's location copied into the MKV?",
-      "a": "It can be. The command does not strip metadata, so container tags such as the title and, on iPhone clips, the camera make, model and location are copied into the MKV as Matroska tags. Check the tags before you share the file if that matters."
+      "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MKV. The sound track keeps its language, and chapter markers keep their place and titles."
     },
     {
       "q": "Why won't the MKV play on my TV or phone?",

@@ -25,6 +25,10 @@
     {
       "q": "Can I extract just a section of the audio?",
       "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."
+    },
+    {
+      "q": "Does the audio file keep where the video was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title, artist and comments are left out. An MP3 keeps the video's chapter markers and their titles, and an OGG keeps the sound track's language; the other formats come out with neither."
     }
   ]
 }

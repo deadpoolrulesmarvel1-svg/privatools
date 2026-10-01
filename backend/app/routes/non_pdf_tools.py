@@ -18,6 +18,7 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.concurrency import run_bounded
+from ..services.media_metadata import with_metadata_options
 from ..services.media_trim_service import AUDIO_EXTENSIONS, VIDEO_ENCODERS, trim_command
 from ..services.ffmpeg_capabilities import ogg_encoder
 
@@ -152,15 +153,17 @@ def _write_temp_file(content: bytes, suffix: str) -> str:
     return path
 
 
-async def _run_ffmpeg_async(cmd: list[str], timeout: int) -> None:
+async def _run_ffmpeg_async(cmd: list[str], timeout: int, *, chapters: bool = False) -> None:
     """Run ffmpeg off the event loop — a long encode (up to `timeout`s) must
     not block the worker from serving other requests."""
-    await run_bounded(_run_ffmpeg, cmd, timeout)
+    await run_bounded(_run_ffmpeg, cmd, timeout, chapters)
 
 
-def _run_ffmpeg(cmd: list[str], timeout: int) -> None:
+def _run_ffmpeg(cmd: list[str], timeout: int, chapters: bool = False) -> None:
+    """The output leaves out its input's tags, such as where it was recorded
+    (see media_metadata); `chapters` keeps its chapter markers."""
     try:
-        subprocess.run(cmd, capture_output=True, check=True, timeout=timeout)
+        subprocess.run(with_metadata_options(cmd, chapters=chapters), capture_output=True, check=True, timeout=timeout)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail="ffmpeg is not installed") from exc
     except subprocess.TimeoutExpired as exc:
@@ -580,6 +583,7 @@ async def extract_audio(request: Request, file: UploadFile = File(...), format: 
                 output_path,
             ],
             timeout=180,
+            chapters=True,
         )
     except HTTPException:
         _cleanup_paths(input_path, output_path)
@@ -614,9 +618,11 @@ async def trim_media(request: Request,
     output_path = _new_temp_file(ext)
 
     try:
+        # FFmpeg moves the chapter markers inside the cut to its new start.
         await _run_ffmpeg_async(
             trim_command(input_path, output_path, ext, start, _timestamp_to_seconds(end) - _timestamp_to_seconds(start)),
             timeout=180,
+            chapters=True,
         )
     except HTTPException:
         _cleanup_paths(input_path, output_path)
@@ -653,6 +659,7 @@ async def compress_video(request: Request, file: UploadFile = File(...), quality
                 output_path,
             ],
             timeout=300,
+            chapters=True,
         )
     except HTTPException:
         _cleanup_paths(input_path, output_path)

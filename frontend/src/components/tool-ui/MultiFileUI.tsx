@@ -24,11 +24,13 @@ interface Props {
     params?: Record<string, string | number | boolean>;
     ordered?: boolean;
     actionVerb?: string;
+    /** What the visitor should know about the result before running it. */
+    note?: string;
 }
 
 export function MultiFileUI({
     endpoint, handoffSlug, accepts, outputFilename, fileLabel,
-    minFiles = 2, params, ordered = true, actionVerb = "Process",
+    minFiles = 2, params, ordered = true, actionVerb = "Process", note,
 }: Props) {
     const [files, setFiles] = useState<Item[]>([]);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
@@ -143,6 +145,7 @@ export function MultiFileUI({
     </StudioResult>;
     return <StudioLayout options={<>
         <div><p className="ts-eyebrow">Bring them together</p><h3>Your collection</h3><p>{ordered ? "Put files in the order you want. They become one result." : "Each selected file joins this collection."}</p></div>
+        {note && <div><p>{note}</p></div>}
         <div><dl><div><dt>Selected</dt><dd>{files.length} files · {formatFileSize(totalSize)}</dd></div><div><dt>Result</dt><dd>{outputFilename}</dd></div></dl></div>
         <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!canProcess}>{files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</button><p>{files.length < minFiles ? `Add at least ${minFiles} ${fileLabel} to begin.` : "Your files are ready."}</p></div>
     </>}>

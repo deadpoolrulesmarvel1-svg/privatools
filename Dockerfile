@@ -35,7 +35,7 @@ RUN npm run build \
     && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
 
 # Stage 2: Production
-FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
+FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
 
 # Install system dependencies and explicitly upgrade affected base packages.
 # Trixie binary-version floors for the nine CVEs recorded in the v2.3.0 scan:

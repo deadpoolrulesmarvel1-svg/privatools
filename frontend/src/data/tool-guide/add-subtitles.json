@@ -25,6 +25,10 @@
     {
       "q": "Can I customize the font / size / color?",
       "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."
+    },
+    {
+      "q": "Does the subtitled video keep where it was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out of the MP4. A clip a phone stored sideways comes out upright, the sound keeps its language, and chapter markers keep their place and titles."
     }
   ]
 }

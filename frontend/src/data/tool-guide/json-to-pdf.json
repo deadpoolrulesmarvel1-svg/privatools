@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload a JSON file",
-      "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."
+      "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid, in UTF-8 (with or without a byte order mark), UTF-16 or UTF-32, and nest no more than 25 levels deep."
     },
     {
       "name": "Know the fixed layout",
-      "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."
+      "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, and emoji print as boxes."
     },
     {
       "name": "Convert and download",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Is JSON validated before conversion?",
-      "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."
+      "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page says what the parser expected and where, for example \"Expecting value at line 1, column 14\", which is what a comma after the last item of a list gives. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."
     },
     {
       "q": "How are nested objects displayed?",

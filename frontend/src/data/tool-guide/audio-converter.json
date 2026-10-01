@@ -39,6 +39,10 @@
       "a": "Use Extract Audio for that; it is built for pulling the soundtrack out of a video file."
     },
     {
+      "q": "Are the file's tags kept?",
+      "a": "No. The title, artist, album, track number, genre, dates and comments are left out, and so are any location and device details a phone or recorder stored, so add song tags again in your music player if you need them. Cover art stays in MP3 and FLAC files, an MP3 keeps chapter markers and their titles, and an OGG keeps the track's language."
+    },
+    {
       "q": "What happens to my file after I upload it?",
       "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }

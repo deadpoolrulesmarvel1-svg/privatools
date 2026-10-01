@@ -142,8 +142,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Generate the PDF", "text": "Click Convert to PDF. The server renders pasted HTML with WeasyPrint and a fetched page with PyMuPDF, then the PDF downloads."},
     ],
     "xml-to-pdf": [
-        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed UTF-8 XML works, including RSS, Atom, and XHTML."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed."},
+        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed XML works, including RSS, Atom, and XHTML, in UTF-8, UTF-16 or a one-byte encoding its declaration names, such as ISO-8859-1 or Windows-1252."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. Blank lines are left out. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
@@ -152,8 +152,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert to PDF", "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."},
     ],
     "json-to-pdf": [
-        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."},
+        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid, in UTF-8 (with or without a byte order mark), UTF-16 or UTF-32, and nest no more than 25 levels deep."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, and emoji print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
@@ -260,7 +260,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "chat-with-pdf": [
         {"name": "Open your PDF", "text": "Select a text-based PDF. Its text is extracted in your browser; a scanned PDF needs OCR PDF first, because there is no text to read."},
-        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."},
+        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. The options are Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. With a hosted provider, leave the model box empty to use the suggested model or type any other model your account offers; for your own server, type the name of the model it runs."},
         {"name": "Ask your question", "text": "Type a question about the document. The question and the document's text go from your browser directly to the provider you chose."},
         {"name": "Read and follow up", "text": "Read the answer and ask follow-ups. Check anything important against the document itself."},
     ],
@@ -997,7 +997,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "video-merge": [
         {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM / AVI, up to 20 clips; the whole upload has to fit within the 500 MB request limit."},
         {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the clips play in. The first clip sets the frame size of the merged video."},
-        {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."},
+        {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order into one MP4. MP4 and MOV clips recorded the same way (H.264 or HEVC video with AAC audio, and the same frame size, rotation and encoder settings, as one phone's clips usually are) keep their video untouched, and their sound is re-encoded so it stays in step with the picture; sound that runs on past the end of a clip's video is cut there. iPhone clips therefore stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; Video Converter makes an H.264 copy. A clip trimmed without re-encoding, and any other mix, is re-encoded once, as H.264 video and AAC audio."},
     ],
     "video-resizer": [
         {"name": "Add one or more videos", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under 500 MB."},
@@ -1362,9 +1362,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are external stylesheets and images included?", "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."},
     ],
     "xml-to-pdf": [
-        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
+        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
-        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."},
+        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Every element starts a line, so a sitemap whose entries have all four fields fits about 8,300 entries. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."},
     ],
     "csv-to-pdf": [
         {"q": "Does the tool auto-detect delimiters?", "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."},
@@ -1372,7 +1372,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the first row treated as a header?", "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."},
     ],
     "json-to-pdf": [
-        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."},
+        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page says what the parser expected and where, for example \"Expecting value at line 1, column 14\", which is what a comma after the last item of a list gives. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."},
         {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."},
         {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],
@@ -1455,11 +1455,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How much can a video be compressed?", "a": "It depends on the source. High-bitrate recordings, such as phone and camera footage, shrink the most; a video that is already heavily compressed may barely change at the default level."},
         {"q": "Does compression change the video resolution?", "a": "No. The resolution stays the same; only the bitrate is reduced. To lower the resolution too, run the video through Video Resizer."},
         {"q": "What output format is used?", "a": "The output is MP4 with H.264 video, which almost every device and browser can play."},
+        {"q": "Does the compressed video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. A clip a phone stored sideways comes out upright, the sound track keeps its language, and chapter markers keep their place and titles."},
     ],
     "trim-media": [
         {"q": "Can I trim audio files too?", "a": "Yes. The tool supports both audio (MP3, WAV, OGG, FLAC) and video (MP4, WebM, MOV, AVI) files."},
         {"q": "Is the trimmed file re-encoded?", "a": "Audio is not: MP3, WAV, AAC, OGG and M4A are cut without re-encoding, and FLAC is rewritten losslessly. Video always is — H.264 for MP4, MOV and MKV, VP9 for WebM, MPEG-4 for AVI — so the file keeps its format but not its exact original encoding."},
         {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
+        {"q": "Does the trimmed file keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the device, the recording date, and tags such as the title, artist, album and comments are left out of trimmed video and audio alike. A video a phone stored sideways comes out upright. The sound keeps its language in the formats that store one, and in MP4, MOV, MKV, WebM, MP3 and M4A files the chapter markers inside the cut keep their titles and move with it."},
     ],
     "base64": [
         {"q": "Can I encode files (not just text)?", "a": "No. This tool encodes and decodes text only; there is no file upload, and Base64 that holds binary data such as an image cannot be decoded to text here."},
@@ -1486,6 +1488,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What bitrate should I pick?", "a": "192 kbps, the default, is a good general choice. Use 256 or 320 for music you care about, and 64 or 128 for speech, podcasts and voice memos where small size matters more."},
         {"q": "Does converting between lossy formats lose quality?", "a": "Yes, a little. Each lossy encode discards more detail, so MP3 to AAC or OGG to MP3 is a trade for compatibility. Start from the highest-quality source you have."},
         {"q": "Can I take the audio out of a video?", "a": "Use Extract Audio for that; it is built for pulling the soundtrack out of a video file."},
+        {"q": "Are the file's tags kept?", "a": "No. The title, artist, album, track number, genre, dates and comments are left out, and so are any location and device details a phone or recorder stored, so add song tags again in your music player if you need them. Cover art stays in MP3 and FLAC files, an MP3 keeps chapter markers and their titles, and an OGG keeps the track's language."},
         {"q": "What happens to my file after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
 
@@ -1714,7 +1717,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "m4a-to-mp3": [
         {"q": "Why convert M4A to MP3?", "a": "M4A (AAC inside an MP4 container) isn't universally supported — older car stereos, some Android players, and many legacy devices won't play it. MP3 works everywhere."},
         {"q": "Will the audio quality drop?", "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. This page always encodes at 192 kbps, which is hard to tell from the source in casual listening; for another bitrate, use Audio Converter."},
-        {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."},
+        {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here. The memo's tags, such as its title, date and any location or device details, are left out of the MP3."},
     ],
     "mp4-to-mp3": [
         {"q": "Does this work for any MP4?", "a": "Yes — as long as the MP4 has an audio track. Music videos, lecture recordings, podcasts, screen recordings with narration, all work."},
@@ -1725,6 +1728,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why convert MOV to MP4?", "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often the same (H.264), but this tool re-encodes the video anyway rather than only changing the container."},
         {"q": "Will I lose quality?", "a": "A little. Every file is re-encoded as H.264 at CRF 23 with AAC audio instead of being copied, so the result is not bit-for-bit the original."},
         {"q": "Does it preserve audio?", "a": "Yes, re-encoded as AAC. If the file has several audio tracks, only one is kept."},
+        {"q": "Is my iPhone's location copied into the MP4?", "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MP4. A portrait clip comes out upright, the sound track keeps its language, and chapter markers keep their place and titles."},
     ],
     "avi-to-mp4": [
         {"q": "Why convert AVI to MP4?", "a": "AVI is Microsoft's older container, usually filled with codecs such as DivX, Xvid or Motion JPEG that phones and browsers handle poorly or not at all. H.264 with AAC in an MP4 is the combination those devices are built around."},
@@ -1832,7 +1836,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
-        {"q": "Is the picture changed at all?", "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."},
+        {"q": "Is the picture changed at all?", "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were, and so does the rotation that makes a portrait phone clip play upright. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."},
+        {"q": "Does the muted video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. Chapter markers keep their place and titles, and a subtitle track kept in an MKV or WebM keeps its language."},
         {"q": "What format is the muted file?", "a": "The same container you uploaded: an MKV comes back as Matroska, a WebM as WebM and an AVI as AVI, with the original video codec inside. The download name always ends in .mp4, though, so a muted holiday.mkv arrives as holiday_muted.mp4 with Matroska inside; rename it to .mkv if your player or editor goes by the extension. Nothing is converted; use Video Converter if you also need another format."},
         {"q": "Which tracks are removed?", "a": "Every audio track, including commentary and extra languages. FFmpeg keeps one video stream, and in MKV and WebM files it can also carry over one text subtitle track. The removed audio cannot be recovered from the muted file."},
         {"q": "How much smaller will the file be?", "a": "Smaller by roughly the size of the audio, which depends on its bitrate and length; the video portion is unchanged. A clip with a short or low-bitrate soundtrack barely shrinks."},
@@ -1845,16 +1850,19 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why is reversing slow?", "a": "Reversing requires re-encoding the whole video — FFmpeg has to read every frame, store them, then write them out in reverse order. RAM usage grows with video length."},
         {"q": "Will the audio sound weird?", "a": "Yes — speech becomes gibberish but music can sound interesting. The audio is reversed with the video so they stay in sync."},
         {"q": "What's a good use case?", "a": "Reverse-loop animations, training analysis (replay a fall or trick backwards), creative edits, debugging frame-by-frame issues."},
+        {"q": "Does the reversed video keep where the clip was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. So are chapter markers, which would point to the wrong moments once the clip runs backwards. The sound track keeps its language, and a clip a phone stored sideways comes out upright."},
     ],
     "video-speed": [
         {"q": "Will fast-forward make voices sound chipmunky?", "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."},
         {"q": "What's the maximum slowdown / speedup?", "a": "From 0.25× (four times slower) to 4× (four times faster)."},
         {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
+        {"q": "Does the new video keep where the clip was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. So are chapter markers, which a new speed would put in the wrong places, and the sound track's language. A clip a phone stored sideways comes out upright."},
     ],
     "audio-trim": [
         {"q": "How precise are the start/end times?", "a": "Times can be set to the millisecond. Because the audio is copied rather than re-encoded, a cut lands on the nearest compressed-audio frame, within a few hundredths of a second. Trim Media copies audio the same way."},
-        {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."},
+        {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original audio bytes. The trimmed file is identical quality to the source."},
         {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC, rewritten losslessly; every other format is copied without re-encoding."},
+        {"q": "Are the file's tags kept?", "a": "No. The title, artist, album, dates and comments are left out, and so are any location and device details a phone or recorder stored. In MP3 and M4A files the chapter markers inside the cut keep their titles and move with it, and M4A and OGG files keep the track's language."},
     ],
     "image-palette": [
         {"q": "How are the colors picked?", "a": "We shrink the image to fit within 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
@@ -2231,11 +2239,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why burn subtitles in instead of using a soft track?", "a": "Burned-in captions show on platforms and players that ignore separate subtitle tracks. The trade-off is that viewers cannot turn them off, and this tool does not create a soft, switchable track."},
         {"q": "What subtitle formats are supported?", "a": "SRT files. The captions are rendered into the picture, so the MP4 shows them in any player; no separate subtitle track is produced."},
         {"q": "Can I customize the font / size / color?", "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."},
+        {"q": "Does the subtitled video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out of the MP4. A clip a phone stored sideways comes out upright, the sound keeps its language, and chapter markers keep their place and titles."},
     ],
     "audio-merge": [
         {"q": "What if my files have different sample rates?", "a": "FFmpeg resamples them to a common rate automatically; a 44.1 kHz MP3 joined to a 48 kHz WAV came out at 44.1 kHz. The result is always an MP3, so the merge is never lossless, even from FLAC or WAV inputs."},
         {"q": "Are gaps between tracks added?", "a": "No — files are concatenated seamlessly. To add silence, prepare it as a separate file with the same format and insert it in the order."},
         {"q": "Maximum total length?", "a": "The limits apply to what you upload: up to 50 files, and the whole upload has to fit within the 500 MB request limit. A merge that takes longer than three minutes to encode is stopped."},
+        {"q": "Are the files' tags kept?", "a": "No. The title, artist, album, dates and comments are left out of the merged MP3, and so are any location and device details a phone or recorder stored. Chapter markers are left out too, because they would point to the wrong places in the joined file."},
     ],
     "color-converter": [
         {"q": "What does the starting color #0E8A56 convert to?", "a": "R 14, G 138, B 86, shown as rgb(14, 138, 86) and rgba(14, 138, 86, 1). HSL is hsl(155, 82%, 30%), the Tailwind row is bg-[#0e8a56] and the CSS variable row is --brand: #0e8a56;. The badge is black and reads AA · 4.8:1, because the contrast is 4.79:1 against black and 4.39:1 against white."},
@@ -2266,6 +2276,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will quality be preserved?", "a": "WAV and FLAC store the decoded audio without further loss. MP3, AAC and OGG are re-encoded at the encoders' default settings, about 128 kbps for stereo MP3 and AAC, and there is no bitrate setting here."},
         {"q": "What if the video has multiple audio tracks?", "a": "The first (default) audio track is extracted. Choosing another track, or extracting several at once, is not supported."},
         {"q": "Can I extract just a section of the audio?", "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."},
+        {"q": "Does the audio file keep where the video was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title, artist and comments are left out. An MP3 keeps the video's chapter markers and their titles, and an OGG keeps the sound track's language; the other formats come out with neither."},
     ],
     "generate-barcode": [
         {"q": "What barcode type for a URL?", "a": "Use QR code — barcodes like Code 128 work for text but are much wider for the same content."},
@@ -2404,17 +2415,22 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
         {"q": "Will quality suffer?", "a": "Every output is re-encoded, so a small loss is normal. MP4, MOV and MKV use H.264 at CRF 23, WebM uses VP9 at about 1 Mbit/s, and AVI uses MPEG-4 with MP3 audio. None of the outputs is lossless, MKV included."},
         {"q": "How long does it take?", "a": "It depends on the length, the resolution and the format. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."},
+        {"q": "Does the converted video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out, whatever the format. What the video needs to play as recorded is kept: a clip a phone stored sideways comes out upright, the sound track keeps its language, and so does a subtitle track carried into an MKV or WebM. Chapter markers keep their place and titles. AVI has no place for languages or chapters."},
     ],
     "video-merge": [
         {"q": "Do the videos need the same resolution?", "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
+        {"q": "Does the merged video keep where the clips were recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording dates, and tags such as the title and comments are left out, and so are the clips' chapter markers and the language of their sound. Portrait phone clips still play upright: a video kept untouched keeps its rotation, and a re-encoded one is turned upright."},
+        {"q": "Will the merged video play everywhere?", "a": "Clips recorded alike keep their video untouched, so iPhone clips, which are HEVC (\"High Efficiency\") by default, give an HEVC video. Some browsers, Chromium on Linux among them, and PCs without an HEVC decoder cannot play it: they show a blank picture or refuse the file. Video Converter makes an H.264 copy that plays everywhere. Any other mix of clips comes out as H.264."},
+        {"q": "How long can the merged video be?", "a": "Clips whose video is kept untouched have only their sound re-encoded, which takes up to about two minutes per hour of footage, so the 180 seconds of FFmpeg time each merge gets cover about an hour and a half, less while the server is busy; phone video reaches the 500 MB upload limit long before that. A mix that has to be re-encoded gets the same 180 seconds, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The route takes 5 requests a minute per IP address."},
     ],
     "video-resizer": [
         {"q": "What size will my video be?", "a": "The height is exactly the preset and the width keeps the proportions, rounded to an even number. A 1920×1080 clip becomes 1280×720 at 720p, 854×480 at 480p and 426×240 at 240p; a 640×480 clip becomes 960×720 at 720p."},
         {"q": "What happens to vertical phone videos?", "a": "The preset still sets the height, so a portrait 1080×1920 clip becomes 406×720 at 720p and 608×1080 at 1080p, a much smaller picture than a landscape video at the same setting. Clips a phone stores sideways with a rotation flag are turned upright first and give the same result."},
         {"q": "Can it make a video larger?", "a": "Yes. Nothing stops a preset above the source height, so a 640×360 clip at 1080p becomes 1920×1080. Enlarging cannot add detail that was never recorded; it only makes the file bigger. To save space, pick a preset below the original height."},
         {"q": "Does resizing change anything else?", "a": "The frame rate stays the same. The video is always re-encoded, even at its current height, and the audio is re-encoded as AAC. One audio track is kept, the default one or else the one with the most channels, and subtitle tracks are dropped, because FFmpeg adds none to an MP4 automatically."},
+        {"q": "Does the resized video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out of the MP4. The sound track keeps its language, and chapter markers keep their place and titles."},
         {"q": "Can I crop or change the aspect ratio?", "a": "No. The resizer always keeps the video's proportions and has no crop or padding option. To make a file smaller without changing its resolution, use Compress Video instead."},
         {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per video and the request five minutes once the upload has arrived, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."},
         {"q": "What happens to my videos on the server?", "a": "They are uploaded over HTTPS and resized by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes each original and its resized copy after the download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
@@ -2642,7 +2658,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     "mkv-to-webm": [
         {"q": "Why convert MKV to WebM?", "a": "WebM is a restricted form of Matroska designed for the web: it allows only VP8, VP9 or AV1 video and Vorbis or Opus audio, and browsers play it in the HTML video element. An MKV can hold almost any codec, so browser playback of an MKV is not something to rely on."},
         {"q": "Is 1 Mbit/s enough?", "a": "It depends on the footage. The target is the same at every resolution, so a small or simple clip keeps its detail while a 1080p or larger video loses more, especially in fast motion. The realtime encoder settings keep encoding quick at the cost of slightly lower quality for the same bitrate. There is no quality setting on this page."},
-        {"q": "Which audio and subtitle tracks are kept?", "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. The title and language tags carry over, while the other audio tracks and any attached fonts are dropped."},
+        {"q": "Which audio and subtitle tracks are kept?", "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. Each track kept keeps its language tag but not its title, and the other audio tracks and any attached fonts are dropped. Tags on the file itself, such as a location or a recording date, are left out too."},
         {"q": "Why does an MKV with 5.1 surround sound fail?", "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"Processing failed. Please try again.\" Stereo, mono and AAC 5.1 tracks convert normally."},
         {"q": "How long a video can I convert?", "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file, and the whole request has five minutes once the upload has arrived, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."},
         {"q": "Are there other limits?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."},
@@ -2672,7 +2688,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Why convert MOV to MKV?", "a": "MOV is Apple's QuickTime container; Matroska is an open, royalty-free one that VLC and many media servers handle, with room for several audio and subtitle tracks and chapters. This tool changes the encoding as well as the container, so it is not a lossless remux."},
         {"q": "Is any quality lost?", "a": "A little. The video is compressed again as H.264 at CRF 23, x264's default quality level, and the audio again as AAC at FFmpeg's default bitrate. Whether the MKV ends up bigger or smaller than the MOV depends on the footage and on how the MOV was encoded."},
         {"q": "Which tracks end up in the MKV?", "a": "One video track, at most one audio track and at most one subtitle track. With several audio tracks, FFmpeg keeps the one flagged as default, or else the one with the most channels. A text subtitle track is converted to ASS. Timecode and other data tracks are not copied."},
-        {"q": "Is my iPhone's location copied into the MKV?", "a": "It can be. The command does not strip metadata, so container tags such as the title and, on iPhone clips, the camera make, model and location are copied into the MKV as Matroska tags. Check the tags before you share the file if that matters."},
+        {"q": "Is my iPhone's location copied into the MKV?", "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MKV. The sound track keeps its language, and chapter markers keep their place and titles."},
         {"q": "Why won't the MKV play on my TV or phone?", "a": "Often it is the pixel format, which the command leaves as it is. A 10-bit source, such as HDR video from a recent iPhone, becomes 10-bit H.264 (High 10), and an RGB screen recording becomes 4:4:4 H.264; many hardware players decode only 8-bit 4:2:0 H.264. Some devices do not open MKV files at all."},
         {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes once the upload has arrived, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."},
         {"q": "What happens to my MOV on the server?", "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, rather than by a third-party service. Response cleanup removes the MOV and the MKV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes left by an interrupted request."},

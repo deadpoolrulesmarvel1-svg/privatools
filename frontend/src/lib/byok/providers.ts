@@ -17,12 +17,31 @@ export interface Provider {
     label: string;
     /** Scheme + host, exactly as it must appear in CSP connect-src. */
     origin: string;
+    /**
+     * Where an OpenAI-shaped provider serves its API under `origin`, when that
+     * is not /v1. Groq serves it under /openai/v1 and OpenRouter under
+     * /api/v1; both answer 404 at /v1, which is where every request to them
+     * went until 2026-09-28, whatever the key.
+     */
+    apiPath?: string;
     shape: ProviderShape;
-    /** Default models; users may type any model id. */
+    /**
+     * Suggested model ids; users may type any other. The first is what every
+     * page sends when the model box is left empty, so it must be one the
+     * provider still serves: a shut-down default fails every such request
+     * (Gemini 2.0 Flash, shut down 2026-06-01, did until 2026-09-28).
+     */
     models: string[];
     /** True when the user supplies the base URL (local or self-hosted). */
     customBaseUrl?: boolean;
     keysUrl?: string;
+    /**
+     * True when the provider refuses a key without CORS headers, so the
+     * browser reports only a failed request and the page cannot read why.
+     * OpenAI's 401 carries no Access-Control-Allow-Origin, though its
+     * preflight does (checked 2026-09-28).
+     */
+    refusalsUnreadable?: boolean;
 }
 
 /** A message part — plain text, or an inline image for vision models. */
@@ -53,33 +72,56 @@ export interface PreparedRequest {
 
 const ANTHROPIC_VERSION = "2023-06-01";
 
+/**
+ * Claude's output cap. Sonnet 5.5 thinks before it answers unless told not
+ * to (Opus 5.5 always does; Haiku 4.5 only when asked), and the thinking
+ * counts toward max_tokens, so the cap must leave room for both. 16,000 is
+ * the figure Anthropic's adaptive-thinking examples use; it is a ceiling,
+ * billed only as used, to the visitor's own key.
+ */
+const ANTHROPIC_MAX_TOKENS = 16_000;
+
+/**
+ * Claude models that take an effort level: the supported-models list of
+ * Anthropic's effort documentation (read 2026-10-01), which is Opus 4.5 and
+ * the 4.6 generation onwards. Haiku 4.5 does not support effort, and a
+ * visitor may type any model id, so only ids of that family are sent one.
+ */
+const TAKES_EFFORT = /^claude-(?:(?:opus|sonnet|fable|mythos)-(?:4-[6-9]|[5-9](?:-\d+)?)|opus-4-5|mythos-preview)(?:-\d{8})?$/;
+
 export const PROVIDERS: Provider[] = [
     {
+        // Sonnet 4.5 was deprecated on 2026-09-30 and retires on 2026-11-30;
+        // Anthropic names Sonnet 5.5 as its replacement.
         id: "anthropic", label: "Anthropic (Claude)", origin: "https://api.anthropic.com",
-        shape: "anthropic", models: ["claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5"],
+        shape: "anthropic", models: ["claude-sonnet-5-5", "claude-haiku-4-5"],
         keysUrl: "https://console.anthropic.com/settings/keys",
     },
     {
         id: "openai", label: "OpenAI", origin: "https://api.openai.com",
         shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "o3-mini"],
-        keysUrl: "https://platform.openai.com/api-keys",
+        keysUrl: "https://platform.openai.com/api-keys", refusalsUnreadable: true,
     },
     {
         id: "gemini", label: "Google Gemini", origin: "https://generativelanguage.googleapis.com",
-        shape: "gemini", models: ["gemini-2.0-flash", "gemini-2.0-pro"],
+        // Google's advice for new projects since 2026-09-18, when it limited
+        // the 2.5 models to accounts that had already used them.
+        shape: "gemini", models: ["gemini-3.8-flash", "gemini-3.5-flash-lite"],
         keysUrl: "https://aistudio.google.com/apikey",
     },
     {
-        id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai",
-        shape: "openai", models: ["auto"], keysUrl: "https://openrouter.ai/keys",
+        id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai", apiPath: "/api/v1",
+        shape: "openai", models: ["openrouter/auto"], keysUrl: "https://openrouter.ai/keys",
     },
     {
-        id: "groq", label: "Groq", origin: "https://api.groq.com",
-        shape: "openai", models: ["llama-3.3-70b-versatile"], keysUrl: "https://console.groq.com/keys",
+        // Groq's named replacement for Llama 3.3 70B, which it shut down for
+        // free and developer plans on 2026-08-16 (Enterprise only since).
+        id: "groq", label: "Groq", origin: "https://api.groq.com", apiPath: "/openai/v1",
+        shape: "openai", models: ["openai/gpt-oss-120b"], keysUrl: "https://console.groq.com/keys",
     },
     {
         id: "together", label: "Together AI", origin: "https://api.together.xyz",
-        shape: "openai", models: ["meta-llama/Llama-3-70b-chat-hf"],
+        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
     },
     {
         id: "mistral", label: "Mistral", origin: "https://api.mistral.ai",
@@ -87,7 +129,7 @@ export const PROVIDERS: Provider[] = [
     },
     {
         id: "deepseek", label: "DeepSeek", origin: "https://api.deepseek.com",
-        shape: "openai", models: ["deepseek-chat"],
+        shape: "openai", models: ["deepseek-flash"],
     },
     {
         id: "openai-compatible", label: "Local or self-hosted (OpenAI-compatible)",
@@ -110,18 +152,24 @@ function customBaseUrl(value: string): string {
     return url.href.replace(/\/+$/, "").replace(/\/v1$/, "");
 }
 
-function baseFor(p: Provider, input: CompleteInput): string {
+function baseFor(p: Provider, baseUrl: string | undefined): string {
     if (p.customBaseUrl) {
         // Never guess a default here. Silently picking one would send the
         // user's key to a host they did not choose.
-        if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`);
-        return customBaseUrl(input.baseUrl);
+        if (!baseUrl) throw new Error(`${p.label} needs a base URL`);
+        return customBaseUrl(baseUrl);
     }
     return p.origin;
 }
 
+/** What an OpenAI-shaped provider's endpoints hang off, such as
+ *  https://api.openai.com/v1 or https://api.groq.com/openai/v1. */
+function openAiRoot(p: Provider, baseUrl: string | undefined): string {
+    return p.customBaseUrl ? `${baseFor(p, baseUrl)}/v1` : `${p.origin}${p.apiPath ?? "/v1"}`;
+}
+
 export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest {
-    const base = baseFor(p, input);
+    const base = baseFor(p, input.baseUrl);
     const maxTokens = input.maxTokens ?? 4096;
 
     if (p.shape === "anthropic") {
@@ -136,8 +184,15 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
                 // Without this the browser request is rejected outright.
                 "anthropic-dangerous-direct-browser-access": "true",
             },
+            // No temperature, top_p, top_k or thinking budget, which Sonnet
+            // 5.5 answers with a 400, and no assistant prefill.
             body: JSON.stringify({
-                model: input.model, max_tokens: maxTokens,
+                model: input.model, max_tokens: input.maxTokens ?? ANTHROPIC_MAX_TOKENS,
+                // Medium rather than Sonnet 5.5's default of high: these are
+                // document tasks, and less thinking leaves more of the cap
+                // for the answer, sooner and at lower cost. Anthropic's docs
+                // put it inside output_config, not at the top level.
+                ...(TAKES_EFFORT.test(input.model) ? { output_config: { effort: "medium" } } : {}),
                 ...(system ? { system } : {}),
                 messages: rest.map((m) => ({
                     role: m.role,
@@ -174,7 +229,7 @@ export function buildRequest(p: Provider, input: CompleteInput): PreparedRequest
     }
 
     return {
-        url: `${base}/v1/chat/completions`,
+        url: `${openAiRoot(p, input.baseUrl)}/chat/completions`,
         headers: { "content-type": "application/json", authorization: `Bearer ${input.apiKey}` },
         body: JSON.stringify({
             model: input.model, max_tokens: maxTokens,
@@ -204,6 +259,21 @@ export function parseResponse(p: Provider, json: unknown): string {
     return choices[0]?.message?.content ?? "";
 }
 
+/**
+ * Why an answer is not a whole one, when the provider says so in a successful
+ * response. Anthropic's stop_reason is "refusal" when Claude declined (its
+ * docs say to discard any partial output), and "max_tokens" or
+ * "model_context_window_exceeded" when the answer reached a length limit,
+ * which thinking counts toward, so it can stop before any text at all.
+ */
+export function stoppedShort(p: Provider, json: unknown): "declined" | "cut-off" | undefined {
+    if (p.shape !== "anthropic" || !json || typeof json !== "object") return undefined;
+    const reason = (json as { stop_reason?: unknown }).stop_reason;
+    if (reason === "refusal") return "declined";
+    if (reason === "max_tokens" || reason === "model_context_window_exceeded") return "cut-off";
+    return undefined;
+}
+
 /** Providers whose API exposes OpenAI-style /v1/audio/transcriptions. */
 export function supportsTranscription(p: Provider): boolean {
     return p.shape === "openai";
@@ -221,15 +291,13 @@ export function buildTranscribeRequest(
     if (!supportsTranscription(p)) {
         throw new Error(`${p.label} has no OpenAI-style transcription endpoint`);
     }
-    const base = p.customBaseUrl
-        ? (() => { if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`); return customBaseUrl(input.baseUrl); })()
-        : p.origin;
+    const root = openAiRoot(p, input.baseUrl);
     const body = new FormData();
     body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));
     body.append("model", input.model);
     body.append("response_format", "text");
     return {
-        url: `${base}/v1/audio/transcriptions`,
+        url: `${root}/audio/transcriptions`,
         // No content-type: the browser sets the multipart boundary itself.
         headers: { authorization: `Bearer ${input.apiKey}` },
         body,

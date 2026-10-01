@@ -25,6 +25,10 @@
     {
       "q": "How long does it take?",
       "a": "It depends on the length, the resolution and the format. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."
+    },
+    {
+      "q": "Does the converted video keep where it was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out, whatever the format. What the video needs to play as recorded is kept: a clip a phone stored sideways comes out upright, the sound track keeps its language, and so does a subtitle track carried into an MKV or WebM. Chapter markers keep their place and titles. AVI has no place for languages or chapters."
     }
   ]
 }

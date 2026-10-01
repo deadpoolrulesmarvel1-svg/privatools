@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { friendlyError } from "@/lib/utils";
 import { complete } from "./client";
 import type { ByokError } from "./errors";
 
@@ -9,6 +10,7 @@ function mockFetch(status: number, body: unknown) {
     ok: status >= 200 && status < 300,
     status,
     json: async () => body,
+    text: async () => JSON.stringify(body),
   } as unknown as Response);
 }
 
@@ -16,7 +18,7 @@ describe("complete", () => {
   it("returns the text on success", async () => {
     mockFetch(200, { content: [{ type: "text", text: "hello" }] });
     const out = await complete({
-      providerId: "anthropic", apiKey: "sk-ant-x-value", model: "claude-sonnet-4-5",
+      providerId: "anthropic", apiKey: "sk-ant-x-value", model: "claude-sonnet-5-5",
       messages: [{ role: "user", content: "hi" }],
     });
     expect(out).toBe("hello");
@@ -73,6 +75,98 @@ describe("complete", () => {
     } catch (e) {
       expect((e as ByokError).userMessage.toLowerCase()).toContain("will not route");
     }
+  });
+});
+
+describe("what a refusal says", () => {
+  it("reports a Gemini key Google refuses with a 400 as a rejected key", async () => {
+    mockFetch(400, { error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT", details: [{ reason: "API_KEY_INVALID" }] } });
+    await expect(complete({ providerId: "gemini", apiKey: "AIza-dummy-value", model: "gemini-3.8-flash", messages: [{ role: "user", content: "hi" }] }))
+      .rejects.toMatchObject({ kind: "BadKey" });
+  });
+
+  it("names the model a provider refused", async () => {
+    mockFetch(404, { error: { message: "The model `gpt-9` does not exist or you do not have access to it.", code: "model_not_found" } });
+    await expect(complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "gpt-9", messages: [{ role: "user", content: "hi" }] }))
+      .rejects.toMatchObject({ kind: "BadModel", userMessage: expect.stringContaining('OpenAI refused the model "gpt-9"') });
+  });
+
+  it("leads with the key when OpenAI's answer cannot be read, since that is how it refuses a key", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    let shown = "";
+    try {
+      await complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "gpt-4o", messages: [] });
+    } catch (e) {
+      shown = (e as ByokError).userMessage;
+    }
+    expect(shown).toMatch(/^The browser could not read OpenAI's answer\./);
+    expect(shown).toContain("check the key on OpenAI's site first");
+    expect(friendlyError(shown)).toBe(shown);
+  });
+
+  it("keeps a blocked request's explanation through the pages' generic rewording", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    let shown = "";
+    try {
+      await complete({ providerId: "groq", apiKey: "gsk-dummy-value", model: "m", messages: [] });
+    } catch (e) {
+      shown = (e as ByokError).userMessage;
+    }
+    expect(shown).toContain("blocked the request to Groq");
+    expect(friendlyError(shown)).toBe(shown);
+  });
+});
+
+/**
+ * Claude can stop short with HTTP 200: Sonnet 5.5's safety classifiers
+ * decline some requests (stop_reason "refusal", content usually empty), and
+ * an answer that reaches max_tokens, which its thinking counts toward, stops
+ * there ("max_tokens"), possibly before any text. Anthropic's refusal docs say
+ * to discard partial output. Both used to reach the pages as "returned no
+ * answer. Check the model name", or as a cut-off answer passed off as whole.
+ */
+describe("when Claude stops short", () => {
+  async function shownFor(body: unknown): Promise<ByokError> {
+    mockFetch(200, body);
+    try {
+      await complete({ providerId: "anthropic", apiKey: "sk-ant-dummy-value", model: "claude-sonnet-5-5", messages: [{ role: "user", content: "hi" }] });
+    } catch (e) {
+      return e as ByokError;
+    }
+    throw new Error("expected complete() to reject");
+  }
+
+  it("says Claude declined, rather than that it gave no answer", async () => {
+    const e = await shownFor({ content: [], stop_reason: "refusal", stop_details: { category: "general_harms", explanation: null } });
+    expect(e).toMatchObject({ kind: "Declined" });
+    expect(e.userMessage).toMatch(/^Claude declined to answer this request/);
+    expect(e.userMessage).not.toMatch(/model name/);
+    expect(friendlyError(e.userMessage)).toBe(e.userMessage);
+  });
+
+  it("discards what Claude wrote before declining", async () => {
+    const e = await shownFor({ content: [{ type: "text", text: "Partial answer" }], stop_reason: "refusal" });
+    expect(e).toMatchObject({ kind: "Declined" });
+  });
+
+  it("says the answer reached its length limit when thinking used it all", async () => {
+    const e = await shownFor({ content: [{ type: "thinking", thinking: "…", signature: "s" }], stop_reason: "max_tokens" });
+    expect(e).toMatchObject({ kind: "TooLong" });
+    expect(e.userMessage).toMatch(/^Claude stopped before finishing its answer/);
+    expect(friendlyError(e.userMessage)).toBe(e.userMessage);
+  });
+
+  it("does not pass off a cut-off answer as a whole one", async () => {
+    for (const stop_reason of ["max_tokens", "model_context_window_exceeded"]) {
+      const e = await shownFor({ content: [{ type: "text", text: "The first half of" }], stop_reason });
+      expect(e).toMatchObject({ kind: "TooLong" });
+    }
+  });
+
+  it("still returns a finished answer", async () => {
+    mockFetch(200, { content: [{ type: "thinking", thinking: "…", signature: "s" }, { type: "text", text: "Done." }], stop_reason: "end_turn" });
+    await expect(complete({ providerId: "anthropic", apiKey: "sk-ant-dummy-value", model: "claude-sonnet-5-5", messages: [{ role: "user", content: "hi" }] }))
+      .resolves.toBe("Done.");
   });
 });
 
