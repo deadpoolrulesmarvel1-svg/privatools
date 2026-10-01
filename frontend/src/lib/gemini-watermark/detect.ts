@@ -881,6 +881,11 @@ interface Checked extends Candidate {
     clean: boolean;
 }
 
+/** The least opacity a layout's logo may fit at, as a multiple of the layout's usual one. */
+function opacityFloor(placement: Placement): number {
+    return placement.family === "inset-96" ? THRESHOLDS.opacity.floor["inset-96"] : THRESHOLDS.opacity.floor.other;
+}
+
 /**
  * Whether the fit takes the logo to have been scaled after Gemini drew it, with a kernel that is not known: a
  * picture scaled from a standard size, or a logo a pixel off its layout's size.
@@ -914,9 +919,7 @@ function check(image: RgbaImage, candidate: Candidate, frame: Frame): Checked {
     const leftOver = plateau(image, removed, sameAsLayout ? undefined : layout);
     const detail = fine(image, removed, sameAsLayout ? undefined : layout);
     const depth = depthResidue(image, variant.map, gain, variant.x, variant.y);
-    const { floor, ceiling } = THRESHOLDS.opacity;
-    const low = variant.placement.family === "inset-96" ? floor["inset-96"] : floor.other;
-    const opacityInRange = gain >= low * variant.placement.gain && gain <= ceiling * variant.placement.gain;
+    const opacityInRange = gain >= opacityFloor(variant.placement) * variant.placement.gain && gain <= THRESHOLDS.opacity.ceiling * variant.placement.gain;
     const clean = opacityInRange && isClean(candidate.residue) && isClean(layoutResidue) && plateauIsClean(leftOver)
         && fineIsClean(detail) && depthIsClean(depth, isScaled(variant));
     return { ...candidate, layoutResidue, plateau: leftOver, fine: detail, depth, opacityInRange, clean };
@@ -1015,13 +1018,21 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
     // The layout is decided by the logo as Gemini draws it; the Lanczos model of a resized copy only refines the fit.
     const { family } = (found.find(c => c.variant.kernel !== "lanczos") ?? found[0]).variant.placement;
     const inFamily = found.filter(c => c.variant.placement.family === family);
-    const shortlist = [...new Set(inFamily.map(c => c.variant.kernel ?? "area"))].flatMap(kernel => {
+    // The Lanczos model is tried only where it matches the logo's outline at least as well as the logo as Gemini
+    // draws it: a copy resized in an editor. Over strong texture another model can pass the checks by chance.
+    const bestMatch = (lanczos: boolean) => Math.max(0, ...inFamily.filter(c => (c.variant.kernel === "lanczos") === lanczos).map(c => c.evidence.match));
+    const lanczosFits = bestMatch(true) >= bestMatch(false);
+    const shortlist = [...new Set(inFamily.map(c => c.variant.kernel ?? "area"))].filter(kernel => kernel !== "lanczos" || lanczosFits).flatMap(kernel => {
         const ofKernel = inFamily.filter(c => (c.variant.kernel ?? "area") === kernel);
         const top = ofKernel[0].evidence.match;
         return ofKernel.filter(c => c.evidence.match >= SHORTLIST_MATCH * top).slice(0, SHORTLIST);
     });
     const fitted = shortlist.map(({ variant, evidence }) => check(image, fitOpacity(image, variant, evidence), frame));
-    const clean = fitted.filter(c => c.clean);
+    // How strong the logo is, is read where it matches best. If that reads under the layout's floor (a logo
+    // softened, or fainter than Gemini draws it), no fit is used: one that reads stronger elsewhere is the wrong one.
+    const strongest = fitted.reduce((a, b) => b.evidence.match > a.evidence.match ? b : a);
+    const faint = strongest.gain < opacityFloor(strongest.variant.placement) * strongest.variant.placement.gain;
+    const clean = faint ? [] : fitted.filter(c => c.clean);
     let best: Checked;
     if (clean.length) {
         // The simplest explanation first: where a logo at its layout's own size, unscaled, comes out clean (a
@@ -1053,7 +1064,7 @@ export function findSparkle(image: RgbaImage, frame: Frame = wholeImage(image)):
         fine: best.fine,
         depth: best.depth,
         opacityInRange: best.opacityInRange,
-        clean: best.clean,
+        clean: best.clean && !faint,
     };
 }
 

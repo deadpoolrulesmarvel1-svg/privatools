@@ -214,7 +214,8 @@ describe("removing the Gemini sparkle", () => {
 
 describe("never claiming a removal that leaves a trace", () => {
     it("does not claim a logo much fainter than the layout's, which is how a softened copy's logo reads", () => {
-        for (const [width, height, family] of [[1024, 1024, "inset-96"], [1024, 1024, "corner-32"]] as const) {
+        // 1025 × 1024 is not a standard size, so scaled fits nearby are tried too: one that reads stronger there is not used.
+        for (const [width, height, family] of [[1024, 1024, "inset-96"], [1024, 1024, "corner-32"], [1025, 1024, "inset-96"]] as const) {
             const p = placement(width, height, family);
             for (const gain of family === "inset-96" ? [0.8, 0.85] : [0.85, 0.9]) {
                 for (const kind of ["photo", "flat-navy", "gradient"] as const) {
