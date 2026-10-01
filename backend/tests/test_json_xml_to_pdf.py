@@ -223,8 +223,58 @@ def test_xml_that_would_print_more_than_50000_lines_is_refused(client):
     assert detail.endswith("and XML to PDF prints at most 50,000, about 800 pages. Split it into smaller files.")
 
 
+def _sitemap(entries: int, *, indented: bool) -> bytes:
+    """A sitemap whose entries have all four fields, as generators write them."""
+    nl, one, two = (b"\n", b"  ", b"    ") if indented else (b"", b"", b"")
+    entry = (one + b"<url>" + nl
+             + two + b"<loc>https://example.com/p%d</loc>" + nl
+             + two + b"<lastmod>2026-09-01</lastmod>" + nl
+             + two + b"<changefreq>weekly</changefreq>" + nl
+             + two + b"<priority>0.5</priority>" + nl
+             + one + b"</url>" + nl)
+    return (b'<?xml version="1.0" encoding="UTF-8"?>' + nl
+            + b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + nl
+            + b"".join(entry % i for i in range(entries)) + b"</urlset>" + nl)
+
+
+def _page_count(response) -> int:
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as doc:
+        return doc.page_count
+
+
+def test_an_indented_file_prints_on_as_many_pages_as_the_same_file_unindented(client):
+    """Re-indenting an indented file left its old indentation behind as two
+    whitespace-only lines around every element, each printed 0.3 of a line
+    high: the output looked double-spaced and took 1.6 times the pages."""
+    indented = _page_count(_post(client, "xml-to-pdf", "indented.xml", _sitemap(1_000, indented=True)))
+    flat = _page_count(_post(client, "xml-to-pdf", "flat.xml", _sitemap(1_000, indented=False)))
+    assert indented == flat == 97  # 6,003 lines at 62 a page
+
+
+def test_a_full_sitemap_at_the_line_cap_prints_about_800_pages(client):
+    """What the refusals and the FAQ promise: 50,000 lines are about 800
+    pages. 8,300 indented entries are 49,803 lines; they printed as 1,300
+    pages while blank lines took space."""
+    assert 790 <= _page_count(_post(client, "xml-to-pdf", "sitemap.xml", _sitemap(8_300, indented=True))) <= 810
+
+
+def test_a_full_sitemap_past_the_line_cap_is_refused(client):
+    """The FAQ's figure: entries with all four fields take six lines each, so
+    about 8,300 fit."""
+    detail = _refusal(_post(client, "xml-to-pdf", "sitemap.xml", _sitemap(8_400, indented=True)), 400)
+    assert detail.startswith("This XML would print as 50,403 lines")
+
+
+def test_blank_lines_print_no_pages(client):
+    """200,000 line breaks inside one element printed about 980 empty pages,
+    and nothing counted them against the line cap."""
+    assert _page_count(_post(client, "xml-to-pdf", "blank.xml", b"<r>" + b"\n" * 200_000 + b"x</r>")) == 1
+
+
 def test_a_real_document_near_the_line_cap_converts(client):
-    """9,000 sitemap entries print as 45,003 lines, about 730 pages."""
+    """9,000 sitemap entries with three fields print as 45,003 lines, about
+    730 pages."""
     urls = b"".join(b"<url><loc>https://example.com/p%d</loc><lastmod>2026-09-01</lastmod><priority>0.5</priority></url>" % i
                     for i in range(9_000))
     response = _post(client, "xml-to-pdf", "sitemap.xml", b'<?xml version="1.0"?><urlset>' + urls + b"</urlset>")
