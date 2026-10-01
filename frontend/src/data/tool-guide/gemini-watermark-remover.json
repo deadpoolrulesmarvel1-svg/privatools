@@ -6,7 +6,7 @@
     },
     {
       "name": "Remove the sparkle",
-      "text": "Click Remove sparkle. Each image is first checked for the logo at the positions Gemini uses. Where it is found, Gemini's blend is reversed pixel by pixel with calibrated masks; an image without it is left exactly as it was and marked as unchanged."
+      "text": "Click Remove sparkle. Each image is first checked for the logo at the sizes and positions Gemini uses, and the logo's size, position and strength are fitted to the image. Where it is found, Gemini's blend is reversed pixel by pixel with calibrated masks, and the result is checked for any outline left behind. An image without the logo, or one where an outline would remain, is left exactly as it was and marked as unchanged."
     },
     {
       "name": "Check the corner and download",
@@ -20,23 +20,27 @@
     },
     {
       "q": "Is it lossless?",
-      "a": "For PNG and lossless WebP, yes. Only the pixels under the sparkle change, and every other pixel in the file is exactly as it was. Under the logo, reversing Gemini's blend recovers the original as closely as the calibrated masks match the logo; in our tests, within one level of brightness out of 255. JPEG and lossy WebP have to be compressed again when they are saved, at quality 95, so the whole picture changes very slightly, as it would with any edit."
+      "a": "For PNG and lossless WebP, yes. Only the pixels under the sparkle change, and every other pixel in the file is exactly as it was. Under the logo, reversing Gemini's blend recovers the original as closely as the fitted mask matches the logo: on synthetic test images, within a few levels of brightness out of 255. On real Gemini images the match is close but not exact, so a faint trace can remain where they differ slightly. JPEG and lossy WebP have to be compressed again when they are saved, at quality 95, so the whole picture changes very slightly, as it would with any edit."
     },
     {
       "q": "Is my image uploaded?",
       "a": "No. The image is read, cleaned and saved again inside your browser tab; it is not sent to PrivaTools or to anyone else. You can watch your browser's network panel while it runs to check."
     },
     {
-      "q": "Which Gemini versions and image sizes does it handle?",
-      "a": "The layouts documented by the two open-source projects whose calibrated masks it uses. Before Gemini 3.5, the logo was 48 px, 32 px from the right and bottom edges, on images of 1024 px or less, and 96 px, 64 px in, when both sides were larger. In the current layout, used since Gemini 3.5 and captured in May 2026, large images carry a paler 96 px logo 192 px in, and smaller ones a 36 px logo, or a 48 px one on free-tier half-size images, whose position shifts with the aspect ratio. Copies that were resized, cropped or screenshotted after download usually are not recognised."
+      "q": "Which logo sizes and positions does it handle?",
+      "a": "The layouts documented by the two open-source projects whose calibrated masks it uses, told apart by size and position: a 48 px logo 32 px from the right and bottom edges; a fainter 48 px logo 96 px in, which current images at Gemini's standard 1K sizes such as 1024 × 1024, 848 × 1264 and 1376 × 768 carry; a 96 px logo 64 px in, or a paler one 192 px in, on images whose sides are both over 1024 px; and a 36 px logo whose margin follows the picture's proportions. On a picture scaled from one of Gemini's 1K sizes, such as 1024 × 768 from 1200 × 896, the logo is looked for where the scaling put it, to a fraction of a pixel. The logo's exact size, position and strength are fitted each time. Copies that were cropped, screenshotted or resized to other proportions usually are not recognised."
     },
     {
       "q": "What if no watermark is found?",
-      "a": "The image is left exactly as it was, marked 'No Gemini sparkle found', and not included in the download, since your original is already the right file. That happens with images that never had the sparkle, with copies resized or cropped after download, and sometimes where the logo sits over busy detail or a nearly white corner, where it is also hardest to see. The tool only removes a logo it has found, so a white shape in the corner of an ordinary photo is left alone."
+      "a": "The image is left exactly as it was, marked 'No Gemini sparkle found', and not included in the download, since your original is already the right file. That happens with images that never had the sparkle, with copies cropped or resized after download, with a logo size or position the tool does not recognise, and sometimes where the logo sits over busy detail or a nearly white corner, where it adds only a few levels of brightness and is also hardest to see. The page shows the corner enlarged, so you can check. The tool only removes a logo it has found, so a white shape in the corner of an ordinary photo is left alone."
+    },
+    {
+      "q": "What does 'not removed cleanly' mean?",
+      "a": "The tool found the sparkle, but even after fitting the logo's size, position and strength, removing it would leave a visible outline, for example on an image that was resized or compressed again after Gemini saved it. Rather than hand you a half-cleaned picture, it leaves the file exactly as it was, marks it 'not removed cleanly' and shows the sparkle enlarged. It is not included in the download."
     },
     {
       "q": "Why can a faint outline remain?",
-      "a": "Removal is exact on the file Gemini saved. If the image was compressed again afterwards, for example saved as JPEG by an app or sent through a messaging app, its pixels no longer match the logo's calibrated opacity exactly, and a faint trace of the outline can remain. Start from the original download where you can."
+      "a": "The calibrated masks match Gemini's logo closely but not perfectly, so even on the file Gemini saved a faint trace can remain where they differ, usually visible only when you zoom in. Each result is measured after removal, and an image whose outline would still stand out is left unchanged instead. Images compressed again after download, for example saved as JPEG by an app or sent through a messaging app, match less well. Start from the original download where you can."
     },
     {
       "q": "What happens to the file's metadata?",
