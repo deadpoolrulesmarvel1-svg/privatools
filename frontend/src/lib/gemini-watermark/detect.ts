@@ -65,7 +65,8 @@
  *      interior; the same reading on clean picture beside the logo says what
  *      the picture's own structure reads as there. The interior must agree
  *      over the whole logo, on every side and along the rim, within what the
- *      picture itself can show;
+ *      picture itself can show, and the rim must not read the opposite way
+ *      from the picture beside it;
  *    - the fitted opacity must lie in the range the layout is drawn with.
  *    The bounds were set on real Gemini images, copies of them saved again
  *    as JPEG, resized and sharpened, and thousands of cases with a known
@@ -312,12 +313,16 @@ export const THRESHOLDS = {
      * Gemini drew it, or a picture of a size Gemini does not make) is
      * modelled only approximately, so its bounds are tighter (`resampled`).
      * A reading needs `pairs` outline pairs on straight picture; a side
-     * needs `sidePairs`.
+     * needs `sidePairs`. The rim's reading must also not disagree with its
+     * null in sign by more than `disagree` times their scatter: a rim left
+     * dark where the picture's own structure reads bright is not that
+     * structure, however busy the picture (a sharpened copy saved again as
+     * JPEG over fur read −8 against a null of +10).
      */
     interior: {
         native: { whole: 4, side: 6, rim: 6, texture: 1.3 },
         resampled: { whole: 3, side: 4, rim: 3, texture: 0.7 },
-        share: { whole: 1.25, side: 1.5, rim: 1.5 }, pairs: 12, sidePairs: 24,
+        share: { whole: 1.25, side: 1.5, rim: 1.5 }, disagree: 2, pairs: 12, sidePairs: 24,
     },
 } as const;
 
@@ -962,18 +967,21 @@ export function depthIsClean(depth: number[], scaled: boolean): boolean {
  * whole logo, on every side that could be read, and along the rim, each
  * against what the picture itself reads as beside the logo (plus the
  * scatter of both readings) and against the picture's fine detail around
- * the logo (`ring`, see `Fine`), under which a remnant does not show. Too
- * few straight pairs to read the whole logo is not clean: nothing confirms
- * it.
+ * the logo (`ring`, see `Fine`), under which a remnant does not show; and
+ * the rim must not read the opposite way from its null by more than their
+ * scatter allows. Too few straight pairs to read the whole logo is not
+ * clean: nothing confirms it.
  */
 export function interiorIsClean(i: Interior, ring: number, resampled: boolean): boolean {
     const t = THRESHOLDS.interior;
     const bounds = resampled ? t.resampled : t.native;
     const within = (r: Reading, floor: number, share: number) => Math.abs(r.left) <= Math.max(floor, share * (Math.abs(r.nullLeft) + r.scatter), bounds.texture * ring);
+    const agrees = (r: Reading, floor: number) => r.left * r.nullLeft >= 0 || Math.abs(r.left) <= floor
+        || Math.abs(r.left - r.nullLeft) <= Math.max(floor, t.disagree * r.scatter, bounds.texture * ring);
     if (i.whole.count < t.pairs) return false;
     return within(i.whole, bounds.whole, t.share.whole)
         && i.sides.every(side => side === null || within(side, bounds.side, t.share.side))
-        && (i.rim === null || within(i.rim, bounds.rim, t.share.rim));
+        && (i.rim === null || (within(i.rim, bounds.rim, t.share.rim) && agrees(i.rim, bounds.rim)));
 }
 
 /** Whether the residue is under both bounds. */
