@@ -10,6 +10,18 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.12] — 2026-10-01 — HEIC reader update
+
+### Other
+
+- HEIC to JPG and the other tools that read HEIC and HEIF photos on the server use pillow-heif 1.8.0 with libheif 1.23.4, which fixes a crash on files whose metadata names an item type that isn't valid UTF-8. The web server moves to uvicorn 0.54.0, whose changes are to HTTP/2, which PrivaTools doesn't use. (#303)
+
+## [2.7.11] — 2026-10-01 — Video and audio previews
+
+### Tools
+
+- Video and audio tools now play their result in the page before you download it. The site's security policy blocked every one of these previews on privatools.me, so the player stayed empty; downloads were not affected. (#307)
+
 ## [2.7.10] — 2026-10-01 — Media downloads that don't say where they were recorded
 
 ### Tools
