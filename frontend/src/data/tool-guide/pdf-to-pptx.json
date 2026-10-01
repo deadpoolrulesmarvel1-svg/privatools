@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools creates one slide per page",
-      "text": "Each page is rendered at 200 DPI and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). No text boxes are created, so the text is part of the picture."
+      "text": "Each page is rendered at 200 DPI (or at the largest size within 100 megapixels, for a page too big for that) and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). One request can draw up to 2,000 megapixels in all, about 500 A4 pages; split a longer PDF first. No text boxes are created, so the text is part of the picture."
     },
     {
       "name": "Download the .pptx file",

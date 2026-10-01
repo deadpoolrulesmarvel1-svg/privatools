@@ -79,6 +79,7 @@ const LazyTransparentBackgroundUI = lazyNamed(() => import("@/components/tool-ui
 const LazyInvertColorsUI = lazyNamed(() => import("@/components/tool-ui/InvertColorsUI"), "InvertColorsUI");
 const LazyPdfaValidatorUI = lazyNamed(() => import("@/components/tool-ui/PdfaValidatorUI"), "PdfaValidatorUI");
 const LazyAccessibilityCheckUI = lazyNamed(() => import("@/components/tool-ui/AccessibilityCheckUI"), "AccessibilityCheckUI");
+const LazyHiddenTextCheckerUI = lazyNamed(() => import("@/components/tool-ui/HiddenTextCheckerUI"), "HiddenTextCheckerUI");
 const LazyBatesRemoveUI = lazyNamed(() => import("@/components/tool-ui/BatesRemoveUI"), "BatesRemoveUI");
 const LazyTranslatePdfUI = lazyNamed(() => import("@/components/tool-ui/TranslatePdfUI"), "TranslatePdfUI");
 const LazyVerifySignatureUI = lazyNamed(() => import("@/components/tool-ui/VerifySignatureUI"), "VerifySignatureUI");
@@ -315,6 +316,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "form-creator": return <LazyFormCreatorUI />;
     case "pdfa-validator": return <LazyPdfaValidatorUI />;
     case "accessibility-check": return <LazyAccessibilityCheckUI />;
+    case "hidden-text-checker": return <LazyHiddenTextCheckerUI />;
     case "bates-remove": return <LazyBatesRemoveUI />;
     case "translate-pdf": return <LazyTranslatePdfUI />;
     case "verify-signature": return <LazyVerifySignatureUI />;

@@ -7,6 +7,7 @@
     "gitignore-generator",
     "graphql-formatter",
     "heic-to-jpg",
+    "hidden-text-checker",
     "image-compressor",
     "image-converter",
     "image-to-pdf",

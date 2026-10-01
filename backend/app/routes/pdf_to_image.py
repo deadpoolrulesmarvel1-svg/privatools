@@ -8,6 +8,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import pdf_to_image_service
 from ..utils.concurrency import run_bounded
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -72,7 +73,9 @@ async def pdf_to_image(
             media_type=media_type,
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a password-protected or unreadable PDF) goes to the
+        # global handler, which answers with its own status and wording.
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

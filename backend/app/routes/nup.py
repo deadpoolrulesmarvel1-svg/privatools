@@ -10,9 +10,11 @@ from ..services import nup_service
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
+    open_pdf_document,
     remove_files,
     validate_pdf_content,
 )
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
 
 router = APIRouter()
@@ -37,10 +39,7 @@ def _nup_2up_stack(input_path: str) -> str:
     ensure_temp_dir()
     output_path = get_temp_path(f"nup_{uuid.uuid4().hex}.pdf")
 
-    src = fitz.open(input_path)
-    if len(src) == 0:
-        src.close()
-        raise ValueError("PDF has no pages to lay out")
+    src = open_pdf_document(input_path)  # a PDF without pages: 400 "This PDF has no pages."
 
     dst = fitz.open()
     cell_w = _A4_W
@@ -151,7 +150,9 @@ async def nup(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a PDF without pages) goes to the global handler, which
+        # answers with its own status and wording, as for every other tool.
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
             [output_path] if output_path else []
         )

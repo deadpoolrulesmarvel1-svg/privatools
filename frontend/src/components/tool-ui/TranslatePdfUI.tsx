@@ -174,7 +174,7 @@ export function TranslatePdfUI() {
             if (engine === "byok") {
                 if (!byok.ready) throw withErrorKind(new Error("Add an API key first, or switch to the on-device model."), "provider");
                 const apiKey = await getKey(byok.provider);
-                if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
+                if (!apiKey) throw withErrorKind(new Error("That saved key could not be read. Enter it again."), "provider");
                 const controller = new AbortController();
                 abortRef.current = controller;
                 setPhase("translating");
@@ -233,8 +233,10 @@ export function TranslatePdfUI() {
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current || current !== runId.current) return;
-            const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "Translation failed";
-            setError(friendlyError(msg, "Couldn't translate that PDF."));
+            // A provider's refusal is already worded for the visitor, and
+            // friendlyError would turn some wording into a server fault.
+            setError(e instanceof ByokError ? e.userMessage
+                : friendlyError(e instanceof Error ? e.message : "", "Couldn't translate that PDF."));
             setPhase("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }

@@ -10,6 +10,48 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.10] — 2026-10-01 — Media downloads that don't say where they were recorded
+
+### Tools
+
+- Video Converter, Video Resizer, Compress Video, Trim Media, Audio Trim, Mute Video, Video Speed, Reverse Video, Extract Audio, Audio Converter, Merge Audio, Add Subtitles and GIF to MP4 no longer copy a recording's location, device, date or other identifying tags into the file you download. Rotation still applies, audio and subtitle languages are kept, and chapters stay where the timeline is unchanged. Song tags such as title, artist and album are not carried over either; cover art stays in MP3 and FLAC. Every media tool now goes through one shared rule, so new ones get it automatically. (#305)
+
+## [2.7.9] — 2026-10-01 — Chat with PDF on every provider, honest conversions, faster video merges
+
+### Tools
+
+- Chat with PDF, Translate PDF and the other bring-your-own-key AI tools work with Groq and OpenRouter, which had answered every request with "not found" since the feature shipped: requests now go to the paths those providers serve. Default models the providers retired are replaced (Gemini, DeepSeek, OpenRouter, Together and Groq), and Claude's default is now Claude Sonnet 5.5, since Sonnet 4.5 retires on 30 November. When a provider refuses the key, the model or the request's size, the page says which; when Claude declines or stops before finishing, the page says so instead of showing a partial answer as a whole one. (#290)
+- JSON to PDF and XML to PDF refuse invalid, oversized or too deeply nested files with a message saying why instead of "Processing failed", read files saved with a byte-order mark, in UTF-16 or in legacy encodings, read valid UTF-8 as UTF-8 whatever the file declares, and no longer double-space indented files. Very large files are bounded so one file can't tie up the server. (#290)
+- Merge Videos no longer copies the first clip's location, device and date tags into the merged video. A merge that runs out of time says so instead of failing silently, and leaves no partial file behind. (#290)
+- Merge Videos joins clips recorded alike (same codec, size and frame rate, from MP4 or MOV) without re-encoding the picture, so long phone videos merge in seconds instead of timing out; sound is re-encoded and aligned at every join. Clips that were trimmed without re-encoding, or that differ, still go through the full re-encode. iPhone clips stay HEVC, which some browsers can't play; the page says so and points to Video Converter for an H.264 copy. (#292)
+
+### Other
+
+- Dependency updates: the CodeQL actions, the Python base image digest, and six frontend packages including Vite 8.3.1 and Vitest 5.0.2. (#297, #298, #299)
+
+## [2.7.8] — 2026-10-01 — Security updates
+
+### Other
+
+- Security updates for advisories published this week: pyjwt 2.15.0 (CVE-2026-101918) and urllib3 2.8.0 (CVE-2026-97687, CVE-2026-97688, CVE-2026-97689) on the server, and brace-expansion 1.1.21 and 2.1.7 (GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p) in the frontend build. Nothing else changed. (#301)
+
+## [2.7.7] — 2026-09-28 — Hidden Text Checker
+
+### New tool
+
+- Hidden Text Checker finds text a PDF hides from readers but machines still read: invisible text, text with zero opacity or the same colour as what lies behind it, text too small to read, text outside the visible page, text in switched-off layers, text under filled shapes or pictures (a failed redaction), hidden comments and form fields, blank glyphs, and Unicode tag characters. It is for screening résumés, papers and contracts for hidden AI prompts, and for checking a redacted document before you share it. Each finding is marked on the page and listed with its text and reason, and the report can be downloaded. The PDF is checked on the server in an isolated, time- and memory-limited process and deleted when the check ends; a file it can't fully check says so and names the pages. The page lists what it can't detect. (#294)
+
+## [2.7.6] — 2026-09-28 — PDF tools that stop failing on locked, turned, cropped, oversized and damaged files
+
+### Tools
+
+- A password-protected PDF gets a clear "this PDF needs its password" message instead of "Processing failed", in PDF to Image, Invert Colors, Deskew, PDF to EPUB, PDF to PowerPoint, Transparent Background, PDF to Long Image and the other tools this release touches. A PDF with no pages, or one too damaged to read, is refused with a message saying so, instead of an empty result. (#291)
+- Split in Half cuts each page as it is shown, including turned and cropped pages and pages whose box doesn't start at the corner, which used to fail; a horizontal cut now puts the top half first. (#291)
+- Auto Crop works on scans stored turned and on pages with an offset box, and crops already-cropped pages correctly. (#291)
+- Pages larger than the render limit are drawn at the largest size that fits instead of failing, and each request has a processing budget, so a small file can't demand hours of work; a request past it is refused with a message. (#291)
+- A PDF cut short by an interrupted download is rebuilt and processed with the pages that survive. (#291)
+- PDF to EPUB writes books e-readers open, pictures included, each with its own identifier. The PDF/A Validator no longer calls a document title required, and reports unreadable XMP metadata instead of failing. A one-page PDF to Image download is named as an image, not a ZIP. N-up refuses a PDF with no pages instead of failing. (#291)
+
 ## [2.7.5] — 2026-09-25 — Bates numbers that are really removed, and a count you can trust
 
 ### Tools

@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import pdf_to_pptx_service
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -33,7 +34,9 @@ async def pdf_to_pptx(file: UploadFile = File(...)):
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a password-protected, unreadable or oversized PDF) goes
+        # to the global handler, which answers with its own status and wording.
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

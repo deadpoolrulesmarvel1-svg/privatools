@@ -444,6 +444,15 @@
         "heic-to-jpg"
       ]
     },
+    "/hidden-text-checker": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "hidden-text-checker"
+      ]
+    },
     "/highlight": {
       "category": "PDF processing",
       "response_media": [

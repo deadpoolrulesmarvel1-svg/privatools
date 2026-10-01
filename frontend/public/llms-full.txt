@@ -555,7 +555,7 @@ URL: https://privatools.me/tool/pdf-to-epub
 
 Convert a PDF into the EPUB format for e-readers
 
-Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.
+Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.
 
 ### Markdown / Config to PDF
 
@@ -683,7 +683,7 @@ URL: https://privatools.me/tool/chat-with-pdf
 
 Ask questions about a PDF — answered with your own AI key
 
-Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.
+Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Groq, OpenRouter, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.
 
 ### Add Shapes to PDF
 
@@ -820,6 +820,14 @@ URL: https://privatools.me/tool/sanitize-pdf
 Remove scripts, attachments and hidden layers from a PDF
 
 Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript, actions that run by themselves (except opening at a set page), links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.
+
+### Hidden Text Checker
+
+URL: https://privatools.me/tool/hidden-text-checker
+
+Find text in a PDF that readers can't see
+
+Find hidden text in a PDF online for free: text a reader can't see but search, copy and paste, screening software and AI models still read. It finds text set to be invisible or fully transparent, text in the colour of what lies behind it (white on white), text too small to read, text off the page or clipped away, text in layers that are switched off, text under a box, shape or image drawn over it (a redaction that left the words in the file), text in hidden comments and form fields, and redaction marks that were never applied. Each finding gives the page, the reason and the exact words, highlighted on a preview of the page, and the report downloads as text or JSON. Invisible text over scanned pages, which OCR adds, is listed separately. A clean result means none of these checks matched, not that the file is safe in every way. The PDF is checked on our server in temporary storage, up to 500 pages, and is not changed.
 
 ### Reverse PDF
 
@@ -1011,7 +1019,7 @@ URL: https://privatools.me/tools/video-merge
 
 Concatenate multiple videos into one
 
-Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips of other sizes are scaled to fit the first clip's frame. Re-encodes once for broad playback compatibility.
+Merge videos online for free — join MP4, MOV, WebM, or MKV clips into one video, one after another. MP4 and MOV clips recorded alike, as one phone's clips usually are, keep their video untouched, so iPhone clips stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; their sound is re-encoded to stay in step with the picture. Any other mix is re-encoded once as H.264, with each clip scaled to fit the first clip's frame.
 
 ### Merge Audio
 

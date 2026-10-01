@@ -20,11 +20,15 @@
     },
     {
       "q": "Will trimming reduce audio quality?",
-      "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."
+      "a": "No — we use stream-copy mode which preserves the original audio bytes. The trimmed file is identical quality to the source."
     },
     {
       "q": "What format does it output?",
       "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC, rewritten losslessly; every other format is copied without re-encoding."
+    },
+    {
+      "q": "Are the file's tags kept?",
+      "a": "No. The title, artist, album, dates and comments are left out, and so are any location and device details a phone or recorder stored. In MP3 and M4A files the chapter markers inside the cut keep their titles and move with it, and M4A and OGG files keep the track's language."
     }
   ]
 }

@@ -25,6 +25,10 @@
     {
       "q": "Does it work for slow-motion footage?",
       "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."
+    },
+    {
+      "q": "Does the new video keep where the clip was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. So are chapter markers, which a new speed would put in the wrong places, and the sound track's language. A clip a phone stored sideways comes out upright."
     }
   ]
 }

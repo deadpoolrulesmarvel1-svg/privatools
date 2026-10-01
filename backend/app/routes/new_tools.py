@@ -78,6 +78,13 @@ async def split_in_half_endpoint(
             media_type="application/pdf",
             background=cleanup,
         )
+    except ToolError:
+        # A password-protected or unreadable PDF: the global handler answers
+        # with the error's own status and wording.
+        remove_files(str(temp_path))
+        if output_path:
+            remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path:
@@ -501,6 +508,13 @@ async def video_merge_endpoint(request: Request, files: list[UploadFile] = File(
             media_type="video/mp4",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own verdicts: 504 when FFmpeg runs out of time (about
+        # three minutes of 1080p on the production container), 400 when it
+        # cannot read a clip. The catch-all below once made both a 500.
+        remove_files(*temp_paths)
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)
@@ -600,6 +614,12 @@ async def pdf_to_long_image_endpoint(
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ToolError:
+        # A password-protected, unreadable or empty PDF, or a page too large
+        # to draw: the global handler answers with the error's own status.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except Exception:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)

@@ -126,7 +126,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "rip audio mp3 from video soundtrack",
     popularity: 56,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "audio.mp3",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "trim-media", icon: Scissors, name: "Cut / Trim Video & Audio",
@@ -137,7 +137,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "cut clip slice shorten",
     popularity: 54,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a", outputLabel: "trimmed file",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "compress-video", icon: Video, name: "Compress Video",
@@ -148,7 +148,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "smaller mp4 webm size",
     popularity: 51,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi", outputLabel: "compressed.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "video-to-pdf", icon: Film, name: "Video to PDF",
@@ -170,7 +170,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format mp4 mov webm avi mkv",
     popularity: 52,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv,.m4v", outputLabel: "converted.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "video-resizer", icon: Maximize2, name: "Video Resizer",
@@ -181,7 +181,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "resize scale dimensions width height",
     popularity: 63,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "video.mp4",
-    lastReviewed: "2026-09-24",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "video-thumbnail", icon: ImageIcon, name: "Video Thumbnail",
@@ -214,18 +214,19 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "subtitle srt caption burn in",
     popularity: 65,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "subtitled.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "video-merge", icon: Merge, name: "Merge Videos",
     description: "Concatenate multiple videos into one",
-    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips of other sizes are scaled to fit the first clip's frame. Re-encodes once for broad playback compatibility.",
+    longDescription: "Merge videos online for free — join MP4, MOV, WebM, or MKV clips into one video, one after another. MP4 and MOV clips recorded alike, as one phone's clips usually are, keep their video untouched, so iPhone clips stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; their sound is re-encoded to stay in step with the picture. Any other mix is re-encoded once as H.264, with each clip scaled to fit the first clip's frame.",
+
     seoTitle: "Merge Video Files Online Free – Combine Clips Seamlessly",
-    metaDescription: "Concatenate multiple MP4, MOV, WebM, or MKV clips into one video file with a single re-encode for smooth playback. Files are processed and then removed.",
+    metaDescription: "Concatenate MP4, MOV, WebM, or MKV clips into one video, keeping the video of clips recorded alike untouched. Files are processed and then removed.",
     synonyms: "join combine concat videos",
     popularity: 66,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "merged.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "audio-merge", icon: Merge, name: "Merge Audio",
@@ -236,7 +237,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "join combine concat audio tracks",
     popularity: 67,
     category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "merged.mp3",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "subtitle-converter", icon: ArrowLeftRight, name: "Subtitle Converter",
@@ -562,7 +563,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format mp3 wav ogg flac aac transcode audio format",
     popularity: 7,
     category: "video-audio", accepts: ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma", outputLabel: "converted audio",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
@@ -777,7 +778,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "iphone voice memo convert universal",
     popularity: 57,
     category: "video-audio", accepts: ".m4a", outputLabel: "audio.mp3",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "mp4-to-mp3", icon: Music, name: "MP4 to MP3",
@@ -799,7 +800,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "apple quicktime convert universal",
     popularity: 53,
     category: "video-audio", accepts: ".mov", outputLabel: "video.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "avi-to-mp4", icon: Film, name: "AVI to MP4",
@@ -1054,7 +1055,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "matroska webm open web vp9",
     popularity: 80,
     category: "video-audio", accepts: ".mkv", outputLabel: "video.webm",
-    lastReviewed: "2026-09-24",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "mp4-to-avi", icon: Film, name: "MP4 to AVI",
@@ -1098,7 +1099,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime matroska archive",
     popularity: 84,
     category: "video-audio", accepts: ".mov", outputLabel: "video.mkv",
-    lastReviewed: "2026-09-24",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "webm-to-gif", icon: Film, name: "WebM to GIF",
@@ -1256,7 +1257,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "remove audio silent strip soundtrack",
     popularity: 53,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi,.m4v", outputLabel: "muted.mp4",
-    lastReviewed: "2026-09-24",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "reverse-video", icon: Video, name: "Reverse Video",
@@ -1267,7 +1268,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "backwards play in reverse rewind",
     popularity: 65,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "reversed.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "video-speed", icon: Video, name: "Video Speed Changer",
@@ -1278,7 +1279,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "speed up slow down fast forward 2x slow motion",
     popularity: 55,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "video.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "audio-trim", icon: Scissors, name: "Audio Trimmer",
@@ -1289,7 +1290,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "cut clip slice shorten audio",
     popularity: 56,
     category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "trimmed.mp3",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "image-palette", icon: ImageIcon, name: "Image Color Palette",
