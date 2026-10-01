@@ -28,7 +28,7 @@ Playwright sets `navigator.webdriver`, and headless Chromium says `HeadlessChrom
 | `tool_slug` | Registry slug; read from the `/tool/<slug>` or `/tools/<slug>` route when the caller omits it. Unknown slugs are dropped. |
 | `tool_category` | The registry category of that slug (`organize`, `optimize`, `image`, `developer`, ...). |
 | `run_mode` | `single`, `batch` or `pipeline`. |
-| `outcome` | `success`, `partial` (some files failed) or `error`. |
+| `outcome` | `success`, `partial` (some files failed) or `error`. A file a tool hands back unchanged because it could not do its job on it counts as failed: the Gemini Watermark Remover's images with no sparkle found (`bad_input`) or with one it could not remove cleanly (`browser`), so its miss rate shows. |
 | `file_count` | Files the run handled, when the caller knows it. Never names, sizes or contents. |
 | `error_kind` | On `error` and `partial` runs only: why the run (or its first failed file) failed, as one value from the fixed list below. Never a message. |
 
@@ -40,12 +40,12 @@ Register `tool_slug`, `tool_category`, `run_mode`, `outcome` and `error_kind` as
 | --- | --- |
 | `too_large` | The server answered 413, or the browser refused a file or input over a size limit (the 500 MB upload cap, Text Diff's comparison limit). |
 | `rate_limited` | The server answered 429. |
-| `bad_input` | The server answered 400, 415 or 422, or the browser rejected the input itself (for example invalid JSON, an unreadable subtitle file, a PDF with no text to translate). |
+| `bad_input` | The server answered 400, 415 or 422, or the browser rejected the input itself (for example invalid JSON, an unreadable subtitle file, a PDF with no text to translate, an image with no Gemini sparkle found). |
 | `timeout` | The server answered 408 or 504, Cloudflare answered 524 (it stops waiting for the origin after 100 seconds, while nginx allows 300), or the request passed the browser's deadline. |
 | `server` | Any other HTTP error from PrivaTools: other 5xx, and 4xx outside the groups above (a 404 or 405 means the deployment is out of step), or a response the tool could not read (a body that is not valid JSON, or Merge's empty PDF). |
 | `network` | The request never completed: offline, DNS, a dropped or blocked connection. |
 | `provider` | The visitor's own AI provider (BYOK) refused or failed the request, or its setup is incomplete. |
-| `browser` | Anything else raised in the browser: on-device processing, an on-device model or browser storage. |
+| `browser` | Anything else raised in the browser: on-device processing (including a Gemini sparkle found but not removed cleanly), an on-device model or browser storage. |
 
 Until the release that carries PR #282, some failures reached the page, which reads api.privatools.me cross-origin, with no CORS headers. The page could not see their status, so it counted them as `network`: nginx's own 413, 502, 503 and 504 on the API host, and the app's answers from its catch-all exception handler (a 500, and the 413, 400 and 501 it maps some exceptions to). From that release, the app's answers count by their status: `server`, `too_large` or `bad_input`. Once nginx's [runbook](api-subdomain-split.md#nginxs-own-error-answers-on-the-api-host-added-24-september-2026) has run, so do nginx's 413 (`too_large`) and 504 (`timeout`). nginx's 502 and 503 mostly stay `network` for uploads. Every upload is preflighted, and while the app is down nginx refuses the preflight itself, as a limit's 503 can, so the page never sees the status. It sees a 502 only when the browser still holds a preflight for that endpoint, up to 600 s after one succeeded, and a limit's 503 whenever the limit refuses the upload itself rather than its preflight. So expect `network` to fall by the 413s, 504s and the app's own errors, `too_large`, `timeout` and `bad_input` to rise, and `server` to rise mainly by the app's 500s. An outage still counts mostly as `network`.
 

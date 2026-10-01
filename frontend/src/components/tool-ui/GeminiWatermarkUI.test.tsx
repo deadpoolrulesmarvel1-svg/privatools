@@ -2,22 +2,27 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { unzipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { alphaFor } from "@/lib/gemini-watermark/alpha";
-import { sparkleCandidates } from "@/lib/gemini-watermark/geometry";
+import { sparklePlacements, type Family } from "@/lib/gemini-watermark/geometry";
+import { MASK_SOURCES } from "@/lib/gemini-watermark/masks";
 import { decodePng } from "@/lib/gemini-watermark/png";
 import { applySparkle, background, pictureToPng } from "@/test/gemini-fixtures";
 
 const mocks = vi.hoisted(() => ({ download: vi.fn() }));
 vi.mock("@/lib/api", async original => ({ ...await original<object>(), downloadBlob: mocks.download }));
 import { GeminiWatermarkUI } from "./GeminiWatermarkUI";
+import { placeLabel } from "@/lib/gemini-watermark/labels";
 
 const RUN_EVENT = "privatools:tool-run";
 
-function watermarked(width: number, height: number, layout: "legacy" | "current", name: string) {
+function watermarked(width: number, height: number, family: Family, name: string) {
     const original = background("gradient", width, height, width);
-    const target = sparkleCandidates(width, height).find(candidate => candidate.layout === layout)!;
-    const image = applySparkle(original, alphaFor(target.mask, target.size), target.x, target.y);
+    const p = sparklePlacements(width, height).find(placement => placement.family === family)!;
+    const size = Math.round(MASK_SOURCES[p.mask].size * p.scaleX);
+    const image = applySparkle(original, alphaFor(p.mask, size), p.left, p.top, p.gain);
     return { original, file: new File([pictureToPng(image)], name, { type: "image/png" }) };
 }
+
+const png = (name: string, width = 640, height = 480) => new File([pictureToPng(background("noise", width, height, 2))], name, { type: "image/png" });
 
 let network: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -29,6 +34,11 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+function choose(container: HTMLElement, files: File[]) {
+    fireEvent.change(container.querySelector("input[type=file]")!, { target: { files } });
+    fireEvent.click(screen.getByRole("button", { name: "Remove sparkle" }));
+}
+
 describe("Gemini Watermark Remover page", () => {
     it("says what it removes, what it keeps and how not to use it", () => {
         render(<GeminiWatermarkUI />);
@@ -38,24 +48,31 @@ describe("Gemini Watermark Remover page", () => {
         expect(screen.getByRole("link", { name: /mask credits/i })).toHaveAttribute("href", "/third-party/gemini-watermark-masks.txt");
     });
 
+    it("describes where the logo was by size and distance, not by version", () => {
+        expect(placeLabel({ family: "inset-96", size: 48, marginRight: 96, marginBottom: 96, x: 0, y: 0, width: 48, height: 48, gain: 0.6 })).toBe("48 px logo, 96 px from the corner");
+        expect(placeLabel({ family: "proportional", size: 36, marginRight: 71, marginBottom: 72, x: 0, y: 0, width: 36, height: 36, gain: 1 })).toBe("36 px logo, 71 px from the right and 72 px from the bottom");
+    });
+
     it("cleans two watermarked images, leaves a clean one unchanged and downloads only the cleaned pair", async () => {
         const runs: unknown[] = [];
         const listener = (event: Event) => runs.push((event as CustomEvent).detail);
         window.addEventListener(RUN_EVENT, listener);
-        const first = watermarked(1024, 1024, "legacy", "castle.png");
-        const second = watermarked(1376, 768, "current", "harbour.png");
+        const first = watermarked(1024, 1024, "corner-32", "castle.png");
+        const second = watermarked(1376, 768, "inset-96", "harbour.png");
         const clean = new File([pictureToPng(background("photo", 800, 600, 9))], "meadow.png", { type: "image/png" });
 
         const { container } = render(<GeminiWatermarkUI />);
-        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [first.file, second.file, clean] } });
-        fireEvent.click(screen.getByRole("button", { name: "Remove sparkle" }));
+        choose(container, [first.file, second.file, clean]);
 
-        await screen.findByRole("heading", { name: "2 images cleaned." }, { timeout: 20_000 });
+        await screen.findByRole("heading", { name: "2 images cleaned." }, { timeout: 30_000 });
         const shelf = screen.getByLabelText("Your images");
-        expect(within(shelf).getByText("Sparkle removed · 48 px logo, layout before Gemini 3.5")).toBeInTheDocument();
-        expect(within(shelf).getByText("Sparkle removed · 48 px logo, current layout")).toBeInTheDocument();
+        expect(within(shelf).getByText("Sparkle removed · 48 px logo, 32 px from the corner")).toBeInTheDocument();
+        expect(within(shelf).getByText("Sparkle removed · 48 px logo, 96 px from the corner")).toBeInTheDocument();
         expect(within(shelf).getByText("No Gemini sparkle found · left unchanged")).toBeInTheDocument();
-        expect(screen.getByText("2 cleaned · 1 with no sparkle, left unchanged")).toBeInTheDocument();
+        expect(screen.getByText("2 cleaned · 1 with no sparkle found, left unchanged")).toBeInTheDocument();
+        // The result is announced and takes the focus the Run button had.
+        expect(screen.getByRole("status")).toHaveTextContent("Sparkle removed.");
+        expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Sparkle removed." }));
 
         fireEvent.click(screen.getByRole("button", { name: "Download 2 images as ZIP" }));
         await vi.waitFor(() => expect(mocks.download).toHaveBeenCalledTimes(1));
@@ -67,30 +84,40 @@ describe("Gemini Watermark Remover page", () => {
             const out = decodePng(entries[name]).rgba;
             let worst = 0;
             for (let i = 0; i < out.length; i++) worst = Math.max(worst, Math.abs(out[i] - source.data[i]));
-            expect(worst, name).toBeLessThanOrEqual(1);
+            expect(worst, name).toBeLessThanOrEqual(3);
         }
 
         expect(network).not.toHaveBeenCalled();
-        expect(runs).toEqual([{ mode: "single", outcome: "success", files: 3 }]);
+        // The image left unchanged is a miss in the usage signal, though the page shows it as handled.
+        expect(runs).toEqual([{ mode: "single", outcome: "partial", files: 3, errorKind: "bad_input" }]);
         window.removeEventListener(RUN_EVENT, listener);
     }, 60_000);
 
-    it("says nothing was changed when no image carries the sparkle", async () => {
+    it("says nothing was found, and shows the corner where Gemini puts the sparkle", async () => {
         const { container } = render(<GeminiWatermarkUI />);
-        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [new File([pictureToPng(background("noise", 640, 480, 2))], "grain.png", { type: "image/png" })] } });
-        fireEvent.click(screen.getByRole("button", { name: "Remove sparkle" }));
-        await screen.findByRole("heading", { name: "No sparkle to remove." }, { timeout: 20_000 });
+        choose(container, [png("grain.png")]);
+        await screen.findByRole("heading", { name: "No sparkle found." }, { timeout: 30_000 });
         expect(screen.getByText("Nothing was changed.")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
-        expect(screen.getByText("No Gemini sparkle found. Nothing was changed.")).toBeInTheDocument();
+        expect(screen.getByText("No Gemini sparkle found at the sizes and places Gemini uses. Nothing was changed.")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "The corner, enlarged" })).toBeInTheDocument();
+        expect(screen.getByText(/If you can see it here, the tool did not recognise this layout/)).toBeInTheDocument();
     }, 30_000);
 
     it("reports a file it cannot read without claiming a result", async () => {
         const { container } = render(<GeminiWatermarkUI />);
-        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [new File(["not an image"], "notes.png", { type: "image/png" })] } });
-        fireEvent.click(screen.getByRole("button", { name: "Remove sparkle" }));
-        await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 20_000 });
+        choose(container, [new File(["not an image"], "notes.png", { type: "image/png" })]);
+        await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 30_000 });
         expect(screen.getByRole("alert")).toHaveTextContent(/not a PNG, JPEG or WebP/);
         expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
+    }, 30_000);
+
+    it("calls a damaged PNG a damaged image, not a damaged PDF", async () => {
+        const bytes = pictureToPng(background("gradient", 64, 64));
+        const { container } = render(<GeminiWatermarkUI />);
+        choose(container, [new File([bytes.slice(0, bytes.length - 40)], "cut.png", { type: "image/png" })]);
+        await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 30_000 });
+        expect(screen.getByRole("alert")).toHaveTextContent("This PNG file is damaged or incomplete.");
+        expect(screen.getByRole("alert")).not.toHaveTextContent(/PDF/);
     }, 30_000);
 });

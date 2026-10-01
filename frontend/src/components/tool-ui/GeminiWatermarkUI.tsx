@@ -1,17 +1,21 @@
 /**
  * Gemini Watermark Remover: takes the visible Gemini sparkle out of images,
  * in this browser. Files are never uploaded; each one is checked for the logo
- * first and left untouched when it is not there.
+ * first and left untouched when it is not there, or when it is there but
+ * removing it would leave a visible trace.
  *
  * Runs through useMultiFileProcessor with a local processor, so the queue,
- * retries and the usage event are the shared ones. An image with no sparkle
- * counts as done, but it is marked unchanged and left out of the download.
+ * retries and the usage event are the shared ones. An image left unchanged
+ * counts as done on the page, is marked as such and is left out of the
+ * download; the usage event counts it as a miss (LocalResult.unchanged).
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
+import { sparkleRegion } from "@/lib/gemini-watermark/geometry";
+import { placeLabel } from "@/lib/gemini-watermark/labels";
 import { removeGeminiSparkle, type SparkleResult } from "@/lib/gemini-watermark/process";
 import { ImageComparison, MediaBusy, MediaField, MediaLayout, MediaPreview, MediaUpload } from "./media/MediaStudio";
 import { useMediaUrl } from "./media/media-files";
@@ -23,37 +27,62 @@ const isImage = (file: File) => /\.(png|jpe?g|webp)$/i.test(file.name);
 type Results = Map<File, SparkleResult>;
 const outcomeOf = (results: Results, entry: FileEntry) => entry.status === "done" ? results.get(entry.file) : undefined;
 
-function layoutLabel(result: SparkleResult): string {
-    if (result.status !== "removed") return "";
-    const { layout, size } = result.detection.candidate;
-    return `${size} px logo, ${layout === "current" ? "current layout" : "layout before Gemini 3.5"}`;
+interface View {
+    left: number;
+    top: number;
+    side: number;
 }
 
-/** The logo's corner, enlarged, before and after: at full-picture scale the sparkle is too small to judge. */
-function CornerZoom({ before, after, result }: { before: Blob; after: Blob; result: SparkleResult & { status: "removed" } }) {
+/** A square around a box, inside the picture. */
+function viewAround(width: number, height: number, x: number, y: number, w: number, h: number, minimum: number): View {
+    const side = Math.min(width, height, Math.max(w * 3, h * 3, minimum));
+    const left = Math.min(Math.max(0, x + w / 2 - side / 2), width - side);
+    const top = Math.min(Math.max(0, y + h / 2 - side / 2), height - side);
+    return { left, top, side };
+}
+
+/** The logo's corner, enlarged: at full-picture scale the sparkle is too small to judge. */
+function CornerZoom({ before, after, width, height, view, caption }: { before: Blob; after?: Blob; width: number; height: number; view: View; caption: string }) {
     const beforeUrl = useMediaUrl(before);
-    const afterUrl = useMediaUrl(after);
-    const { x, y, size } = result.detection.candidate;
-    const side = Math.min(result.width, result.height, Math.max(size * 3, 120));
-    const left = Math.min(Math.max(0, x + size / 2 - side / 2), result.width - side);
-    const top = Math.min(Math.max(0, y + size / 2 - side / 2), result.height - side);
-    const view = (url: string): CSSProperties => ({
+    const afterUrl = useMediaUrl(after ?? before);
+    const { left, top, side } = view;
+    const style = (url: string): CSSProperties => ({
         backgroundImage: url ? `url("${url}")` : undefined,
-        backgroundSize: `${(result.width / side) * 100}% ${(result.height / side) * 100}%`,
-        backgroundPosition: `${(left / Math.max(1, result.width - side)) * 100}% ${(top / Math.max(1, result.height - side)) * 100}%`,
+        backgroundSize: `${(width / side) * 100}% ${(height / side) * 100}%`,
+        backgroundPosition: `${(left / Math.max(1, width - side)) * 100}% ${(top / Math.max(1, height - side)) * 100}%`,
     });
     return <figure className="gw-zoom">
-        <div className="gw-zoom-pair">
-            <div><span className="gw-zoom-view" style={view(beforeUrl)} role="img" aria-label="The corner before, enlarged" /><small>Before</small></div>
-            <div><span className="gw-zoom-view" style={view(afterUrl)} role="img" aria-label="The corner after, enlarged" /><small>After</small></div>
+        <div className={after ? "gw-zoom-pair" : "gw-zoom-single"}>
+            {after ? <>
+                <div><span className="gw-zoom-view" style={style(beforeUrl)} role="img" aria-label="The corner before, enlarged" /><small>Before</small></div>
+                <div><span className="gw-zoom-view" style={style(afterUrl)} role="img" aria-label="The corner after, enlarged" /><small>After</small></div>
+            </> : <div><span className="gw-zoom-view" style={style(beforeUrl)} role="img" aria-label="The corner, enlarged" /><small>Unchanged</small></div>}
         </div>
-        <figcaption>The corner where the sparkle was, enlarged.</figcaption>
+        <figcaption>{caption}</figcaption>
     </figure>;
+}
+
+function zoomFor(result: SparkleResult): { view: View; caption: string } | null {
+    const { width, height } = result;
+    if (result.status === "not-found") {
+        const region = sparkleRegion(width, height);
+        if (!region) return null;
+        return {
+            view: viewAround(width, height, region.left, region.top, region.width, region.height, 0),
+            caption: "The corner where Gemini puts the sparkle, enlarged. If you can see it here, the tool did not recognise this layout.",
+        };
+    }
+    const { x, y, width: w, height: h } = result.fit;
+    return {
+        view: viewAround(width, height, x, y, w, h, 120),
+        caption: result.status === "removed" ? "The corner where the sparkle was, enlarged." : "The sparkle the tool found, enlarged. Nothing was changed.",
+    };
 }
 
 export function GeminiWatermarkUI() {
     const proc = useMultiFileProcessor();
     const results = useRef<Results>(new Map());
+    const summary = useRef<HTMLHeadingElement>(null);
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [selectedId, setSelectedId] = useState("");
     const busy = phase === "processing";
@@ -61,7 +90,8 @@ export function GeminiWatermarkUI() {
 
     const resultFor = (entry: FileEntry) => outcomeOf(results.current, entry);
     const removed = proc.entries.filter(entry => resultFor(entry)?.status === "removed");
-    const unchanged = proc.entries.filter(entry => resultFor(entry)?.status === "not-found");
+    const notClean = proc.entries.filter(entry => resultFor(entry)?.status === "not-clean");
+    const notFound = proc.entries.filter(entry => resultFor(entry)?.status === "not-found");
 
     const run = useCallback(async (retry = false) => {
         setPhase("processing");
@@ -74,11 +104,18 @@ export function GeminiWatermarkUI() {
             localProcess: async (file: File) => {
                 const result = await removeGeminiSparkle(file);
                 results.current.set(file, result);
-                return result.status === "removed" ? { blob: result.blob, outName: result.outName } : { blob: file, outName: file.name };
+                if (result.status === "removed") return { blob: result.blob, outName: result.outName };
+                // Left as it was: no sparkle found counts as the input's, one that would not come out cleanly as the tool's.
+                return { blob: file, outName: file.name, unchanged: result.status === "not-found" ? "bad_input" : "browser" };
             },
         }, retry);
         setPhase("done");
     }, [proc]);
+
+    // The Run button disappears when a run ends; move focus to the result so keyboard and screen reader users hear it.
+    useEffect(() => {
+        if (finished) summary.current?.focus();
+    }, [finished]);
 
     const download = useCallback(() => {
         const done = proc.entries.flatMap(entry => {
@@ -111,19 +148,35 @@ export function GeminiWatermarkUI() {
 
     const selected = proc.entries.find(entry => entry.id === selectedId) || proc.entries[0];
     const selectedResult = selected ? resultFor(selected) : undefined;
+    const zoom = selectedResult ? zoomFor(selectedResult) : null;
 
     const statusLine = (entry: FileEntry) => {
         const result = resultFor(entry);
         if (entry.status === "queued") return formatFileSize(entry.size);
         if (entry.status === "running") return "Checking…";
         if (entry.status === "failed") return "Could not be processed";
-        if (result?.status === "removed") return `Sparkle removed · ${layoutLabel(result)}`;
+        if (result?.status === "removed") return `Sparkle removed · ${placeLabel(result.fit)}`;
+        if (result?.status === "not-clean") return "Sparkle found, but not removed cleanly · left unchanged";
         return "No Gemini sparkle found · left unchanged";
     };
 
+    const caption = selectedResult?.status === "not-found"
+        ? "No Gemini sparkle found at the sizes and places Gemini uses. Nothing was changed."
+        : selectedResult?.status === "not-clean"
+            ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit)}), but removing it would leave a visible outline, so the image was left as it was.`
+            : "Original";
+
     const title = !finished ? "Take the sparkle off." : removed.length
         ? `${removed.length} ${removed.length === 1 ? "image" : "images"} cleaned.`
-        : proc.failedCount && !unchanged.length ? "Let’s try that again." : "No sparkle to remove.";
+        : proc.failedCount && !notClean.length && !notFound.length ? "Let’s try that again."
+            : notClean.length ? "Nothing was changed." : "No sparkle found.";
+
+    const counts = [
+        `${removed.length} cleaned`,
+        notClean.length ? `${notClean.length} found but not removed cleanly, left unchanged` : "",
+        notFound.length ? `${notFound.length} with no sparkle found, left unchanged` : "",
+        proc.failedCount ? `${proc.failedCount} could not be processed` : "",
+    ].filter(Boolean).join(" · ");
 
     const settings = !finished ? <>
         <MediaField label="What it removes" detail="Only the visible Gemini sparkle in the bottom-right corner, and only where it is found. SynthID, Google’s invisible watermark, stays in the image, and the file’s metadata is kept as it was." />
@@ -135,13 +188,13 @@ export function GeminiWatermarkUI() {
             <a className="ms-caption" href="/third-party/gemini-watermark-masks.txt" target="_blank" rel="noreferrer">Logo mask credits &amp; licences</a>
         </div>
     </> : <>
-        <div className="ms-result-summary">
+        <div className="ms-result-summary" role="status">
             <span className="ms-result-seal">{removed.length ? <Check size={27} /> : <CircleSlash size={27} />}</span>
-            <h3>{removed.length ? "Sparkle removed." : "Nothing was changed."}</h3>
-            <p>{removed.length} cleaned{unchanged.length ? ` · ${unchanged.length} with no sparkle, left unchanged` : ""}{proc.failedCount ? ` · ${proc.failedCount} could not be processed` : ""}</p>
+            <h3 ref={summary} tabIndex={-1}>{removed.length ? "Sparkle removed." : "Nothing was changed."}</h3>
+            <p>{counts}</p>
         </div>
         {removed.length > 0 && <button className="ms-primary" onClick={download}><ArrowDownToLine size={16} />{removed.length > 1 ? `Download ${removed.length} images as ZIP` : "Download image"}</button>}
-        {unchanged.length > 0 && <p className="ms-caption">Images with no sparkle found are not in the download; your originals are already the right files.</p>}
+        {notClean.length + notFound.length > 0 && <p className="ms-caption">Images left unchanged are not in the download; your originals are already those files.</p>}
         {proc.failedCount > 0 && <button className="ms-secondary" onClick={() => void run(true)}>Retry {proc.failedCount} failed</button>}
         <button className="ms-text" onClick={reset}>Start a new set</button>
     </>;
@@ -155,11 +208,11 @@ export function GeminiWatermarkUI() {
     >
         {!selected ? <MediaUpload accepts={ACCEPTS} multiple disabled={busy} title="Bring your Gemini images." detail="PNG · JPEG · WebP · One or more images" onFiles={files => proc.addFiles(files, isImage)} /> : <>
             <div className="ms-selected-file"><span>{selected.name}</span><span>{formatFileSize(selected.size)}</span></div>
-            {selectedResult?.status === "removed" ? <>
-                <ImageComparison before={selected.file} after={selectedResult.blob} name={selected.name} />
-                <CornerZoom before={selected.file} after={selectedResult.blob} result={selectedResult} />
-            </> : <MediaPreview file={selected.file} name={selected.name} kind="image"
-                caption={selectedResult?.status === "not-found" ? "No Gemini sparkle found. Nothing was changed." : "Original"} />}
+            {selectedResult?.status === "removed"
+                ? <ImageComparison before={selected.file} after={selectedResult.blob} name={selected.name} />
+                : <MediaPreview file={selected.file} name={selected.name} kind="image" caption={caption} />}
+            {selectedResult && zoom && <CornerZoom before={selected.file} after={selectedResult.status === "removed" ? selectedResult.blob : undefined}
+                width={selectedResult.width} height={selectedResult.height} view={zoom.view} caption={zoom.caption} />}
             <div className="ms-file-shelf" aria-label="Your images">
                 {proc.entries.map((entry, index) => {
                     const result = resultFor(entry);

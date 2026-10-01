@@ -8,12 +8,18 @@
  * footprint is kept: pixels of 10 or more and a 2-pixel band around them,
  * where the anti-aliased edge fades out. Everything else in the box is left
  * exactly as it is.
+ *
+ * alphaFor resamples a capture to another whole-pixel size; placedAlpha draws
+ * it at a fractional position and scale, as a picture scaled down from one of
+ * Gemini's standard sizes shows it. Maps carry the capture's own opacity; the
+ * fitted strength is applied where they are used (detect.ts).
  */
 import { MASK_SOURCES, type MaskId } from "./masks";
 import { decodePng } from "./png";
 
 export interface AlphaMap {
-    size: number;
+    width: number;
+    height: number;
     /** Opacity from 0 to 1, row after row. */
     values: Float32Array;
 }
@@ -59,7 +65,7 @@ export function baseAlpha(id: MaskId): AlphaMap {
             if (nearLogo) alpha[y * size + x] = values[y * size + x] / 255;
         }
     }
-    const map = { size, values: alpha };
+    const map = { width: size, height: size, values: alpha };
     bases.set(id, map);
     return map;
 }
@@ -95,18 +101,94 @@ function resampleAxis(source: Float32Array, from: number, to: number, lines: num
     return out;
 }
 
-const sized = new Map<string, AlphaMap>();
+const cache = new Map<string, AlphaMap>();
 
-/** The map for a logo of `size` pixels, resampled from the capture when the sizes differ. */
+function remember(key: string, make: () => AlphaMap): AlphaMap {
+    let map = cache.get(key);
+    if (!map) {
+        // A search tries a few hundred variants per image; keep the cache from growing without bound.
+        if (cache.size > 2000) cache.clear();
+        map = make();
+        cache.set(key, map);
+    }
+    return map;
+}
+
+/** The map for a logo of `size` × `size` pixels, resampled from the capture when the sizes differ. */
 export function alphaFor(id: MaskId, size: number): AlphaMap {
     const base = baseAlpha(id);
-    if (size === base.size) return base;
-    const key = `${id}@${size}`;
-    const cached = sized.get(key);
-    if (cached) return cached;
-    const rows = resampleAxis(base.values, base.size, size, base.size, true);
-    const values = resampleAxis(rows, base.size, size, size, false);
-    const map = { size, values };
-    sized.set(key, map);
-    return map;
+    if (size === base.width) return base;
+    return remember(`${id}@${size}`, () => {
+        const rows = resampleAxis(base.values, base.width, size, base.height, true);
+        return { width: size, height: size, values: resampleAxis(rows, base.height, size, size, false) };
+    });
+}
+
+/** The capture pixels one output pixel covers along an axis: the first one's index and each one's share. */
+interface Span {
+    first: number;
+    weights: number[];
+}
+
+/**
+ * Area weights for one axis, with capture pixel p spanning
+ * [origin + p·scale, origin + (p + 1)·scale) and output pixel i spanning [i, i + 1).
+ */
+function axisSpans(sourceSize: number, scale: number, origin: number, outSize: number): Span[] {
+    const spans: Span[] = [];
+    for (let i = 0; i < outSize; i++) {
+        const first = Math.max(0, Math.floor((i - origin) / scale));
+        const last = Math.min(sourceSize - 1, Math.floor((i + 1 - origin) / scale));
+        const weights: number[] = [];
+        for (let p = first; p <= last; p++) {
+            const lo = origin + p * scale;
+            weights.push(Math.max(0, Math.min(i + 1, lo + scale) - Math.max(i, lo)));
+        }
+        spans.push({ first, weights });
+    }
+    return spans;
+}
+
+export interface Placed {
+    map: AlphaMap;
+    /** The integer box that holds the logo. */
+    x: number;
+    y: number;
+}
+
+/**
+ * The capture drawn at a fractional position and scale, as an image of the
+ * same picture scaled down from a standard size would show it: each output
+ * pixel gets the capture's opacity averaged over the area it covers.
+ */
+export function placedAlpha(id: MaskId, left: number, top: number, scaleX: number, scaleY: number): Placed {
+    const base = baseAlpha(id);
+    const x = Math.floor(left + 1e-9), y = Math.floor(top + 1e-9);
+    const width = Math.ceil(left + base.width * scaleX - 1e-9) - x;
+    const height = Math.ceil(top + base.height * scaleY - 1e-9) - y;
+    const key = `${id}:${(left - x).toFixed(3)}:${(top - y).toFixed(3)}:${scaleX.toFixed(5)}:${scaleY.toFixed(5)}`;
+    const map = remember(key, () => {
+        const spansX = axisSpans(base.width, scaleX, left - x, width);
+        const spansY = axisSpans(base.height, scaleY, top - y, height);
+        // Down the rows first (height × capture width), then across.
+        const rows = new Float32Array(height * base.width);
+        for (let j = 0; j < height; j++) {
+            const { first, weights } = spansY[j];
+            for (let k = 0; k < weights.length; k++) {
+                const w = weights[k], q = first + k;
+                for (let p = 0; p < base.width; p++) rows[j * base.width + p] += w * base.values[q * base.width + p];
+            }
+        }
+        const values = new Float32Array(width * height);
+        for (let j = 0; j < height; j++) {
+            for (let i = 0; i < width; i++) {
+                const { first, weights } = spansX[i];
+                let sum = 0;
+                for (let k = 0; k < weights.length; k++) sum += weights[k] * rows[j * base.width + first + k];
+                values[j * width + i] = sum;
+            }
+        }
+        return { width, height, values };
+    });
+    return { map, x, y };
 }

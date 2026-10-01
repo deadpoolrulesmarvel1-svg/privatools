@@ -102,13 +102,16 @@ export function clone(image: RgbaImage): RgbaImage {
     return { width: image.width, height: image.height, data: new Uint8ClampedArray(image.data) };
 }
 
-/** Lay the logo over the picture the way Gemini does: alpha · 255 + (1 − alpha) · pixel, rounded to 8 bits. */
-export function applySparkle(image: RgbaImage, alpha: AlphaMap, x0: number, y0: number): RgbaImage {
+/**
+ * Lay the logo over the picture the way Gemini does: alpha · 255 + (1 − alpha) · pixel,
+ * rounded to 8 bits, with the map's opacity times `gain`.
+ */
+export function applySparkle(image: RgbaImage, alpha: AlphaMap, x0: number, y0: number, gain = 1): RgbaImage {
     const out = clone(image);
-    const { size, values } = alpha;
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const a = values[y * size + x];
+    const { width, height, values } = alpha;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const a = Math.min(0.99, values[y * width + x] * gain);
             if (a <= 0) continue;
             const i = ((y0 + y) * image.width + x0 + x) * 4;
             for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(a * 255 + (1 - a) * image.data[i + c]);
@@ -179,6 +182,20 @@ export function veil(image: RgbaImage, x0: number, y0: number, size: number, opa
         for (let x = from; x < to; x++) {
             const i = (y * image.width + x) * 4;
             for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(opacity * 255 + (1 - opacity) * image.data[i + c]);
+        }
+    }
+    return out;
+}
+
+/** A soft white glow centred on the logo box and spreading well beyond it, like a light source or glare. */
+export function glare(image: RgbaImage, x0: number, y0: number, size: number): RgbaImage {
+    const out = clone(image);
+    const cx = x0 + size / 2, cy = y0 + size / 2, r = size / 3;
+    for (let y = Math.max(0, y0 - size); y < Math.min(image.height, y0 + 2 * size); y++) {
+        for (let x = Math.max(0, x0 - size); x < Math.min(image.width, x0 + 2 * size); x++) {
+            const k = 0.85 * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * r * r));
+            const i = (y * image.width + x) * 4;
+            for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(image.data[i + c] * (1 - k) + 255 * k);
         }
     }
     return out;

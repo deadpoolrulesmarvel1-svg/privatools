@@ -4,9 +4,11 @@
  * SHA-256 below is the file's, and masks.test.ts checks it. Brightness over
  * black is the logo's opacity: alpha = value / 255 (the brightest channel).
  *
- * v1-48, v1-96  the logo before Gemini 3.5, measured by AllenK (Kwyshell)
- * v2-96         the current large logo, captured in May 2026 by Jad (GargantuaX)
- * v2-36         the current small logo, measured by AllenK (Kwyshell)
+ * v1-48, v1-96  the 48 and 96 px logo, measured by AllenK (Kwyshell); at about
+ *               0.6 of its opacity the 48 px capture also matches the fainter
+ *               48 px logo set 96 px in
+ * v2-96         the paler 96 px logo, captured in May 2026 by Jad (GargantuaX)
+ * v2-36         the small 36 px logo, measured by AllenK (Kwyshell)
  *
  * MIT licensed: (c) 2024 AllenK (Kwyshell), github.com/allenk/GeminiWatermarkTool;
  * (c) 2025 Jad, github.com/GargantuaX/gemini-watermark-remover. Full notices in

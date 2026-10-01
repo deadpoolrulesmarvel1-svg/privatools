@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { MASK_SOURCES, type MaskId } from "./masks";
-import { alphaFor, baseAlpha, captureValues } from "./alpha";
+import { alphaFor, baseAlpha, captureValues, placedAlpha } from "./alpha";
 
 /**
  * The approved files, by SHA-256: the three GargantuaX PNGs as recorded when
@@ -36,7 +36,7 @@ describe("Gemini logo masks", () => {
         }
     });
 
-    it("reads opacity as brightness over black: about half for the earlier logo, about a third for the current one", () => {
+    it("reads opacity as brightness over black: about half for the 48 and 96 px captures, about a third for the paler ones", () => {
         expect(peak(baseAlpha("v1-48").values)).toBeCloseTo(129 / 255, 5);
         expect(peak(baseAlpha("v1-96").values)).toBeCloseTo(131 / 255, 5);
         expect(peak(baseAlpha("v2-96").values)).toBeCloseTo(93 / 255, 5);
@@ -59,12 +59,27 @@ describe("Gemini logo masks", () => {
         }
     });
 
-    it("scales the current large logo for smaller layouts without changing its strength much", () => {
+    it("scales the large logo for smaller layouts without changing its strength much", () => {
         const scaled = alphaFor("v2-96", 48);
-        expect(scaled.size).toBe(48);
+        expect([scaled.width, scaled.height]).toEqual([48, 48]);
         expect(scaled.values).toHaveLength(48 * 48);
         expect(Math.abs(peak(scaled.values) - peak(baseAlpha("v2-96").values))).toBeLessThan(0.05);
         expect(alphaFor("v2-96", 48)).toBe(scaled);
         expect(alphaFor("v2-96", 96)).toBe(baseAlpha("v2-96"));
+    });
+
+    it("draws the 48 px capture at a fraction of a pixel and a scale, keeping its total opacity", () => {
+        const total = (values: Float32Array) => values.reduce((sum, value) => sum + value, 0);
+        const base = baseAlpha("v1-48");
+        // At a whole-pixel position and scale 1 it is the capture itself.
+        const same = placedAlpha("v1-48", 10, 20, 1, 1);
+        expect([same.x, same.y, same.map.width, same.map.height]).toEqual([10, 20, 48, 48]);
+        for (let i = 0; i < base.values.length; i++) expect(same.map.values[i]).toBeCloseTo(base.values[i], 6);
+        // Scaled to 1024 / 1200 and shifted by a fraction, the box grows to hold it and the area-weighted opacity scales with it.
+        const placed = placedAlpha("v1-48", 901.12, 644.57, 1024 / 1200, 768 / 896);
+        expect([placed.x, placed.y]).toEqual([901, 644]);
+        expect([placed.map.width, placed.map.height]).toEqual([42, 42]);
+        expect(total(placed.map.values)).toBeCloseTo(total(base.values) * (1024 / 1200) * (768 / 896), 3);
+        expect(peak(placed.map.values)).toBeLessThanOrEqual(peak(base.values) + 1e-6);
     });
 });
