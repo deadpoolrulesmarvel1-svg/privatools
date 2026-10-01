@@ -22,7 +22,10 @@ from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
 
-FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
+# Seconds. Re-encoding 1080p30 at the veryfast preset costs about 111 CPU-seconds
+# a minute (v2.7.5 image), so on production's 1.8 CPUs this covers a little
+# under three minutes of 1080p, or under a minute of 4K.
+FFMPEG_TIMEOUT = 180
 
 # Supported output formats per tool — kept lower-case for sanity.
 VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
@@ -335,14 +338,25 @@ def video_merge(input_paths: list[str]) -> str:
         map_args = ["-map", "[v]"]
         codec_args = ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-an"]
 
-    _run_ffmpeg([
-        *inputs,
-        "-filter_complex", filter_complex,
-        *map_args,
-        *codec_args,
-        "-movflags", "+faststart",
-        str(output_path),
-    ])
+    try:
+        _run_ffmpeg([
+            *inputs,
+            "-filter_complex", filter_complex,
+            *map_args,
+            *codec_args,
+            # FFmpeg copies the first input's tags by default: where a phone
+            # recorded the clip (GPS location), on what, and when. The frames
+            # are already turned upright, so no rotation tag is needed.
+            "-map_metadata", "-1", "-map_chapters", "-1",
+            "-movflags", "+faststart",
+            str(output_path),
+        ])
+    except BaseException:
+        # A merge stopped at FFmpeg's time limit has written about 250 MB by
+        # then. The route never learns this path, so remove it here, or it
+        # stays in the temp directory until the 10-minute sweep.
+        Path(output_path).unlink(missing_ok=True)
+        raise
     return str(output_path)
 
 

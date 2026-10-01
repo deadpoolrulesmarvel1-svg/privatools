@@ -958,13 +958,13 @@ const _toolsRaw: Tool[] = [
   {
     slug: "chat-with-pdf", icon: MessagesSquare, name: "Chat with PDF (AI)",
     description: "Ask questions about a PDF — answered with your own AI key",
-    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.",
+    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Groq, OpenRouter, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.",
     seoTitle: "Chat With a PDF Using AI – Your Own API Key",
     metaDescription: "Ask questions about a document with text extracted in your browser and sent straight to the AI provider you choose. Free, private, your own API key.",
     synonyms: "ask pdf chat document ai question answer chatpdf talk",
     popularity: 30,
     category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",

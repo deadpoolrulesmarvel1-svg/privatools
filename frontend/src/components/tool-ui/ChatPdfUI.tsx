@@ -140,8 +140,10 @@ export function ChatPdfUI() {
         } catch (e: unknown) {
             if (currentDocument !== documentId.current) return;
             if ((e as DOMException)?.name === "AbortError") { setMessages(history); setInput(question); return; }
-            const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "The request failed.";
-            setError(friendlyError(msg, "The request failed."));
+            // A provider's refusal is already worded for the visitor, and
+            // friendlyError would turn some wording into a server fault.
+            setError(e instanceof ByokError ? e.userMessage
+                : friendlyError(e instanceof Error ? e.message : "", "The request failed."));
             emitToolRun({ outcome: "error" }, e);
             // Put the question back so it isn't lost.
             setMessages(history);

@@ -142,8 +142,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Generate the PDF", "text": "Click Convert to PDF. The server renders pasted HTML with WeasyPrint and a fetched page with PyMuPDF, then the PDF downloads."},
     ],
     "xml-to-pdf": [
-        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed UTF-8 XML works, including RSS, Atom, and XHTML."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed."},
+        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed XML works, including RSS, Atom, and XHTML, in UTF-8, UTF-16 or a one-byte encoding its declaration names, such as ISO-8859-1 or Windows-1252."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. Blank lines are left out. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
@@ -152,8 +152,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert to PDF", "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."},
     ],
     "json-to-pdf": [
-        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."},
+        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid, in UTF-8 (with or without a byte order mark), UTF-16 or UTF-32, and nest no more than 25 levels deep."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, and emoji print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
@@ -260,7 +260,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "chat-with-pdf": [
         {"name": "Open your PDF", "text": "Select a text-based PDF. Its text is extracted in your browser; a scanned PDF needs OCR PDF first, because there is no text to read."},
-        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."},
+        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. The options are Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. With a hosted provider, leave the model box empty to use the suggested model or type any other model your account offers; for your own server, type the name of the model it runs."},
         {"name": "Ask your question", "text": "Type a question about the document. The question and the document's text go from your browser directly to the provider you chose."},
         {"name": "Read and follow up", "text": "Read the answer and ask follow-ups. Check anything important against the document itself."},
     ],
@@ -1362,9 +1362,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are external stylesheets and images included?", "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."},
     ],
     "xml-to-pdf": [
-        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
+        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
-        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."},
+        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Every element starts a line, so a sitemap whose entries have all four fields fits about 8,300 entries. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."},
     ],
     "csv-to-pdf": [
         {"q": "Does the tool auto-detect delimiters?", "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."},
@@ -1372,7 +1372,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the first row treated as a header?", "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."},
     ],
     "json-to-pdf": [
-        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."},
+        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page says what the parser expected and where, for example \"Expecting value at line 1, column 14\", which is what a comma after the last item of a list gives. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."},
         {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."},
         {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],
@@ -2409,6 +2409,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Do the videos need the same resolution?", "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
+        {"q": "How long can the merged video be?", "a": "FFmpeg has 180 seconds to join the clips, and it re-encodes every frame, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The whole upload must also fit in 500 MB, and the route takes 5 requests a minute per IP address."},
     ],
     "video-resizer": [
         {"q": "What size will my video be?", "a": "The height is exactly the preset and the width keeps the proportions, rounded to an even number. A 1920×1080 clip becomes 1280×720 at 720p, 854×480 at 480p and 426×240 at 240p; a 640×480 clip becomes 960×720 at 720p."},

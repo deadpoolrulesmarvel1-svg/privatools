@@ -508,6 +508,13 @@ async def video_merge_endpoint(request: Request, files: list[UploadFile] = File(
             media_type="video/mp4",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own verdicts: 504 when FFmpeg runs out of time (about
+        # three minutes of 1080p on the production container), 400 when it
+        # cannot read a clip. The catch-all below once made both a 500.
+        remove_files(*temp_paths)
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)
