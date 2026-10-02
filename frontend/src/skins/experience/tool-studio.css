@@ -57,7 +57,11 @@ html[data-experience=play] .ts-intake-notice { border-radius: 16px; }
 .tool-studio-with-action .ts-options{border-left:0}
 .ts-action-bar{display:grid;gap:12px;padding:20px 0 22px 26px;background:hsl(var(--background))}
 .ts-options+.ts-action-bar{border-top:1px solid hsl(var(--border))}
-.ts-action-bar[data-ready=true]{position:sticky;bottom:0;z-index:4}
+/* Once there is something to run, the bar docks at the bottom of the screen.
+   On a short screen (300% zoom and more, a phone held sideways) the docked bar
+   and the sticky header would leave the tool almost no room and could hide
+   what has focus (WCAG 2.4.11), so there it stays at the end of the tool. */
+@media(min-height:421px){.ts-action-bar[data-ready=true]{position:sticky;bottom:0;z-index:4}}
 .ts-action-status{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin:0;font-size:13px;line-height:1.45;color:hsl(var(--muted-foreground))}
 .ts-action-count{font-weight:650;color:hsl(var(--foreground));font-variant-numeric:tabular-nums}
 .ts-action-where{display:inline-flex;align-items:center;gap:6px}
@@ -81,12 +85,13 @@ html[data-experience=play] .tool-studio-with-action>.ts-canvas,.tool-studio-with
  html[data-experience=air] .tool-studio-with-action .ts-action-run>:is(.ts-primary-button,.ms-primary){flex:0 0 auto}
 }
 html[data-experience=play] .tool-studio-with-action .ts-action-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;margin:0;padding:14px 16px 14px 24px;border:0;border-radius:22px;background:hsl(var(--card));box-shadow:0 4px 0 hsl(var(--border)/.7)}
-html[data-experience=play] .tool-studio-with-action .ts-action-bar[data-ready=true]{bottom:12px;box-shadow:0 4px 0 hsl(var(--border)/.7),0 20px 34px -24px hsl(var(--foreground)/.5);animation:ts-bar-pop .4s cubic-bezier(.16,1,.3,1) both}
+html[data-experience=play] .tool-studio-with-action .ts-action-bar[data-ready=true]{bottom:calc(12px + env(safe-area-inset-bottom, 0px));box-shadow:0 4px 0 hsl(var(--border)/.7),0 20px 34px -24px hsl(var(--foreground)/.5);animation:ts-bar-pop .4s cubic-bezier(.16,1,.3,1) both}
 html[data-experience=play] .tool-studio-with-action .ts-action-status{flex:1 1 12rem;min-width:0}
 html[data-experience=play] .tool-studio-with-action .ts-action-run{margin-left:auto}
 html[data-experience=play] .tool-studio-with-action .ts-action-run>:is(.ts-primary-button,.ms-primary){flex:0 0 auto}
-/* The floating dock's 12px gap shows the page, not the tool scrolling under it. */
-html[data-experience=play] .tool-studio-with-action .ts-action-bar[data-ready=true]::after{content:"";position:absolute;left:-14px;right:-14px;bottom:-13px;height:13px;background:hsl(var(--background));pointer-events:none}
+/* The floating dock's 12px gap (and any safe area under it, as the Air strip
+   pads for) shows the page, not the tool scrolling under it. */
+@media(min-height:421px){html[data-experience=play] .tool-studio-with-action .ts-action-bar[data-ready=true]::after{content:"";position:absolute;left:-14px;right:-14px;bottom:calc(-13px - env(safe-area-inset-bottom, 0px));height:calc(13px + env(safe-area-inset-bottom, 0px));background:hsl(var(--background));pointer-events:none}}
 @keyframes ts-bar-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes ts-bar-pop{from{opacity:0;transform:translateY(18px) rotate(-.6deg) scale(.98)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.ts-action-bar{animation:none!important}}

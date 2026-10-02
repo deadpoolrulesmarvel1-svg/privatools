@@ -232,11 +232,13 @@
  .merge-workbench:not(.merge-workbench--done) .merge-layout{display:flex;flex-direction:column;align-items:stretch}
  .merge-workbench:not(.merge-workbench--done) .merge-layout>*{min-width:0}
  html[data-experience=air] .merge-layout>.merge-action-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 calc(-1 * var(--tw-gutter, 0px));padding:12px var(--tw-gutter, 16px) max(12px, env(safe-area-inset-bottom));background:hsl(var(--card));border-top:1px solid hsl(var(--border));box-shadow:0 -14px 30px -24px hsl(var(--foreground)/.5);animation:ts-bar-in .32s cubic-bezier(.16,1,.3,1) both}
- html[data-experience=play] .merge-layout>.merge-action-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;margin:0;padding:14px 16px 14px 24px;bottom:12px;border-radius:22px;background:hsl(var(--card));box-shadow:0 4px 0 hsl(var(--border)/.7),0 20px 34px -24px hsl(var(--foreground)/.5);animation:ts-bar-pop .4s cubic-bezier(.16,1,.3,1) both}
- html[data-experience=play] .merge-layout>.merge-action-bar::after{content:"";position:absolute;left:-14px;right:-14px;bottom:-13px;height:13px;background:hsl(var(--background));pointer-events:none}
+ html[data-experience=play] .merge-layout>.merge-action-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;margin:0;padding:14px 16px 14px 24px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));border-radius:22px;background:hsl(var(--card));box-shadow:0 4px 0 hsl(var(--border)/.7),0 20px 34px -24px hsl(var(--foreground)/.5);animation:ts-bar-pop .4s cubic-bezier(.16,1,.3,1) both}
  .merge-layout>.merge-action-bar .ts-action-status{flex:1 1 11rem;min-width:0}
  .merge-layout>.merge-action-bar .ts-action-run{margin-left:auto}
  .merge-layout>.merge-action-bar .ts-action-run>.merge-button{flex:0 0 auto;width:auto;min-height:48px}
+}
+@media(max-width:767px) and (min-height:421px){
+ html[data-experience=play] .merge-layout>.merge-action-bar::after{content:"";position:absolute;left:-14px;right:-14px;bottom:calc(-13px - env(safe-area-inset-bottom, 0px));height:calc(13px + env(safe-area-inset-bottom, 0px));background:hsl(var(--background));pointer-events:none}
 }
 
 /* A refused selection, and files the merge will leave out, in the shared warning grammar. */
