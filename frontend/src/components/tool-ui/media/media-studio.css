@@ -51,6 +51,12 @@ html[data-experience='play'] .ms-result-badge { transform: rotate(7deg); }
  html[data-experience='play'] .ms-with-action .ts-action-run>.ms-primary{flex:0 0 auto}
 }
 
+/* A video preview takes focus, so it is never taller than the screen leaves
+   between the sticky header and the action bar (at 200% zoom it was, and
+   focus on it sat partly under both). */
+html[data-experience] .ms-preview .ms-preview-surface>video{max-height:min(430px,calc(100svh - var(--pt-header-clearance, 0px) - var(--pt-action-clearance, 0px) - 48px))}
+@media(min-width:1001px){html[data-experience='play'] .ms-stage .ms-preview-surface>video{max-height:min(390px,calc(100svh - var(--pt-header-clearance, 0px) - var(--pt-action-clearance, 0px) - 48px))}}
+
 /* Where the file goes, in full, under the drop area. */
 .ms-intake-wrap .tool-where{margin:14px 4px 0;max-width:62ch}
 .ms-intake-compact .ms-intake>svg{flex-shrink:0;color:var(--pt-action)}
