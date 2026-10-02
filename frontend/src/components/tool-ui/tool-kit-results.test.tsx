@@ -117,8 +117,8 @@ const surfaces: Surface[] = [
     { name: "Split by Bookmarks", ui: () => <SplitByBookmarksUI />, run: () => click(/^Split by bookmarks/), verb: "split" },
     { name: "Split by Size", ui: () => <SplitBySizeUI />, run: () => click(/^Split by size/), verb: "split" },
     { name: "Stamp PDF", ui: () => <StampUI />, run: () => click(/^Apply stamp/), verb: "stamped" },
-    { name: "Strip Metadata", ui: () => <StripMetadataUI />, run: () => click(/^Strip (PDF|\d+ PDFs)/), verb: "cleaned" },
-    { name: "Transparent Background", ui: () => <TransparentBackgroundUI />, run: () => click(/^Remove background/), verb: "processed" },
+    { name: "Strip Metadata", ui: () => <StripMetadataUI />, run: () => click(/^Strip (PDF|\d+ PDFs)/), verb: "stripped" },
+    { name: "Transparent Background", ui: () => <TransparentBackgroundUI />, run: () => click(/^Remove background/), verb: "made transparent" },
     { name: "Watermark PDF", ui: () => <WatermarkUI />, run: () => click(/^Watermark (PDF|\d+ PDFs)/), verb: "watermarked" },
 ];
 

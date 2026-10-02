@@ -83,7 +83,7 @@ export function PdfToImageUI() {
             setReturning(true); setPhase("idle");
         };
         return <ProcessorResult proc={proc} verb="converted" accepts=".pdf"
-            title={proc.doneCount > 1 ? `${proc.doneCount} PDFs → ${format.toUpperCase()} at ${dpi} dpi.` : `Your pages, as ${format.toUpperCase()} at ${dpi} dpi.`}
+            title={proc.doneCount > 1 ? `${proc.doneCount} PDFs converted to ${format.toUpperCase()} at ${dpi} dpi.` : `Your pages, as ${format.toUpperCase()} at ${dpi} dpi.`}
             detail={proc.doneCount > 1 ? "The ZIP download has started: one ZIP of page images per PDF inside." : "The ZIP of page images has started downloading."}
             onDownload={() => proc.downloadAll("archive_images")} onRetry={() => void process("transient")}
             onStartOver={startOver} more="Convert more" />;

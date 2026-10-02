@@ -66,7 +66,7 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
     "fill-form": {
         kind: "server",
         label: "Temporary server processing",
-        detail: "Your PDF is uploaded when you choose “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
+        detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
     },
     // Tools whose input is not a file: the sentence names what is sent.
     "url-to-pdf": {

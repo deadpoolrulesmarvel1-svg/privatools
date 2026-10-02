@@ -80,7 +80,7 @@ describe("where the file goes", () => {
 
     it.each([
         // "Detect form fields" uploads the PDF before the fill itself.
-        { slug: "fill-form", name: "Fill PDF Form", detail: "Your PDF is uploaded when you choose “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response." },
+        { slug: "fill-form", name: "Fill PDF Form", detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response." },
         // No file is chosen on these: the sentence names what is sent.
         { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and renders it to a PDF in temporary storage, then removes the job’s files after the response." },
         { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools, which fetches the page or reads the HTML, renders the PDF in temporary storage and removes the job’s files after the response." },

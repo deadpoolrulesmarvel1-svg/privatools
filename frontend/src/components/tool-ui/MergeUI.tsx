@@ -427,7 +427,7 @@ export function MergeUI() {
                             </>
                         )}
                     </section>
-                    <aside className="merge-settings" aria-label={result ? "Download merged PDF" : "Merge settings"} aria-busy={busy}>
+                    <aside className="merge-settings" aria-label={result ? "Merge details" : "Merge settings"} aria-busy={busy}>
                         <div ref={settingsBodyRef} className="merge-settings-body" style={{ minHeight: phase === "idle" ? undefined : panelBodyHeight }}>
                             {(!result || !mobile) && <h2>{result ? "Merge details" : busy ? "Making your PDF" : "Merge settings"}</h2>}
                             {result ? (

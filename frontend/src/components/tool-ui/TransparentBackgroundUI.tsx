@@ -78,8 +78,8 @@ export function TransparentBackgroundUI() {
             if (files) proc.addFiles(files);
             setReturning(true); setPhase("idle");
         };
-        return <ProcessorResult proc={proc} verb="processed" accepts=".pdf"
-            title={proc.doneCount > 1 ? `${proc.doneCount} transparent PDFs.` : "Your transparent PDF is ready."}
+        return <ProcessorResult proc={proc} verb="made transparent" accepts=".pdf"
+            title={proc.doneCount > 1 ? `${proc.doneCount} PDFs made transparent.` : "Your transparent PDF is ready."}
             detail={downloadStarted(proc.doneCount)}
             onDownload={downloadResults} onRetry={() => void process("transient")}
             onStartOver={startOver} more="Process another" />;

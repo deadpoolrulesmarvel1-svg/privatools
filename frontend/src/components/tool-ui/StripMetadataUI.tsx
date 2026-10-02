@@ -61,8 +61,8 @@ export function StripMetadataUI() {
             if (files) proc.addFiles(files, isPdfOnly);
             setReturning(true); setPhase("idle");
         };
-        return <ProcessorResult proc={proc} verb="cleaned" accepts=".pdf"
-            title={proc.doneCount > 1 ? `${proc.doneCount} files sanitized.` : "Metadata stripped."}
+        return <ProcessorResult proc={proc} verb="stripped" accepts=".pdf"
+            title={proc.doneCount > 1 ? `${proc.doneCount} PDFs stripped.` : "Metadata stripped."}
             detail={downloadStarted(proc.doneCount)}
             receipt={<section className="ts-receipt"><h3>Privacy receipt</h3><Stripped /></section>}
             onDownload={() => proc.downloadAll("archive_stripped")} onRetry={() => void process("transient")}
