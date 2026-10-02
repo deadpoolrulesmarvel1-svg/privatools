@@ -10,6 +10,21 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.16] — 2026-10-02 — Every tool ends the same honest way
+
+### Tools
+
+- Twenty-four more tools now end a run the way the rest do. When a file fails, the page says so and offers "Choose a different file" first, with no before-and-after receipt. When some files fail, it says how many finished and why the others didn't. "Try again" appears only when another attempt could work, and it re-sends only those files. These tools include Bates Numbering, Remove Bates Numbers, Crop, Header & Footer, Highlight, Page Numbers, Protect, Permissions, Stamp, Watermark, PDF to Image, PDF to Excel, PDF to PowerPoint, PDF to Text and Split by Size. Batch and Pipeline offer a retry only for a failure another attempt could fix. (#317)
+- One rule for downloads: a finished result downloads once by itself, as one file or one ZIP for several, and the page then offers "Download again". Merge PDF now follows it. Split PDF, Unlock PDF and Image to PDF gain "Download again". Editors such as Sign, Edit, Redact and Fill Form keep their own download button, and Bates Numbering's "Download ZIP again" now works. (#317)
+- Add Subtitles to Video, Favicon Generator, Image Color Palette, Photo Collage, Merge Images, Remove Image Watermark, View EXIF Data and the trim tools now have their run button in the action bar. (#317)
+- Where the file goes is now exact for Fill Form, which uploads when you select "Detect form fields", and for tools that take a link or text instead of a file. (#317)
+
+### Accessibility
+
+- Sign PDF's editor fields have labels.
+- The AI tools' option panels meet the contrast minimum in Play's dark theme, and so does Page Numbers' chosen position.
+- On phones, the JSON / XML Formatter's output can be reached with the keyboard. (#317)
+
 ## [2.7.15] — 2026-10-02 — Tool pages that get to the point
 
 ### Tools
