@@ -54,9 +54,15 @@
  *      or a resize left, against the picture's own fine detail around it,
  *      which slow shading and bokeh do not raise;
  *    - in its core, direction by direction (`depthResidue`): a logo whose
- *      edge was softened fits too faint, or a resampled one too strong, and
- *      its core then comes out brighter or darker than the picture in most
- *      directions at once, which the outline steps, zeroed by the fit, miss;
+ *      edge was softened fits too faint, or a sharpened or resampled one too
+ *      strong, and its core then comes out brighter or darker than the
+ *      picture in most directions at once, which the outline steps, zeroed
+ *      by the fit, miss; the darker bound allows for the picture's fine
+ *      detail. Over the logo as a whole (`plateau`), the core's two middle
+ *      quadrants together may not come out darker than the picture's own
+ *      variation at the logo's scale allows: grain has fine detail but
+ *      little such variation, so it hides no coherent dark copy, where a
+ *      busy texture has both;
  *    - across its interior (`interior`), the one general check: any edit to
  *      the logo's edge, sharpening, blur, JPEG or a resample, biases the
  *      opacity fitted at that edge and leaves a copy of the logo, dark or
@@ -65,9 +71,11 @@
  *      interior; the same reading on clean picture beside the logo says what
  *      the picture's own structure reads as there. The interior must agree
  *      over the whole logo, on every side and along the rim, within what the
- *      picture itself can show, and the rim must not read the opposite way
- *      from the picture beside it;
- *    - the fitted opacity must lie in the range the layout is drawn with.
+ *      picture itself can show, the rim must not read the opposite way
+ *      from the picture beside it, and the rim's colour must stay the
+ *      picture's (JPEG leaves a coloured outline along a sharpened edge);
+ *    - the fitted opacity must lie in the range the layout is drawn with,
+ *      above which a sharpened copy fits.
  *    The bounds were set on real Gemini images, copies of them saved again
  *    as JPEG, resized and sharpened, and thousands of cases with a known
  *    clean original. A fit over any of them is not written: the picture is
@@ -155,6 +163,19 @@ export interface Plateau {
     rough: number;
     /** The same for the picture around it. */
     ringRough: number;
+    /**
+     * How far the picture around the logo strays from that surface at the
+     * logo's own scale: the root mean square of its distance averaged over
+     * COARSE × COARSE pixel blocks, in levels. Grain averages out of it,
+     * texture with blobs the size of the logo's arms does not.
+     */
+    coarse: number;
+    /**
+     * Mean brightness left in the logo's core, the two middle quadrants
+     * together, in levels: what a wrong opacity leaves in every quadrant
+     * at once, where picture structure under the logo moves one or two.
+     */
+    core: number;
 }
 
 /**
@@ -194,6 +215,16 @@ export interface Interior {
     /** By the direction out of the logo (DIRECTIONS); null where too few pairs could be read. */
     sides: (Reading | null)[];
     rim: Reading | null;
+    /**
+     * The rim's colour against the picture's just outside: each channel's
+     * departure from the pixel's own brightness, the rim's minus the
+     * reference's, as the length of the median vector over the pairs
+     * (`left`), with the same reading on clean picture beside the logo
+     * (`nullLeft`) and both medians' scatter. A coloured outline that JPEG's
+     * chroma leaves along a sharpened edge shows here; brightness readings
+     * do not see it.
+     */
+    colour: Reading | null;
 }
 
 /** A logo's size and its distance from the right and bottom edges, in pixels, rounded. */
@@ -274,6 +305,20 @@ export const THRESHOLDS = {
      */
     rough: { floor: 3, share: 1.6 },
     /**
+     * How dark the logo's core, its two middle quadrants together, may come
+     * out against the picture's surface (see `Plateau.core`): the larger of
+     * `floor` levels and `share` times the picture's own variation at the
+     * logo's scale (`Plateau.coarse`). A sharpened copy saved again as JPEG
+     * over per-pixel grain fits within the layout's range and reads each
+     * direction of its core noisily (−20 to +6 on one logo), yet its core as
+     * a whole is 4 to 13 levels darker, a dark copy of the logo plain at
+     * 100 %; grain hides nothing at the logo's scale (a coarse variation of
+     * 1 to 3). A legitimate logo over bokeh or a soft field reads −8 to −27
+     * where the picture itself varies by 9 to 26 (up to 1.05 times), and the
+     * kanji sample −33 against 65, so the share stays above those.
+     */
+    core: { floor: 4, share: 1.25 },
+    /**
      * Fine detail over the logo after removal (see `Fine`), in levels: at
      * most the larger of a floor and a share of the ring's. Real Gemini
      * pictures come out at 0.9 to 1.25 times the ring; JPEG ringing or a
@@ -286,21 +331,31 @@ export const THRESHOLDS = {
      * picture around it in three or four directions at once; the picture's
      * own structure seldom does that. `under` bounds the third-largest of
      * the four. Over strong per-pixel grain a small logo's core reads too
-     * noisily to pass it, and is left unchanged. On a logo that was scaled
+     * noisily to pass it, and is left unchanged. The core coming out darker
+     * in three or four directions is bounded too: on a logo that was scaled
      * (a picture scaled from a standard size, or a logo a pixel off its
-     * layout's size), where the scaling kernel is not known, `over` bounds
-     * the core coming out darker in three or four directions.
+     * layout's size), where the scaling kernel is not known, by `over`; on
+     * a logo at its layout's own size by `native`, the larger of a floor
+     * and a share of the picture's fine detail around the logo, since a
+     * sharpened copy fits 1.15 to 1.4 times the opacity drawn and cuts its
+     * core in darker, while legitimate removals over busy texture read as
+     * low as −12 against fine detail of 17 to 19. Over per-pixel grain each
+     * direction reads too noisily for this check (−20 to +6 on one logo);
+     * the core as a whole is judged by `core` below.
      */
-    depth: { under: 3, over: 2 },
+    depth: { under: 3, over: 2, native: { floor: 4, share: 0.75 } },
     /**
      * The fitted opacity must lie within these multiples of the layout's
-     * usual one: from a floor per layout to a ceiling. Real logos 96 px in
-     * fit 0.98–1.19 times it (0.59–0.71 of the capture) and the 48 px corner
-     * logo fits the capture's own. JPEG and blur soften a logo's edge, which
-     * makes its fit read faint, so a fit under the floor is not removed; a
-     * fit over the ceiling describes some other logo.
+     * usual one, from a floor to a ceiling per layout. Real logos 96 px in
+     * fit 0.98–1.19 times it (0.59–0.71 of the capture; 1-1 fits 1.188),
+     * and the 48 px corner logo fits the capture's own (20260520-1: 0.998).
+     * JPEG and blur soften a logo's edge, which makes its fit read faint,
+     * so a fit under the floor is not removed; sharpening steepens it, which
+     * makes it read strong (sharpened copies fit 1.16–1.38 times), so a fit
+     * over the ceiling is not removed either; it describes another logo or
+     * an edited one.
      */
-    opacity: { floor: { "inset-96": 0.9, other: 0.95 }, ceiling: 1.35 },
+    opacity: { floor: { "inset-96": 0.9, other: 0.95 }, ceiling: { "inset-96": 1.22, other: 1.1 } },
     /**
      * What removal may leave in the logo's interior, read against the
      * picture beyond the outline (see `interior`), in levels: over the whole
@@ -317,12 +372,19 @@ export const THRESHOLDS = {
      * null in sign by more than `disagree` times their scatter: a rim left
      * dark where the picture's own structure reads bright is not that
      * structure, however busy the picture (a sharpened copy saved again as
-     * JPEG over fur read −8 against a null of +10).
+     * JPEG over fur read −8 against a null of +10). The rim's colour, read
+     * the same way (see `Interior.colour`), may depart from the picture's
+     * by at most `colour` levels, or `share.rim` times its null plus
+     * scatter: a sharpened copy saved again as JPEG at quality 80 left an
+     * orange outline reading 9.7 levels, visible at 100 %, and one saved at
+     * quality 85 an outline reading 8.5, visible at 200 %, where the six
+     * real samples read 0.6 to 1.6 and copies with speckle only at 200 %
+     * read up to 7.6.
      */
     interior: {
         native: { whole: 4, side: 6, rim: 6, texture: 1.3 },
         resampled: { whole: 3, side: 4, rim: 3, texture: 0.7 },
-        share: { whole: 1.25, side: 1.5, rim: 1.5 }, disagree: 2, pairs: 12, sidePairs: 24,
+        share: { whole: 1.25, side: 1.5, rim: 1.5 }, disagree: 2, colour: 8, pairs: 12, sidePairs: 24,
     },
 } as const;
 
@@ -347,6 +409,8 @@ const GAP = 1;
  */
 const INSIDE = 2;
 const BEYOND = 2;
+/** Side of the blocks the ring's distance from its surface is averaged over for `Plateau.coarse`, in pixels: a quarter of the 48 px logo, the scale of its arms and of its core's quadrants. */
+const COARSE = 6;
 /** The picture outside counts as straight where its steps, over INSIDE pixels, stay under this share of the logo's step, and differ by less than this share. */
 const STRAIGHT = 0.35;
 const CURVED = 0.15;
@@ -639,7 +703,7 @@ export function plateau(image: RgbaImage, removed: Drawn, layout?: { map: AlphaM
     left = Math.max(0, left - outer); top = Math.max(0, top - outer);
     right = Math.min(width, right + outer); bottom = Math.min(height, bottom + outer);
     const w = right - left, h = bottom - top;
-    if (w <= 0 || h <= 0) return { bump: 0, spread: 0, rough: 0, ringRough: 0 };
+    if (w <= 0 || h <= 0) return { bump: 0, spread: 0, rough: 0, ringRough: 0, coarse: 0, core: 0 };
     const peaks = shapes.map(({ map }) => map.values.reduce((max, value) => Math.max(max, value), 0));
     const alphaOf = (k: number, x: number, y: number) => opacity(shapes[k].map, 1, left + x - shapes[k].x, top + y - shapes[k].y);
     const fromAll = distances(w, h, (x, y) => shapes.some((_, k) => alphaOf(k, x, y) > OUTSIDE), outer);
@@ -671,7 +735,7 @@ export function plateau(image: RgbaImage, removed: Drawn, layout?: { map: AlphaM
             }
         }
     }
-    if (ring.length < 30) return { bump: 0, spread: Infinity, rough: 0, ringRough: Infinity };
+    if (ring.length < 30) return { bump: 0, spread: Infinity, rough: 0, ringRough: Infinity, coarse: Infinity, core: 0 };
     const surfaces = normals.map(solve);
     /** How far each channel lies from its surface. */
     const offsets = (x: number, y: number, values: number[]) => {
@@ -680,11 +744,24 @@ export function plateau(image: RgbaImage, removed: Drawn, layout?: { map: AlphaM
     };
     let squares = 0;
     const ringDistances: number[] = [];
+    const blocksAcross = Math.ceil(w / COARSE);
+    const blockSum = new Float64Array(blocksAcross * Math.ceil(h / COARSE)), blockCount = new Float64Array(blockSum.length);
     for (const [x, y, values] of ring) {
         const d = offsets(x, y, values);
-        squares += ((d[0] + d[1] + d[2]) / 3) ** 2;
+        const offset = (d[0] + d[1] + d[2]) / 3;
+        squares += offset ** 2;
         ringDistances.push(Math.max(Math.abs(d[0]), Math.abs(d[1]), Math.abs(d[2])));
+        const block = Math.floor(y / COARSE) * blocksAcross + Math.floor(x / COARSE);
+        blockSum[block] += offset; blockCount[block]++;
     }
+    // The ring's distance from the surface averaged over blocks, where a block has at least half its pixels on the ring.
+    let coarseSquares = 0, coarseBlocks = 0;
+    for (let block = 0; block < blockSum.length; block++) {
+        if (blockCount[block] < COARSE * COARSE / 2) continue;
+        coarseSquares += (blockSum[block] / blockCount[block]) ** 2; coarseBlocks++;
+    }
+    const spread = Math.sqrt(squares / ring.length);
+    const coarse = coarseBlocks >= 4 ? Math.sqrt(coarseSquares / coarseBlocks) : spread;
     const logoDistances: number[] = [];
     // Regions 0–3: the removed logo's core by quadrant; 4–7 its soft edge; 8–11 its halo; 12 the layout's core.
     const sum = new Float64Array(13), count = new Float64Array(13);
@@ -709,12 +786,16 @@ export function plateau(image: RgbaImage, removed: Drawn, layout?: { map: AlphaM
         }
     }
     let bump = 0;
+    const quadrants: number[] = [];
     for (let region = 0; region < 13; region++) {
         if (count[region] < 12) continue;
         const mean = sum[region] / count[region];
         if (Math.abs(mean) > Math.abs(bump)) bump = mean;
+        if (region < 4) quadrants.push(mean);
     }
-    return { bump, spread: Math.sqrt(squares / ring.length), rough: percentile(logoDistances, 0.99), ringRough: percentile(ringDistances, 0.99) };
+    quadrants.sort((a, b) => b - a);
+    const core = quadrants.length >= 2 ? (quadrants.length === 4 ? (quadrants[1] + quadrants[2]) / 2 : quadrants[Math.floor(quadrants.length / 2)]) : 0;
+    return { bump, spread, rough: percentile(logoDistances, 0.99), ringRough: percentile(ringDistances, 0.99), coarse, core };
 }
 
 /**
@@ -770,6 +851,24 @@ interface Readings {
 
 const newReadings = (): Readings => ({ real: [], nulls: [], steps: [] });
 
+/** Colour readings: per-pair vectors of each channel's departure, the real ones and their nulls. */
+interface ColourReadings {
+    real: number[][];
+    nulls: number[][];
+}
+
+/** The median vector's length and the standard error of its channels' medians, as `summarise` takes them. */
+function summariseColour(vectors: number[][]): { median: number; error: number } {
+    const channels = [0, 1, 2].map(c => summarise(vectors.map(v => v[c]), 1));
+    return { median: Math.hypot(...channels.map(ch => ch.median)), error: Math.hypot(...channels.map(ch => ch.error)) };
+}
+
+function colourReading(set: ColourReadings): Reading | null {
+    if (set.real.length < THRESHOLDS.interior.pairs) return null;
+    const real = summariseColour(set.real), nulls = set.nulls.length ? summariseColour(set.nulls) : { median: 0, error: 0 };
+    return { count: set.real.length, left: real.median, nullLeft: nulls.median, scatter: real.error + nulls.error };
+}
+
 /** The median and the standard error of a median, from the readings' own scatter; neighbouring pairs read the same picture, so three count as one. */
 function summarise(values: number[], typical: number): { median: number; error: number } {
     const m = median(values);
@@ -816,8 +915,16 @@ export function interior(image: RgbaImage, map: AlphaMap, gain: number, x0: numb
     const inImage = (x: number, y: number) => x0 + x >= 0 && y0 + y >= 0 && x0 + x < width && y0 + y < height;
     const after = (x: number, y: number) => restoredBrightness(data, ((y0 + y) * width + x0 + x) * 4, opacity(map, gain, x, y));
     const before = (x: number, y: number) => brightness(data, ((y0 + y) * width + x0 + x) * 4);
+    /** Each channel's departure from the pixel's brightness, as removal writes the pixel. */
+    const colourAt = (x: number, y: number): number[] => {
+        const i = ((y0 + y) * width + x0 + x) * 4, alpha = opacity(map, gain, x, y);
+        const channels = [restore(data[i], alpha), restore(data[i + 1], alpha), restore(data[i + 2], alpha)];
+        const mean = (channels[0] + channels[1] + channels[2]) / 3;
+        return channels.map(v => v - mean);
+    };
     const whole = newReadings(), rim = newReadings();
     const sides = DIRECTIONS.map(newReadings);
+    const colour: ColourReadings = { real: [], nulls: [] };
     for (let k = 0; k < line.count; k++) {
         const d = line.direction[k];
         const [dx, dy] = DIRECTIONS[d];
@@ -849,6 +956,11 @@ export function interior(image: RgbaImage, map: AlphaMap, gain: number, x0: numb
                 rim[into].push((after(px + dx * j, py + dy * j) - (ref + slope * (s - j + BEYOND))) / predicted);
                 if (!shift) rim.steps.push(predicted);
             }
+            // The rim's colour (the first core pixel and the pixels out to the first outside one) against the reference's.
+            const reference = colourAt(refX, refY).map((v, c) => (v + colourAt(farX, farY)[c]) / 2);
+            const tint = [0, 0, 0];
+            for (let j = 0; j < s; j++) colourAt(px + dx * j, py + dy * j).forEach((v, c) => { tint[c] += v / s; });
+            colour[into].push(tint.map((v, c) => v - reference[c]));
         }
     }
     const typical = median(whole.steps);
@@ -857,6 +969,7 @@ export function interior(image: RgbaImage, map: AlphaMap, gain: number, x0: numb
         whole: reading(whole, typical),
         sides: sides.map(side => side.real.length >= few.sidePairs ? reading(side, typical) : null),
         rim: rim.real.length >= few.pairs ? reading(rim, typical) : null,
+        colour: colourReading(colour),
     };
 }
 
@@ -942,9 +1055,16 @@ function solve(system: Float64Array[]): number[] {
 
 const limit = ({ floor, share }: { floor: number; share: number }, texture: number) => Math.max(floor, share * texture);
 
-/** Whether what removal leaves over the logo as a whole is within its bounds. */
+/**
+ * Whether what removal leaves over the logo as a whole is within its bounds:
+ * no region of it far from the picture's surface beyond the picture's own
+ * spread, nothing rougher than the picture around it, and the core, its two
+ * middle quadrants together, not darker than the picture's own variation at
+ * the logo's scale allows (see `Plateau.coarse`).
+ */
 export function plateauIsClean(p: Plateau): boolean {
-    return Math.abs(p.bump) <= limit(THRESHOLDS.plateau, p.spread) && p.rough <= limit(THRESHOLDS.rough, p.ringRough);
+    return Math.abs(p.bump) <= limit(THRESHOLDS.plateau, p.spread) && p.rough <= limit(THRESHOLDS.rough, p.ringRough)
+        && -p.core <= limit(THRESHOLDS.core, p.coarse);
 }
 
 /** Whether the fine detail removal leaves over the logo is within its bound. */
@@ -953,13 +1073,17 @@ export function fineIsClean(f: Fine): boolean {
 }
 
 /**
- * Whether what removal leaves in the core passes: not brighter in three or
- * four directions at once and, on a logo that was scaled (`scaled`), not
- * darker in three or four either.
+ * Whether what removal leaves in the core passes, direction by direction:
+ * not brighter in three or four directions at once, and not darker in three
+ * or four either, by `over` on a logo that was scaled (`scaled`) and
+ * otherwise by the larger of the native floor and a share of the picture's
+ * fine detail around the logo (`ring`, see `Fine`). The core as a whole,
+ * against the picture's variation at the logo's scale, is `plateauIsClean`'s.
  */
-export function depthIsClean(depth: number[], scaled: boolean): boolean {
+export function depthIsClean(depth: number[], scaled: boolean, ring = 0): boolean {
     const sorted = [...depth].sort((a, b) => b - a);
-    return sorted[2] <= THRESHOLDS.depth.under && (!scaled || -sorted[1] <= THRESHOLDS.depth.over);
+    const darker = scaled ? THRESHOLDS.depth.over : Math.max(THRESHOLDS.depth.native.floor, THRESHOLDS.depth.native.share * ring);
+    return sorted[2] <= THRESHOLDS.depth.under && -sorted[1] <= darker;
 }
 
 /**
@@ -967,10 +1091,11 @@ export function depthIsClean(depth: number[], scaled: boolean): boolean {
  * whole logo, on every side that could be read, and along the rim, each
  * against what the picture itself reads as beside the logo (plus the
  * scatter of both readings) and against the picture's fine detail around
- * the logo (`ring`, see `Fine`), under which a remnant does not show; and
- * the rim must not read the opposite way from its null by more than their
- * scatter allows. Too few straight pairs to read the whole logo is not
- * clean: nothing confirms it.
+ * the logo (`ring`, see `Fine`), under which a remnant does not show; the
+ * rim must not read the opposite way from its null by more than their
+ * scatter allows; and the rim's colour must stay within `colour` levels of
+ * the picture's, or within its own null plus scatter. Too few straight
+ * pairs to read the whole logo is not clean: nothing confirms it.
  */
 export function interiorIsClean(i: Interior, ring: number, resampled: boolean): boolean {
     const t = THRESHOLDS.interior;
@@ -981,7 +1106,8 @@ export function interiorIsClean(i: Interior, ring: number, resampled: boolean): 
     if (i.whole.count < t.pairs) return false;
     return within(i.whole, bounds.whole, t.share.whole)
         && i.sides.every(side => side === null || within(side, bounds.side, t.share.side))
-        && (i.rim === null || (within(i.rim, bounds.rim, t.share.rim) && agrees(i.rim, bounds.rim)));
+        && (i.rim === null || (within(i.rim, bounds.rim, t.share.rim) && agrees(i.rim, bounds.rim)))
+        && (i.colour === null || i.colour.left <= Math.max(t.colour, t.share.rim * (i.colour.nullLeft + i.colour.scatter)));
 }
 
 /** Whether the residue is under both bounds. */
@@ -1080,6 +1206,11 @@ function opacityFloor(placement: Placement): number {
     return placement.family === "inset-96" ? THRESHOLDS.opacity.floor["inset-96"] : THRESHOLDS.opacity.floor.other;
 }
 
+/** The greatest opacity a layout's logo may fit at, as a multiple of the layout's usual one. */
+function opacityCeiling(placement: Placement): number {
+    return placement.family === "inset-96" ? THRESHOLDS.opacity.ceiling["inset-96"] : THRESHOLDS.opacity.ceiling.other;
+}
+
 /**
  * Whether the fit takes the logo to have been scaled after Gemini drew it, with a kernel that is not known: a
  * picture scaled from a standard size, or a logo a pixel off its layout's size.
@@ -1115,10 +1246,10 @@ function check(image: RgbaImage, candidate: Candidate, frame: Frame): Checked {
     const detail = fine(image, removed, sameAsLayout ? undefined : layout);
     const depth = depthResidue(image, variant.map, gain, variant.x, variant.y);
     const inside = interior(image, variant.map, gain, variant.x, variant.y);
-    const opacityInRange = gain >= opacityFloor(variant.placement) * variant.placement.gain && gain <= THRESHOLDS.opacity.ceiling * variant.placement.gain;
+    const opacityInRange = gain >= opacityFloor(variant.placement) * variant.placement.gain && gain <= opacityCeiling(variant.placement) * variant.placement.gain;
     const resampled = isScaled(variant) || !isStandardSize(frame.width, frame.height);
     const clean = opacityInRange && isClean(candidate.residue) && isClean(layoutResidue) && plateauIsClean(leftOver)
-        && fineIsClean(detail) && depthIsClean(depth, isScaled(variant)) && interiorIsClean(inside, detail.ring, resampled);
+        && fineIsClean(detail) && depthIsClean(depth, isScaled(variant), detail.ring) && interiorIsClean(inside, detail.ring, resampled);
     return { ...candidate, layoutResidue, plateau: leftOver, fine: detail, depth, interior: inside, opacityInRange, clean };
 }
 

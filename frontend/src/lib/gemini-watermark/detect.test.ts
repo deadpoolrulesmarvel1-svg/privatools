@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { alphaFor, placedAlpha, placedLanczos, type AlphaMap, type Kernel } from "./alpha";
-import { depthIsClean, depthResidue, findSparkle, fine, fineIsClean, measure, passes, plateau, plateauIsClean, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
+import { depthIsClean, depthResidue, findSparkle, fine, fineIsClean, interior, interiorIsClean, measure, passes, plateau, plateauIsClean, removeSparkle, type Fit, type Frame, type RgbaImage } from "./detect";
 import { sparklePlacements, sparkleRegion, type Family, type Placement } from "./geometry";
 import { MASK_SOURCES, type MaskId } from "./masks";
 import { BACKGROUNDS, SHAPES, SMOOTH, applySparkle, background, clone, glare, jpegLike, paintShape, random, resized, smooth, solid, veil, type Background } from "@/test/gemini-fixtures";
@@ -98,10 +98,12 @@ const LAYOUTS: [number, number, Family, number][] = [
 /** A logo this faint over near-white adds only a few levels; it may be missed there, but never misjudged. */
 const faintOver = (kind: Background, p: Placement) => kind === "flat-pale" && p.gain < 1;
 /**
- * Over strong per-pixel grain (standard deviation about 12 levels) the small 36 px logo's core reads too noisily
- * for the core check to certify, so it may be found and left unchanged; it is still found, as the right layout.
+ * Over strong per-pixel grain (standard deviation about 12 levels) the logo's opacity fits a few per cent off and
+ * its core then reads darker or brighter than the picture in every direction, which the core check does not
+ * certify (the same reading on a sharpened copy is a dark copy of the logo), so the logo may be found and left
+ * unchanged; it is still found, as the right layout.
  */
-const noisySmall = (kind: Background, p: Placement) => kind === "noise" && MASK_SOURCES[p.mask].size * p.scaleX < 40;
+const noisy = (kind: Background) => kind === "noise";
 /** Backgrounds where the logo's opacity is fully determined: flat colour well away from white, and a smooth gradient. */
 const DETERMINED: Background[] = ["flat-navy", "flat-orange", "flat-black", "gradient"];
 
@@ -124,7 +126,7 @@ describe("removing the Gemini sparkle", () => {
                 if (faintOver(kind, p) && fit === null) continue;
                 expect(fit, kind).not.toBeNull();
                 expect(fit!.family, kind).toBe(family);
-                if (noisySmall(kind, p) && !fit!.clean) continue;
+                if (noisy(kind) && !fit!.clean) continue;
                 expect(fit!.clean, `${kind} clean`).toBe(true);
                 // A scaled logo's box can start a pixel away from where it was drawn: its edge falls between pixels.
                 const slack = p.subpixel ? 1 : 0;
@@ -485,14 +487,93 @@ describe("copies saved again or resized after Gemini made them", () => {
         expect(depthIsClean(exact, true)).toBe(true);
         // Saved again as JPEG, the same removal leaves the JPEG's ringing around the logo as fine detail.
         expect(fineIsClean(fine(jpegLike(marked, 75), drawn(0.6)))).toBe(false);
-        // Too faint a removal leaves the core brighter in every direction; too strong, darker, refused on a scaled logo.
+        // Too faint a removal leaves the core brighter in every direction; too strong, darker: refused on a scaled
+        // logo, and on an unscaled one unless the picture's own fine detail around the logo would hide it.
         const faint = depthResidue(marked, alphaFor("v1-48", 48), 0.45, 176, 176);
         expect(Math.min(...faint)).toBeGreaterThan(3);
         expect(depthIsClean(faint, false)).toBe(false);
         const strong = depthResidue(marked, alphaFor("v1-48", 48), 0.75, 176, 176);
-        expect(Math.max(...strong)).toBeLessThan(-2);
+        expect(Math.max(...strong)).toBeLessThan(-15);
         expect(depthIsClean(strong, true)).toBe(false);
-        expect(depthIsClean(strong, false)).toBe(true);
+        expect(depthIsClean(strong, false, 20)).toBe(false);
+        // Ten per cent too strong cuts the core in some 8 levels darker, which only busy fine detail (30) hides.
+        const slightly = depthResidue(marked, alphaFor("v1-48", 48), 0.66, 176, 176);
+        expect(Math.max(...slightly)).toBeLessThan(-5);
+        expect(Math.min(...slightly)).toBeGreaterThan(-20);
+        expect(depthIsClean(slightly, true)).toBe(false);
+        expect(depthIsClean(slightly, false, 1)).toBe(false);
+        expect(depthIsClean(slightly, false, 30)).toBe(true);
+    });
+
+    it("judges the core as a whole against the picture's variation at the logo's scale, which grain lacks", () => {
+        // Per-pixel grain of 12 levels: fine detail and spread of 7 to 12, but averaged over 6 px blocks under 3.
+        const grain = background("noise", 320, 320, 1);
+        const map = alphaFor("v1-48", 48);
+        const marked = applySparkle(grain, map, 176, 176, 0.6);
+        const exact = plateau(marked, { map, x: 176, y: 176, gain: 0.6 });
+        expect(exact.spread).toBeGreaterThan(6);
+        expect(exact.coarse).toBeLessThan(3);
+        expect(Math.abs(exact.core)).toBeLessThan(2);
+        expect(plateauIsClean(exact)).toBe(true);
+        // Ten per cent too strong, as a sharpened copy saved again as JPEG fits: the core's two middle quadrants
+        // together are a dark copy some 5 levels deep, within the old plateau bound of twice the spread.
+        const strong = plateau(marked, { map, x: 176, y: 176, gain: 0.66 });
+        expect(strong.core).toBeLessThan(-4.5);
+        expect(Math.abs(strong.bump)).toBeLessThan(2 * strong.spread);
+        expect(plateauIsClean(strong)).toBe(false);
+        // The same darkening over a picture that varies by 20 levels at the logo's scale is within what it hides;
+        // one that varies by 3 hides nothing more than grain does.
+        expect(plateauIsClean({ ...strong, coarse: 20 })).toBe(true);
+        expect(plateauIsClean({ ...strong, coarse: 3 })).toBe(false);
+    });
+
+    it("refuses a logo whose rim would come out coloured, as JPEG leaves a sharpened edge", () => {
+        // The right logo over soft bokeh: the rim's colour reads as the picture's, and the removal is clean.
+        const clean = smooth("bokeh", 320, 320, 5);
+        const map = alphaFor("v1-48", 48);
+        const marked = applySparkle(clean, map, 176, 176, 0.6);
+        const frame: Frame = { width: 1024, height: 1024, left: 704, top: 704 };
+        const plain = interior(marked, map, 0.6, 176, 176);
+        expect(plain.colour).not.toBeNull();
+        expect(plain.colour!.left).toBeLessThan(3);
+        expect(findSparkle(marked, frame)?.clean).toBe(true);
+        // The same logo with its edge band tinted (the soft rim and the core pixels within 3 px of the outside,
+        // not the solid centre), brightness unchanged: a coloured outline of the logo would be left after the
+        // reverse blend, which the brightness readings cannot see; the rim's colour reading does.
+        let peak = 0;
+        for (const value of map.values) peak = Math.max(peak, value);
+        const at = (x: number, y: number) => x >= 0 && y >= 0 && x < 48 && y < 48 ? map.values[y * 48 + x] : 0;
+        const onEdge = (x: number, y: number) => {
+            const alpha = at(x, y);
+            if (alpha <= 0.01 * peak) return false;
+            if (alpha < 0.9 * peak) return true;
+            return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => [1, 2, 3].some(s => at(x + dx * s, y + dy * s) <= 0.01 * peak));
+        };
+        const tint = (amount: number) => {
+            const image = clone(marked);
+            for (let y = 0; y < 48; y++) {
+                for (let x = 0; x < 48; x++) {
+                    if (!onEdge(x, y)) continue;
+                    const i = ((176 + y) * 320 + 176 + x) * 4;
+                    image.data[i] = Math.min(255, image.data[i] + amount);
+                    image.data[i + 2] = Math.max(0, image.data[i + 2] - amount);
+                }
+            }
+            return image;
+        };
+        // A tint of 6 levels reads about 10 after the reverse blend, over the bound of 8; one of 3 reads about 5.
+        const coloured = tint(6), faint = tint(3);
+        const read = interior(coloured, map, 0.6, 176, 176);
+        expect(read.colour!.left).toBeGreaterThan(8);
+        expect(read.colour!.nullLeft).toBeLessThan(2);
+        expect(interiorIsClean(read, 1, false)).toBe(false);
+        expect(interiorIsClean(plain, 1, false)).toBe(true);
+        const fit = findSparkle(coloured, frame);
+        expect(fit).not.toBeNull();
+        expect(fit!.clean).toBe(false);
+        // A tint a visitor could not see at 100 % passes.
+        expect(interior(faint, map, 0.6, 176, 176).colour!.left).toBeLessThan(8);
+        expect(findSparkle(faint, frame)?.clean).toBe(true);
     });
 });
 
