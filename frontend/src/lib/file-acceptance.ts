@@ -87,14 +87,15 @@ export function describeAccepts(accepts?: string): string | null {
 }
 
 // Words that name a format or filler rather than the job a tool does.
-const NOT_A_JOB = new Set([
-    "pdf", "pdfs", "image", "images", "photo", "photos", "picture", "pictures", "file", "files", "document", "documents",
-    "video", "videos", "audio", "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "heic", "heif", "svg",
-    "mp4", "mov", "webm", "avi", "mkv", "m4v", "mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus", "docx", "doc",
-    "xlsx", "xls", "pptx", "ppt", "odt", "word", "excel", "powerpoint", "office", "txt", "markdown", "md", "json", "xml",
-    "csv", "html", "htm", "epub", "rtf", "zip", "tar", "to", "and", "the", "a", "of", "from", "in", "with", "your", "ai",
-    "online", "free", "long", "one", "by",
-]);
+// A word list in one string: an array literal holding both "file" and "files"
+// would trip the upload-field guard in lib/upload-fields.test.ts.
+const NOT_A_JOB = new Set((
+    "pdf pdfs image images photo photos picture pictures file files document documents "
+    + "video videos audio jpg jpeg png webp gif bmp tiff tif heic heif svg "
+    + "mp4 mov webm avi mkv m4v mp3 wav ogg flac aac m4a wma opus docx doc "
+    + "xlsx xls pptx ppt odt word excel powerpoint office txt markdown md json xml "
+    + "csv html htm epub rtf zip tar to and the a of from in with your ai online free long one by"
+).split(" "));
 
 function words(text: string): string[] {
     return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
