@@ -15,9 +15,9 @@ import {
 import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-endpoints";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
-import { emitToolRun, isTransientFailure, runOutcome } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ConversionPath, FileIntake, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 /* Shared "upload → convert" UI for simpler conversion tools. Accepts a
@@ -44,6 +44,8 @@ interface QueueItem {
     errMsg?: string;
     /** The failure could pass on another attempt (connection, time limit, rate limit, server fault). */
     retryable?: boolean;
+    /** Why it failed, so the result can name the cause of a failure worth retrying. */
+    errorKind?: ToolErrorKind;
 }
 
 export function SimpleConvertUI({ slug, label, outputExt, outputFilename, acceptFileTypes, description }: SimpleConvertUIProps) {
@@ -142,7 +144,8 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
                 const msg = e instanceof Error ? e.message : "Failed";
-                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Couldn't convert that file."), retryable: isTransientFailure(e) });
+                const kind = toolErrorKind(e);
+                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Couldn't convert that file."), retryable: isTransientFailure(e), errorKind: kind === "cancelled" ? undefined : kind });
                 failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
@@ -200,7 +203,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             // This UI also runs tools that do not convert (Flatten, Repair, Reverse…), so failures say "processed".
             title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
                 : tone === "partial" ? `${doneItems.length} of ${items.length} files ready.` : single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
-            detail={tone === "failure" ? failureDetail(failCount, retryCount)
+            detail={tone === "failure" ? failureDetail(failCount, retryKinds(items))
                 : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The completed results are ready.`
                 : single ? "The download has started. A copy is ready here whenever you need it." : "Save them separately, or download one ZIP."}>
             {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : formatFileSize(item.file.size))}
@@ -219,7 +222,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
             {items.length > 0 && status !== "processing" && <button className="ts-text-button" onClick={reset}>Clear</button>}</div>
     </>}>
-        <FileIntake accepts={acceptFileTypes} multiple onFiles={addFiles} label={items.length ? "Add more files" : "Drop files here"} title={`Choose ${fileFormatLabel(acceptFileTypes)} files`}
+        <FileIntake accepts={acceptFileTypes} multiple onFiles={addFiles} label={items.length ? "Add more files" : "Drop files here"} title={fileFormatLabel(acceptFileTypes) === "FILE" ? "Your files" : `Your ${fileFormatLabel(acceptFileTypes)} files`}
             detail={`${description} · up to ${MAX_QUEUE} files`} compact={items.length > 0} disabled={status === "processing"} autoFocus={returning} />
         {items.length > 0 && <section aria-label="Selected files">{items.map(item => <StudioFile key={item.id} name={item.file.name}
             detail={item.errMsg || formatFileSize(item.file.size)} status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined}

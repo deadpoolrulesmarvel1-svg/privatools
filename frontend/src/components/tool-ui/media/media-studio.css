@@ -15,3 +15,9 @@ html[data-experience='play'] .ms-workspace{grid-template-columns:minmax(0,1fr) 3
 /* Refused files and failed runs share the tool studio's warning grammar. */
 .ms-intake-wrap .ts-intake-notice { margin-top: 12px; }
 .ms-result-summary[data-tone=failure] .ms-result-seal { color: hsl(var(--warning)); background: hsl(var(--warning-soft)); }
+/* A partial run keeps its check but carries the same warning badge as StudioResult. */
+.ms-result-seal { position: relative; }
+.ms-result-badge { position: absolute; right: -7px; bottom: -5px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid hsl(var(--card)); background: hsl(var(--warning-soft)); color: hsl(var(--warning)); }
+html[data-experience='play'] .ms-result-badge { transform: rotate(7deg); }
+.ms-result-summary h3:focus { outline: none; }
+.ms-result-summary h3:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 4px; border-radius: 6px; }

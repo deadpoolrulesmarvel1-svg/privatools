@@ -178,15 +178,23 @@ describe("the Hidden Text Checker page", () => {
     });
 
     it.each([
-        [httpError(413, "This PDF has 612 pages, and the checker reads at most 500. Split it into parts with Split PDF and check each part."), /612 pages, and the checker reads at most 500/, false],
-        [httpError(400, "This PDF is password-protected. Please unlock it first using the Unlock PDF tool."), /password-protected/, false],
-        [httpError(504, "The operation timed out. Try a smaller file."), /took longer than the server allows for one file\. Split it/, true],
-        [Object.assign(new Error("Slow down — we're rate-limiting requests. Wait a moment and try again."), { __status: 429 }), /rate-limiting requests/, true],
-        [httpError(500, "Processing failed. Please try again."), /./, true],
-    ])("says why a check failed, leads with a different PDF and offers another attempt only when one could work", async (error, message, retryable) => {
+        [httpError(413, "This PDF has 612 pages, and the checker reads at most 500. Split it into parts with Split PDF and check each part."), /612 pages, and the checker reads at most 500/, false,
+            "The check didn’t finish. The reason is below."],
+        [httpError(400, "This PDF is password-protected. Please unlock it first using the Unlock PDF tool."), /password-protected/, false,
+            "The check didn’t finish. The reason is below."],
+        // The line under the heading names the recorded kind of failure, never a cause it doesn't know.
+        [httpError(504, "The operation timed out. Try a smaller file."), /took longer than the server allows for one file\. Split it/, true,
+            "The check didn’t finish. It ran out of time. Trying again may work, or try a smaller file."],
+        [Object.assign(new Error("Slow down — we're rate-limiting requests. Wait a moment and try again."), { __status: 429 }), /rate-limiting requests/, true,
+            "The check didn’t finish. Too many requests just now. Wait a moment, then try again."],
+        [httpError(500, "Processing failed. Please try again."), /./, true,
+            "The check didn’t finish. The server couldn’t finish it."],
+    ])("says why a check failed, leads with a different PDF and offers another attempt only when one could work", async (error, message, retryable, detail) => {
         await check(error);
         const heading = await screen.findByRole("heading", { name: "This PDF couldn’t be checked." });
         expect(heading).toHaveFocus();
+        expect(document.querySelector(".ts-result-detail")).toHaveTextContent(detail);
+        expect(document.body).not.toHaveTextContent("The connection or the server got in the way");
         // The reason sits on the file's row, beneath the heading.
         expect(document.querySelector(".ts-file[data-status=error] p")).toHaveTextContent(message);
         expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "error", files: 1 }, error);

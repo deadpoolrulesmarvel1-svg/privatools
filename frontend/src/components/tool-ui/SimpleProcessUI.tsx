@@ -12,7 +12,7 @@ import { Download, type LucideIcon } from "lucide-react";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { FileIntake, StudioActions, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { matchesAccept } from "@/lib/file-acceptance";
 
@@ -104,7 +104,7 @@ export function SimpleProcessUI({
         return <StudioResult tone={tone}
             title={tone === "failure" ? several ? "None of these files could be processed." : "This file couldn’t be processed."
                 : tone === "partial" ? `${doneTitle} for ${proc.doneCount} of ${proc.entries.length} files.` : doneTitle}
-            detail={tone === "failure" ? failureDetail(proc.failedCount, proc.retryableCount)
+            detail={tone === "failure" ? failureDetail(proc.failedCount, retryKinds(proc.entries))
                 : tone === "partial" ? `${proc.failedCount === 1 ? "One file" : `${proc.failedCount} files`} couldn’t be processed; the reason is below. The rest are ready.` : `${proc.doneCount} completed`}>
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => entry.blob && downloadBlob(entry.blob, entry.outName || entry.name) : undefined} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}

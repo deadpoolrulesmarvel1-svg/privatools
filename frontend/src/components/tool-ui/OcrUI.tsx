@@ -12,6 +12,9 @@ import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { visionOcrWithByok } from "@/lib/byok/tasks";
 import { ByokError } from "@/lib/byok/errors";
+import { StudioActions, StudioFile, StudioResult } from "@/skins/experience/ToolStudio";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 
 // Tesseract language packs actually installed in the production image — keep
 // in sync with the `tesseract-ocr-*` packages in /Dockerfile.
@@ -112,6 +115,12 @@ export function OcrUI() {
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
+  const dropzone = useRef<HTMLDivElement>(null);
+  // Set when a failed result is left for fresh files, so focus lands on the drop zone, not the page body.
+  const [returning, setReturning] = useState(false);
+  useEffect(() => {
+    if (returning && phase === "idle") { setReturning(false); focusIfIdle(dropzone.current); }
+  }, [returning, phase]);
 
   // ── Client engines (BYOK vision / in-browser tesseract.js) ──
   const byok = useByok();
@@ -157,7 +166,7 @@ export function OcrUI() {
     ? proc.entries.length > 0 && phase !== "processing"
     : !!singleFile && !clientBusy && (engine !== "byok" || byok.ready);
 
-  const process = useCallback(async (retry = false) => {
+  const process = useCallback(async (retry: boolean | "transient" = false) => {
     setPhase("processing");
     await proc.run({
       endpoint: "/ocr",
@@ -342,6 +351,36 @@ export function OcrUI() {
   if (phase === "done") {
     const isMulti = proc.entries.length > 1;
     const doneEntries = proc.entries.filter(e => e.status === "done");
+    const tone = studioOutcome(proc.doneCount, proc.failedCount);
+    // A failed or partial run uses the shared result: no "OCR complete" or check mark over a
+    // failure, every file's reason in view, and "Try again" only where another attempt could pass.
+    if (tone !== "success") {
+      const startOver = (files?: File[]) => {
+        proc.reset(); setTexts({}); downloadedRef.current = false;
+        if (files) proc.addFiles(files, isPdfOnly);
+        setReturning(true); setPhase("idle");
+      };
+      const made = output === "searchable_pdf" ? "searchable PDF" : "text";
+      const title = tone === "failure" ? isMulti ? "None of these PDFs could be read." : "This PDF couldn’t be read."
+        : `${proc.doneCount} of ${proc.entries.length} PDFs read.`;
+      const detail = tone === "failure" ? failureDetail(proc.failedCount, retryKinds(proc.entries))
+        : `${output === "json" ? `The ${made} is below.` : "The download has started."} ${proc.failedCount === 1 ? "One file" : `${proc.failedCount} files`} couldn’t be read; the reason is below.`;
+      return <StudioResult tone={tone} title={title} detail={detail}>
+        {proc.entries.map(e => <StudioFile key={e.id} name={e.status === "done" ? e.outName || e.name : e.name} status={e.status === "failed" ? "error" : e.status}
+          detail={e.status === "done" ? (output === "searchable_pdf" ? "Searchable PDF" : output === "txt" ? "Text file" : "Text extracted") : e.error || "Could not read this file"} />)}
+        {output === "json" && doneEntries.map(e => texts[e.id] ? <div key={`${e.id}-text`} className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="font-medium flex items-center justify-between gap-3 px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
+            <span className="truncate min-w-0">{e.name} · {texts[e.id].length.toLocaleString()} chars</span>
+            <button onClick={() => navigator.clipboard.writeText(texts[e.id])} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors shrink-0">Copy</button>
+          </div>
+          <pre className="font-mono text-[13px] text-foreground whitespace-pre-wrap max-h-80 overflow-y-auto p-4">{texts[e.id]}</pre>
+        </div> : null)}
+        <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
+          choose={{ accepts: ".pdf", multiple: true, label: isMulti ? "Choose different files" : "Choose a different file", onFiles: startOver }}
+          primary={output !== "json" && <button type="button" className="ts-primary-button" onClick={() => proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+          more={tone !== "failure" && <button type="button" className="ts-text-button" onClick={() => startOver()}>OCR another file</button>} />
+      </StudioResult>;
+    }
     return (
       <div className="space-y-4">
         <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
@@ -355,7 +394,7 @@ export function OcrUI() {
                 <p className="section-mark mb-2">OCR complete</p>
                 <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                   {isMulti
-                    ? <>{output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDFs</span></> : <><span className="italic text-accent">Text</span> extracted</>} · <span className="italic text-accent">{proc.doneCount}</span> of {proc.entries.length}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                    ? <>{output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDFs</span></> : <><span className="italic text-accent">Text</span> extracted</>} · <span className="italic text-accent">{proc.doneCount}</span> of {proc.entries.length}</>
                     : output === "searchable_pdf" ? <>Searchable <span className="italic text-accent">PDF</span> created.</> : <><span className="italic text-accent">Text</span> extracted.</>}
                 </h2>
                 {output !== "json" && proc.doneCount > 0 && (
@@ -392,14 +431,6 @@ export function OcrUI() {
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
             >
               <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
-            </button>
-          )}
-          {proc.failedCount > 0 && (
-            <button
-              onClick={() => { downloadedRef.current = false; void process(true); }}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
-            >
-              Retry {proc.failedCount} failed
             </button>
           )}
           <button
@@ -480,6 +511,7 @@ export function OcrUI() {
     <div className="space-y-4">
       {engine === "server" ? (
         <div
+          ref={dropzone}
           onDragOver={e => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}

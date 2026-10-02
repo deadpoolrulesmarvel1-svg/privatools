@@ -30,10 +30,10 @@ import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
-import { emitToolRun, isTransientFailure, runOutcome } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
 import { ConversionPath, FileIntake, LocalFilePreview, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 const MAX_QUEUE = 25;
@@ -61,6 +61,8 @@ interface QueueItem {
     errMsg?: string;
     /** The failure could pass on another attempt (connection, time limit, rate limit, server fault). */
     retryable?: boolean;
+    /** Why it failed, so the result can name the cause of a failure worth retrying. */
+    errorKind?: ToolErrorKind;
 }
 
 export function GenericUI({
@@ -220,7 +222,8 @@ export function GenericUI({
                     break;
                 }
                 const msg = e instanceof Error ? e.message : "Processing failed";
-                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Processing failed"), retryable: isTransientFailure(e) });
+                const kind = toolErrorKind(e);
+                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Processing failed"), retryable: isTransientFailure(e), errorKind: kind === "cancelled" ? undefined : kind });
                 failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
@@ -288,7 +291,7 @@ export function GenericUI({
         return <StudioResult tone={tone}
             title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
                 : tone === "partial" ? `${okCount} of ${files.length} files ready.` : single ? "Your file is ready." : `${okCount} files, ready to go.`}
-            detail={tone === "failure" ? failureDetail(failCount, retryCount)
+            detail={tone === "failure" ? failureDetail(failCount, retryKinds(files))
                 : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The rest are ready.`
                 : single ? singleItem?.outName : "Download your results individually or bring them together in one ZIP."}>
             {files.map(item => <StudioFile key={item.id} name={item.outName || item.name}
@@ -312,7 +315,7 @@ export function GenericUI({
         <div><p>Each file is processed separately. Your original files stay as they are.</p>{timeEstimate && <p className="ts-caption">Usually {timeEstimate} per file.</p>}</div>
         <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>{files.length > 0 && state !== "processing" && <button className="ts-text-button" onClick={clearFile}>Clear selection</button>}</div>
     </>}>
-        <FileIntake accepts={accepts} multiple label={`Upload files for ${toolName}`} title={`Choose ${fileFormatLabel(accepts)} ${fileFormatLabel(accepts) === "FILE" ? "files" : "files to process"}`} detail={`${acceptsLabel} · Up to ${MAX_QUEUE} files, ${MAX_FILE_SIZE_LABEL} each`}
+        <FileIntake accepts={accepts} multiple label={`Upload files for ${toolName}`} title={fileFormatLabel(accepts) === "FILE" ? "Your files" : `Your ${fileFormatLabel(accepts)} files`} detail={`${acceptsLabel} · Up to ${MAX_QUEUE} files, ${MAX_FILE_SIZE_LABEL} each`}
             onFiles={addFiles} compact={files.length > 0} disabled={state === "processing"} autoFocus={returning} />
         {files[0] && <LocalFilePreview file={files[0].file} name={files[0].name} label="Original · on your device" />}
         {files.length > 0 && <section aria-label="Selected files">{files.map(item => <StudioFile key={item.id} name={item.name} detail={item.errMsg || item.size} status={item.status}

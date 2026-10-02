@@ -4,7 +4,7 @@ import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { FileIntake, StudioActions, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { mergePageSelection } from "../merge-model";
 import { PdfPageStage } from "./PdfPageStage";
 
@@ -45,7 +45,7 @@ export function PdfPageSelectionUI({ operation }: { operation: "delete" | "extra
         return <StudioResult tone={tone}
             title={tone === "failure" ? removing ? "The pages couldn’t be removed." : "The pages couldn’t be extracted."
                 : tone === "partial" ? `Done for ${proc.doneCount} of ${proc.entries.length} PDFs.` : removing ? "A little less. Just what you need." : "Your chosen pages, together."}
-            detail={tone === "failure" ? `${failureDetail(proc.failedCount, proc.retryableCount)}${proc.retryableCount ? "" : " Check the page numbers, or choose a different PDF."}`
+            detail={tone === "failure" ? `${failureDetail(proc.failedCount, retryKinds(proc.entries))}${proc.retryableCount ? "" : " Check the page numbers, or choose a different PDF."}`
                 : `${proc.doneCount} completed${proc.failedCount ? ` · ${proc.failedCount} couldn’t be changed; the reason is below` : ""}`}>
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => downloadBlob(entry.blob!, entry.outName || entry.name) : undefined} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloaded.current = false; void process("transient"); }}

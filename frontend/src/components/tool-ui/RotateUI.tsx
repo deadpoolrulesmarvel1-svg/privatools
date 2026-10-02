@@ -7,7 +7,7 @@ import { Download, RotateCw } from "lucide-react";
 import { isValidPageRange, pageRangeError } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL, formatFileSize } from "@/lib/api";
 import { FileIntake, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
@@ -80,7 +80,7 @@ export function RotateUI() {
         return <StudioResult tone={tone}
             title={tone === "failure" ? several ? "None of these PDFs could be rotated." : "This PDF couldn’t be rotated."
                 : tone === "partial" ? `${proc.doneCount} of ${proc.entries.length} PDFs rotated.` : `${proc.doneCount} PDF${proc.doneCount === 1 ? "" : "s"}, a fresh perspective.`}
-            detail={tone === "failure" ? failureDetail(proc.failedCount, proc.retryableCount)
+            detail={tone === "failure" ? failureDetail(proc.failedCount, retryKinds(proc.entries))
                 : `Pages rotated ${angle}°. Your original documents are unchanged.${tone === "partial" ? ` ${proc.failedCount === 1 ? "One file" : `${proc.failedCount} files`} couldn’t be rotated; the reason is below.` : ""}`}>
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || `${angle}° · ${entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size)}`} status={entry.status === "failed" ? "error" : entry.status} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}

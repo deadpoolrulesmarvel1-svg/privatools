@@ -15,7 +15,7 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { ResultHandoff } from "./ResultHandoff";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
 import { FileIntake, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
-import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 
 type Level =
     | "light" | "recommended" | "extreme" | "custom"
@@ -177,7 +177,8 @@ export function CompressUI() {
         const tone = studioOutcome(doneEntries.length, failedCount);
         const originalTotal = doneEntries.reduce((sum, entry) => sum + entry.size, 0);
         const outputTotal = doneEntries.reduce((sum, entry) => sum + compressedBytesOf(entry), 0);
-        const saving = originalTotal ? Math.max(0, Math.round((1 - outputTotal / originalTotal) * 100)) : 0;
+        // A file that still has bytes is never "100% smaller": cap the rounded figure at 99.
+        const saving = originalTotal ? Math.min(99, Math.max(0, Math.round((1 - outputTotal / originalTotal) * 100))) : 0;
         const singleDone = doneEntries.length === 1 && proc.entries.length === 1 ? doneEntries[0] : null;
         const several = proc.entries.length > 1;
         const startOver = (files?: File[]) => {
@@ -189,7 +190,7 @@ export function CompressUI() {
             : tone === "partial" ? `${doneEntries.length} of ${proc.entries.length} PDFs compressed.`
             : saving > 0 ? `A little lighter. ${saving}% smaller.` : "Your PDF is ready.";
         const receipt = `${formatFileSize(originalTotal)} became ${formatFileSize(outputTotal)}${tone === "partial" && saving > 0 ? ` (${saving}% smaller)` : ""}. The download has started.`;
-        const detail = tone === "failure" ? failureDetail(failedCount, proc.retryableCount)
+        const detail = tone === "failure" ? failureDetail(failedCount, retryKinds(proc.entries))
             : tone === "partial" ? `${receipt} ${failedCount === 1 ? "One file" : `${failedCount} files`} couldn’t be compressed; the reason is below.` : receipt;
         return <StudioResult tone={tone} title={title} detail={detail}>
             {tone !== "failure" && <div className="ts-compression-receipt"><div><span>Before</span><strong>{formatFileSize(originalTotal)}</strong></div><span>→</span><div><span>After</span><strong>{formatFileSize(outputTotal)}</strong></div></div>}

@@ -9,6 +9,9 @@ import {
 import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { StudioActions, StudioFile, StudioResult } from "@/skins/experience/ToolStudio";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 import { MultiFileQueue } from "./MultiFileQueue";
 
 export function PdfToWordUI() {
@@ -16,10 +19,17 @@ export function PdfToWordUI() {
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const dropzone = useRef<HTMLDivElement>(null);
+    // Set when a failed result is left for fresh files, so focus lands on the drop zone, not the page body.
+    const [returning, setReturning] = useState(false);
     const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
     const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async (retry = false) => {
+    useEffect(() => {
+        if (returning && phase === "idle") { setReturning(false); focusIfIdle(dropzone.current); }
+    }, [returning, phase]);
+
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/pdf-to-word",
@@ -50,6 +60,29 @@ export function PdfToWordUI() {
 
     if (phase === "done") {
         const isMulti = proc.entries.length > 1;
+        const tone = studioOutcome(proc.doneCount, proc.failedCount);
+        // A failed or partial run uses the shared result: no "Converted" over a failure, every
+        // file's reason in view, and "Try again" only for failures another attempt could fix.
+        if (tone !== "success") {
+            const startOver = (files?: File[]) => {
+                proc.reset(); downloadedRef.current = false;
+                if (files) proc.addFiles(files, isPdfOnly);
+                setReturning(true); setPhase("idle");
+            };
+            const title = tone === "failure" ? isMulti ? "None of these PDFs could be converted." : "This PDF couldn’t be converted."
+                : `${proc.doneCount} of ${proc.entries.length} PDFs converted.`;
+            const detail = tone === "failure" ? failureDetail(proc.failedCount, retryKinds(proc.entries))
+                : `The download has started. ${proc.failedCount === 1 ? "One file" : `${proc.failedCount} files`} couldn’t be converted; the reason is below.`;
+            return <StudioResult tone={tone} title={title} detail={detail}>
+                {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.status === "done" ? entry.outName || entry.name : entry.name}
+                    status={entry.status === "failed" ? "error" : entry.status}
+                    detail={entry.status === "done" ? "Word document" : entry.error || "Could not convert this file"} />)}
+                <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
+                    choose={{ accepts: ".pdf", multiple: true, label: isMulti ? "Choose different files" : "Choose a different file", onFiles: startOver }}
+                    primary={<button type="button" className="ts-primary-button" onClick={() => proc.downloadAll("archive_docx")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+                    more={tone !== "failure" && <button type="button" className="ts-text-button" onClick={() => startOver()}>Convert more</button>} />
+            </StudioResult>;
+        }
         return (
             <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
                 <div className="relative p-7 sm:p-9 animate-corner-extend">
@@ -62,7 +95,7 @@ export function PdfToWordUI() {
                             <p className="section-mark mb-2">Converted</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                                 {isMulti
-                                    ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} → <span className="italic text-accent">.docx</span>{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} → <span className="italic text-accent">.docx</span></>
                                     : <>PDF → <span className="italic text-accent">.docx</span></>}
                             </h2>
                             {isMulti && proc.doneCount > 0 && (
@@ -74,14 +107,6 @@ export function PdfToWordUI() {
                                 {proc.doneCount > 0 && (
                                     <button onClick={() => proc.downloadAll("archive_docx")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
                                         <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
-                                    </button>
-                                )}
-                                {proc.failedCount > 0 && (
-                                    <button
-                                        onClick={() => { downloadedRef.current = false; void process(true); }}
-                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
-                                    >
-                                        Retry {proc.failedCount} failed
                                     </button>
                                 )}
                                 <button onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
@@ -98,6 +123,7 @@ export function PdfToWordUI() {
     return (
         <div className="space-y-4">
             <div
+                ref={dropzone}
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
