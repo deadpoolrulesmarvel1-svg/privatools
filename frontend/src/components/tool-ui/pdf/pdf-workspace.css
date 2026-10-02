@@ -6,3 +6,5 @@
 .pdf-long-result{max-height:580px;overflow:auto;background:hsl(var(--paper-2));border-radius:10px;padding:20px}.pdf-long-result img{display:block;max-width:100%;width:400px;margin:auto;box-shadow:0 4px 18px hsl(var(--foreground)/.14)}
 .pdf-stage-context{min-width:0}.pdf-preview-context-note{font-size:12px;color:hsl(var(--muted-foreground));line-height:1.6;padding:12px 6px}.pdf-stage-context .pdf-stage{grid-area:auto}
 .pdf-editor-body{position:relative}.pdf-editor-loading{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;gap:10px;background:hsl(var(--paper-2)/.94);color:hsl(var(--muted-foreground));font-size:13px;pointer-events:auto}
+/* Where the file goes, beside its name in the editor header (the intake that said it is gone). */
+.pdf-editor-where{font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap}.pdf-editor-header>.pdf-editor-where{max-width:none}

@@ -4,7 +4,8 @@ import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { FileIntake, StudioActions, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { useToolLocation } from "@/skins/experience/tool-location";
 import { mergePageSelection } from "../merge-model";
 import { PdfPageStage } from "./PdfPageStage";
 
@@ -14,6 +15,8 @@ const isPdf = (file: File) => file.name.toLowerCase().endsWith(".pdf");
 export function PdfPageSelectionUI({ operation }: { operation: "delete" | "extract" }) {
     const proc = useMultiFileProcessor();
     const { addFiles, doneCount, downloadAll } = proc;
+    // A chosen file's row says where it goes on a tool page, as FileUploadZone's does.
+    const where = useToolLocation();
     const [pages, setPages] = useState("");
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState<number | null>(null);
@@ -50,13 +53,13 @@ export function PdfPageSelectionUI({ operation }: { operation: "delete" | "extra
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => downloadBlob(entry.blob!, entry.outName || entry.name) : undefined} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloaded.current = false; void process("transient"); }}
                 choose={{ accepts: ".pdf", multiple: true, label: several ? "Choose different PDFs" : "Choose a different PDF", onFiles: fresh }}
-                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll(`${slug}.zip`)}><Download size={16} />Download {proc.doneCount > 1 ? "all" : "again"}</button>}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll(`${slug}.zip`)}><Download size={16} aria-hidden="true" />{downloadAgainLabel(proc.doneCount)}</button>}
                 more={<><button className="ts-text-button" onClick={adjust}>Adjust selection</button>{tone !== "failure" && <button className="ts-text-button" onClick={() => fresh()}>Choose another PDF</button>}</>} />
         </StudioResult>;
     }
     return <div className="space-y-5">
         <FileIntake accepts=".pdf" multiple compact={!!first} disabled={phase === "processing"} label="Choose PDFs" title={removing ? "Make room for what matters." : "Keep the pages you came for."} detail="Choose pages visually, or enter a range. The same selection applies to each file." autoFocus={returning} onFiles={files => proc.addFiles(files, isPdf)} />
-        {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={formatFileSize(entry.size)} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase === "processing" ? undefined : () => proc.removeFile(entry.id)} />)}
+        {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={`${formatFileSize(entry.size)} · ${where ? where.label : "Ready on this device"}`} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase === "processing" ? undefined : () => proc.removeFile(entry.id)} />)}
         {first && <div className="pdf-coordinate-workspace"><PdfPageStage file={first.file} page={page} onPageChange={setPage} onDimensions={info => setTotal(info.pages)} /><fieldset className="pdf-coordinate-controls" disabled={phase === "processing"}>
             <div><p className="ts-eyebrow">Choose your pages</p><h3>{removing ? "Take these out." : "Bring these along."}</h3><p className="pdf-preview-context-note">Previewing {first.name}{proc.entries.length > 1 ? ". The same page numbers apply to every selected PDF." : "."}</p></div>
             <button className="ts-secondary-button" aria-pressed={selected.includes(page)} onClick={toggle}>{selected.includes(page) ? <Minus size={16} /> : <Plus size={16} />}{selected.includes(page) ? `Unselect page ${page}` : `${removing ? "Remove" : "Keep"} page ${page}`}</button>

@@ -37,6 +37,7 @@ import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import "./pdf/pdf-workspace.css";
 import { useEditHistory } from "@/hooks/useEditHistory";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { useToolLocation } from "@/skins/experience/tool-location";
 
 // PDF.js is loaded dynamically the first time a user drops a file so the
 // ~440 KB library is excluded from the EditPdfUI route chunk. The promise
@@ -121,6 +122,8 @@ export function EditPdfUI() {
     const { showThumbs } = config;
     const setShowThumbs = useCallback((v: React.SetStateAction<typeof EDIT_PDF_DEFAULTS["showThumbs"]>) => setField("showThumbs", v), [setField]);
     const [file, setFile] = useState<File | null>(null);
+    // The editor replaces the intake that said where the file goes, so its header says it.
+    const where = useToolLocation();
     const history = useEditHistory<Edit[]>([]);
     const edits = history.present;
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -567,6 +570,8 @@ export function EditPdfUI() {
                 </button>
                 <div className="w-px h-5" style={{ background: "hsl(var(--border))" }} />
                 <span className="text-sm font-medium text-foreground truncate max-w-[180px]">{file?.name}</span>
+                {/* Where the file goes, as the other chosen-file rows say it: the editor replaced the intake that did. */}
+                {where && <span className="pdf-editor-where" data-where={where.kind}>{where.label}</span>}
                 <div className="flex-1" />
 
                 {/* Pages sidebar toggle */}
