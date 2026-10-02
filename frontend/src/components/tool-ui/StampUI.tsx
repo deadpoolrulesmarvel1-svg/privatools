@@ -3,7 +3,7 @@
  * Stamp preset gallery showing the stamp's look, position picker, opacity slider.
  * Multi-file via useMultiFileProcessor — same stamp applied to every PDF.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Stamp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -147,9 +147,8 @@ export function StampUI() {
                     position === "top" && "items-start justify-center pt-3",
                     position === "bottom" && "items-end justify-center pb-3",
                     (position === "center" || position === "diagonal") && "items-center justify-center")}>
-                    <span className="px-2 py-0.5 border-2 rounded" style={{ color: stampPreviewColor, borderColor: stampPreviewColor, opacity: opacity / 100, transform: position === "diagonal" ? "rotate(-25deg)" : undefined, fontSize: Math.max(9, Math.min(displayText.length > 10 ? 11 : 14, 18)) }}>
-                        {displayText}
-                    </span>
+                    <StampMark text={displayText} color={stampPreviewColor} opacity={opacity / 100} diagonal={position === "diagonal"}
+                        fontSize={Math.max(9, Math.min(displayText.length > 10 ? 11 : 14, 18))} />
                 </div>
             </div>
         </div>
@@ -161,4 +160,33 @@ export function StampUI() {
         <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
         {busy && <StudioProgress label="Applying the stamp" detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}
     </StudioLayout>;
+}
+
+/**
+ * The stamp in the preview, at the opacity it will have on the page. It is drawn as part of
+ * the picture of the page (an SVG inside the aria-hidden preview), not as page text: a faint
+ * stamp is the point of the picture, and WCAG's contrast minimum exempts text that is part of
+ * a picture. The box hugs the measured text, as the HTML version's padding and border did.
+ */
+function StampMark({ text, color, opacity, diagonal, fontSize }: { text: string; color: string; opacity: number; diagonal: boolean; fontSize: number }) {
+    const ref = useRef<SVGTextElement>(null);
+    const [textWidth, setTextWidth] = useState(() => text.length * fontSize * 0.72);
+    useLayoutEffect(() => {
+        let live = true;
+        const measure = () => {
+            const el = ref.current;
+            if (!live || !el || typeof el.getBBox !== "function") return;
+            const width = el.getBBox().width;
+            if (width > 0) setTextWidth(width);
+        };
+        measure();
+        document.fonts?.ready.then(measure).catch(() => {});
+        return () => { live = false; };
+    }, [text, fontSize]);
+    const width = textWidth + 20, height = fontSize * 1.25 + 8;
+    return <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} focusable="false" className="font-display font-extrabold overflow-visible"
+        style={{ opacity, transform: diagonal ? "rotate(-25deg)" : undefined }}>
+        <rect x={1} y={1} width={width - 2} height={height - 2} rx={4} fill="none" strokeWidth={2} style={{ stroke: color }} />
+        <text ref={ref} x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="central" fontSize={fontSize} style={{ fill: color }}>{text}</text>
+    </svg>;
 }
