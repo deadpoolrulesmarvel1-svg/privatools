@@ -19,6 +19,7 @@ from ..services import (
     view_exif_service,
     web_optimize_service,
 )
+from ..utils.images import image_read_error
 from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
@@ -192,5 +193,7 @@ async def view_exif_endpoint(file: UploadFile = File(...)):
         raise
     except Exception as e:
         remove_files(*([str(temp_path)] if temp_path else []))
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("view-exif failed")
         raise HTTPException(status_code=500, detail=f"view-exif failed: {e}")
