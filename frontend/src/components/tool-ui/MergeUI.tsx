@@ -10,7 +10,7 @@ import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice, StudioActionBar } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
 import { focusIfIdle } from "@/skins/experience/focus-result";
-import { downloadAgainLabel } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, downloadStarted } from "@/skins/experience/studio-outcome";
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
@@ -429,7 +429,7 @@ export function MergeUI() {
                     </section>
                     <aside className="merge-settings" aria-label={result ? "Download merged PDF" : "Merge settings"} aria-busy={busy}>
                         <div ref={settingsBodyRef} className="merge-settings-body" style={{ minHeight: phase === "idle" ? undefined : panelBodyHeight }}>
-                            {(!result || !mobile) && <h2>{result ? "Ready to download" : busy ? "Making your PDF" : "Merge settings"}</h2>}
+                            {(!result || !mobile) && <h2>{result ? "Merge details" : busy ? "Making your PDF" : "Merge settings"}</h2>}
                             {result ? (
                                 mobile ? <details className="merge-result-details"><summary>Merge details</summary><ResultSummary result={result} /></details> : <ResultSummary result={result} />
                             ) : busy ? (
@@ -505,7 +505,8 @@ function ResultSummary({ result }: { result: MergeResult }) {
             {result.excludedCount !== null && <div><dt>Excluded pages</dt><dd>{result.excludedCount}</dd></div>}
             <div><dt>File size</dt><dd>{formatFileSize(result.blob.size)}</dd></div>
         </dl>
-        <p className="merge-help">Review the pages, then save your PDF.</p>
+        {/* The download policy: the merged PDF downloaded by itself when it was made. */}
+        <p className="merge-help">{downloadStarted(1)}</p>
     </>;
 }
 
