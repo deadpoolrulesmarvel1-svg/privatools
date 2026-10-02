@@ -127,6 +127,13 @@ html[data-experience] .consumer-formatter .formatter-button,html[data-experience
 html[data-experience=play] .formatter-editors{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:28px;}
 html[data-experience=play] .formatter-pane{border:0;border-radius:28px;box-shadow:0 5px 0 var(--pt-panel);}
 html[data-experience=play] .formatter-output-pane{background:var(--pt-code);}
+/* Play's output pane is the code paper in both themes, light in Charcoal too:
+   its text takes the paper's inks and the code darker colours, each at least
+   5:1 on the paper (Charcoal's light foreground was 1.2:1 there). */
+html[data-experience=play] .formatter-output-pane{color:var(--pt-code-ink);--formatter-code-key:#00509f;--formatter-code-string:#8c3c05;--formatter-code-literal:#1e6131;--formatter-code-number:#62479a;}
+html[data-experience=play] .consumer-formatter .formatter-output-pane :is(.formatter-pane-heading h2,.formatter-empty p,.formatter-empty svg,.formatter-code,.formatter-result-status.is-valid){color:var(--pt-code-ink);}
+html[data-experience=play] .consumer-formatter .formatter-output-pane :is(.formatter-empty span,.formatter-line-numbers,.formatter-text-button,.formatter-pane-footer,.formatter-token-comment){color:var(--pt-code-muted);}
+html[data-experience=play] .consumer-formatter .formatter-output-pane .formatter-line-numbers{background:transparent;}
 html[data-experience=play] .consumer-formatter .formatter-button,html[data-experience=play] .consumer-formatter .formatter-run,html[data-experience=play] .formatter-segments{border-radius:99px;}
 html[data-experience=play] .consumer-formatter .formatter-run:hover:not(:disabled){transform:translateY(-3px);}
 @media(max-width:680px){html[data-experience=play] .formatter-editors{grid-template-columns:minmax(0,1fr);}.formatter-pane{min-width:0;}}
