@@ -197,10 +197,11 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         const tone = studioOutcome(doneItems.length, failCount);
         const startOver = (incoming?: File[]) => { reset(); if (incoming) addFiles(incoming); setReturning(true); };
         return <StudioResult tone={tone}
-            title={tone === "failure" ? single ? "This file couldn’t be converted." : "None of these files could be converted."
-                : tone === "partial" ? `${doneItems.length} of ${items.length} files converted.` : single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
+            // This UI also runs tools that do not convert (Flatten, Repair, Reverse…), so failures say "processed".
+            title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
+                : tone === "partial" ? `${doneItems.length} of ${items.length} files ready.` : single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
             detail={tone === "failure" ? failureDetail(failCount, retryCount)
-                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be converted; the reason is below. The completed results are ready.`
+                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The completed results are ready.`
                 : single ? "The download has started. A copy is ready here whenever you need it." : "Save them separately, or download one ZIP."}>
             {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : formatFileSize(item.file.size))}
                 status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined} />)}

@@ -1,7 +1,7 @@
 ---
 name: "PrivaTools — Air and Play"
 description: "Two distinct consumer experiences sharing one functional application."
-updated: "2026-09-28"
+updated: "2026-10-02"
 experiences:
   air:
     light: "Morning Mist"
