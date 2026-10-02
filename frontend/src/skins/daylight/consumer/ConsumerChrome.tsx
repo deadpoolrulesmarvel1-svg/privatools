@@ -115,7 +115,12 @@ export function ConsumerSearch({ open, onOpenChange, history }: { open: boolean;
   // Say how many results a query found once typing settles; "no match" has its own status line.
   const count = query.trim() && items.length ? `${items.length} result${items.length === 1 ? '' : 's'}` : '';
   const [announced, setAnnounced] = useState('');
-  useEffect(() => { const timer = window.setTimeout(() => setAnnounced(count), 350); return () => window.clearTimeout(timer); }, [count]);
+  // Closing clears the count, so a reopened dialog never repeats the last search's.
+  useEffect(() => {
+    if (!open) { setAnnounced(''); return; }
+    const timer = window.setTimeout(() => setAnnounced(count), 350);
+    return () => window.clearTimeout(timer);
+  }, [count, open]);
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="cp-search-dialog" onCloseAutoFocus={event => { event.preventDefault(); returnFocus.current?.focus(); }}>
     <DialogTitle className="sr-only">Search tools and pages</DialogTitle>
     <DialogDescription className="sr-only">Search by name or task. Use the arrow keys and Enter to open a result.</DialogDescription>

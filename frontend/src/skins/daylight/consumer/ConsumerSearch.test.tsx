@@ -22,6 +22,20 @@ describe("tool search dialog", () => {
         expect(screen.getAllByRole("option")).toHaveLength(shown);
     });
 
+    it("never repeats the last search's count when the dialog is reopened", () => {
+        vi.useFakeTimers();
+        const view = render(<ConsumerSearch open onOpenChange={vi.fn()} history={[]} />);
+        fireEvent.change(screen.getByRole("combobox"), { target: { value: "compress" } });
+        act(() => { vi.advanceTimersByTime(400); });
+        expect(document.querySelector(".sr-only[role=status]")).not.toHaveTextContent(/^$/);
+        view.rerender(<ConsumerSearch open={false} onOpenChange={vi.fn()} history={[]} />);
+        view.rerender(<ConsumerSearch open onOpenChange={vi.fn()} history={[]} />);
+        // Straight after reopening, and once the reset query has settled.
+        expect(document.querySelector(".sr-only[role=status]")).toHaveTextContent(/^$/);
+        act(() => { vi.advanceTimersByTime(400); });
+        expect(document.querySelector(".sr-only[role=status]")).toHaveTextContent(/^$/);
+    });
+
     it("leaves a query with no match to the visible no-match status", () => {
         vi.useFakeTimers();
         render(<ConsumerSearch open onOpenChange={vi.fn()} history={[]} />);

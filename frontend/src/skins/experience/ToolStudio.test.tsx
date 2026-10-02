@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { FileIntake, StudioActions, StudioResult } from "./ToolStudio";
+import { useState } from "react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
+import { FileChooserButton, FileIntake, StudioActions, StudioResult } from "./ToolStudio";
 
-afterEach(() => { cleanup(); window.history.pushState({}, "", "/"); });
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() } }));
+
+afterEach(() => { cleanup(); vi.mocked(toast.error).mockClear(); window.history.pushState({}, "", "/"); });
 
 const png = () => new File(["png"], "holiday.png", { type: "image/png" });
 const pdf = (name = "report.pdf") => new File(["%PDF-1.7"], name, { type: "application/pdf" });
@@ -29,11 +34,15 @@ describe("FileIntake", () => {
         expect(screen.getByRole("button", { name: "Add files" })).toBeInTheDocument();
     });
 
-    it.each(["Enter", " "])("opens the chooser from the keyboard with %j, once", key => {
+    // The button's own activation (user-event runs the browser's default for Enter and Space)
+    // reaches the card's click handler: no key handler of its own, so no second route.
+    it.each(["{Enter}", " "])("opens the chooser from the keyboard with %j, once", async key => {
+        const user = userEvent.setup();
         const { container } = render(<FileIntake accepts=".pdf" title="Pick" onFiles={vi.fn()} />);
         const input = container.querySelector<HTMLInputElement>("input[type=file]")!;
         const click = vi.spyOn(input, "click").mockImplementation(() => {});
-        fireEvent.keyDown(screen.getByRole("button", { name: /^Choose a file/ }), { key });
+        screen.getByRole("button", { name: /^Choose a file/ }).focus();
+        await user.keyboard(key);
         expect(click).toHaveBeenCalledTimes(1);
     });
 
@@ -77,12 +86,59 @@ describe("StudioResult", () => {
         expect(screen.getByText("Ready for what’s next")).toBeInTheDocument();
     });
 
+    it("leaves focus where the visitor put it: a field in an open dialog keeps it when the result appears", () => {
+        function Page() {
+            const [done, setDone] = useState(false);
+            return <>
+                <div role="dialog" aria-modal="true" aria-label="Search tools and pages"><input aria-label="Search" /></div>
+                <button onClick={() => setDone(true)}>finish run</button>
+                {done && <StudioResult title="A little lighter. 60% smaller." />}
+            </>;
+        }
+        render(<Page />);
+        const field = screen.getByRole("textbox", { name: "Search" });
+        const finish = screen.getByRole("button", { name: "finish run" });
+        field.focus();
+        act(() => { finish.click(); });
+        expect(screen.getByRole("heading", { name: "A little lighter. 60% smaller." })).not.toHaveFocus();
+        expect(field).toHaveFocus();
+    });
+
     it("never dresses a failure as success", () => {
         const { container } = render(<StudioResult tone="failure" title="This PDF couldn’t be compressed." />);
         expect(container.querySelector(".ts-result")).toHaveAttribute("data-tone", "failure");
         expect(screen.queryByText("Ready for what’s next")).toBeNull();
         expect(container.querySelector(".lucide-check")).toBeNull();
         expect(container.querySelector(".lucide-triangle-alert, .lucide-alert-triangle")).not.toBeNull();
+    });
+});
+
+describe("FileChooserButton", () => {
+    it("names the refused part of a mixed choice in a toast when the result it sat on gives way", () => {
+        window.history.pushState({}, "", "/tool/compress-pdf");
+        const report = pdf("notes.pdf");
+        function Result() {
+            const [chosen, setChosen] = useState<File[] | null>(null);
+            // Like every result: accepted files reset the tool, so the chooser and its notice unmount at once.
+            return chosen ? <p>Form with {chosen.map(file => file.name).join(", ")}</p>
+                : <FileChooserButton accepts=".pdf" multiple onFiles={setChosen}>Choose a different file</FileChooserButton>;
+        }
+        const { container } = render(<Result />);
+        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [report, png()] } });
+        expect(screen.getByText("Form with notes.pdf")).toBeInTheDocument();
+        expect(toast.error).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(toast.error).mock.calls[0][0]).toBe("holiday.png wasn’t added.");
+        expect(vi.mocked(toast.error).mock.calls[0][1]).toMatchObject({ description: "Compress PDF takes PDF files. Try Image Compressor for PNG files." });
+    });
+
+    it("keeps a refusal beside the button, with no toast, when nothing was accepted", () => {
+        const onFiles = vi.fn();
+        const { container } = render(<FileChooserButton accepts=".pdf" onFiles={onFiles}>Choose a different file</FileChooserButton>);
+        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [png()] } });
+        expect(onFiles).not.toHaveBeenCalled();
+        expect(screen.getByRole("alert")).toHaveTextContent("holiday.png wasn’t added.");
+        cleanup();
+        expect(toast.error).not.toHaveBeenCalled();
     });
 });
 

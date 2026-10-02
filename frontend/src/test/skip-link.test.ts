@@ -3,11 +3,14 @@
  * which Tailwind never scans: its old `focus:not-sr-only` utilities were never
  * generated, so production showed a 1×1 clipped link on focus (audit B P1-1).
  * It is now styled by the inline stylesheet in index.html; this renders that
- * stylesheet and checks the link is hidden until focused and shown on focus.
+ * stylesheet and checks the link is hidden until focused and shown on focus,
+ * and that SkinAppHost's retargeting (skins/skip-link.ts) sends it, and focus,
+ * to the app's <main>.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { retargetSkipLink } from "@/skins/skip-link";
 
 const html = readFileSync(join(process.cwd(), "index.html"), "utf8");
 
@@ -19,7 +22,17 @@ function mountIndex() {
     return document.getElementById("prepaint-skip") as HTMLAnchorElement;
 }
 
-afterEach(() => { document.head.innerHTML = ""; document.body.innerHTML = ""; });
+afterEach(() => { vi.useRealTimers(); document.head.innerHTML = ""; document.body.innerHTML = ""; });
+
+/** The app's <main>, as ExperienceShell renders it. */
+function mountMain() {
+    const main = document.createElement("main");
+    main.id = "dl-main";
+    main.tabIndex = -1;
+    main.scrollIntoView = vi.fn();
+    document.getElementById("root")!.append(main);
+    return main;
+}
 
 describe("skip link", () => {
     it("is the first focusable element and targets the main content", () => {
@@ -27,8 +40,40 @@ describe("skip link", () => {
         expect(link.tagName).toBe("A");
         expect(link.textContent).toBe("Skip to main content");
         expect(document.body.querySelector("a[href], button, input, [tabindex]")).toBe(link);
+        // Before the app mounts it points at the pre-paint default.
+        expect(link.getAttribute("href")).toBe("#main-content");
         // No utility classes that depend on Tailwind scanning this file.
         expect(link.className).toBe("");
+    });
+
+    it("is pointed at the app's <main> once it mounts, and moves focus there without leaving the page", () => {
+        const link = mountIndex();
+        const main = mountMain();
+        const cleanup = retargetSkipLink();
+        expect(link.getAttribute("href")).toBe("#dl-main");
+        link.focus();
+        // Enter on a link is a click; a fragment is a route here, so the default is stopped.
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        link.dispatchEvent(click);
+        expect(click.defaultPrevented).toBe(true);
+        expect(main).toHaveFocus();
+        expect(main.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
+        cleanup();
+    });
+
+    it("waits for a <main> that mounts late, and lets go when the app unmounts", () => {
+        vi.useFakeTimers();
+        const link = mountIndex();
+        const cleanup = retargetSkipLink();
+        expect(link.getAttribute("href")).toBe("#main-content");
+        const main = mountMain();
+        vi.advanceTimersByTime(50);
+        expect(link.getAttribute("href")).toBe("#dl-main");
+        cleanup();
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        link.dispatchEvent(click);
+        expect(click.defaultPrevented).toBe(false);
+        expect(main).not.toHaveFocus();
     });
 
     it("stays out of sight until focused", () => {

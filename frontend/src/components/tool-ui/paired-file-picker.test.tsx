@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { AttachmentUI } from "./AttachmentUI";
 import { CompareUI } from "./CompareUI";
 import { postFormData, downloadBlob } from "@/lib/api";
@@ -31,15 +32,18 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe.each(surfaces)("$name file pickers", ({ Component, pickers, action, endpoint, fields }) => {
-  it.each(["click", "Enter", " "])("opens the correct native input using %s", gesture => {
+  // Keys go through user-event, which runs the native button's own activation:
+  // the intake has no key handler of its own, so each gesture opens one chooser.
+  it.each(["click", "{Enter}", " "])("opens the correct native input using %j", async gesture => {
+    const user = userEvent.setup();
     render(<Component />);
     for (const name of pickers) {
       const control = screen.getByRole("button", { name });
       const input = fileInputOf(control);
       expect(input).toBeTruthy();
       const click = vi.spyOn(input, "click").mockImplementation(() => {});
-      if (gesture === "click") fireEvent.click(control);
-      else fireEvent.keyDown(control, { key: gesture });
+      if (gesture === "click") await user.click(control);
+      else { control.focus(); await user.keyboard(gesture); }
       expect(click).toHaveBeenCalledTimes(1);
     }
     expect(postFormData).not.toHaveBeenCalled();

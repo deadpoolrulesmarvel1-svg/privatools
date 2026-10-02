@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice } from "@/skins/experience/ToolStudio";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
@@ -314,7 +315,8 @@ export function MergeUI() {
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    useEffect(() => { if (phase === "done") resultHeading.current?.focus(); }, [phase]);
+    // Only when nothing else holds focus: never out of a dialog or a field the visitor moved to.
+    useEffect(() => { if (phase === "done") focusIfIdle(resultHeading.current); }, [phase]);
 
     const previewOrder = useMemo(() => mergeable.flatMap((file, index) =>
         (mergeableSelections[index].pages ?? []).map(page => ({ file, page }))), [mergeable, mergeableSelections]);

@@ -1,22 +1,13 @@
 import { fileFormatLabel } from "./file-format-label";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowDownToLine, ArrowUpRight, Check, FileText, Plus, X } from "lucide-react";
-import { adviseRejection, partitionByAccept, type RejectionAdvice } from "@/lib/file-acceptance";
+import type { RejectionAdvice } from "@/lib/file-acceptance";
 import type { StudioOutcome } from "./studio-outcome";
+import { focusIfIdle } from "./focus-result";
+import { useFileAcceptance } from "./useFileAcceptance";
 import "./tool-studio.css";
 
 export type { StudioOutcome } from "./studio-outcome";
-
-/** Take files by an `accept` list; anything else becomes a notice. */
-function useAcceptance(accepts: string | undefined, onFiles: (files: File[]) => void) {
-    const [advice, setAdvice] = useState<RejectionAdvice | null>(null);
-    const receive = (files: File[]) => {
-        const { accepted, rejected } = partitionByAccept(files, accepts);
-        setAdvice(adviseRejection(rejected, { accepts }));
-        if (accepted.length) onFiles(accepted);
-    };
-    return { advice, receive, dismiss: () => setAdvice(null) };
-}
 
 /** Files an intake refused: named, what this tool takes, and the tool that takes them. */
 export function IntakeNotice({ advice, onDismiss }: { advice: RejectionAdvice | null; onDismiss?: () => void }) {
@@ -48,14 +39,15 @@ export function FileIntake({ accepts, multiple, onFiles, label = "Choose files",
     const input = useRef<HTMLInputElement>(null);
     const button = useRef<HTMLButtonElement>(null);
     const [dragging, setDragging] = useState(false);
-    const { advice, receive, dismiss } = useAcceptance(accepts, onFiles);
+    const { advice, receive, dismiss } = useFileAcceptance(accepts, onFiles);
     const id = useId();
     const open = () => { if (!disabled) input.current?.click(); };
     const take = (files: FileList | null) => { if (!disabled && files?.length) receive(Array.from(files)); };
     const format = fileFormatLabel(accepts);
     const heading = compact ? "Add to your selection" : title || label;
     const action = compact ? "Add files" : multiple ? "Choose files" : "Choose a file";
-    useEffect(() => { if (autoFocus) button.current?.focus(); }, [autoFocus]);
+    // Back from a result: the chooser that was used is gone, so focus is on the body; never take it from elsewhere.
+    useEffect(() => { if (autoFocus) focusIfIdle(button.current); }, [autoFocus]);
     return <>
         <div className={`ts-intake${compact ? " ts-intake-compact" : ""}`} data-dragging={dragging} data-disabled={disabled}
             onClick={open}
@@ -65,9 +57,9 @@ export function FileIntake({ accepts, multiple, onFiles, label = "Choose files",
                 onClick={event => event.stopPropagation()} onChange={event => { take(event.target.files); event.target.value = ""; }} />
             <div className="ts-intake-art" aria-hidden="true"><span className="ts-sheet ts-sheet-back" /><span className="ts-sheet ts-sheet-front"><FileText size={31} strokeWidth={1.35} /><span>{format?.slice(0, 6)}</span><i /><i /><i /></span><span className="ts-intake-plus"><Plus size={22} /></span></div>
             <div className="ts-intake-copy"><span className="ts-intake-overline">{compact ? "Your selection" : "Start with your file"}</span><h3>{heading}</h3><p id={`${id}-detail`}>{detail || "Choose from your device, or bring your files into this space."}</p>
+                {/* A native button: Enter and Space click it, and the click reaches the card's onClick. */}
                 <button ref={button} type="button" className="ts-intake-choose" disabled={disabled}
-                    aria-label={compact ? undefined : `${action}: ${heading}`} aria-describedby={compact ? undefined : `${id}-detail`}
-                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } }}>
+                    aria-label={compact ? undefined : `${action}: ${heading}`} aria-describedby={compact ? undefined : `${id}-detail`}>
                     {action}<ArrowUpRight size={18} aria-hidden="true" />
                 </button>
                 <span className="ts-intake-drag">or drag {multiple ? "them" : "it"} here</span></div>
@@ -81,7 +73,9 @@ export function FileChooserButton({ accepts, multiple, onFiles, children, classN
     accepts?: string; multiple?: boolean; onFiles: (files: File[]) => void; children: ReactNode; className?: string;
 }) {
     const input = useRef<HTMLInputElement>(null);
-    const { advice, receive, dismiss } = useAcceptance(accepts, onFiles);
+    // Choosing here leaves the result, so a refused part of a mixed choice is
+    // said in a toast as well (useFileAcceptance).
+    const { advice, receive, dismiss } = useFileAcceptance(accepts, onFiles);
     return <>
         <button type="button" className={className} onClick={() => input.current?.click()}>{children}</button>
         <input ref={input} type="file" accept={accepts} multiple={multiple} className="ts-native-input" tabIndex={-1}
@@ -112,7 +106,8 @@ export function StudioProgress({ label = "Working on your file", progress, detai
  */
 export function StudioResult({ title, detail, children, onReset, tone = "success" }: { title: string; detail?: string; children?: ReactNode; onReset?: () => void; tone?: StudioOutcome }) {
     const heading = useRef<HTMLHeadingElement>(null);
-    useEffect(() => { heading.current?.focus(); }, []);
+    // Only when nothing else holds focus: never out of a dialog or a field the visitor moved to.
+    useEffect(() => { focusIfIdle(heading.current); }, []);
     return <section className="ts-result" data-tone={tone}>
         <header><div className="ts-result-art" aria-hidden="true"><span /><span />{tone === "failure" ? <AlertTriangle size={36} strokeWidth={1.6} /> : <Check size={38} strokeWidth={1.5} />}{tone === "partial" && <b className="ts-result-badge"><AlertTriangle size={15} strokeWidth={2.2} /></b>}</div>
             <div>{tone === "success" && <p className="ts-eyebrow">Ready for what’s next</p>}<h2 ref={heading} tabIndex={-1}>{title}</h2>{detail && <p className="ts-result-detail">{detail}</p>}</div></header>
