@@ -378,7 +378,7 @@ export const THRESHOLDS = {
      * scatter: a sharpened copy saved again as JPEG at quality 80 left an
      * orange outline reading 9.7 levels, visible at 100 %, and one saved at
      * quality 85 an outline reading 8.5, visible at 200 %, where the six
-     * real samples read 0.6 to 1.6 and copies with speckle only at 200 %
+     * real samples read 0.4 to 2.2 and copies with speckle only at 200 %
      * read up to 7.6.
      */
     interior: {
