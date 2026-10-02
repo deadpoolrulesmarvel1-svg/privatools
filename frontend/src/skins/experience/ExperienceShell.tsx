@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { useStickyHeaderClearance } from './useStickyHeaderClearance';
 import { ArrowRight, AudioLines, BookOpen, Check, CircleHelp, Code2, Feather, FolderHeart, Grid2X2, Home, Keyboard, Layers, LifeBuoy, LockKeyhole, Moon, Palette, Search, Settings, ShieldCheck, Sparkles, Sun, UserRound, Workflow } from 'lucide-react';
 import { useExperience } from '@/lib/experience';
 import { PwaControls } from '@/components/pwa/PwaControls';
@@ -40,8 +41,10 @@ export function AppearanceControls({ expanded=false }: {expanded?:boolean}) {
 
 export function ExperienceShell({view,signedIn,onSearch,children}: {view:string;signedIn:boolean;onSearch:()=>void;children:ReactNode}) {
   const {experience}=useExperience();
+  const header = useRef<HTMLElement>(null);
+  useStickyHeaderClearance(header);
   return <div className="pt-shell pt-studio-shell" data-view={view}>
-    <header className="pt-header">
+    <header className="pt-header" ref={header}>
       <ExperienceLogo/>
       <nav className="pt-top-links" aria-label="Primary navigation">
         {[navigation[1], navigation[2], navigation[3], navigation[6], navigation[5], navigation[8], navigation[4]].map(item => <a

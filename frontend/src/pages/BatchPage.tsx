@@ -28,6 +28,7 @@ import { setBatchActive, clearBatchActive } from "@/lib/persistence";
 import { chooseDownloadFilename, formatErrorForClipboard, postFormData, withErrorKind } from "@/lib/api";
 import { batchConfigError, buildBatchForm } from "@/lib/batch-request";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
+import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -161,11 +162,11 @@ export default function BatchPage() {
     const [parallel, setParallel] = useState(false);  // Run files in parallel (default off — server-friendly)
     const [showHistory, setShowHistory] = useState(false);
     const [history, setHistory] = useState<BatchHistoryEntry[]>(loadHistory);
-    const [rejectedCount, setRejectedCount] = useState(0);  // Files filtered out by accepts
+    // Files the selected tool can't take: named, with the tool that takes them.
+    const [rejection, setRejection] = useState<RejectionAdvice | null>(null);
     const [hideDone, setHideDone] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
-    const rejectedFlashRef = useRef<number | null>(null);
 
     const filteredTools = useMemo(() =>
         toolSearch.trim()
@@ -178,16 +179,15 @@ export default function BatchPage() {
             for (const f of prev) if (f.resultUrl) URL.revokeObjectURL(f.resultUrl);
             return [];
         });
-        setRejectedCount(0);
+        setRejection(null);
     }, []);
 
     useEffect(() => clearAllFiles, [clearAllFiles]);
 
-    // Abort any in-flight batch run and clear the rejected-flash timer on
-    // unmount so neither keeps the page alive after navigation.
+    // Abort any in-flight batch run on unmount so it doesn't keep the page
+    // alive after navigation.
     useEffect(() => () => {
         abortRef.current?.abort();
-        if (rejectedFlashRef.current) window.clearTimeout(rejectedFlashRef.current);
     }, []);
 
     /**
@@ -199,16 +199,13 @@ export default function BatchPage() {
         if (!newFiles || processing) return;
         const arr = Array.from(newFiles);
         const accepted = arr.filter(f => fileAccepts(f, selectedTool.accepts));
-        const rejected = arr.length - accepted.length;
+        const rejected = arr.filter(f => !accepted.includes(f));
         const added: BatchFile[] = accepted.map(f => ({ file: f, status: "pending" as const }));
         setFiles(prev => [...prev, ...added]);
-        if (rejected > 0) {
-            setRejectedCount(c => c + rejected);
-            // Clear the warning after a few seconds.
-            if (rejectedFlashRef.current) window.clearTimeout(rejectedFlashRef.current);
-            rejectedFlashRef.current = window.setTimeout(() => setRejectedCount(0), 6000);
-        }
-    }, [selectedTool.accepts, processing]);
+        // The notice stays until the next selection or a dismissal: a warning
+        // that times out can vanish before it is read.
+        setRejection(adviseRejection(rejected, { accepts: selectedTool.accepts, fromSlug: selectedTool.slug }));
+    }, [selectedTool.accepts, selectedTool.slug, processing]);
 
     const removeFile = (idx: number) => {
         setFiles(prev => {
@@ -513,7 +510,7 @@ export default function BatchPage() {
                 <section className="wf-batch-main wf-work-sheet" aria-label="Batch files">
                     <div className="wf-sheet-heading"><div><p className="wf-section-label">02 / BRING YOUR FILES</p><h2>A place for the whole pile.</h2></div><span className="wf-status-pill">{files.length} file{files.length !== 1 ? "s" : ""}</span></div>
                     <div className="wf-batch-drop-area"><Dropzone disabled={processing} accepts={selectedTool.accepts} onFiles={addFiles} onClick={() => inputRef.current?.click()} /><input ref={inputRef} disabled={processing} type="file" multiple accept={selectedTool.accepts} className="hidden" onChange={event => { addFiles(event.target.files); event.target.value = ""; }} /></div>
-                    {rejectedCount > 0 && <div className="wf-notice wf-notice-error" role="status"><AlertCircle size={18} /><p>Skipped {rejectedCount} file{rejectedCount !== 1 ? "s" : ""} that do not match {selectedTool.accepts || "the accepted formats"}.</p><button aria-label="Dismiss" onClick={() => setRejectedCount(0)}><X size={16} /></button></div>}
+                    {rejection && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><p><strong>{rejection.headline}</strong> {rejection.reason}{rejection.suggestion && <> {rejection.suggestionLead}<a href={rejection.suggestion.href}>{rejection.suggestion.name}</a>{rejection.suggestionTail}</>}</p><button aria-label="Dismiss" onClick={() => setRejection(null)}><X size={16} /></button></div>}
                     <section className="pt-batch-queue">
                         <div className="wf-queue-heading"><div><h3>{files.length ? "Your files" : "Your queue starts here"}</h3><p>{files.length ? `${(totalIn / 1024).toFixed(0)} KB in${totalOut ? ` · ${(totalOut / 1024).toFixed(0)} KB finished` : ""}` : "Add files above. We’ll keep each job easy to follow."}</p></div>{doneCount > 0 && <button className="wf-text-button" disabled={processing} onClick={downloadAll}><Download size={15} /> Download all ({doneCount})</button>}</div>
                         {files.length > 0 && <div className="wf-queue-progress"><div className="wf-progress-label"><span>{doneCount} of {files.length} finished{errorCount > 0 ? ` · ${errorCount} need attention` : ""}</span><span>{etaSeconds > 0 ? `About ${etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left` : `${progressPct}%`}</span></div><div className="pt-batch-progress" role="progressbar" aria-label="Completed batch files" aria-valuemin={0} aria-valuemax={files.length} aria-valuenow={doneCount} aria-valuetext={`${doneCount} of ${files.length} files completed${errorCount ? `; ${errorCount} failed` : ""}`}><div style={{ width: `${progressPct}%` }} /></div></div>}

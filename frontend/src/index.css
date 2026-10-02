@@ -143,6 +143,9 @@
 
     --copper: 28 92% 33%;                /* warning — 4.7:1 on white */
     --copper-soft: 32 100% 94%;
+    /* Fallback only: Air and Play set their own in skins/experience/tokens.css. */
+    --warning: 28 92% 33%;
+    --warning-soft: 32 100% 94%;
     --success: 158 80% 30%;
     --success-soft: 158 60% 94%;
 
@@ -197,6 +200,8 @@
 
     --copper: 32 96% 62%;
     --copper-soft: 28 45% 16%;
+    --warning: 32 96% 62%;
+    --warning-soft: 28 45% 16%;
     --success: 158 62% 48%;
     --success-soft: 158 40% 14%;
 

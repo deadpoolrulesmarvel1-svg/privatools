@@ -20,6 +20,7 @@ import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Down
 import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+import { adviseRejection } from "@/lib/file-acceptance";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { configureTransformers } from "@/lib/transformersEnv";
 import { useByok } from "@/hooks/useByok";
@@ -156,7 +157,7 @@ export function SummarizePdfUI() {
     const onPick = useCallback((fl: FileList | null) => {
         if (!fl || !fl[0]) return;
         if (!fl[0].name.toLowerCase().endsWith(".pdf")) {
-            setError("Please pick a PDF file.");
+            setError(adviseRejection([fl[0]], { accepts: ".pdf" })?.text ?? "Please pick a PDF file.");
             return;
         }
         setFile(fl[0]);

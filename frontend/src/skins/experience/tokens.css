@@ -22,7 +22,8 @@ html[data-experience="air"][data-theme="light"] {
   --sidebar-accent-foreground: 210.00 38.60% 22.35%;
   --muted-foreground: 210.70 20.77% 40.59%;
   --border: 211.11 36.00% 85.29%;
-  --input: 211.11 36.00% 85.29%;
+  /* A field's edge is often its only cue: 3:1 on page, card and panel (--pt-field-line). */
+  --input: 210.77 16.46% 53.53%;
   --border-strong: 211.11 36.00% 85.29%;
   --sidebar-border: 211.11 36.00% 85.29%;
   --primary: 220.38 66.53% 46.86%;
@@ -36,6 +37,9 @@ html[data-experience="air"][data-theme="light"] {
   --sidebar-primary-foreground: 0.00 0.00% 100.00%;
   --accent-soft: 215.17 78.38% 92.75%;
   --success: 158.40 49.67% 29.61%;
+  /* Needs attention, not destructive: failed runs, refused files, read-this-first notes. */
+  --warning: 35.68 100.00% 29.02%;
+  --warning-soft: 34.29 100.00% 93.14%;
   --destructive: 5.00 53.10% 44.31%;
   --copper: 5.00 53.10% 44.31%;
   --font-sans: var(--pt-font);
@@ -66,7 +70,7 @@ html[data-experience="air"][data-theme="dark"] {
   --sidebar-accent-foreground: 225.00 20.00% 96.08%;
   --muted-foreground: 219.00 14.71% 73.33%;
   --border: 218.57 11.11% 24.71%;
-  --input: 218.57 11.11% 24.71%;
+  --input: 221.25 6.90% 45.49%;
   --border-strong: 218.57 11.11% 24.71%;
   --sidebar-border: 218.57 11.11% 24.71%;
   --primary: 220.36 100.00% 78.43%;
@@ -80,6 +84,8 @@ html[data-experience="air"][data-theme="dark"] {
   --sidebar-primary-foreground: 218.57 51.22% 16.08%;
   --accent-soft: 218.18 36.07% 23.92%;
   --success: 155.59 41.26% 71.96%;
+  --warning: 37.10 67.88% 62.16%;
+  --warning-soft: 36.92 35.14% 14.51%;
   --destructive: 7.86 100.00% 83.53%;
   --copper: 7.86 100.00% 83.53%;
   --font-sans: var(--pt-font);
@@ -110,7 +116,7 @@ html[data-experience="play"][data-theme="light"] {
   --sidebar-accent-foreground: 339.38 29.09% 21.57%;
   --muted-foreground: 337.89 19.19% 38.82%;
   --border: 343.78 25.52% 71.57%;
-  --input: 343.78 25.52% 71.57%;
+  --input: 341.05 15.83% 52.94%;
   --border-strong: 343.78 25.52% 71.57%;
   --sidebar-border: 343.78 25.52% 71.57%;
   --primary: 343.55 61.39% 39.61%;
@@ -123,6 +129,8 @@ html[data-experience="play"][data-theme="light"] {
   --accent-foreground: 345.00 100.00% 98.43%;
   --sidebar-primary-foreground: 345.00 100.00% 98.43%;
   --success: 137.89 36.31% 30.78%;
+  --warning: 31.64 100.00% 28.63%;
+  --warning-soft: 28.33 100.00% 92.94%;
   --destructive: 354.68 56.36% 43.14%;
   --copper: 354.68 56.36% 43.14%;
   --font-sans: var(--pt-font);
@@ -153,7 +161,7 @@ html[data-experience="play"][data-theme="dark"] {
   --sidebar-accent-foreground: 37.50 33.33% 95.29%;
   --muted-foreground: 34.29 8.97% 69.41%;
   --border: 40.00 2.33% 25.29%;
-  --input: 40.00 2.33% 25.29%;
+  --input: 37.50 3.42% 45.88%;
   --border-strong: 40.00 2.33% 25.29%;
   --sidebar-border: 40.00 2.33% 25.29%;
   --primary: 13.68 100.00% 73.33%;
@@ -167,6 +175,8 @@ html[data-experience="play"][data-theme="dark"] {
   --sidebar-primary-foreground: 15.56 36.99% 14.31%;
   --accent-soft: 16.67 19.15% 18.43%;
   --success: 95.45 46.48% 72.16%;
+  --warning: 31.79 74.44% 64.71%;
+  --warning-soft: 31.11 32.53% 16.27%;
   --destructive: 4.39 100.00% 83.92%;
   --copper: 4.39 100.00% 83.92%;
   --font-sans: var(--pt-font);

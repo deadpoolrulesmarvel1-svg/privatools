@@ -23,7 +23,7 @@
 .cmp-search:focus-within { color: var(--pt-action); }
 .cmp-search:has(input:focus-visible) { outline: 2px solid var(--pt-action); outline-offset: 6px; border-radius: 3px; }
 .cmp-sort { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--pt-muted); }
-.cmp-sort select { background: var(--pt-surface); border: 1px solid var(--pt-line); border-radius: 8px; min-height: 38px; padding: 7px 29px 7px 10px; color: var(--pt-ink); font: inherit; }
+.cmp-sort select { background: var(--pt-surface); border: 1px solid var(--pt-field-line); border-radius: 8px; min-height: 38px; padding: 7px 29px 7px 10px; color: var(--pt-ink); font: inherit; }
 .cmp-browse-layout { display: grid; grid-template-columns: 180px minmax(0,1fr); gap: 45px; padding-top: 27px; }
 .cmp-workflow-filter h2 { margin: 0 0 14px; font-size: 12px; font-weight: 550; }
 .cmp-workflow-filter > div { display: grid; gap: 5px; }

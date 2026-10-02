@@ -181,6 +181,8 @@
 .cp-search-dialog {max-width:720px!important;padding:0!important;gap:0!important;border-radius:14px!important;overflow:hidden;font-family:var(--font-sans);}
 .cp-search-input {display:flex;align-items:center;gap:15px;padding:18px 60px 18px 24px;border-bottom:1px solid hsl(var(--border));}
 .cp-search-input input {width:100%;min-width:0;outline:none;background:transparent;padding:7px 0;font-size:18px;}
+/* The browser's grey placeholder measured 2.1–2.3:1; the muted ink passes 4.5:1 in every palette. */
+.cp-search-input input::placeholder {color:hsl(var(--muted-foreground));opacity:1;}
 .cp-search-results {max-height:min(60vh,570px);overflow-y:auto;padding:8px;}
 .cp-search-result {display:flex;align-items:center;gap:16px;padding:14px 16px;min-height:72px;border-radius:8px;cursor:pointer;}
 .cp-search-result.is-selected {background:hsl(var(--muted));}

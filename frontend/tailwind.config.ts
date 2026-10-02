@@ -78,6 +78,10 @@ export default {
           DEFAULT: "hsl(var(--copper))",
           soft: "hsl(var(--copper-soft))",
         },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          soft: "hsl(var(--warning-soft))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

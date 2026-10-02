@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { emitToolRun, TOOL_ERROR_KINDS, TOOL_RUN_EVENT, toolErrorKind } from "./toolRun";
+import { emitToolRun, isTransientFailure, TOOL_ERROR_KINDS, TOOL_RUN_EVENT, toolErrorKind } from "./toolRun";
 
 type Detail = Record<string, unknown>;
 const listeners: ((event: Event) => void)[] = [];
@@ -68,6 +68,31 @@ describe("toolErrorKind", () => {
         expect(toolErrorKind(new TypeError("Cannot read properties of undefined (reading 'pages')"))).toBe("browser");
         expect(toolErrorKind(new Error("The model returned no summary."))).toBe("browser");
         expect(toolErrorKind("worker crashed")).toBe("browser");
+    });
+});
+
+describe("isTransientFailure", () => {
+    it.each([500, 502, 503, 520, 429, 408, 504, 524])("offers another attempt after HTTP %i", status => {
+        expect(isTransientFailure(httpError(status))).toBe(true);
+    });
+
+    it.each([400, 404, 405, 413, 415, 422])("does not after HTTP %i: the same file would fail the same way", status => {
+        expect(isTransientFailure(httpError(status))).toBe(false);
+    });
+
+    it("counts a dropped connection, a deadline and an unreadable answer as passing trouble", () => {
+        expect(isTransientFailure(new TypeError("Failed to fetch"))).toBe(true);
+        expect(isTransientFailure(Object.assign(new Error("The upload stopped moving"), { __kind: "timeout" }))).toBe(true);
+        expect(isTransientFailure(Object.assign(new Error("x"), { __kind: "network" }))).toBe(true);
+        expect(isTransientFailure(Object.assign(new SyntaxError("Unexpected token <"), { __kind: "server" }))).toBe(true);
+    });
+
+    it("never retries a size limit, the visitor's AI provider, a cancel or a browser failure", () => {
+        expect(isTransientFailure(Object.assign(new Error("too big"), { __kind: "too_large" }))).toBe(false);
+        expect(isTransientFailure(Object.assign(new Error("401"), { name: "ByokError", kind: "BadKey" }))).toBe(false);
+        expect(isTransientFailure(new DOMException("Aborted", "AbortError"))).toBe(false);
+        expect(isTransientFailure(new Error("The model returned no summary."))).toBe(false);
+        expect(isTransientFailure("worker crashed")).toBe(false);
     });
 });
 

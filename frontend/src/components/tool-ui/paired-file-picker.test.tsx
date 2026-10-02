@@ -9,12 +9,19 @@ vi.mock("@/lib/api", async original => ({
 }));
 vi.mock("@/lib/localStore/defaults", () => ({ registerCustomized: vi.fn(), unregisterCustomized: vi.fn() }));
 
+// Each intake's one button is named by its visible call to action, then the
+// heading that tells the pair apart (WCAG 2.5.3).
 const surfaces = [
-  { name: "PDF attachment", Component: AttachmentUI, pickers: ["Choose Main PDF", "Choose Attachment"],
+  { name: "PDF attachment", Component: AttachmentUI, pickers: ["Choose a file: Your main PDF", "Choose a file: The extra file"],
     action: "Embed attachment", endpoint: "/add-attachment", fields: ["file", "attachment"] },
-  { name: "PDF comparison", Component: CompareUI, pickers: ["Upload Original", "Upload Modified"],
+  { name: "PDF comparison", Component: CompareUI, pickers: ["Choose a file: Original PDF", "Choose a file: Modified PDF"],
     action: "Compare PDFs", endpoint: "/compare", fields: ["file1", "file2"] },
 ];
+
+/** The native input sits beside the intake's button, inside the same card. */
+function fileInputOf(control: HTMLElement) {
+  return control.closest(".ts-intake")!.querySelector<HTMLInputElement>('input[type="file"]')!;
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -28,7 +35,7 @@ describe.each(surfaces)("$name file pickers", ({ Component, pickers, action, end
     render(<Component />);
     for (const name of pickers) {
       const control = screen.getByRole("button", { name });
-      const input = control.querySelector<HTMLInputElement>('input[type="file"]')!;
+      const input = fileInputOf(control);
       expect(input).toBeTruthy();
       const click = vi.spyOn(input, "click").mockImplementation(() => {});
       if (gesture === "click") fireEvent.click(control);
@@ -45,7 +52,7 @@ describe.each(surfaces)("$name file pickers", ({ Component, pickers, action, end
     expect(screen.getByRole("button", { name: action })).toBeDisabled();
     for (let index = 0; index < pickers.length; index++) {
       const control = screen.getByRole("button", { name: pickers[index] });
-      fireEvent.change(control.querySelector('input[type="file"]')!, { target: { files: [files[index]] } });
+      fireEvent.change(fileInputOf(control), { target: { files: [files[index]] } });
       expect(screen.getAllByText(files[index].name).length).toBeGreaterThan(0);
     }
     expect(postFormData).not.toHaveBeenCalled();
@@ -63,12 +70,12 @@ describe.each(surfaces)("$name file pickers", ({ Component, pickers, action, end
   it("restores a working input after removing the first selection", () => {
     render(<Component />);
     const control = screen.getByRole("button", { name: pickers[0] });
-    fireEvent.change(control.querySelector('input[type="file"]')!, {
+    fireEvent.change(fileInputOf(control), {
       target: { files: [new File(["%PDF sample"], "sample.pdf", { type: "application/pdf" })] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     const restored = screen.getByRole("button", { name: pickers[0] });
-    const input = restored.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const input = fileInputOf(restored);
     const click = vi.spyOn(input, "click").mockImplementation(() => {});
     fireEvent.click(restored);
     expect(click).toHaveBeenCalledTimes(1);

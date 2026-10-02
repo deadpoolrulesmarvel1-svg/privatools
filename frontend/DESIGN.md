@@ -1,7 +1,7 @@
 ---
 name: "PrivaTools — Air and Play"
 description: "Two distinct consumer experiences sharing one functional application."
-updated: "2026-09-18"
+updated: "2026-09-28"
 experiences:
   air:
     light: "Morning Mist"
@@ -40,13 +40,13 @@ Both experiences use a sticky top navbar. Air is full-width with a quiet bottom 
 
 ## Air
 
-An open studio with content up to 1240px and 40px desktop gutters. Manrope handles headings and body text. Morning Mist is cool and soft; Graphite is neutral with blue actions. Headers reach 58px, reducing to 38px on phones. Tool page headings carry the tool's full search title, so they stop at 52px and drop to 28px on phones. Panels use 22px radii and fine borders. A compact category index sits beside the tool library. Tool settings sit beside the canvas; Pipeline uses an orderly chain; account and API pages pair focused controls with useful context. The policy reader has a sticky left contents column.
+An open studio with content up to 1240px and 40px desktop gutters. Manrope handles headings and body text. Morning Mist is cool and soft; Graphite is neutral with blue actions. Headers reach 58px, reducing to 38px on phones. Tool page headings carry the tool's full search title, so they stop at 52px and drop to 28px on phones. Panels use 22px radii and fine borders; form fields and search boxes use the firmer field edge (`--pt-field-line`) described below. A compact category index sits beside the tool library. Tool settings sit beside the canvas; Pipeline uses an orderly chain; account and API pages pair focused controls with useful context. The policy reader has a sticky left contents column.
 
 Air enters with a 9px upward fade over 420ms. Progress follows actual work; there are no fake completion timers.
 
 ## Play
 
-A personal workshop with Bricolage Grotesque headings and Outfit body text. Blush uses raspberry actions; Charcoal uses warm coral actions. Colored papers carry paired foregrounds, including in dark mode. Headers reach 66px; tool page headings stop at 65px and drop to 33px on phones; panels use 24–30px radii, tactile shadows and pill actions.
+A personal workshop with Bricolage Grotesque headings and Outfit body text. Blush uses raspberry actions; Charcoal uses warm coral actions. Colored papers carry paired foregrounds, including in dark mode: an ink (`--pt-pdf-ink` and its siblings) and a muted ink (`--pt-pdf-muted` …) for secondary copy such as category blurbs and recipe numbers, each at least 4.5:1 on its paper. Secondary copy on a paper is never dimmed with opacity, which put it at 2.9–4.4:1. Headers reach 66px; tool page headings stop at 65px and drop to 33px on phones; panels use 24–30px radii, tactile shadows and pill actions.
 
 Layouts change as well as colors: categories become a horizontal shelf and the library uses three columns; tool settings move to a horizontal work shelf; Batch uses job cards; the Vault form moves to the left; AI uses a horizontal studio navigation; API connection and example panels swap positions. Support puts its contact note beside the answer shelf; documents become a broad rounded reading sheet below chapter navigation. Advanced editors preserve their specialized controls inside the new workspace composition.
 
@@ -57,6 +57,15 @@ Play entrances use a small rotation, scale and overshoot over 550ms. Hover detai
 Self-host fonts. Keep semantic Tailwind tokens as HSL triplets in `tokens.css`; experience surfaces and color pairs live in `experience.css`. Secondary-page and workflow styling are isolated in their own stylesheets.
 
 Use visible keyboard focus, proper labels, real disabled states and accessible progress. Respect reduced motion for all entrances, transitions, connectors and scroll navigation. Top navigation stays accessible on mobile; panels stack and long code/chapters scroll within their own containers. Labels wrap inside narrow provider controls. Native dialogs manage focus and dismissal.
+
+Keyboard and focus: the first Tab stop is the skip link, a solid action-colour tab styled in `index.html` itself (Tailwind does not scan that file). The root's `scroll-padding-top` follows the sticky header's real bottom edge (`--pt-header-clearance`, measured by `useStickyHeaderClearance`), so focused controls never sit under it at 200% zoom or on short screens. When a run finishes, focus moves to the result heading. The ⌘K results count is announced once typing settles, and its placeholder uses the muted ink.
+
+Colour roles added in this pass, all in four palettes: `--warning` / `--warning-soft` (tokens.css) for "needs attention, not destructive": refused files, failed runs, read-this-first notes, at least 4.5:1 on cards, the page and its own tint. `--pt-field-line` (and `--input` for Tailwind fields) is the edge of text fields, selects and search boxes, at least 3:1 on the page, cards and panels, because a field's edge is often its only cue; panel and divider lines stay fine. Smart Redact's category chips use the paper pairs and semantic tones instead of dark-only Tailwind inks.
+
+Failure grammar, shared by Air and Play and by every intake:
+- A file an intake cannot take is never dropped silently. `FileIntake` and `MediaUpload` show a notice beside the intake that names the file, says what the tool takes and links a registry tool that takes it (`lib/file-acceptance.ts`); drop zones that hand files straight to `useMultiFileProcessor.addFiles` get the same words in a toast. `FileIntake`'s one real button is its visible call to action, and its accessible name starts with that text ("Choose files: …").
+- `StudioResult` has three outcomes. Success keeps the check and "Ready for what’s next". Partial shows both parts: the receipt for what worked, a warning badge and the per-file reason for what didn't. Failure carries the warning mark, no eyebrow and no receipt, leads with "Choose a different file" (which opens the chooser directly) and offers "Try again" only for failures another attempt could fix: a dropped connection, a time limit, the rate limit or a server fault (`isTransientFailure` in `lib/toolRun.ts`).
+- Merge leaves out a file the browser can't read as a PDF ("This doesn’t look like a valid PDF") or one locked with a password, keeps it listed with the reason and merges the rest.
 
 Status, file counts and percentages come from real state. No simulated success, invented uptime or certification claims. Local tools, temporary server processing and user-selected AI providers have different disclosures. A saved password is encrypted locally; a server operation may receive the password needed for that job.
 

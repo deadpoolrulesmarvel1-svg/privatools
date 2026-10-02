@@ -112,6 +112,10 @@ export function ConsumerSearch({ open, onOpenChange, history }: { open: boolean;
     if (item.href.startsWith('/account')) location.assign(item.href);
     else navigateTo(item.href);
   };
+  // Say how many results a query found once typing settles; "no match" has its own status line.
+  const count = query.trim() && items.length ? `${items.length} result${items.length === 1 ? '' : 's'}` : '';
+  const [announced, setAnnounced] = useState('');
+  useEffect(() => { const timer = window.setTimeout(() => setAnnounced(count), 350); return () => window.clearTimeout(timer); }, [count]);
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="cp-search-dialog" onCloseAutoFocus={event => { event.preventDefault(); returnFocus.current?.focus(); }}>
     <DialogTitle className="sr-only">Search tools and pages</DialogTitle>
     <DialogDescription className="sr-only">Search by name or task. Use the arrow keys and Enter to open a result.</DialogDescription>
@@ -121,6 +125,7 @@ export function ConsumerSearch({ open, onOpenChange, history }: { open: boolean;
       onKeyDown={event => { if(event.key === 'ArrowDown'){event.preventDefault();setSelected(index => Math.max(0,Math.min(items.length-1,index+1)));}
         if(event.key === 'ArrowUp'){event.preventDefault();setSelected(index => Math.max(0,index-1));}
         if(event.key === 'Enter'){event.preventDefault();choose(selected);} }}/></div>
+    <p className="sr-only" role="status" aria-live="polite">{announced}</p>
     <div id="cp-search-results" role="listbox" aria-label="Search results" className="cp-search-results">
       {!items.length && <p className="cp-empty" role="status">No match for “{query}”. Try a file type or a task such as “compress”.</p>}
       {items.map((item,index) => <div id={'cp-result-'+index} key={item.href} role="option" aria-selected={index === selected} className={'cp-search-result' + (index === selected ? ' is-selected' : '')}

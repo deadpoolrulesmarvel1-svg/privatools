@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { emitToolRun } from "@/lib/toolRun";
+import { adviseRejection } from "@/lib/file-acceptance";
 import { navigateTo } from "@/lib/navigation";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
@@ -276,6 +277,17 @@ export default function PipelinePage() {
         setFile(nextFile);
         resetRunState();
     }, [resetRunState, processing]);
+
+    // The chooser filters to PDFs; a drop does not. A file that isn't a PDF
+    // is named and pointed to a converter instead of becoming the input.
+    const dropInputFile = useCallback((dropped: File) => {
+        if (processing) return;
+        if (!dropped.name.toLowerCase().endsWith(".pdf")) {
+            setError(adviseRejection([dropped], { accepts: ".pdf", prefer: "convert", name: "A pipeline" })?.text ?? null);
+            return;
+        }
+        setInputFile(dropped);
+    }, [processing, setInputFile]);
 
     const addStep = (tool: (typeof pipelineTools)[0]) => {
         if (processing) return;
@@ -568,7 +580,7 @@ export default function PipelinePage() {
                     {error && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><div><strong>{error}</strong>{failedIdx >= 0 && <p>Earlier steps are kept. Continue from step {failedIdx + 1}.</p>}<div className="wf-inline-actions">{failedIdx >= 0 && file && <button onClick={() => runPipeline(failedIdx)}><RotateCw size={14} /> Retry from {failedIdx + 1}</button>}{errorReport && <button onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}>Copy report</button>}</div></div><button aria-label="Dismiss" onClick={() => { setError(null); setErrorReport(null); }}><X size={16} /></button></div>}
                     <div className="pt-pipeline-builder">
                         <div className="wf-input-stage"><span className="wf-stage-label">START WITH A FILE</span>
-                            <FlowNode kind="endpoint" title={file ? file.name : "Choose your PDF"} subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · ready to work` : "Drop it here, or browse your device"} onClick={() => inputRef.current?.click()} onDrop={setInputFile} onClear={file ? () => setInputFile(null) : undefined} disabled={processing} state={file ? "ready" : "empty"} />
+                            <FlowNode kind="endpoint" title={file ? file.name : "Choose your PDF"} subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · ready to work` : "Drop it here, or browse your device"} onClick={() => inputRef.current?.click()} onDrop={dropInputFile} onClear={file ? () => setInputFile(null) : undefined} disabled={processing} state={file ? "ready" : "empty"} />
                             <input ref={inputRef} disabled={processing} type="file" accept=".pdf" className="hidden" onChange={event => setInputFile(event.target.files?.[0] || null)} />
                         </div>
                         <div className="pt-pipeline-chain">

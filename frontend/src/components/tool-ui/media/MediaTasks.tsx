@@ -15,6 +15,6 @@ export function MediaSingleTask({title,endpoint,accepts,params,outputExt,suffix,
 export function ConfiguredMediaBatch({title,endpoint,accepts,params,outputExt,suffix,kind='video',resultKind,options,preview,valid=true}:{title:string;endpoint:string;accepts:string;params?:Record<string,string|number|boolean>;outputExt:string;suffix:string|null;kind?:MediaKind;resultKind?:MediaKind;options:ReactNode;preview?:(file:File)=>ReactNode;valid?:boolean}) {
  const proc=useMultiFileProcessor();const[phase,setPhase]=useState<'idle'|'processing'|'done'>('idle');const downloaded=useRef(false);
  useEffect(()=>{if(phase==='done'&&proc.doneCount>0&&!downloaded.current){downloaded.current=true;proc.downloadAll('media-results');}},[phase,proc]);
- const run=async(retry=false)=>{downloaded.current=false;setPhase('processing');await proc.run({endpoint,params,outputExt,outputSuffix:suffix},retry);setPhase('done');};
+ const run=async(retry:boolean|'transient'=false)=>{downloaded.current=false;setPhase('processing');await proc.run({endpoint,params,outputExt,outputSuffix:suffix},retry);setPhase('done');};
  return <MediaBatchStudio proc={proc} phase={phase} title={title} accepts={accepts} kind={kind} resultKind={resultKind} options={options} action={title} onRun={run} onReset={()=>{proc.reset();setPhase('idle');downloaded.current=false;}} onDownload={()=>proc.downloadAll('media-results')} canProcess={valid} preview={preview}/>;
 }

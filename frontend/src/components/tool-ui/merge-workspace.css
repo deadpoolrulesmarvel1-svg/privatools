@@ -85,7 +85,7 @@
 .merge-ranges>.merge-help{margin-top:-5px}
 .merge-field{display:grid;gap:8px}
 .merge-field label{color:hsl(var(--foreground));font-size:13px;font-weight:550;line-height:1.5;overflow-wrap:anywhere}
-.merge-field input{display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:7px;color:hsl(var(--foreground));font-size:14px}
+.merge-field input{display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid hsl(var(--input));background:hsl(var(--background));border-radius:7px;color:hsl(var(--foreground));font-size:14px}
 .merge-field input::placeholder{color:hsl(var(--muted-foreground));opacity:1}
 .merge-field input[aria-invalid="true"]{border-color:hsl(var(--destructive))}
 .merge-field input:disabled{color:hsl(var(--muted-foreground))}
@@ -216,3 +216,10 @@
  .merge-workbench--done .merge-result-heading h2{font-size:29px}
  .merge-workbench--done .merge-result-details{margin-top:12px}
 }
+
+/* A refused selection, and files the merge will leave out, in the shared warning grammar. */
+.merge-workbench > .ts-intake-notice { margin-bottom: 18px; }
+.merge-preview-status--left-out { align-items: flex-start; color: hsl(var(--foreground)); }
+.merge-preview-status--left-out > svg { flex-shrink: 0; margin-top: 2px; color: hsl(var(--warning)); }
+.merge-preview-status--left-out strong { font-weight: 650; }
+.merge-preview-status--left-out a { color: hsl(var(--accent)); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }

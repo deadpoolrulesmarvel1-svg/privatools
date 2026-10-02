@@ -29,9 +29,11 @@ import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-e
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
-import { emitToolRun, runOutcome } from "@/lib/toolRun";
+import { takeAccepted } from "@/lib/report-rejected-files";
+import { emitToolRun, isTransientFailure, runOutcome } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
-import { ConversionPath, FileIntake, LocalFilePreview, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { ConversionPath, FileIntake, LocalFilePreview, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 const MAX_QUEUE = 25;
@@ -57,6 +59,8 @@ interface QueueItem {
     blob?: Blob | null;
     outName?: string;
     errMsg?: string;
+    /** The failure could pass on another attempt (connection, time limit, rate limit, server fault). */
+    retryable?: boolean;
 }
 
 export function GenericUI({
@@ -69,6 +73,8 @@ export function GenericUI({
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const [progressLabel, setProgressLabel] = useState("Processing...");
     const [currentName, setCurrentName] = useState<string>("");
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
     const stopRef = useRef(false);
     const elapsed = useElapsed(state === "processing");
@@ -131,11 +137,12 @@ export function GenericUI({
         queueMicrotask(() => {
             if (cancelled) return;
             void consumeFileHandoffs(slug).then(files => {
-                if (!cancelled && files.length) addFiles(files);
+                const taken = cancelled ? [] : takeAccepted(files, accepts);
+                if (taken.length) addFiles(taken);
             });
         });
         return () => { cancelled = true; };
-    }, [slug, addFiles]);
+    }, [slug, addFiles, accepts]);
 
     const biggest = files.reduce((m, f) => Math.max(m, f.bytes), 0);
     const sizeWarning = files.length > 0 ? getFileSizeWarning(biggest) : null;
@@ -144,7 +151,7 @@ export function GenericUI({
     const doneItems = files.filter(f => f.status === "done" && f.blob);
     const canProcess = queued.length > 0 && state !== "processing";
 
-    const processRef = useRef<() => void>();
+    const processRef = useRef<(onlyRetryable?: boolean) => void>();
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
@@ -171,8 +178,9 @@ export function GenericUI({
     const setItem = (id: string, patch: Partial<QueueItem>) =>
         setFiles(prev => prev.map(f => (f.id === id ? { ...f, ...patch } : f)));
 
-    const process = useCallback(async () => {
-        const run = files.filter(f => f.status === "queued" || f.status === "error");
+    // `onlyRetryable`: "Try again" after a run, for failures another attempt could fix.
+    const process = useCallback(async (onlyRetryable = false) => {
+        const run = files.filter(f => f.status === "queued" || (f.status === "error" && (!onlyRetryable || f.retryable)));
         if (!run.length) return;
         const single = files.length === 1;
         stopRef.current = false;
@@ -212,7 +220,7 @@ export function GenericUI({
                     break;
                 }
                 const msg = e instanceof Error ? e.message : "Processing failed";
-                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Processing failed") });
+                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Processing failed"), retryable: isTransientFailure(e) });
                 failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
@@ -228,13 +236,9 @@ export function GenericUI({
             setState("idle");
             return;
         }
-        if (firstFailure && single) {
-            const msg = firstFailure instanceof Error ? firstFailure.message : "Processing failed";
-            setError(friendlyError(msg, "Processing failed"));
-            setLastError(firstFailure);
-            setState("idle");
-            return;
-        }
+        // A failure, even of the only file, ends on the result: it names the
+        // reason and leads with a fresh file, and offers "Try again" only
+        // when another attempt could work.
         setLastError(firstFailure);
         setState("done");
     }, [files, apiEndpoint, slug, params, onProgress, plannedOutputName]);
@@ -276,19 +280,28 @@ export function GenericUI({
     const single = files.length === 1;
     const okCount = doneItems.length;
     const failCount = files.filter(f => f.status === "error").length;
+    const retryCount = files.filter(f => f.status === "error" && f.retryable).length;
     if (state === "done") {
         const singleItem = single ? files[0] : null;
-        return <StudioResult title={single ? "Your file is ready." : `${okCount} files, ready to go.`}
-            detail={single ? singleItem?.outName : failCount ? `${failCount} files need another try. Your completed files are ready below.` : "Download your results individually or bring them together in one ZIP."}>
+        const tone = studioOutcome(okCount, failCount);
+        const startOver = (incoming?: File[]) => { clearFile(); if (incoming) addFiles(incoming); setReturning(true); };
+        return <StudioResult tone={tone}
+            title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
+                : tone === "partial" ? `${okCount} of ${files.length} files ready.` : single ? "Your file is ready." : `${okCount} files, ready to go.`}
+            detail={tone === "failure" ? failureDetail(failCount, retryCount)
+                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The rest are ready.`
+                : single ? singleItem?.outName : "Download your results individually or bring them together in one ZIP."}>
             {files.map(item => <StudioFile key={item.id} name={item.outName || item.name}
                 detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : item.size)} status={item.status}
                 onDownload={item.blob ? () => handleDownloadOne(item) : undefined} />)}
-            <div className="ts-actions">
-                {single ? <button className="ts-primary-button" onClick={() => singleItem && handleDownloadOne(singleItem)}><Download size={17} /> Download again</button>
-                    : okCount > 1 ? <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={17} /> Download all ({okCount}) as .zip</button> : null}
-                {failCount > 0 && <button className="ts-secondary-button" onClick={process}>Retry {failCount} failed</button>}
-                <button className="ts-text-button" onClick={clearFile}>Process another <ArrowRight size={16} /></button>
-            </div>
+            <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
+                choose={{ accepts, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}
+                primary={single ? <button className="ts-primary-button" onClick={() => singleItem && handleDownloadOne(singleItem)}><Download size={17} /> Download again</button>
+                    : okCount > 1 ? <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={17} /> Download all ({okCount}) as .zip</button>
+                    : doneItems[0] && <button className="ts-primary-button" onClick={() => handleDownloadOne(doneItems[0])}><Download size={17} /> Download</button>}
+                more={tone === "failure"
+                    ? lastError != null && <button className="ts-text-button" onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError, toolName)).catch(() => {})}>Copy error details</button>
+                    : <button className="ts-text-button" onClick={() => startOver()}>Process another <ArrowRight size={16} /></button>} />
             {singleItem?.blob && <LocalFilePreview file={singleItem.blob} name={singleItem.outName || plannedOutputName(singleItem.name)} label="Result preview" />}
             {single && <ResultHandoff blob={singleItem?.blob ?? null} filename={singleItem?.outName || plannedOutputName(singleItem?.name || "")} fromSlug={slug} />}
         </StudioResult>;
@@ -297,10 +310,10 @@ export function GenericUI({
         <ConversionPath accepts={accepts} output={outputLabel} />
         <div><p className="ts-eyebrow">Conversion details</p><h3>Your output</h3><dl><div><dt>Format</dt><dd>{outputLabel}</dd></div><div><dt>Selected</dt><dd>{files.length ? `${files.length} file${single ? "" : "s"} · ${formatFileSize(files.reduce((n, f) => n + f.bytes, 0))}` : "Choose one or several files"}</dd></div></dl></div>
         <div><p>Each file is processed separately. Your original files stay as they are.</p>{timeEstimate && <p className="ts-caption">Usually {timeEstimate} per file.</p>}</div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>{files.length > 0 && state !== "processing" && <button className="ts-text-button" onClick={clearFile}>Clear selection</button>}</div>
+        <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>{files.length > 0 && state !== "processing" && <button className="ts-text-button" onClick={clearFile}>Clear selection</button>}</div>
     </>}>
         <FileIntake accepts={accepts} multiple label={`Upload files for ${toolName}`} title={`Choose ${fileFormatLabel(accepts)} ${fileFormatLabel(accepts) === "FILE" ? "files" : "files to process"}`} detail={`${acceptsLabel} · Up to ${MAX_QUEUE} files, ${MAX_FILE_SIZE_LABEL} each`}
-            onFiles={addFiles} compact={files.length > 0} disabled={state === "processing"} />
+            onFiles={addFiles} compact={files.length > 0} disabled={state === "processing"} autoFocus={returning} />
         {files[0] && <LocalFilePreview file={files[0].file} name={files[0].name} label="Original · on your device" />}
         {files.length > 0 && <section aria-label="Selected files">{files.map(item => <StudioFile key={item.id} name={item.name} detail={item.errMsg || item.size} status={item.status}
             onRemove={state !== "processing" ? () => removeOne(item.id) : undefined} onDownload={item.blob ? () => handleDownloadOne(item) : undefined} />)}</section>}

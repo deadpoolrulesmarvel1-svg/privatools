@@ -14,8 +14,10 @@ import {
 } from "@/lib/api";
 import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-endpoints";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
-import { emitToolRun, runOutcome } from "@/lib/toolRun";
-import { ConversionPath, FileIntake, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { takeAccepted } from "@/lib/report-rejected-files";
+import { emitToolRun, isTransientFailure, runOutcome } from "@/lib/toolRun";
+import { ConversionPath, FileIntake, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 /* Shared "upload → convert" UI for simpler conversion tools. Accepts a
@@ -40,6 +42,8 @@ interface QueueItem {
     blob?: Blob | null;
     outName?: string;
     errMsg?: string;
+    /** The failure could pass on another attempt (connection, time limit, rate limit, server fault). */
+    retryable?: boolean;
 }
 
 export function SimpleConvertUI({ slug, label, outputExt, outputFilename, acceptFileTypes, description }: SimpleConvertUIProps) {
@@ -48,6 +52,8 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const [progressLabel, setProgressLabel] = useState("Processing…");
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
     const stopRef = useRef(false);
 
@@ -89,19 +95,21 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         queueMicrotask(() => {
             if (cancelled) return;
             void consumeFileHandoffs(slug).then(files => {
-                if (!cancelled && files.length) addFiles(files);
+                const taken = cancelled ? [] : takeAccepted(files, acceptFileTypes);
+                if (taken.length) addFiles(taken);
             });
         });
         return () => { cancelled = true; };
-    }, [slug, addFiles]);
+    }, [slug, addFiles, acceptFileTypes]);
 
     useEffect(() => () => abortRef.current?.abort(), []);
 
     const setItem = (id: string, patch: Partial<QueueItem>) =>
         setItems(prev => prev.map(i => (i.id === id ? { ...i, ...patch } : i)));
 
-    const process = useCallback(async () => {
-        const run = items.filter(i => i.status === "queued" || i.status === "error");
+    // `onlyRetryable`: "Try again" after a run, for failures another attempt could fix.
+    const process = useCallback(async (onlyRetryable = false) => {
+        const run = items.filter(i => i.status === "queued" || (i.status === "error" && (!onlyRetryable || i.retryable)));
         if (!run.length) return;
         const single = items.length === 1;
         stopRef.current = false;
@@ -134,7 +142,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
                 const msg = e instanceof Error ? e.message : "Failed";
-                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Couldn't convert that file.") });
+                setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Couldn't convert that file."), retryable: isTransientFailure(e) });
                 failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
@@ -145,12 +153,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         const outcome = runOutcome(done, failed);
         if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed }, firstFailure);
         if (stopRef.current) { setStatus("idle"); return; }
-        if (firstFailure && single) {
-            const msg = firstFailure instanceof Error ? firstFailure.message : "Failed";
-            setError(friendlyError(msg, "Couldn't convert that file."));
-            setStatus("idle");
-            return;
-        }
+        // A failure, even of the only file, ends on the result with its reason.
         setStatus("done");
     }, [items, slug, plannedName]);
 
@@ -188,26 +191,35 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     }, [doneItems, plannedName, slug]);
 
     const reset = () => { setItems([]); setStatus("idle"); setError(null); setProgress(undefined); };
+    const retryCount = items.filter(i => i.status === "error" && i.retryable).length;
 
-    if (status === "done") return <StudioResult title={single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
-        detail={failCount ? "Some files need another try. The completed results are ready below." : single ? "The download has started. A copy is ready here whenever you need it." : "Save them separately, or download one ZIP."}>
-        {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : formatFileSize(item.file.size))}
-            status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined} />)}
-        <div className="ts-actions">{single && doneItems[0] && <button className="ts-primary-button" onClick={() => downloadOne(doneItems[0])}><Download size={16} /> Download again</button>}
-            {!single && doneItems.length > 1 && <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={16} /> Download all ({doneItems.length}) as .zip</button>}
-            {failCount > 0 && <button className="ts-secondary-button" onClick={process}>Retry {failCount} failed</button>}
-            <button className="ts-text-button" onClick={reset}>Convert another</button>
-        </div>
-    </StudioResult>;
+    if (status === "done") {
+        const tone = studioOutcome(doneItems.length, failCount);
+        const startOver = (incoming?: File[]) => { reset(); if (incoming) addFiles(incoming); setReturning(true); };
+        return <StudioResult tone={tone}
+            title={tone === "failure" ? single ? "This file couldn’t be converted." : "None of these files could be converted."
+                : tone === "partial" ? `${doneItems.length} of ${items.length} files converted.` : single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
+            detail={tone === "failure" ? failureDetail(failCount, retryCount)
+                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be converted; the reason is below. The completed results are ready.`
+                : single ? "The download has started. A copy is ready here whenever you need it." : "Save them separately, or download one ZIP."}>
+            {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : formatFileSize(item.file.size))}
+                status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined} />)}
+            <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
+                choose={{ accepts: acceptFileTypes, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}
+                primary={doneItems.length > 1 ? <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={16} /> Download all ({doneItems.length}) as .zip</button>
+                    : doneItems[0] && <button className="ts-primary-button" onClick={() => downloadOne(doneItems[0])}><Download size={16} /> {single ? "Download again" : "Download"}</button>}
+                more={tone !== "failure" && <button className="ts-text-button" onClick={() => startOver()}>Convert another</button>} />
+        </StudioResult>;
+    }
     return <StudioLayout options={<>
         <ConversionPath accepts={acceptFileTypes} output={outputExt} />
         <div><p className="ts-eyebrow">A useful new format</p><h3>Ready for {outputExt.toUpperCase()}</h3><p>{description}</p></div>
         <div><dl><div><dt>Bring</dt><dd>{acceptFileTypes.replace(/,/g, " · ")}</dd></div><div><dt>Take away</dt><dd>{outputExt.toUpperCase()} {items.length > 1 ? "files" : "file"}</dd></div></dl></div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
+        <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
             {items.length > 0 && status !== "processing" && <button className="ts-text-button" onClick={reset}>Clear</button>}</div>
     </>}>
         <FileIntake accepts={acceptFileTypes} multiple onFiles={addFiles} label={items.length ? "Add more files" : "Drop files here"} title={`Choose ${fileFormatLabel(acceptFileTypes)} files`}
-            detail={`${description} · up to ${MAX_QUEUE} files`} compact={items.length > 0} disabled={status === "processing"} />
+            detail={`${description} · up to ${MAX_QUEUE} files`} compact={items.length > 0} disabled={status === "processing"} autoFocus={returning} />
         {items.length > 0 && <section aria-label="Selected files">{items.map(item => <StudioFile key={item.id} name={item.file.name}
             detail={item.errMsg || formatFileSize(item.file.size)} status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined}
             onRemove={status !== "processing" ? () => setItems(prev => prev.filter(i => i.id !== item.id)) : undefined} />)}</section>}

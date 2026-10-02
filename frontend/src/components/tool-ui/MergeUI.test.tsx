@@ -87,10 +87,44 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
     it("rejects a mixed file selection visibly without silently dropping a file", () => {
         render(<MergeUI />);
         addFiles([pdf("notes.pdf"), new File(["image"], "photo.png", { type: "image/png" })]);
-        expect(screen.getByRole("alert")).toHaveTextContent("photo.png");
-        expect(screen.getByRole("alert")).toHaveTextContent("selection was not added");
+        const alert = screen.getByRole("alert");
+        expect(alert).toHaveTextContent("photo.png isn’t a PDF, so this selection wasn’t added. Merge PDF takes PDF files. Image to PDF can turn it into a PDF first.");
+        expect(within(alert).getByRole("link", { name: "Image to PDF" })).toHaveAttribute("href", "/tool/image-to-pdf");
         expect(screen.queryByRole("button", { name: "Remove notes.pdf" })).not.toBeInTheDocument();
         expect(uploadFiles).not.toHaveBeenCalled();
+    });
+
+    it("leaves out a file this browser can't read as a PDF, says so, and merges the rest", async () => {
+        const preview = vi.mocked(openMergePreview).getMockImplementation()!;
+        vi.mocked(openMergePreview).mockImplementation(async file => {
+            if (file instanceof File && file.name === "not-really-a.pdf") throw Object.assign(new Error("Invalid PDF structure."), { name: "InvalidPDFException" });
+            return preview(file);
+        });
+        render(<MergeUI />);
+        addFiles([pdf("notes.pdf"), pdf("not-really-a.pdf"), pdf("checklist.pdf")]);
+        await ready();
+        expect(screen.getByText("This doesn’t look like a valid PDF.")).toBeVisible();
+        expect(screen.queryByText(/password/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/3 files · 1 left out/)).toBeInTheDocument();
+        expect(screen.queryByLabelText("not-really-a.pdf")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        const [, files, params] = vi.mocked(uploadFiles).mock.calls[0];
+        expect(files.map(file => file.name)).toEqual(["notes.pdf", "checklist.pdf"]);
+        expect(params).toEqual({ page_ranges: '["all","all"]' });
+    });
+
+    it("leaves out a PDF locked with a password and points to Unlock PDF", async () => {
+        const preview = vi.mocked(openMergePreview).getMockImplementation()!;
+        vi.mocked(openMergePreview).mockImplementation(async file => {
+            if (file instanceof File && file.name === "locked.pdf") throw Object.assign(new Error("No password given"), { name: "PasswordException" });
+            return preview(file);
+        });
+        render(<MergeUI />);
+        addFiles([pdf("notes.pdf"), pdf("locked.pdf")]);
+        await waitFor(() => expect(screen.getByText("This PDF is locked with a password.")).toBeVisible());
+        expect(screen.getByRole("link", { name: "Unlock PDF" })).toHaveAttribute("href", "/tool/unlock-pdf");
+        expect(screen.getByRole("button", { name: "Add one more PDF" })).toBeDisabled();
     });
 
     it("refuses PDFs that would take the merge past the 500 MB one upload can carry, before anything is sent", async () => {

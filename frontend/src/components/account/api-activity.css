@@ -8,7 +8,7 @@ html[data-experience=play] .pt-account-page .pt-account-desk { grid-template-are
 .pt-activity-heading button { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
 .pt-activity-heading button:disabled { opacity: .6; }
 .pt-activity-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; margin: 24px 0 18px; }
-.pt-activity-filter select { max-width: 100%; min-height: 40px; padding: 8px 28px 8px 12px; background: var(--pt-bg, hsl(var(--background))); color: inherit; border: 1px solid var(--pt-line, hsl(var(--border))); border-radius: 8px; }
+.pt-activity-filter select { max-width: 100%; min-height: 40px; padding: 8px 28px 8px 12px; background: var(--pt-bg, hsl(var(--background))); color: inherit; border: 1px solid var(--pt-field-line, hsl(var(--input))); border-radius: 8px; }
 .pt-activity-allowances { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
 .pt-activity-allowances article { min-width: 0; padding: 16px; border: 1px solid var(--pt-line, hsl(var(--border))); border-radius: 12px; }
 .pt-activity-allowances h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }

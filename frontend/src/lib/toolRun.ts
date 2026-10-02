@@ -82,6 +82,21 @@ export function toolErrorKind(err: unknown): ToolErrorKind | "cancelled" {
 }
 
 /**
+ * Whether the same file could succeed if the visitor tries again: the
+ * connection failed, a time limit or the rate limit was reached, or the
+ * server failed (5xx, or an answer it could not read). A file or setting the
+ * tool refused (4xx), a size limit, the visitor's own AI provider and failures
+ * inside the browser would fail the same way twice, so they are not.
+ */
+export function isTransientFailure(err: unknown): boolean {
+    const kind = toolErrorKind(err);
+    if (kind === "network" || kind === "timeout" || kind === "rate_limited") return true;
+    if (kind !== "server") return false;
+    const status = (err as { __status?: unknown }).__status;
+    return typeof status !== "number" || status >= 500;
+}
+
+/**
  * Report one run. For an error or partial outcome, pass what the run caught
  * (the first failure, for a multi-file run) as `cause`. A run the visitor
  * cancelled is not a failure: an error whose cause is a cancel is not reported.

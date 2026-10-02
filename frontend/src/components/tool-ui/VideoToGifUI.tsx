@@ -40,7 +40,7 @@ export function VideoToGifUI() {
         return mbPerSec;
     }, [proc.entries.length, fps, width]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/video-to-gif",

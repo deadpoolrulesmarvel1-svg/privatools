@@ -11,8 +11,10 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Download, type LucideIcon } from "lucide-react";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { FileIntake, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActions, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { failureDetail, studioOutcome } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
+import { matchesAccept } from "@/lib/file-acceptance";
 
 interface SimpleProcessUIProps {
     handoffSlug?: string;
@@ -48,6 +50,7 @@ export function SimpleProcessUI({
     const proc = useMultiFileProcessor();
     const { addFiles } = proc;
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    const [returning, setReturning] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -55,15 +58,16 @@ export function SimpleProcessUI({
         queueMicrotask(() => {
             if (cancelled) return;
             void consumeFileHandoffs(handoffSlug).then(files => {
-                if (!cancelled && files.length) addFiles(files);
+                // A handed-over file this tool can't take is named, not sent.
+                if (!cancelled && files.length) addFiles(files, file => matchesAccept(file, accepts));
             });
         });
         return () => { cancelled = true; };
-    }, [handoffSlug, addFiles]);
+    }, [handoffSlug, addFiles, accepts]);
 
     const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({ endpoint, params, outputExt, outputSuffix }, retry);
         setPhase("done");
@@ -88,14 +92,29 @@ export function SimpleProcessUI({
         return () => window.removeEventListener("keydown", h);
     }, [canProcess, phase, process]);
 
-    const restart = () => { proc.reset(); setPhase("idle"); downloadedRef.current = false; };
+    const restart = (files?: File[]) => {
+        proc.reset(); downloadedRef.current = false;
+        if (files) proc.addFiles(files);
+        setReturning(true); setPhase("idle");
+    };
 
-    if (phase === "done") return <StudioResult title={proc.doneCount ? doneTitle : "These files need another try."} detail={`${proc.doneCount} completed${proc.failedCount ? ` · ${proc.failedCount} need attention` : ""}`}>
-        {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => entry.blob && downloadBlob(entry.blob, entry.outName || entry.name) : undefined} />)}
-        <div className="ts-actions">{proc.doneCount > 0 && <button className="ts-primary-button" onClick={() => proc.downloadAll(`archive_${outputSuffix}`)}><Download size={16} /> Download {proc.doneCount > 1 ? "all as ZIP" : "again"}</button>}{proc.failedCount > 0 && <button className="ts-secondary-button" onClick={() => { downloadedRef.current = false; void process(true); }}>Retry {proc.failedCount} failed</button>}<button className="ts-text-button" onClick={restart}>Process another</button></div>
-    </StudioResult>;
+    if (phase === "done") {
+        const tone = studioOutcome(proc.doneCount, proc.failedCount);
+        const several = proc.entries.length > 1;
+        return <StudioResult tone={tone}
+            title={tone === "failure" ? several ? "None of these files could be processed." : "This file couldn’t be processed."
+                : tone === "partial" ? `${doneTitle} for ${proc.doneCount} of ${proc.entries.length} files.` : doneTitle}
+            detail={tone === "failure" ? failureDetail(proc.failedCount, proc.retryableCount)
+                : tone === "partial" ? `${proc.failedCount === 1 ? "One file" : `${proc.failedCount} files`} couldn’t be processed; the reason is below. The rest are ready.` : `${proc.doneCount} completed`}>
+            {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => entry.blob && downloadBlob(entry.blob, entry.outName || entry.name) : undefined} />)}
+            <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
+                choose={{ accepts, multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: restart }}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll(`archive_${outputSuffix}`)}><Download size={16} /> Download {proc.doneCount > 1 ? "all as ZIP" : "again"}</button>}
+                more={tone !== "failure" && <button className="ts-text-button" onClick={() => restart()}>Process another</button>} />
+        </StudioResult>;
+    }
     return <StudioLayout options={<><div><p className="ts-eyebrow">Your next step</p><h3>{actionLabel}</h3><p>{dropSubtitle}</p></div><div><dl><div><dt>Result</dt><dd>{outputExt.toUpperCase()}</dd></div><div><dt>Selected files</dt><dd>{proc.entries.length}</dd></div></dl></div><button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}>{actionLabel}</button></>}>
-        <FileIntake accepts={accepts} multiple label="Upload files" title={dropTitle} detail={dropSubtitle} compact={proc.entries.length > 0} disabled={phase === "processing"} onFiles={files => proc.addFiles(files)} />
+        <FileIntake accepts={accepts} multiple label="Upload files" title={dropTitle} detail={dropSubtitle} compact={proc.entries.length > 0} disabled={phase === "processing"} autoFocus={returning} onFiles={files => proc.addFiles(files)} />
         {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={entry.error || formatFileSize(entry.size)} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase === "processing" ? undefined : () => proc.removeFile(entry.id)} />)}
         {phase === "processing" && <StudioProgress label={processingLabel} detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}
     </StudioLayout>;
