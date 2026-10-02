@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 222 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -1132,6 +1132,14 @@ URL: https://privatools.me/tools/remove-image-watermark
 Erase a watermark from a photo or graphic
 
 Remove watermark from an image online for free. Drag a box over the watermark and it is reconstructed from the surrounding pixels — no account, no upload to third parties. Works best over gradients and texture; a large selection is refused because there would not be enough image left to rebuild from.
+
+### Gemini Watermark Remover
+
+URL: https://privatools.me/tools/gemini-watermark-remover
+
+Take the visible Gemini sparkle off AI-generated images
+
+Remove the visible Gemini watermark, the sparkle logo in the bottom-right corner of images made with Google Gemini and Nano Banana. It runs in your browser, so nothing is uploaded. Each image is checked for the logo first and the logo's size, position and strength are fitted; then Gemini's blend is reversed pixel by pixel using calibrated masks, and nothing else is touched. The result is checked for an outline or a copy of the logo, dark or light, against the picture around it before it is saved; where the tool cannot confirm a clean result, the image is left as it was. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95. SynthID, Google's invisible watermark, stays in the image, and the file's metadata is kept.
 
 ### Image Watermark
 

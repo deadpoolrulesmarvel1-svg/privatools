@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
   QrCode, Merge, Maximize2, Type,
-  Eraser,
+  Eraser, Sparkles,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -387,6 +387,17 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     popularity: 64,
     category: "image", accepts: ".png,.jpg,.jpeg,.webp,.bmp", outputLabel: "no_watermark.png",
     lastReviewed: "2026-09-18",
+  },
+  {
+    slug: "gemini-watermark-remover", icon: Sparkles, name: "Gemini Watermark Remover",
+    description: "Take the visible Gemini sparkle off AI-generated images",
+    longDescription: "Remove the visible Gemini watermark, the sparkle logo in the bottom-right corner of images made with Google Gemini and Nano Banana. It runs in your browser, so nothing is uploaded. Each image is checked for the logo first and the logo's size, position and strength are fitted; then Gemini's blend is reversed pixel by pixel using calibrated masks, and nothing else is touched. The result is checked for an outline or a copy of the logo, dark or light, against the picture around it before it is saved; where the tool cannot confirm a clean result, the image is left as it was. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95. SynthID, Google's invisible watermark, stays in the image, and the file's metadata is kept.",
+    seoTitle: "Gemini Watermark Remover – Nano Banana Sparkle, No Upload",
+    metaDescription: "Remove the visible Gemini sparkle from Nano Banana and Gemini images in your browser, with nothing uploaded. PNG stays lossless; SynthID is not removed.",
+    synonyms: "remove gemini watermark nano banana watermark remover gemini logo remover gemini sparkle gemini star watermark imagen ai image logo",
+    popularity: 12,
+    category: "image", clientOnly: true, accepts: ".png,.jpg,.jpeg,.webp", outputLabel: "image without the sparkle",
+    lastReviewed: "2026-10-01",
   },
   {
     slug: "image-watermark", icon: Stamp, name: "Image Watermark",

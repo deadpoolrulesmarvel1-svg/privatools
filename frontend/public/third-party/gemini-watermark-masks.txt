@@ -1,0 +1,86 @@
+Gemini Watermark Remover: logo mask credits and licences
+=========================================================
+
+The Gemini Watermark Remover at /tools/gemini-watermark-remover uses four
+calibrated captures of Gemini's visible sparkle logo, taken over pure black,
+to know the logo's opacity at every pixel. The captures come from two MIT
+licensed projects and are shipped unchanged, embedded in the page's
+JavaScript (frontend/src/lib/gemini-watermark/masks.ts in the PrivaTools
+source). Only these data files come from those projects. The detection and
+removal code is PrivaTools' own.
+
+  Mask        Size     SHA-256 of the PNG                                                 Source
+  bg_48       48x48    4afc99afe0ef108d67acc45bf4dc5da867ddb793bebc89c9243bb121ce7f0f57   both projects (identical files)
+  bg_96       96x96    3e26f2233a12a5829acac174d8df1f3db40e07fef04ecdd0e035732154077911   both projects (identical files)
+  bg_96       96x96    e5e95a3cd28454a1281465519c1b6209c22320856e2bc3074d2386d75cd8bff1   GargantuaX, May 2026 capture
+   (20260520)
+  bg_b_36     36x36    a3e7d5ca932e6acf9ff826a4db47d597458480e72089da81a40bd4b52668cd31   AllenK, Gemini 3.5 small logo
+
+- GargantuaX/gemini-watermark-remover, commit
+  13195610a5b534d69adfa169b1011981c9b6f499: src/assets/bg_48.png,
+  src/assets/bg_96.png and src/assets/bg_96_20260520.png.
+  https://github.com/GargantuaX/gemini-watermark-remover
+- allenk/GeminiWatermarkTool, commit
+  7c6a99f2c3df97eb3c430ef87a0c962aea5cb80e: bg_48_png, bg_96_png and
+  bg_b_36_png, the PNG files embedded in assets/embedded_assets.hpp.
+  https://github.com/allenk/GeminiWatermarkTool
+
+AllenK's project notice identifies him as the author of the calibrated 48 and
+96 px masks and asks that redistributions keep the copyright notice and the
+full licence text, both below, with a link back to his repository (above).
+
+The tool removes only the visible logo. It does not remove, weaken or look
+for SynthID or any other invisible or metadata provenance signal.
+
+
+GargantuaX/gemini-watermark-remover: LICENSE
+--------------------------------------------
+
+MIT License
+
+Copyright (c) 2025 Jad
+Copyright (c) 2024 AllenK (Kwyshell)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+allenk/GeminiWatermarkTool: LICENSE
+-----------------------------------
+
+MIT License
+
+Copyright (c) 2024 AllenK (Kwyshell)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
