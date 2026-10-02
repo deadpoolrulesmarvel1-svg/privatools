@@ -6,11 +6,15 @@
  * you run the tool". Organize Pages and Remove Watermark upload the moment a
  * PDF is chosen, to draw page thumbnails and to look for watermarks, so that
  * sentence was untrue there. This test renders every registry tool's UI as its
- * page mounts it, chooses one synthetic file through its first file input,
- * and records what goes over the network (fetch and XMLHttpRequest, nothing
- * answers). Only the tools in UPLOADS_WHEN_CHOSEN may send anything, and their
- * location says so: a new tool that uploads on choice fails here until it is
- * listed there and worded in toolLocation().
+ * page mounts it, chooses a synthetic file in every file input it shows (and
+ * in any that appear after a choice), runs the clock five seconds on so an
+ * upload a moment after the choice counts too, and records what goes over the
+ * network: fetch, XMLHttpRequest and sendBeacon, with nothing answering. Only
+ * the tools in UPLOADS_WHEN_CHOSEN may send anything, and their location says
+ * so. It cannot see a Worker or a WebSocket (jsdom has neither), and files
+ * other than PDF and PNG are a few placeholder bytes, so a path that reads the
+ * file before uploading may give up first: it catches the common case, not
+ * every one.
  */
 import { Component, Suspense, type ReactNode } from "react";
 import { act, cleanup, configure, fireEvent, render } from "@testing-library/react";
@@ -76,6 +80,7 @@ const ROWS: Row[] = [
 ];
 
 let requests: SentRequest[] = [];
+let beacons: string[] = [];
 const scrolling = { scrollTo: Element.prototype.scrollTo, scrollIntoView: Element.prototype.scrollIntoView };
 
 beforeAll(() => {
@@ -87,6 +92,12 @@ afterAll(() => Object.assign(Element.prototype, scrolling));
 beforeEach(() => {
     localStorage.clear();
     ({ requests } = installNetwork({ uploadMs: 0 }));
+    beacons = [];
+    // jsdom has no sendBeacon; record any use of it as a request.
+    Object.defineProperty(navigator, "sendBeacon", {
+        configurable: true,
+        value: (url: string) => { beacons.push(String(url)); return true; },
+    });
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -109,12 +120,28 @@ describe("what a tool page sends when a file is only chosen", () => {
             return;
         }
         expect(input, `${row.slug} shows no file input to choose from: if it opens on text, add it to NO_FILE_INPUT`).not.toBeNull();
-        await act(async () => {
-            fireEvent.change(input!, { target: { files: [fileFor(input!.getAttribute("accept"))] } });
-            for (let tick = 0; tick < 4; tick++) await new Promise(resolve => setTimeout(resolve, 10));
-        });
+        // Choose in every file input, including any a first choice reveals, and run
+        // the clock five seconds on after each round so a delayed upload counts too.
+        vi.useFakeTimers({ toFake: ["setTimeout", "setInterval", "Date"] });
+        try {
+            const chosen = new WeakSet<HTMLInputElement>();
+            for (let round = 0; round < 3; round++) {
+                const fresh = [...container.querySelectorAll<HTMLInputElement>("input[type=file]")].filter(el => !chosen.has(el));
+                if (!fresh.length) break;
+                for (const el of fresh) {
+                    chosen.add(el);
+                    if (!el.isConnected) continue;
+                    await act(async () => {
+                        fireEvent.change(el, { target: { files: [fileFor(el.getAttribute("accept"))] } });
+                    });
+                }
+                await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+            }
+        } finally {
+            vi.useRealTimers();
+        }
         expect(crashes.map(String)).toEqual([]);
-        const sent = requests.map(request => request.url.replace(/^https?:\/\/[^/]+/, ""));
+        const sent = [...requests.map(request => request.url), ...beacons].map(url => url.replace(/^https?:\/\/[^/]+/, ""));
         if (UPLOADS_WHEN_CHOSEN.includes(row.slug)) {
             expect(sent.length, `${row.slug} is listed in UPLOADS_WHEN_CHOSEN but sent nothing`).toBeGreaterThan(0);
             expect(toolLocation(row).detail).toMatch(/uploaded when you choose it/);
