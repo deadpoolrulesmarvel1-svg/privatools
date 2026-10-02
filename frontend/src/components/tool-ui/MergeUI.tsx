@@ -553,7 +553,8 @@ function PageOrderPreview({ pages }: { pages: { file: MergeFile; page: number }[
     const start = Math.min(offset, Math.max(0, Math.floor((pages.length - 1) / 6) * 6));
     return <section className="merge-order" aria-label="Preview of page order">
         <h3>Preview of page order</h3>
-        <ol className="merge-order-list">
+        {/* On a phone this list scrolls sideways; a keyboard has to be able to reach it (axe scrollable-region-focusable). */}
+        <ol className="merge-order-list" tabIndex={0} aria-label="Output pages in order">
             {pages.slice(start, start + 6).map(({ file, page }, index) => <li key={`${file.id}-${page}`}>
                 <span className="merge-order-number">{start + index + 1}</span>
                 <PdfThumbnail document={file.document!} page={page} label={`Output page ${start + index + 1}: ${file.file.name}, page ${page}`} />
