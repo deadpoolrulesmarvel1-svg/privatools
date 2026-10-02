@@ -3,7 +3,9 @@ import { useState } from "react";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
-import { FileChooserButton, FileIntake, StudioActions, StudioResult } from "./ToolStudio";
+import { FileChooserButton, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioResult } from "./ToolStudio";
+import { fileCount, fileNoun } from "./file-format-label";
+import { ToolLocationProvider, toolLocation } from "./tool-location";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() } }));
 
@@ -74,6 +76,87 @@ describe("FileIntake", () => {
     it("focuses its button when asked, for a return from a result", () => {
         render(<FileIntake accepts=".pdf" multiple compact autoFocus onFiles={vi.fn()} />);
         expect(screen.getByRole("button", { name: "Add files" })).toHaveFocus();
+    });
+
+    it("heads the page's first step with an h2 and opens the chooser from a folder, not an external-link arrow", () => {
+        render(<FileIntake accepts=".pdf" multiple title="Make a little more room." onFiles={vi.fn()} />);
+        expect(screen.getByRole("heading", { level: 2, name: "Make a little more room." })).toBeInTheDocument();
+        const choose = screen.getByRole("button", { name: /^Choose files/ });
+        expect(choose.querySelector(".lucide-folder-open")).not.toBeNull();
+        expect(choose.querySelector(".lucide-arrow-up-right")).toBeNull();
+        // No eyebrow over the heading.
+        expect(screen.queryByText("Start with your file")).toBeNull();
+    });
+
+    it("shrinks to a quiet \"Add files\" text button once files are chosen", () => {
+        render(<FileIntake accepts=".pdf" multiple compact onFiles={vi.fn()} />);
+        const add = screen.getByRole("button", { name: "Add files" });
+        expect(add.querySelector(".lucide-plus")).not.toBeNull();
+        expect(add.querySelector(".lucide-arrow-up-right")).toBeNull();
+        expect(screen.queryByText(/Temporary server processing/)).toBeNull();
+    });
+
+    it("says where the file goes on a tool page, in the page's own words, and nothing elsewhere", () => {
+        const { rerender } = render(<FileIntake accepts=".pdf" title="Pick" onFiles={vi.fn()} />);
+        expect(document.querySelector(".tool-where")).toBeNull();
+        rerender(<ToolLocationProvider value={toolLocation({ slug: "compress-pdf" })}><FileIntake accepts=".pdf" title="Pick" onFiles={vi.fn()} /></ToolLocationProvider>);
+        expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent("Temporary server processing. Files are uploaded only when you run the tool. PrivaTools processes them in temporary storage and removes the job’s files after the response.");
+        rerender(<ToolLocationProvider value={toolLocation({ slug: "json-xml-formatter", clientOnly: true })}><FileIntake accepts=".json" title="Pick" onFiles={vi.fn()} /></ToolLocationProvider>);
+        expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent(/^Stays on your device\. Processing happens in this browser\. Your input stays on this device\./);
+        rerender(<ToolLocationProvider value={toolLocation({ slug: "summarize-pdf", clientOnly: true, byok: true })}><FileIntake accepts=".pdf" title="Pick" onFiles={vi.fn()} /></ToolLocationProvider>);
+        expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent(/^This device or your AI key\. Choose where the model runs before summarizing\./);
+    });
+});
+
+describe("StudioLayout and the action bar", () => {
+    it("keeps one order: the intake, the options, then the action bar", () => {
+        render(<ToolLocationProvider value={toolLocation({ slug: "compress-pdf" })}>
+            <StudioLayout options={<h2>How small?</h2>} action={<StudioActionBar ready count={fileCount(1, "PDF")}><button>Compress PDF</button></StudioActionBar>}>
+                <FileIntake accepts=".pdf" multiple compact onFiles={vi.fn()} />
+            </StudioLayout>
+        </ToolLocationProvider>);
+        const order = [...document.querySelectorAll(".ts-intake, .ts-options, .ts-action-bar")].map(element => element.className.split(" ")[0]);
+        expect(order).toEqual(["ts-intake", "ts-options", "ts-action-bar"]);
+        const bar = document.querySelector(".ts-action-bar")!;
+        expect(bar).toHaveAttribute("data-ready", "true");
+        expect(bar).toHaveTextContent("1 PDFTemporary server processingCompress PDF");
+        // The bar names the count and where the files go before its button, for screen readers too.
+        expect(within(bar as HTMLElement).getByText("1 PDF").compareDocumentPosition(screen.getByRole("button", { name: "Compress PDF" }))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it("waits to stick until there is something to run", () => {
+        render(<StudioActionBar ready={false}><button disabled>Compress PDF</button></StudioActionBar>);
+        expect(document.querySelector(".ts-action-bar")).toHaveAttribute("data-ready", "false");
+        expect(document.querySelector(".ts-action-status")).toBeNull();
+    });
+
+    it("counts files in the visitor's words", () => {
+        expect(fileCount(1, "PDF")).toBe("1 PDF");
+        expect(fileCount(3, "PDF")).toBe("3 PDFs");
+        expect(fileCount(2)).toBe("2 files");
+        expect(fileCount(1, "audio file")).toBe("1 audio file");
+        expect(fileCount(4, "PDF", "PDFs")).toBe("4 PDFs");
+    });
+
+    it("names what a tool takes the same way on every screen: PDFs on a PDF-only tool", () => {
+        expect(fileCount(1, fileNoun(".pdf"))).toBe("1 PDF");
+        expect(fileCount(2, fileNoun("application/pdf"))).toBe("2 PDFs");
+        expect(fileCount(3, fileNoun(".jpg,.jpeg,.png,.webp"))).toBe("3 images");
+        expect(fileCount(1, fileNoun("image/*"))).toBe("1 image");
+        expect(fileCount(2, fileNoun(".mp4,.mov,.webm"))).toBe("2 videos");
+        expect(fileCount(1, fileNoun(".mp3,.wav,.m4a"))).toBe("1 audio file");
+        expect(fileCount(1, fileNoun(".pdf,.png"))).toBe("1 file");
+        expect(fileCount(2, fileNoun(".docx"))).toBe("2 files");
+        expect(fileCount(1, fileNoun("*"))).toBe("1 file");
+        expect(fileCount(1, fileNoun(undefined))).toBe("1 file");
+    });
+});
+
+describe("StudioFile", () => {
+    it("names a file as a label in its row, not as a heading that would break the page's outline", () => {
+        render(<StudioFile name="report.pdf" detail="1 MB" />);
+        expect(screen.queryByRole("heading")).toBeNull();
+        expect(screen.getByText("report.pdf")).toHaveClass("ts-file-name");
     });
 });
 

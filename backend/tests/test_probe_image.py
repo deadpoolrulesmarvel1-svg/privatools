@@ -85,3 +85,30 @@ def test_the_deploy_probe_asks_for_the_public_host_name(probe, monkeypatch, host
         server.shutdown()
         server.server_close()
     assert status == expected, body
+
+
+@pytest.mark.parametrize("path", ["/tool/merge-pdf", "/tools/image-compressor"])
+def test_the_page_probe_expects_the_heading_the_server_renders(probe, monkeypatch, path):
+    """The tool pages' H1 is the tool's name and promise, as seo_meta renders
+    it into the real index.html. The probe also still accepts the search-title
+    H1 of releases up to v2.7.14: the rollout's fallback probes the canonical
+    container with the newer checkout's probe."""
+    import html
+
+    from backend.app import seo_meta
+
+    rows = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    manifest = {row["path"]: row for row in rows.values()}
+    row = manifest[path]
+    pages = {
+        "current": seo_meta.inject_seo((ROOT / "frontend/index.html").read_text("utf-8"), path),
+        "older": f"<html><body><div id=\"root\"><h1>{html.escape(row['seoTitle'])}</h1></div></body></html>",
+    }
+    for kind, page in pages.items():
+        monkeypatch.setattr(probe, "fetch", lambda _base, _path, timeout=None, page=page: (200, page.encode()))
+        found = probe.check_tool_page("http://127.0.0.1:1", path, manifest)
+        assert ("tool-promise" in found) == (kind == "current"), (kind, found)
+    assert probe.tool_headings(row)[0] == f'<h1>{html.escape(row["name"])}<span class="tool-promise">: {html.escape(row["description"])}</span></h1>'
+    monkeypatch.setattr(probe, "fetch", lambda *_args, **_kwargs: (200, b"<h1>Something else</h1>"))
+    with pytest.raises(probe.CheckFailed):
+        probe.check_tool_page("http://127.0.0.1:1", path, manifest)

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { formatFileSize } from "@/lib/api";
 import { FileIntake, StudioFile, StudioProgress } from "@/skins/experience/ToolStudio";
+import { useToolLocation } from "@/skins/experience/tool-location";
 
 interface FileUploadZoneProps {
     onFileSelect: (file: File) => void;
@@ -18,6 +19,9 @@ interface FileUploadZoneProps {
 
 export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hint, showPreview, className, multiple, onFilesSelect }: FileUploadZoneProps) {
     const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+    // On a tool page the chosen file's row says where it goes: the editors hide
+    // the page's location line after a choice, and the upload comes at the run.
+    const where = useToolLocation();
 
     useEffect(() => {
         if (!showPreview || !file?.type.startsWith("image/")) { setPreviewSrc(null); return; }
@@ -39,7 +43,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
 
     if (file) return <div className={className} role="status" aria-live="polite">
         {previewSrc && <img src={previewSrc} alt={`Preview of ${file.name}`} className="ts-selected-preview" />}
-        <StudioFile name={file.name} detail={`${formatFileSize(file.size)} · Ready on this device`} onRemove={onClear} />
+        <StudioFile name={file.name} detail={`${formatFileSize(file.size)} · ${where ? where.label : "Ready on this device"}`} onRemove={onClear} />
     </div>;
     return <div className={className}><FileIntake accepts={accept} multiple={multiple}
         label={label || "Upload file"} detail={hint} onFiles={handleIncoming} /></div>;

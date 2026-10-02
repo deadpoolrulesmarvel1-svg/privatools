@@ -2,7 +2,7 @@
    experience tokens, except the marks drawn on the page preview, which sits on
    white paper in every appearance and so uses fixed colours that show on it. */
 
-.htc-options h3 { font-size: 15px; font-weight: 650; margin: 0 0 10px; }
+.htc-options :is(h2, h3) { font-size: 15px; font-weight: 650; margin: 0 0 10px; }
 .htc-checks { display: grid; gap: 7px; margin: 0 0 16px; padding: 0; list-style: none; font-size: 12.5px; line-height: 1.5; }
 .htc-checks li { position: relative; padding-left: 16px; }
 .htc-checks li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: hsl(var(--accent)); }

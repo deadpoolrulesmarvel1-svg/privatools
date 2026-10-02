@@ -1733,9 +1733,13 @@ def _tool_page_body(slug: str, name: str, desc: str, registry: dict, prefix: str
     for the same content is untouched by this — it's JSON, not HTML.
     """
     parts: list[str] = []
-    parts.append(f"<h1>{escape(_tool_seo_fields(slug).get('seoTitle') or name)}</h1>")
-    short = _tool_registry_short_description(slug) or desc
-    parts.append(f'<p class="tool-summary">{escape(short)}</p>')
+    # The page's heading, as ToolWorkspace renders it (frontend/src/lib/tool-seo.ts):
+    # the tool's name, then its one-line promise, the registry description, after a
+    # colon the page keeps for screen readers. The search title (seoTitle) is the
+    # <title> and the meta title, set by get_meta_for_path, not the heading.
+    promise = (_tool_registry_short_description(slug) or "").strip()
+    promise_html = f'<span class="tool-promise">: {escape(promise)}</span>' if promise else ""
+    parts.append(f"<h1>{escape(name)}{promise_html}</h1>")
     parts.append(f'<p class="tool-intro">{escape(desc)}</p>')
     if slug in TOOL_HOWTO:
         parts.append(f'<section class="tool-steps"><h2>{escape(_howto_name_for(name))}</h2><ol>')

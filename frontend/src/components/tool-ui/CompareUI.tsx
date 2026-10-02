@@ -8,7 +8,9 @@ import { friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData, readJson } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-import { FileIntake, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActionBar, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
+import { ToolWhere } from "@/skins/experience/ToolWhere";
 
 const MODES = [
     { value: "visual", label: "Visual", desc: "Side-by-side with diff highlights" },
@@ -88,11 +90,13 @@ export function CompareUI() {
         <div className="ts-actions">{mode === "visual" && resultBlob && <button className="ts-primary-button" onClick={() => downloadBlob(resultBlob, buildOutputFilename(file1?.name, "comparison", "pdf"))}><Download size={16} /> Download again</button>}<button className="ts-text-button" onClick={() => { setFile1(null); setFile2(null); setState("idle"); setResultBlob(null); setTextResult(null); }}>Compare more</button></div>
     </StudioResult>;
     return <StudioLayout options={<>
-        <div><p className="ts-eyebrow">Notice the difference</p><h3>Compare your way</h3><div className="ts-choices">{MODES.map(item => <button className="ts-choice" key={item.value} aria-pressed={mode === item.value} disabled={state === "processing"} onClick={() => setMode(item.value)}><strong>{item.label}</strong><span>{item.desc}</span></button>)}</div></div>
+        <div><p className="ts-eyebrow">Notice the difference</p><h2>Compare your way</h2><div className="ts-choices">{MODES.map(item => <button className="ts-choice" key={item.value} aria-pressed={mode === item.value} disabled={state === "processing"} onClick={() => setMode(item.value)}><strong>{item.label}</strong><span>{item.desc}</span></button>)}</div></div>
         {mode === "visual" && <div className="ts-setting"><label htmlFor="comparison-highlight">Highlight color</label><input id="comparison-highlight" type="color" value={highlight} disabled={state === "processing"} onChange={event => setHighlight(event.target.value)} /></div>}
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!file1 || !file2 || state === "processing"}><GitCompare size={16} /> Compare PDFs</button></div>
-    </>}>
+    </>} action={<StudioActionBar ready={!!file1 && !!file2} count={file1 && file2 ? fileCount(2, "PDF") : undefined}>
+        <button className="ts-primary-button" onClick={process} disabled={!file1 || !file2 || state === "processing"}><GitCompare size={16} /> Compare PDFs</button>
+    </StudioActionBar>}>
         <div className="ts-paired-inputs">{([{ label: "Original", file: file1, set: setFile1 }, { label: "Modified", file: file2, set: setFile2 }]).map(item => <section key={item.label}><p className="ts-eyebrow">{item.label === "Original" ? "Where you started" : "The latest version"}</p>{item.file ? <StudioFile name={item.file.name} detail={item.file.size} onRemove={state !== "processing" ? () => item.set(null) : undefined} removeLabel="Remove" /> : <FileIntake accepts=".pdf" label={`Upload ${item.label}`} title={`${item.label} PDF`} detail={item.label === "Original" ? "Choose the earlier document." : "Choose the version to compare."} onFiles={files => pick(item.set, files)} disabled={state === "processing"} />}</section>)}</div>
+        <ToolWhere className="ts-paired-where" />
         {state === "processing" && <StudioProgress label="Looking a little closer" detail="Comparing both documents for changes." />}{error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;
 }

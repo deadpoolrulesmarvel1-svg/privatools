@@ -439,10 +439,10 @@ def test_generated_blog_content_refreshes_by_mtime(tmp_path, monkeypatch):
 
 
 def test_tool_pages_use_registry_search_copy(tmp_path, monkeypatch):
-    """Tool title/description/H1/og:title come from the registry's seoTitle
-    and metaDescription — not the old "<name> — Free Online | PrivaTools"
-    formula. `_tool_seo_fields` is the read path both `get_meta_for_path`
-    and the SSR `<h1>` share."""
+    """Tool title/description/og:title come from the registry's seoTitle and
+    metaDescription — not the old "<name> — Free Online | PrivaTools"
+    formula. The SSR `<h1>` is the page's heading instead: the tool's name and
+    its one-line promise, the registry `description`."""
     manifest = {
         "merge-pdf": {"slug": "merge-pdf", "name": "Merge PDF", "path": "/tool/merge-pdf", "category": "organize",
                       "description": "Combine PDFs", "longDescription": "Long intro text for the page.",
@@ -470,8 +470,10 @@ def test_tool_pages_use_registry_search_copy(tmp_path, monkeypatch):
 
     template = (Path(__file__).resolve().parents[2] / "frontend" / "index.html").read_text("utf-8")
     html = inject_seo(template, "/tools/image-compressor")
-    assert "<h1>Compress Images Online Free – Smaller JPG, PNG and WebP</h1>" in html
+    assert '<h1>Image Compressor<span class="tool-promise">: Shrink images</span></h1>' in html
+    assert "<title>Compress Images Online Free – Smaller JPG, PNG and WebP</title>" in html
     assert '<meta property="og:title" content="Compress Images Online Free – Smaller JPG, PNG and WebP">' in html
+    assert "<h1>Compress Images Online Free" not in html
 
     # The manifest's lastReviewed date reaches both the visible review line
     # and the JSON-LD dateModified — `_last_reviewed_for` is the shared read
@@ -616,6 +618,34 @@ def test_tools_hub_is_known_and_renders_full_directory():
     assert '"CollectionPage"' in out
     # canonical points at the hub itself
     assert 'rel="canonical" href="https://privatools.me/tools"' in out
+
+
+def test_tool_heading_is_the_name_and_promise_the_page_shows():
+    """Every tool's crawler H1 says what the page's H1 says (ToolWorkspace via
+    frontend/src/lib/tool-seo.ts): the tool's name, then its one-line promise,
+    the registry `description`, after a colon the page keeps for screen
+    readers. The search title is the <title> and the meta title, never the H1,
+    and the promise is not repeated in a paragraph of its own."""
+    import html as html_lib
+
+    manifest = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    assert manifest, "tool-content.json manifest not found"
+    checked = 0
+    for slug, row in manifest.items():
+        title, description = seo_meta.get_meta_for_path(row["path"])
+        body = seo_meta._build_ssr_content(row["path"], title, description)
+        assert body.count("<h1") == 1, slug
+        heading = re.search(r"<h1>(.*?)</h1>", body, re.S)
+        assert heading, slug
+        text = html_lib.unescape(re.sub(r"<[^>]+>", "", heading.group(1)))
+        promise = (row.get("description") or "").strip()
+        assert text == (f"{row['name']}: {promise}" if promise else row["name"]), slug
+        if row.get("seoTitle") and row["seoTitle"] != text:
+            assert title == row["seoTitle"], slug
+            assert row["seoTitle"] not in heading.group(1), slug
+        assert 'class="tool-summary"' not in body, slug
+        checked += 1
+    assert checked == len(manifest) > 200
 
 
 def test_tool_body_matches_visible_blocks_in_order():

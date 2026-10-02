@@ -176,8 +176,21 @@ export function JsonXmlFormatterUI() {
     const copyTimer = useRef<ReturnType<typeof setTimeout>>();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const inputGutterRef = useRef<HTMLPreElement>(null);
+    const outputRef = useRef<HTMLDivElement>(null);
+    // Set by the run button, not by Ctrl/⌘ + Enter, which leaves the caret in the input being edited.
+    const revealOutput = useRef(false);
 
     useEffect(() => () => { revision.current++; clearTimeout(copyTimer.current); }, []);
+    // Stacked on a narrow screen, the output starts below the fold: after a run from
+    // the button, focus moves to it, so it is seen and its label is heard. Beside
+    // the input (wider screens) it is already in view and focus stays on the button.
+    useEffect(() => {
+        const reveal = revealOutput.current;
+        revealOutput.current = false;
+        const pane = outputRef.current;
+        if (!reveal || !result || !pane) return;
+        if (pane.getBoundingClientRect().top > window.innerHeight - 96) pane.focus();
+    }, [result]);
     const invalidate = useCallback(() => {
         revision.current++;
         setResult(null);
@@ -299,7 +312,7 @@ export function JsonXmlFormatterUI() {
                             <option value="tab">Tabs</option>
                         </select>
                     </label>
-                    <button type="button" className="formatter-run" disabled={!input.trim()} onClick={run} title={actionName + " " + upperMode + " (Ctrl/⌘ + Enter)"}>
+                    <button type="button" className="formatter-run" disabled={!input.trim()} onClick={() => { revealOutput.current = true; run(); }} title={actionName + " " + upperMode + " (Ctrl/⌘ + Enter)"}>
                         {actionName} {upperMode}
                     </button>
                 </div>
@@ -339,13 +352,13 @@ export function JsonXmlFormatterUI() {
 
                 <div className="formatter-pane formatter-output-pane">
                     <div className="formatter-pane-heading">
-                        <h3 id="formatter-output-label">{outputLabel}</h3>
+                        <h2 id="formatter-output-label">{outputLabel}</h2>
                         <button type="button" className="formatter-text-button" onClick={() => void copy()} disabled={!result}>
                             {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}{copied ? "Copied" : "Copy"}
                         </button>
                     </div>
                     {result ? (
-                        <div className="formatter-output-body" role="region" aria-labelledby="formatter-output-label" tabIndex={0} onKeyDown={event => {
+                        <div ref={outputRef} className="formatter-output-body" role="region" aria-labelledby="formatter-output-label" tabIndex={0} onKeyDown={event => {
                             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
                                 const code = event.currentTarget.querySelector("code");
                                 const selection = window.getSelection();

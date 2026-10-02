@@ -32,7 +32,8 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
-import { ConversionPath, FileIntake, LocalFilePreview, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { ConversionPath, FileIntake, LocalFilePreview, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
@@ -311,15 +312,17 @@ export function GenericUI({
     }
     return <StudioLayout options={<>
         <ConversionPath accepts={accepts} output={outputLabel} />
-        <div><p className="ts-eyebrow">Conversion details</p><h3>Your output</h3><dl><div><dt>Format</dt><dd>{outputLabel}</dd></div><div><dt>Selected</dt><dd>{files.length ? `${files.length} file${single ? "" : "s"} · ${formatFileSize(files.reduce((n, f) => n + f.bytes, 0))}` : "Choose one or several files"}</dd></div></dl></div>
+        <div><p className="ts-eyebrow">Conversion details</p><h2>Your output</h2><dl><div><dt>Format</dt><dd>{outputLabel}</dd></div><div><dt>Selected</dt><dd>{files.length ? `${files.length} file${single ? "" : "s"} · ${formatFileSize(files.reduce((n, f) => n + f.bytes, 0))}` : "Choose one or several files"}</dd></div></dl></div>
         <div><p>Each file is processed separately. Your original files stay as they are.</p>{timeEstimate && <p className="ts-caption">Usually {timeEstimate} per file.</p>}</div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>{files.length > 0 && state !== "processing" && <button className="ts-text-button" onClick={clearFile}>Clear selection</button>}</div>
-    </>}>
+    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length, fileNoun(accepts)) : undefined}>
+        <button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>
+    </StudioActionBar>}>
         <FileIntake accepts={accepts} multiple label={`Upload files for ${toolName}`} title={fileFormatLabel(accepts) === "FILE" ? "Your files" : `Your ${fileFormatLabel(accepts)} files`} detail={`${acceptsLabel} · Up to ${MAX_QUEUE} files, ${MAX_FILE_SIZE_LABEL} each`}
             onFiles={addFiles} compact={files.length > 0} disabled={state === "processing"} autoFocus={returning} />
         {files[0] && <LocalFilePreview file={files[0].file} name={files[0].name} label="Original · on your device" />}
         {files.length > 0 && <section aria-label="Selected files">{files.map(item => <StudioFile key={item.id} name={item.name} detail={item.errMsg || item.size} status={item.status}
             onRemove={state !== "processing" ? () => removeOne(item.id) : undefined} onDownload={item.blob ? () => handleDownloadOne(item) : undefined} />)}</section>}
+        {files.length > 0 && state !== "processing" && <button className="ts-text-button" onClick={clearFile}>Clear selection</button>}
         {state === "processing" && <StudioProgress label={progressLabel} detail={`${currentName} · ${elapsed}`} progress={progress} onCancel={cancelProcessing} />}
         {sizeWarning && <p className="ts-caption">{sizeWarning}</p>}
         {error && <div className="ts-error" role="alert">{error}{lastError != null && <button className="ts-text-button" onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError, toolName)).catch(() => {})}>Copy error details</button>}</div>}

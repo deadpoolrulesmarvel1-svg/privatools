@@ -6,6 +6,8 @@ html[data-experience='play'][data-theme='dark'] {--pt-bg:#181818;--pt-surface:#2
 html[data-experience] body {background:var(--pt-bg);color:var(--pt-ink);font-family:var(--pt-font);}
 /* Focus and in-page jumps stop below the sticky header, whatever its height (ExperienceShell measures it). */
 html[data-experience] {scroll-padding-top:calc(var(--pt-header-clearance, 0px) + 12px);}
+/* And above a tool's sticky action bar, while one can stick (useActionBarClearance measures it). */
+html[data-experience] {scroll-padding-bottom:calc(var(--pt-action-clearance, 0px) + 12px);}
 html[data-experience] .dl-root {--dl-paper:var(--pt-bg);--dl-paper-2:var(--pt-panel);--dl-paper-3:var(--pt-panel2);--dl-card:var(--pt-surface);--dl-card2:var(--pt-panel);--dl-ink:var(--pt-ink);--dl-muted:var(--pt-muted);--dl-faint:var(--pt-muted);--dl-green:var(--pt-action);--dl-on-accent:var(--pt-on);--dl-wash:var(--pt-soft);--dl-ghost:var(--pt-panel);--dl-rule:var(--pt-line);--dl-rule-soft:var(--pt-line);--dl-rule-mid:var(--pt-line);--dl-rule-strong:var(--pt-muted);--dl-sh1:var(--pt-shadow);--dl-sh2:var(--pt-shadow);--dl-eo:var(--pt-ease);font-family:var(--pt-font);background:var(--pt-bg);color:var(--pt-ink);}
 html[data-experience] .dl-root :is(h1,h2,h3,h4,.font-display) {font-family:var(--pt-display);}
 html[data-experience] .dl-root {--font-sans:var(--pt-font);--font-display:var(--pt-display);--font-mono:'DM Mono',monospace;}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowDownToLine } from "lucide-react";
-import { FileIntake, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActionBar, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { friendlyError } from "@/lib/utils";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -34,11 +35,12 @@ export function LongImageUI() {
         <button className="ts-primary-button" onClick={() => downloadBlob(result.blob, result.name)}><ArrowDownToLine size={17} /> Download again</button>
     </StudioResult>;
     return <StudioLayout options={<>
-        <div><p className="ts-eyebrow">Made for a longer view</p><h3>Export settings</h3><p>Pages join vertically, ready to save or share as one image.</p></div>
+        <div><p className="ts-eyebrow">Made for a longer view</p><h2>Export settings</h2><p>Pages join vertically, ready to save or share as one image.</p></div>
         <div className="ts-setting"><label htmlFor="long-image-format">Image format</label><select id="long-image-format" value={format} disabled={busy} onChange={event => setFormat(event.target.value)}><option value="png">PNG · lossless</option><option value="jpg">JPG · smaller file</option></select></div>
         <div className="ts-setting"><label htmlFor="long-image-dpi">Resolution</label><select id="long-image-dpi" value={dpi} disabled={busy} onChange={event => setDpi(Number(event.target.value))}>{[36, 72, 100, 150, 200].map(value => <option value={value} key={value}>{value} dpi{value === 100 ? " · recommended" : ""}</option>)}</select><p>Higher resolution creates a larger image. Very long documents may need a lower setting.</p></div>
+    </>} action={<StudioActionBar ready={!!file} count={file ? fileCount(1, "PDF") : undefined}>
         <button className="ts-primary-button" disabled={!file || busy} onClick={process}>Create long image</button>
-    </>}>
+    </StudioActionBar>}>
         {!file ? <FileIntake accepts=".pdf" label="Choose PDF for a long image" title="Your whole document. One image." onFiles={files => { setFile(files[0] || null); setError(""); }} /> : <><StudioFile name={file.name} detail={formatFileSize(file.size)} onRemove={busy ? undefined : () => setFile(null)} /><PdfPageStage file={file} /></>}
         {busy && <StudioProgress label="Joining your pages" detail={`${format.toUpperCase()} · ${dpi} dpi`} />}{error && <p className="ts-error" role="alert">{error}</p>}
     </StudioLayout>;

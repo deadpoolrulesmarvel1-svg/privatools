@@ -2,12 +2,13 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
-    FileText, Upload, X, Loader2, CheckCircle2, GripVertical, Plus,
+    FileText, FolderOpen, X, Loader2, CheckCircle2, GripVertical, Plus,
     AlertCircle, AlertTriangle, ChevronUp, ChevronDown, Download, Sparkles, Server,
     ChevronLeft, ChevronRight, Check, SlidersHorizontal, Info, BookmarkPlus, LockKeyhole,
 } from "lucide-react";
 import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
-import { IntakeNotice } from "@/skins/experience/ToolStudio";
+import { IntakeNotice, StudioActionBar } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { focusIfIdle } from "@/skins/experience/focus-result";
 import { cn, friendlyError } from "@/lib/utils";
 import {
@@ -321,6 +322,20 @@ export function MergeUI() {
     const previewOrder = useMemo(() => mergeable.flatMap((file, index) =>
         (mergeableSelections[index].pages ?? []).map(page => ({ file, page }))), [mergeable, mergeableSelections]);
 
+    // The run action in the shared action bar, with how many PDFs and where they go. Beside the
+    // files it sits in the settings card under the full disclosure; on a phone it follows the
+    // card, so it can stick to the bottom of the screen.
+    const actionBar = !result && files.length > 0 ? <StudioActionBar className="merge-action-bar" ready count={fileCount(mergeable.length, "PDF")}>
+        {busy ? <button className="merge-button" type="button" onClick={cancel}>Cancel request</button>
+            : <button className="merge-button merge-button--primary" type="button" disabled={!canProcess} onClick={() => void process()}>
+                {previewsLoading ? <><Loader2 size={19} className="merge-spinner" />Reading PDFs…</>
+                    : mergeable.length < 2 ? "Add one more PDF"
+                        : selectedCount !== null ? `Merge ${selectedCount} pages` : `Merge ${mergeable.length} PDFs`}
+            </button>}
+        {busy ? <p className="ts-action-hint">Cancelling stops this request. A merge already running on the server may still finish.</p>
+            : !allRangesValid && <p className="ts-action-hint merge-field-error">Check the highlighted page ranges before merging.</p>}
+    </StudioActionBar> : null;
+
     return (
         <div
             className={cn("merge-workbench", drag && "merge-workbench--drag", result && "merge-workbench--done")}
@@ -346,7 +361,7 @@ export function MergeUI() {
                     <h2>Bring your PDFs together.</h2>
                     <p>Choose two or more PDFs. Preview the pages, arrange your files, and make one document.</p>
                     <button type="button" className="merge-button merge-button--primary" onClick={() => inputRef.current?.click()}>
-                        <Upload size={20} /> Choose PDFs
+                        <FolderOpen size={20} aria-hidden="true" /> Choose PDFs
                     </button>
                     <p className="merge-empty-hint">Or drop PDFs here · Up to {MAX_FILES_PER_REQUEST} files, 500 MB in total</p>
                     <button className="merge-text-button" type="button" disabled={loadingSample} onClick={() => void trySample()}>
@@ -369,7 +384,7 @@ export function MergeUI() {
                             <>
                                 <div className="merge-section-heading">
                                     <div><h2>Your files</h2><p>{files.length} file{files.length === 1 ? "" : "s"}{leftOut ? ` · ${leftOut} left out` : ""}{selectedCount !== null ? ` · ${selectedCount} of ${totalCount} pages` : ` · ${formatFileSize(mergeable.reduce((sum, file) => sum + file.file.size, 0))}`}</p></div>
-                                    <button className="merge-button merge-button--small" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><Plus size={18} />Add PDFs</button>
+                                    <button className="merge-text-button merge-add-button" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><Plus size={18} aria-hidden="true" />Add PDFs</button>
                                 </div>
                                 <p className="merge-help">Move files into order. Select thumbnails or enter page ranges in Merge settings.</p>
                                 <ol className="merge-files">
@@ -445,14 +460,8 @@ export function MergeUI() {
                                 <strong>{result ? "Processed by PrivaTools" : "Processing: temporary server upload"}</strong>
                                 <p>{result ? "The result is ready in this browser. Source files and the server result are removed after the response." : "Choosing Merge sends these PDFs to PrivaTools. Server copies are removed after the response."}</p>
                             </div></div>
-                            {result ? <button className="merge-button merge-button--primary" type="button" onClick={() => { downloadBlob(result.blob, result.filename); emitToolSuccess("Merge PDF"); }}><Download size={20} />Download PDF</button>
-                                : busy ? <button className="merge-button" type="button" onClick={cancel}>Cancel request</button>
-                                    : <button className="merge-button merge-button--primary" type="button" disabled={!canProcess} onClick={() => void process()}>
-                                        {previewsLoading ? <><Loader2 size={19} className="merge-spinner" />Reading PDFs…</>
-                                            : mergeable.length < 2 ? "Add one more PDF"
-                                                : selectedCount !== null ? `Merge ${selectedCount} pages` : `Merge ${mergeable.length} PDFs`}
-                                    </button>}
-                            {result ? <>
+                            {result && <button className="merge-button merge-button--primary" type="button" onClick={() => { downloadBlob(result.blob, result.filename); emitToolSuccess("Merge PDF"); }}><Download size={20} />Download PDF</button>}
+                            {result && <>
                                 <button className="merge-button merge-button--quiet" type="button" onClick={() => { invalidateResult(); setNotice("Adjust the pages or order, then merge again to create an updated PDF."); }}><SlidersHorizontal size={18} />Adjust pages</button>
                                 <div className="merge-save-workflow">
                                     <button className="merge-text-button" type="button" disabled={!!savedWorkflow} onClick={() => {
@@ -464,13 +473,17 @@ export function MergeUI() {
                                     {workflowError && <p className="merge-field-error" role="alert">{workflowError}</p>}
                                 </div>
                                 <button className="merge-text-button" type="button" onClick={reset}>Start another merge</button>
-                            </> : busy ? <p className="merge-action-help">Cancelling stops this request. A merge already running on the server may still finish.</p> : <>
-                                {!allRangesValid && <p className="merge-field-error">Check the highlighted page ranges before merging.</p>}
-                                <button className="merge-text-button" type="button" onClick={reset}>Clear selection</button>
-                                {canProcess && <p className="merge-action-help">Shortcut: Ctrl / ⌘ + Enter</p>}
                             </>}
                         </div>
+                        {/* A child of the card itself, so beside the files it can stick to the bottom of the screen anywhere in the card. */}
+                        {!mobile && actionBar}
+                        {!result && !busy && <div className="merge-action-extras">
+                            <button className="merge-text-button" type="button" onClick={reset}>Clear selection</button>
+                            {canProcess && <p className="merge-action-help">Shortcut: Ctrl / ⌘ + Enter</p>}
+                        </div>}
                     </aside>
+                    {/* On a phone the bar leaves the settings card, so it can stick to the bottom of the screen. */}
+                    {mobile && actionBar}
                     {result && <div className="merge-handoff"><ResultHandoff blob={result.blob} filename={result.filename} fromSlug="merge-pdf" /></div>}
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { JsonXmlFormatterUI } from "./JsonXmlFormatterUI";
 import { downloadBlob } from "@/lib/api";
@@ -48,6 +48,33 @@ describe("JSON/XML consumer formatter", () => {
         choose("Format JSON");
         expect(output()).toBe('{\n  "id": 9007199254740993,\n  "id": 1e+20,\n  "value": "a \\"quote\\"",\n  "empty": {},\n  "list": [\n    true,\n    false,\n    null\n  ]\n}');
         expect(screen.getByText("Valid JSON")).toBeInTheDocument();
+    });
+
+    it("moves focus to the output when it starts below the fold, as it does under the input on a phone", () => {
+        const top = { value: 980 };
+        vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+            const y = this.classList.contains("formatter-output-body") ? top.value : 0;
+            return { x: 0, y, top: y, left: 0, right: 390, bottom: y + 60, width: 390, height: 60, toJSON: () => ({}) } as DOMRect;
+        });
+        const height = window.innerHeight;
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+        onTestFinished(() => { Object.defineProperty(window, "innerHeight", { configurable: true, value: height }); });
+        render(<JsonXmlFormatterUI />);
+        replaceInput('{"b":1}');
+        choose("Format JSON");
+        expect(screen.getByRole("region", { name: "Formatted output" })).toHaveFocus();
+        // The keyboard shortcut leaves the caret where the visitor is typing.
+        input().focus();
+        replaceInput('{"b":2}');
+        fireEvent.keyDown(input(), { key: "Enter", ctrlKey: true });
+        expect(input()).toHaveFocus();
+        // Beside the input, the output is already in view: focus stays on the button.
+        top.value = 320;
+        replaceInput('{"b":3}');
+        const run = screen.getByRole("button", { name: "Format JSON" });
+        run.focus();
+        fireEvent.click(run);
+        expect(run).toHaveFocus();
     });
 
     it("supports 4-space and tab indentation plus the existing keyboard shortcut", () => {
