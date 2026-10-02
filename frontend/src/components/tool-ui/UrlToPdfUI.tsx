@@ -9,6 +9,15 @@ import { Globe, Download, Loader2, AlertCircle, ExternalLink, RotateCcw } from "
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+
+/** The download's name: the page's host, as "example_com.pdf". */
+function pdfNameFor(url: string): string {
+    try {
+        const domain = new URL(normalizeWebpageUrl(url) || "").hostname;
+        return `${domain.replace(/\./g, "_")}.pdf`;
+    } catch { return "webpage.pdf"; }
+}
+
 export function UrlToPdfUI() {
     const [url, setUrl] = useState("");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
@@ -32,6 +41,8 @@ export function UrlToPdfUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
+            // The download policy: the finished PDF downloads by itself, once; the result offers it again.
+            downloadBlob(blob, pdfNameFor(trimmed));
             emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
@@ -55,12 +66,7 @@ export function UrlToPdfUI() {
     // Use shared downloadBlob (handles URL revoke + toast) instead of bespoke download function.
     const download = () => {
         if (!resultBlob) return;
-        let filename = "webpage.pdf";
-        try {
-            const domain = new URL(normalizeWebpageUrl(url) || "").hostname;
-            filename = `${domain.replace(/\./g, "_")}.pdf`;
-        } catch { /* keep default */ }
-        downloadBlob(resultBlob, filename);
+        downloadBlob(resultBlob, pdfNameFor(url));
     };
 
     const reset = () => { setUrl(""); setStatus("idle"); setError(null); setResultBlob(null); };
@@ -84,7 +90,7 @@ export function UrlToPdfUI() {
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
                                 <button onClick={download} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                    <Download size={13} /> Download PDF
+                                    <Download size={13} aria-hidden="true" /> Download again
                                 </button>
                                 <button onClick={reset} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
                                     <RotateCcw size={12} /> Convert another

@@ -18,12 +18,14 @@ import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ConversionPath, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, downloadStarted, failureDetail, partialLine, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 /* Shared "upload → convert" UI for simpler conversion tools. Accepts a
- * queue of files and converts them sequentially; a single file keeps the
- * classic auto-download flow. */
+ * queue of files and converts them sequentially. The download policy: a
+ * finished run downloads once by itself, one file or one ZIP for several,
+ * and the result offers "Download again" (useDownloadOnce). */
 interface SimpleConvertUIProps {
     slug: string;
     label: string;
@@ -114,7 +116,6 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     const process = useCallback(async (onlyRetryable = false) => {
         const run = items.filter(i => i.status === "queued" || (i.status === "error" && (!onlyRetryable || i.retryable)));
         if (!run.length) return;
-        const single = items.length === 1;
         stopRef.current = false;
         setStatus("processing"); setError(null); setProgress(undefined);
         const endpoint = getToolEndpoint(slug);
@@ -141,7 +142,6 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                 );
                 setItem(item.id, { status: "done", blob, outName });
                 done++;
-                if (single) downloadBlob(blob, outName);
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
                 const msg = e instanceof Error ? e.message : "Failed";
@@ -194,6 +194,13 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         downloadBlob(new Blob([zipped.slice().buffer], { type: "application/zip" }), `${slug}-results.zip`);
     }, [doneItems, plannedName, slug]);
 
+    // One file downloads as itself, several as one ZIP: once per finished run.
+    const downloadResults = () => {
+        if (doneItems.length === 1) downloadOne(doneItems[0]);
+        else if (doneItems.length > 1) void downloadAllZip();
+    };
+    useDownloadOnce(status === "done", doneItems.length, downloadResults);
+
     const reset = () => { setItems([]); setStatus("idle"); setError(null); setProgress(undefined); };
     const retryCount = items.filter(i => i.status === "error" && i.retryable).length;
 
@@ -205,14 +212,13 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
                 : tone === "partial" ? `${doneItems.length} of ${items.length} files ready.` : single ? "Your conversion is ready." : `${doneItems.length} files, freshly converted.`}
             detail={tone === "failure" ? failureDetail(failCount, retryKinds(items))
-                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The completed results are ready.`
-                : single ? "The download has started. A copy is ready here whenever you need it." : "Save them separately, or download one ZIP."}>
+                : tone === "partial" ? `${downloadStarted(doneItems.length)} ${partialLine(failCount)}`
+                : single ? "The download has started. A copy is ready here whenever you need it." : `${downloadStarted(doneItems.length)} Each file can also be downloaded on its own.`}>
             {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : formatFileSize(item.file.size))}
                 status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined} />)}
             <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
                 choose={{ accepts: acceptFileTypes, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}
-                primary={doneItems.length > 1 ? <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={16} /> Download all ({doneItems.length}) as .zip</button>
-                    : doneItems[0] && <button className="ts-primary-button" onClick={() => downloadOne(doneItems[0])}><Download size={16} /> {single ? "Download again" : "Download"}</button>}
+                primary={doneItems.length > 0 && <button className="ts-primary-button" onClick={downloadResults}>{doneItems.length > 1 ? <Archive size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />} {downloadAgainLabel(doneItems.length)}</button>}
                 more={tone !== "failure" && <button className="ts-text-button" onClick={() => startOver()}>Convert another</button>} />
         </StudioResult>;
     }

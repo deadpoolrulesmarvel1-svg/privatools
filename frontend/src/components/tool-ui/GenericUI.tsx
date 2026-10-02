@@ -6,8 +6,9 @@
  * Multi-file: every tool this surface backs is a per-file transform (the
  * batch page has always run them that way), so the queue accepts many files
  * and processes them sequentially — one upload in flight at a time, per-file
- * results, and a client-side ZIP for "download all". One file behaves
- * exactly as it always has, auto-download included.
+ * results, and a client-side ZIP for "download all". The download policy:
+ * a finished run downloads once by itself, one file or one ZIP for several,
+ * and the result offers "Download again" (useDownloadOnce).
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Download, ArrowRight, Archive } from "lucide-react";
@@ -34,7 +35,8 @@ import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolEr
 import { ResultHandoff } from "./ResultHandoff";
 import { ConversionPath, FileIntake, LocalFilePreview, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, downloadStarted, failureDetail, partialLine, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
 const MAX_QUEUE = 25;
@@ -185,7 +187,6 @@ export function GenericUI({
     const process = useCallback(async (onlyRetryable = false) => {
         const run = files.filter(f => f.status === "queued" || (f.status === "error" && (!onlyRetryable || f.retryable)));
         if (!run.length) return;
-        const single = files.length === 1;
         stopRef.current = false;
         setState("processing");
         setError(null);
@@ -215,7 +216,6 @@ export function GenericUI({
                 );
                 setItem(item.id, { status: "done", blob, outName });
                 done++;
-                if (single) downloadBlob(blob, outName);
             } catch (e: unknown) {
                 if (isAbortError(e)) {
                     setItem(item.id, { status: "queued" });
@@ -270,6 +270,12 @@ export function GenericUI({
     }, [doneItems, plannedOutputName, slug]);
 
     const handleDownloadOne = (item: QueueItem) => { if (item.blob) downloadBlob(item.blob, item.outName || plannedOutputName(item.name)); };
+    // One file downloads as itself, several as one ZIP: once per finished run.
+    const downloadResults = () => {
+        if (doneItems.length === 1) handleDownloadOne(doneItems[0]);
+        else if (doneItems.length > 1) void downloadAllZip();
+    };
+    useDownloadOnce(state === "done", doneItems.length, downloadResults);
     const cancelProcessing = () => { stopRef.current = true; abortRef.current?.abort(); };
     const clearFile = () => {
         setFiles([]);
@@ -293,16 +299,14 @@ export function GenericUI({
             title={tone === "failure" ? single ? "This file couldn’t be processed." : "None of these files could be processed."
                 : tone === "partial" ? `${okCount} of ${files.length} files ready.` : single ? "Your file is ready." : `${okCount} files, ready to go.`}
             detail={tone === "failure" ? failureDetail(failCount, retryKinds(files))
-                : tone === "partial" ? `${failCount === 1 ? "One file" : `${failCount} files`} couldn’t be processed; the reason is below. The rest are ready.`
-                : single ? singleItem?.outName : "Download your results individually or bring them together in one ZIP."}>
+                : tone === "partial" ? `${downloadStarted(okCount)} ${partialLine(failCount)}`
+                : single ? singleItem?.outName : `${downloadStarted(okCount)} Each file can also be downloaded on its own.`}>
             {files.map(item => <StudioFile key={item.id} name={item.outName || item.name}
                 detail={item.errMsg || (item.blob ? formatFileSize(item.blob.size) : item.size)} status={item.status}
                 onDownload={item.blob ? () => handleDownloadOne(item) : undefined} />)}
             <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
                 choose={{ accepts, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}
-                primary={single ? <button className="ts-primary-button" onClick={() => singleItem && handleDownloadOne(singleItem)}><Download size={17} /> Download again</button>
-                    : okCount > 1 ? <button className="ts-primary-button" onClick={downloadAllZip}><Archive size={17} /> Download all ({okCount}) as .zip</button>
-                    : doneItems[0] && <button className="ts-primary-button" onClick={() => handleDownloadOne(doneItems[0])}><Download size={17} /> Download</button>}
+                primary={okCount > 0 && <button className="ts-primary-button" onClick={downloadResults}>{okCount > 1 ? <Archive size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />} {downloadAgainLabel(okCount)}</button>}
                 more={tone === "failure"
                     ? lastError != null && <button className="ts-text-button" onClick={() => navigator.clipboard.writeText(formatErrorForClipboard(lastError, toolName)).catch(() => {})}>Copy error details</button>
                     : <button className="ts-text-button" onClick={() => startOver()}>Process another <ArrowRight size={16} /></button>} />

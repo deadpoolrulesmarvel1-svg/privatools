@@ -36,3 +36,22 @@ export function failureDetail(failed: number, retryable: readonly (ToolErrorKind
     if (count > 0) return `Nothing was created. The reasons are below; trying again may work for ${count === 1 ? "one of the files" : `${count} of the files`}.`;
     return failed > 1 ? "Nothing was created. The reasons are below." : "Nothing was created. The reason is below.";
 }
+
+/** A partial run's line about what didn't work: how many, and that each reason is on its file's row. */
+export function partialLine(failed: number, verb = "processed"): string {
+    return failed === 1 ? `One file couldn’t be ${verb}; the reason is below.` : `${failed} files couldn’t be ${verb}; the reasons are below.`;
+}
+
+/**
+ * The download policy's second chance. A finished run downloads its result by
+ * itself, once: one file, or one ZIP for several (useDownloadOnce). The
+ * result then offers it again under this name.
+ */
+export function downloadAgainLabel(results: number): string {
+    return results > 1 ? "Download ZIP again" : "Download again";
+}
+
+/** What a result says about the download that started by itself. */
+export function downloadStarted(results: number): string {
+    return results > 1 ? "The ZIP download has started." : "The download has started.";
+}

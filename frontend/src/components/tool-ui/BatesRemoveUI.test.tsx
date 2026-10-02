@@ -51,7 +51,7 @@ async function run(answers: Response[], prefix = "") {
 describe("Remove Bates Numbers' result", () => {
     it("says a stamp is still in the file instead of calling it gone", async () => {
         const heading = await run([answer(2, 1)]);
-        expect(heading).toHaveTextContent(/^1 stamp could not be removed$/);
+        expect(heading).toHaveTextContent(/^1 stamp could not be removed\.$/);
         expect(screen.getByText(/is still in the file/)).toHaveTextContent(/2 other stamps were removed/);
         expect(screen.queryByText(/gone from the file/)).toBeNull();
         expect(screen.queryByText("Bates removed")).toBeNull();
@@ -66,19 +66,19 @@ describe("Remove Bates Numbers' result", () => {
 
     it("claims no removal when none was removed", async () => {
         const heading = await run([answer(0, 3)]);
-        expect(heading).toHaveTextContent(/^3 stamps could not be removed$/);
+        expect(heading).toHaveTextContent(/^3 stamps could not be removed\.$/);
         expect(screen.queryByText(/other stamps? w(as|ere) removed/)).toBeNull();
     });
 
     it("says the stamps are gone when every one left the file", async () => {
         const heading = await run([answer(3, 0)]);
-        expect(heading).toHaveTextContent(/^3 stamps removed$/);
+        expect(heading).toHaveTextContent(/^3 stamps removed\.$/);
         expect(screen.getByText(/the removed stamps' text is gone from the file/)).toBeInTheDocument();
     });
 
     it("reports Bates-shaped numbers left in place without a prefix, and says how to remove them", async () => {
         const heading = await run([answer(0, 0, 1)]);
-        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place$/);
+        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place\.$/);
         expect(screen.getByText(/left in place on pages turned a quarter/)).toHaveTextContent(
             /outside the margins searched without a prefix\. If it is a stamp, give the prefix to remove it\. Check before you share/,
         );
@@ -87,7 +87,7 @@ describe("Remove Bates Numbers' result", () => {
 
     it("names the file with a number left in place in a batch run without a prefix", async () => {
         const heading = await run([answer(4, 0), answer(0, 0, 1)]);
-        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place$/);
+        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place\.$/);
         expect(screen.getByText(/left in place on pages turned a quarter/)).toHaveTextContent(/4 stamps in the margins were removed/);
         const list = screen.getByRole("list", { name: "Files to check" });
         expect(within(list).getAllByRole("listitem").map(item => item.textContent)).toEqual(["production-2.pdf1 left in place"]);
@@ -100,9 +100,12 @@ describe("Remove Bates Numbers' result", () => {
         fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files: [new File(["%PDF-1.7"], "crammed.pdf", { type: "application/pdf" })] } });
         fireEvent.click(screen.getByRole("button", { name: /Remove Bates numbers/ }));
         const heading = await screen.findByRole("heading", { level: 2 }, { timeout: 5000 });
-        expect(heading).toHaveTextContent(/^No file was made$/);
-        expect(screen.getByText(/could not be processed/)).toBeInTheDocument();
+        // The shared failure grammar: the failure tone, nothing created, the reason on the file's row.
+        expect(heading).toHaveTextContent(/^This PDF couldn’t be processed\.$/);
+        expect(view.container.querySelector(".ts-result")).toHaveAttribute("data-tone", "failure");
+        expect(screen.getByText(/^Nothing was created\./)).toBeInTheDocument();
         expect(screen.getByText(/so no file was made\./)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Choose a different file" })).toBeInTheDocument();
         expect(screen.queryByText(/stamps? removed/)).toBeNull();
         expect(screen.queryByText(/gone from the file/)).toBeNull();
         expect(screen.queryByText("Bates removed")).toBeNull();
@@ -110,19 +113,19 @@ describe("Remove Bates Numbers' result", () => {
 
     it("says nothing matched when nothing was found", async () => {
         const heading = await run([answer(0, 0)]);
-        expect(heading).toHaveTextContent("No Bates numbers found");
+        expect(heading).toHaveTextContent("No Bates numbers found.");
         expect(screen.getByText(/top or bottom inch/)).toBeInTheDocument();
     });
 
     it("says nothing in the file matched the prefix when one was given", async () => {
         const heading = await run([answer(0, 0)], "PROD");
-        expect(heading).toHaveTextContent("No Bates numbers found");
+        expect(heading).toHaveTextContent("No Bates numbers found.");
         expect(screen.getByText(/Nothing in the file matched the prefix or suffix/)).toBeInTheDocument();
     });
 
     it("reports matches left in place instead of saying nothing was found", async () => {
         const heading = await run([answer(0, 0, 1)], "PROD");
-        expect(heading).toHaveTextContent(/^1 match left in place$/);
+        expect(heading).toHaveTextContent(/^1 match left in place\.$/);
         expect(screen.getByText(/found elsewhere in the file/)).toHaveTextContent(/Check before you share/);
         expect(screen.queryByText("No Bates numbers found")).toBeNull();
         expect(screen.queryByText(/gone from the file/)).toBeNull();
@@ -130,13 +133,13 @@ describe("Remove Bates Numbers' result", () => {
 
     it("says how many stamps went when matches were left in place", async () => {
         const heading = await run([answer(3, 0, 2)], "PROD");
-        expect(heading).toHaveTextContent(/^2 matches left in place$/);
+        expect(heading).toHaveTextContent(/^2 matches left in place\.$/);
         expect(screen.getByText(/found elsewhere in the file/)).toHaveTextContent(/3 stamps in the margins were removed/);
     });
 
     it("mentions the matches left in place when stamps could not be removed", async () => {
         const heading = await run([answer(2, 1, 1)], "PROD");
-        expect(heading).toHaveTextContent(/^1 stamp could not be removed$/);
+        expect(heading).toHaveTextContent(/^1 stamp could not be removed\.$/);
         expect(screen.getByText(/is still in the file/)).toHaveTextContent(
             /2 other stamps were removed\. 1 more match for the prefix or suffix was found elsewhere in the file/,
         );
@@ -152,5 +155,44 @@ describe("Remove Bates Numbers' result", () => {
     it("names no files for a single file", async () => {
         await run([answer(0, 1)]);
         expect(screen.queryByRole("list", { name: "Files to check" })).toBeNull();
+    });
+});
+
+describe("Remove Bates Numbers' partial result", () => {
+    /** One file the server answers with `good`, and one it refuses (a 400: not worth trying again). */
+    async function partial(good: Response) {
+        mocks.upload.mockResolvedValueOnce(good);
+        mocks.upload.mockRejectedValueOnce(Object.assign(new Error("File does not appear to be a PDF."), { __status: 400 }));
+        const view = render(<BatesRemoveUI />);
+        const files = ["production-1.pdf", "not-a.pdf"].map(name => new File(["%PDF-1.7"], name, { type: "application/pdf" }));
+        fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files } });
+        fireEvent.click(screen.getByRole("button", { name: /Remove Bates numbers/ }));
+        const heading = await screen.findByRole("heading", { level: 2 }, { timeout: 5000 });
+        return { heading, detail: view.container.querySelector(".ts-result-detail")!, view };
+    }
+
+    // The kit's heading ("1 of 2 PDFs processed.") replaces this tool's own, so the detail
+    // has to open with what the heading would have said.
+    it("opens with the stamp that could not be removed, so “It was found…” refers to it", async () => {
+        const { heading, detail, view } = await partial(answer(2, 1));
+        expect(heading).toHaveTextContent(/^1 of 2 PDFs processed\.$/);
+        expect(view.container.querySelector(".ts-result")).toHaveAttribute("data-tone", "partial");
+        expect(detail).toHaveTextContent(/^1 stamp could not be removed\. It was found in the page margins but is still in the file/);
+        expect(detail).toHaveTextContent(/2 other stamps were removed\./);
+        expect(detail).toHaveTextContent(/One file couldn’t be processed; the reason is below\.$/);
+        expect(screen.queryByText(/^It was/)).toBeNull();
+        expect(screen.queryByRole("button", { name: /Try( \d+)? again/ })).toBeNull();
+    });
+
+    it("keeps the count of stamps removed", async () => {
+        const { heading, detail } = await partial(answer(3, 0));
+        expect(heading).toHaveTextContent(/^1 of 2 PDFs processed\.$/);
+        expect(detail).toHaveTextContent(/^3 stamps removed across 1 file\. Redacted, not covered: the removed stamps' text is gone from the file\./);
+    });
+
+    it("adds nothing where the summary already says what it reports", async () => {
+        const { detail } = await partial(answer(0, 0, 2));
+        expect(detail).toHaveTextContent(/^2 Bates-shaped numbers were left in place on pages turned a quarter/);
+        expect(detail).not.toHaveTextContent(/left in place\. 2 Bates-shaped/);
     });
 });

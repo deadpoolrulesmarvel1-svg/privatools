@@ -13,7 +13,7 @@ import { providerById } from "@/lib/byok/providers";
 import { visionOcrWithByok } from "@/lib/byok/tasks";
 import { ByokError } from "@/lib/byok/errors";
 import { StudioActions, StudioFile, StudioResult } from "@/skins/experience/ToolStudio";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { focusIfIdle } from "@/skins/experience/focus-result";
 
 // Tesseract language packs actually installed in the production image — keep
@@ -377,7 +377,7 @@ export function OcrUI() {
         </div> : null)}
         <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
           choose={{ accepts: ".pdf", multiple: true, label: isMulti ? "Choose different files" : "Choose a different file", onFiles: startOver }}
-          primary={output !== "json" && <button type="button" className="ts-primary-button" onClick={() => proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+          primary={output !== "json" && <button type="button" className="ts-primary-button" onClick={() => proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable")}><Download size={16} /> {downloadAgainLabel(proc.doneCount)}</button>}
           more={tone !== "failure" && <button type="button" className="ts-text-button" onClick={() => startOver()}>OCR another file</button>} />
       </StudioResult>;
     }
@@ -430,7 +430,7 @@ export function OcrUI() {
               onClick={() => proc.downloadAll(output === "txt" ? "archive_text" : "archive_searchable")}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
             >
-              <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+              <Download size={13} /> {downloadAgainLabel(proc.doneCount)}
             </button>
           )}
           <button
@@ -642,7 +642,7 @@ export function OcrUI() {
             onRemove={proc.removeFile}
             onReorder={proc.reorder}
             onClearAll={proc.clearAll}
-            onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+            onRetryFailed={() => { downloadedRef.current = false; void process("transient"); }}
             busy={phase === "processing"}
           />
 

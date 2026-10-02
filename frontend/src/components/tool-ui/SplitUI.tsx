@@ -35,6 +35,8 @@ export function SplitUI() {
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
+    // What the run downloaded, for "Download again" (the download policy).
+    const [downloaded, setDownloaded] = useState<{ blob: Blob; name: string } | null>(null);
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
@@ -60,7 +62,9 @@ export function SplitUI() {
             const res = await uploadFile("/split", file.raw, params);
             const blob = await res.blob();
             const ext = blob.type.includes("zip") ? "zip" : "pdf";
-            downloadBlob(blob, buildOutputFilename(file.name, "split", ext));
+            const name = buildOutputFilename(file.name, "split", ext);
+            downloadBlob(blob, name);
+            setDownloaded({ blob, name });
             setState("done");
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
@@ -104,6 +108,9 @@ export function SplitUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             <span className="italic text-accent">Split</span> downloaded.
                         </h2>
+                        {downloaded && <button onClick={() => downloadBlob(downloaded.blob, downloaded.name)} className="mt-5 mr-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                            <Download size={13} aria-hidden="true" /> Download again
+                        </button>}
                         <button
                             onClick={() => { setFile(null); setState("idle"); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"

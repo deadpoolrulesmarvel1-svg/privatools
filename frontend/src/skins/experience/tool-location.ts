@@ -62,6 +62,33 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Temporary server processing",
         detail: "Your PDF is uploaded when you choose it, so PrivaTools can look for watermarks, and again when you remove the ones you confirm. Both requests use temporary storage, and the job’s files are removed after each response.",
     },
+    // A step before the run that uploads: "Detect form fields" sends the PDF to read its fields.
+    "fill-form": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
+    },
+    // Tools whose input is not a file: the sentence names what is sent.
+    "url-to-pdf": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and renders it to a PDF in temporary storage, then removes the job’s files after the response.",
+    },
+    "html-to-pdf": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools, which fetches the page or reads the HTML, renders the PDF in temporary storage and removes the job’s files after the response.",
+    },
+    "generate-barcode": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "When you run the tool, the text you enter is sent to PrivaTools, which draws the barcode in temporary storage and removes the job’s files after the response.",
+    },
+    "qr-code": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "When you run the tool, the text you enter, and a logo if you add one, is sent to PrivaTools, which draws the QR code in temporary storage and removes the job’s files after the response.",
+    },
     "summarize-pdf": {
         kind: "ai",
         label: "This device or your AI key",

@@ -1,22 +1,36 @@
 /**
  * InvertColorsUI — invert PDF colors for dark mode reading.
  *
- * Mode picker (Full vs Night), DPI picker, workshop dropzone.
+ * Mode picker (Full vs Night) and DPI picker.
  * Multi-file via useMultiFileProcessor — same mode/DPI applied to every PDF.
  */
-import { useRef, useState, useEffect, useCallback } from "react";
-import { Loader2, AlertCircle, Moon, Sun, CheckCircle2, Download, RotateCcw, Upload } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback } from "react";
+import { Moon } from "lucide-react";
 import { downloadBlob, buildOutputFilename } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { FileIntake, StudioActionBar, StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
+import { ProcessorFiles, ProcessorResult } from "@/skins/experience/ProcessorStudio";
+import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
+import { downloadStarted } from "@/skins/experience/studio-outcome";
+import { fileCount } from "@/skins/experience/file-format-label";
 
 const INVERT_COLORS_DEFAULTS: { mode: "full" | "night"; dpi: number } = {
     mode: "full",
     dpi: 150,
 };
+
+const MODES = [
+    { id: "full" as const, label: "Full invert", desc: "Flip every color" },
+    { id: "night" as const, label: "Night mode", desc: "Warm dark tint" },
+];
+
+const QUALITIES = [
+    { val: 72, label: "Fast", hint: "72 dpi" },
+    { val: 150, label: "Balanced", hint: "150 dpi" },
+    { val: 200, label: "Sharp", hint: "200 dpi" },
+];
 
 const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
@@ -28,8 +42,8 @@ export function InvertColorsUI() {
     const proc = useMultiFileProcessor();
 
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
 
     const canProcess = proc.entries.length > 0 && phase !== "processing";
 
@@ -53,7 +67,7 @@ export function InvertColorsUI() {
         })();
     }, [proc.entries, outNameFor]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/invert-colors",
@@ -64,13 +78,7 @@ export function InvertColorsUI() {
         setPhase("done");
     }, [proc, dpi, mode]);
 
-    const downloadedRef = useRef(false);
-    useEffect(() => {
-        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
-            downloadedRef.current = true;
-            downloadResults();
-        }
-    }, [phase, proc.doneCount, downloadResults]);
+    useDownloadOnce(phase === "done", proc.doneCount, downloadResults);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
@@ -83,196 +91,34 @@ export function InvertColorsUI() {
     }, [canProcess, phase, process]);
 
     if (phase === "done") {
-        const isMulti = proc.entries.length > 1;
-        return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-                <div className="relative p-7 sm:p-9 animate-corner-extend">
-                    <CornerMarks accent />
-                    <div className="flex items-start gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">Colors inverted</p>
-                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                {isMulti || proc.doneCount === 0
-                                    ? <><span className="italic text-accent">{proc.doneCount}</span> PDF{proc.doneCount === 1 ? "" : "s"} inverted{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
-                                    : <><span className="italic text-accent">{mode === "night" ? "Night-mode" : "Inverted"}</span> PDF downloaded</>}
-                            </h2>
-                            {isMulti && proc.doneCount > 0 && (
-                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
-                                </p>
-                            )}
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                {proc.doneCount > 0 && (
-                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
-                                    </button>
-                                )}
-                                {proc.failedCount > 0 && (
-                                    <button
-                                        onClick={() => { downloadedRef.current = false; void process(true); }}
-                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
-                                    >
-                                        Retry {proc.failedCount} failed
-                                    </button>
-                                )}
-                                <button onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60">
-                                    <RotateCcw size={12} /> Process another
-                                </button>
-                            </div>
-                            {proc.failedCount > 0 && (
-                                <div className="mt-4 space-y-1.5">
-                                    {proc.entries.filter(e => e.status === "failed").map(e => (
-                                        <p key={e.id} className="flex items-center gap-2 text-[12px] text-destructive">
-                                            <AlertCircle size={12} className="shrink-0" /> {e.name}: {e.error}
-                                        </p>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        const startOver = (files?: File[]) => {
+            proc.reset();
+            if (files) proc.addFiles(files, isPdfOnly);
+            setReturning(true); setPhase("idle");
+        };
+        return <ProcessorResult proc={proc} verb="inverted" accepts=".pdf"
+            title={proc.doneCount > 1 ? `${proc.doneCount} PDFs inverted.` : mode === "night" ? "Your night-mode PDF is ready." : "Your inverted PDF is ready."}
+            detail={downloadStarted(proc.doneCount)}
+            onDownload={downloadResults} onRetry={() => void process("transient")}
+            onStartOver={startOver} more="Process another" />;
     }
 
-    return (
-        <div className="space-y-4">
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
-                onClick={() => ref.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload PDFs"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Moon size={20} className="text-accent" strokeWidth={1.75} />}
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {proc.entries.length ? "Add more PDFs" : "Drop PDFs to invert colors"}
-                </p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">Dark mode for any document · several files become a ZIP</p>
-            </div>
-
-            {proc.entries.length > 0 && (
-                <MultiFileQueue
-                    entries={proc.entries}
-                    reorderable={false}
-                    onRemove={proc.removeFile}
-                    onReorder={proc.reorder}
-                    onClearAll={proc.clearAll}
-                    onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
-                    busy={phase === "processing"}
-                />
-            )}
-
-            {/* Mode + DPI */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    Options
-                </div>
-                <div className="p-5 space-y-5">
-                    {/* Mode */}
-                    <div>
-                        <p className="font-medium text-[11.5px] text-muted-foreground mb-2">Inversion mode</p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {([
-                                { id: "full" as const,  label: "Full invert", desc: "Flip every color", icon: Moon },
-                                { id: "night" as const, label: "Night mode",  desc: "Warm dark tint",   icon: Sun  },
-                            ]).map((m, idx) => {
-                                const active = mode === m.id;
-                                const Icon = m.icon;
-                                return (
-                                    <button
-                                        key={m.id}
-                                        onClick={() => setMode(m.id)}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
-                                            active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
-                                        )}
-                                    >
-                                        <div className={cn(
-                                            "h-9 w-9 rounded-md flex items-center justify-center shrink-0",
-                                            active ? "bg-accent/15 border border-accent/30 text-accent" : "bg-paper-2 text-muted-foreground border border-border"
-                                        )}>
-                                            <Icon size={16} />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-baseline gap-1.5">
-                                                <span className="font-medium text-[11px] text-accent">{String(idx + 1).padStart(2, "0")}</span>
-                                                <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{m.label}</p>
-                                            </div>
-                                            <p className="text-[11.5px] text-muted-foreground mt-0.5">{m.desc}</p>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* DPI */}
-                    <div>
-                        <p className="font-medium text-[11.5px] text-muted-foreground mb-2">Quality (DPI)</p>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {[
-                                { val: 72,  label: "Fast",     hint: "72 dpi" },
-                                { val: 150, label: "Balanced", hint: "150 dpi" },
-                                { val: 200, label: "Sharp",    hint: "200 dpi" },
-                            ].map(d => {
-                                const active = dpi === d.val;
-                                return (
-                                    <button
-                                        key={d.val}
-                                        onClick={() => setDpi(d.val)}
-                                        className={cn(
-                                            "rounded-md border py-2 transition-colors",
-                                            active ? "border-accent bg-accent/[0.06] text-foreground" : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                                        )}
-                                    >
-                                        <p className="font-display text-[13px] font-semibold tracking-[-0.015em]">{d.label}</p>
-                                        <p className="font-mono text-[10px] tracking-wide text-muted-foreground">{d.hint}</p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {proc.entries.length > 0 && (
-                <div className="flex items-center gap-3">
-                    <button onClick={() => void process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                        {phase === "processing"
-                            ? <><Loader2 size={13} className="animate-spin" /> Inverting… ({proc.doneCount}/{proc.entries.length})</>
-                            : <><Download size={13} /> Invert colors{proc.entries.length > 1 ? ` — ${proc.entries.length} PDFs` : ""}</>}
-                    </button>
-                    {phase === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
-                </div>
-            )}
+    const busy = phase === "processing";
+    return <StudioLayout options={<>
+        <div>
+            <h2>Inversion mode</h2>
+            <div className="ts-choices">{MODES.map(m => <button type="button" className="ts-choice" key={m.id} aria-pressed={mode === m.id} disabled={busy} onClick={() => setMode(m.id)}><strong>{m.label}</strong><span>{m.desc}</span></button>)}</div>
         </div>
-    );
-}
-
-function CornerMarks({ accent }: { accent?: boolean }) {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    const color = accent ? "bg-accent" : "bg-accent/70";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className={`absolute top-0 left-0 h-px w-3 ${color}`} /><span className={`absolute top-0 left-0 w-px h-3 ${color}`} /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className={`absolute top-0 right-0 h-px w-3 ${color}`} /><span className={`absolute top-0 right-0 w-px h-3 ${color}`} /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className={`absolute bottom-0 left-0 h-px w-3 ${color}`} /><span className={`absolute bottom-0 left-0 w-px h-3 ${color}`} /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className={`absolute bottom-0 right-0 h-px w-3 ${color}`} /><span className={`absolute bottom-0 right-0 w-px h-3 ${color}`} /></span>
-        </>
-    );
+        <div>
+            <h2>Quality (DPI)</h2>
+            <div className="ts-choices">{QUALITIES.map(d => <button type="button" className="ts-choice" key={d.val} aria-pressed={dpi === d.val} disabled={busy} onClick={() => setDpi(d.val)}><strong>{d.label}</strong><span>{d.hint}</span></button>)}</div>
+        </div>
+    </>} action={<StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length, "PDF") : undefined}>
+        <button type="button" className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Moon size={16} aria-hidden="true" /> Invert colors{proc.entries.length > 1 ? ` — ${proc.entries.length} PDFs` : ""}</button>
+    </StudioActionBar>}>
+        <FileIntake accepts=".pdf" multiple title="Drop PDFs to invert colors" detail="Dark mode for any document · several files become a ZIP"
+            compact={proc.entries.length > 0} disabled={busy} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdfOnly)} />
+        <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
+        {busy && <StudioProgress label="Inverting the colors" detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}
+    </StudioLayout>;
 }

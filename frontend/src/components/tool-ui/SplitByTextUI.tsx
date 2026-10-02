@@ -26,6 +26,8 @@ export function SplitByTextUI() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const canProcess = !!file && search.trim().length > 0 && state !== "processing";
+    // What the run downloaded, for "Download again" (the download policy).
+    const [downloaded, setDownloaded] = useState<{ blob: Blob; name: string } | null>(null);
 
     const onPick = (f: FileList | null) => {
         if (!f || !f[0]) return;
@@ -46,6 +48,7 @@ export function SplitByTextUI() {
             const blob = await res.blob();
             const baseName = file.name.replace(/\.pdf$/i, "");
             downloadBlob(blob, `${baseName}_split.zip`);
+            setDownloaded({ blob, name: `${baseName}_split.zip` });
             setState("done");
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
@@ -80,6 +83,9 @@ export function SplitByTextUI() {
                         <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                             Split on <span className="italic text-accent">"{search.trim()}"</span>
                         </h2>
+                        {downloaded && <button onClick={() => downloadBlob(downloaded.blob, downloaded.name)} className="mt-5 mr-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                            <Download size={13} aria-hidden="true" /> Download again
+                        </button>}
                         <button
                             onClick={() => { setFile(null); setState("idle"); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"

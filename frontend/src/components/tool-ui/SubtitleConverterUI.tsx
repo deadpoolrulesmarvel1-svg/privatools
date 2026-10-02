@@ -1,23 +1,25 @@
 import { type Target, convertSubtitles } from "./subtitle-conversion";
-import "./SpecialistTools.css";
 /**
  * SubtitleConverterUI — SRT ↔ VTT (and basic ASS → SRT/VTT) in-browser.
- * Workshop: lab-card with cue counter, format toggle, signal-green CTA.
  *
  * Multi-file: conversion runs client-side (no server), so instead of
  * useMultiFileProcessor we keep a local FileEntry-shaped queue, convert
- * sequentially, and reuse the same done-panel pattern (N=1 → direct
- * download, N>1 → zip via buildZip).
+ * sequentially, and end on the shared result (N=1 → direct download,
+ * N>1 → zip via buildZip). A file that doesn't parse would fail the same way
+ * again, so no failure here is offered a retry.
  */
-import { useMemo, useRef, useState, useCallback, useEffect } from "react";
-import { Upload, AlertCircle, Download, ShieldCheck, Sparkles, CheckCircle2, RotateCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useMemo, useState, useCallback } from "react";
+import { Download, Sparkles } from "lucide-react";
 import { downloadBlob, withErrorKind } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
-import { emitToolRun, runOutcome } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind } from "@/lib/toolRun";
 import type { FileEntry } from "@/hooks/useMultiFileProcessor";
-import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { FileIntake, StudioActionBar, StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
+import { ProcessorFiles, ProcessorResult } from "@/skins/experience/ProcessorStudio";
+import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
+import { downloadStarted } from "@/skins/experience/studio-outcome";
+import { fileCount } from "@/skins/experience/file-format-label";
 
 const SAMPLE_SRT = `1
 00:00:00,500 --> 00:00:03,200
@@ -32,7 +34,9 @@ Subtitle conversion runs entirely in your browser.
 No upload — your captions never touch a server.
 `;
 
+const ACCEPTS = ".srt,.vtt,.ass";
 let entryCounter = 0;
+
 function makeEntry(file: File): FileEntry {
     return {
         id: `${Date.now().toString(36)}-${++entryCounter}`,
@@ -57,9 +61,8 @@ export function SubtitleConverterUI() {
     // synchronous convert loop) can work off strings.
     const [texts, setTexts] = useState<Record<string, string>>({});
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
-
-    const [drag, setDrag] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
 
     const addFiles = useCallback((list: FileList | File[]) => {
         const arr = Array.from(list);
@@ -76,20 +79,10 @@ export function SubtitleConverterUI() {
         setTexts(prev => { const next = { ...prev }; delete next[id]; return next; });
     }, []);
 
-    const reorder = useCallback((from: number, to: number) => {
-        setEntries(prev => {
-            if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev;
-            const next = [...prev];
-            const [moved] = next.splice(from, 1);
-            next.splice(to, 0, moved);
-            return next;
-        });
-    }, []);
-
     const clearAll = useCallback(() => { setEntries([]); setTexts({}); }, []);
 
     // Live parse per file — powers the cue counter and the pre-flight error
-    // banner exactly like the old single-file `result` memo.
+    // list exactly like the old single-file `result` memo.
     const liveResults = useMemo(() => {
         const m = new Map<string, ReturnType<typeof convertSubtitles>>();
         for (const en of entries) {
@@ -108,16 +101,16 @@ export function SubtitleConverterUI() {
         return r !== undefined && !r.ok;
     });
     const hasConvertible = entries.some(en => liveResults.get(en.id)?.ok);
-
     const doneCount = entries.filter(e => e.status === "done").length;
     const failedCount = entries.filter(e => e.status === "failed").length;
+    const retryableCount = entries.filter(e => e.status === "failed" && e.retryable).length;
 
-    const process = useCallback(async (retryOnly = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         const ids = entries
-            .filter(e => retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
+            .filter(e => retry === "transient" ? e.status === "failed" && e.retryable : retry ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
             .map(e => e.id);
-        setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "queued", error: undefined } : e));
+        setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "queued", error: undefined, errorKind: undefined, retryable: undefined } : e));
         let done = 0, failed = 0;
         let firstFailure: unknown = null;
         for (const id of ids) {
@@ -137,7 +130,8 @@ export function SubtitleConverterUI() {
                 done++;
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
-                setEntries(prev => prev.map(e => e.id === id ? { ...e, status: "failed", error: msg } : e));
+                const kind = toolErrorKind(err);
+                setEntries(prev => prev.map(e => e.id === id ? { ...e, status: "failed", error: msg, errorKind: kind === "cancelled" ? undefined : kind, retryable: isTransientFailure(err) } : e));
                 failed++;
                 firstFailure ??= err;
             }
@@ -163,13 +157,7 @@ export function SubtitleConverterUI() {
         })();
     }, [entries]);
 
-    const downloadedRef = useRef(false);
-    useEffect(() => {
-        if (phase === "done" && !downloadedRef.current && doneCount > 0) {
-            downloadedRef.current = true;
-            downloadResults();
-        }
-    }, [phase, doneCount, downloadResults]);
+    useDownloadOnce(phase === "done", doneCount, downloadResults);
 
     const loadSample = () => {
         // Synthesize a File from the sample text so the existing queue path works.
@@ -178,168 +166,36 @@ export function SubtitleConverterUI() {
     };
 
     if (phase === "done") {
-        const isMulti = entries.length > 1;
-        return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-                <div className="relative p-7 sm:p-9 animate-corner-extend">
-                    <CornerMarks />
-                    <div className="flex items-start gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">Converted</p>
-                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                {isMulti
-                                    ? <><span className="italic text-accent">{doneCount}</span> file{doneCount === 1 ? "" : "s"} converted to <span className="italic text-accent">.{target}</span>{failedCount > 0 ? <> · <span className="text-destructive italic">{failedCount} failed</span></> : null}</>
-                                    : <>Saved as <span className="italic text-accent">.{target}</span></>}
-                            </h2>
-                            {isMulti && doneCount > 0 && (
-                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    {doneCount > 1 ? "ZIP downloaded" : "File downloaded"}
-                                </p>
-                            )}
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                {doneCount > 0 && (
-                                    <button onClick={downloadResults} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                        <Download size={13} /> Download {doneCount > 1 ? "ZIP" : "again"}
-                                    </button>
-                                )}
-                                {failedCount > 0 && (
-                                    <button
-                                        onClick={() => { downloadedRef.current = false; void process(true); }}
-                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
-                                    >
-                                        Retry {failedCount} failed
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => { clearAll(); setPhase("idle"); downloadedRef.current = false; }}
-                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                                >
-                                    <RotateCcw size={12} /> Convert more
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        const startOver = (files?: File[]) => {
+            clearAll();
+            if (files) addFiles(files);
+            setReturning(true); setPhase("idle");
+        };
+        return <ProcessorResult proc={{ entries, doneCount, failedCount, retryableCount }} noun="file" verb="converted" accepts={ACCEPTS}
+            title={doneCount > 1 ? `${doneCount} files converted to .${target}.` : `Saved as .${target}.`}
+            detail={downloadStarted(doneCount)}
+            onDownload={downloadResults} onRetry={() => void process("transient")}
+            onStartOver={startOver} more="Convert more" />;
     }
 
-    return (
-        <div className="pt-specialist pt-subtitle-workspace space-y-4">
-            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
-                <ShieldCheck size={16} className="text-accent shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-foreground leading-snug">
-                        <span className="text-[11px] text-accent font-medium mr-1.5"> 100% in-browser</span>
-                        Parsing happens in JavaScript — subtitles never touch a server.
-                    </p>
-                </div>
-                {entries.length === 0 && (
-                    <button
-                        type="button"
-                        onClick={loadSample}
-                        className="font-medium shrink-0 inline-flex items-center gap-1 px-2 h-7 rounded-md border border-accent/40 bg-accent/[0.08] text-[11px] text-accent hover:bg-accent/[0.12] transition-colors"
-                    >
-                        <Sparkles size={11} /> Try sample
-                    </button>
-                )}
-            </div>
-
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
-                onClick={() => inputRef.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
-                role="button" tabIndex={0} aria-label="Upload subtitle files"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={inputRef} type="file" accept=".srt,.vtt,.ass" multiple className="hidden" onChange={e => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    <Upload size={20} className="text-accent" strokeWidth={1.75} />
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {entries.length ? "Add more files" : "Pick a subtitle file"}
-                </p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">.srt · .vtt · .ass</p>
-            </div>
-
-            {entries.length > 0 && (
-                <MultiFileQueue
-                    entries={entries}
-                    reorderable={false}
-                    onRemove={removeFile}
-                    onReorder={reorder}
-                    onClearAll={clearAll}
-                    onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
-                    busy={phase === "processing"}
-                />
-            )}
-
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    Convert to
-                </div>
-                <div className="p-3 grid grid-cols-2 gap-2">
-                    {(["vtt", "srt"] as Target[]).map(t => {
-                        const active = target === t;
-                        return (
-                            <button
-                                key={t}
-                                onClick={() => setTarget(t)}
-                                className={cn(
-                                    "rounded-lg border p-3 text-center transition-colors",
-                                    active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
-                                )}
-                            >
-                                <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>
-                                    {t === "vtt" ? "WebVTT" : "SubRip"}
-                                </p>
-                                <p className="font-medium text-[11px] text-muted-foreground mt-0.5">.{t}</p>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {invalidEntries.length > 0 && (
-                <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive space-y-1">
-                    {invalidEntries.map(en => (
-                        <p key={en.id} className="flex items-center gap-2">
-                            <AlertCircle size={13} className="shrink-0" />
-                            {entries.length > 1 ? `${en.name}: ` : ""}{liveResults.get(en.id)!.error}
-                        </p>
-                    ))}
-                </div>
-            )}
-
-            <button
-                onClick={() => void process(false)}
-                disabled={!hasConvertible || phase === "processing"}
-                className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-                <Download size={13} /> Download .{target}{entries.length > 1 ? ` — ${entries.length} files` : ""}
-                {totalCues > 0 && <span className="font-mono text-[11px] tracking-wider text-accent ml-1">({totalCues} cues)</span>}
-            </button>
-        </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+    const busy = phase === "processing";
+    return <StudioLayout options={<div>
+        <h2>Convert to</h2>
+        <div className="ts-choices">{(["vtt", "srt"] as Target[]).map(t => <button type="button" className="ts-choice" key={t} aria-pressed={target === t} disabled={busy} onClick={() => setTarget(t)}>
+            <strong>{t === "vtt" ? "WebVTT" : "SubRip"}</strong><span>.{t}</span>
+        </button>)}</div>
+    </div>} action={<StudioActionBar ready={entries.length > 0} count={entries.length ? fileCount(entries.length) : undefined}>
+        <button type="button" className="ts-primary-button" onClick={() => void process(false)} disabled={!hasConvertible || busy}>
+            <Download size={16} aria-hidden="true" /> Download .{target}{entries.length > 1 ? ` — ${entries.length} files` : ""}{totalCues > 0 && ` (${totalCues} cues)`}
+        </button>
+    </StudioActionBar>}>
+        <FileIntake accepts={ACCEPTS} multiple title="Pick a subtitle file" detail=".srt · .vtt · .ass"
+            compact={entries.length > 0} disabled={busy} autoFocus={returning} onFiles={addFiles} />
+        {entries.length === 0 && <button type="button" className="ts-text-button" onClick={loadSample}><Sparkles size={15} aria-hidden="true" /> Try sample</button>}
+        <ProcessorFiles proc={{ entries, removeFile, clearAll }} busy={busy} label="Selected subtitle files" />
+        {invalidEntries.length > 0 && <div className="ts-error" role="alert">
+            {invalidEntries.map(en => <p key={en.id}>{entries.length > 1 ? `${en.name}: ` : ""}{liveResults.get(en.id)!.error}</p>)}
+        </div>}
+        {busy && <StudioProgress label="Converting your subtitles" detail={`${doneCount} of ${entries.length} files completed`} />}
+    </StudioLayout>;
 }

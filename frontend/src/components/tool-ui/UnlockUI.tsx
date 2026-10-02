@@ -3,14 +3,15 @@
  * Workshop dropzone + vault-style password panel.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen, RotateCcw } from "lucide-react";
+import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen, RotateCcw, Download } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { processFilesAndDownload, downloadBlob, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { takeAccepted } from "@/lib/report-rejected-files";
 import { usePdfPasswordTrial } from "@/hooks/usePdfPasswordTrial";
 import { VaultTrialBanner } from "@/components/VaultTrialBanner";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
+import { downloadAgainLabel } from "@/skins/experience/studio-outcome";
 
 type UnlockFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -53,6 +54,8 @@ export function UnlockUI() {
     };
     const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
     const canProcess = files.length > 0 && !!password && state !== "processing";
+    // What the run downloaded, for "Download again" (the download policy).
+    const [downloaded, setDownloaded] = useState<{ blob: Blob; filename: string } | null>(null);
 
     const process = useCallback(async () => {
         if (!files.length || !password) return;
@@ -60,7 +63,8 @@ export function UnlockUI() {
         try {
             const outExt = files.length === 1 ? "pdf" : "zip";
             const outName = buildOutputFilename(files[0]?.raw.name, "unlocked", outExt);
-            await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
+            const out = await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
+            setDownloaded(out ?? null);
             setState("done");
             emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
@@ -103,6 +107,9 @@ export function UnlockUI() {
                                 />
                             </div>
                         )}
+                        {downloaded && <button onClick={() => downloadBlob(downloaded.blob, downloaded.filename)} className="mt-5 mr-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                            <Download size={13} aria-hidden="true" /> {downloadAgainLabel(files.length)}
+                        </button>}
                         <button
                             onClick={() => { setFiles([]); setState("idle"); setPassword(""); setTypedPassword(""); resetTrial(); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"

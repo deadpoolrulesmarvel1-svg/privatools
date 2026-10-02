@@ -28,7 +28,8 @@ import {
     BookmarkPlus, Bookmark, Square, RefreshCw, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { emitToolRun } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
+import { retryLine } from "@/skins/experience/studio-outcome";
 import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice } from "@/skins/experience/ToolStudio";
 import { navigateTo } from "@/lib/navigation";
@@ -200,6 +201,10 @@ export default function PipelinePage() {
     const [currentStep, setCurrentStep] = useState(-1);
     const [stepStatuses, setStepStatuses] = useState<Record<number, "queued" | "running" | "done" | "error">>({});
     const [stepErrors, setStepErrors] = useState<Record<number, string>>({});
+    // Whether a failed step could pass on another attempt (connection, time
+    // limit, rate limit, server fault), and the recorded kind for its line.
+    // A step the server refused would fail the same way again: no retry.
+    const [stepRetry, setStepRetry] = useState<Record<number, { retryable: boolean; kind?: ToolErrorKind }>>({});
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [resultUrl, setResultUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -265,6 +270,7 @@ export default function PipelinePage() {
     const resetRunState = useCallback(() => {
         setStepStatuses({});
         setStepErrors({});
+        setStepRetry({});
         intermediateBlobsRef.current = {};
         setResultBlob(null);
         if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
@@ -419,6 +425,7 @@ export default function PipelinePage() {
             // Fresh run — clear all status.
             setStepStatuses({});
             setStepErrors({});
+            setStepRetry({});
             intermediateBlobsRef.current = {};
             if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
             setResultBlob(null);
@@ -434,6 +441,11 @@ export default function PipelinePage() {
                 for (let i = startFromStep; i < steps.length; i++) delete next[i];
                 return next;
             });
+            setStepRetry(prev => {
+                const next = { ...prev };
+                for (let i = startFromStep; i < steps.length; i++) delete next[i];
+                return next;
+            });
             for (const key of Object.keys(intermediateBlobsRef.current)) {
                 if (Number(key) >= startFromStep) delete intermediateBlobsRef.current[Number(key)];
             }
@@ -445,6 +457,8 @@ export default function PipelinePage() {
             setError(msg);
             setStepStatuses(prev => ({ ...prev, [startFromStep]: "error" }));
             setStepErrors(prev => ({ ...prev, [startFromStep]: "Missing previous output" }));
+            // Resuming here again would find the same gap: only a full run can.
+            setStepRetry(prev => ({ ...prev, [startFromStep]: { retryable: false } }));
             setProcessing(false);
             setCurrentStep(-1);
             abortRef.current = null;
@@ -525,6 +539,8 @@ export default function PipelinePage() {
                 setErrorReport(formatErrorForClipboard(e, `Pipeline step ${i + 1}: ${steps[i].tool.name} (${steps[i].tool.slug})`));
                 setStepStatuses(prev => ({ ...prev, [i]: "error" }));
                 setStepErrors(prev => ({ ...prev, [i]: msg }));
+                const kind = toolErrorKind(e);
+                setStepRetry(prev => ({ ...prev, [i]: { retryable: isTransientFailure(e), kind: kind === "cancelled" ? undefined : kind } }));
                 setProcessing(false);
                 setCurrentStep(-1);
                 abortRef.current = null;
@@ -552,6 +568,7 @@ export default function PipelinePage() {
         }
         return -1;
     }, [stepStatuses, steps.length]);
+    const failedRetry = failedIdx >= 0 ? stepRetry[failedIdx] : undefined;
 
     return (
         <div className="pt-studio-page pt-workflow-page pt-pipeline-page" data-running={processing}>
@@ -581,7 +598,7 @@ export default function PipelinePage() {
             <div className="wf-pipeline-layout">
                 <section className="pt-pipeline-main wf-work-sheet" aria-label="Workflow canvas">
                     <div className="wf-sheet-heading"><div><p className="wf-section-label">THE CANVAS</p><h2>Your workflow</h2></div><span className="wf-status-pill"><span />{processing ? "Working through your steps" : steps.length ? `${steps.length} steps · saved on this device` : "Ready when you are"}</span></div>
-                    {error && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><div><strong>{error}</strong>{failedIdx > 0 && <p>Earlier steps are kept. Continue from step {failedIdx + 1}.</p>}<div className="wf-inline-actions">{failedIdx >= 0 && file && <button onClick={() => runPipeline(failedIdx)}><RotateCw size={14} /> Retry from {failedIdx + 1}</button>}{errorReport && <button onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}>Copy report</button>}</div></div><button aria-label="Dismiss" onClick={() => { setError(null); setErrorReport(null); }}><X size={16} /></button></div>}
+                    {error && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><div><strong>{error}</strong>{failedRetry?.retryable && <p>{retryLine([failedRetry.kind])}{failedIdx > 0 && ` Earlier steps are kept. Continue from step ${failedIdx + 1}.`}</p>}<div className="wf-inline-actions">{failedIdx >= 0 && file && failedRetry?.retryable && <button onClick={() => runPipeline(failedIdx)}><RotateCw size={14} /> Try again from step {failedIdx + 1}</button>}{errorReport && <button onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}>Copy report</button>}</div></div><button aria-label="Dismiss" onClick={() => { setError(null); setErrorReport(null); }}><X size={16} /></button></div>}
                     <div className="pt-pipeline-builder">
                         <div className="wf-input-stage"><span className="wf-stage-label">START WITH A FILE</span>
                             <FlowNode kind="endpoint" title={file ? file.name : "Choose your PDF"} subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · ready to work` : "Drop it here, or browse your device"} onClick={() => inputRef.current?.click()} onDrop={takeInputFile} onClear={file ? () => setInputFile(null) : undefined} disabled={processing} state={file ? "ready" : "empty"} />
@@ -601,11 +618,11 @@ export default function PipelinePage() {
                                         onDrop={event => { event.preventDefault(); if (draggingIdx !== null) reorderStep(draggingIdx, index); setDraggingIdx(null); setDragOverIdx(null); }}
                                         onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); }}>
                                         <div className="pt-step-number">{status === "done" ? <CheckCircle size={22} /> : String(index + 1).padStart(2, "0")}</div>
-                                        <div className="wf-step-copy"><span className="wf-step-category"><Icon size={14} /> {step.tool.category}</span><h3>{step.tool.name}</h3><p>{status === "running" ? "Working on this step…" : status === "done" ? "Finished and passed to the next step" : status === "error" ? (stepErrors[index] || "This step needs another try") : "Uses the output from the previous step"}</p></div>
+                                        <div className="wf-step-copy"><span className="wf-step-category"><Icon size={14} /> {step.tool.category}</span><h3>{step.tool.name}</h3><p>{status === "running" ? "Working on this step…" : status === "done" ? "Finished and passed to the next step" : status === "error" ? (stepErrors[index] || "This step couldn’t finish") : "Uses the output from the previous step"}</p></div>
                                         {status === "running" && <Loader2 size={20} className="animate-spin" />}
                                         {!processing && <div className="pt-step-controls">
                                             <GripVertical className="wf-drag-handle" size={16} aria-hidden="true" />
-                                            {status === "error" && file && <button onClick={() => runPipeline(index)} aria-label={`Retry from step ${index + 1}`}><RotateCw size={16} /></button>}
+                                            {status === "error" && file && stepRetry[index]?.retryable && <button onClick={() => runPipeline(index)} aria-label={`Try again from step ${index + 1}`}><RotateCw size={16} /></button>}
                                             <button disabled={index === 0} onClick={() => moveStep(index, -1)} aria-label="Move step up"><ChevronLeft size={16} className="rotate-90" /></button>
                                             <button disabled={index === steps.length - 1} onClick={() => moveStep(index, 1)} aria-label="Move step down"><ChevronRight size={16} className="rotate-90" /></button>
                                             <button onClick={() => removeStep(index)} aria-label="Remove step"><X size={16} /></button>

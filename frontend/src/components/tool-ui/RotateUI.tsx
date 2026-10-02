@@ -8,7 +8,7 @@ import { isValidPageRange, pageRangeError } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL, formatFileSize } from "@/lib/api";
 import { FileIntake, StudioActionBar, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
@@ -86,7 +86,7 @@ export function RotateUI() {
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || `${angle}° · ${entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size)}`} status={entry.status === "failed" ? "error" : entry.status} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
                 choose={{ accepts: ".pdf", multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: startOver }}
-                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll("archive_rotated")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll("archive_rotated")}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(proc.doneCount)}</button>}
                 more={tone !== "failure" && <button className="ts-text-button" onClick={() => startOver()}>Rotate more</button>} />
         </StudioResult>;
     }

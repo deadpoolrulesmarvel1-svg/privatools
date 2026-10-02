@@ -79,6 +79,22 @@ describe("where the file goes", () => {
     });
 
     it.each([
+        // "Detect form fields" uploads the PDF before the fill itself.
+        { slug: "fill-form", name: "Fill PDF Form", detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response." },
+        // No file is chosen on these: the sentence names what is sent.
+        { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and renders it to a PDF in temporary storage, then removes the job’s files after the response." },
+        { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools, which fetches the page or reads the HTML, renders the PDF in temporary storage and removes the job’s files after the response." },
+        { slug: "generate-barcode", name: "Generate Barcode", detail: "When you run the tool, the text you enter is sent to PrivaTools, which draws the barcode in temporary storage and removes the job’s files after the response." },
+        { slug: "qr-code", name: "QR Code", detail: "When you run the tool, the text you enter, and a logo if you add one, is sent to PrivaTools, which draws the QR code in temporary storage and removes the job’s files after the response." },
+    ])("says exactly what $name sends and when", async ({ slug, name, detail }) => {
+        await page({ slug, name, description: "Make something", category: "pdf" });
+        const where = document.querySelector(".tw-where-fallback")!;
+        expect(where).toHaveTextContent(`Temporary server processing. ${detail} Read about file handling`);
+        expect(where).not.toHaveTextContent(/Files are uploaded only when you run the tool/);
+        expect(UPLOADS_WHEN_CHOSEN).not.toContain(slug);
+    });
+
+    it.each([
         { slug: "compare-pdf", name: "Compare PDF", ui: <CompareUI /> },
         { slug: "add-attachment", name: "Add Attachment", ui: <AttachmentUI /> },
     ])("says it once, in full, under $name's two intakes, before and after both files are chosen", async ({ slug, name, ui }) => {

@@ -10,6 +10,7 @@ import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice, StudioActionBar } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
 import { focusIfIdle } from "@/skins/experience/focus-result";
+import { downloadAgainLabel, downloadStarted } from "@/skins/experience/studio-outcome";
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
@@ -285,7 +286,11 @@ export function MergeUI() {
             if (!blob.size) throw withErrorKind(new Error("The server returned an empty PDF. Try merging again."), "server");
             setResult({ blob, ...snapshot });
             setPhase("done");
-            setNotice("Your merged PDF is ready to download.");
+            // The download policy: a finished result downloads by itself, once, and
+            // the result offers "Download again".
+            downloadBlob(blob, snapshot.filename);
+            emitToolSuccess("Merge PDF");
+            setNotice("Your merged PDF is ready. The download has started.");
             emitToolRun({ outcome: "success", files: mergeable.length });
         } catch (cause) {
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
@@ -422,9 +427,9 @@ export function MergeUI() {
                             </>
                         )}
                     </section>
-                    <aside className="merge-settings" aria-label={result ? "Download merged PDF" : "Merge settings"} aria-busy={busy}>
+                    <aside className="merge-settings" aria-label={result ? "Merge details" : "Merge settings"} aria-busy={busy}>
                         <div ref={settingsBodyRef} className="merge-settings-body" style={{ minHeight: phase === "idle" ? undefined : panelBodyHeight }}>
-                            {(!result || !mobile) && <h2>{result ? "Ready to download" : busy ? "Making your PDF" : "Merge settings"}</h2>}
+                            {(!result || !mobile) && <h2>{result ? "Merge details" : busy ? "Making your PDF" : "Merge settings"}</h2>}
                             {result ? (
                                 mobile ? <details className="merge-result-details"><summary>Merge details</summary><ResultSummary result={result} /></details> : <ResultSummary result={result} />
                             ) : busy ? (
@@ -460,7 +465,7 @@ export function MergeUI() {
                                 <strong>{result ? "Processed by PrivaTools" : "Processing: temporary server upload"}</strong>
                                 <p>{result ? "The result is ready in this browser. Source files and the server result are removed after the response." : "Choosing Merge sends these PDFs to PrivaTools. Server copies are removed after the response."}</p>
                             </div></div>
-                            {result && <button className="merge-button merge-button--primary" type="button" onClick={() => { downloadBlob(result.blob, result.filename); emitToolSuccess("Merge PDF"); }}><Download size={20} />Download PDF</button>}
+                            {result && <button className="merge-button merge-button--primary" type="button" onClick={() => downloadBlob(result.blob, result.filename)}><Download size={20} aria-hidden="true" />{downloadAgainLabel(1)}</button>}
                             {result && <>
                                 <button className="merge-button merge-button--quiet" type="button" onClick={() => { invalidateResult(); setNotice("Adjust the pages or order, then merge again to create an updated PDF."); }}><SlidersHorizontal size={18} />Adjust pages</button>
                                 <div className="merge-save-workflow">
@@ -500,7 +505,8 @@ function ResultSummary({ result }: { result: MergeResult }) {
             {result.excludedCount !== null && <div><dt>Excluded pages</dt><dd>{result.excludedCount}</dd></div>}
             <div><dt>File size</dt><dd>{formatFileSize(result.blob.size)}</dd></div>
         </dl>
-        <p className="merge-help">Review the pages, then save your PDF.</p>
+        {/* The download policy: the merged PDF downloaded by itself when it was made. */}
+        <p className="merge-help">{downloadStarted(1)}</p>
     </>;
 }
 

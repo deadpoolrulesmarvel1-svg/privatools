@@ -22,7 +22,7 @@ describe("image watermark request", () => {
         const pdf = new File(["%PDF-1.7 synthetic"], "report.pdf", { type: "application/pdf" });
         const logo = new File(["synthetic png"], "logo.png", { type: "image/png" });
         fireEvent.change(container.querySelector('input[type="file"][accept=".pdf"]')!, { target: { files: [pdf] } });
-        fireEvent.click(screen.getByRole("tab", { name: "Image" }));
+        fireEvent.click(screen.getByRole("button", { name: "Image" }));
         fireEvent.change(container.querySelector('input[type="file"][accept=".png,.jpg,.jpeg,.webp"]')!, { target: { files: [logo] } });
         fireEvent.click(screen.getByRole("button", { name: "Watermark PDF" }));
         await waitFor(() => expect(downloadBlob).toHaveBeenCalledOnce());
