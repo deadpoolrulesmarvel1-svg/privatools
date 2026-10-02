@@ -69,7 +69,7 @@ describe("Image to PDF limits", { timeout: 20_000 }, () => {
 
     it("sends 100 images of exactly 200 MB in one request, with the shared upload wait", async () => {
         let finish!: () => void;
-        vi.mocked(processFilesAndDownload).mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+        vi.mocked(processFilesAndDownload).mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({ blob: new Blob(["%PDF-1.7"]), filename: "IMG_1.pdf" }); }));
         render(<ImageToPdfUI />);
         choose(photos(60, { bytes: 2 * MB }));
         choose(photos(40, { from: 61, bytes: 2 * MB }));

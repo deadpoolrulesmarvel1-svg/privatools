@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Download, X, Image as ImageIcon, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, buildOutputFilename, getErrorDetail, getErrorStatus } from "@/lib/api";
+import { processFilesAndDownload, downloadBlob, formatFileSize, buildOutputFilename, getErrorDetail, getErrorStatus } from "@/lib/api";
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -14,6 +14,7 @@ import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioActionBar, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
+import { downloadAgainLabel } from "@/skins/experience/studio-outcome";
 import { IMAGE_TO_PDF_MAX_FILES as MAX_FILES, IMAGE_TO_PDF_MAX_TOTAL_MB as MAX_TOTAL_MB, imageToPdfLimits } from "./image-to-pdf-limits";
 
 const MAX_TOTAL_BYTES = MAX_TOTAL_MB * 1024 * 1024;
@@ -71,6 +72,8 @@ export function ImageToPdfUI({
     const replaceFiles = useCallback((next: SelectedImage[]) => { filesRef.current = next; setFiles(next); }, []);
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    // What the run downloaded, for "Download again" (the download policy).
+    const [downloaded, setDownloaded] = useState<{ blob: Blob; filename: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [dragIdx, setDragIdx] = useState<number | null>(null);
 
@@ -132,7 +135,8 @@ export function ImageToPdfUI({
             const outName = buildOutputFilename(files[0]?.name, null, "pdf");
             // A full selection can take minutes to upload. The shared wait in
             // lib/api.ts lets it, and gives up only on a connection that stops.
-            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
+            const out = await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
+            setDownloaded(out ?? null);
             setState("done");
             emitToolSuccess("Image to PDF");
             emitToolRun({ outcome: "success", files: files.length });
@@ -161,7 +165,7 @@ export function ImageToPdfUI({
 
     if (state === "done") return <StudioResult title={`${files.length} ${nounLabel}${files.length > 1 ? "s" : ""}, one PDF.`} detail="Your download has started. Each image has its own page, in your chosen order.">
         <StudioFile name={buildOutputFilename(files[0]?.name, null, "pdf")} detail={`${files.length} pages · ${sizes.find(size => size.id === pageSize)?.label} page size`} status="done" />
-        <div className="ts-actions"><button className="ts-text-button" onClick={() => { replaceFiles([]); setState("idle"); }}>Convert more</button></div>
+        <div className="ts-actions">{downloaded && <button className="ts-primary-button" onClick={() => downloadBlob(downloaded.blob, downloaded.filename)}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(1)}</button>}<button className="ts-text-button" onClick={() => { replaceFiles([]); setState("idle"); }}>Convert more</button></div>
     </StudioResult>;
     const totalBytes = files.reduce((total, file) => total + file.raw.size, 0);
     return <StudioLayout className="ts-image-binding" options={<>

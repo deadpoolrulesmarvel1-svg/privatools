@@ -13,7 +13,7 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { FileIntake, StudioActionBar, StudioActions, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { matchesAccept } from "@/lib/file-acceptance";
 
@@ -110,7 +110,7 @@ export function SimpleProcessUI({
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} detail={entry.error || (entry.blob ? formatFileSize(entry.blob.size) : formatFileSize(entry.size))} status={entry.status === "failed" ? "error" : entry.status} onDownload={entry.blob ? () => entry.blob && downloadBlob(entry.blob, entry.outName || entry.name) : undefined} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
                 choose={{ accepts, multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: restart }}
-                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll(`archive_${outputSuffix}`)}><Download size={16} /> Download {proc.doneCount > 1 ? "all as ZIP" : "again"}</button>}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll(`archive_${outputSuffix}`)}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(proc.doneCount)}</button>}
                 more={tone !== "failure" && <button className="ts-text-button" onClick={() => restart()}>Process another</button>} />
         </StudioResult>;
     }

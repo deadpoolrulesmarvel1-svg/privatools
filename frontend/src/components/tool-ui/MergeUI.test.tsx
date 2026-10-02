@@ -66,9 +66,12 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         expect(params).toEqual({ page_ranges: '["all","3,1"]' });
         expect(options?.signal).toBeInstanceOf(AbortSignal);
         expect(screen.getByTestId("result-handoff")).toHaveTextContent("Together.pdf");
-        expect(downloadBlob).not.toHaveBeenCalled();
-        fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+        // The download policy: the merged PDF downloads by itself, once, and the result offers it again.
+        expect(downloadBlob).toHaveBeenCalledTimes(1);
         expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), "Together.pdf");
+        fireEvent.click(screen.getByRole("button", { name: "Download again" }));
+        expect(downloadBlob).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(downloadBlob).mock.calls[1][1]).toBe("Together.pdf");
     });
 
     it("keeps out-of-bounds ranges and a one-file selection from reaching the server", async () => {
@@ -179,7 +182,9 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         await act(async () => { resolveFirst(response()); });
         expect(screen.getByTestId("result-handoff")).toHaveTextContent("Fresh.pdf");
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-        expect(downloadBlob).not.toHaveBeenCalled();
+        // Only the run that finished downloads, once; the cancelled response downloads nothing.
+        expect(downloadBlob).toHaveBeenCalledTimes(1);
+        expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), "Fresh.pdf");
     });
 
     it("invalidates the previous download before editing and uses the revised selection", async () => {
@@ -189,7 +194,7 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
         await screen.findByRole("heading", { name: "Your PDF is ready" });
         fireEvent.click(screen.getByRole("button", { name: "Adjust pages" }));
-        expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Download again" })).not.toBeInTheDocument();
         expect(screen.queryByTestId("result-handoff")).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "1" } });
         fireEvent.click(screen.getByRole("button", { name: "Merge 2 pages" }));
@@ -197,7 +202,7 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         expect(vi.mocked(uploadFiles).mock.calls[1][2]).toEqual({ page_ranges: '["1","all"]' });
         fireEvent.click(screen.getByRole("button", { name: "Start another merge" }));
         expect(screen.getByRole("button", { name: "Choose PDFs" })).toBeVisible();
-        expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Download again" })).not.toBeInTheDocument();
     });
 
     it("retains inputs after a server error and aborts a request when unmounted", async () => {
@@ -256,6 +261,6 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         fireEvent.click(within(strip).getByRole("button", { name: "Show 2 · notes.pdf, page 3" }));
         await waitFor(() => expect(screen.getByRole("img", { name: "Merged PDF, 2 · notes.pdf, page 3" })).not.toHaveClass("merge-canvas-pending"));
         expect(screen.getByText("Merge details").closest("details")).not.toHaveAttribute("open");
-        expect(screen.getByRole("button", { name: "Download PDF" })).toBeVisible();
+        expect(screen.getByRole("button", { name: "Download again" })).toBeVisible();
     });
 });

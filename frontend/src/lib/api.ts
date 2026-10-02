@@ -836,7 +836,8 @@ export async function processAndDownload(
     return headers;
 }
 
-/** Helper: upload multiple files → get blob → download. With progress tracking. */
+/** Helper: upload multiple files → get blob → download. With progress tracking.
+ *  Returns what it downloaded, so the result can offer "Download again". */
 export async function processFilesAndDownload(
     endpoint: string,
     files: File[],
@@ -845,7 +846,7 @@ export async function processFilesAndDownload(
     onProgress?: ProgressCallback,
     signal?: AbortSignal,
     options?: { retry?: RetryPolicy; onRetry?: RetryCallback; timeoutMs?: number },
-): Promise<void> {
+): Promise<{ blob: Blob; filename: string }> {
     const res = onProgress
         ? await uploadFilesWithProgress(endpoint, files, params, onProgress, signal, { timeoutMs: options?.timeoutMs })
         : await uploadFiles(endpoint, files, params, {
@@ -860,6 +861,7 @@ export async function processFilesAndDownload(
     if (onProgress) onProgress("download", 100);
     const finalName = chooseDownloadFilename(filename, filenameFromResponse(res));
     downloadBlob(blob, finalName);
+    return { blob, filename: finalName };
 }
 
 /** Choose the filename users see in their Downloads folder.

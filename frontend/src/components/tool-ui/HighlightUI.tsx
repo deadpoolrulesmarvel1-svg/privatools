@@ -5,15 +5,17 @@
  * The backend returns an `X-Highlight-Hits` header per file; we sum across the
  * batch and show the total.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-    Loader2, AlertCircle, Highlighter, CheckCircle2, RotateCcw, Search, Upload, Download,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Highlighter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
-import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { MultiFileQueue } from "./MultiFileQueue";
+import { MAX_FILE_SIZE_LABEL, formatFileSize } from "@/lib/api";
+import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { FileIntake, StudioActionBar, StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
+import { ProcessorFiles, ProcessorResult } from "@/skins/experience/ProcessorStudio";
+import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
+import { downloadStarted } from "@/skins/experience/studio-outcome";
+import { fileCount } from "@/skins/experience/file-format-label";
 
 const COLORS = [
     { id: "yellow", label: "Yellow", swatch: "#ffea00" },
@@ -28,29 +30,24 @@ const HIGHLIGHT_DEFAULTS = {
     caseSensitive: false,
 };
 
+const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+const hitsOf = (entry: FileEntry) => parseInt(entry.headers?.["x-highlight-hits"] || "0", 10) || 0;
+
 export function HighlightUI() {
     const [config, , { setField }] = useToolDefaults("highlight-pdf", HIGHLIGHT_DEFAULTS);
     const { color, caseSensitive } = config;
     const setColor = useCallback((v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["color"]>) => setField("color", v), [setField]);
     const setCaseSensitive = useCallback((v: React.SetStateAction<typeof HIGHLIGHT_DEFAULTS["caseSensitive"]>) => setField("caseSensitive", v), [setField]);
     const proc = useMultiFileProcessor();
-    const [query, setQuery] = useState("");
 
+    const [query, setQuery] = useState("");
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
-    const [drag, setDrag] = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
 
     const canProcess = proc.entries.length > 0 && query.trim().length > 0 && phase !== "processing";
-    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
-    // Sum hits across all done entries.
-    const totalHits = proc.entries.reduce((s, e) => {
-        if (e.status !== "done") return s;
-        const h = e.headers?.["x-highlight-hits"];
-        return h ? s + (parseInt(h, 10) || 0) : s;
-    }, 0);
-
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/highlight",
@@ -61,13 +58,7 @@ export function HighlightUI() {
         setPhase("done");
     }, [proc, query, color, caseSensitive]);
 
-    const downloadedRef = useRef(false);
-    useEffect(() => {
-        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
-            downloadedRef.current = true;
-            proc.downloadAll("archive_highlighted");
-        }
-    }, [phase, proc]);
+    useDownloadOnce(phase === "done", proc.doneCount, () => proc.downloadAll("archive_highlighted"));
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -81,179 +72,45 @@ export function HighlightUI() {
     }, [canProcess, process]);
 
     if (phase === "done") {
-        const isMulti = proc.entries.length > 1;
-        return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-                <div className="relative p-7 sm:p-9 animate-corner-extend">
-                    <CornerMarks />
-                    <div className="flex items-start gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">Highlighted</p>
-                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                {totalHits > 0
-                                    ? <><span className="italic text-accent">{totalHits}</span> match{totalHits === 1 ? "" : "es"} marked{isMulti ? <> across <span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"}</> : null}</>
-                                    : <>{isMulti ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} processed</> : <>Matches highlighted</>}</>}
-                            </h2>
-                            {query && (
-                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
-                                    Query: <span className="text-foreground">"{query}"</span>
-                                    {proc.failedCount > 0 && <> · <span className="text-destructive">{proc.failedCount} failed</span></>}
-                                </p>
-                            )}
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                {proc.doneCount > 0 && (
-                                    <button
-                                        onClick={() => proc.downloadAll("archive_highlighted")}
-                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90"
-                                    >
-                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
-                                    </button>
-                                )}
-                                {proc.failedCount > 0 && (
-                                    <button
-                                        onClick={() => { downloadedRef.current = false; void process(true); }}
-                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
-                                    >
-                                        Retry {proc.failedCount} failed
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => { proc.reset(); setQuery(""); setPhase("idle"); downloadedRef.current = false; }}
-                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                                >
-                                    <RotateCcw size={12} /> Start over
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        // Sum hits across all done entries.
+        const totalHits = proc.entries.reduce((sum, entry) => entry.status === "done" ? sum + hitsOf(entry) : sum, 0);
+        const startOver = (files?: File[]) => {
+            proc.reset();
+            if (!files) setQuery("");
+            if (files) proc.addFiles(files, isPdfOnly);
+            setReturning(true); setPhase("idle");
+        };
+        const matches = `${totalHits} match${totalHits === 1 ? "" : "es"}`;
+        return <ProcessorResult proc={proc} verb="highlighted" accepts=".pdf"
+            title={totalHits > 0 ? `${matches} marked${proc.doneCount > 1 ? ` across ${proc.doneCount} PDFs` : ""}.` : proc.doneCount > 1 ? `${proc.doneCount} PDFs processed.` : "Matches highlighted."}
+            detail={`Query: “${query.trim()}”. ${downloadStarted(proc.doneCount)}`}
+            fileDetail={entry => `${hitsOf(entry)} match${hitsOf(entry) === 1 ? "" : "es"} · ${formatFileSize(entry.blob?.size ?? 0)}`}
+            onDownload={() => proc.downloadAll("archive_highlighted")} onRetry={() => void process("transient")}
+            onStartOver={startOver} more="Start over" />;
     }
 
-    return (
-        <div className="space-y-4">
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
-                onClick={() => fileRef.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload PDFs"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
-                )}
-            >
-                <CornerMarks />
-                <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Highlighter size={20} className="text-accent" strokeWidth={1.75} />}
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {proc.entries.length ? "Add more PDFs" : "Select PDFs to highlight"}
-                </p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Multi-file OK · same query applied to all · max {MAX_FILE_SIZE_LABEL} each
-                </p>
-            </div>
-
-            {proc.entries.length > 0 && (
-                <MultiFileQueue
-                    entries={proc.entries}
-                    reorderable={false}
-                    onRemove={proc.removeFile}
-                    onReorder={proc.reorder}
-                    onClearAll={proc.clearAll}
-                    onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
-                    busy={phase === "processing"}
-                />
-            )}
-
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    Search
-                </div>
-                <div className="p-4 space-y-4">
-                    <div className="relative">
-                        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                        <input
-                            type="text" value={query} onChange={e => setQuery(e.target.value)}
-                            placeholder='e.g. "confidential"'
-                            maxLength={500}
-                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                        />
-                    </div>
-                    <div>
-                        <label className="font-medium text-[11px] text-muted-foreground">Color</label>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {COLORS.map(c => (
-                                <button
-                                    key={c.id}
-                                    onClick={() => setColor(c.id)}
-                                    aria-label={c.label}
-                                    aria-pressed={color === c.id}
-                                    className={cn(
-                                        "h-10 w-10 rounded-lg border-2 transition-colors",
-                                        color === c.id ? "border-foreground/70 ring-2 ring-accent/40" : "border-border hover:border-foreground/30",
-                                    )}
-                                    style={{ backgroundColor: c.swatch }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setCaseSensitive(v => !v)}
-                        className={cn(
-                            "inline-flex items-center gap-2 h-9 px-3 rounded-md border text-[12.5px] font-medium transition-colors",
-                            caseSensitive
-                                ? "border-accent bg-accent/[0.06] text-accent"
-                                : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
-                        )}
-                    >
-                        <span className={cn(
-                            "h-4 w-4 rounded border flex items-center justify-center shrink-0",
-                            caseSensitive ? "bg-accent border-accent text-background" : "border-border",
-                        )}>
-                            {caseSensitive && <CheckCircle2 size={9} strokeWidth={3} />}
-                        </span>
-                        Case sensitive
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-                <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                    {phase === "processing"
-                        ? <><Loader2 size={13} className="animate-spin" /> Highlighting… ({proc.doneCount}/{proc.entries.length})</>
-                        : <><Highlighter size={13} /> Highlight {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "every match"}</>}
-                </button>
-                {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
-                )}
-                {proc.entries.length > 0 && !query.trim() && (
-                    <span className="font-medium text-[11.5px] text-muted-foreground inline-flex items-center gap-1">
-                        <AlertCircle size={11} /> Enter a query
-                    </span>
-                )}
+    const busy = phase === "processing";
+    return <StudioLayout options={<>
+        <div>
+            <h2>Search</h2>
+            <div className="ts-setting"><label htmlFor="highlight-query">Text to highlight</label><input id="highlight-query" type="text" value={query} disabled={busy} onChange={e => setQuery(e.target.value)} placeholder='e.g. "confidential"' maxLength={500} /></div>
+            {proc.entries.length > 0 && !query.trim() && <p className="ts-caption">Enter a query.</p>}
+            <label className="ts-check"><input type="checkbox" checked={caseSensitive} disabled={busy} onChange={e => setCaseSensitive(e.target.checked)} /> Case sensitive</label>
+        </div>
+        <div>
+            <h2>Color</h2>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Highlight color">
+                {COLORS.map(c => <button type="button" key={c.id} onClick={() => setColor(c.id)} disabled={busy} aria-label={c.label} aria-pressed={color === c.id}
+                    className={cn("h-10 w-10 rounded-lg border-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--accent))]", color === c.id ? "border-foreground/70 ring-2 ring-accent/40" : "border-border hover:border-foreground/30")}
+                    style={{ backgroundColor: c.swatch }} />)}
             </div>
         </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+    </>} action={<StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length, "PDF") : undefined}>
+        <button type="button" className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Highlighter size={16} aria-hidden="true" /> Highlight {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "every match"}</button>
+    </StudioActionBar>}>
+        <FileIntake accepts=".pdf" multiple title="Select PDFs to highlight" detail={`Multi-file OK · same query applied to all · max ${MAX_FILE_SIZE_LABEL} each`}
+            compact={proc.entries.length > 0} disabled={busy} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdfOnly)} />
+        <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
+        {busy && <StudioProgress label="Finding every match" detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}
+    </StudioLayout>;
 }

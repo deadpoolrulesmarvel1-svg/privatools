@@ -10,6 +10,7 @@ import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice, StudioActionBar } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
 import { focusIfIdle } from "@/skins/experience/focus-result";
+import { downloadAgainLabel } from "@/skins/experience/studio-outcome";
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
@@ -285,7 +286,11 @@ export function MergeUI() {
             if (!blob.size) throw withErrorKind(new Error("The server returned an empty PDF. Try merging again."), "server");
             setResult({ blob, ...snapshot });
             setPhase("done");
-            setNotice("Your merged PDF is ready to download.");
+            // The download policy: a finished result downloads by itself, once, and
+            // the result offers "Download again".
+            downloadBlob(blob, snapshot.filename);
+            emitToolSuccess("Merge PDF");
+            setNotice("Your merged PDF is ready. The download has started.");
             emitToolRun({ outcome: "success", files: mergeable.length });
         } catch (cause) {
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
@@ -460,7 +465,7 @@ export function MergeUI() {
                                 <strong>{result ? "Processed by PrivaTools" : "Processing: temporary server upload"}</strong>
                                 <p>{result ? "The result is ready in this browser. Source files and the server result are removed after the response." : "Choosing Merge sends these PDFs to PrivaTools. Server copies are removed after the response."}</p>
                             </div></div>
-                            {result && <button className="merge-button merge-button--primary" type="button" onClick={() => { downloadBlob(result.blob, result.filename); emitToolSuccess("Merge PDF"); }}><Download size={20} />Download PDF</button>}
+                            {result && <button className="merge-button merge-button--primary" type="button" onClick={() => downloadBlob(result.blob, result.filename)}><Download size={20} aria-hidden="true" />{downloadAgainLabel(1)}</button>}
                             {result && <>
                                 <button className="merge-button merge-button--quiet" type="button" onClick={() => { invalidateResult(); setNotice("Adjust the pages or order, then merge again to create an updated PDF."); }}><SlidersHorizontal size={18} />Adjust pages</button>
                                 <div className="merge-save-workflow">

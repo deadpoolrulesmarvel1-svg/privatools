@@ -16,7 +16,7 @@ import { ResultHandoff } from "./ResultHandoff";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
 import { FileIntake, StudioActionBar, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
-import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
+import { downloadAgainLabel, failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 
 type Level =
     | "light" | "recommended" | "extreme" | "custom"
@@ -199,7 +199,7 @@ export function CompressUI() {
                 detail={entry.status === "done" ? `${formatFileSize(entry.size)} → ${formatFileSize(compressedBytesOf(entry))}${entry.headers?.["x-target-met"] === "false" ? " · Target could not be reached; smallest result provided" : ""}` : entry.error || "Could not process this file"} />)}
             <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
                 choose={{ accepts: ".pdf", multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: startOver }}
-                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll("archive_compressed")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll("archive_compressed")}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(proc.doneCount)}</button>}
                 more={tone !== "failure" && <button className="ts-text-button" onClick={() => startOver()}>Compress more</button>} />
             {singleDone && <ResultHandoff blob={singleDone.blob ?? null} filename={singleDone.outName || buildOutputFilename(singleDone.name, "compressed", "pdf")} fromSlug="compress-pdf" />}
         </StudioResult>;

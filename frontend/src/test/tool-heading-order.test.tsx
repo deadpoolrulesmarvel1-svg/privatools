@@ -16,6 +16,10 @@ import { CompressVideoUI } from "@/components/tool-ui/CompressVideoUI";
 import { GeminiWatermarkUI } from "@/components/tool-ui/GeminiWatermarkUI";
 import { JsonXmlFormatterUI } from "@/components/tool-ui/JsonXmlFormatterUI";
 import { HiddenTextCheckerUI } from "@/components/tool-ui/HiddenTextCheckerUI";
+import { CropUI } from "@/components/tool-ui/CropUI";
+import { WatermarkUI } from "@/components/tool-ui/WatermarkUI";
+import { MetadataUI } from "@/components/tool-ui/MetadataUI";
+import { ProtectUI } from "@/components/tool-ui/ProtectUI";
 
 vi.mock("@/skins/daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("@/skins/experience/ToolGuide", () => ({ ToolGuide: () => <section><h2>How to use this tool</h2><h3>A question</h3></section> }));
@@ -28,6 +32,9 @@ vi.mock("@/components/tool-ui/merge-preview", () => ({
     })),
 }));
 vi.mock("@/components/tool-ui/pdf/PdfPageStage", () => ({ PdfPageStage: () => <div data-testid="stage" /> }));
+vi.mock("@/components/tool-ui/pdf/PdfWatermarkPreview", () => ({ PdfWatermarkPreview: () => null }));
+vi.mock("@/components/VaultPasswordPicker", () => ({ VaultPasswordPicker: () => null }));
+vi.mock("@/components/AssetPicker", () => ({ AssetPicker: () => null }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), message: vi.fn(), success: vi.fn() }) }));
 afterEach(cleanup);
 
@@ -58,6 +65,11 @@ const CASES: Case[] = [
     { name: "Gemini Watermark Remover", tool: { slug: "gemini-watermark-remover", name: "Gemini Watermark Remover", description: "Take the visible Gemini sparkle off AI-generated images", category: "image", clientOnly: true }, ui: () => <GeminiWatermarkUI />, choose: c => fileInput(c, [png("gemini.png")]) },
     { name: "JSON / XML Formatter", tool: { slug: "json-xml-formatter", name: "JSON / XML Formatter", description: "Prettify, minify or validate JSON and XML in your browser", category: "developer", clientOnly: true }, ui: () => <JsonXmlFormatterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: '{"a":1}' } }) },
     { name: "Hidden Text Checker", tool: { slug: "hidden-text-checker", name: "Hidden Text Checker", description: "Find text in a PDF that readers can't see", category: "security" }, ui: () => <HiddenTextCheckerUI />, choose: c => fileInput(c, [pdf("notes.pdf")]) },
+    // Screens moved onto the shared kit in step 2b: their options are h2 parts of the tool.
+    { name: "Crop PDF", tool: { slug: "crop-pdf", name: "Crop PDF", description: "Trim the margins of a PDF", category: "edit" }, ui: () => <CropUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
+    { name: "Watermark PDF", tool: { slug: "watermark", name: "Watermark PDF", description: "Add a watermark to a PDF", category: "edit" }, ui: () => <WatermarkUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
+    { name: "Metadata", tool: { slug: "metadata", name: "Edit Metadata", description: "View and edit PDF properties", category: "edit" }, ui: () => <MetadataUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
+    { name: "Protect PDF", tool: { slug: "protect-pdf", name: "Protect PDF", description: "Add a password to a PDF", category: "security" }, ui: () => <ProtectUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
 ];
 
 describe("tool page heading order", () => {

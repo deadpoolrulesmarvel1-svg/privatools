@@ -3,7 +3,13 @@
  *
  * Talks to a `useMultiFileProcessor()` result. Doesn't fetch anything itself;
  * just renders status, lets the user reorder/remove, and exposes a "Clear all"
- * and "Retry failed" affordance.
+ * and, after a partial run, a "Try again" for the failures another attempt
+ * could fix (connection, time limit, rate limit, server fault). Each failed
+ * file says its reason on its row; a file the tool refused gets no retry.
+ *
+ * Tool screens now show their chosen files with the shared kit's rows
+ * (ProcessorFiles in skins/experience/ProcessorStudio.tsx) and end on
+ * ProcessorResult; this queue stays for screens that still use it.
  *
  * Drag-reorder uses HTML5 DnD (no library) with a GripVertical handle. Falls
  * back to ChevronUp/Down buttons for keyboard / touch users.
@@ -17,6 +23,7 @@ import {
     AlertCircle, Clock, RotateCw,
 } from "lucide-react";
 import { useState } from "react";
+import { retryKinds, retryLine } from "@/skins/experience/studio-outcome";
 
 interface Props {
     entries: FileEntry[];
@@ -25,6 +32,7 @@ interface Props {
     onRemove: (id: string) => void;
     onReorder: (from: number, to: number) => void;
     onClearAll: () => void;
+    /** Run again only the failures another attempt could fix: `run(opts, "transient")`. */
     onRetryFailed?: () => void;
     /** Whether processing is in flight — disables interactive controls. */
     busy?: boolean;
@@ -71,6 +79,7 @@ export function MultiFileQueue({
     if (entries.length === 0) return null;
 
     const failedCount = entries.filter(e => e.status === "failed").length;
+    const retryable = retryKinds(entries);
     const doneCount = entries.filter(e => e.status === "done").length;
     const totalSize = entries.reduce((s, e) => s + e.size, 0);
 
@@ -121,19 +130,18 @@ export function MultiFileQueue({
                 </div>
             </div>
 
-            {/* Partial-failure banner */}
-            {!busy && failedCount > 0 && doneCount > 0 && onRetryFailed && (
+            {/* Partial run: a retry only for the failures another attempt could fix. */}
+            {!busy && retryable.length > 0 && doneCount > 0 && onRetryFailed && (
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-copper/40 bg-copper-soft/40 px-3 py-2.5 text-[13px]">
                     <span className="text-foreground">
-                        <span className="text-accent font-semibold">{doneCount}</span> of {entries.length} processed.{" "}
-                        <span className="text-destructive font-semibold">{failedCount} failed</span> — retry?
+                        {doneCount} of {entries.length} processed. {retryLine(retryable)}
                     </span>
                     <button
                         type="button"
                         onClick={onRetryFailed}
                         className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-foreground text-background text-[12px] font-semibold hover:opacity-90"
                     >
-                        <RotateCw size={11} /> Retry {failedCount}
+                        <RotateCw size={11} /> {retryable.length > 1 ? `Try ${retryable.length} again` : "Try again"}
                     </button>
                 </div>
             )}

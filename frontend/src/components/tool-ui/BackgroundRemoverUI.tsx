@@ -30,7 +30,8 @@ export function BackgroundRemoverUI() {
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
     return <MediaBatchStudio proc={proc} phase={phase} title="Make the subject stand out." accepts=".jpg,.jpeg,.png,.webp,.bmp" kind="image"
-        action="Remove backgrounds" canProcess={canProcess} onRun={retry => { void process(retry); }} onDownload={() => proc.downloadAll("backgrounds_removed")}
+        // Reviewed before it is kept ("Inspect hair, transparent objects and fine edges"): the download stays a choice.
+        action="Remove backgrounds" canProcess={canProcess} onRun={retry => { void process(retry); }} onDownload={() => proc.downloadAll("backgrounds_removed")} downloaded={false}
         onReset={() => { proc.reset(); setPhase("idle"); setModelPct(null); }} filter={isImg}
         note={engine === "local" ? "Your images stay on this device. Transparent PNG at the original dimensions." : "Images upload when you run the tool. Transparent PNG at the original dimensions."}
         options={<><MediaField label="Where to process"><MediaChoices label="Background removal engine" value={engine} onChange={setEngine}
