@@ -10,6 +10,19 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.14] — 2026-10-02 — Honest failures, clearer refusals, easier keyboard use
+
+### Tools
+
+- When a file fails, the page says so. It shows a warning, no before-and-after receipt, and "Choose a different file" first. "Try again" appears only when another attempt could work: a dropped connection, a timeout, too many requests or a server error. The message says which. When some files finish and others fail, the page says how many finished and gives the reason for each failure. PDF to Word and OCR PDF no longer show a success mark when they fail. (#312)
+- A file of the wrong type, dropped or chosen, is no longer ignored or sent to the server. The page names it and says what the tool takes. When another tool does the same job or converts the file, it points there. Merge PDF leaves out a file that isn't a valid PDF, and says so, instead of asking for a password. (#312)
+- Some image tools couldn't read a file that isn't an image, or an image whose data stops early or is broken. They now say so, instead of failing with a server error and offering "Try again". This covers Image Format Converter, WebP to JPG, Image Compressor, HEIC to JPG, Favicon Generator, Image Watermark, Remove EXIF Data, View EXIF Data and Image OCR. (#313)
+
+### Accessibility
+
+- A visible "Skip to main content" link. Controls you tab to are no longer hidden under the sticky header at 200% zoom or on phones. After a run, focus moves to the result, unless you are using something else, such as the search dialog. Search announces how many results it found.
+- Text on Play's coloured backgrounds, Smart Redact's labels, the search placeholder and the edges of form fields now meet the contrast minimums in light and dark. (#312)
+
 ## [2.7.13] — 2026-10-02 — Gemini Watermark Remover
 
 ### New tool
