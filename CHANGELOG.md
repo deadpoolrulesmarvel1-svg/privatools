@@ -10,6 +10,17 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.15] — 2026-10-02 — Tool pages that get to the point
+
+### Tools
+
+- Every tool page now opens with the tool's name and what it does, followed by the tool itself. Air and Play show it in the same order: the file box, its options, the button that runs it, then the result. On many tools, the run button, the number of files and where they go now sit together in one action bar. Once a file is chosen, that bar stays in view; on phones it sits at the bottom of the screen. (#315)
+- Each tool says where your file goes, in words beside the file box instead of a small badge. The answer is one of: this device, temporary processing on the PrivaTools server, your own AI provider, or your choice. Organize Pages and Remove Watermark say that the PDF is uploaded as soon as you choose it, to draw thumbnails and to look for watermarks. OCR PDF and Image OCR say you choose between the server, your AI key and this browser. (#315)
+
+### Accessibility
+
+- Tool pages follow one heading outline. Controls you tab to are not hidden under the action bar at 200% zoom or on phones. At higher zoom, the bar stays in the page instead of covering it. (#315)
+
 ## [2.7.14] — 2026-10-02 — Honest failures, clearer refusals, easier keyboard use
 
 ### Tools
