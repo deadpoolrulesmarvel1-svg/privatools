@@ -93,52 +93,98 @@ const NOT_A_JOB = new Set((
     "pdf pdfs image images photo photos picture pictures file files document documents "
     + "video videos audio jpg jpeg png webp gif bmp tiff tif heic heif svg "
     + "mp4 mov webm avi mkv m4v mp3 wav ogg flac aac m4a wma opus docx doc "
-    + "xlsx xls pptx ppt odt word excel powerpoint office txt markdown md json xml "
+    + "xlsx xls pptx ppt odt word excel powerpoint office txt text markdown md json xml "
     + "csv html htm epub rtf zip tar to and the a of from in with your ai online free long one by"
 ).split(" "));
+
+// Words many unrelated tools share. A match on "convert", "format", "extract"
+// or "remove" says nothing about the job: Extract Audio is not Extract Pages.
+const GENERIC = new Set((
+    "convert converter conversion format formats create creator generate generator make maker "
+    + "check checker view viewer extract extractor remove remover add edit editor batch tool tools"
+).split(" "));
+
+// Tools that take something away. A watermark tool and a watermark remover share
+// the word "watermark" but do opposite jobs; a transparent background is a removed one.
+const TAKES_AWAY = new Set("remove remover delete strip erase clean unwatermark transparent".split(" "));
+
+// Jobs about the original file itself: a converted copy carries none of its
+// metadata, so these tools never send a file to a converter.
+const ABOUT_THE_ORIGINAL = new Set(["exif", "metadata"]);
 
 function words(text: string): string[] {
     return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 }
 
 function jobWords(slug: string): string[] {
-    return words(slug).filter(word => !NOT_A_JOB.has(word));
+    return words(slug).filter(word => !NOT_A_JOB.has(word) && !GENERIC.has(word));
 }
 
+function takesAway(slug: string): boolean {
+    return words(slug).some(word => TAKES_AWAY.has(word));
+}
+
+const ENDINGS = ["s", "es", "r", "or", "er", "ors", "ers", "ing", "ion", "ions", "ed", "d"];
+
+/** One word and its inflections ("compress", "compressor"; "resize", "resizer";
+ *  "subtitle", "subtitles"), never another word that starts the same way
+ *  ("format" and "formatter", "speed" and "speech", "form" and "format"). */
 function sameStem(a: string, b: string): boolean {
     if (a === b) return true;
-    if (a.length < 4 || b.length < 4) return false;
-    const shorter = a.length <= b.length ? a : b;
-    const longer = shorter === a ? b : a;
-    return longer.startsWith(shorter.slice(0, Math.max(4, shorter.length - 2)));
-}
-
-/** A job word shared by few tools ("background") says more than a common one ("remove"). */
-function specificity(word: string): number {
-    const tools = CATALOGUE.filter(entry => words(entry.slug).some(other => sameStem(word, other))).length;
-    return tools <= 4 ? 3 : 1.5;
+    const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+    if (short.length < 3) return false;
+    const base = short.endsWith("e") ? short.slice(0, -1) : short;
+    return ENDINGS.some(ending => long === short + ending || long === base + ending);
 }
 
 /** What a tool turns files into when its slug reads "<from>-to-<target>". */
 function conversionTargets(slug: string): string[] {
     const at = slug.indexOf("-to-");
-    return at < 0 ? [] : words(slug.slice(at + 4));
+    return at < 0 ? [] : words(slug.slice(at + 4)).filter(word => !GENERIC.has(word));
 }
 
 const IMAGE_FORMATS = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "heic", "heif"];
+const TARGET_FORMATS: Record<string, string[]> = {
+    word: ["docx", "doc"], excel: ["xlsx", "xls"], powerpoint: ["pptx", "ppt"], text: ["txt"], markdown: ["md"],
+    image: IMAGE_FORMATS, images: IMAGE_FORMATS, jpg: ["jpg", "jpeg"], jpeg: ["jpg", "jpeg"], tif: ["tiff", "tif"], tiff: ["tiff", "tif"],
+};
 
-/** The formats a tool takes: its accepted extensions and the format words
- *  that name its input ("heic" in heic-to-jpg, never the "jpg" it makes). */
-function inputFormats(entry: CatalogueEntry): Set<string> {
+/** The file formats a target word stands for: "word" is DOCX or DOC, and "image"
+ *  any image unless `family` is false, when "image" stays a word of its own. */
+function targetFormats(word: string, family = true): string[] {
+    if (!family && (word === "image" || word === "images")) return ["image"];
+    return TARGET_FORMATS[word] ?? [word];
+}
+
+/** The formats a tool takes, read from its accept list alone: a slug can name
+ *  what a tool makes as easily as what it takes ("markdown-html"). */
+function inputFormats(accepts?: string): Set<string> {
     const formats = new Set<string>();
-    for (const token of acceptTokens(entry.accepts) ?? []) {
-        const ext = token.replace(/^\./, "").split(".").pop();
-        if (ext) formats.add(ext);
+    for (const token of acceptTokens(accepts) ?? []) {
+        if (token === "image/*") IMAGE_FORMATS.forEach(format => formats.add(format));
+        const ext = token.includes("/") ? "" : token.replace(/^\./, "").split(".").pop();
+        if (ext) for (const alias of targetFormats(ext, false)) formats.add(alias);
     }
-    const at = entry.slug.indexOf("-to-");
-    for (const word of words(at < 0 ? entry.slug : entry.slug.slice(0, at))) if (NOT_A_JOB.has(word)) formats.add(word);
-    if ([...formats].some(format => IMAGE_FORMATS.includes(format))) formats.add("image");
     return formats;
+}
+
+/** The target word when a converter is handed what it makes (report.pdf on
+ *  Word to PDF: "pdf"; a HEIC on PDF to Image: "image"), otherwise null. */
+function madeAs(file: Pick<File, "name">, slug?: string): string | null {
+    const ext = extensionOf(file.name);
+    if (!slug || !ext) return null;
+    return conversionTargets(slug).find(target => targetFormats(target).includes(ext)) ?? null;
+}
+
+function alreadyMade(file: Pick<File, "name">, slug?: string): boolean {
+    return madeAs(file, slug) !== null;
+}
+
+/** What a converter's target word can give this tool. A converter "to image"
+ *  makes PNG or JPG, so it helps only a tool that takes one of those. */
+function convertsInto(target: string, formats: Set<string>): boolean {
+    const made = target === "image" || target === "images" ? ["png", "jpg"] : targetFormats(target);
+    return made.some(format => formats.has(format));
 }
 
 function takesFileExplicitly(entry: CatalogueEntry, file: Pick<File, "name" | "type">): boolean {
@@ -149,8 +195,9 @@ export interface ToolSuggestion {
     slug: string;
     name: string;
     href: string;
-    /** "convert": the suggestion turns the file into something this tool takes. */
-    relation: "same-job" | "convert" | "takes-it";
+    /** "same-job": the same job for this format. "convert": the suggestion
+     *  turns the file into something this tool takes. */
+    relation: "same-job" | "convert";
     /** For "convert": the format it produces ("PDF", "JPG", "image"). */
     into?: string;
 }
@@ -161,19 +208,29 @@ function targetName(word: string): string {
     return TARGET_NAMES[word] ?? FORMAT_ALIASES[word] ?? word.toUpperCase();
 }
 
+/** A same-job match needs a job word in the other tool's slug, or two signs
+ *  from its synonyms: one shared synonym ("thumbnails" for Organize Pages) is chance. */
+const SAME_JOB = 3;
+
 /**
- * The registry tool best placed to take a file this tool refused. It prefers
- * a tool doing the same job for that format ("Image Compressor" for a PNG
- * dropped on Compress PDF) or, with `prefer: "convert"`, a tool that turns the
+ * The registry tool best placed to take a file this tool refused, or null.
+ * Two relations count: a tool doing the same job for that format ("Image
+ * Compressor" for a PNG dropped on Compress PDF), and a tool that turns the
  * file into what this tool takes ("Image to PDF" for a PNG dropped on Merge
- * PDF). Tools that accept any file are never suggested.
+ * PDF), which `prefer: "convert"` puts first. A tool that merely opens the
+ * file is not advice, so then nothing is suggested; neither is a tool that
+ * accepts any file.
  */
 export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, prefer = "same-job", accepts }: { fromSlug?: string; prefer?: "same-job" | "convert"; accepts?: string } = {}): ToolSuggestion | null {
+    // A converter handed what it makes needs no other tool: PDF to Text would only undo Text to PDF.
+    if (alreadyMade(file, fromSlug)) return null;
     const from = fromSlug ? BY_SLUG.get(fromSlug) : undefined;
-    const job = from ? jobWords(from.slug).map(word => ({ word, weight: specificity(word) })) : [];
+    const job = from ? jobWords(from.slug) : [];
+    const removes = from ? takesAway(from.slug) : false;
     // A surface that is not a registered tool (Pipeline, Batch) still says what it takes.
-    const formats = inputFormats(from ?? { slug: "", name: "", accepts: accepts ?? "", outputLabel: "", href: "" });
-    const outputs = from ? conversionTargets(from.slug) : [];
+    const formats = job.some(word => ABOUT_THE_ORIGINAL.has(word)) ? new Set<string>() : inputFormats(from ? from.accepts : accepts);
+    // What this tool makes, by format: "any image" is too broad to call two tools' results the same.
+    const outputs = new Set((from ? conversionTargets(from.slug) : []).flatMap(target => targetFormats(target, false)));
     let best: { entry: CatalogueEntry; score: number; relation: ToolSuggestion["relation"]; into?: string } | null = null;
     for (const entry of CATALOGUE) {
         if (entry.slug === fromSlug || entry.comingSoon || !takesFileExplicitly(entry, file)) continue;
@@ -181,20 +238,40 @@ export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, pr
         const synonyms = words(entry.synonyms ?? "");
         const targets = conversionTargets(entry.slug);
         let jobScore = 0;
-        for (const { word, weight } of job) {
-            if (own.some(other => sameStem(word, other))) jobScore += weight;
-            else if (synonyms.some(other => sameStem(word, other))) jobScore += weight / 2;
+        // Adding a watermark and removing one share a word, not a job.
+        if (job.length && takesAway(entry.slug) === removes) {
+            for (const word of job) {
+                if (own.some(other => sameStem(word, other))) jobScore += SAME_JOB;
+                else if (synonyms.some(other => sameStem(word, other))) jobScore += SAME_JOB / 2;
+            }
+            // Both take something away, and the other tool's words say what.
+            if (jobScore > 0 && removes) jobScore += SAME_JOB / 2;
         }
-        // Same result from a different input: PNG to JPG for a PNG dropped on HEIC to JPG.
-        if (outputs.length && targets.some(target => outputs.includes(target))) jobScore += 3;
-        const into = targets.find(target => formats.has(target));
-        const score = jobScore + (into ? (prefer === "convert" ? 5 : 2) : 0);
-        const relation: ToolSuggestion["relation"] = into && (prefer === "convert" || jobScore < 2) ? "convert" : jobScore > 0 ? "same-job" : "takes-it";
+        // The same result from a different input: PNG to JPG for a PNG dropped on HEIC to JPG.
+        if (outputs.size && targets.some(target => targetFormats(target, false).some(format => outputs.has(format)))) jobScore += SAME_JOB;
+        const into = targets.find(target => convertsInto(target, formats));
+        const sameJob = jobScore >= SAME_JOB;
+        if (!sameJob && !into) continue;
+        const relation: ToolSuggestion["relation"] = into && (prefer === "convert" || !sameJob) ? "convert" : "same-job";
+        // Between two same-job tools, the one with no job of its own beyond this one's is the general
+        // tool: Remove Image Watermark before Gemini Watermark Remover for any PNG.
+        const narrower = sameJob ? jobWords(entry.slug).filter(word => !job.some(other => sameStem(word, other))).length / 2 : 0;
+        const score = (sameJob ? jobScore - narrower : 0) + (into ? (prefer === "convert" ? 5 : 2) : 0);
         if (!best || score > best.score || (score === best.score && (entry.popularity ?? 999) < (best.entry.popularity ?? 999))) {
             best = { entry, score, relation, into: relation === "convert" && into ? targetName(into) : undefined };
         }
     }
     return best ? { slug: best.entry.slug, name: best.entry.name, href: best.entry.href, relation: best.relation, ...(best.into ? { into: best.into } : {}) } : null;
+}
+
+// Formats said as words although their first letter reads with a vowel: "a FLAC", "a HEIC", never "an FLAC".
+const SPOKEN_AS_WORDS = new Set(["FLAC", "HEIC", "HEIF"]);
+
+/** The article before a format name. Spelled-out acronyms take the article of
+ *  their first letter's sound ("an MP4", "an SVG", "a PDF"). */
+function article(name: string): string {
+    if (name !== name.toUpperCase() || SPOKEN_AS_WORDS.has(name)) return /^[aeiou]/i.test(name) ? "an" : "a";
+    return /^[AEFHILMNORSX]/.test(name) ? "an" : "a";
 }
 
 export interface RejectionAdvice {
@@ -226,17 +303,24 @@ export function adviseRejection(rejected: readonly Pick<File, "name" | "type">[]
     const takesFrom = accepts ?? (slug ? BY_SLUG.get(slug)?.accepts : undefined);
     const takes = describeAccepts(takesFrom);
     const name = surface ?? toolName(slug) ?? "This tool";
-    const reason = takes ? `${name} takes ${takes}.` : `${name} can’t open ${others === 0 ? "it" : "them"}.`;
-    const suggestion = suggestToolFor(first, { fromSlug: slug, prefer, accepts: takesFrom });
     const ext = extensionOf(first.name);
     const format = ext ? (FORMAT_ALIASES[ext] ?? ext.toUpperCase()) : "";
+    // A converter handed what it makes (report.pdf on Word to PDF) needs no other tool, only the fact.
+    // A converter "to image" makes an image, not this file's format: a HEIC is "already an image".
+    const made = madeAs(first, slug);
+    const isMade = (file: Pick<File, "name">) => alreadyMade(file, slug);
+    const what = made === "image" || made === "images" ? "image" : format;
+    const sameFormat = rejected.every(file => { const other = extensionOf(file.name); return (FORMAT_ALIASES[other] ?? other.toUpperCase()) === format; });
+    const already = !made ? ""
+        : others === 0 ? ` It’s already ${article(what)} ${what}.`
+            : rejected.every(isMade) && (what === "image" || sameFormat) ? ` They’re already ${what}s.` : "";
+    const reason = (takes ? `${name} takes ${takes}.` : `${name} can’t open ${others === 0 ? "it" : "them"}.`) + already;
+    const suggestion = suggestToolFor(first, { fromSlug: slug, prefer, accepts: takesFrom });
     let suggestionLead = "";
     let suggestionTail = "";
     if (suggestion?.relation === "convert" && suggestion.into) {
         const target = suggestion.into;
-        // Acronyms take the article of their spoken letter ("an MP4", "a PDF").
-        const vowelSound = target === target.toUpperCase() ? /^[AEFHILMNORSX]/.test(target) : /^[aeiou]/i.test(target);
-        suggestionTail = others === 0 ? ` can turn it into ${vowelSound ? "an" : "a"} ${target} first.` : ` can turn them into ${target}s first.`;
+        suggestionTail = others === 0 ? ` can turn it into ${article(target)} ${target} first.` : ` can turn them into ${target}s first.`;
     } else if (suggestion) {
         suggestionLead = "Try ";
         suggestionTail = format ? ` for ${format} files.` : " instead.";
