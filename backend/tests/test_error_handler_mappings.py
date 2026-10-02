@@ -44,6 +44,10 @@ class CalledProcessError(Exception):
     pass
 
 
+class UnidentifiedImageError(OSError):
+    pass
+
+
 class TestErrorHandlerMappings:
     def test_decompression_bomb_is_413(self):
         assert _status(DecompressionBombError("bomb")) == 413
@@ -81,3 +85,12 @@ class TestErrorHandlerMappings:
 
     def test_unknown_exception_is_generic_500(self):
         assert _status(RuntimeError("boom")) == 500
+
+    def test_unidentified_image_is_400(self):
+        assert _status(UnidentifiedImageError("cannot identify image file")) == 400
+
+    def test_truncated_image_is_400(self):
+        assert _status(OSError("image file is truncated (12 bytes not processed)")) == 400
+
+    def test_other_os_errors_stay_500(self):
+        assert _status(OSError("No space left on device")) == 500

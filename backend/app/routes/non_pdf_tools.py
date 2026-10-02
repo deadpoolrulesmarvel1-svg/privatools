@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
+from ..utils.images import image_read_error
 from ..utils.concurrency import run_bounded
 from ..services.media_metadata import with_metadata_options
 from ..services.media_trim_service import AUDIO_EXTENSIONS, VIDEO_ENCODERS, trim_command
@@ -456,6 +457,8 @@ async def remove_exif(files: list[UploadFile] = File(...)):
         raise
     except Exception as e:
         _cleanup_paths(*output_paths)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("remove-exif error")
         raise HTTPException(status_code=500, detail="Failed to remove EXIF data")
 

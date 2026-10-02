@@ -45,9 +45,7 @@ def open_image_safe(
     try:
         img = Image.open(path)
     except UnidentifiedImageError as exc:
-        raise UnsupportedFileError(
-            "This file isn't a supported image format."
-        ) from exc
+        raise UnsupportedFileError(image_read_error(exc)[1]) from exc
     except Image.DecompressionBombError as exc:
         raise ValidationError(
             "Image is too large to process safely."
@@ -67,4 +65,40 @@ def open_image_safe(
             pass
 
 
-__all__ = ["open_image_safe"]
+_TRUNCATED_MESSAGES = (
+    "image file is truncated",
+    "broken data stream when reading image file",
+)
+
+
+def image_read_error(exc: BaseException) -> tuple[int, str] | None:
+    """The HTTP status and message for an image Pillow could not read, or None.
+
+    For a file that is not an image Pillow decodes (a text file named .png),
+    one that stops part-way through, and one past the pixel cap. The global
+    catch-all and the routes that catch their own errors both use it, so a
+    bad upload gets the same answer everywhere instead of a 500 whose page
+    offers a retry that can never work. Matched on the class name, like the
+    catch-all, so callers need not import the codec that raised.
+
+    Neither message may say "damaged" or "corrupt": the frontend's
+    friendlyError() turns those into its PDF advice. "not an image" maps to
+    its image message.
+    """
+    name = type(exc).__name__
+    if name == "DecompressionBombError":
+        return 413, "Image is too large to process safely. Try a smaller image."
+    if name == "UnidentifiedImageError":
+        return 400, (
+            "This file can't be read as an image: it's not an image, "
+            "or it's in a format this tool doesn't read."
+        )
+    if isinstance(exc, OSError) and str(exc).startswith(_TRUNCATED_MESSAGES):
+        return 400, (
+            "This image can't be read: its data stops early or is broken. "
+            "Try the original file."
+        )
+    return None
+
+
+__all__ = ["image_read_error", "open_image_safe"]

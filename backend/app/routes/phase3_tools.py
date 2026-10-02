@@ -22,6 +22,8 @@ from ..services import (
     svg_to_png_service,
     url_to_pdf_service,
 )
+from ..utils.exceptions import ToolError
+from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 
@@ -237,8 +239,13 @@ async def image_watermark(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
+    except ToolError:
+        _cleanup_on_error(temp, out)
+        raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("watermark error")
         raise HTTPException(status_code=500, detail="Watermark failed")
 
@@ -264,8 +271,13 @@ async def generate_favicon(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
+    except ToolError:
+        _cleanup_on_error(temp, out)
+        raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("favicon error")
         raise HTTPException(status_code=500, detail="Favicon generation failed")
 

@@ -18,6 +18,7 @@ from ..services import (
     txt_to_pdf_service,
     word_to_pdf_service,
 )
+from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 
@@ -223,5 +224,7 @@ async def heic_to_jpg(
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("heic-to-jpg error")
         raise HTTPException(status_code=500, detail="Conversion failed")

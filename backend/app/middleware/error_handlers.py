@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ..utils.exceptions import ToolError
+from ..utils.images import image_read_error
 
 logger = logging.getLogger("privatools.errors")
 
@@ -199,15 +200,11 @@ async def builtin_exception_handler(request: Request, exc: Exception) -> JSONRes
     name = type(exc).__name__
     msg = str(exc)
 
-    # Pillow — image too large (decompression bomb guard tripped).
-    # Translate to a friendly 413 so the user sees "image too large" rather
-    # than a generic 500. Match on class name to avoid a hard PIL import here.
-    if name == "DecompressionBombError":
-        return _json(
-            413,
-            "Image is too large to process safely. Try a smaller image.",
-            request=request,
-        )
+    # Pillow — an upload it can't read, one cut short, or one past the pixel
+    # cap: the file's fault, so a 400 or 413 that says so (utils.images).
+    image_error = image_read_error(exc)
+    if image_error is not None:
+        return _json(image_error[0], image_error[1], request=request)
 
     # pikepdf — password
     if name == "PasswordError":

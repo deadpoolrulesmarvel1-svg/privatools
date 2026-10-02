@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import remove_files
+from ..utils.images import image_read_error
 from ..utils.concurrency import run_bounded
 
 router = APIRouter()
@@ -139,6 +140,8 @@ async def image_ocr(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         remove_files(tmp_path)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("OCR failed")
         raise HTTPException(status_code=500, detail="OCR processing failed. Is Tesseract installed?")
     finally:
