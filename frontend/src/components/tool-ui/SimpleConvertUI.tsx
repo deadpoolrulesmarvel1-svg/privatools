@@ -16,7 +16,8 @@ import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-e
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
-import { ConversionPath, FileIntake, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { ConversionPath, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
@@ -217,16 +218,17 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     }
     return <StudioLayout options={<>
         <ConversionPath accepts={acceptFileTypes} output={outputExt} />
-        <div><p className="ts-eyebrow">A useful new format</p><h3>Ready for {outputExt.toUpperCase()}</h3><p>{description}</p></div>
+        <div><p className="ts-eyebrow">A useful new format</p><h2>Ready for {outputExt.toUpperCase()}</h2><p>{description}</p></div>
         <div><dl><div><dt>Bring</dt><dd>{acceptFileTypes.replace(/,/g, " · ")}</dd></div><div><dt>Take away</dt><dd>{outputExt.toUpperCase()} {items.length > 1 ? "files" : "file"}</dd></div></dl></div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
-            {items.length > 0 && status !== "processing" && <button className="ts-text-button" onClick={reset}>Clear</button>}</div>
-    </>}>
+    </>} action={<StudioActionBar ready={items.length > 0} count={items.length ? fileCount(items.length) : undefined}>
+        <button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
+    </StudioActionBar>}>
         <FileIntake accepts={acceptFileTypes} multiple onFiles={addFiles} label={items.length ? "Add more files" : "Drop files here"} title={fileFormatLabel(acceptFileTypes) === "FILE" ? "Your files" : `Your ${fileFormatLabel(acceptFileTypes)} files`}
             detail={`${description} · up to ${MAX_QUEUE} files`} compact={items.length > 0} disabled={status === "processing"} autoFocus={returning} />
         {items.length > 0 && <section aria-label="Selected files">{items.map(item => <StudioFile key={item.id} name={item.file.name}
             detail={item.errMsg || formatFileSize(item.file.size)} status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined}
             onRemove={status !== "processing" ? () => setItems(prev => prev.filter(i => i.id !== item.id)) : undefined} />)}</section>}
+        {items.length > 0 && status !== "processing" && <button className="ts-text-button" onClick={reset}>Clear</button>}
         {status === "processing" && <StudioProgress label={progressLabel} progress={progress} onCancel={() => { stopRef.current = true; abortRef.current?.abort(); }} />}
         {error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;

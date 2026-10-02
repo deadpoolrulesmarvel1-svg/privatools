@@ -9,7 +9,8 @@ import { uploadFilesWithProgress, downloadBlob, chooseDownloadFilename, isAbortE
 import { getFilenameFromContentDisposition } from "@/lib/tool-endpoints";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { emitToolRun } from "@/lib/toolRun";
-import { FileIntake, LocalFilePreview, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileIntake, LocalFilePreview, StudioActionBar, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 
 interface Item { id: string; name: string; size: string; file: File }
 
@@ -144,11 +145,13 @@ export function MultiFileUI({
         <div className="ts-actions"><button className="ts-primary-button" onClick={() => result && downloadBlob(result.blob, result.name)}>Download again</button><button className="ts-text-button" onClick={() => { setFiles([]); setResult(null); setState("idle"); }}>Start another</button></div>
     </StudioResult>;
     return <StudioLayout options={<>
-        <div><p className="ts-eyebrow">Bring them together</p><h3>Your collection</h3><p>{ordered ? "Put files in the order you want. They become one result." : "Each selected file joins this collection."}</p></div>
+        <div><p className="ts-eyebrow">Bring them together</p><h2>Your collection</h2><p>{ordered ? "Put files in the order you want. They become one result." : "Each selected file joins this collection."}</p></div>
         {note && <div><p>{note}</p></div>}
         <div><dl><div><dt>Selected</dt><dd>{files.length} files · {formatFileSize(totalSize)}</dd></div><div><dt>Result</dt><dd>{outputFilename}</dd></div></dl></div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!canProcess}>{files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</button><p>{files.length < minFiles ? `Add at least ${minFiles} ${fileLabel} to begin.` : "Your files are ready."}</p></div>
-    </>}>
+    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length, fileLabel.replace(/s$/, ""), fileLabel) : undefined}>
+        <button className="ts-primary-button" onClick={process} disabled={!canProcess}>{files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</button>
+        <p className="ts-action-hint">{files.length < minFiles ? `Add at least ${minFiles} ${fileLabel} to begin.` : "Your files are ready."}</p>
+    </StudioActionBar>}>
         <FileIntake accepts={accepts} multiple label={files.length ? "Add more" : `Add ${fileLabel}`} detail="Choose files together, then arrange the collection." compact={files.length > 0} disabled={state === "processing"} onFiles={add} />
         {files.length > 0 && <section aria-label="Selected files">{files.map((file, i) => <div className="ts-ordered-file" key={file.id}><span className="ts-page-number">{i + 1}</span><StudioFile name={file.name} detail={file.size} onRemove={state !== "processing" ? () => remove(file.id) : undefined} />{ordered && <div className="ts-order-controls"><button type="button" className="ts-icon-button" onClick={() => move(i, -1)} disabled={i === 0 || state === "processing"} aria-label="Move up"><ChevronUp size={16} /></button><button type="button" className="ts-icon-button" onClick={() => move(i, 1)} disabled={i === files.length - 1 || state === "processing"} aria-label="Move down"><ChevronDown size={16} /></button></div>}</div>)}</section>}
         {state === "processing" && <StudioProgress label={progressLabel} progress={progress} detail={`${files.length} files · Keep this tab open while we prepare your result.`} onCancel={() => request.current?.abort()} />}

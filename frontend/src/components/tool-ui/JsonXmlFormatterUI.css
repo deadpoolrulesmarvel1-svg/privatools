@@ -46,7 +46,7 @@
 .formatter-pane-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 6px 18px; border-bottom: 1px solid hsl(var(--border)); }
 .formatter-pane-label {display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;}
 .formatter-example-marker {color:hsl(var(--muted-foreground));font-size:12px;font-weight:400;}
-.consumer-formatter .formatter-pane-heading :is(h3, label) { margin: 0; font-family: var(--font-sans); font-size: 16px; letter-spacing: -.015em; font-weight: 650; }
+.consumer-formatter .formatter-pane-heading :is(h2, h3, label) { margin: 0; font-family: var(--font-sans); font-size: 16px; letter-spacing: -.015em; font-weight: 650; }
 .consumer-formatter .formatter-text-button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 4px; border: 0; background: transparent; color: hsl(var(--muted-foreground)); font-size: 14px; transition: color 160ms ease; }
 .consumer-formatter .formatter-text-button:hover:not(:disabled) { color: hsl(var(--foreground)); }
 .formatter-input-body { display: flex; height: 350px; min-height: 350px; min-width: 0; }
@@ -120,7 +120,7 @@
 html[data-experience] .consumer-formatter{font-family:var(--pt-font);}
 html[data-experience] .formatter-pane{border-radius:22px;background:var(--pt-surface);}
 html[data-experience] .formatter-pane-heading{padding:21px 22px;background:transparent;}
-html[data-experience] .consumer-formatter .formatter-pane-heading :is(h3,label){font:600 20px var(--pt-display);letter-spacing:-.5px;}
+html[data-experience] .consumer-formatter .formatter-pane-heading :is(h2,h3,label){font:600 20px var(--pt-display);letter-spacing:-.5px;}
 html[data-experience] .formatter-editors{gap:25px;}
 html[data-experience] .formatter-output-pane{background:var(--pt-panel);}
 html[data-experience] .consumer-formatter .formatter-button,html[data-experience] .consumer-formatter .formatter-run{border-radius:12px;}

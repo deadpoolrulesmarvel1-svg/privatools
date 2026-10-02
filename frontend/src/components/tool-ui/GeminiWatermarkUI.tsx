@@ -11,7 +11,8 @@
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AlertTriangle, ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
-import { FileChooserButton } from "@/skins/experience/ToolStudio";
+import { FileChooserButton, StudioActionBar } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { focusIfIdle } from "@/skins/experience/focus-result";
 import { retryKinds, retryLine } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
@@ -175,7 +176,8 @@ export function GeminiWatermarkUI() {
     // Every image failed: nothing was checked to the end. "No sparkle found" and
     // "Not removed cleanly" are honest answers, not failures, and keep their own titles.
     const allFailed = finished && proc.failedCount > 0 && !removed.length && !notClean.length && !notFound.length;
-    const title = !finished ? "Take the sparkle off." : removed.length
+    // Before a run the page's H1 and promise name the job; the stage heading says how a run ended.
+    const title = !finished ? undefined : removed.length
         ? `${removed.length} ${removed.length === 1 ? "image" : "images"} cleaned.`
         : allFailed
             // Shared failure grammar: invite another attempt only when one could work.
@@ -193,11 +195,7 @@ export function GeminiWatermarkUI() {
         <MediaField label="What it removes" detail="Only the visible Gemini sparkle in the bottom-right corner, and only where it is found. SynthID, Google’s invisible watermark, stays in the image, and the file’s metadata is kept as it was." />
         <MediaField label="Quality" detail="PNG and lossless WebP stay lossless: only the sparkle’s pixels change. JPEG and lossy WebP are saved again at quality 95, which recompresses the whole picture slightly." />
         <MediaField label="Use it fairly" detail="Don’t use a cleaned image to pass an AI picture off as a real photo, for example as evidence in a complaint, a refund claim or a news story. Follow each platform’s rules for labelling AI images." />
-        <div className="ms-run">
-            <button className="ms-primary" disabled={!proc.entries.length || busy} onClick={() => void run(false)}><ArrowRight size={16} />{busy ? "Checking…" : "Remove sparkle"}</button>
-            <p className="ms-caption">Runs in this browser. Your images are not uploaded.</p>
-            <a className="ms-caption" href="/third-party/gemini-watermark-masks.txt" target="_blank" rel="noreferrer">Logo mask credits &amp; licences</a>
-        </div>
+        <a className="ms-caption" href="/third-party/gemini-watermark-masks.txt" target="_blank" rel="noreferrer">Logo mask credits &amp; licences</a>
     </> : <>
         <div className="ms-result-summary" role="status" data-tone={allFailed ? "failure" : undefined}>
             <span className="ms-result-seal">{removed.length ? <Check size={27} /> : allFailed ? <AlertTriangle size={25} /> : <CircleSlash size={27} />}</span>
@@ -214,13 +212,16 @@ export function GeminiWatermarkUI() {
 
     return <MediaLayout
         title={title}
-        detail={!finished ? "Gemini’s visible logo, reversed pixel by pixel."
+        detail={!finished ? undefined
             : !allFailed ? "Check the corner before you keep the result."
                 : proc.retryableCount ? `Your images are still here. ${retryLine(retryKinds(proc.entries))}`
                     : proc.entries.length > 1 ? "Nothing was created. The reason is shown with each image." : "Nothing was created. The reason is shown with the image."}
         busy={busy}
         className="gw-workspace"
         settings={settings}
+        action={finished ? undefined : <StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length, "image") : undefined}>
+            <button className="ms-primary" disabled={!proc.entries.length || busy} onClick={() => void run(false)}><ArrowRight size={16} />{busy ? "Checking…" : "Remove sparkle"}</button>
+        </StudioActionBar>}
     >
         {!selected ? <MediaUpload accepts={ACCEPTS} multiple disabled={busy} title="Bring your Gemini images." detail="PNG · JPEG · WebP · One or more images" onFiles={files => proc.addFiles(files, isImage)} /> : <>
             <div className="ms-selected-file"><span>{selected.name}</span><span>{formatFileSize(selected.size)}</span></div>

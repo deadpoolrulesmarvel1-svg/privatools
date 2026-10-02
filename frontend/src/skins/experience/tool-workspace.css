@@ -1,10 +1,99 @@
-.tw-workspace{max-width:1240px;margin:0 auto;padding:35px 44px 80px;color:var(--pt-ink);font-family:var(--pt-font)}.tw-wayfinding{display:flex;gap:18px;align-items:center;color:var(--pt-muted);font-size:12px;margin-bottom:40px}.tw-wayfinding>a{display:flex;align-items:center;gap:8px}.tw-wayfinding>span{border-left:1px solid var(--pt-line);padding-left:18px}.tw-wayfinding>button{margin-left:auto;display:flex;align-items:center;gap:10px;background:none;border:0;font-size:12px;color:var(--pt-muted)}.tw-heading{display:flex;gap:30px;align-items:center;justify-content:space-between;margin-bottom:34px}.tw-kicker{color:var(--pt-muted);font-size:11px;margin:0 0 13px}.tw-heading h1{font-size:clamp(32px,4.4vw,58px);font-weight:500;line-height:1.06;letter-spacing:-.055em;margin:0 0 15px;text-wrap:balance}.tw-description{font-size:15px;line-height:1.6;max-width:54ch;color:var(--pt-muted);margin:0}.tw-tool-emblem{display:grid;place-items:center;position:relative;width:100px;height:100px;flex-shrink:0;color:var(--pt-action);background:var(--pt-soft);border-radius:45% 45% 45% 12%;transform:rotate(5deg)}.tw-tool-emblem svg{transform:rotate(-5deg)}.tw-task-shelf{display:flex;align-items:center;gap:24px;padding:17px 0;border-top:1px solid var(--pt-line);border-bottom:1px solid var(--pt-line);margin-bottom:30px;font-size:11px}.tw-processing{display:flex;align-items:center;gap:9px}.tw-processing>a{color:var(--pt-muted);display:grid;place-items:center}.tw-free{color:var(--pt-muted);font-size:11px}.tw-utilities{display:flex;align-items:center;gap:15px;margin-left:auto}.tw-utilities>button:not(.cp-favorite){display:flex;align-items:center;gap:8px;font-size:11px;background:none;color:var(--pt-muted);border:0}.tw-working-area{min-width:0}.tw-workspace .dl-toolui{min-width:0;min-height:0;max-width:none;opacity:1;animation:none}.tw-help{position:relative;margin:-10px 0 30px;padding:27px 30px;background:var(--pt-panel);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:18px 35px}.tw-help-intro{display:flex;align-items:center;justify-content:space-between;grid-column:1/-1}.tw-help h2{font-size:24px;letter-spacing:-.04em;margin:0;font-weight:550}.tw-help dl{display:flex;gap:30px;margin:0}.tw-help dt{font-size:11px;color:var(--pt-muted);margin-bottom:5px}.tw-help dd{font-size:13px;margin:0;overflow-wrap:anywhere}.tw-help>p{font-size:12px;line-height:1.65;color:var(--pt-muted);margin:0}.tw-help>a{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--pt-action)}.tw-afterword{display:grid;grid-template-columns:1fr 1.1fr;gap:70px;margin:75px 0 55px;padding-top:36px;border-top:1px solid var(--pt-line)}.tw-afterword h2{font-size:31px;font-weight:500;line-height:1.13;letter-spacing:-.04em;margin:0 0 25px}.tw-afterword>div>a{display:inline-flex;align-items:center;gap:12px;font-size:12px}.tw-related{display:grid;gap:0}.tw-afterword .tw-related>a{display:flex;align-items:center;gap:15px;padding:20px 0;border-bottom:1px solid var(--pt-line)}.tw-related>a:first-child{padding-top:0}.tw-related>a>span{flex:1}.tw-related strong{display:block;font-size:15px;font-weight:550;margin-bottom:6px}.tw-related small{display:block;font-size:12px;color:var(--pt-muted);line-height:1.4}
-html[data-experience=play] .tw-workspace{max-width:1300px;padding-top:35px}html[data-experience=play] .tw-wayfinding{margin-bottom:37px}html[data-experience=play] .tw-heading{margin-bottom:38px;padding-right:42px}html[data-experience=play] .tw-heading h1{font-size:clamp(42px,6vw,78px);font-weight:650;max-width:16ch;letter-spacing:-.06em}html[data-experience=play] .tw-kicker{font-size:12px}html[data-experience=play] .tw-tool-emblem{width:125px;height:125px;background:var(--pt-pdf);color:var(--pt-pdf-ink);border-radius:19px;transform:rotate(10deg);box-shadow:7px 7px 0 var(--pt-line)}html[data-experience=play] .tw-tool-emblem svg{transform:rotate(-10deg);width:58px;height:58px}html[data-experience=play] .tw-task-shelf{border:0;background:var(--pt-panel);border-radius:12px;padding:16px 23px;margin-bottom:32px}html[data-experience=play] .tw-afterword{grid-template-columns:1fr 1.4fr;gap:55px}html[data-experience=play] .tw-afterword h2{font-size:38px;font-weight:600}html[data-experience=play] .tw-related{gap:10px}html[data-experience=play] .tw-afterword .tw-related>a{padding:18px 20px;background:var(--pt-surface);border-radius:10px;border:0;transition:transform .28s cubic-bezier(.2,1.4,.4,1)}html[data-experience=play] .tw-related>a:hover{transform:translateX(6px) rotate(-.5deg)}
-@media(max-width:900px){.tw-workspace{padding:28px 26px 60px}.tw-free{display:none}.tw-heading h1{font-size:42px}.tw-afterword{gap:35px}.tw-tool-emblem{width:80px;height:80px}html[data-experience=play] .tw-heading{padding-right:10px}html[data-experience=play] .tw-tool-emblem{width:92px;height:92px}html[data-experience=play] .tw-heading h1{font-size:53px}}
-@media(max-width:560px){.tw-workspace{padding:22px 18px 50px}.tw-wayfinding{margin-bottom:30px;gap:12px;font-size:11px}.tw-wayfinding>span{padding-left:12px}.tw-wayfinding>button{font-size:0;gap:0}.tw-wayfinding>button svg{width:19px;height:19px}.tw-heading{gap:15px;margin-bottom:25px}.tw-kicker{display:none}.tw-heading h1{font-size:34px}.tw-description{font-size:13px;line-height:1.5}.tw-tool-emblem{width:54px;height:62px}.tw-tool-emblem svg{width:29px;height:29px}.tw-task-shelf{gap:10px;padding:14px 0;margin-bottom:22px}.tw-processing{font-size:10px;gap:6px}.tw-processing>svg{width:13px}.tw-utilities{gap:7px}.tw-utilities>button:not(.cp-favorite){font-size:0;gap:0}.tw-utilities>button:not(.cp-favorite) svg{width:17px;height:17px}.tw-help{grid-template-columns:1fr;padding:20px;gap:18px}.tw-help-intro{grid-column:auto}.tw-help h2{font-size:21px}.tw-help dl{gap:20px}.tw-afterword{grid-template-columns:1fr;gap:30px;margin-top:48px}.tw-afterword h2{font-size:28px}.tw-afterword h2 br{display:none}.tw-afterword h2{margin-bottom:14px}html[data-experience=play] .tw-workspace{padding-top:22px}html[data-experience=play] .tw-heading{padding-right:6px;margin-bottom:29px}html[data-experience=play] .tw-heading h1{font-size:41px}html[data-experience=play] .tw-tool-emblem{width:62px;height:72px;border-radius:11px;box-shadow:4px 4px 0 var(--pt-line)}html[data-experience=play] .tw-tool-emblem svg{width:35px;height:35px}html[data-experience=play] .tw-task-shelf{padding:13px 12px;gap:8px}html[data-experience=play] .tw-afterword{grid-template-columns:1fr;gap:24px}html[data-experience=play] .tw-afterword h2{font-size:31px}}
-@media(prefers-reduced-motion:reduce){.tw-related>a{transition:none!important}}
-/* Put the working canvas closer to the page title; the task takes precedence. */
-.tw-wayfinding{margin-bottom:29px}.tw-heading{margin-bottom:27px}.tw-heading h1{font-size:clamp(32px,4vw,52px)}.tw-heading-copy{animation:tw-air-arrive .34s ease-out both}.tw-tool-emblem{width:82px;height:87px}.tw-tool-emblem svg{width:40px;height:40px}.tw-task-shelf{margin-bottom:25px}.tw-afterword h2{max-width:15ch}.tw-workspace :is(a,button,summary):focus-visible{outline:2px solid var(--pt-action);outline-offset:4px}html[data-experience=play] .tw-heading{margin-bottom:29px}html[data-experience=play] .tw-heading h1{font-size:clamp(38px,4.7vw,65px);max-width:22ch}html[data-experience=play] .tw-heading-copy{animation:tw-play-arrive .48s cubic-bezier(.2,1.25,.35,1) both}html[data-experience=play] .tw-tool-emblem{width:106px;height:110px;background:var(--tw-tone);color:var(--tw-tone-ink)}html[data-experience=play] .tw-tool-emblem svg{width:48px;height:48px}@keyframes tw-air-arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes tw-play-arrive{from{opacity:0;transform:translateY(14px) rotate(-1deg)}to{opacity:1;transform:none}}@media(max-width:560px){.tw-heading h1{font-size:28px}.tw-tool-emblem{width:50px;height:56px}.tw-tool-emblem svg{width:27px;height:27px}html[data-experience=play] .tw-heading h1{font-size:33px}html[data-experience=play] .tw-tool-emblem{width:56px;height:63px}html[data-experience=play] .tw-tool-emblem svg{width:31px;height:31px}}@media(prefers-reduced-motion:reduce){.tw-heading-copy{animation:none!important}}
+/* Tool page frame: one row of wayfinding and page utilities, the tool's name
+   and promise as the H1, then the tool, its guide and what comes next. The
+   same order in Air and Play; they differ in material, type, colour, radius
+   and motion. --tw-gutter is the page's side margin, which the tool's action
+   bar bleeds into on narrow screens (tool-studio.css). */
+.tw-workspace{--tw-gutter:44px;max-width:1240px;margin:0 auto;padding:30px var(--tw-gutter) 80px;color:var(--pt-ink);font-family:var(--pt-font)}
+.tw-wayfinding{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;color:var(--pt-muted);font-size:12px;margin-bottom:20px}
+.tw-wayfinding>a{display:flex;align-items:center;gap:8px;min-height:36px}
+.tw-wayfinding>span{border-left:1px solid var(--pt-line);padding-left:18px}
+.tw-utilities{display:flex;align-items:center;gap:4px;margin-left:auto}
+.tw-utilities>button:not(.cp-favorite){display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 10px;border:0;border-radius:9px;background:none;color:var(--pt-muted);font-size:12px;cursor:pointer}
+.tw-utilities>button:not(.cp-favorite):hover{color:var(--pt-ink);background:var(--pt-panel)}
+.tw-heading{display:flex;gap:30px;align-items:center;justify-content:space-between;margin-bottom:28px}
+.tw-title{display:grid;gap:10px;margin:0;min-width:0;animation:tw-air-arrive .34s ease-out both}
+.tw-name{font:500 clamp(34px,3.4vw,48px)/1.04 var(--pt-display);letter-spacing:-.04em;text-wrap:balance}
+.tw-promise{font:400 17px/1.5 var(--pt-font);letter-spacing:0;color:var(--pt-muted);max-width:56ch;text-wrap:pretty}
+.tw-kicker{color:var(--pt-muted);font-size:11px;margin:0 0 13px}
+.tw-tool-emblem{display:grid;place-items:center;position:relative;width:82px;height:87px;flex-shrink:0;color:var(--pt-action);background:var(--pt-soft);border-radius:45% 45% 45% 12%;transform:rotate(5deg)}
+.tw-tool-emblem svg{transform:rotate(-5deg);width:40px;height:40px}
+/* Where the file goes, as readable text: inside the shared intakes, and here
+   above any tool UI that has no intake of its own. */
+.tool-where{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:13px;line-height:1.55;color:var(--pt-muted)}
+.tool-where>svg{flex-shrink:0;margin-top:2px;color:var(--pt-action)}
+.tool-where strong{font-weight:650;color:var(--pt-ink)}
+.tool-where a{color:var(--pt-action);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.tw-where-fallback{margin:0 0 22px;padding:14px 18px;border-radius:12px;background:var(--pt-panel)}
+.tw-workspace:has(.tw-working-area :is(.tool-studio,.ts-result,.ms-workspace,.merge-workbench,.consumer-formatter,.tool-where,[aria-label^="Loading"])) .tw-where-fallback{display:none}
+.tw-working-area{min-width:0}
+.tw-workspace .dl-toolui{min-width:0;min-height:0;max-width:none;opacity:1;animation:none}
+.tw-help{position:relative;margin:-6px 0 28px;padding:27px 30px;background:var(--pt-panel);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:18px 35px}
+.tw-help-intro{display:flex;align-items:center;justify-content:space-between;grid-column:1/-1}
+.tw-help h2{font-size:24px;letter-spacing:-.04em;margin:0;font-weight:550}
+.tw-help dl{display:flex;gap:30px;margin:0}
+.tw-help dt{font-size:11px;color:var(--pt-muted);margin-bottom:5px}
+.tw-help dd{font-size:13px;margin:0;overflow-wrap:anywhere}
+.tw-help>p{font-size:12px;line-height:1.65;color:var(--pt-muted);margin:0}
+.tw-help>a{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--pt-action)}
+.tw-afterword{display:grid;grid-template-columns:1fr 1.1fr;gap:70px;margin:75px 0 55px;padding-top:36px;border-top:1px solid var(--pt-line)}
+.tw-afterword h2{font-size:31px;font-weight:500;line-height:1.13;letter-spacing:-.04em;margin:0 0 25px;max-width:15ch}
+.tw-afterword>div>a{display:inline-flex;align-items:center;gap:12px;font-size:12px}
+.tw-related{display:grid;gap:0}
+.tw-afterword .tw-related>a{display:flex;align-items:center;gap:15px;padding:20px 0;border-bottom:1px solid var(--pt-line)}
+.tw-related>a:first-child{padding-top:0}
+.tw-related>a>span{flex:1}
+.tw-related strong{display:block;font-size:15px;font-weight:550;margin-bottom:6px}
+.tw-related small{display:block;font-size:12px;color:var(--pt-muted);line-height:1.4}
+.tw-workspace :is(a,button,summary):focus-visible{outline:2px solid var(--pt-action);outline-offset:4px}
+html[data-experience=play] .tw-workspace{max-width:1300px}
+html[data-experience=play] .tw-wayfinding{margin-bottom:22px}
+html[data-experience=play] .tw-utilities>button:not(.cp-favorite){border-radius:99px}
+html[data-experience=play] .tw-heading{margin-bottom:30px;padding-right:42px}
+html[data-experience=play] .tw-title{animation:tw-play-arrive .48s cubic-bezier(.2,1.25,.35,1) both}
+html[data-experience=play] .tw-name{font-size:clamp(40px,4.4vw,60px);font-weight:650;letter-spacing:-.04em}
+html[data-experience=play] .tw-promise{font-size:18px}
+html[data-experience=play] .tw-kicker{font-size:12px}
+html[data-experience=play] .tw-tool-emblem{width:106px;height:110px;background:var(--tw-tone);color:var(--tw-tone-ink);border-radius:19px;transform:rotate(10deg);box-shadow:7px 7px 0 var(--pt-line)}
+html[data-experience=play] .tw-tool-emblem svg{transform:rotate(-10deg);width:48px;height:48px}
+html[data-experience=play] .tw-where-fallback{border-radius:16px}
+html[data-experience=play] .tw-afterword{grid-template-columns:1fr 1.4fr;gap:55px}
+html[data-experience=play] .tw-afterword h2{font-size:38px;font-weight:600}
+html[data-experience=play] .tw-related{gap:10px}
+html[data-experience=play] .tw-afterword .tw-related>a{padding:18px 20px;background:var(--pt-surface);border-radius:10px;border:0;transition:transform .28s cubic-bezier(.2,1.4,.4,1)}
+html[data-experience=play] .tw-related>a:hover{transform:translateX(6px) rotate(-.5deg)}
+@keyframes tw-air-arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes tw-play-arrive{from{opacity:0;transform:translateY(14px) rotate(-1deg)}to{opacity:1;transform:none}}
+@media(max-width:900px){.tw-workspace{--tw-gutter:26px;padding-top:26px;padding-bottom:60px}.tw-free{display:none}.tw-name{font-size:40px}.tw-afterword{gap:35px}.tw-tool-emblem{width:72px;height:76px}html[data-experience=play] .tw-heading{padding-right:10px}html[data-experience=play] .tw-name{font-size:46px}html[data-experience=play] .tw-tool-emblem{width:86px;height:90px}}
+@media(max-width:560px){
+ .tw-workspace{--tw-gutter:18px;padding-top:14px;padding-bottom:50px}
+ .tw-wayfinding{margin-bottom:12px;gap:4px 12px}
+ .tw-wayfinding>span{padding-left:12px;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .tw-utilities{gap:0}
+ .tw-utilities>button:not(.cp-favorite){min-width:44px;min-height:44px;justify-content:center;padding:0}
+ .tw-utilities>button:not(.cp-favorite)>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .tw-utilities>button:not(.cp-favorite) svg{width:19px;height:19px}
+ .tw-heading{gap:14px;margin-bottom:18px}
+ .tw-title{gap:8px}
+ .tw-name{font-size:30px;line-height:1.08}
+ .tw-promise{font-size:15px;line-height:1.45}
+ .tw-tool-emblem{width:50px;height:56px}
+ .tw-tool-emblem svg{width:27px;height:27px}
+ .tw-where-fallback{padding:12px 14px}
+ .tw-help{grid-template-columns:1fr;padding:20px;gap:18px}
+ .tw-help-intro{grid-column:auto}
+ .tw-help h2{font-size:21px}
+ .tw-help dl{gap:20px}
+ .tw-afterword{grid-template-columns:1fr;gap:30px;margin-top:48px}
+ .tw-afterword h2{font-size:28px;margin-bottom:14px}
+ html[data-experience=play] .tw-heading{padding-right:6px;margin-bottom:20px}
+ html[data-experience=play] .tw-name{font-size:34px}
+ html[data-experience=play] .tw-promise{font-size:15px}
+ html[data-experience=play] .tw-tool-emblem{width:56px;height:63px;border-radius:11px;box-shadow:4px 4px 0 var(--pt-line)}
+ html[data-experience=play] .tw-tool-emblem svg{width:31px;height:31px}
+ html[data-experience=play] .tw-afterword{grid-template-columns:1fr;gap:24px}
+ html[data-experience=play] .tw-afterword h2{font-size:31px}
+}
+@media(prefers-reduced-motion:reduce){.tw-related>a{transition:none!important}.tw-title{animation:none!important}}
 .tw-guide{display:grid;gap:44px;margin:56px 0 12px;max-width:760px}
 .tw-guide h2{font-size:31px;font-weight:500;letter-spacing:-.04em;margin:6px 0 18px;color:var(--pt-ink)}
 .tw-guide-steps ol{display:grid;gap:14px;padding-left:0;list-style:none;counter-reset:step}

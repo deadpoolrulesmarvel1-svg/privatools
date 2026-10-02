@@ -12,7 +12,8 @@ import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActionBar, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { IMAGE_TO_PDF_MAX_FILES as MAX_FILES, IMAGE_TO_PDF_MAX_TOTAL_MB as MAX_TOTAL_MB, imageToPdfLimits } from "./image-to-pdf-limits";
 
 const MAX_TOTAL_BYTES = MAX_TOTAL_MB * 1024 * 1024;
@@ -164,10 +165,12 @@ export function ImageToPdfUI({
     </StudioResult>;
     const totalBytes = files.reduce((total, file) => total + file.raw.size, 0);
     return <StudioLayout className="ts-image-binding" options={<>
-        <div><p className="ts-eyebrow">The shape of your document</p><h3>Page size</h3><div className="ts-choices">{sizes.map(size => <button className="ts-choice" key={size.id} onClick={() => setPageSize(size.id)} aria-pressed={pageSize === size.id} disabled={state === "processing"}><strong>{size.label}</strong><span>{size.desc}</span></button>)}</div></div>
+        <div><p className="ts-eyebrow">The shape of your document</p><h2>Page size</h2><div className="ts-choices">{sizes.map(size => <button className="ts-choice" key={size.id} onClick={() => setPageSize(size.id)} aria-pressed={pageSize === size.id} disabled={state === "processing"}><strong>{size.label}</strong><span>{size.desc}</span></button>)}</div></div>
         <div><p>Every image gets a page. Drag images into order, or use the arrow controls.</p><p className="ts-caption">{files.length} of {MAX_FILES} {nounLabel}s selected</p>{files.length > 0 && <p className="ts-caption">{formatFileSize(totalBytes)} of {MAX_TOTAL_MB} MB</p>}</div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>{files.length > 0 && <button className="ts-text-button" disabled={state === "processing"} onClick={clearFiles} aria-label="Clear all images">Clear</button>}</div>
-    </>}>
+        {files.length > 0 && <div><button className="ts-text-button" disabled={state === "processing"} onClick={clearFiles} aria-label="Clear all images">Clear</button></div>}
+    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length, nounLabel) : undefined}>
+        <button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>
+    </StudioActionBar>}>
         <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={`${formatsLabel}. ${imageToPdfLimits(handoffSlug)}`} disabled={state === "processing"} compact={files.length > 0} />
         {/* Status sits under the intake, not after up to 100 thumbnails, so it is seen where the user acted. */}
         {error && <div role="alert" className="ts-error">{error}</div>}

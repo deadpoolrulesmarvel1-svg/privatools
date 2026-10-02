@@ -1,10 +1,13 @@
 import { fileFormatLabel } from "./file-format-label";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowDownToLine, ArrowUpRight, Check, FileText, Plus, X } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, ArrowRight, Check, FileText, FolderOpen, Plus, RotateCcw, X } from "lucide-react";
 import type { RejectionAdvice } from "@/lib/file-acceptance";
 import type { StudioOutcome } from "./studio-outcome";
 import { focusIfIdle } from "./focus-result";
 import { useFileAcceptance } from "./useFileAcceptance";
+import { LOCATION_ICONS, useToolLocation } from "./tool-location";
+import { ToolWhere } from "./ToolWhere";
+import { useActionBarClearance } from "./useActionBarClearance";
 import "./tool-studio.css";
 
 export type { StudioOutcome } from "./studio-outcome";
@@ -29,6 +32,10 @@ export function IntakeNotice({ advice, onDismiss }: { advice: RejectionAdvice | 
  * reader and speech users meet the same control sighted users see. Its name
  * starts with that visible text (WCAG 2.5.3). A file outside `accepts` is
  * refused beside the card, by name, with the tool that takes it.
+ *
+ * On a tool page the card also says where the file goes, in full (ToolWhere).
+ * Once files are chosen it shrinks to a quiet "Add files" row, so the run
+ * action in the action bar is the obvious next step.
  */
 export function FileIntake({ accepts, multiple, onFiles, label = "Choose files", title, detail, disabled = false, compact = false, autoFocus = false }: {
     accepts?: string; multiple?: boolean; onFiles: (files: File[]) => void; label?: string;
@@ -56,13 +63,14 @@ export function FileIntake({ accepts, multiple, onFiles, label = "Choose files",
             <input ref={input} type="file" accept={accepts} multiple={multiple} disabled={disabled} className="ts-native-input" tabIndex={-1}
                 onClick={event => event.stopPropagation()} onChange={event => { take(event.target.files); event.target.value = ""; }} />
             <div className="ts-intake-art" aria-hidden="true"><span className="ts-sheet ts-sheet-back" /><span className="ts-sheet ts-sheet-front"><FileText size={31} strokeWidth={1.35} /><span>{format?.slice(0, 6)}</span><i /><i /><i /></span><span className="ts-intake-plus"><Plus size={22} /></span></div>
-            <div className="ts-intake-copy"><span className="ts-intake-overline">{compact ? "Your selection" : "Start with your file"}</span><h3>{heading}</h3><p id={`${id}-detail`}>{detail || "Choose from your device, or bring your files into this space."}</p>
+            <div className="ts-intake-copy"><h2 className="ts-intake-title">{heading}</h2>{!compact && <p id={`${id}-detail`}>{detail || "Choose from your device, or bring your files into this space."}</p>}
                 {/* A native button: Enter and Space click it, and the click reaches the card's onClick. */}
                 <button ref={button} type="button" className="ts-intake-choose" disabled={disabled}
                     aria-label={compact ? undefined : `${action}: ${heading}`} aria-describedby={compact ? undefined : `${id}-detail`}>
-                    {action}<ArrowUpRight size={18} aria-hidden="true" />
+                    {compact ? <Plus size={17} aria-hidden="true" /> : <FolderOpen size={18} aria-hidden="true" />}{action}
                 </button>
-                <span className="ts-intake-drag">or drag {multiple ? "them" : "it"} here</span></div>
+                {!compact && <span className="ts-intake-drag">or drag {multiple ? "them" : "it"} here</span>}
+                {!compact && <ToolWhere className="ts-intake-where" />}</div>
         </div>
         <IntakeNotice advice={advice} onDismiss={dismiss} />
     </>;
@@ -84,17 +92,49 @@ export function FileChooserButton({ accepts, multiple, onFiles, children, classN
     </>;
 }
 
-export function StudioLayout({ children, options, summary, className = "" }: { children: ReactNode; options?: ReactNode; summary?: ReactNode; className?: string }) {
-    return <div className={`tool-studio ${options ? "tool-studio-with-options" : ""} ${className}`}>
+/**
+ * One order for every tool, in Air and Play: the intake and what was chosen
+ * (`children`), then the options, then the action bar, then the result,
+ * which replaces the layout when a run ends. Beside the canvas, the options
+ * and the action bar share a column; in one column the bar sticks to the
+ * bottom of the screen once there is something to run (tool-studio.css).
+ */
+export function StudioLayout({ children, options, action, summary, className = "" }: { children: ReactNode; options?: ReactNode; action?: ReactNode; summary?: ReactNode; className?: string }) {
+    return <div className={`tool-studio ${options ? "tool-studio-with-options" : ""} ${action ? "tool-studio-with-action" : ""} ${className}`}>
         <div className="ts-canvas">{children}</div>
-        {options && <aside className="ts-options">{options}</aside>}
+        {(options || action) && <div className="ts-side">
+            {options && <aside className="ts-options">{options}</aside>}
+            {action}
+        </div>}
         {summary && <div className="ts-summary">{summary}</div>}
+    </div>;
+}
+
+/**
+ * The run action, and what running it does: how many files, and where they
+ * go (the tool page's location, said by its label). `ready` once there is
+ * something to run: from then on, in a one-column layout, the bar sticks to
+ * the bottom of the screen and the page's scroll padding keeps focused
+ * controls clear of it (useActionBarClearance).
+ */
+export function StudioActionBar({ ready, count, children, className = "" }: { ready: boolean; count?: string; children: ReactNode; className?: string }) {
+    const where = useToolLocation();
+    const bar = useRef<HTMLDivElement>(null);
+    useActionBarClearance(bar, ready);
+    const WhereIcon = where ? LOCATION_ICONS[where.kind] : null;
+    return <div ref={bar} className={`ts-action-bar ${className}`} data-ready={ready}>
+        {(count || where) && <p className="ts-action-status">
+            {count && <span className="ts-action-count">{count}</span>}
+            {where && WhereIcon && <span className="ts-action-where" data-where={where.kind}><WhereIcon size={15} strokeWidth={1.8} aria-hidden="true" />{where.label}</span>}
+        </p>}
+        <div className="ts-action-run">{children}</div>
     </div>;
 }
 
 export function StudioProgress({ label = "Working on your file", progress, detail, onCancel }: { label?: string; progress?: number; detail?: string; onCancel?: () => void }) {
     const value = progress === undefined ? undefined : Math.max(0, Math.min(100, progress));
-    return <section className="ts-progress" role="status" aria-live="polite"><div className="ts-progress-heading"><span className="ts-orbit" aria-hidden="true"><i /><i /><i /></span><div><h3>{label}</h3>{detail && <p>{detail}</p>}</div>{onCancel && <button type="button" onClick={onCancel} className="ts-text-button">Cancel</button>}</div><div className="ts-progress-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} data-indeterminate={value === undefined}><i style={value === undefined ? undefined : { transform: `scaleX(${value / 100})` }} /></div>{value !== undefined && <span className="ts-progress-value">{Math.round(value)}%</span>}</section>;
+    // The label is a status line, not a heading: it appears and goes with the run, so it never breaks the page's heading order.
+    return <section className="ts-progress" role="status" aria-live="polite"><div className="ts-progress-heading"><span className="ts-orbit" aria-hidden="true"><i /><i /><i /></span><div><strong className="ts-progress-title">{label}</strong>{detail && <p>{detail}</p>}</div>{onCancel && <button type="button" onClick={onCancel} className="ts-text-button">Cancel</button>}</div><div className="ts-progress-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} data-indeterminate={value === undefined}><i style={value === undefined ? undefined : { transform: `scaleX(${value / 100})` }} /></div>{value !== undefined && <span className="ts-progress-value">{Math.round(value)}%</span>}</section>;
 }
 
 /**
@@ -112,7 +152,7 @@ export function StudioResult({ title, detail, children, onReset, tone = "success
         <header><div className="ts-result-art" aria-hidden="true"><span /><span />{tone === "failure" ? <AlertTriangle size={36} strokeWidth={1.6} /> : <Check size={38} strokeWidth={1.5} />}{tone === "partial" && <b className="ts-result-badge"><AlertTriangle size={15} strokeWidth={2.2} /></b>}</div>
             <div>{tone === "success" && <p className="ts-eyebrow">Ready for what’s next</p>}<h2 ref={heading} tabIndex={-1}>{title}</h2>{detail && <p className="ts-result-detail">{detail}</p>}</div></header>
         <div className="ts-result-content">{children}</div>
-        {onReset && <button type="button" className="ts-text-button ts-result-reset" onClick={onReset}>Start with another file <ArrowUpRight size={16} /></button>}
+        {onReset && <button type="button" className="ts-text-button ts-result-reset" onClick={onReset}><RotateCcw size={15} aria-hidden="true" />Start with another file</button>}
     </section>;
 }
 
@@ -141,7 +181,8 @@ export function StudioActions({ tone, retryCount = 0, onRetry, choose, primary, 
 
 export function StudioFile({ name, detail, status, onRemove, onDownload, children, removeLabel }: { name: string; detail?: string; status?: string; onRemove?: () => void; onDownload?: () => void; children?: ReactNode; removeLabel?: string }) {
     const failed = status === "error" || status === "failed";
-    return <article className="ts-file" data-status={failed ? "error" : status}><span className="ts-file-icon" aria-hidden="true">{status === "done" ? <Check size={22} /> : failed ? <AlertTriangle size={20} strokeWidth={1.8} /> : <FileText size={22} strokeWidth={1.5} />}</span><div className="ts-file-copy"><h4>{name}</h4>{detail && <p>{detail}</p>}{children}</div>{onDownload && <button type="button" className="ts-icon-button" aria-label={`Download ${name}`} onClick={onDownload}><ArrowDownToLine size={18} /></button>}{onRemove && <button type="button" className="ts-icon-button" aria-label={removeLabel || `Remove ${name}`} onClick={onRemove}><X size={17} /></button>}</article>;
+    // A file's name is a label in a list, not a heading: rows sit under the intake, a result or nothing at all.
+    return <article className="ts-file" data-status={failed ? "error" : status}><span className="ts-file-icon" aria-hidden="true">{status === "done" ? <Check size={22} /> : failed ? <AlertTriangle size={20} strokeWidth={1.8} /> : <FileText size={22} strokeWidth={1.5} />}</span><div className="ts-file-copy"><span className="ts-file-name">{name}</span>{detail && <p>{detail}</p>}{children}</div>{onDownload && <button type="button" className="ts-icon-button" aria-label={`Download ${name}`} onClick={onDownload}><ArrowDownToLine size={18} /></button>}{onRemove && <button type="button" className="ts-icon-button" aria-label={removeLabel || `Remove ${name}`} onClick={onRemove}><X size={17} /></button>}</article>;
 }
 
 /** Object URLs stay on this device and are released when their source changes. */
@@ -170,5 +211,5 @@ export function LocalFilePreview({ file, name, label = "Preview" }: { file: Blob
 
 export function ConversionPath({ accepts, output }: { accepts: string; output: string }) {
     const target = output.includes(".") ? output.split(".").pop() : output;
-    return <div className="ts-conversion-path" aria-label={`${fileFormatLabel(accepts)} to ${target?.toUpperCase()}`}><span>{fileFormatLabel(accepts)}</span><ArrowUpRight size={22} aria-hidden="true"/><span>{target?.toUpperCase()}</span></div>;
+    return <div className="ts-conversion-path" aria-label={`${fileFormatLabel(accepts)} to ${target?.toUpperCase()}`}><span>{fileFormatLabel(accepts)}</span><ArrowRight size={22} aria-hidden="true"/><span>{target?.toUpperCase()}</span></div>;
 }

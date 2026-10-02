@@ -339,7 +339,7 @@ export function JsonXmlFormatterUI() {
 
                 <div className="formatter-pane formatter-output-pane">
                     <div className="formatter-pane-heading">
-                        <h3 id="formatter-output-label">{outputLabel}</h3>
+                        <h2 id="formatter-output-label">{outputLabel}</h2>
                         <button type="button" className="formatter-text-button" onClick={() => void copy()} disabled={!result}>
                             {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}{copied ? "Copied" : "Copy"}
                         </button>

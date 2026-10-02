@@ -18,7 +18,8 @@ import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } fr
 import { retryLine } from "@/skins/experience/studio-outcome";
 import { focusIfIdle } from "@/skins/experience/focus-result";
 import { takeAccepted } from "@/lib/report-rejected-files";
-import { StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import {
@@ -136,16 +137,15 @@ export function HiddenTextCheckerUI() {
 
     return <StudioLayout options={<div className="htc-options">
         <p className="ts-eyebrow">What it looks for</p>
-        <h3>Text a reader can't see</h3>
+        <h2>Text a reader can't see</h2>
         <ul className="htc-checks">{CHECKS.map(check => <li key={check}>{check}</li>)}</ul>
         <p className="htc-where">Your PDF is uploaded over HTTPS to the PrivaTools server, checked in temporary storage and deleted when the check ends. Nothing in it is changed. The page preview is drawn on your device.</p>
         <p className="htc-where">A check reads up to 500 pages and stops after 20 seconds plus 12 for each MB of the file, 90 at most. Split a larger PDF with Split PDF first.</p>
-        <div className="ts-actions">
-            <button ref={runButton} type="button" className="ts-primary-button" onClick={() => void run()} disabled={!file || busy}>
-                <ScanEye size={16} aria-hidden="true" /> Check for hidden text
-            </button>
-        </div>
-    </div>}>
+    </div>} action={<StudioActionBar ready={!!file} count={file ? fileCount(1, "PDF") : undefined}>
+        <button ref={runButton} type="button" className="ts-primary-button" onClick={() => void run()} disabled={!file || busy}>
+            <ScanEye size={16} aria-hidden="true" /> Check for hidden text
+        </button>
+    </StudioActionBar>}>
         <FileUploadZone
             file={file}
             onFileSelect={next => { setFile(next); setError(null); }}

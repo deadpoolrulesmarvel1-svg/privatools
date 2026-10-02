@@ -11,7 +11,8 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Download, type LucideIcon } from "lucide-react";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
-import { FileIntake, StudioActions, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActionBar, StudioActions, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { matchesAccept } from "@/lib/file-acceptance";
@@ -113,7 +114,8 @@ export function SimpleProcessUI({
                 more={tone !== "failure" && <button className="ts-text-button" onClick={() => restart()}>Process another</button>} />
         </StudioResult>;
     }
-    return <StudioLayout options={<><div><p className="ts-eyebrow">Your next step</p><h3>{actionLabel}</h3><p>{dropSubtitle}</p></div><div><dl><div><dt>Result</dt><dd>{outputExt.toUpperCase()}</dd></div><div><dt>Selected files</dt><dd>{proc.entries.length}</dd></div></dl></div><button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}>{actionLabel}</button></>}>
+    return <StudioLayout options={<><div><p className="ts-eyebrow">Your next step</p><h2>{actionLabel}</h2><p>{dropSubtitle}</p></div><div><dl><div><dt>Result</dt><dd>{outputExt.toUpperCase()}</dd></div><div><dt>Selected files</dt><dd>{proc.entries.length}</dd></div></dl></div></>}
+        action={<StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length) : undefined}><button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}>{actionLabel}</button></StudioActionBar>}>
         <FileIntake accepts={accepts} multiple label="Upload files" title={dropTitle} detail={dropSubtitle} compact={proc.entries.length > 0} disabled={phase === "processing"} autoFocus={returning} onFiles={files => proc.addFiles(files)} />
         {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={entry.error || formatFileSize(entry.size)} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase === "processing" ? undefined : () => proc.removeFile(entry.id)} />)}
         {phase === "processing" && <StudioProgress label={processingLabel} detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}

@@ -14,7 +14,8 @@ import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { ResultHandoff } from "./ResultHandoff";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
-import { FileIntake, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActionBar, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { fileCount } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 
 type Level =
@@ -204,13 +205,15 @@ export function CompressUI() {
         </StudioResult>;
     }
     return <StudioLayout className="ts-compress-studio" options={<>
-        <div className="ts-compression-levels"><p className="ts-eyebrow">Keep the good parts</p><h3>How small?</h3><div className="ts-choices">{levels.slice(0, 3).map(item => <button type="button" className="ts-choice" key={item.id} onClick={() => setLevel(item.id)} aria-pressed={level === item.id} disabled={phase === "processing"}><strong>{item.label}</strong><span>{item.desc}</span></button>)}</div></div>
+        <div className="ts-compression-levels"><p className="ts-eyebrow">Keep the good parts</p><h2>How small?</h2><div className="ts-choices">{levels.slice(0, 3).map(item => <button type="button" className="ts-choice" key={item.id} onClick={() => setLevel(item.id)} aria-pressed={level === item.id} disabled={phase === "processing"}><strong>{item.label}</strong><span>{item.desc}</span></button>)}</div></div>
         <div className="ts-setting"><label htmlFor="compression-purpose">Or choose for a purpose</label><select id="compression-purpose" disabled={phase === "processing"} value={["light", "recommended", "extreme"].includes(level) ? "" : level} onChange={event => { if (event.target.value) setLevel(event.target.value as Level); }}><option value="">Everyday compression</option>{levels.slice(3).map(item => <option value={item.id} key={item.id}>{item.label}</option>)}</select>
             {level === "custom" && <><label htmlFor="jpeg-q">JPEG quality · {customQuality}</label><input id="jpeg-q" type="range" min={15} max={95} step={1} disabled={phase === "processing"} value={customQuality} onChange={event => setCustomQuality(parseInt(event.target.value, 10))} /><label htmlFor="max-dim">Max image dimension (px) · {customMaxDim}</label><input id="max-dim" type="range" min={300} max={4000} step={100} disabled={phase === "processing"} value={customMaxDim} onChange={event => setCustomMaxDim(parseInt(event.target.value, 10))} /></>}
             {level === "target" && <><label htmlFor="target-mb">Target size (MB)</label><input id="target-mb" type="number" min={0.1} max={500} step={0.5} value={targetMb} disabled={phase === "processing"} onChange={event => setTargetMb(Math.max(0.1, Math.min(500, parseFloat(event.target.value) || 10)))} /><p>We return the lightest setting that fits. If the target is out of reach, you get the smallest version we can make.</p></>}
         </div>
-        <div><p className="ts-caption">{totalBytes > 0 ? `Rough estimate: ${formatFileSize(totalBytes)} → ${formatFileSize(estimatedOutputBytes)}. Actual savings depend on the PDF.` : "Text stays readable. Image-heavy PDFs usually have the most room to shrink."}</p><div className="ts-actions"><button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Minimize2 size={16} /> Compress {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</button><button className="ts-text-button" onClick={resetConfig} disabled={phase === "processing"}>Reset to defaults</button></div></div>
-    </>}>
+        <div><p className="ts-caption">{totalBytes > 0 ? `Rough estimate: ${formatFileSize(totalBytes)} → ${formatFileSize(estimatedOutputBytes)}. Actual savings depend on the PDF.` : "Text stays readable. Image-heavy PDFs usually have the most room to shrink."}</p><button className="ts-text-button" onClick={resetConfig} disabled={phase === "processing"}>Reset to defaults</button></div>
+    </>} action={<StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length, "PDF") : undefined}>
+        <button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Minimize2 size={16} /> Compress {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</button>
+    </StudioActionBar>}>
         <FileIntake accepts=".pdf" multiple label="Upload files" title="Make a little more room." detail={`Choose PDFs to compress · Up to ${MAX_FILE_SIZE_LABEL} each`} compact={proc.entries.length > 0} disabled={phase === "processing"} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdfOnly)} />
         {proc.entries.length === 0 && <button type="button" className="ts-text-button" onClick={trySample} disabled={loadingSample}><Sparkles size={15} /> {loadingSample ? "Loading sample…" : "Try with a sample PDF"}</button>}
         {proc.entries.length > 0 && <section aria-label="Selected PDFs">{proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={entry.error || formatFileSize(entry.size)} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase !== "processing" ? () => proc.removeFile(entry.id) : undefined} />)}</section>}
