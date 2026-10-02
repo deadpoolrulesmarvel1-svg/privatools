@@ -263,17 +263,38 @@ def check_homepage(base_url: str, tool_count: int) -> str:
     return f"advertises {advertised.group(0)!r}"
 
 
+def tool_headings(row: dict) -> list[str]:
+    """The server-rendered H1s a release may give this tool, current first.
+
+    seo_meta's `_tool_page_body` renders the page's heading: the tool's name,
+    then its one-line promise (the manifest `description`) after a colon. Up to
+    v2.7.14 it rendered the search title (`seoTitle`, else the name). This probe
+    runs from the deploy checkout, which can be newer than a container it
+    checks (the rollout's fallback to the canonical container), so it accepts
+    both.
+    """
+    name = str(row.get("name") or "").strip()
+    promise = str(row.get("description") or "").strip()
+    headings = []
+    if name:
+        headings.append(f'<h1>{html.escape(name)}<span class="tool-promise">: {html.escape(promise)}</span></h1>' if promise else f"<h1>{html.escape(name)}</h1>")
+    title = str(row.get("seoTitle") or name).strip()
+    if title:
+        headings.append(f"<h1>{html.escape(title)}</h1>")
+    return headings
+
+
 def check_tool_page(base_url: str, path: str, manifest: dict[str, dict]) -> str:
     row = manifest.get(path)
     expect(row, f"the manifest has no tool at {path}")
-    title = str(row.get("seoTitle") or row.get("name") or "").strip()
-    expect(title, f"the manifest gives {path} neither a seoTitle nor a name")
-    # seo_meta renders escape(seoTitle or name): the same function, the same text.
-    heading = f"<h1>{html.escape(title)}</h1>"
+    headings = tool_headings(row)
+    expect(headings, f"the manifest gives {path} neither a name nor a seoTitle")
     status, body = fetch(base_url, path)
     expect(status == 200, f"HTTP {status}")
-    expect(heading in body.decode("utf-8", "replace"), f"the page lacks the server-rendered {heading}")
-    return f"contains {heading}"
+    page = body.decode("utf-8", "replace")
+    found = next((heading for heading in headings if heading in page), None)
+    expect(found, f"the page lacks the server-rendered {headings[0]}")
+    return f"contains {found}"
 
 
 def check_sitemap(base_url: str, manifest: dict[str, dict]) -> str:
