@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.13] — 2026-10-02 — Gemini Watermark Remover
+
+### New tool
+
+- Gemini Watermark Remover takes the visible sparkle logo off images made with Google Gemini and Nano Banana. It runs in your browser, so the images are not uploaded. Each image is checked for the logo, the logo's size, position and strength are fitted, and Gemini's blend is reversed using calibrated masks. The result is then checked against the picture around it; where a clean result can't be confirmed, which happens more often with copies that were compressed again, resized or sharpened, the image is left unchanged and the page says so. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95. SynthID, Google's invisible watermark, stays in the image, the file's metadata (including any Content Credentials) is kept, and no label is added or removed. (#293)
+
 ## [2.7.12] — 2026-10-01 — HEIC reader update
 
 ### Other
