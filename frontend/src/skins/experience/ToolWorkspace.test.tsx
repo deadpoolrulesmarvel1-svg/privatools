@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { toolSeo } from "@/lib/tool-seo";
+import { tools } from "@/data/tools";
+import { nonPdfTools } from "@/data/non-pdf-tools";
+import { UPLOADS_WHEN_CHOSEN, hasOwnLocation, toolLocation } from "./tool-location";
 import { ToolWorkspace } from "./ToolWorkspace";
 import { FileIntake } from "./ToolStudio";
 
@@ -47,13 +50,47 @@ describe("tool page heading", () => {
 });
 
 describe("where the file goes", () => {
-    it("gives Background Remover a browser/server choice and explains the default upload", async () => {
-        await page({ slug: "remove-background", name: "Background Remover", description: "Make a cutout", category: "image" }, <div>Engine selector</div>);
-        expect(screen.getByText(/^Browser or server · your choice\.$/)).toBeInTheDocument();
+    it.each([
+        { slug: "remove-background", name: "Background Remover", label: "Browser or server · your choice.", says: [/default server engine uploads images/, /Both options work without an account or an AI provider key/] },
+        // OCR PDF and Image OCR offer a server engine, the visitor's AI key and an in-browser engine, in their engine cards' words.
+        { slug: "ocr-pdf", name: "OCR PDF", label: "Server, your AI key or this browser · your choice.", says: [/On our server, Tesseract reads the PDF in temporary storage and the files are deleted after processing\./, /With your own AI key, each page is rendered to an image and sent to the provider you choose\./, /In this browser, tesseract\.js reads the pages on your device and nothing uploads\./] },
+        { slug: "image-ocr", name: "Image OCR", label: "Server, your AI key or this browser · your choice.", says: [/On our server, Tesseract reads the image in temporary storage and deletes it after processing\./, /With your own AI key, the image goes to the provider you choose, not to PrivaTools\./, /In this browser, tesseract\.js reads it on your device and nothing uploads\./] },
+    ])("gives $name the choice its engine picker offers, not just the server's", async ({ slug, name, label, says }) => {
+        await page({ slug, name, description: "Pick an engine", category: "image" }, <div>Engine selector</div>);
+        expect(screen.getByText(label)).toBeInTheDocument();
         expect(screen.queryByText(/Temporary server processing/)).toBeNull();
+        expect(document.querySelector("article.tw-workspace")).toHaveAttribute("data-where", "choice");
         fireEvent.click(screen.getByRole("button", { name: "How it works" }));
-        expect(screen.getAllByText(/default server engine uploads images/).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/Both options work without an account or an AI provider key/).length).toBeGreaterThan(0);
+        for (const words of says) expect(screen.getAllByText(words).length).toBeGreaterThan(0);
+    });
+
+    it.each([
+        { slug: "organize-pages", name: "Organize Pages", detail: "Your PDF is uploaded when you choose it, so PrivaTools can draw its page thumbnails, and again when you save. Both requests use temporary storage, and the job’s files are removed after each response." },
+        { slug: "remove-watermark", name: "Remove Watermark", detail: "Your PDF is uploaded when you choose it, so PrivaTools can look for watermarks, and again when you remove the ones you confirm. Both requests use temporary storage, and the job’s files are removed after each response." },
+    ])("says $name uploads the PDF as soon as it is chosen", async ({ slug, name, detail }) => {
+        await page({ slug, name, description: "Work on a PDF", category: "pdf" });
+        const where = document.querySelector(".tw-where-fallback")!;
+        expect(where).toHaveTextContent(`Temporary server processing. ${detail} Read about file handling`);
+        expect(where).not.toHaveTextContent(/only when you run the tool/);
+        expect(UPLOADS_WHEN_CHOSEN).toContain(slug);
+    });
+
+    it("says, per AI tool, what reaches the provider, what reaches PrivaTools, and what stays on the device", () => {
+        const detail = (slug: string) => toolLocation({ slug, byok: true }).detail;
+        // Summarize, Chat and Transcribe never contact PrivaTools.
+        expect(detail("summarize-pdf")).toBe("Choose where the model runs before summarizing. On this device, a model downloads once and the PDF stays in your browser. With your own API key, the PDF’s text goes to the provider you choose, not to PrivaTools.");
+        expect(detail("chat-with-pdf")).toBe("The PDF is read on your device. Each question is sent, with the document text, straight from your browser to the provider you choose, using your key. It never passes through PrivaTools.");
+        expect(detail("transcribe-audio")).toBe("Choose where the AI runs before transcribing. On this device, Whisper downloads once and the recording never leaves your browser. With your own API key, the audio goes directly to the provider you choose.");
+        // Translate renders a PDF of the translated text on the server; Smart Redact removes the selections there.
+        expect(detail("translate-pdf")).toMatch(/“Save as PDF” sends the translated text, never the original file, to PrivaTools to be rendered, then deletes it\.$/);
+        expect(detail("smart-redact")).toMatch(/When you apply, the PDF and the strings you selected are sent to PrivaTools to be removed, then deleted on response\.$/);
+        for (const slug of ["summarize-pdf", "chat-with-pdf", "transcribe-audio"]) expect(detail(slug)).not.toMatch(/also use PrivaTools|sent to PrivaTools|PrivaTools to /);
+        // Where an on-device engine exists, it is named.
+        for (const slug of ["summarize-pdf", "transcribe-audio", "translate-pdf", "smart-redact"]) expect(detail(slug)).toMatch(/On this device/);
+        // A tool that can use the visitor's AI key always gets words of its own: what goes where differs per tool.
+        const ai = [...tools, ...nonPdfTools].filter(tool => tool.byok).map(tool => tool.slug);
+        expect(ai.length).toBeGreaterThan(0);
+        expect(ai.filter(slug => !hasOwnLocation(slug))).toEqual([]);
     });
 
     it("keeps an ordinary server tool's disclosure, as readable text with a way to read more", async () => {

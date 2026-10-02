@@ -104,7 +104,7 @@ describe("FileIntake", () => {
         rerender(<ToolLocationProvider value={toolLocation({ slug: "json-xml-formatter", clientOnly: true })}><FileIntake accepts=".json" title="Pick" onFiles={vi.fn()} /></ToolLocationProvider>);
         expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent(/^Stays on your device\. Processing happens in this browser\. Your input stays on this device\./);
         rerender(<ToolLocationProvider value={toolLocation({ slug: "summarize-pdf", clientOnly: true, byok: true })}><FileIntake accepts=".pdf" title="Pick" onFiles={vi.fn()} /></ToolLocationProvider>);
-        expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent(/^Your choice of AI\. Review your AI settings before running\./);
+        expect(document.querySelector(".ts-intake .tool-where")).toHaveTextContent(/^This device or your AI key\. Choose where the model runs before summarizing\./);
     });
 });
 
