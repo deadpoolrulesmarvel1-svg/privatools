@@ -13,6 +13,9 @@ from pathlib import Path
 
 from fastapi.routing import APIRoute, iter_route_contexts
 
+from ..services.hidden_text_service import MAX_PAGES as _HIDDEN_TEXT_PAGES
+from ..services.hidden_text_service import TIME_LIMIT_BASE_SECONDS as _HIDDEN_TEXT_BASE_SECONDS
+from ..services.hidden_text_service import TIME_LIMIT_MAX_SECONDS as _HIDDEN_TEXT_MAX_SECONDS
 from ..services.image_to_pdf_service import MAX_DECODED_MEGAPIXELS as _IMAGE_MEGAPIXELS
 from . import quota
 
@@ -31,6 +34,7 @@ CONSTRAINTS = {
     "/pdf-to-long-image": ["format accepts png, jpg, or jpeg. At most 200 PDF pages; rendering DPI is clamped to 36–200."],
     "/verify-signature": ["Checks that each signature matches the file and the certificate embedded with it, and reports what was saved after signing. Certificates are not checked against a trust list or for revocation.", "A signature made with SHA-1 or MD5, which can be forged, has status weak, never valid; digest_algorithm names the digest of every checked signature.", "The check stops after 10 to 60 seconds, depending on file size; a signature it could not finish has status unchecked and a reason."],
     "/sanitize": ["A file whose layered page content decodes to more than 6 MiB, or needs more memory than the server allows, is refused with 413. Layered content that will not parse is refused with 400, rather than returned with its hidden layers left in it.", "The work stops after 20 to 90 seconds, depending on file size, with 504."],
+    "/hidden-text-checker": ["Read-only: returns a JSON report and no file. Each finding gives the page, a reason (invisible, transparent, same-colour, tiny, off-page, clipped, hidden-layer, covered, hidden-annotation or unapplied-redaction), the text and boxes as fractions of the page as shown. Invisible text over a page image (an OCR layer) is listed under ocr, not as a finding. summary.pagesNotChecked names pages that could not be read, and summary.pagesPartlyChecked pages where some checks could not run; the notes say which.", f"A file with more than {_HIDDEN_TEXT_PAGES} pages, or needing more memory than the server allows, is refused with 413, and one none of whose pages can be read with 400. The check stops after {_HIDDEN_TEXT_BASE_SECONDS} to {_HIDDEN_TEXT_MAX_SECONDS} seconds, depending on file size, with 504. A clean report means none of the checks matched, not that the file is safe in every way."],
 }
 
 

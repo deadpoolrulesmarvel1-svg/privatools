@@ -1,23 +1,27 @@
 import asyncio
 import csv
+import html as html_text
 import io
 import json
 import logging
 import os
 import re
 import tempfile
+import time
 import uuid
 import zipfile
+from xml.etree import ElementTree
 
 import fitz
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from PIL import Image
+from PIL import Image, ImageChops
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import remove_files, validate_pdf_content
+from ..utils.exceptions import PdfEncryptedError, ToolError
 from ..utils.page_space import drawing_unturned
-from ..utils.render import safe_get_pixmap
+from ..utils.render import plan_renders, safe_get_pixmap
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -37,9 +41,15 @@ async def _read_upload(file: UploadFile, max_bytes: int, label: str) -> bytes:
 
 def _open_pdf(data: bytes) -> fitz.Document:
     try:
-        return fitz.open(stream=data, filetype="pdf")
+        doc = fitz.open(stream=data, filetype="pdf")
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
+    if doc.needs_pass:
+        # PyMuPDF opens it, then fails on the first page it reads, which the
+        # routes here answered as a 500 ("Processing failed").
+        doc.close()
+        raise HTTPException(status_code=400, detail=PdfEncryptedError.default_detail)
+    return doc
 
 
 class _TempPath:
@@ -178,6 +188,87 @@ def _parse_form_fields(raw: str) -> list[dict]:
     return normalized
 
 
+# An EPUB's pages are XHTML, which e-readers parse as XML. PyMuPDF's page HTML
+# is HTML: it leaves <img> open, so a page with a picture made the whole book
+# fail to parse, and it gives every page's box id="page0".
+
+
+def _close_img_tags(markup: str) -> str:
+    """`markup` with every <img ...> written as <img .../>.
+
+    A plain scan, one pass: the first version, a regular expression with a
+    lazy match next to optional whitespace, took 24 s on "<img" followed by
+    40,000 spaces (PyMuPDF writes these tags itself, so a PDF cannot produce
+    that, but nothing here should depend on it).
+    """
+    parts, pos = [], 0
+    while True:
+        start = markup.find("<img", pos)
+        if start < 0:
+            break
+        after = markup[start + 4:start + 5]
+        if after and (after.isalnum() or after in "_-"):  # "<imgx": not an img tag
+            parts.append(markup[pos:start + 4])
+            pos = start + 4
+            continue
+        end = markup.find(">", start)
+        if end < 0:
+            break
+        tag = markup[start:end].rstrip()
+        if tag.endswith("/"):
+            tag = tag[:-1].rstrip()
+        parts.append(markup[pos:start])
+        parts.append(tag + "/>")
+        pos = end + 1
+    parts.append(markup[pos:])
+    return "".join(parts)
+
+
+def _parses_as_xhtml(fragment: str) -> bool:
+    try:
+        ElementTree.fromstring(f'<div xmlns="http://www.w3.org/1999/xhtml">{fragment}</div>')
+    except ElementTree.ParseError:
+        return False
+    return True
+
+
+def _page_xhtml(page, number: int) -> str:
+    """One page as XHTML: PyMuPDF's page HTML (text with its sizes, bold,
+    italics and colours, and pictures) with <img> closed and a page id of its
+    own. A page that still does not parse falls back to PyMuPDF's plain XHTML
+    for that page (text and pictures without the styling), then to its text."""
+    page_id = f'id="page{number}-body"'
+    markup = _close_img_tags(page.get_text("html")).replace('id="page0"', page_id, 1)
+    if _parses_as_xhtml(markup):
+        return markup
+    plain = page.get_text("xhtml").replace('id="page0"', page_id, 1)
+    if _parses_as_xhtml(plain):
+        return plain
+    return f"<div {page_id}><p>{html_text.escape(page.get_text('text'))}</p></div>"
+
+
+def _epub_nav(pages: int) -> str:
+    """The navigation document EPUB 3 requires: one entry for each page."""
+    items = "".join(f'<li><a href="content.xhtml#page{n}">Page {n}</a></li>' for n in range(1, pages + 1))
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">'
+        "<head><title>Contents</title></head><body>"
+        f'<nav epub:type="toc" id="toc"><h1>Contents</h1><ol>{items}</ol></nav>'
+        "</body></html>"
+    )
+
+
+def _epub_package() -> str:
+    modified = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:{uuid.uuid4()}</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">{modified}</meta></metadata>
+<manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
+<spine><itemref idref="content"/></spine>
+</package>"""
+
+
 @router.post("/pdf-to-epub")
 async def pdf_to_epub(file: UploadFile = File(...)):
     """Convert PDF to simple EPUB by extracting text per page."""
@@ -195,10 +286,11 @@ async def pdf_to_epub(file: UploadFile = File(...)):
         def _work(out_path: str) -> None:
             doc = _open_pdf(data)
             try:
+                if len(doc) == 0:
+                    raise HTTPException(status_code=400, detail="This PDF has no pages.")
                 pages_html: list[str] = []
                 for i, page in enumerate(doc):
-                    text = page.get_text("html")
-                    pages_html.append(f'<div id="page{i + 1}">{text}</div>')
+                    pages_html.append(f'<div id="page{i + 1}">{_page_xhtml(page, i + 1)}</div>')
 
                 with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
                     archive.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
@@ -206,17 +298,14 @@ async def pdf_to_epub(file: UploadFile = File(...)):
                         "META-INF/container.xml",
                         '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
                     )
-                    content_html = f'<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Converted PDF</title></head><body>{"".join(pages_html)}</body></html>'
-                    archive.writestr("content.xhtml", content_html)
-                    archive.writestr(
-                        "content.opf",
-                        """<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
-<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:{uuid.uuid4()}</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language></metadata>
-<manifest><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
-<spine><itemref idref="content"/></spine>
-</package>""",
+                    content_html = (
+                        '<?xml version="1.0" encoding="utf-8"?>\n'
+                        '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Converted PDF</title></head>'
+                        f'<body>{"".join(pages_html)}</body></html>'
                     )
+                    archive.writestr("content.xhtml", content_html)
+                    archive.writestr("nav.xhtml", _epub_nav(len(pages_html)))
+                    archive.writestr("content.opf", _epub_package())
             finally:
                 doc.close()
 
@@ -733,6 +822,13 @@ def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, fiel
     page.add_widget(widget)
 
 
+# A page is held as RGB, as RGBA and as channels while its transparency is
+# worked out, then as a PNG and MuPDF's copy of it: two 100-megapixel pages
+# peaked at 2.5 GB. 25 megapixels covers A3 at 300 DPI (17.4); a larger page
+# is drawn at the largest size within it.
+_TRANSPARENT_MAX_PIXELS = 25_000_000
+
+
 @router.post("/transparent-background")
 async def transparent_background(
     file: UploadFile = File(...),
@@ -758,18 +854,31 @@ async def transparent_background(
                 if len(src_doc) == 0:
                     raise HTTPException(status_code=400, detail="PDF has no pages")
 
-                matrix = fitz.Matrix(dpi / 72, dpi / 72)
+                # The DPI asked for, or less for a page larger than
+                # _TRANSPARENT_MAX_PIXELS; the whole request held to a fifth of
+                # the render budget (400 megapixels, about 200 A4 pages at 144
+                # DPI): saving an optimised PNG with an alpha channel costs about
+                # 0.3 s of CPU a megapixel, as much as Deskew spends.
+                zooms = plan_renders(src_doc, dpi / 72, share=0.2, max_pixels=_TRANSPARENT_MAX_PIXELS, advice=(
+                    "Choose a lower resolution, or split the PDF and convert the parts separately."))
 
                 for page in src_doc:
-                    pix = safe_get_pixmap(page, matrix=matrix, alpha=False)
-                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    zoom = zooms[page.number]
+                    pix = safe_get_pixmap(page, matrix=fitz.Matrix(zoom, zoom), alpha=False)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples_mv)
+                    del pix
+                    # Transparent where every channel reaches the threshold, as
+                    # before, but computed on whole channels: the per-pixel
+                    # Python list this replaces took 6 s and 300 MB for one A4
+                    # page at 144 DPI, and about 15 GB for a 100-megapixel page.
+                    red, green, blue = img.split()
+                    alpha = ImageChops.darker(ImageChops.darker(red, green), blue).point(
+                        lambda value: 0 if value >= threshold else 255)
+                    del red, green, blue
                     rgba = img.convert("RGBA")
-                    rgb_data = list(img.getdata())
-                    rgba_data = [
-                        (r, g, b, 0 if (r >= threshold and g >= threshold and b >= threshold) else 255)
-                        for (r, g, b) in rgb_data
-                    ]
-                    rgba.putdata(rgba_data)
+                    del img
+                    rgba.putalpha(alpha)
+                    del alpha
 
                     png_bytes = io.BytesIO()
                     rgba.save(png_bytes, format="PNG", optimize=True)
@@ -786,7 +895,9 @@ async def transparent_background(
 
         cleanup = BackgroundTask(remove_files, tmp.name)
         return FileResponse(tmp.name, media_type="application/pdf", filename="transparent.pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # A ToolError (a page too large to draw, a request over its render
+        # budget) goes to the global handler with its own status and wording.
         if tmp is not None:
             remove_files(tmp.name)
         raise

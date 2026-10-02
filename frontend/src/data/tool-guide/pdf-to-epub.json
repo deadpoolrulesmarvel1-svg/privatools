@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the EPUB",
-      "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, and the file lacks the navigation document the EPUB 3 standard requires, so check it in your e-book app before relying on it."
+      "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, so check it in your e-book app before relying on it. The book's contents list has one entry for each page."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "Will the table of contents work?",
-      "a": "No table of contents is created, even when the PDF has bookmarks: the whole document is a single section of the book."
+      "a": "The contents list has one entry for each page of the PDF, Page 1 onwards, so you can jump to a page. The PDF's bookmarks are not carried over, and the whole document is a single section of the book."
     }
   ]
 }

@@ -133,4 +133,4 @@ def render_plain_subtitles(video_path: str, srt_path: str, output_path: str, run
         manifest.extend([f"file {last_name}", "option framerate 1000"])
         timeline = root / "captions.ffconcat"
         timeline.write_text("\n".join(manifest) + "\n", encoding="utf-8")
-        run_ffmpeg(["-i", video_path, "-f", "concat", "-safe", "0", "-i", str(timeline), "-filter_complex", "[0:v:0][1:v:0]overlay=x=(W-w)/2:y=H-h:eof_action=pass:shortest=0[v]", "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", output_path])
+        run_ffmpeg(["-i", video_path, "-f", "concat", "-safe", "0", "-i", str(timeline), "-filter_complex", "[0:v:0][1:v:0]overlay=x=(W-w)/2:y=H-h:eof_action=pass:shortest=0[v]", "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", output_path], chapters=True)

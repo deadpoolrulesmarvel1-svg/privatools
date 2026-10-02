@@ -444,6 +444,15 @@
         "heic-to-jpg"
       ]
     },
+    "/hidden-text-checker": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "hidden-text-checker"
+      ]
+    },
     "/highlight": {
       "category": "PDF processing",
       "response_media": [
@@ -1522,6 +1531,11 @@
     {
       "slug": "json-to-csv-schema",
       "name": "JSON to CSV Schema",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "gemini-watermark-remover",
+      "name": "Gemini Watermark Remover",
       "reason": "Browser-only utility; no v1 HTTP endpoint."
     }
   ]

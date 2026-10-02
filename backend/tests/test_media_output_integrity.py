@@ -238,6 +238,234 @@ def test_video_merge_rounds_an_odd_first_clip_down_to_an_even_frame(client, merg
     assert frame_size(info) == (320, 180)
 
 
+def clip_recorded_alike(path, colour, *, codec=("-c:v", "libx264", "-preset", "ultrafast")):
+    """Two seconds of one colour, encoded as one phone encodes every clip:
+    the same settings, frame size and audio format, whatever it films."""
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c={colour}:s=320x180:r=30:d=2,format=yuv420p", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=2", *codec, "-c:a", "aac", "-shortest", str(path)], check=True, timeout=60)
+    return path
+
+
+def video_setup(path):
+    """The video stream's codec name, tag and parameter-set hash (extradata)."""
+    probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_streams", "-show_data_hash", "sha256", "-of", "json", str(path)], timeout=15))
+    stream = probe["streams"][0]
+    return stream["codec_name"], stream["codec_tag_string"], stream["extradata_hash"]
+
+
+def decodes_cleanly(path):
+    result = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "null", "-"], capture_output=True, text=True, timeout=60)
+    return result.returncode == 0 and not result.stderr.strip()
+
+
+def test_video_merge_joins_clips_recorded_alike_as_they_are(client, media_fixtures, tmp_path):
+    """Re-encoding stopped at FFmpeg's 180 s after about three minutes of
+    1080p on the production container. Clips from one phone need none."""
+    red = clip_recorded_alike(tmp_path / "red.mp4", "red")
+    blue = clip_recorded_alike(tmp_path / "blue.mp4", "blue")
+    merged = tmp_path / "merged.mp4"
+    info = inspect_download(merge(client, red, blue), merged)
+    # A copied stream keeps the recording's parameter sets; a re-encode writes its own.
+    assert video_setup(merged) == video_setup(red)
+    assert abs(float(info["format"]["duration"]) - 4.0) <= 0.1
+    assert colours_at(merged, 1, [(160, 90)], tmp_path) == ["red"]
+    assert colours_at(merged, 3, [(160, 90)], tmp_path) == ["blue"]
+    assert decodes_cleanly(merged)
+
+
+def test_video_merge_copies_hevc_under_the_tag_apple_players_need(client, media_fixtures, tmp_path):
+    if "libx265" not in subprocess.check_output(["ffmpeg", "-hide_banner", "-encoders"], text=True, timeout=15):
+        pytest.skip("this FFmpeg has no HEVC encoder")
+    hevc = ("-c:v", "libx265", "-preset", "ultrafast", "-x265-params", "log-level=error")
+    red = clip_recorded_alike(tmp_path / "red.mov", "red", codec=hevc)
+    blue = clip_recorded_alike(tmp_path / "blue.mov", "blue", codec=hevc)
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, red, blue), merged)
+    codec, tag, setup = video_setup(merged)
+    assert (codec, tag, setup) == ("hevc", "hvc1", video_setup(red)[2])
+    assert decodes_cleanly(merged)
+
+
+def test_video_merge_keeps_portrait_clips_joined_as_they_are_upright(client, media_fixtures, tmp_path):
+    """Phones store portrait video as landscape frames and a display rotation,
+    which the copy has to carry over, or the merge would lie on its side."""
+    turned = []
+    for colour in ("red", "blue"):
+        path = tmp_path / f"{colour}-portrait.mp4"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-display_rotation", "90", "-i", str(clip_recorded_alike(tmp_path / f"{colour}.mp4", colour)), "-c", "copy", str(path)], check=True, timeout=15)
+        turned.append(path)
+    merged = tmp_path / "merged.mp4"
+    info = inspect_download(merge(client, *turned), merged)
+    video = next(stream for stream in info["streams"] if stream["codec_type"] == "video")
+    assert [entry.get("rotation") for entry in video.get("side_data_list", [])] == [90]
+    assert video_setup(merged) == video_setup(turned[0])
+
+
+def test_video_merge_reencodes_clips_alike_but_turned_differently(client, media_fixtures, tmp_path):
+    """Copying would show every clip turned as the first one is."""
+    upright = clip_recorded_alike(tmp_path / "upright.mp4", "red")
+    turned = tmp_path / "turned.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-display_rotation", "90", "-i", str(clip_recorded_alike(tmp_path / "blue.mp4", "blue")), "-c", "copy", str(turned)], check=True, timeout=15)
+    merged = tmp_path / "merged.mp4"
+    info = inspect_download(merge(client, upright, turned), merged)
+    assert frame_size(info) == (320, 180)
+    # Upright, the turned clip is 180x320: fitted to 180 lines, bars either side.
+    assert colours_at(merged, 3, [(20, 90), (160, 90)], tmp_path) == ["black", "blue"]
+
+
+def flash_and_beep_clip(path, colour, *, seconds=2, flash_at=1.0):
+    """A clip recorded alike to the others: one white frame and a 1 kHz beep
+    start at the same instant, so sound and picture can be lined up."""
+    beep = f"if(between(t,{flash_at},{flash_at + 0.1}),0.8*sin(2*PI*1000*t),0)"
+    video = (f"color=c={colour}:s=160x90:r=30:d={seconds},format=yuv420p,"
+             f"drawbox=c=white:t=fill:enable='between(t,{flash_at},{flash_at + 0.03})'")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", video, "-f", "lavfi", "-i",
+                    f"aevalsrc='{beep}|{beep}':s=48000:d={seconds}", "-c:v", "libx264", "-preset", "ultrafast",
+                    "-c:a", "aac", str(path)], check=True, timeout=60)
+    return path
+
+
+def flash_times(path):
+    """When each white frame is shown."""
+    times = [float(f["best_effort_timestamp_time"]) for f in json.loads(subprocess.check_output(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "frame=best_effort_timestamp_time",
+         "-of", "json", str(path)], timeout=60))["frames"]]
+    luma = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v:0", "-fps_mode", "passthrough",
+                           "-vf", "scale=4:4,format=gray", "-f", "rawvideo", "-"], capture_output=True, timeout=60).stdout
+    return [t for i, t in enumerate(times) if sum(luma[16 * i:16 * i + 16]) / 16 > 200]
+
+
+def beeps_played_back_to_back(path, rate=48000):
+    """When each beep is heard by a player that plays the decoded sound
+    without gaps from its first sample, as browsers do."""
+    first = float(json.loads(subprocess.check_output(
+        ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries",
+         "frame=best_effort_timestamp_time", "-of", "json", str(path)], timeout=60))["frames"][0]["best_effort_timestamp_time"])
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:a:0", "-ac", "1", "-ar", str(rate),
+                          "-f", "s16le", "-acodec", "pcm_s16le", "-"], capture_output=True, timeout=60).stdout
+    samples = memoryview(pcm).cast("h")
+    onsets, quiet = [], rate
+    for i, value in enumerate(samples):
+        if abs(value) > 3000:
+            if quiet > rate // 20:
+                onsets.append(first + i / rate)
+            quiet = 0
+        else:
+            quiet += 1
+    return onsets
+
+
+def test_video_merge_keeps_sound_in_step_with_picture_to_the_last_clip(client, media_fixtures, tmp_path):
+    """Copied as they were, every clip's audio brought its encoder's priming
+    and the few milliseconds it runs past its video, so the sound fell 24 ms
+    further behind at every join: 238 ms by clip 10 in Chromium (review)."""
+    clips = [flash_and_beep_clip(tmp_path / f"c{i}.mp4", colour) for i, colour in
+             enumerate(["red", "blue", "green", "purple", "maroon", "navy"])]
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, *clips), merged)
+    assert video_setup(merged) == video_setup(clips[0])  # the picture is still copied
+    flashes, beeps = flash_times(merged), beeps_played_back_to_back(merged)
+    assert len(flashes) == len(beeps) == 6
+    assert abs(beeps[-1] - flashes[-1]) <= 1 / 30, f"last clip's sound is {1000 * (beeps[-1] - flashes[-1]):.0f} ms off its picture"
+
+
+def test_video_merge_reencodes_a_clip_trimmed_without_reencoding(client, media_fixtures, tmp_path):
+    """Trimmed by stream copy, a clip keeps the frames before the cut, hidden
+    by an edit list. Copied into a merge, the cut footage came back."""
+    alike = clip_recorded_alike(tmp_path / "alike.mp4", "red")
+    # Encoded as the other clip is, with its only keyframe at the start, so a
+    # cut at 1 s keeps the 30 frames before it, hidden.
+    long = tmp_path / "long.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x180:r=30:d=4,format=yuv420p",
+                    "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=4", "-c:v", "libx264",
+                    "-preset", "ultrafast", "-g", "300", "-c:a", "aac", "-shortest", str(long)], check=True, timeout=60)
+    trimmed = tmp_path / "trimmed.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "1", "-i", str(long), "-c", "copy", str(trimmed)], check=True, timeout=60)
+    assert video_setup(trimmed) == video_setup(alike)  # alike enough to have been joined by copy
+
+    def frames_shown(path):
+        md5s = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v:0", "-fps_mode", "passthrough",
+                                        "-f", "framemd5", "-"], text=True, timeout=60)
+        return sum(1 for line in md5s.splitlines() if line and not line.startswith("#"))
+
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, alike, trimmed), merged)
+    assert frames_shown(merged) == frames_shown(alike) + frames_shown(trimmed)
+
+
+def test_video_merge_copies_only_mp4_and_mov(client, media_fixtures, tmp_path):
+    """A guard: copied MKV joins came out with irregular frame times (review).
+    Phones record MP4 and MOV, and other containers are re-encoded."""
+    red = clip_recorded_alike(tmp_path / "red.mkv", "red")
+    blue = clip_recorded_alike(tmp_path / "blue.mkv", "blue")
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, red, blue), merged)
+    assert video_setup(merged)[2] != video_setup(red)[2]  # re-encoded
+    assert colours_at(merged, 3, [(160, 90)], tmp_path) == ["blue"]
+
+
+def test_video_merge_reencodes_when_ffmpeg_will_not_copy(client, media_fixtures, tmp_path, monkeypatch):
+    from backend.app.services import video_tools_service
+    from backend.app.utils.exceptions import ValidationError
+
+    def refuse(*args, **kwargs):
+        raise ValidationError("ffmpeg failed: refused for this test")
+
+    monkeypatch.setattr(video_tools_service, "_merge_by_copy", refuse)
+    red = clip_recorded_alike(tmp_path / "red.mp4", "red")
+    blue = clip_recorded_alike(tmp_path / "blue.mp4", "blue")
+    merged = tmp_path / "merged.mp4"
+    inspect_download(merge(client, red, blue), merged)
+    assert video_setup(merged)[2] != video_setup(red)[2]
+    assert colours_at(merged, 3, [(160, 90)], tmp_path) == ["blue"]
+
+
+def test_video_merge_past_ffmpegs_time_limit_answers_504(client, merge_clips, monkeypatch):
+    """Three minutes of 1080p reach FFmpeg's 180 s limit in the v2.7.5 image
+    on production's 1.8 CPUs, and the route answered that with a 500, so the
+    page said "Processing failed. Please try again." """
+    real_run = subprocess.run
+    outputs = []
+
+    def ffmpeg_out_of_time(command, *args, **kwargs):
+        if command and command[0] == "ffmpeg":
+            # FFmpeg has written part of the merge by the time it is stopped:
+            # about 250 MB at the real limit.
+            Path(command[-1]).write_bytes(b"\0" * 1024)
+            outputs.append(Path(command[-1]))
+            raise subprocess.TimeoutExpired(command, kwargs.get("timeout"))
+        return real_run(command, *args, **kwargs)  # ffprobe still answers
+
+    monkeypatch.setattr(subprocess, "run", ffmpeg_out_of_time)
+    response = merge(client, merge_clips["wide"], merge_clips["small"])
+    assert response.status_code == 504, response.text
+    assert outputs and not any(path.exists() for path in outputs), "the partial merge was left in the temp directory"
+
+
+def test_video_merge_leaves_out_where_and_on_what_the_clips_were_recorded(client, merge_clips, tmp_path):
+    """Phones tag each recording with where it was made and on what. The
+    merge copied the first clip's tags into its output, GPS location included."""
+    tagged = []
+    for name in ("wide", "small"):
+        dst = tmp_path / f"{name}-tagged.mov"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(merge_clips[name]), "-c", "copy",
+                        "-metadata", "location=+48.8584+002.2945/", "-metadata", "make=Apple",
+                        "-metadata", "model=iPhone 15", str(dst)], check=True, timeout=30)
+        tagged.append(dst)
+    merged = tmp_path / "merged.mp4"
+    info = inspect_download(merge(client, *tagged), merged)
+    assert not {key.lower() for key in info["format"].get("tags", {})} & {"location", "make", "model"}
+    assert b"+48.8584" not in merged.read_bytes()
+    assert b"iPhone 15" not in merged.read_bytes()
+
+
+def test_video_merge_of_a_file_that_is_no_video_answers_400(client, merge_clips, tmp_path):
+    notes = tmp_path / "notes.mp4"
+    notes.write_bytes(b"Meeting notes, saved with the wrong name.")
+    response = merge(client, notes, merge_clips["wide"])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "Could not read the frame size of the first video."
+
+
 def child_cpu_seconds():
     usage = resource.getrusage(resource.RUSAGE_CHILDREN)
     return usage.ru_utime + usage.ru_stime

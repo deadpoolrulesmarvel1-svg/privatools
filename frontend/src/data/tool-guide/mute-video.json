@@ -20,7 +20,11 @@
   "faq": [
     {
       "q": "Is the picture changed at all?",
-      "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."
+      "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were, and so does the rotation that makes a portrait phone clip play upright. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."
+    },
+    {
+      "q": "Does the muted video keep where it was recorded?",
+      "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. Chapter markers keep their place and titles, and a subtitle track kept in an MKV or WebM keeps its language."
     },
     {
       "q": "What format is the muted file?",

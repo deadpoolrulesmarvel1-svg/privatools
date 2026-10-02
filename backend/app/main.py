@@ -66,6 +66,7 @@ from .routes import (
     developer,
     analytics,
     accessibility,
+    hidden_text,
 )
 from .routes import accounts as accounts_routes
 from .routes import clerk_webhook as clerk_webhook_routes
@@ -445,6 +446,9 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
         f"img-src {' '.join(img_src)}; "
+        # Video and audio results are previewed from blob: URLs; without this,
+        # default-src 'self' blocks every media preview.
+        "media-src 'self' blob:; "
         f"connect-src {' '.join(connect_src)}; "
         f"frame-src {' '.join(frame_src)}; "
         "worker-src 'self' blob:; "
@@ -904,6 +908,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(accounts_routes.router, prefix="/api")
 app.include_router(clerk_webhook_routes.router, prefix="/api")
 app.include_router(accessibility.router, prefix="/api")
+app.include_router(hidden_text.router, prefix="/api")
 
 # Sitemap + OG image
 
@@ -984,6 +989,7 @@ api_v1.mount(app, [
     remove_watermark.router,
     developer.router,
     accessibility.router,
+    hidden_text.router,
 ])
 
 from .api_v1.jobs import router as api_job_router  # noqa: E402

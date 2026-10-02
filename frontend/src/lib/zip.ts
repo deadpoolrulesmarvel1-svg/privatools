@@ -32,7 +32,8 @@ const CRC_TABLE = (() => {
     return t;
 })();
 
-function crc32(buf: Uint8Array): number {
+/** CRC-32 (IEEE 802.3), the checksum ZIP entries and PNG chunks both carry. */
+export function crc32(buf: Uint8Array): number {
     let crc = 0xffffffff;
     for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
     return (crc ^ 0xffffffff) >>> 0;

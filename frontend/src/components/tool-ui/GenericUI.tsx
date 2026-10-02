@@ -25,7 +25,7 @@ import {
     uploadFileWithProgress,
     type ProgressCallback,
 } from "@/lib/api";
-import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-endpoints";
+import { getFilenameFromContentDisposition, getToolEndpoint, plannedNameForAnswer } from "@/lib/tool-endpoints";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -207,7 +207,7 @@ export function GenericUI({
                 const blob = await res.blob();
                 if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
                 const outName = chooseDownloadFilename(
-                    plannedOutputName(item.name),
+                    plannedNameForAnswer(plannedOutputName(item.name), res.headers.get("Content-Type")),
                     getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
                 );
                 setItem(item.id, { status: "done", blob, outName });

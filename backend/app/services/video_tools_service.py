@@ -19,10 +19,14 @@ from pathlib import Path
 
 from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
+from .media_metadata import with_metadata_options
 
 logger = logging.getLogger(__name__)
 
-FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
+# Seconds. Re-encoding 1080p30 at the veryfast preset costs about 111 CPU-seconds
+# a minute (v2.7.5 image), so on production's 1.8 CPUs this covers a little
+# under three minutes of 1080p, or under a minute of 4K.
+FFMPEG_TIMEOUT = 180
 
 # Supported output formats per tool — kept lower-case for sanity.
 VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
@@ -37,11 +41,16 @@ VP9_SPEED = ["-deadline", "realtime", "-cpu-used", "8", "-row-mt", "1"]
 # ─── helpers ─────────────────────────────────────────────────────────────
 
 
-def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | None = None) -> None:
-    """Run ffmpeg with full args list; raise typed exception on failure."""
+def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | None = None,
+                chapters: bool = False) -> None:
+    """Run ffmpeg with full args list; raise typed exception on failure.
+
+    The output leaves out its inputs' tags, such as where a clip was
+    recorded (see media_metadata); `chapters` keeps their chapter markers.
+    """
     try:
         proc = subprocess.run(
-            ["ffmpeg", "-y", "-loglevel", "error", *args],
+            ["ffmpeg", "-y", "-loglevel", "error", *with_metadata_options(args, chapters=chapters)],
             capture_output=True, timeout=timeout, text=True,
             check=False,  # we handle returncode ourselves
             **({"cwd": cwd} if cwd is not None else {}),
@@ -156,7 +165,8 @@ def video_convert(input_path: str, target_format: str) -> str:
         args += ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
                  "-c:a", "aac", "-movflags", "+faststart"]
     args.append(str(output_path))
-    _run_ffmpeg(args)
+    # The same timeline in another format, so its chapter markers still fit.
+    _run_ffmpeg(args, chapters=True)
     return str(output_path)
 
 
@@ -186,7 +196,7 @@ def video_resize(input_path: str, preset: str = "720p") -> str:
         "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
         "-c:a", "aac", "-movflags", "+faststart",
         str(output_path),
-    ])
+    ], chapters=True)
     return str(output_path)
 
 
@@ -272,11 +282,154 @@ def _display_size(path: str) -> tuple[int, int]:
     return width - width % 2, height - height % 2
 
 
+# What phones record, and what an MP4 carries as it is.
+_COPYABLE_VIDEO = {"h264", "hevc"}
+_COPYABLE_AUDIO = {"aac"}
+_VIDEO_KEYS = ("codec_name", "profile", "level", "width", "height", "pix_fmt", "sample_aspect_ratio",
+               "field_order", "color_range", "color_space", "color_transfer", "color_primaries",
+               "time_base", "extradata_hash")
+_AUDIO_KEYS = ("codec_name", "profile", "sample_rate", "channels", "channel_layout", "time_base",
+               "extradata_hash")
+
+
+# More hidden audio than an encoder's priming (Apple's AAC primes 2112 samples,
+# 44 ms at 48 kHz) means part of the sound was cut away without re-encoding.
+_MAX_HIDDEN_AUDIO = 0.1
+
+
+def _copy_plan(path: str) -> tuple[tuple, dict] | None:
+    """A clip's copy signature and timing, or None if it must be re-encoded.
+
+    The signature is what has to be the same in every clip for a merge to copy
+    their video: the streams, in the same order; the video's codec set-up down
+    to its parameter sets (the extradata hash), frame size, pixels, colours,
+    time base and display rotation; and the audio's format. The timing is how
+    long the clip's video runs and where its sound starts, which the merge
+    lines each clip's sound up with.
+
+    None for a clip that cannot go into an MP4 as it is, such as VP9 or one
+    with two audio tracks; for anything but an MP4 or MOV, which is what phones
+    record (copied MKV and AVI joins came out with irregular or reversed
+    timestamps); and for a clip trimmed without re-encoding: it keeps the
+    frames and sound before the cut, marked to be discarded (an edit list),
+    and a copy would bring the cut footage back.
+    """
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_data_hash", "sha256", "-show_entries",
+             "format=format_name,start_time:stream:packet=stream_index,flags,duration_time", "-of", "json", path],
+            capture_output=True, timeout=60, text=True, check=True,
+        )
+        info = json.loads(result.stdout)
+        streams, packets, fmt = info["streams"], info.get("packets", []), info["format"]
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError, KeyError):
+        return None
+    if "mp4" not in fmt.get("format_name", "").split(","):
+        return None
+    video = [s for s in streams if s.get("codec_type") == "video"]
+    audio = [s for s in streams if s.get("codec_type") == "audio"]
+    if len(video) != 1 or len(audio) > 1 or video[0].get("codec_name") not in _COPYABLE_VIDEO:
+        return None
+    if audio and audio[0].get("codec_name") not in _COPYABLE_AUDIO:
+        return None
+    hidden = [p for p in packets if "D" in p.get("flags", "")]
+    if any(p.get("stream_index") == video[0]["index"] for p in hidden):
+        return None
+    if sum(float(p.get("duration_time") or 0) for p in hidden) > _MAX_HIDDEN_AUDIO:
+        return None
+    try:
+        file_start = float(fmt["start_time"])
+        video_end = float(video[0]["start_time"]) + float(video[0]["duration"])
+        audio_start = float(audio[0]["start_time"]) if audio else file_start
+    except (KeyError, TypeError, ValueError):
+        return None
+    rotation = next((entry["rotation"] for entry in video[0].get("side_data_list", []) if "rotation" in entry), 0)
+    signature = (
+        tuple(s.get("codec_type") for s in streams),
+        tuple(video[0].get(key) for key in _VIDEO_KEYS),
+        rotation,
+        tuple(audio[0].get(key) for key in _AUDIO_KEYS) if audio else None,
+    )
+    timing = {"length": video_end - file_start, "audio_lead": audio_start - file_start,
+              "sample_rate": int(audio[0]["sample_rate"]) if audio else 0}
+    return signature, timing
+
+
+def _merge_by_copy(input_paths: list[str], timings: list[dict], *, hevc: bool) -> str:
+    """Join clips of one encoding by copying their video, which loses nothing
+    and costs little: re-encoding the sound is most of the work, up to about
+    two minutes per hour of footage. Re-encoding one minute of 1080p30 took
+    111 CPU-seconds (v2.7.5 image), so a merge of about three minutes ran out
+    of FFmpeg's 180 s on the production container; copying it took 1.5.
+
+    The sound is rebuilt instead of copied. Copied, each clip's audio kept its
+    encoder's priming and the few milliseconds it runs past its video, which
+    players play back to back, so the sound fell about 24 ms further behind
+    the picture at every join: 238 ms by clip 10 in Chromium. Here each clip's
+    sound is trimmed or padded to exactly its video's length, and the concat
+    list gives each clip that same length, so every clip's sound starts with
+    its picture. Sound that runs on past a clip's video is cut there. Only
+    the sound is encoded, once.
+    """
+    output_path = temp_output("video_merge", "mp4")
+    work_dir = tempfile.mkdtemp(prefix="video_merge_")
+    try:
+        listing = Path(work_dir) / "clips.txt"
+        # The concat list quotes each path; a quote inside one is written '\''.
+        listing.write_text("".join(
+            "file '" + os.path.abspath(path).replace("'", "'\\''") + f"'\nduration {timing['length']:.6f}\n"
+            for path, timing in zip(input_paths, timings)
+        ))
+        # -copyts: FFmpeg would otherwise shift the copied video so its input's
+        # earliest timestamp is zero, and that is the first clip's discarded
+        # AAC priming packet, so the picture started 21 ms after the rebuilt
+        # sound in every clip.
+        args = ["-copyts", "-f", "concat", "-safe", "0", "-i", str(listing)]
+        rate = timings[0]["sample_rate"]
+        if rate:
+            chains = []
+            for k, (path, timing) in enumerate(zip(input_paths, timings)):
+                args += ["-i", path]
+                samples = round(timing["length"] * rate)
+                lead = round(timing["audio_lead"] * rate)
+                chains.append(f"[{k + 1}:a:0]asetpts=PTS-STARTPTS"
+                              + (f",adelay=delays={lead}S:all=1" if lead > 0 else "")
+                              + f",atrim=end_sample={samples},apad=whole_len={samples}[a{k}]")
+            joined = "".join(f"[a{k}]" for k in range(len(input_paths)))
+            # The fast AAC coder, which FFmpeg's documentation calls "better
+            # and much faster at higher bitrates" (above 64 kbps). With the
+            # default coder the sound took most of a long merge, at 15 to 35
+            # times real time on a 2-core ARM server like production's, so
+            # FFmpeg's 180 s covered as little as 45 minutes of footage; fast
+            # ran at 29 to 58 times, and a merge of 2 x 5 minutes took 13.8
+            # CPU-s against 27.8.
+            args += ["-filter_complex", ";".join(chains) + f";{joined}concat=n={len(input_paths)}:v=0:a=1[a]",
+                     "-map", "0:v:0", "-map", "[a]", "-c:v", "copy",
+                     "-c:a", "aac", "-aac_coder", "fast", "-b:a", "192k"]
+        else:
+            args += ["-map", "0:v:0", "-c:v", "copy"]
+        # _run_ffmpeg leaves out the clips' tags, such as where they were
+        # recorded, and their chapters. The rotation is not a tag, and stays.
+        _run_ffmpeg([
+            *args,
+            # Apple's players open HEVC in an MP4 only under the hvc1 tag.
+            *(["-tag:v", "hvc1"] if hevc else []),
+            "-movflags", "+faststart", str(output_path),
+        ])
+    except BaseException:
+        Path(output_path).unlink(missing_ok=True)
+        raise
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+    return str(output_path)
+
+
 def video_merge(input_paths: list[str]) -> str:
-    """Concatenate multiple videos using ffmpeg's concat filter (re-encodes
-    once for compatibility — concat demuxer would be faster but only works
-    when every input has identical codecs/dimensions, which uploaded clips
-    rarely do).
+    """Concatenate videos into one MP4.
+
+    Clips recorded the same way, as one phone's clips usually are, are joined
+    as they are (see _merge_by_copy). Any other mix goes through ffmpeg's
+    concat filter and is re-encoded once as H.264 and AAC.
 
     Handles mixed audio-presence inputs by padding video-only clips with a
     silent audio track at concat time, so the user never gets the cryptic
@@ -289,6 +442,16 @@ def video_merge(input_paths: list[str]) -> str:
         raise ValidationError("Need at least 2 videos to merge.")
     if len(input_paths) > 20:
         raise ValidationError("Too many videos to merge in one call (max 20).")
+
+    plans = [_copy_plan(p) for p in input_paths]
+    if all(plans) and len({signature for signature, _ in plans}) == 1:
+        try:
+            return _merge_by_copy(input_paths, [timing for _, timing in plans],
+                                  hevc=plans[0][0][1][0] == "hevc")
+        except ValidationError:
+            # FFmpeg refused to join them as they are; re-encoding still can.
+            logger.warning("video-merge: joining by copy failed, re-encoding", exc_info=True)
+
     output_path = temp_output("video_merge", "mp4")
     n = len(input_paths)
 
@@ -335,14 +498,24 @@ def video_merge(input_paths: list[str]) -> str:
         map_args = ["-map", "[v]"]
         codec_args = ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-an"]
 
-    _run_ffmpeg([
-        *inputs,
-        "-filter_complex", filter_complex,
-        *map_args,
-        *codec_args,
-        "-movflags", "+faststart",
-        str(output_path),
-    ])
+    try:
+        # _run_ffmpeg leaves out the first clip's tags, such as where it was
+        # recorded, and its chapters. The frames are already turned upright,
+        # so no rotation tag is needed.
+        _run_ffmpeg([
+            *inputs,
+            "-filter_complex", filter_complex,
+            *map_args,
+            *codec_args,
+            "-movflags", "+faststart",
+            str(output_path),
+        ])
+    except BaseException:
+        # A merge stopped at FFmpeg's time limit has written about 250 MB by
+        # then. The route never learns this path, so remove it here, or it
+        # stays in the temp directory until the 10-minute sweep.
+        Path(output_path).unlink(missing_ok=True)
+        raise
     return str(output_path)
 
 
@@ -390,7 +563,7 @@ def burn_subtitles(video_path: str, srt_path: str) -> str:
             # containing colons/quotes; those must never enter filter syntax.
             with tempfile.TemporaryDirectory(prefix="subtitle_native_") as folder:
                 shutil.copy2(srt_path, Path(folder) / "captions.srt")
-                _run_ffmpeg(["-i", str(Path(video_path).resolve()), "-vf", "subtitles=captions.srt", "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", str(output_path.resolve())], cwd=folder)
+                _run_ffmpeg(["-i", str(Path(video_path).resolve()), "-vf", "subtitles=captions.srt", "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", str(output_path.resolve())], cwd=folder, chapters=True)
         return str(output_path)
     except Exception:
         output_path.unlink(missing_ok=True)

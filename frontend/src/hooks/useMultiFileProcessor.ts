@@ -28,7 +28,7 @@
  *     "N=1 → blob, N>1 → zip" branching so most call sites stay tiny.
  */
 import { useCallback, useRef, useState } from "react";
-import { uploadFile, downloadBlob, buildOutputFilename, chooseDownloadFilename, type UploadOptions } from "@/lib/api";
+import { uploadFile, downloadBlob, buildOutputFilename, chooseDownloadFilename, hasUserMessage, type UploadOptions } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { friendlyError } from "@/lib/utils";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
@@ -72,7 +72,17 @@ export interface ProcessOptions {
     uploadOptions?: UploadOptions;
     /** Client-side processor — when set, files never leave the browser:
      *  the worker calls this instead of POSTing to `endpoint`. */
-    localProcess?: (file: File) => Promise<{ blob: Blob; outName?: string }>;
+    localProcess?: (file: File) => Promise<LocalResult>;
+}
+
+export interface LocalResult {
+    blob: Blob;
+    outName?: string;
+    /** Set when the processor handled the file but could not do its job on it
+     *  (an image with no watermark to remove, say) and returned it unchanged.
+     *  The file still counts as done on the page; the run's usage signal
+     *  counts it as a failure of this kind, so such misses stay visible. */
+    unchanged?: ToolErrorKind;
 }
 
 export interface UseMultiFileProcessorResult {
@@ -179,6 +189,8 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         let cursor = 0;
         // The first failure names the run's error category in the usage signal.
         let firstFailure: unknown = null;
+        // Files a local processor returned unchanged, with why (LocalResult.unchanged).
+        const unchanged = new Map<string, ToolErrorKind>();
         const ids = targetIds; // captured
 
         const worker = async () => {
@@ -196,6 +208,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                 try {
                     if (opts.localProcess) {
                         const out = await opts.localProcess(file as File);
+                        if (out.unchanged) unchanged.set(id, out.unchanged);
                         const outName = out.outName || buildOutputFilename((file as File).name, opts.outputSuffix, opts.outputExt);
                         mutate(prev => prev.map(x => x.id === id
                             ? { ...x, status: "done", blob: out.blob, outName, headers: {} }
@@ -233,7 +246,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                 } catch (e: unknown) {
                     firstFailure ??= e;
                     const raw = e instanceof Error ? e.message : "Failed";
-                    const msg = friendlyError(raw, "Processing failed");
+                    const msg = hasUserMessage(e) ? raw : friendlyError(raw, "Processing failed");
                     const kind = toolErrorKind(e);
                     // A cancelled file can simply run again.
                     const retryable = kind === "cancelled" || isTransientFailure(e);
@@ -250,11 +263,14 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         await Promise.all(workers);
 
         // One usage signal per run, counting only the files this run touched.
+        // A file returned unchanged counts as a failure there, never as a success.
         const touched = entriesRef.current.filter(e => ids.includes(e.id));
         const done = touched.filter(e => e.status === "done").length;
         const failed = touched.filter(e => e.status === "failed").length;
-        const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed }, firstFailure);
+        const missed = touched.filter(e => e.status === "done" && unchanged.has(e.id));
+        const outcome = runOutcome(done - missed.length, failed + missed.length);
+        const missKind = firstFailure === null && missed.length ? unchanged.get(missed[0].id) : undefined;
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed, ...(missKind ? { errorKind: missKind } : {}) }, firstFailure);
 
         inFlight.current = false;
     }, [mutate]);

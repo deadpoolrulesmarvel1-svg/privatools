@@ -20,6 +20,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
+from ..services.media_metadata import with_metadata_options
 from ..services.media_trim_service import trim_command
 from ..services.video_tools_service import has_audio
 
@@ -38,14 +39,16 @@ def _suffix(name: str | None) -> str:
     return "." + name.rsplit(".", 1)[-1].lower()
 
 
-async def _run_ffmpeg_async(args: list[str], label: str) -> None:
+async def _run_ffmpeg_async(args: list[str], label: str, *, chapters: bool = False) -> None:
     """Run ffmpeg off the event loop so a long encode doesn't block the worker."""
-    await run_bounded(_run_ffmpeg, args, label)
+    await run_bounded(_run_ffmpeg, args, label, chapters)
 
 
-def _run_ffmpeg(args: list[str], label: str) -> None:
+def _run_ffmpeg(args: list[str], label: str, chapters: bool = False) -> None:
+    """The output leaves out its input's tags, such as where it was recorded
+    (see media_metadata); `chapters` keeps its chapter markers."""
     try:
-        proc = subprocess.run(args, capture_output=True, timeout=180)
+        proc = subprocess.run(with_metadata_options(args, chapters=chapters), capture_output=True, timeout=180)
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(status_code=504, detail=f"{label} timed out") from exc
     if proc.returncode != 0:
@@ -69,7 +72,7 @@ async def mute_video_endpoint(request: Request, file: UploadFile = File(...)):
         await _run_ffmpeg_async([
             "ffmpeg", "-y", "-i", str(in_path),
             "-c:v", "copy", "-an", str(out_path),
-        ], "Mute video")
+        ], "Mute video", chapters=True)
         cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
         return FileResponse(
             str(out_path), media_type="video/mp4",
@@ -213,7 +216,7 @@ async def audio_trim_endpoint(
         await _run_ffmpeg_async(trim_command(
             str(in_path), str(out_path), suffix, s_strip,
             _ts_to_seconds(e_strip) - _ts_to_seconds(s_strip),
-        ), "Audio trim")
+        ), "Audio trim", chapters=True)
         cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
         return FileResponse(
             str(out_path),

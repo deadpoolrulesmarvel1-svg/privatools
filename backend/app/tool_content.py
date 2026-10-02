@@ -142,8 +142,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Generate the PDF", "text": "Click Convert to PDF. The server renders pasted HTML with WeasyPrint and a fetched page with PyMuPDF, then the PDF downloads."},
     ],
     "xml-to-pdf": [
-        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed UTF-8 XML works, including RSS, Atom, and XHTML."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed."},
+        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed XML works, including RSS, Atom, and XHTML, in UTF-8, UTF-16 or a one-byte encoding its declaration names, such as ISO-8859-1 or Windows-1252."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. Blank lines are left out. A line too long for the page is cut off at the right margin, and the rest of it is not printed. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
@@ -152,8 +152,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert to PDF", "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."},
     ],
     "json-to-pdf": [
-        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."},
-        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."},
+        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid, in UTF-8 (with or without a byte order mark), UTF-16 or UTF-32, and nest no more than 25 levels deep."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page. The font has Western European letters and common symbols; other letters, such as ł, Cyrillic, Chinese or Arabic, and emoji print as boxes."},
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
@@ -174,7 +174,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-image": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. The queue lists each file with its size."},
-        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection."},
+        {"name": "Configure output settings", "text": "Choose the image format (JPG, the default, or PNG) and the resolution: 72, 150 (the default) or 300 DPI. Every page is converted; there is no page selection. A page too big for 100 megapixels at the resolution you choose, such as a large poster at 300 DPI, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all: about 900 A4 pages at 150 DPI, or 230 at 300 DPI; split a longer PDF first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes a separate image file: a multi-page PDF downloads as a ZIP of images and a one-page PDF as a single image. Several PDFs arrive together in one ZIP."},
     ],
 
@@ -260,7 +260,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "chat-with-pdf": [
         {"name": "Open your PDF", "text": "Select a text-based PDF. Its text is extracted in your browser; a scanned PDF needs OCR PDF first, because there is no text to read."},
-        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."},
+        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. The options are Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. With a hosted provider, leave the model box empty to use the suggested model or type any other model your account offers; for your own server, type the name of the model it runs."},
         {"name": "Ask your question", "text": "Type a question about the document. The question and the document's text go from your browser directly to the provider you chose."},
         {"name": "Read and follow up", "text": "Read the answer and ask follow-ups. Check anything important against the document itself."},
     ],
@@ -280,12 +280,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "split-in-half": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."},
-        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its bottom half followed by its top half."},
-        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original."},
+        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its top half followed by its bottom half. Both follow the page as it is shown, so a spread that a scanner stored turned sideways is still cut into its left and right pages."},
+        {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original. Each new page is the whole original page with its visible area set to one half, so the other half's content is still in the file, out of view."},
     ],
     "pdf-to-svg": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."},
-        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG, which currently downloads with a .zip name, so rename it to .svg."},
+        {"name": "Convert and download", "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG."},
     ],
     "pdf-to-html": [
         {"name": "Upload the PDF", "text": "Select one or more PDFs up to 500 MB each. Each page is exported with PyMuPDF's HTML exporter, which keeps the text, images and font styles."},
@@ -603,7 +603,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"name": "Upload a scanned PDF", "text": "Drop a scanned PDF up to 500 MB. Works best on documents where text lines are visible."},
         {"name": "PrivaTools detects skew per page", "text": "The algorithm tries rotations of up to about 6° either way, in half-degree steps, on a low-resolution copy of each page and picks the angle at which the lines of text run straightest."},
-        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise; the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
+        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise (or smaller, for a page that would take more than 16 megapixels); the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
     ],
     "esign-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document to sign, up to 500 MB."},
@@ -653,7 +653,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI)."},
+        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI). A page too big for 100 megapixels at that resolution is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages at Balanced; split a longer PDF first."},
         {"name": "Download the inverted PDF", "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."},
     ],
     "jpg-to-pdf": [
@@ -701,22 +701,22 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-bmp": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI, a good size for screens; there is no resolution setting on this page. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of BMPs", "text": "Each page becomes one 24-bit BMP file, and a multi-page PDF downloads as a ZIP. BMP is uncompressed so files are LARGE — about 6.5 MB for each A4 page."},
     ],
     "pdf-to-epub": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Works best on simple, text-heavy PDFs."},
         {"name": "PrivaTools copies the text and images", "text": "Each page is exported with PyMuPDF: every line of text keeps its font size, bold, italics and color, and images are embedded. All pages go into a single section; headings, lists and chapters are not detected."},
-        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, and the file lacks the navigation document the EPUB 3 standard requires, so check it in your e-book app before relying on it."},
+        {"name": "Download the EPUB", "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, so check it in your e-book app before relying on it. The book's contents list has one entry for each page."},
     ],
     "pdf-to-gif": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of GIFs", "text": "Each page becomes one GIF file, and a multi-page PDF downloads as a ZIP. Useful for embedding PDF previews in legacy systems."},
     ],
     "pdf-to-jpg": [
         {"name": "Drop your PDF", "text": "Upload a PDF up to 500 MB. It is processed in isolated temporary per-request storage for the conversion, and response cleanup removes the job's temporary files after your download is sent."},
-        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image."},
+        {"name": "Check the output settings", "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Add more PDFs (optional)", "text": "Queue up to 25 PDFs. Each one is converted separately and gets its own download, and Download all bundles the results into one ZIP."},
         {"name": "Need only some pages?", "text": "Every page is converted. To convert only some, pull them into a smaller PDF with Extract Pages first."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes one JPG. Multi-page PDFs return as a ZIP; single-page PDFs return as a single JPG file."},
@@ -728,12 +728,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-png": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead."},
+        {"name": "Convert", "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead. A page too big for 100 megapixels at 150 DPI, such as a photo saved as a page the size of its pixels, is rendered at the largest size that fits. One request can draw up to 2,000 megapixels in all, about 900 A4 pages; split a longer PDF first."},
         {"name": "Download a ZIP of PNGs", "text": "Each page becomes one PNG file with lossless compression, and a multi-page PDF downloads as a ZIP. Pages are rendered onto a white background, so the PNGs have no transparency."},
     ],
     "pdf-to-pptx": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). No text boxes are created, so the text is part of the picture."},
+        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered at 200 DPI (or at the largest size within 100 megapixels, for a page too big for that) and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). One request can draw up to 2,000 megapixels in all, about 500 A4 pages; split a longer PDF first. No text boxes are created, so the text is part of the picture."},
         {"name": "Download the .pptx file", "text": "Open in PowerPoint / Keynote / Google Slides to present it, or to add your own titles, notes and slides around the page pictures."},
     ],
     "pdf-to-tiff": [
@@ -822,7 +822,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF. Only the pixels are copied, so camera, author and location details in the TIFF tags are removed."},
     ],
     "transparent-background": [
-        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
+        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300). A page larger than 25 megapixels at that DPI (A3 at 300 DPI is 17) is drawn at the largest size within 25 megapixels, and one request can draw up to 400 megapixels in all, about 200 A4 pages at 144 DPI; split a longer PDF first."},
         {"name": "Set threshold", "text": "Set how close to pure white a pixel must be to count as background, from 180 to 255 (245 by default). A pixel whose red, green and blue values are all at or above the threshold becomes transparent."},
         {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."},
     ],
@@ -997,7 +997,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "video-merge": [
         {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM / AVI, up to 20 clips; the whole upload has to fit within the 500 MB request limit."},
         {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the clips play in. The first clip sets the frame size of the merged video."},
-        {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."},
+        {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order into one MP4. MP4 and MOV clips recorded the same way (H.264 or HEVC video with AAC audio, and the same frame size, rotation and encoder settings, as one phone's clips usually are) keep their video untouched, and their sound is re-encoded so it stays in step with the picture; sound that runs on past the end of a clip's video is cut there. iPhone clips therefore stay HEVC, which some browsers, and PCs without an HEVC decoder, cannot play; Video Converter makes an H.264 copy. A clip trimmed without re-encoding, and any other mix, is re-encoded once, as H.264 video and AAC audio."},
     ],
     "video-resizer": [
         {"name": "Add one or more videos", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under 500 MB."},
@@ -1174,6 +1174,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Run the audit', "text": 'The document is checked against PDF/UA and WCAG expectations: tag structure, document language, title metadata, and alternative text on images.'},
         {"name": 'Read the report', "text": 'Each finding names the requirement it relates to, so you can fix the document at source. The report is advice, not a legal certification.'},
     ],
+    "hidden-text-checker": [
+        {"name": "Add the PDF", "text": "Drop or select a PDF of up to 500 pages and 500 MB, such as a résumé or paper you are screening, or a redacted document before you share it. It is uploaded over HTTPS and checked on the PrivaTools server in isolated temporary per-request storage. The page preview is drawn on your device."},
+        {"name": "Run the check", "text": "Click Check for hidden text. Every page is examined for text a reader cannot see but a program still reads: text set to be invisible, fully transparent or drawn in a font whose letters draw nothing, Unicode tag characters, text in the colour of what lies behind it or faded or blended away by the group it is drawn in, text too small or too squeezed to read, text off the page or cut away by a clipping path, text in layers that are switched off or hidden, text under a box, image, marker scribble or line of █ characters drawn over it, text in hidden comments and form fields, and redaction marks that were never applied."},
+        {"name": "Read the findings", "text": "Each finding gives the page, the reason and the exact words, and is numbered and highlighted on the page preview; the counts show how many of each kind were found. Invisible text over a scanned page image, which OCR software adds so a scan can be searched, is outlined and listed separately and is not counted as hidden text. A page that could not be read, or where some checks could not run, is named, and the result then says the PDF could not be fully checked."},
+        {"name": "Fix it, or keep the report", "text": "Download the report as text or JSON. It holds the findings and nothing else of the document, but it quotes the hidden words, including any under redaction boxes, so share it as carefully as the document. To remove what was found, use Redact PDF, which deletes the text under the boxes you draw, or Sanitize Document, which removes hidden layers along with scripts and attachments. A clean result means none of these checks matched, not that the file is safe in every way."},
+    ],
     "remove-watermark": [
         {"name": 'Upload the watermarked PDF', "text": 'Select a PDF that carries a visible watermark.'},
         {"name": 'Review the candidates', "text": 'The tool scans the pages for text that repeats across them and is see-through or set at an angle, as watermarks usually are, and lists what it found. Image watermarks such as logos are not detected.'},
@@ -1183,6 +1189,11 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Upload the image', "text": 'Drop a JPG, PNG or WebP that carries a watermark.'},
         {"name": 'Mark the watermark', "text": 'Select the area covering it. The tool reconstructs that region from the pixels around it.'},
         {"name": 'Download the result', "text": 'Works best on watermarks over flat or gently textured backgrounds. Over busy detail the repair will be visible — and only remove watermarks from images you have the right to alter.'},
+    ],
+    "gemini-watermark-remover": [
+        {"name": "Add your Gemini images", "text": "Drop or choose one or more PNG, JPEG or WebP images, ideally the files exactly as Gemini or Nano Banana saved them. They are read inside this browser tab and are not uploaded."},
+        {"name": "Remove the sparkle", "text": "Click Remove sparkle. Each image is first checked for the logo at the sizes and positions Gemini uses, and the logo's size, position and strength are fitted to the image. Where it is found, Gemini's blend is reversed pixel by pixel with calibrated masks, and what that would leave is measured before anything is changed: at the logo's outline, over the logo as a whole, in its fine detail, in its core direction by direction, and across its interior against the picture carried in from beyond the outline, side by side and in colour, with the same reading taken on clean picture beside the logo to tell the picture's own structure from a copy of the logo left behind. A logo whose fitted strength falls outside the range Gemini draws it with, as a sharpened copy's often does, is not removed either. An image without the logo, or one where the tool cannot confirm that no outline or copy of the logo, dark or light, would be left, is left exactly as it was and marked as unchanged."},
+        {"name": "Check the corner and download", "text": "Compare the before and after, with the corner enlarged, then download. Several cleaned images come as one ZIP. PNG and lossless WebP stay lossless; JPEG and lossy WebP are saved again at quality 95."},
     ],
     "translate-pdf": [
         {"name": "Choose the PDF", "text": "Select a text-based PDF. The text is extracted in your browser, so the file itself is not uploaded; a scanned PDF needs OCR PDF first."},
@@ -1356,9 +1367,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are external stylesheets and images included?", "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."},
     ],
     "xml-to-pdf": [
-        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
+        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported, except one that declares entities in its DOCTYPE, which is refused for safety. A file that is not well-formed is refused with the line and column of the first problem. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
-        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."},
+        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file, and up to 50,000 printed lines, about 800 A4 pages; a larger file is refused, so split it first. Every element starts a line, so a sitemap whose entries have all four fields fits about 8,300 entries. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide documents lose text. A file nested more than 60 levels deep is refused, because its deepest lines would start past the margin."},
     ],
     "csv-to-pdf": [
         {"q": "Does the tool auto-detect delimiters?", "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."},
@@ -1366,7 +1377,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the first row treated as a header?", "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."},
     ],
     "json-to-pdf": [
-        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."},
+        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first, and invalid JSON is not converted: the page says what the parser expected and where, for example \"Expecting value at line 1, column 14\", which is what a comma after the last item of a list gives. JSON / XML Formatter can help you fix it. A file that would print as more than 50,000 lines is refused too."},
         {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."},
         {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],
@@ -1449,11 +1460,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How much can a video be compressed?", "a": "It depends on the source. High-bitrate recordings, such as phone and camera footage, shrink the most; a video that is already heavily compressed may barely change at the default level."},
         {"q": "Does compression change the video resolution?", "a": "No. The resolution stays the same; only the bitrate is reduced. To lower the resolution too, run the video through Video Resizer."},
         {"q": "What output format is used?", "a": "The output is MP4 with H.264 video, which almost every device and browser can play."},
+        {"q": "Does the compressed video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. A clip a phone stored sideways comes out upright, the sound track keeps its language, and chapter markers keep their place and titles."},
     ],
     "trim-media": [
         {"q": "Can I trim audio files too?", "a": "Yes. The tool supports both audio (MP3, WAV, OGG, FLAC) and video (MP4, WebM, MOV, AVI) files."},
         {"q": "Is the trimmed file re-encoded?", "a": "Audio is not: MP3, WAV, AAC, OGG and M4A are cut without re-encoding, and FLAC is rewritten losslessly. Video always is — H.264 for MP4, MOV and MKV, VP9 for WebM, MPEG-4 for AVI — so the file keeps its format but not its exact original encoding."},
         {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
+        {"q": "Does the trimmed file keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the device, the recording date, and tags such as the title, artist, album and comments are left out of trimmed video and audio alike. A video a phone stored sideways comes out upright. The sound keeps its language in the formats that store one, and in MP4, MOV, MKV, WebM, MP3 and M4A files the chapter markers inside the cut keep their titles and move with it."},
     ],
     "base64": [
         {"q": "Can I encode files (not just text)?", "a": "No. This tool encodes and decodes text only; there is no file upload, and Base64 that holds binary data such as an image cannot be decoded to text here."},
@@ -1480,6 +1493,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What bitrate should I pick?", "a": "192 kbps, the default, is a good general choice. Use 256 or 320 for music you care about, and 64 or 128 for speech, podcasts and voice memos where small size matters more."},
         {"q": "Does converting between lossy formats lose quality?", "a": "Yes, a little. Each lossy encode discards more detail, so MP3 to AAC or OGG to MP3 is a trade for compatibility. Start from the highest-quality source you have."},
         {"q": "Can I take the audio out of a video?", "a": "Use Extract Audio for that; it is built for pulling the soundtrack out of a video file."},
+        {"q": "Are the file's tags kept?", "a": "No. The title, artist, album, track number, genre, dates and comments are left out, and so are any location and device details a phone or recorder stored, so add song tags again in your music player if you need them. Cover art stays in MP3 and FLAC files, an MP3 keeps chapter markers and their titles, and an OGG keeps the track's language."},
         {"q": "What happens to my file after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
 
@@ -1526,14 +1540,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "split-in-half": [
         {"q": "What is this for?", "a": "Scans of open books and magazines, where each scanned sheet holds two pages side by side. Cutting them apart gives a document that reads one page at a time, which suits phones, e-readers and OCR."},
         {"q": "Which direction should I choose?", "a": "Vertical for a two-page spread scanned side by side, which is the usual case. Horizontal for sheets where the two halves are stacked, such as some forms or tickets printed two to a page."},
-        {"q": "Does it cut exactly down the middle?", "a": "Yes, it splits each page into two equal halves of the full page. If the spread was scanned off-centre, a little of one page may appear on the other. Cropping first does not help: the cut ignores any crop set with Crop PDF or Auto Crop, and the cropped-off edges come back."},
-        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, for each original page in turn — so a correctly scanned book reads in order. A horizontal cut puts each page's bottom half first; for top-then-bottom order, run Reverse PDF before and after splitting."},
+        {"q": "Does it cut exactly down the middle?", "a": "Yes: each page is cut into two equal halves of what shows, which is the page after any crop. If the spread was scanned off-centre, crop it first with Crop PDF so the fold sits in the middle; the cut follows the crop."},
+        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, top then bottom for a horizontal one, for each original page in turn — so a correctly scanned book reads in order."},
         {"q": "Does it reduce image quality?", "a": "No resampling is involved in the cut itself; each half shows the same content at the same resolution as the original page."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "pdf-to-svg": [
         {"q": "What kind of PDFs convert best?", "a": "Vector PDFs (drawn in Illustrator, Inkscape, Figma, LaTeX, etc.) convert into editable vector SVGs. Scanned/raster PDFs become SVGs containing embedded images."},
-        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file, which currently downloads with a .zip name, so rename it to .svg."},
+        {"q": "How many SVG files come back?", "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file."},
         {"q": "Can I edit the SVGs after?", "a": "Yes. Open them in any vector editor (Illustrator, Inkscape, Figma) to edit shapes and paths. Text is converted to outlines, so it keeps its exact look but cannot be edited as text, and links are not kept."},
     ],
     "pdf-to-html": [
@@ -1708,7 +1722,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "m4a-to-mp3": [
         {"q": "Why convert M4A to MP3?", "a": "M4A (AAC inside an MP4 container) isn't universally supported — older car stereos, some Android players, and many legacy devices won't play it. MP3 works everywhere."},
         {"q": "Will the audio quality drop?", "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. This page always encodes at 192 kbps, which is hard to tell from the source in casual listening; for another bitrate, use Audio Converter."},
-        {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."},
+        {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here. The memo's tags, such as its title, date and any location or device details, are left out of the MP3."},
     ],
     "mp4-to-mp3": [
         {"q": "Does this work for any MP4?", "a": "Yes — as long as the MP4 has an audio track. Music videos, lecture recordings, podcasts, screen recordings with narration, all work."},
@@ -1719,6 +1733,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why convert MOV to MP4?", "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often the same (H.264), but this tool re-encodes the video anyway rather than only changing the container."},
         {"q": "Will I lose quality?", "a": "A little. Every file is re-encoded as H.264 at CRF 23 with AAC audio instead of being copied, so the result is not bit-for-bit the original."},
         {"q": "Does it preserve audio?", "a": "Yes, re-encoded as AAC. If the file has several audio tracks, only one is kept."},
+        {"q": "Is my iPhone's location copied into the MP4?", "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MP4. A portrait clip comes out upright, the sound track keeps its language, and chapter markers keep their place and titles."},
     ],
     "avi-to-mp4": [
         {"q": "Why convert AVI to MP4?", "a": "AVI is Microsoft's older container, usually filled with codecs such as DivX, Xvid or Motion JPEG that phones and browsers handle poorly or not at all. H.264 with AAC in an MP4 is the combination those devices are built around."},
@@ -1826,7 +1841,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
-        {"q": "Is the picture changed at all?", "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."},
+        {"q": "Is the picture changed at all?", "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were, and so does the rotation that makes a portrait phone clip play upright. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."},
+        {"q": "Does the muted video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. Chapter markers keep their place and titles, and a subtitle track kept in an MKV or WebM keeps its language."},
         {"q": "What format is the muted file?", "a": "The same container you uploaded: an MKV comes back as Matroska, a WebM as WebM and an AVI as AVI, with the original video codec inside. The download name always ends in .mp4, though, so a muted holiday.mkv arrives as holiday_muted.mp4 with Matroska inside; rename it to .mkv if your player or editor goes by the extension. Nothing is converted; use Video Converter if you also need another format."},
         {"q": "Which tracks are removed?", "a": "Every audio track, including commentary and extra languages. FFmpeg keeps one video stream, and in MKV and WebM files it can also carry over one text subtitle track. The removed audio cannot be recovered from the muted file."},
         {"q": "How much smaller will the file be?", "a": "Smaller by roughly the size of the audio, which depends on its bitrate and length; the video portion is unchanged. A clip with a short or low-bitrate soundtrack barely shrinks."},
@@ -1839,16 +1855,19 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why is reversing slow?", "a": "Reversing requires re-encoding the whole video — FFmpeg has to read every frame, store them, then write them out in reverse order. RAM usage grows with video length."},
         {"q": "Will the audio sound weird?", "a": "Yes — speech becomes gibberish but music can sound interesting. The audio is reversed with the video so they stay in sync."},
         {"q": "What's a good use case?", "a": "Reverse-loop animations, training analysis (replay a fall or trick backwards), creative edits, debugging frame-by-frame issues."},
+        {"q": "Does the reversed video keep where the clip was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. So are chapter markers, which would point to the wrong moments once the clip runs backwards. The sound track keeps its language, and a clip a phone stored sideways comes out upright."},
     ],
     "video-speed": [
         {"q": "Will fast-forward make voices sound chipmunky?", "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."},
         {"q": "What's the maximum slowdown / speedup?", "a": "From 0.25× (four times slower) to 4× (four times faster)."},
         {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
+        {"q": "Does the new video keep where the clip was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out. So are chapter markers, which a new speed would put in the wrong places, and the sound track's language. A clip a phone stored sideways comes out upright."},
     ],
     "audio-trim": [
         {"q": "How precise are the start/end times?", "a": "Times can be set to the millisecond. Because the audio is copied rather than re-encoded, a cut lands on the nearest compressed-audio frame, within a few hundredths of a second. Trim Media copies audio the same way."},
-        {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."},
+        {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original audio bytes. The trimmed file is identical quality to the source."},
         {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC, rewritten losslessly; every other format is copied without re-encoding."},
+        {"q": "Are the file's tags kept?", "a": "No. The title, artist, album, dates and comments are left out, and so are any location and device details a phone or recorder stored. In MP3 and M4A files the chapter markers inside the cut keep their titles and move with it, and M4A and OGG files keep the track's language."},
     ],
     "image-palette": [
         {"q": "How are the colors picked?", "a": "We shrink the image to fit within 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
@@ -1953,6 +1972,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "deskew-pdf": [
         {"q": "My scans look fine — should I run deskew?", "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."},
         {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."},
+        {"q": "How long a PDF can I deskew?", "a": "Up to 500 MB, and pages adding up to 400 megapixels at the resolution it straightens them at, which is about 400 A4 pages. The pages are counted before any work starts, whether or not they turn out tilted; a longer PDF is refused with a message saying so, so split it and deskew the parts."},
         {"q": "Should I deskew before or after OCR?", "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."},
     ],
     "esign-pdf": [
@@ -2071,7 +2091,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "pdf-to-epub": [
         {"q": "How accurate is the EPUB compared to the PDF?", "a": "The text comes across line by line, in the order it is stored in the PDF, with its font sizes, bold, italics and colors. Headings, lists and chapters are not detected, and multi-column layouts, footnotes, and figure captions may need cleanup in an e-book editor such as calibre."},
         {"q": "Does it preserve images?", "a": "Yes — images are embedded inside the page as inline data, at the resolution stored in the PDF, rather than as separate image files in the EPUB."},
-        {"q": "Will the table of contents work?", "a": "No table of contents is created, even when the PDF has bookmarks: the whole document is a single section of the book."},
+        {"q": "Will the table of contents work?", "a": "The contents list has one entry for each page of the PDF, Page 1 onwards, so you can jump to a page. The PDF's bookmarks are not carried over, and the whole document is a single section of the book."},
     ],
     "pdf-to-gif": [
         {"q": "Will the GIFs look good?", "a": "GIF's 256-color palette quantizes the page. Text remains readable but gradients and photos show banding. Use PNG for higher quality."},
@@ -2084,7 +2104,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How long does it take?", "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end, depending on how complex the pages are."},
         {"q": "What happens to a confidential PDF after I upload it?", "a": "The PDF is uploaded over HTTPS and rendered in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated JPGs after the result is sent, and a background sweep clears anything left behind by an interrupted request."},
         {"q": "What resolution are the JPGs?", "a": "150 DPI, which makes an A4 page about 1240 x 1755 pixels, plenty for on-screen viewing and social-media sharing. For 72 DPI thumbnails or 300 DPI print copies, use PDF to Image, which lets you choose."},
-        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG, which currently downloads with a .zip name, so rename it to .jpg."},
+        {"q": "Can I convert just specific pages?", "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG."},
         {"q": "What's the file size limit?", "a": "Up to 500 MB per file on the hosted site. Each page becomes its own JPG, so a very long document produces a large ZIP and can hit the request timeout; split the PDF first if that happens. Fair-use rate limits apply."},
         {"q": "Do the JPGs carry a watermark or need an account?", "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions."},
     ],
@@ -2224,11 +2244,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why burn subtitles in instead of using a soft track?", "a": "Burned-in captions show on platforms and players that ignore separate subtitle tracks. The trade-off is that viewers cannot turn them off, and this tool does not create a soft, switchable track."},
         {"q": "What subtitle formats are supported?", "a": "SRT files. The captions are rendered into the picture, so the MP4 shows them in any player; no separate subtitle track is produced."},
         {"q": "Can I customize the font / size / color?", "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."},
+        {"q": "Does the subtitled video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out of the MP4. A clip a phone stored sideways comes out upright, the sound keeps its language, and chapter markers keep their place and titles."},
     ],
     "audio-merge": [
         {"q": "What if my files have different sample rates?", "a": "FFmpeg resamples them to a common rate automatically; a 44.1 kHz MP3 joined to a 48 kHz WAV came out at 44.1 kHz. The result is always an MP3, so the merge is never lossless, even from FLAC or WAV inputs."},
         {"q": "Are gaps between tracks added?", "a": "No — files are concatenated seamlessly. To add silence, prepare it as a separate file with the same format and insert it in the order."},
         {"q": "Maximum total length?", "a": "The limits apply to what you upload: up to 50 files, and the whole upload has to fit within the 500 MB request limit. A merge that takes longer than three minutes to encode is stopped."},
+        {"q": "Are the files' tags kept?", "a": "No. The title, artist, album, dates and comments are left out of the merged MP3, and so are any location and device details a phone or recorder stored. Chapter markers are left out too, because they would point to the wrong places in the joined file."},
     ],
     "color-converter": [
         {"q": "What does the starting color #0E8A56 convert to?", "a": "R 14, G 138, B 86, shown as rgb(14, 138, 86) and rgba(14, 138, 86, 1). HSL is hsl(155, 82%, 30%), the Tailwind row is bg-[#0e8a56] and the CSS variable row is --brand: #0e8a56;. The badge is black and reads AA · 4.8:1, because the contrast is 4.79:1 against black and 4.39:1 against white."},
@@ -2259,6 +2281,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will quality be preserved?", "a": "WAV and FLAC store the decoded audio without further loss. MP3, AAC and OGG are re-encoded at the encoders' default settings, about 128 kbps for stereo MP3 and AAC, and there is no bitrate setting here."},
         {"q": "What if the video has multiple audio tracks?", "a": "The first (default) audio track is extracted. Choosing another track, or extracting several at once, is not supported."},
         {"q": "Can I extract just a section of the audio?", "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."},
+        {"q": "Does the audio file keep where the video was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title, artist and comments are left out. An MP3 keeps the video's chapter markers and their titles, and an OGG keeps the sound track's language; the other formats come out with neither."},
     ],
     "generate-barcode": [
         {"q": "What barcode type for a URL?", "a": "Use QR code — barcodes like Code 128 work for text but are much wider for the same content."},
@@ -2397,17 +2420,22 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
         {"q": "Will quality suffer?", "a": "Every output is re-encoded, so a small loss is normal. MP4, MOV and MKV use H.264 at CRF 23, WebM uses VP9 at about 1 Mbit/s, and AVI uses MPEG-4 with MP3 audio. None of the outputs is lossless, MKV included."},
         {"q": "How long does it take?", "a": "It depends on the length, the resolution and the format. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."},
+        {"q": "Does the converted video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out, whatever the format. What the video needs to play as recorded is kept: a clip a phone stored sideways comes out upright, the sound track keeps its language, and so does a subtitle track carried into an MKV or WebM. Chapter markers keep their place and titles. AVI has no place for languages or chapters."},
     ],
     "video-merge": [
         {"q": "Do the videos need the same resolution?", "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
+        {"q": "Does the merged video keep where the clips were recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording dates, and tags such as the title and comments are left out, and so are the clips' chapter markers and the language of their sound. Portrait phone clips still play upright: a video kept untouched keeps its rotation, and a re-encoded one is turned upright."},
+        {"q": "Will the merged video play everywhere?", "a": "Clips recorded alike keep their video untouched, so iPhone clips, which are HEVC (\"High Efficiency\") by default, give an HEVC video. Some browsers, Chromium on Linux among them, and PCs without an HEVC decoder cannot play it: they show a blank picture or refuse the file. Video Converter makes an H.264 copy that plays everywhere. Any other mix of clips comes out as H.264."},
+        {"q": "How long can the merged video be?", "a": "Clips whose video is kept untouched have only their sound re-encoded, which takes up to about two minutes per hour of footage, so the 180 seconds of FFmpeg time each merge gets cover about an hour and a half, less while the server is busy; phone video reaches the 500 MB upload limit long before that. A mix that has to be re-encoded gets the same 180 seconds, so what fits depends on the total length and frame size: on the PrivaTools server, a little under three minutes of 1080p video in all at 30 frames a second, about half that at 60, or under a minute of 4K, and less while the server is busy. A longer merge stops with \"The server took too long\"; join fewer or shorter clips at a time, or make them smaller first with Video Resizer. The route takes 5 requests a minute per IP address."},
     ],
     "video-resizer": [
         {"q": "What size will my video be?", "a": "The height is exactly the preset and the width keeps the proportions, rounded to an even number. A 1920×1080 clip becomes 1280×720 at 720p, 854×480 at 480p and 426×240 at 240p; a 640×480 clip becomes 960×720 at 720p."},
         {"q": "What happens to vertical phone videos?", "a": "The preset still sets the height, so a portrait 1080×1920 clip becomes 406×720 at 720p and 608×1080 at 1080p, a much smaller picture than a landscape video at the same setting. Clips a phone stores sideways with a rotation flag are turned upright first and give the same result."},
         {"q": "Can it make a video larger?", "a": "Yes. Nothing stops a preset above the source height, so a 640×360 clip at 1080p becomes 1920×1080. Enlarging cannot add detail that was never recorded; it only makes the file bigger. To save space, pick a preset below the original height."},
         {"q": "Does resizing change anything else?", "a": "The frame rate stays the same. The video is always re-encoded, even at its current height, and the audio is re-encoded as AAC. One audio track is kept, the default one or else the one with the most channels, and subtitle tracks are dropped, because FFmpeg adds none to an MP4 automatically."},
+        {"q": "Does the resized video keep where it was recorded?", "a": "No. The location (GPS), the make, model and software of the phone or camera, the recording date, and tags such as the title and comments are left out of the MP4. The sound track keeps its language, and chapter markers keep their place and titles."},
         {"q": "Can I crop or change the aspect ratio?", "a": "No. The resizer always keeps the video's proportions and has no crop or padding option. To make a file smaller without changing its resolution, use Compress Video instead."},
         {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per video and the request five minutes once the upload has arrived, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."},
         {"q": "What happens to my videos on the server?", "a": "They are uploaded over HTTPS and resized by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes each original and its resized copy after the download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
@@ -2445,6 +2473,16 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is my document uploaded to be checked?", "a": "Yes. It is uploaded over HTTPS and checked in the same isolated temporary per-request storage every server tool here uses. Response cleanup removes the job's temporary files after the report is sent, and a background sweep clears anything left behind by an interrupted request. The document is not added to an account or used for model training."},
         {"q": 'Can it fix the problems it finds?', "a": 'No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known.'},
     ],
+    "hidden-text-checker": [
+        {"q": "How do I find hidden text in a PDF?", "a": "Run the file through this checker. It reads every character the way text extraction does, then tests whether a reader can actually see it: how it is drawn (text render mode 3 or 7 draws nothing, and so does a font with empty letters), its opacity and that of the group it is drawn in, its blend mode, its colour against what is drawn behind it, its size and spacing, whether it lies on the visible page or inside a clipping path, whether its layer is shown, and whether a box, stroke, image or line of block characters was drawn over it. Where the answer depends on how the page looks, the page is rendered and the words count as hidden only if their area shows no ink at all, so readable text is not reported."},
+        {"q": "Can it find hidden AI prompts in a résumé or a paper?", "a": "Yes, when they are hidden in any of the ways it checks. Instructions such as \"ignore all previous instructions\" have been hidden in résumés and papers as white or tiny text, where screening software and AI models read them but people do not. The checker shows each hidden passage and its exact words. It cannot tell whether hidden text is malicious, only that it is there, so read it and decide; white text can also be leftover formatting."},
+        {"q": "How do I check whether a redacted PDF is really redacted?", "a": "Check the redacted file before you share it. A black box drawn over text hides it from the eye but leaves the words in the file, where copying, search and AI tools still find them; the checker reports those words as text under a shape or image. Areas marked for redaction but never applied are reported too, as is text under a picture of the page laid on top. A real redaction removes the text, so nothing is found under the box. Redact PDF removes the text under the boxes you draw."},
+        {"q": "Why is invisible text over my scanned pages listed separately?", "a": "OCR software makes a scan searchable by laying invisible text over the page image, so that text is expected. It is outlined on the preview and listed as an OCR text layer, with a sample of its words, and is not counted as hidden text; the downloaded report gives only its page and word count. Invisible words that sit over a blank part of the page image, where the picture shows nothing, are reported as hidden text, and so is invisible text over a photo or a chart on a page of ordinary text."},
+        {"q": "Why does it report text nobody meant to hide?", "a": "Some hidden text is harmless. A web page saved as PDF can carry a link meant only for screen readers, such as \"Skip to main content\", clipped out of view, and white text can be leftover formatting. The checker reports what is in the file and why a reader cannot see it; whether it matters is for you to decide."},
+        {"q": "Does a clean result mean the PDF is safe?", "a": "No. It means none of these checks matched. The checker does not look inside attachments, scripts or metadata, cannot see text drawn with a font whose letters show as different letters, and does not notice text hidden by a soft mask whose shape is never painted, or under a shape that covers each letter only in part. A page it could not read is named, and the result then says it could not fully check the PDF instead of giving the all-clear. Sanitize Document removes scripts, attachments and hidden layers, and Strip Metadata removes document properties."},
+        {"q": "Is my PDF uploaded?", "a": "Yes. The check runs on the PrivaTools server, because it needs the drawing order, colour and opacity of every character, which the PDF engine in your browser does not report. The file is uploaded over HTTPS, checked in isolated temporary per-request storage by a separate process with memory and time limits, and deleted when the check ends; a background sweep clears anything an interrupted request leaves behind. The report is sent back to you and not stored. Your file is not changed."},
+        {"q": "What are the limits?", "a": "Up to 500 pages and 500 MB per file. A check stops after 20 seconds plus 12 for each MB of the file, 90 seconds at most; split a longer document with Split PDF and check the parts. Password-protected PDFs must be unlocked first, and the site's fair-use rate limits apply."},
+    ],
     "bates-remove": [
         {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as page text and you can describe their shape: prefix, digit count, suffix. A stamp added as a stamp annotation or a form field is found but cannot be removed, and the page says so. A number printed into a scanned image can only be found through the scan\'s OCR text: then the text is removed and the picture under it whitened.'},
         {"q": 'Why type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed, and only within an inch of an edge of the page; matches anywhere else on the pages are left in place and counted for you. With both blank, anything in the top or bottom inch that looks like a number with at least as many digits as you give (three at the fewest), with or without letters in front, goes, so dates and account numbers printed there go too.'},
@@ -2472,6 +2510,17 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": 'Which formats can I use?', "a": 'JPG, PNG, WebP and BMP, and the result comes back in the same format. Transparency is not kept: see-through areas usually turn black, so place a transparent PNG on a background first if that matters.'},
         {"q": "Does the image leave my device?", "a": "Yes, for the repair step. It is uploaded over HTTPS to the PrivaTools server, processed in isolated temporary per-request storage, and removed by response cleanup after the result is sent; a background sweep clears anything left behind by an interrupted request. It is not passed to a third-party service or used for model training."},
         {"q": 'Is it legal to remove a watermark?', "a": "That depends entirely on the image. A watermark is usually an ownership mark, and stripping one from a stock photo or someone else's work to avoid licensing it is copyright infringement. Use this on your own images, or where you hold the rights."},
+    ],
+    "gemini-watermark-remover": [
+        {"q": "Does it remove SynthID?", "a": "No. SynthID is Google's invisible watermark: it is spread through the whole picture rather than drawn in one place, and it is designed to survive edits. This tool does not look for it, weaken it or remove it. It takes off only the visible sparkle logo, so SynthID stays in the image."},
+        {"q": "Is it lossless?", "a": "For PNG and lossless WebP, yes. Only the pixels under and right around the sparkle change, and every other pixel in the file is exactly as it was. Under the logo, reversing Gemini's blend recovers the original as closely as the fitted mask matches the logo: within 3 levels of brightness out of 255 on most synthetic test images. On real Gemini images the match is close but not exact, so a faint trace can remain where they differ slightly. JPEG and lossy WebP have to be compressed again when they are saved, at quality 95, so the whole picture changes very slightly, as it would with any edit."},
+        {"q": "Is my image uploaded?", "a": "No. The image is read, cleaned and saved again inside your browser tab; it is not sent to PrivaTools or to anyone else. You can watch your browser's network panel while it runs to check."},
+        {"q": "Which logo sizes and positions does it handle?", "a": "The layouts documented by the two open-source projects whose calibrated masks it uses, told apart by size and position: a 48 px logo 32 px from the right and bottom edges; a fainter 48 px logo 96 px in, which current images at Gemini's standard 1K sizes such as 1024 × 1024, 848 × 1264 and 1376 × 768 carry; a 96 px logo 64 px in, or a paler one 192 px in, on images whose sides are both over 1024 px; and a 36 px logo whose margin follows the picture's proportions. On a picture scaled from one of Gemini's 1K sizes, such as 1024 × 768 from 1200 × 896, the logo is looked for where the scaling put it, to a fraction of a pixel. The logo's exact size, position and strength are fitted each time. Copies that were cropped, screenshotted or resized to other proportions usually are not recognised."},
+        {"q": "What if no watermark is found?", "a": "The image is left exactly as it was, marked 'No Gemini sparkle found', and not included in the download, since your original is already the right file. That happens with images that never had the sparkle, with copies cropped, resized or compressed again after download, with a logo size or position the tool does not recognise, and sometimes where the logo sits over busy detail or a nearly white corner, where it adds only a few levels of brightness and is also hardest to see. The page shows the corner enlarged, so you can check. The tool only removes a logo it has found, so a white shape in the corner of an ordinary photo is left alone."},
+        {"q": "What does 'not removed cleanly' mean?", "a": "The tool found the sparkle, but even after fitting the logo's size, position and strength it could not confirm that removing it would leave no outline or copy of the logo, dark or light. That happens most with images saved again as JPEG, resized or sharpened after Gemini made them, for example by an app, a messaging service or a gallery's enhance button, because their logo's edge no longer matches its calibrated mask and a strength fitted at that edge would leave a copy of the logo in its interior. Over smooth backgrounds such as out-of-focus light or soft shading, where any trace would show, and over strong grain, the tool is more cautious still and can leave even an original unchanged. Rather than hand you a picture with a trace that would show, the tool leaves the file exactly as it was, marks it 'not removed cleanly' and shows the sparkle enlarged. It is not included in the download."},
+        {"q": "Why can a faint trace remain?", "a": "The calibrated masks match Gemini's logo closely but not perfectly, so a faint trace can remain where they differ: a little colour speckle, a thin line along the logo's edge or, on a copy that was sharpened or resized, a faint darker or lighter shape of the logo, usually visible only when you zoom in to 200 % or more, most often over busy detail or on a copy that was saved again. Each result is measured before it is saved, at the outline, in the core and across the logo's interior against the picture around it, and an image where the tool cannot confirm that no outline or copy of the logo would be left is left unchanged instead. Images compressed again, resized or sharpened after download, for example saved as JPEG by an app or sent through a messaging app, match less well and are more often left unchanged. Start from the original download where you can."},
+        {"q": "What happens to the file's metadata?", "a": "It is kept. EXIF, XMP and PNG text data, the colour profile, and any Content Credentials (C2PA) or AI labels already in the file are copied into the new file unchanged; the tool adds no label of its own and takes none out. Because the pixels change, a Content Credentials check may report that the image was edited after it was signed. The only things not carried over describe the old encoding rather than the picture: a JPEG's Adobe colour-transform and multi-picture markers and any CMYK or greyscale colour profile, and an indexed PNG's palette, which is saved as full colour. A JPEG's EXIF orientation is set to upright, because the picture is saved upright."},
+        {"q": "Is it allowed to remove the Gemini watermark?", "a": "That depends on the terms you use Gemini under and on how you use the image. Google itself leaves the visible logo off images on some paid plans, and SynthID stays in the image either way. Follow each platform's rules for labelling AI images, and do not use a cleaned image to pass an AI picture off as a real photo, for example as evidence in a complaint, a refund claim or a news story."},
     ],
     "translate-pdf": [
         {"q": "Is my PDF uploaded anywhere?", "a": "The PDF itself is not. With the default 'On this device' engine, text extraction and translation both run in your browser. Two optional steps do send text out: 'My own API key' sends the extracted text directly to the AI provider you chose, and 'Save as PDF' sends the translated text to the PrivaTools server, where it is typeset in temporary per-request storage."},
@@ -2625,7 +2674,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     "mkv-to-webm": [
         {"q": "Why convert MKV to WebM?", "a": "WebM is a restricted form of Matroska designed for the web: it allows only VP8, VP9 or AV1 video and Vorbis or Opus audio, and browsers play it in the HTML video element. An MKV can hold almost any codec, so browser playback of an MKV is not something to rely on."},
         {"q": "Is 1 Mbit/s enough?", "a": "It depends on the footage. The target is the same at every resolution, so a small or simple clip keeps its detail while a 1080p or larger video loses more, especially in fast motion. The realtime encoder settings keep encoding quick at the cost of slightly lower quality for the same bitrate. There is no quality setting on this page."},
-        {"q": "Which audio and subtitle tracks are kept?", "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. The title and language tags carry over, while the other audio tracks and any attached fonts are dropped."},
+        {"q": "Which audio and subtitle tracks are kept?", "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. Each track kept keeps its language tag but not its title, and the other audio tracks and any attached fonts are dropped. Tags on the file itself, such as a location or a recording date, are left out too."},
         {"q": "Why does an MKV with 5.1 surround sound fail?", "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"Processing failed. Please try again.\" Stereo, mono and AAC 5.1 tracks convert normally."},
         {"q": "How long a video can I convert?", "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file, and the whole request has five minutes once the upload has arrived, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."},
         {"q": "Are there other limits?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."},
@@ -2655,7 +2704,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Why convert MOV to MKV?", "a": "MOV is Apple's QuickTime container; Matroska is an open, royalty-free one that VLC and many media servers handle, with room for several audio and subtitle tracks and chapters. This tool changes the encoding as well as the container, so it is not a lossless remux."},
         {"q": "Is any quality lost?", "a": "A little. The video is compressed again as H.264 at CRF 23, x264's default quality level, and the audio again as AAC at FFmpeg's default bitrate. Whether the MKV ends up bigger or smaller than the MOV depends on the footage and on how the MOV was encoded."},
         {"q": "Which tracks end up in the MKV?", "a": "One video track, at most one audio track and at most one subtitle track. With several audio tracks, FFmpeg keeps the one flagged as default, or else the one with the most channels. A text subtitle track is converted to ASS. Timecode and other data tracks are not copied."},
-        {"q": "Is my iPhone's location copied into the MKV?", "a": "It can be. The command does not strip metadata, so container tags such as the title and, on iPhone clips, the camera make, model and location are copied into the MKV as Matroska tags. Check the tags before you share the file if that matters."},
+        {"q": "Is my iPhone's location copied into the MKV?", "a": "No. The location (GPS), the camera make, model and software, the recording date, and tags such as the title and comments are left out of the MKV. The sound track keeps its language, and chapter markers keep their place and titles."},
         {"q": "Why won't the MKV play on my TV or phone?", "a": "Often it is the pixel format, which the command leaves as it is. A 10-bit source, such as HDR video from a recent iPhone, becomes 10-bit H.264 (High 10), and an RGB screen recording becomes 4:4:4 H.264; many hardware players decode only 8-bit 4:2:0 H.264. Some devices do not open MKV files at all."},
         {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes once the upload has arrived, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."},
         {"q": "What happens to my MOV on the server?", "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, rather than by a third-party service. Response cleanup removes the MOV and the MKV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes left by an interrupted request."},

@@ -9,7 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
-  ArrowDownUp, BookOpenCheck, Accessibility, Languages,
+  ArrowDownUp, BookOpenCheck, Accessibility, Languages, ScanEye,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -101,7 +101,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "two columns down middle horizontal vertical",
     popularity: 20,
     category: "organize", accepts: ".pdf", outputLabel: "split-in-half.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "organize-pages", icon: Layout, name: "Organize Pages",
@@ -259,7 +259,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "straighten skew tilt rotate angle scan",
     popularity: 56,
     category: "optimize", accepts: ".pdf", outputLabel: "deskewed.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "repair-pdf", icon: Wrench, name: "Repair PDF",
@@ -540,7 +540,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "jpg png screenshot picture",
     popularity: 132,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-long-image", icon: FileImage, name: "PDF to Long Image",
@@ -573,7 +573,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "bitmap windows render convert",
     popularity: 144,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-gif", icon: FileImage, name: "PDF to GIF",
@@ -584,7 +584,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "gif render frame convert",
     popularity: 145,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-svg", icon: FileImage, name: "PDF to SVG",
@@ -595,7 +595,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "vector scalable graphics",
     popularity: 143,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-jpg", icon: FileImage, name: "PDF to JPG",
@@ -606,7 +606,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert jpg jpeg image picture",
     popularity: 131,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-png", icon: FileImage, name: "PDF to PNG",
@@ -617,7 +617,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert png transparent picture",
     popularity: 134,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-pptx", icon: Presentation, name: "PDF to PowerPoint",
@@ -628,7 +628,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "powerpoint slides presentation",
     popularity: 135,
     category: "from-pdf", accepts: ".pdf", outputLabel: "slides.pptx",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "pdf-to-text", icon: Type, name: "PDF to Text",
@@ -782,13 +782,13 @@ const _toolsRaw: Tool[] = [
   {
     slug: "pdf-to-epub", icon: BookMarked, name: "PDF to EPUB",
     description: "Convert a PDF into the EPUB format for e-readers",
-    longDescription: "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.",
+    longDescription: "Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters, the contents list names each page, and bookmarks are not carried over.",
     seoTitle: "Convert PDF to EPUB Online – Basic E-Book File",
     metaDescription: "Turn a PDF into a basic EPUB e-book file that keeps the text and images of every page, in page order. Free conversion, no sign-up needed.",
     synonyms: "ebook kindle reader book",
     popularity: 141,
     category: "from-pdf", accepts: ".pdf", outputLabel: "book.epub",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "markdown-to-pdf", icon: Code2, name: "Markdown / Config to PDF",
@@ -958,13 +958,13 @@ const _toolsRaw: Tool[] = [
   {
     slug: "chat-with-pdf", icon: MessagesSquare, name: "Chat with PDF (AI)",
     description: "Ask questions about a PDF — answered with your own AI key",
-    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.",
+    longDescription: "Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Groq, OpenRouter, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.",
     seoTitle: "Chat With a PDF Using AI – Your Own API Key",
     metaDescription: "Ask questions about a document with text extracted in your browser and sent straight to the AI provider you choose. Free, private, your own API key.",
     synonyms: "ask pdf chat document ai question answer chatpdf talk",
     popularity: 30,
     category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",
@@ -1076,7 +1076,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "alpha clear see through transparency",
     popularity: 44,
     category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
   {
     slug: "invert-colors", icon: Moon, name: "Invert Colors",
@@ -1087,7 +1087,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-28",
   },
 
   {
@@ -1160,6 +1160,17 @@ const _toolsRaw: Tool[] = [
     popularity: 78,
     category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
     lastReviewed: "2026-09-24",
+  },
+  {
+    slug: "hidden-text-checker", icon: ScanEye, name: "Hidden Text Checker",
+    description: "Find text in a PDF that readers can't see",
+    longDescription: "Find hidden text in a PDF online for free: text a reader can't see but search, copy and paste, screening software and AI models still read. It finds text set to be invisible or fully transparent, text in the colour of what lies behind it (white on white), text too small to read, text off the page or clipped away, text in layers that are switched off, text under a box, shape or image drawn over it (a redaction that left the words in the file), text in hidden comments and form fields, and redaction marks that were never applied. Each finding gives the page, the reason and the exact words, highlighted on a preview of the page, and the report downloads as text or JSON. Invisible text over scanned pages, which OCR adds, is listed separately. A clean result means none of these checks matched, not that the file is safe in every way. The PDF is checked on our server in temporary storage, up to 500 pages, and is not changed.",
+    seoTitle: "Find Hidden Text in a PDF – AI Prompts, Failed Redactions",
+    metaDescription: "Check a PDF for text people cannot see but software reads: hidden AI prompts in résumés, and redactions that left the words in the file. Free, no sign-up.",
+    synonyms: "hidden text detector finder invisible text white text show hidden text prompt injection hidden prompt resume cv ai prompt redaction checker check redaction failed redaction black box text under box hidden layer",
+    popularity: 62,
+    category: "security", accepts: ".pdf", outputLabel: "report",
+    lastReviewed: "2026-09-28",
   },
 
   // ── Page Order ─────────────────────────────────────────────────────────────
