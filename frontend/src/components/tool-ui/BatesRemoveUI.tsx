@@ -119,13 +119,18 @@ export function BatesRemoveUI() {
                         ? "Nothing in the file matched the prefix or suffix. Check the ones the stamps actually use."
                         : "Nothing in the top or bottom inch of the pages looked like a Bates number. Try giving the prefix or suffix the stamps actually use."
                     : `Redacted, not covered: the removed stamps' text is gone from the ${files}.`;
+        // A partial run's heading is the kit's "1 of 2 PDFs processed.", so the detail opens with
+        // the sentence this heading would have said, where the summary follows on from it: what
+        // could not be removed ("It was found…"), or how many stamps were removed. The other
+        // summaries say what they report themselves.
+        const lead = proc.failedCount > 0 && proc.doneCount > 0 && (someLeft || (!leftInPlace && !nothingMatched)) ? `${title} ` : "";
         const startOver = (files?: File[]) => {
             proc.reset();
             if (files) proc.addFiles(files, isPdfOnly);
             setReturning(true); setStatus("idle");
         };
         return <ProcessorResult proc={proc} verb="processed" accepts=".pdf"
-            title={title} detail={`${summary} ${downloadStarted(proc.doneCount)}`}
+            title={title} detail={`${lead}${summary} ${downloadStarted(proc.doneCount)}`}
             // A stamp or a match still in the file, or nothing found: the file is made, but read this before sharing it.
             attention={someLeft || leftInPlace || nothingMatched}
             receipt={toCheck.length > 0 && <ul aria-label="Files to check" className="ts-checklist ts-checklist-warn">
