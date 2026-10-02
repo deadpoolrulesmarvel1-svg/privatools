@@ -131,6 +131,18 @@ describe("FileChooserButton", () => {
         expect(vi.mocked(toast.error).mock.calls[0][1]).toMatchObject({ description: "Compress PDF takes PDF files. Try Image Compressor for PNG files." });
     });
 
+    it("says nothing, rather than name another tool, when the visitor has moved to another page", () => {
+        window.history.pushState({}, "", "/tool/compress-pdf");
+        const onFiles = vi.fn();
+        // The chooser stays on the page after the mixed choice; the visitor then follows a link.
+        const { container } = render(<FileChooserButton accepts=".pdf" multiple onFiles={onFiles}>Choose a different file</FileChooserButton>);
+        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [pdf("notes.pdf"), png()] } });
+        expect(onFiles).toHaveBeenCalledTimes(1);
+        window.history.pushState({}, "", "/tool/merge-pdf");
+        cleanup();
+        expect(toast.error).not.toHaveBeenCalled();
+    });
+
     it("keeps a refusal beside the button, with no toast, when nothing was accepted", () => {
         const onFiles = vi.fn();
         const { container } = render(<FileChooserButton accepts=".pdf" onFiles={onFiles}>Choose a different file</FileChooserButton>);

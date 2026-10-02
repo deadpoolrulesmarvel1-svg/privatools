@@ -5,7 +5,7 @@
  * same words beside the intake instead.
  */
 import { toast } from "sonner";
-import { adviseRejection, partitionByAccept } from "./file-acceptance";
+import { adviseRejection, partitionByAccept, type RejectionAdvice } from "./file-acceptance";
 import { navigateTo } from "./navigation";
 
 /** The files an `accept` list takes; the others are reported. For files
@@ -18,7 +18,12 @@ export function takeAccepted<T extends File>(files: readonly T[], accepts?: stri
 
 export function reportRejectedFiles(rejected: readonly Pick<File, "name" | "type">[], options?: Parameters<typeof adviseRejection>[1]): void {
     const advice = adviseRejection(rejected, options);
-    if (!advice) return;
+    if (advice) toastRejection(advice);
+}
+
+/** Say advice built earlier, such as when the files arrived: advice built
+ *  later reads whatever tool page the visitor is on by then. */
+export function toastRejection(advice: RejectionAdvice): void {
     const suggestion = advice.suggestion;
     toast.error(advice.headline, {
         description: [advice.reason, suggestion ? `${advice.suggestionLead}${suggestion.name}${advice.suggestionTail}` : ""].filter(Boolean).join(" "),
