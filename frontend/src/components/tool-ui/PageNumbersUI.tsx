@@ -98,7 +98,8 @@ export function PageNumbersUI() {
                     const dx = p.col === 0 ? "left-2" : p.col === 1 ? "left-1/2 -translate-x-1/2" : "right-2";
                     return <button type="button" key={p.id} onClick={() => setPosition(p.id)} disabled={busy} aria-pressed={active}
                         className={cn("absolute h-7 min-w-[34px] px-1.5 rounded border tabular-nums text-[11px] flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--accent))]", dy, dx,
-                            active ? "border-accent bg-accent/15 text-accent font-semibold" : "border-border bg-card text-muted-foreground hover:border-accent/55 hover:text-foreground")}>
+                            // An opaque fill: a see-through tint over the picker's own tint and the options panel left the 11px number at 4.3:1.
+                            active ? "border-accent bg-[color:color-mix(in_srgb,hsl(var(--accent))_10%,hsl(var(--card)))] text-accent font-semibold" : "border-border bg-card text-muted-foreground hover:border-accent/55 hover:text-foreground")}>
                         <span className="sr-only">{p.label}: </span>{startNumber}
                     </button>;
                 })}
