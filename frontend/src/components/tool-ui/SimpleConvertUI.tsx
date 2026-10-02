@@ -17,7 +17,7 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ConversionPath, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { fileCount } from "@/skins/experience/file-format-label";
+import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
@@ -220,7 +220,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         <ConversionPath accepts={acceptFileTypes} output={outputExt} />
         <div><p className="ts-eyebrow">A useful new format</p><h2>Ready for {outputExt.toUpperCase()}</h2><p>{description}</p></div>
         <div><dl><div><dt>Bring</dt><dd>{acceptFileTypes.replace(/,/g, " · ")}</dd></div><div><dt>Take away</dt><dd>{outputExt.toUpperCase()} {items.length > 1 ? "files" : "file"}</dd></div></dl></div>
-    </>} action={<StudioActionBar ready={items.length > 0} count={items.length ? fileCount(items.length) : undefined}>
+    </>} action={<StudioActionBar ready={items.length > 0} count={items.length ? fileCount(items.length, fileNoun(acceptFileTypes)) : undefined}>
         <button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{label}{items.filter(i => i.status === "queued" || i.status === "error").length > 1 ? ` — ${items.filter(i => i.status === "queued" || i.status === "error").length} files` : ""}</button>
     </StudioActionBar>}>
         <FileIntake accepts={acceptFileTypes} multiple onFiles={addFiles} label={items.length ? "Add more files" : "Drop files here"} title={fileFormatLabel(acceptFileTypes) === "FILE" ? "Your files" : `Your ${fileFormatLabel(acceptFileTypes)} files`}

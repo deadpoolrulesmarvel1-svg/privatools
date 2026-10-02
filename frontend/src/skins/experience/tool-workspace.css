@@ -18,13 +18,16 @@
 .tw-tool-emblem{display:grid;place-items:center;position:relative;width:82px;height:87px;flex-shrink:0;color:var(--pt-action);background:var(--pt-soft);border-radius:45% 45% 45% 12%;transform:rotate(5deg)}
 .tw-tool-emblem svg{transform:rotate(-5deg);width:40px;height:40px}
 /* Where the file goes, as readable text: inside the shared intakes, and here
-   above any tool UI that has no intake of its own. */
+   above any tool UI that does not say it itself. The page line steps aside
+   while a tool UI loads or says it, and for the rest of the page view once it
+   has (data-own-where, ToolWorkspace): an editor that opens on the shared
+   intake keeps the line there, and it never jumps in above the editor. */
 .tool-where{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:13px;line-height:1.55;color:var(--pt-muted)}
 .tool-where>svg{flex-shrink:0;margin-top:2px;color:var(--pt-action)}
 .tool-where strong{font-weight:650;color:var(--pt-ink)}
 .tool-where a{color:var(--pt-action);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .tw-where-fallback{margin:0 0 22px;padding:14px 18px;border-radius:12px;background:var(--pt-panel)}
-.tw-workspace:has(.tw-working-area :is(.tool-studio,.ts-result,.ms-workspace,.merge-workbench,.consumer-formatter,.tool-where,[aria-label^="Loading"])) .tw-where-fallback{display:none}
+.tw-workspace:has(.tw-working-area :is(.tool-studio,.ms-workspace,.merge-workbench,.consumer-formatter,.tool-where,[aria-label^="Loading"])) .tw-where-fallback,.tw-workspace[data-own-where] .tw-where-fallback{display:none}
 .tw-working-area{min-width:0}
 .tw-workspace .dl-toolui{min-width:0;min-height:0;max-width:none;opacity:1;animation:none}
 .tw-help{position:relative;margin:-6px 0 28px;padding:27px 30px;background:var(--pt-panel);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:18px 35px}

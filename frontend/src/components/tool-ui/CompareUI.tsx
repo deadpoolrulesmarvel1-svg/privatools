@@ -10,6 +10,7 @@ import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioActionBar, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileCount } from "@/skins/experience/file-format-label";
+import { ToolWhere } from "@/skins/experience/ToolWhere";
 
 const MODES = [
     { value: "visual", label: "Visual", desc: "Side-by-side with diff highlights" },
@@ -95,6 +96,7 @@ export function CompareUI() {
         <button className="ts-primary-button" onClick={process} disabled={!file1 || !file2 || state === "processing"}><GitCompare size={16} /> Compare PDFs</button>
     </StudioActionBar>}>
         <div className="ts-paired-inputs">{([{ label: "Original", file: file1, set: setFile1 }, { label: "Modified", file: file2, set: setFile2 }]).map(item => <section key={item.label}><p className="ts-eyebrow">{item.label === "Original" ? "Where you started" : "The latest version"}</p>{item.file ? <StudioFile name={item.file.name} detail={item.file.size} onRemove={state !== "processing" ? () => item.set(null) : undefined} removeLabel="Remove" /> : <FileIntake accepts=".pdf" label={`Upload ${item.label}`} title={`${item.label} PDF`} detail={item.label === "Original" ? "Choose the earlier document." : "Choose the version to compare."} onFiles={files => pick(item.set, files)} disabled={state === "processing"} />}</section>)}</div>
+        <ToolWhere className="ts-paired-where" />
         {state === "processing" && <StudioProgress label="Looking a little closer" detail="Comparing both documents for changes." />}{error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;
 }

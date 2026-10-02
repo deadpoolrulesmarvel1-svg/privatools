@@ -33,7 +33,7 @@ import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
 import { ConversionPath, FileIntake, LocalFilePreview, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
-import { fileCount } from "@/skins/experience/file-format-label";
+import { fileCount, fileNoun } from "@/skins/experience/file-format-label";
 import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
@@ -314,7 +314,7 @@ export function GenericUI({
         <ConversionPath accepts={accepts} output={outputLabel} />
         <div><p className="ts-eyebrow">Conversion details</p><h2>Your output</h2><dl><div><dt>Format</dt><dd>{outputLabel}</dd></div><div><dt>Selected</dt><dd>{files.length ? `${files.length} file${single ? "" : "s"} · ${formatFileSize(files.reduce((n, f) => n + f.bytes, 0))}` : "Choose one or several files"}</dd></div></dl></div>
         <div><p>Each file is processed separately. Your original files stay as they are.</p>{timeEstimate && <p className="ts-caption">Usually {timeEstimate} per file.</p>}</div>
-    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length) : undefined}>
+    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length, fileNoun(accepts)) : undefined}>
         <button className="ts-primary-button" onClick={() => void process()} disabled={!canProcess}>{actionLabel || toolName}{queued.length > 1 ? ` — ${queued.length} files` : ""}<ArrowRight size={16} /></button>
     </StudioActionBar>}>
         <FileIntake accepts={accepts} multiple label={`Upload files for ${toolName}`} title={fileFormatLabel(accepts) === "FILE" ? "Your files" : `Your ${fileFormatLabel(accepts)} files`} detail={`${acceptsLabel} · Up to ${MAX_QUEUE} files, ${MAX_FILE_SIZE_LABEL} each`}

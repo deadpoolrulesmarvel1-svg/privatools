@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -8,6 +9,8 @@ import { nonPdfTools } from "@/data/non-pdf-tools";
 import { UPLOADS_WHEN_CHOSEN, hasOwnLocation, toolLocation } from "./tool-location";
 import { ToolWorkspace } from "./ToolWorkspace";
 import { FileIntake } from "./ToolStudio";
+import { CompareUI } from "@/components/tool-ui/CompareUI";
+import { AttachmentUI } from "@/components/tool-ui/AttachmentUI";
 
 vi.mock("../daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("./ToolGuide", () => ({ ToolGuide: ({ slug }: { slug: string }) => <div data-testid="guide">{slug}</div> }));
@@ -75,6 +78,23 @@ describe("where the file goes", () => {
         expect(UPLOADS_WHEN_CHOSEN).toContain(slug);
     });
 
+    it.each([
+        { slug: "compare-pdf", name: "Compare PDF", ui: <CompareUI /> },
+        { slug: "add-attachment", name: "Add Attachment", ui: <AttachmentUI /> },
+    ])("says it once, in full, under $name's two intakes, before and after both files are chosen", async ({ slug, name, ui }) => {
+        await page({ slug, name, description: "Two files", category: "pdf" }, ui);
+        const full = "Temporary server processing. Files are uploaded only when you run the tool. PrivaTools processes them in temporary storage and removes the job’s files after the response.";
+        expect(document.querySelectorAll(".ts-paired-where")).toHaveLength(1);
+        expect(document.querySelector(".ts-paired-where")).toHaveTextContent(full);
+        const pdf = (name: string) => new File(["%PDF-1.7"], name, { type: "application/pdf" });
+        const inputs = [...document.querySelectorAll<HTMLInputElement>(".ts-paired-inputs input[type=file]")];
+        await act(async () => { fireEvent.change(inputs[0], { target: { files: [pdf("first.pdf")] } }); });
+        await act(async () => { fireEvent.change(document.querySelector<HTMLInputElement>(".ts-paired-inputs input[type=file]")!, { target: { files: [slug === "compare-pdf" ? pdf("second.pdf") : new File(["notes"], "notes.txt", { type: "text/plain" })] } }); });
+        expect(document.querySelectorAll(".ts-paired-inputs input[type=file]")).toHaveLength(0);
+        expect(document.querySelectorAll(".ts-paired-where")).toHaveLength(1);
+        expect(document.querySelector(".ts-paired-where")).toHaveTextContent(full);
+    });
+
     it("says, per AI tool, what reaches the provider, what reaches PrivaTools, and what stays on the device", () => {
         const detail = (slug: string) => toolLocation({ slug, byok: true }).detail;
         // Summarize, Chat and Transcribe never contact PrivaTools.
@@ -112,7 +132,28 @@ describe("where the file goes", () => {
         fireEvent.click(within(intake as HTMLElement).getByRole("link", { name: "Read about file handling" }));
         expect(choose).not.toHaveBeenCalled();
         const css = readFileSync(join(process.cwd(), "src/skins/experience/tool-workspace.css"), "utf8");
-        expect(css).toMatch(/\.tw-workspace:has\(\.tw-working-area :is\(\.tool-studio,\.ts-result,\.ms-workspace,\.merge-workbench,[^)]*\)\) \.tw-where-fallback\{display:none\}/);
+        expect(css).toContain('.tw-workspace:has(.tw-working-area :is(.tool-studio,.ms-workspace,.merge-workbench,.consumer-formatter,.tool-where,[aria-label^="Loading"])) .tw-where-fallback,.tw-workspace[data-own-where] .tw-where-fallback{display:none}');
+        expect(document.querySelector("article.tw-workspace")).toHaveAttribute("data-own-where");
+    });
+
+    it("keeps the line where the tool first said it: an editor replacing its intake brings no page line in", async () => {
+        function Editor() {
+            const [chosen, setChosen] = useState(false);
+            return chosen ? <div className="pdf-full-editor">Editing report.pdf</div> : <FileIntake accepts=".pdf" title="Your PDF" onFiles={() => setChosen(true)} />;
+        }
+        await page({ ...COMPRESS, slug: "sign-pdf", name: "Sign PDF" }, <Editor />);
+        const article = document.querySelector("article.tw-workspace")!;
+        expect(article).toHaveAttribute("data-own-where");
+        await act(async () => { fireEvent.change(document.querySelector<HTMLInputElement>(".ts-intake input[type=file]")!, { target: { files: [new File(["%PDF-1.7"], "report.pdf", { type: "application/pdf" })] } }); });
+        expect(screen.getByText("Editing report.pdf")).toBeInTheDocument();
+        expect(document.querySelector(".ts-intake")).toBeNull();
+        expect(article).toHaveAttribute("data-own-where");
+    });
+
+    it("keeps the page line for a tool UI that never says where the file goes itself", async () => {
+        await page({ ...COMPRESS, slug: "organize-pages", name: "Organize Pages" }, <div className="organize-workbench">Drop a PDF</div>);
+        expect(document.querySelector("article.tw-workspace")).not.toHaveAttribute("data-own-where");
+        expect(document.querySelector(".tw-where-fallback")).not.toBeNull();
     });
 });
 

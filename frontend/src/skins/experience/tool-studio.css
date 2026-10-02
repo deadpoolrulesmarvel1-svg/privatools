@@ -102,7 +102,9 @@ html[data-experience] [data-sonner-toaster][data-y-position=bottom]{bottom:calc(
 
 /* Where the file goes, in full, inside the intake card. */
 .ts-intake .tool-where{margin:22px 0 0;padding-top:16px;border-top:1px solid hsl(var(--border));max-width:48ch;text-align:left}
+/* Two intakes side by side say it once, under the pair. */
 .ts-paired-inputs .ts-intake .tool-where{display:none}
+.ts-paired-where{margin:20px 0 0;max-width:64ch}
 
 /* After a choice the intake is a quiet row; the run action leads. */
 .ts-intake-compact{background:transparent;border:1px dashed hsl(var(--input)/.55);min-height:0;padding:12px 18px}
@@ -119,5 +121,11 @@ html[data-experience=play] .ts-intake-compact{box-shadow:none;border-radius:16px
 html[data-experience=play] .ts-options>.ts-compression-levels{flex:2 1 0%;min-width:min(100%,340px)}
 @media(max-width:900px){html[data-experience=play] .ts-options>.ts-compression-levels{flex-basis:100%;min-width:100%}}
 html[data-experience] .ts-options .ts-choices{grid-template-columns:repeat(auto-fit,minmax(min(100%,7.5rem),1fr))}
+/* Three choices (the compression levels) never wrap two and one: three abreast
+   when each gets room for its words, otherwise one above another. Play's
+   compact compression levels fit three abreast in less room. The 16px is two
+   gaps of up to 8px, so three columns always fit when they are chosen. */
+html[data-experience] .ts-options .ts-choices:has(> :nth-child(3):last-child){grid-template-columns:repeat(auto-fit,minmax(clamp((100% - 16px) / 3,(24rem - 100%) * 999,100%),1fr))}
+html[data-experience=play] .ts-options .ts-compression-levels .ts-choices:has(> :nth-child(3):last-child){grid-template-columns:repeat(auto-fit,minmax(clamp((100% - 16px) / 3,(19rem - 100%) * 999,100%),1fr))}
 html[data-experience] .ts-choice{min-width:0}
 html[data-experience] .ts-choice :is(strong,span){overflow-wrap:anywhere}

@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { FileChooserButton, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioResult } from "./ToolStudio";
-import { fileCount } from "./file-format-label";
+import { fileCount, fileNoun } from "./file-format-label";
 import { ToolLocationProvider, toolLocation } from "./tool-location";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() } }));
@@ -136,6 +136,19 @@ describe("StudioLayout and the action bar", () => {
         expect(fileCount(2)).toBe("2 files");
         expect(fileCount(1, "audio file")).toBe("1 audio file");
         expect(fileCount(4, "PDF", "PDFs")).toBe("4 PDFs");
+    });
+
+    it("names what a tool takes the same way on every screen: PDFs on a PDF-only tool", () => {
+        expect(fileCount(1, fileNoun(".pdf"))).toBe("1 PDF");
+        expect(fileCount(2, fileNoun("application/pdf"))).toBe("2 PDFs");
+        expect(fileCount(3, fileNoun(".jpg,.jpeg,.png,.webp"))).toBe("3 images");
+        expect(fileCount(1, fileNoun("image/*"))).toBe("1 image");
+        expect(fileCount(2, fileNoun(".mp4,.mov,.webm"))).toBe("2 videos");
+        expect(fileCount(1, fileNoun(".mp3,.wav,.m4a"))).toBe("1 audio file");
+        expect(fileCount(1, fileNoun(".pdf,.png"))).toBe("1 file");
+        expect(fileCount(2, fileNoun(".docx"))).toBe("2 files");
+        expect(fileCount(1, fileNoun("*"))).toBe("1 file");
+        expect(fileCount(1, fileNoun(undefined))).toBe("1 file");
     });
 });
 
