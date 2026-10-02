@@ -52,12 +52,10 @@ html[data-experience='play'] .ms-result-badge { transform: rotate(7deg); }
 @media(max-width:760px) and (min-height:421px),(min-width:1001px) and (min-height:421px){
  html[data-experience='play'] .ms-with-action .ts-action-bar[data-ready=true]::after{content:"";position:absolute;left:-14px;right:-14px;bottom:calc(-13px - env(safe-area-inset-bottom, 0px));height:calc(13px + env(safe-area-inset-bottom, 0px));background:hsl(var(--background));pointer-events:none}
 }
-/* Beside the stage the settings column itself sticks to the top of the
-   screen, so the bar at its foot never needs to stick to the bottom: it would
-   only sit mid-screen and lift toasts onto its own button. On a short screen
-   the column stays in the flow too, or its lower half could sit off-screen. */
-@media(min-width:761px){html[data-experience='air'] .ms-with-action>.ms-side .ts-action-bar{position:static}}
-@media(min-width:761px) and (max-width:1000px){html[data-experience='play'] .ms-with-action>.ms-side .ts-action-bar{position:static}}
+/* Beside the stage the bar sits at the foot of the top-sticky settings column:
+   mid-screen when the column is short, docked at the bottom when it runs on
+   below the screen (useActionBarClearance counts it only then). On a short
+   screen the column stays in the flow, or its lower half could sit off-screen. */
 @media(max-height:420px){.ms-side{position:static}}
 
 /* A video preview takes focus, so it is never taller than the screen leaves

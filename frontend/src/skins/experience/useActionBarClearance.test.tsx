@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { useRef } from "react";
 import { act, cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useActionBarClearance } from "./useActionBarClearance";
 
 function Bar({ bottom, position = "sticky", active = true }: { bottom: string; position?: string; active?: boolean }) {
@@ -11,54 +11,58 @@ function Bar({ bottom, position = "sticky", active = true }: { bottom: string; p
     return <div className="tool-studio"><div ref={bar} style={{ position: position as "sticky", bottom }}>Compress PDF</div></div>;
 }
 
-function setHeight(element: Element, height: number) {
-    Object.defineProperty(element, "offsetHeight", { configurable: true, get: () => height });
-}
-
 const clearance = () => document.documentElement.style.getPropertyValue("--pt-action-clearance");
+const css = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
-const nativeOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+/** Where the bar is on screen (jsdom lays nothing out): its top and bottom edges. */
+const place = { top: 0, bottom: 0 };
+const at = (top: number, height: number) => { place.top = top; place.bottom = top + height; };
+/** Frames run when the test says, as a browser runs them after a scroll or resize. */
+let frames: FrameRequestCallback[] = [];
+const nextFrame = () => act(() => { const due = frames; frames = []; due.forEach(run => run(0)); });
+const scrolled = () => { window.dispatchEvent(new Event("scroll")); nextFrame(); };
+
+beforeEach(() => {
+    frames = [];
+    vi.stubGlobal("requestAnimationFrame", (run: FrameRequestCallback) => frames.push(run));
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({ x: 0, y: place.top, top: place.top, left: 0, right: 390, bottom: place.bottom, width: 390, height: place.bottom - place.top, toJSON: () => ({}) } as DOMRect));
+});
 afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
-    Object.defineProperty(HTMLElement.prototype, "offsetHeight", nativeOffsetHeight);
+    vi.restoreAllMocks();
 });
 
-/** An IntersectionObserver the test drives: report(true) puts the tool on screen, report(false) scrolls it away. */
-function watchTool() {
-    const observed: Element[] = [];
-    let callback: IntersectionObserverCallback = () => undefined;
-    vi.stubGlobal("IntersectionObserver", class {
-        constructor(next: IntersectionObserverCallback) { callback = next; }
-        observe(target: Element) { observed.push(target); }
-        unobserve() { /* not used */ }
-        disconnect() { /* not used */ }
-    });
-    return {
-        observed,
-        report: (isIntersecting: boolean) => act(() => { callback([{ isIntersecting } as IntersectionObserverEntry], {} as IntersectionObserver); }),
-    };
-}
-
-const css = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
-
 describe("sticky action bar clearance", () => {
-    it("follows the bar's real height and offset, through resizes, and is removed with the bar", () => {
-        setHeight(HTMLElement.prototype, 68);
-        const { container, rerender, unmount } = render(<Bar bottom="0px" />);
+    it("is the room a docked bar takes at the bottom of the screen, through resizes, and is removed with the bar", () => {
         // Air's strip along the bottom edge of a phone.
+        at(window.innerHeight - 68, 68);
+        const { rerender, unmount } = render(<Bar bottom="0px" />);
         expect(clearance()).toBe("68px");
-        setHeight(container.querySelector(".tool-studio > div")!, 74);
-        rerender(<Bar bottom="12px" />);
-        act(() => { window.dispatchEvent(new Event("resize")); });
         // Play's floating dock, 12px above the edge.
+        at(window.innerHeight - 12 - 74, 74);
+        rerender(<Bar bottom="12px" />);
+        window.dispatchEvent(new Event("resize"));
+        nextFrame();
         expect(clearance()).toBe("86px");
         unmount();
         expect(clearance()).toBe("");
     });
 
+    it("measures the bar again where its entrance animation leaves it", () => {
+        // Mid-rise: the bar still sits 18px lower than where it lands.
+        at(window.innerHeight - 12 - 104 + 18, 104);
+        const { container } = render(<Bar bottom="12px" />);
+        expect(clearance()).toBe("98px");
+        at(window.innerHeight - 12 - 104, 104);
+        act(() => { container.querySelector(".tool-studio > div")!.dispatchEvent(new Event("animationend", { bubbles: true })); });
+        nextFrame();
+        expect(clearance()).toBe("116px");
+    });
+
     it("clears nothing while the bar cannot stick, or has nothing to run", () => {
-        setHeight(HTMLElement.prototype, 68);
+        at(window.innerHeight - 68, 68);
         const { unmount } = render(<Bar bottom="0px" position="static" />);
         expect(clearance()).toBe("0px");
         unmount();
@@ -66,30 +70,35 @@ describe("sticky action bar clearance", () => {
         expect(clearance()).toBe("");
     });
 
-    it("clears nothing once the tool has scrolled out of view, as the bar has left with it", () => {
-        setHeight(HTMLElement.prototype, 68);
-        const tool = watchTool();
+    it("counts the bar only while it sits low on the screen, where toasts land", () => {
+        // Mid-screen at the foot of a settings column shorter than the screen: toasts stay at the bottom.
+        at(window.innerHeight - 250, 96);
         render(<Bar bottom="0px" />);
-        expect(tool.observed.map(element => element.className)).toEqual(["tool-studio"]);
-        expect(clearance()).toBe("68px");
-        tool.report(false);
         expect(clearance()).toBe("0px");
-        tool.report(true);
+        // Resting in the flow just above the bottom, before it docks: toasts rise above it.
+        at(window.innerHeight - 120, 77);
+        scrolled();
+        expect(clearance()).toBe("120px");
+        // Docked.
+        at(window.innerHeight - 68, 68);
+        scrolled();
         expect(clearance()).toBe("68px");
+        // Scrolled on to the guide, the bar has left with the tool.
+        at(-200, 68);
+        scrolled();
+        expect(clearance()).toBe("0px");
     });
 
     it("drives the root's bottom scroll padding, so focus lands above the bar", () => {
         expect(css("src/skins/experience/experience.css")).toMatch(/html\[data-experience\]\s*\{scroll-padding-bottom:calc\(var\(--pt-action-clearance, 0px\) \+ 12px\);\}/);
     });
 
-    it("docks only on a screen taller than 420px, and never inside the media studio's sticky settings column", () => {
+    it("docks only on a screen taller than 420px, where it leaves the tool room", () => {
         // 300–400% zoom and a phone held sideways: header and docked bar left the tool no room (WCAG 2.4.11).
         const studio = css("src/skins/experience/tool-studio.css");
         expect(studio).toContain("@media(min-height:421px){.ts-action-bar[data-ready=true]{position:sticky;bottom:0;z-index:4}}");
         expect(studio).not.toMatch(/(^|\})\.ts-action-bar\[data-ready=true\]\{position:sticky/m);
         const media = css("src/components/tool-ui/media/media-studio.css");
-        expect(media).toContain("@media(min-width:761px){html[data-experience='air'] .ms-with-action>.ms-side .ts-action-bar{position:static}}");
-        expect(media).toContain("@media(min-width:761px) and (max-width:1000px){html[data-experience='play'] .ms-with-action>.ms-side .ts-action-bar{position:static}}");
         expect(media).toContain("@media(max-height:420px){.ms-side{position:static}}");
         // A video preview keeps a usable size however little room is left.
         expect(media.match(/max-height:min\((430|390)px,max\(120px,calc\(100svh/g)).toHaveLength(2);
