@@ -27,7 +27,7 @@ import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromC
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
 import { chooseDownloadFilename, formatErrorForClipboard, postFormData, withErrorKind } from "@/lib/api";
 import { batchConfigError, buildBatchForm } from "@/lib/batch-request";
-import { emitToolRun, runOutcome } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
 import { IntakeNotice } from "@/skins/experience/ToolStudio";
 
@@ -104,6 +104,10 @@ interface BatchFile {
     downloadName?: string;
     error?: string;
     errorReport?: string;
+    /** The failure could pass on another attempt (connection, time limit,
+     *  rate limit, server fault). A file the tool refused would fail again. */
+    retryable?: boolean;
+    errorKind?: ToolErrorKind;
     durationMs?: number;
 }
 
@@ -255,7 +259,7 @@ export default function BatchPage() {
         updater(prev => {
             if (prev[targetIdx]?.status === "done") return prev;
             const next = [...prev];
-            next[targetIdx] = { ...next[targetIdx], status: "processing", error: undefined, errorReport: undefined };
+            next[targetIdx] = { ...next[targetIdx], status: "processing", error: undefined, errorReport: undefined, retryable: undefined, errorKind: undefined };
             return next;
         });
 
@@ -317,9 +321,11 @@ export default function BatchPage() {
                 e,
                 `Batch ${selectedTool.name} (${selectedTool.slug}) — ${originalFile.name}`,
             );
+            const kind = toolErrorKind(e);
+            const retryable = isTransientFailure(e);
             updater(prev => {
                 const next = [...prev];
-                next[targetIdx] = { ...next[targetIdx], status: "error", error: msg, errorReport: report };
+                next[targetIdx] = { ...next[targetIdx], status: "error", error: msg, errorReport: report, retryable, errorKind: kind === "cancelled" ? undefined : kind };
                 return next;
             });
             onFailure?.(e);
@@ -328,13 +334,14 @@ export default function BatchPage() {
     }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename, highlightQuery, subtitleTarget]);
 
     /**
-     * Run the queue. Picks up only files in {pending, error} state — done
-     * files are skipped automatically, which makes "Process N" double as
-     * "retry failures" for free.
+     * Run the queue. Picks up the pending files and the failures another
+     * attempt could fix (connection, time limit, rate limit, server fault);
+     * done files are skipped. A file the tool refused keeps its reason on its
+     * row and is not sent again: it would fail the same way.
      */
     const processAll = async () => {
         const targets = files.map((f, i) => ({ f, i })).filter(({ f }) =>
-            f.status === "pending" || f.status === "error"
+            f.status === "pending" || (f.status === "error" && f.retryable)
         );
         if (targets.length === 0 || processing || batchConfigError(selectedTool.slug, highlightQuery)) return;
 
@@ -414,21 +421,21 @@ export default function BatchPage() {
     };
 
     const retryFile = (idx: number) => {
-        // Reset to pending so the next "Process N" picks it up. Avoid running
-        // mid-flight; if not processing, kick off immediately for one file.
+        // Reset to pending so the next "Process N" picks it up. Only a failure
+        // another attempt could fix is offered this.
         setFiles(prev => {
-            if (prev[idx]?.status !== "error") return prev;
+            if (prev[idx]?.status !== "error" || !prev[idx].retryable) return prev;
             const next = [...prev];
-            next[idx] = { ...next[idx], status: "pending", error: undefined, errorReport: undefined };
+            next[idx] = { ...next[idx], status: "pending", error: undefined, errorReport: undefined, retryable: undefined, errorKind: undefined };
             return next;
         });
     };
 
     const retryAllFailures = async () => {
-        const failedCount = files.filter(f => f.status === "error").length;
-        if (failedCount === 0 || processing) return;
-        // Flip errors back to pending, then re-run.
-        setFiles(prev => prev.map(f => f.status === "error" ? { ...f, status: "pending", error: undefined, errorReport: undefined } : f));
+        const retryableCount = files.filter(f => f.status === "error" && f.retryable).length;
+        if (retryableCount === 0 || processing) return;
+        // Flip the failures another attempt could fix back to pending, then re-run.
+        setFiles(prev => prev.map(f => f.status === "error" && f.retryable ? { ...f, status: "pending", error: undefined, errorReport: undefined, retryable: undefined, errorKind: undefined } : f));
         // Defer the run by a tick so React commits the state change first.
         setTimeout(() => { void processAll(); }, 0);
     };
@@ -459,6 +466,8 @@ export default function BatchPage() {
 
     const doneCount    = files.filter(f => f.status === "done").length;
     const errorCount   = files.filter(f => f.status === "error").length;
+    // Failures another attempt could fix; the rest keep their reason on their row.
+    const retryableCount = files.filter(f => f.status === "error" && f.retryable).length;
     const pendingCount = files.filter(f => f.status === "pending").length;
     const totalIn  = files.reduce((s, f) => s + f.file.size, 0);
     const totalOut = files.reduce((s, f) => s + (f.resultSize || 0), 0);
@@ -483,14 +492,14 @@ export default function BatchPage() {
     [files, hideDone]);
 
     const ToolIcon = selectedTool.icon;
-    const runnableCount = pendingCount + errorCount;
+    const runnableCount = pendingCount + retryableCount;
     const canRun = runnableCount > 0 && !processing && (selectedTool.slug !== "highlight-pdf" || !!highlightQuery.trim());
 
     return (
         <div className="pt-studio-page pt-workflow-page pt-batch-page" data-running={processing}>
             <header className="pt-workflow-header pt-studio-header">
                 <div className="pt-workflow-heading"><p className="pt-studio-kicker">BATCH / MORE DONE IN ONE GO</p><h1><span className="wf-air-copy">Make room for more.</span><span className="wf-play-copy">A whole pile. One click.</span></h1><p>Choose a tool, bring your files, and give every one the same treatment.</p></div>
-                <div className="wf-header-actions"><button className="wf-button" onClick={clearAllFiles} disabled={processing || !files.length}><Trash2 size={15} /> Clear</button>{processing ? <button className="wf-button wf-button-danger" onClick={cancelRun}><Square size={14} /> Cancel <span>{doneCount}/{files.length}</span></button> : <button className="wf-button wf-button-primary" onClick={processAll} disabled={!canRun}><Play size={15} /> Process {runnableCount || files.length}{errorCount > 0 && <span>({errorCount} retry)</span>}</button>}</div>
+                <div className="wf-header-actions"><button className="wf-button" onClick={clearAllFiles} disabled={processing || !files.length}><Trash2 size={15} /> Clear</button>{processing ? <button className="wf-button wf-button-danger" onClick={cancelRun}><Square size={14} /> Cancel <span>{doneCount}/{files.length}</span></button> : <button className="wf-button wf-button-primary" onClick={processAll} disabled={!canRun}><Play size={15} /> Process {runnableCount || files.length}{retryableCount > 0 && <span>({retryableCount} to try again)</span>}</button>}</div>
             </header>
             <div className="wf-batch-layout">
                 <aside className="wf-batch-setup wf-work-sheet">
@@ -515,7 +524,7 @@ export default function BatchPage() {
                     <section className="pt-batch-queue">
                         <div className="wf-queue-heading"><div><h3>{files.length ? "Your files" : "Your queue starts here"}</h3><p>{files.length ? `${(totalIn / 1024).toFixed(0)} KB in${totalOut ? ` · ${(totalOut / 1024).toFixed(0)} KB finished` : ""}` : "Add files above. We’ll keep each job easy to follow."}</p></div>{doneCount > 0 && <button className="wf-text-button" disabled={processing} onClick={downloadAll}><Download size={15} /> Download all ({doneCount})</button>}</div>
                         {files.length > 0 && <div className="wf-queue-progress"><div className="wf-progress-label"><span>{doneCount} of {files.length} finished{errorCount > 0 ? ` · ${errorCount} need attention` : ""}</span><span>{etaSeconds > 0 ? `About ${etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left` : `${progressPct}%`}</span></div><div className="pt-batch-progress" role="progressbar" aria-label="Completed batch files" aria-valuemin={0} aria-valuemax={files.length} aria-valuenow={doneCount} aria-valuetext={`${doneCount} of ${files.length} files completed${errorCount ? `; ${errorCount} failed` : ""}`}><div style={{ width: `${progressPct}%` }} /></div></div>}
-                        <div className="wf-queue-actions">{errorCount > 0 && !processing && <button onClick={retryAllFailures}><RotateCw size={14} /> Retry {errorCount} failure{errorCount !== 1 ? "s" : ""}</button>}{doneCount > 0 && !processing && <button onClick={removeDone}><Trash2 size={14} /> Clear done</button>}{doneCount > 0 && <button onClick={() => setHideDone(value => !value)}><Filter size={14} /> {hideDone ? "Show done" : "Hide done"}</button>}</div>
+                        <div className="wf-queue-actions">{retryableCount > 0 && !processing && <button onClick={retryAllFailures}><RotateCw size={14} /> {retryableCount > 1 ? `Try ${retryableCount} again` : "Try again"}</button>}{doneCount > 0 && !processing && <button onClick={removeDone}><Trash2 size={14} /> Clear done</button>}{doneCount > 0 && <button onClick={() => setHideDone(value => !value)}><Filter size={14} /> {hideDone ? "Show done" : "Hide done"}</button>}</div>
                         {files.length ? <div className="pt-batch-files">{!visibleFiles.length && hideDone ? <div className="wf-queue-finished"><CheckCircle size={28} /><p>Every file is finished.</p><button className="wf-text-button" onClick={() => setHideDone(false)}>Show your downloads</button></div> : visibleFiles.map(item => { const index = files.indexOf(item); return <FileRow key={`${item.file.name}-${index}`} file={item} index={index} processing={processing} onRemove={removeFile} onRetry={retryFile} />; })}</div> : <div className="wf-empty-queue" aria-hidden="true"><span><FileText size={23} /></span><div><i /><i /></div><CheckCircle size={21} /></div>}
                     </section>
                 </section>
@@ -657,7 +666,7 @@ function FileRow({
             <FileText size={13} className="text-muted-foreground shrink-0" />
             <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{f.file.name}</p>
-                {f.error && <p className="text-[11px] text-destructive truncate mt-0.5" title={f.error}>{f.error}</p>}
+                {f.error && <p className="text-[11px] text-destructive mt-0.5">{f.error}</p>}
             </div>
             {/* Size info */}
             <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground hidden sm:inline shrink-0 tabular-nums">
@@ -691,13 +700,13 @@ function FileRow({
                 {f.status === "error" && (
                     <>
                         <AlertCircle size={13} className="text-destructive" />
-                        {!processing && (
+                        {!processing && f.retryable && (
                             <button
                                 onClick={() => onRetry(index)}
                                 className="font-medium inline-flex items-center gap-1 text-[11.5px] tracking-wider text-destructive hover:underline"
-                                title="Retry this file"
+                                aria-label={`Try ${f.file.name} again`}
                             >
-                                <RotateCw size={10} /> Retry
+                                <RotateCw size={10} /> Try again
                             </button>
                         )}
                         {f.errorReport && !processing && (
