@@ -57,7 +57,11 @@ TRUNCATED = [r for r in ROUTES if r[2].endswith(".png") and r[0] != "/api/view-e
 
 
 @pytest.mark.parametrize("route,field,name,data", TRUNCATED, ids=[r[0] for r in TRUNCATED])
-def test_a_truncated_image_is_a_400(quiet_client, route, field, name, data):
+def test_a_truncated_image_is_a_400(quiet_client, monkeypatch, route, field, name, data):
+    # WeasyPrint sets ImageFile.LOAD_TRUNCATED_IMAGES for the whole process
+    # when it is first imported, after which Pillow fills a cut-off image
+    # instead of raising. Pin the default, in which Pillow raises.
+    monkeypatch.setattr("PIL.ImageFile.LOAD_TRUNCATED_IMAGES", False)
     response = quiet_client.post(route, files={field: ("cut.png", _truncated_png(), "image/png")}, data=data)
     assert response.status_code == 400, response.text
     assert "incomplete" in response.json()["detail"]
