@@ -56,11 +56,13 @@ export function StampUI() {
     const activePreset = STAMP_PRESETS.find(s => s.value === stampType);
     const displayText = stampType === "custom" ? (customText.trim().toUpperCase() || "CUSTOM") : (activePreset?.label || "");
 
+    // A chosen preset's tint is mixed into the card, not laid over whatever the options sit
+    // on: over Play's coloured paper a see-through tint left the red label at 4.34:1.
     const toneClasses = (tone: string, active: boolean) => {
         if (!active) return "border-border bg-card text-muted-foreground hover:border-accent/55 hover:text-foreground";
-        if (tone === "destructive") return "border-destructive/55 bg-destructive/[0.08] text-destructive";
-        if (tone === "accent") return "border-accent bg-accent/[0.08] text-accent";
-        return "border-foreground/45 bg-secondary/60 text-foreground";
+        if (tone === "destructive") return "border-destructive/55 bg-[color:color-mix(in_srgb,hsl(var(--destructive))_8%,hsl(var(--card)))] text-destructive";
+        if (tone === "accent") return "border-accent bg-[color:color-mix(in_srgb,hsl(var(--accent))_8%,hsl(var(--card)))] text-accent";
+        return "border-foreground/45 bg-[color:color-mix(in_srgb,hsl(var(--secondary))_60%,hsl(var(--card)))] text-foreground";
     };
 
     const stampPreviewColor = activePreset?.tone === "destructive" ? "hsl(var(--destructive))" : activePreset?.tone === "accent" ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))";
