@@ -95,8 +95,8 @@ def image_read_error(exc: BaseException) -> tuple[int, str] | None:
         )
     if isinstance(exc, OSError) and str(exc).startswith(_TRUNCATED_MESSAGES):
         return 400, (
-            "This image is incomplete: the file ends part-way through, so it "
-            "can't be read. Try the original file."
+            "This image can't be read: its data stops early or is broken. "
+            "Try the original file."
         )
     return None
 

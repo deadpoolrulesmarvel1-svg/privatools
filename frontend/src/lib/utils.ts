@@ -105,7 +105,7 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
         return "This PDF is damaged. Try the Repair PDF tool first, then come back.";
     }
     if (m.includes("not an image") || m.includes("invalid image") || m.includes("cannot identify image")) {
-        return "That file doesn't look like a valid image. Try JPG, PNG, WebP, or HEIC.";
+        return "That file doesn't look like a valid image.";
     }
     if (m.includes("empty") && (m.includes("file") || m.includes("pdf"))) {
         return "That file is empty (0 bytes). Pick a different file.";

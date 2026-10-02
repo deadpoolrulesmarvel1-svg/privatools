@@ -53,7 +53,10 @@ def test_a_file_that_is_not_an_image_is_a_400(quiet_client, route, field, name, 
 
 # View EXIF reads metadata without decoding pixels, so a file cut off in its
 # image data still answers 200 there, which is right.
-TRUNCATED = [r for r in ROUTES if r[2].endswith(".png") and r[0] != "/api/view-exif"]
+TRUNCATED = [r for r in ROUTES if r[2].endswith(".png") and r[0] != "/api/view-exif"] + [
+    # Image OCR checks the magic bytes first, so only a cut-off image reaches Pillow.
+    ("/api/image-ocr", "file", "cut.png", {}),
+]
 
 
 @pytest.mark.parametrize("route,field,name,data", TRUNCATED, ids=[r[0] for r in TRUNCATED])
@@ -64,7 +67,7 @@ def test_a_truncated_image_is_a_400(quiet_client, monkeypatch, route, field, nam
     monkeypatch.setattr("PIL.ImageFile.LOAD_TRUNCATED_IMAGES", False)
     response = quiet_client.post(route, files={field: ("cut.png", _truncated_png(), "image/png")}, data=data)
     assert response.status_code == 400, response.text
-    assert "incomplete" in response.json()["detail"]
+    assert "stops early or is broken" in response.json()["detail"]
 
 
 def test_a_real_image_still_converts(quiet_client):
