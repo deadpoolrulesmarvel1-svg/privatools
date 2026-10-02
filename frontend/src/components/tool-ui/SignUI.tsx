@@ -276,8 +276,9 @@ export function SignUI() {
                                     { f: "height", label: "H", val: height, set: setHeight, min: 10 },
                                 ] as const).map(c => (
                                     <div key={c.f}>
-                                        <label className="font-medium text-[9.5px] text-muted-foreground">{c.label}</label>
+                                        <label htmlFor={`sign-${c.f}`} className="font-medium text-[9.5px] text-muted-foreground">{c.label}</label>
                                         <input
+                                            id={`sign-${c.f}`}
                                             type="number" inputMode="numeric" min={c.min} value={c.val}
                                             onChange={e => c.set(parseInt(e.target.value) || c.min)}
                                             className="mt-0.5 w-full rounded-md border border-border bg-paper-2/40 px-2 py-1.5 font-mono text-[13px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 text-center"

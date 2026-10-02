@@ -162,6 +162,8 @@ describe("the page each tool's page sends", { timeout: 20_000 }, () => {
         choose(container.querySelector('input[type="file"][accept=".png,.jpg,.jpeg"]')!, [signature]);
         showPage(page);
         await drawRegion("Place signature");
+        // The placement fields are labelled (axe found five unlabelled number fields).
+        for (const label of ["Page", "X", "Y", "W", "H"]) expect(screen.getAllByLabelText(label).some(field => field.getAttribute("type") === "number")).toBe(true);
         fireEvent.click(await screen.findByRole("button", { name: /^Sign PDF/ }));
         expect((await sent("/sign-pdf")).get("page")).toBe(String(expected("sign-pdf", which)));
     });
@@ -312,6 +314,9 @@ describe("a box drawn on a turned or cropped page reaches the route where the pa
         preview.shown = spec.shown;
         render(<PdfPageStage file={pdf()} regions={[{ id: "found", page: 1, ...spec.unrotated, kind: "rectangle", label: "Found box" }]} />);
         await stageReady();
+        // A region the visitor cannot select is a labelled picture of where it lands: a label on a
+        // role-less <g> is prohibited ARIA (axe aria-prohibited-attr on Sign PDF's editor).
+        expect(screen.getByRole("img", { name: "Found box" })).toBe(screen.getByLabelText("Found box"));
         const rect = screen.getByLabelText("Found box").querySelector("rect")!;
         const shown = Object.fromEntries(["x", "y", "width", "height"].map(key => [key, Number(rect.getAttribute(key))]));
         expect(shown).toEqual(DRAWN);
