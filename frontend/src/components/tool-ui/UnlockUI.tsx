@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen,
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+import { takeAccepted } from "@/lib/report-rejected-files";
 import { usePdfPasswordTrial } from "@/hooks/usePdfPasswordTrial";
 import { VaultTrialBanner } from "@/components/VaultTrialBanner";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
@@ -32,8 +33,8 @@ export function UnlockUI() {
     const [typedPassword, setTypedPassword] = useState("");
 
     const addFiles = (fl: FileList) => {
-        const next: UnlockFile[] = Array.from(fl)
-            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+        // A file that isn't a PDF is named, with the tool that takes it, never dropped silently.
+        const next: UnlockFile[] = takeAccepted(Array.from(fl), ".pdf")
             .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
         if (!next.length) return;
         setFiles(prev => [...prev, ...next]);

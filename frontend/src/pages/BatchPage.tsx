@@ -29,6 +29,7 @@ import { chooseDownloadFilename, formatErrorForClipboard, postFormData, withErro
 import { batchConfigError, buildBatchForm } from "@/lib/batch-request";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
+import { IntakeNotice } from "@/skins/experience/ToolStudio";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -510,7 +511,7 @@ export default function BatchPage() {
                 <section className="wf-batch-main wf-work-sheet" aria-label="Batch files">
                     <div className="wf-sheet-heading"><div><p className="wf-section-label">02 / BRING YOUR FILES</p><h2>A place for the whole pile.</h2></div><span className="wf-status-pill">{files.length} file{files.length !== 1 ? "s" : ""}</span></div>
                     <div className="wf-batch-drop-area"><Dropzone disabled={processing} accepts={selectedTool.accepts} onFiles={addFiles} onClick={() => inputRef.current?.click()} /><input ref={inputRef} disabled={processing} type="file" multiple accept={selectedTool.accepts} className="hidden" onChange={event => { addFiles(event.target.files); event.target.value = ""; }} /></div>
-                    {rejection && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><p><strong>{rejection.headline}</strong> {rejection.reason}{rejection.suggestion && <> {rejection.suggestionLead}<a href={rejection.suggestion.href}>{rejection.suggestion.name}</a>{rejection.suggestionTail}</>}</p><button aria-label="Dismiss" onClick={() => setRejection(null)}><X size={16} /></button></div>}
+                    <IntakeNotice advice={rejection} onDismiss={() => setRejection(null)} />
                     <section className="pt-batch-queue">
                         <div className="wf-queue-heading"><div><h3>{files.length ? "Your files" : "Your queue starts here"}</h3><p>{files.length ? `${(totalIn / 1024).toFixed(0)} KB in${totalOut ? ` · ${(totalOut / 1024).toFixed(0)} KB finished` : ""}` : "Add files above. We’ll keep each job easy to follow."}</p></div>{doneCount > 0 && <button className="wf-text-button" disabled={processing} onClick={downloadAll}><Download size={15} /> Download all ({doneCount})</button>}</div>
                         {files.length > 0 && <div className="wf-queue-progress"><div className="wf-progress-label"><span>{doneCount} of {files.length} finished{errorCount > 0 ? ` · ${errorCount} need attention` : ""}</span><span>{etaSeconds > 0 ? `About ${etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left` : `${progressPct}%`}</span></div><div className="pt-batch-progress" role="progressbar" aria-label="Completed batch files" aria-valuemin={0} aria-valuemax={files.length} aria-valuenow={doneCount} aria-valuetext={`${doneCount} of ${files.length} files completed${errorCount ? `; ${errorCount} failed` : ""}`}><div style={{ width: `${progressPct}%` }} /></div></div>}

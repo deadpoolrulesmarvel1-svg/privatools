@@ -14,8 +14,9 @@ import { Braces, FileText, RotateCcw, ScanEye, ShieldAlert, ShieldCheck, ShieldQ
 import { friendlyError } from "@/lib/utils";
 import { buildOutputFilename, downloadBlob, getErrorDetail, getErrorStatus, uploadFileGetJson } from "@/lib/api";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
-import { emitToolRun } from "@/lib/toolRun";
-import { StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
+import { emitToolRun, isTransientFailure } from "@/lib/toolRun";
+import { takeAccepted } from "@/lib/report-rejected-files";
+import { StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import {
@@ -50,6 +51,8 @@ export function HiddenTextCheckerUI() {
     const [status, setStatus] = useState<Status>("idle");
     const [progress, setProgress] = useState<number | undefined>();
     const [error, setError] = useState<string | null>(null);
+    // Whether another attempt at the same file could work (connection, time limit, rate limit, server fault).
+    const [retryable, setRetryable] = useState(false);
     const [report, setReport] = useState<HiddenTextReport | null>(null);
     const [checkedAt, setCheckedAt] = useState<Date>(() => new Date());
     const busy = status === "uploading" || status === "checking";
@@ -58,7 +61,8 @@ export function HiddenTextCheckerUI() {
         let cancelled = false;
         queueMicrotask(() => {
             if (cancelled) return;
-            void consumeFileHandoffs(SLUG).then(files => { if (!cancelled && files[0]) setFile(files[0]); });
+            // A handed-over file that isn't a PDF is named, not checked.
+            void consumeFileHandoffs(SLUG).then(files => { const [pdf] = cancelled ? [] : takeAccepted(files, ".pdf"); if (pdf) setFile(pdf); });
         });
         return () => { cancelled = true; };
     }, []);
@@ -88,6 +92,7 @@ export function HiddenTextCheckerUI() {
             setError(status === 504
                 ? "Checking this PDF took longer than the server allows for one file. Split it into parts with Split PDF and check each part."
                 : detail && (status === 400 || status === 413) ? detail : friendlyError(message, "Couldn't check that PDF."));
+            setRetryable(isTransientFailure(e));
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
@@ -107,6 +112,17 @@ export function HiddenTextCheckerUI() {
 
     if (status === "done" && report && file) {
         return <HiddenTextReportView report={report} file={file} checkedAt={checkedAt} onReset={reset} />;
+    }
+
+    // The shared failure grammar: the reason, a different PDF first, and
+    // "Try again" only when another attempt could work.
+    if (error && file && status === "idle") {
+        return <StudioResult tone="failure" title="This PDF couldn’t be checked."
+            detail={retryable ? "The check didn’t finish. The connection or the server got in the way, so trying again may work." : "The check didn’t finish. The reason is below."}>
+            <StudioFile name={file.name} status="error" detail={error} />
+            <StudioActions tone="failure" retryCount={retryable ? 1 : 0} onRetry={() => void run()}
+                choose={{ accepts: ".pdf", label: "Choose a different PDF", onFiles: files => { setFile(files[0]); setError(null); } }} />
+        </StudioResult>;
     }
 
     return <StudioLayout options={<div className="htc-options">
@@ -134,7 +150,6 @@ export function HiddenTextCheckerUI() {
             progress={status === "uploading" ? progress : undefined}
             detail={status === "uploading" ? "Sending it to the server for the check." : "Reading every page's text, colours and layers."}
         />}
-        {error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;
 }
 

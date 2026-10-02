@@ -30,6 +30,8 @@ html[data-experience=play] .ts-compression-levels{flex:2;min-width:340px}html[da
 .ts-intake-notice a { color: hsl(var(--accent)); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
 .ts-intake-notice .ts-icon-button { width: 30px; height: 30px; margin: -4px 0 -4px auto; }
 .ts-actions .ts-intake-notice { flex-basis: 100%; }
+.wf-batch-drop-area + .ts-intake-notice { margin: 0 26px 20px; }
+@media (max-width: 560px) { .wf-batch-drop-area + .ts-intake-notice { margin: 0 19px 16px; } }
 html[data-experience=play] .ts-intake-notice { border-radius: 16px; }
 
 /* Outcomes: a failure carries a warning mark and never the success check. */

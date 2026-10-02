@@ -10,7 +10,8 @@
  * download; the usage event counts it as a miss (LocalResult.unchanged).
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
+import { FileChooserButton } from "@/skins/experience/ToolStudio";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
@@ -93,7 +94,7 @@ export function GeminiWatermarkUI() {
     const notClean = proc.entries.filter(entry => resultFor(entry)?.status === "not-clean");
     const notFound = proc.entries.filter(entry => resultFor(entry)?.status === "not-found");
 
-    const run = useCallback(async (retry = false) => {
+    const run = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             // Never requested: localProcess handles every file inside this tab.
@@ -166,9 +167,14 @@ export function GeminiWatermarkUI() {
             ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit.layout)}), but the tool could not confirm that removing it would leave no trace, so the image was left as it was.`
             : "Original";
 
+    // Every image failed: nothing was checked to the end. "No sparkle found" and
+    // "Not removed cleanly" are honest answers, not failures, and keep their own titles.
+    const allFailed = finished && proc.failedCount > 0 && !removed.length && !notClean.length && !notFound.length;
     const title = !finished ? "Take the sparkle off." : removed.length
         ? `${removed.length} ${removed.length === 1 ? "image" : "images"} cleaned.`
-        : proc.failedCount && !notClean.length && !notFound.length ? "Let’s try that again."
+        : allFailed
+            // Shared failure grammar: invite another attempt only when one could work.
+            ? proc.retryableCount ? "Let’s try that again." : proc.entries.length > 1 ? "None of these images could be processed." : "This image couldn’t be processed."
             : notClean.length ? "Not removed cleanly." : "No sparkle found.";
 
     const counts = [
@@ -188,15 +194,17 @@ export function GeminiWatermarkUI() {
             <a className="ms-caption" href="/third-party/gemini-watermark-masks.txt" target="_blank" rel="noreferrer">Logo mask credits &amp; licences</a>
         </div>
     </> : <>
-        <div className="ms-result-summary" role="status">
-            <span className="ms-result-seal">{removed.length ? <Check size={27} /> : <CircleSlash size={27} />}</span>
+        <div className="ms-result-summary" role="status" data-tone={allFailed ? "failure" : undefined}>
+            <span className="ms-result-seal">{removed.length ? <Check size={27} /> : allFailed ? <AlertTriangle size={25} /> : <CircleSlash size={27} />}</span>
             <h3 ref={summary} tabIndex={-1}>{removed.length ? "Sparkle removed." : "Nothing was changed."}</h3>
             <p>{counts}</p>
         </div>
         {removed.length > 0 && <button className="ms-primary" onClick={download}><ArrowDownToLine size={16} />{removed.length > 1 ? `Download ${removed.length} images as ZIP` : "Download image"}</button>}
         {notClean.length + notFound.length > 0 && <p className="ms-caption">Images left unchanged are not in the download; your originals are already those files.</p>}
-        {proc.failedCount > 0 && <button className="ms-secondary" onClick={() => void run(true)}>Retry {proc.failedCount} failed</button>}
-        <button className="ms-text" onClick={reset}>Start a new set</button>
+        {allFailed && <FileChooserButton className="ms-primary" accepts={ACCEPTS} multiple onFiles={files => { reset(); proc.addFiles(files, isImage); }}>{proc.entries.length > 1 ? "Choose different images" : "Choose a different image"}</FileChooserButton>}
+        {/* Images are read in this browser, so a failure is the file's or the browser's: another attempt would fail the same way. */}
+        {proc.retryableCount > 0 && <button className="ms-secondary" onClick={() => void run("transient")}>{proc.retryableCount > 1 ? `Try ${proc.retryableCount} again` : "Try again"}</button>}
+        {!allFailed && <button className="ms-text" onClick={reset}>Start a new set</button>}
     </>;
 
     return <MediaLayout
