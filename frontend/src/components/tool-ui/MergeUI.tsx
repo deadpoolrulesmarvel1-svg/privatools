@@ -3,9 +3,12 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
     FileText, Upload, X, Loader2, CheckCircle2, GripVertical, Plus,
-    AlertCircle, ChevronUp, ChevronDown, Download, Sparkles, Server,
-    ChevronLeft, ChevronRight, Check, SlidersHorizontal, Info, BookmarkPlus,
+    AlertCircle, AlertTriangle, ChevronUp, ChevronDown, Download, Sparkles, Server,
+    ChevronLeft, ChevronRight, Check, SlidersHorizontal, Info, BookmarkPlus, LockKeyhole,
 } from "lucide-react";
+import { adviseRejection, type RejectionAdvice } from "@/lib/file-acceptance";
+import { IntakeNotice } from "@/skins/experience/ToolStudio";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
@@ -26,8 +29,23 @@ interface MergeFile {
     file: File;
     pages: string;
     document: MergePreviewDocument | null;
-    preview: "loading" | "ready" | "unavailable";
+    /** "invalid": pdf.js found no PDF in it. "locked": it needs its password.
+     *  Both stay listed, with the reason, and are left out of the merge. */
+    preview: "loading" | "ready" | "unavailable" | "invalid" | "locked";
     previewNote?: string;
+}
+
+const notMergeable = (file: MergeFile) => file.preview === "invalid" || file.preview === "locked";
+
+/** Merge keeps a selection whole, so one file that isn't a PDF holds back the
+ *  rest and nothing is dropped silently. The notice names the file and points
+ *  to a tool that can turn it into a PDF. */
+function selectionRejection(notPdf: File[]): RejectionAdvice | null {
+    const advice = adviseRejection(notPdf, { accepts: ".pdf", fromSlug: "merge-pdf", prefer: "convert" });
+    if (!advice) return null;
+    const others = notPdf.length - 1;
+    const headline = `${notPdf[0].name}${others ? ` and ${others} other file${others === 1 ? "" : "s"} aren’t PDFs` : " isn’t a PDF"}, so this selection wasn’t added.`;
+    return { ...advice, headline, text: advice.text.replace(advice.headline, headline) };
 }
 
 // Previews must not make the existing 100-file / 500 MB merge capability unusable
@@ -43,6 +61,7 @@ export function MergeUI() {
     const filesRef = useRef<MergeFile[]>([]);
     const [phase, setPhase] = useState<Phase>("idle");
     const [error, setError] = useState<string | null>(null);
+    const [rejection, setRejection] = useState<RejectionAdvice | null>(null);
     const [notice, setNotice] = useState("");
     const [result, setResult] = useState<MergeResult | null>(null);
     const [filename, setFilename] = useState<string | null>(null);
@@ -85,6 +104,7 @@ export function MergeUI() {
         setResult(null);
         setPhase("idle");
         setError(null);
+        setRejection(null);
         setSavedWorkflow(null);
         setWorkflowError(null);
     }, []);
@@ -93,11 +113,13 @@ export function MergeUI() {
         if (activeRequest.current) return;
         const incoming = Array.from(input);
         if (!incoming.length) return;
-        const invalid = incoming.find(file => !file.name.toLowerCase().endsWith(".pdf"));
-        if (invalid) {
-            setError(`“${invalid.name}” is not a PDF. Choose only PDF files; this selection was not added.`);
+        const notPdf = incoming.filter(file => !file.name.toLowerCase().endsWith(".pdf"));
+        if (notPdf.length) {
+            setError(null);
+            setRejection(selectionRejection(notPdf));
             return;
         }
+        setRejection(null);
         const empty = incoming.find(file => file.size === 0);
         if (empty) { setError(`“${empty.name}” is empty. Choose a PDF with content; this selection was not added.`); return; }
         const oversized = incoming.find(file => file.size > MAX_FILE_SIZE);
@@ -137,9 +159,16 @@ export function MergeUI() {
                     if (!alive.current || !activeFiles.current.has(entry.id)) { void document.destroy(); return; }
                     openDocuments.current.set(entry.id, document);
                     replaceFiles(filesRef.current.map(file => file.id === entry.id ? { ...file, document, preview: "ready" } : file));
-                } catch {
+                } catch (cause) {
                     if (alive.current && activeFiles.current.has(entry.id)) {
-                        replaceFiles(filesRef.current.map(file => file.id === entry.id ? { ...file, preview: "unavailable" } : file));
+                        // pdf.js names what it met. Only a file that is not a PDF at
+                        // all, or one locked with a password, is left out; any other
+                        // preview failure keeps the file in the merge.
+                        const name = (cause as { name?: unknown } | null)?.name;
+                        const preview = name === "InvalidPDFException" ? "invalid" : name === "PasswordException" ? "locked" : "unavailable";
+                        replaceFiles(filesRef.current.map(file => file.id === entry.id ? { ...file, preview } : file));
+                        if (preview === "invalid") setNotice(`${entry.file.name} doesn’t look like a valid PDF, so it won’t be merged.`);
+                        if (preview === "locked") setNotice(`${entry.file.name} is locked with a password, so it won’t be merged.`);
                     }
                 }
             });
@@ -211,16 +240,22 @@ export function MergeUI() {
     };
 
     const selections = useMemo(() => files.map(file => mergePageSelection(file.pages, file.document?.numPages ?? null)), [files]);
-    const countsKnown = files.length > 0 && files.every(file => file.document) && selections.every(selection => selection.pages !== null);
-    const selectedCount = countsKnown ? selections.reduce((sum, selection) => sum + selection.pages!.length, 0) : null;
-    const totalCount = countsKnown ? files.reduce((sum, file) => sum + file.document!.numPages, 0) : null;
+    // A file this browser could not open as a PDF, or one locked with a
+    // password, stays listed with its reason but is never sent to the merge.
+    const mergeable = useMemo(() => files.filter(file => !notMergeable(file)), [files]);
+    const mergeableSelections = useMemo(() => mergeable.map(file => mergePageSelection(file.pages, file.document?.numPages ?? null)), [mergeable]);
+    const countsKnown = mergeable.length > 0 && mergeable.every(file => file.document) && mergeableSelections.every(selection => selection.pages !== null);
+    const selectedCount = countsKnown ? mergeableSelections.reduce((sum, selection) => sum + selection.pages!.length, 0) : null;
+    const totalCount = countsKnown ? mergeable.reduce((sum, file) => sum + file.document!.numPages, 0) : null;
     const excludedCount = totalCount !== null && selectedCount !== null ? totalCount - selectedCount : null;
     const previewsLoading = files.some(file => file.preview === "loading");
-    const allRangesValid = selections.every(selection => !selection.error);
+    const allRangesValid = mergeableSelections.every(selection => !selection.error);
     const busy = phase === "processing";
-    const fallbackName = files[0] ? buildOutputFilename(files[0].file.name, "merged", "pdf") : "Combined.pdf";
+    const leading = mergeable[0] ?? files[0];
+    const fallbackName = leading ? buildOutputFilename(leading.file.name, "merged", "pdf") : "Combined.pdf";
     const outputName = mergeOutputFilename(filename ?? fallbackName, fallbackName);
-    const canProcess = files.length >= 2 && allRangesValid && !previewsLoading && !busy && !result;
+    const canProcess = mergeable.length >= 2 && allRangesValid && !previewsLoading && !busy && !result;
+    const leftOut = files.length - mergeable.length;
 
     const process = useCallback(async () => {
         if (!canProcess || activeRequest.current) return;
@@ -232,11 +267,11 @@ export function MergeUI() {
         setError(null);
         setNotice("");
         setProcessingMessage("Sending PDFs and waiting for the merged file…");
-        const snapshot = { filename: outputName, sourceCount: files.length, selectedCount, excludedCount,
-            ...mergeSourceMap(files.map(file => ({ filename: file.file.name, total: file.document?.numPages ?? null, range: file.pages }))) };
+        const snapshot = { filename: outputName, sourceCount: mergeable.length, selectedCount, excludedCount,
+            ...mergeSourceMap(mergeable.map(file => ({ filename: file.file.name, total: file.document?.numPages ?? null, range: file.pages }))) };
         try {
-            const params = { page_ranges: JSON.stringify(files.map(file => file.pages.trim() || "all")) };
-            const response = await uploadFiles("/merge", files.map(file => file.file), params, {
+            const params = { page_ranges: JSON.stringify(mergeable.map(file => file.pages.trim() || "all")) };
+            const response = await uploadFiles("/merge", mergeable.map(file => file.file), params, {
                 signal: controller.signal,
                 onRetry: (attempt, total) => {
                     if (activeRequest.current === controller) setProcessingMessage(`Connection interrupted. Retrying (${attempt} of ${total})…`);
@@ -250,16 +285,16 @@ export function MergeUI() {
             setResult({ blob, ...snapshot });
             setPhase("done");
             setNotice("Your merged PDF is ready to download.");
-            emitToolRun({ outcome: "success", files: files.length });
+            emitToolRun({ outcome: "success", files: mergeable.length });
         } catch (cause) {
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
             setError(friendlyError(cause instanceof Error ? cause.message : "", "Could not merge these PDFs. Try again."));
             setPhase("idle");
-            emitToolRun({ outcome: "error", files: files.length }, cause);
+            emitToolRun({ outcome: "error", files: mergeable.length }, cause);
         } finally {
             if (activeRequest.current === controller) activeRequest.current = null;
         }
-    }, [canProcess, files, outputName, selectedCount, excludedCount]);
+    }, [canProcess, mergeable, outputName, selectedCount, excludedCount]);
 
     const cancel = () => {
         activeRequest.current?.abort();
@@ -280,10 +315,11 @@ export function MergeUI() {
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    useEffect(() => { if (phase === "done") resultHeading.current?.focus(); }, [phase]);
+    // Only when nothing else holds focus: never out of a dialog or a field the visitor moved to.
+    useEffect(() => { if (phase === "done") focusIfIdle(resultHeading.current); }, [phase]);
 
-    const previewOrder = useMemo(() => files.flatMap((file, index) =>
-        (selections[index].pages ?? []).map(page => ({ file, page }))), [files, selections]);
+    const previewOrder = useMemo(() => mergeable.flatMap((file, index) =>
+        (mergeableSelections[index].pages ?? []).map(page => ({ file, page }))), [mergeable, mergeableSelections]);
 
     return (
         <div
@@ -303,6 +339,7 @@ export function MergeUI() {
             />
             <p className="sr-only" role="status" aria-live="polite">{notice}</p>
             {error && <div className="merge-error" role="alert"><AlertCircle size={20} /><p>{error}</p></div>}
+            <IntakeNotice advice={rejection} onDismiss={() => setRejection(null)} />
             {files.length === 0 ? (
                 <div className="merge-empty">
                     <div className="merge-empty-icon"><FileText size={35} strokeWidth={1.6} /><Plus size={20} /></div>
@@ -331,7 +368,7 @@ export function MergeUI() {
                         ) : (
                             <>
                                 <div className="merge-section-heading">
-                                    <div><h2>Your files</h2><p>{files.length} file{files.length === 1 ? "" : "s"}{selectedCount !== null ? ` · ${selectedCount} of ${totalCount} pages` : ` · ${formatFileSize(files.reduce((sum, file) => sum + file.file.size, 0))}`}</p></div>
+                                    <div><h2>Your files</h2><p>{files.length} file{files.length === 1 ? "" : "s"}{leftOut ? ` · ${leftOut} left out` : ""}{selectedCount !== null ? ` · ${selectedCount} of ${totalCount} pages` : ` · ${formatFileSize(mergeable.reduce((sum, file) => sum + file.file.size, 0))}`}</p></div>
                                     <button className="merge-button merge-button--small" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><Plus size={18} />Add PDFs</button>
                                 </div>
                                 <p className="merge-help">Move files into order. Select thumbnails or enter page ranges in Merge settings.</p>
@@ -379,14 +416,14 @@ export function MergeUI() {
                                 <div className="merge-processing" role="status" aria-live="polite">
                                     <Loader2 size={30} className="merge-spinner" />
                                     <p>{processingMessage}</p>
-                                    <div className="merge-processing-detail"><CheckCircle2 size={18} /><span>{files.length} PDFs selected{selectedCount !== null ? ` · ${selectedCount} pages to include` : ""}</span></div>
+                                    <div className="merge-processing-detail"><CheckCircle2 size={18} /><span>{mergeable.length} PDFs selected{selectedCount !== null ? ` · ${selectedCount} pages to include` : ""}</span></div>
                                     <p className="merge-help">Keep this tab open. The server does not report page-by-page progress.</p>
                                 </div>
                             ) : (
                                 <div className="merge-ranges">
                                     <h3>Pages to include</h3>
                                     <p className="merge-help" id="merge-range-help">Blank includes all pages. Use 1-3,5, end, or 2-end. Pages follow the order you enter.</p>
-                                    {files.map((file, index) => <div className="merge-field" key={file.id}>
+                                    {files.map((file, index) => !notMergeable(file) && <div className="merge-field" key={file.id}>
                                         <label htmlFor={`merge-pages-${file.id}`}>{file.file.name}</label>
                                         <input id={`merge-pages-${file.id}`} type="text" value={file.pages} placeholder="All pages"
                                             onChange={event => updatePages(file.id, event.target.value)} spellCheck={false} autoComplete="off"
@@ -412,8 +449,8 @@ export function MergeUI() {
                                 : busy ? <button className="merge-button" type="button" onClick={cancel}>Cancel request</button>
                                     : <button className="merge-button merge-button--primary" type="button" disabled={!canProcess} onClick={() => void process()}>
                                         {previewsLoading ? <><Loader2 size={19} className="merge-spinner" />Reading PDFs…</>
-                                            : files.length < 2 ? "Add one more PDF"
-                                                : selectedCount !== null ? `Merge ${selectedCount} pages` : `Merge ${files.length} PDFs`}
+                                            : mergeable.length < 2 ? "Add one more PDF"
+                                                : selectedCount !== null ? `Merge ${selectedCount} pages` : `Merge ${mergeable.length} PDFs`}
                                     </button>}
                             {result ? <>
                                 <button className="merge-button merge-button--quiet" type="button" onClick={() => { invalidateResult(); setNotice("Adjust the pages or order, then merge again to create an updated PDF."); }}><SlidersHorizontal size={18} />Adjust pages</button>
@@ -490,7 +527,9 @@ function SourcePages({ file, selected, disabled, onToggle }: { file: MergeFile; 
     const pageCount = file.document?.numPages ?? 0;
     const pageSize = 2;
     if (file.preview === "loading") return <p className="merge-preview-status"><Loader2 className="merge-spinner" size={18} />Reading pages on this device…</p>;
-    if (!file.document) return <p className="merge-preview-status"><FileText size={20} />{file.previewNote || "Preview unavailable. You can still send this PDF to merge; password-protected PDFs must be unlocked first."}</p>;
+    if (file.preview === "invalid") return <p className="merge-preview-status merge-preview-status--left-out"><AlertTriangle size={20} aria-hidden="true" /><span><strong>This doesn’t look like a valid PDF.</strong> It won’t be included in the merge. Remove it, or add a PDF that opens.</span></p>;
+    if (file.preview === "locked") return <p className="merge-preview-status merge-preview-status--left-out"><LockKeyhole size={20} aria-hidden="true" /><span><strong>This PDF is locked with a password.</strong> It won’t be included in the merge. <a href="/tool/unlock-pdf">Unlock PDF</a> can remove the password first.</span></p>;
+    if (!file.document) return <p className="merge-preview-status"><FileText size={20} />{file.previewNote || "This browser can’t show a preview of this PDF. It is still included in the merge."}</p>;
     return <div className="merge-source-pages">
         <div className="merge-source-page-list">
             {Array.from({ length: Math.min(pageSize, pageCount - start) }, (_, offset) => start + offset + 1).map(page => {
@@ -516,7 +555,8 @@ function PageOrderPreview({ pages }: { pages: { file: MergeFile; page: number }[
     const start = Math.min(offset, Math.max(0, Math.floor((pages.length - 1) / 6) * 6));
     return <section className="merge-order" aria-label="Preview of page order">
         <h3>Preview of page order</h3>
-        <ol className="merge-order-list">
+        {/* On a phone this list scrolls sideways; a keyboard has to be able to reach it (axe scrollable-region-focusable). */}
+        <ol className="merge-order-list" tabIndex={0} aria-label="Output pages in order">
             {pages.slice(start, start + 6).map(({ file, page }, index) => <li key={`${file.id}-${page}`}>
                 <span className="merge-order-number">{start + index + 1}</span>
                 <PdfThumbnail document={file.document!} page={page} label={`Output page ${start + index + 1}: ${file.file.name}, page ${page}`} />

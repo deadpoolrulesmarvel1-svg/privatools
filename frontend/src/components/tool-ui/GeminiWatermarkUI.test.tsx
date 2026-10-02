@@ -104,19 +104,28 @@ describe("Gemini Watermark Remover page", () => {
         expect(screen.getByText(/If you can see it here, the tool did not find it/)).toBeInTheDocument();
     }, 30_000);
 
-    it("reports a file it cannot read without claiming a result", async () => {
+    it("reports a file it cannot read without claiming a result, and leads with a different image", async () => {
         const { container } = render(<GeminiWatermarkUI />);
         choose(container, [new File(["not an image"], "notes.png", { type: "image/png" })]);
-        await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 30_000 });
+        // Read in this browser, the same file would fail the same way: no "Try again".
+        await screen.findByRole("heading", { name: "This image couldn’t be processed." }, { timeout: 30_000 });
         expect(screen.getByRole("alert")).toHaveTextContent(/not a PNG, JPEG or WebP/);
         expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
+        expect(screen.getByRole("button", { name: "Choose a different image" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Try .*again|Retry/ })).toBeNull();
+        // Nothing was produced, so nothing invites a look at "the result".
+        expect(screen.getByText("Nothing was created. The reason is shown with the image.")).toBeInTheDocument();
+        expect(document.body).not.toHaveTextContent("Check the corner before you keep the result.");
+        fireEvent.error(container.querySelector(".ms-preview img")!);
+        expect(screen.getByText("Your browser cannot preview this file.")).toBeInTheDocument();
+        expect(document.body).not.toHaveTextContent("You can still process the original file.");
     }, 30_000);
 
     it("calls a damaged PNG a damaged image, not a damaged PDF", async () => {
         const bytes = pictureToPng(background("gradient", 64, 64));
         const { container } = render(<GeminiWatermarkUI />);
         choose(container, [new File([bytes.slice(0, bytes.length - 40)], "cut.png", { type: "image/png" })]);
-        await screen.findByRole("heading", { name: "Let’s try that again." }, { timeout: 30_000 });
+        await screen.findByRole("heading", { name: "This image couldn’t be processed." }, { timeout: 30_000 });
         expect(screen.getByRole("alert")).toHaveTextContent("This PNG file is damaged or incomplete.");
         expect(screen.getByRole("alert")).not.toHaveTextContent(/PDF/);
     }, 30_000);

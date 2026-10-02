@@ -47,7 +47,7 @@ export function AudioConverterUI() {
 
     const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/audio-converter",

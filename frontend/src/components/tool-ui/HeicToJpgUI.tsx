@@ -56,7 +56,7 @@ export function HeicToJpgUI() {
         })();
     }, [proc.entries, outNameFor]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/heic-to-jpg",

@@ -36,6 +36,7 @@ import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Shie
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+import { adviseRejection } from "@/lib/file-acceptance";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODEL_ID = "Xenova/bert-base-NER";
@@ -50,16 +51,20 @@ interface Detection {
     occurrences: number;
 }
 
+// Each chip names its category in words; the colour only groups. Every pair
+// is a designed token pair (the Air/Play papers, or a semantic tone) that
+// passes 4.5:1 in all four palettes: the old Tailwind -300 inks were
+// dark-theme leftovers at 1.1–1.5:1 on the light papers.
 const TYPE_META: Record<EntityType, { label: string; color: string }> = {
     PER:   { label: "People",        color: "bg-destructive/10 text-destructive border-destructive/30" },
-    ORG:   { label: "Organizations", color: "bg-violet-500/10 text-violet-300 border-violet-500/30" },
+    ORG:   { label: "Organizations", color: "bg-[var(--pt-image)] text-[color:var(--pt-image-ink)] border-transparent" },
     LOC:   { label: "Locations",     color: "bg-accent/10 text-accent border-accent/30" },
-    MISC:  { label: "Other entities",color: "bg-slate-500/10 text-slate-300 border-slate-500/30" },
-    EMAIL: { label: "Emails",        color: "bg-accent/10 text-blue-300 border-accent/30" },
-    PHONE: { label: "Phone numbers", color: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
-    SSN:   { label: "SSNs",          color: "bg-orange-500/10 text-orange-300 border-orange-500/30" },
+    MISC:  { label: "Other entities",color: "bg-[var(--pt-panel)] text-[color:var(--pt-muted)] border-[color:var(--pt-line)]" },
+    EMAIL: { label: "Emails",        color: "bg-[var(--pt-pdf)] text-[color:var(--pt-pdf-ink)] border-transparent" },
+    PHONE: { label: "Phone numbers", color: "bg-[var(--pt-media)] text-[color:var(--pt-media-ink)] border-transparent" },
+    SSN:   { label: "SSNs",          color: "bg-warning-soft text-warning border-warning/30" },
     CARD:  { label: "Credit cards",  color: "bg-copper-soft text-copper border-copper/30" },
-    DATE:  { label: "Dates",         color: "bg-pink-500/10 text-pink-300 border-pink-500/30" },
+    DATE:  { label: "Dates",         color: "bg-[var(--pt-code)] text-[color:var(--pt-code-ink)] border-transparent" },
 };
 
 const REGEX_PASSES: { type: EntityType; re: RegExp }[] = [
@@ -210,7 +215,7 @@ export function SmartRedactUI() {
     const onPick = useCallback((fl: FileList | null) => {
         if (!fl || !fl[0]) return;
         if (!fl[0].name.toLowerCase().endsWith(".pdf")) {
-            setError("Please pick a PDF file."); return;
+            setError(adviseRejection([fl[0]], { accepts: ".pdf" })?.text ?? "Please pick a PDF file."); return;
         }
         setFile(fl[0]); setError(null); setDetections([]); setSelected(new Set());
         setHits(null); setStage("idle");
@@ -550,8 +555,8 @@ export function SmartRedactUI() {
 
                         {engine === "byok" && (
                             <>
-                                <div className="rounded-lg border border-amber-500/40 bg-amber-500/[0.06] px-3 py-2 space-y-1">
-                                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-amber-500 font-medium">
+                                <div className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 space-y-1">
+                                    <span className="font-mono text-[11px] tracking-[0.10em] uppercase text-warning font-medium">
                                         § Read this first
                                     </span>
                                     <p className="text-[12px] text-foreground leading-snug">
@@ -640,7 +645,7 @@ export function SmartRedactUI() {
                                     <div key={type} className="rounded-xl border border-border bg-card overflow-hidden">
                                         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40">
                                             <div className="flex items-center gap-2">
-                                                <span className={cn("inline-flex items-center px-1.5 h-5 rounded text-[9.5px] font-medium border", meta.color)}>
+                                                <span className={cn("inline-flex items-center px-2 h-6 rounded text-[11px] font-medium border", meta.color)}>
                                                     {meta.label}
                                                 </span>
                                                 <span className="font-medium text-[11.5px] text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>

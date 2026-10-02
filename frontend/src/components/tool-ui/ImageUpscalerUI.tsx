@@ -70,7 +70,7 @@ export function ImageUpscalerUI() {
         })();
     }, [proc.entries, outNameFor]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/image-upscaler",

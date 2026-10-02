@@ -10,7 +10,10 @@
  * download; the usage event counts it as a miss (LocalResult.unchanged).
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, ArrowRight, Check, CircleSlash, X } from "lucide-react";
+import { FileChooserButton } from "@/skins/experience/ToolStudio";
+import { focusIfIdle } from "@/skins/experience/focus-result";
+import { retryKinds, retryLine } from "@/skins/experience/studio-outcome";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
@@ -83,6 +86,8 @@ export function GeminiWatermarkUI() {
     const proc = useMultiFileProcessor();
     const results = useRef<Results>(new Map());
     const summary = useRef<HTMLHeadingElement>(null);
+    // Set after "Choose a different image", so focus lands on the intake instead of the page body.
+    const [returning, setReturning] = useState(false);
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [selectedId, setSelectedId] = useState("");
     const busy = phase === "processing";
@@ -93,7 +98,7 @@ export function GeminiWatermarkUI() {
     const notClean = proc.entries.filter(entry => resultFor(entry)?.status === "not-clean");
     const notFound = proc.entries.filter(entry => resultFor(entry)?.status === "not-found");
 
-    const run = useCallback(async (retry = false) => {
+    const run = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             // Never requested: localProcess handles every file inside this tab.
@@ -112,9 +117,10 @@ export function GeminiWatermarkUI() {
         setPhase("done");
     }, [proc]);
 
-    // The Run button disappears when a run ends; move focus to the result so keyboard and screen reader users hear it.
+    // The Run button disappears when a run ends; move focus to the result so keyboard and screen reader users hear it,
+    // unless the visitor has moved on to a field or a dialog meanwhile.
     useEffect(() => {
-        if (finished) summary.current?.focus();
+        if (finished) focusIfIdle(summary.current);
     }, [finished]);
 
     const download = useCallback(() => {
@@ -166,9 +172,14 @@ export function GeminiWatermarkUI() {
             ? `A Gemini sparkle was found (${placeLabel(selectedResult.fit.layout)}), but the tool could not confirm that removing it would leave no trace, so the image was left as it was.`
             : "Original";
 
+    // Every image failed: nothing was checked to the end. "No sparkle found" and
+    // "Not removed cleanly" are honest answers, not failures, and keep their own titles.
+    const allFailed = finished && proc.failedCount > 0 && !removed.length && !notClean.length && !notFound.length;
     const title = !finished ? "Take the sparkle off." : removed.length
         ? `${removed.length} ${removed.length === 1 ? "image" : "images"} cleaned.`
-        : proc.failedCount && !notClean.length && !notFound.length ? "Let’s try that again."
+        : allFailed
+            // Shared failure grammar: invite another attempt only when one could work.
+            ? proc.retryableCount ? "Let’s try that again." : proc.entries.length > 1 ? "None of these images could be processed." : "This image couldn’t be processed."
             : notClean.length ? "Not removed cleanly." : "No sparkle found.";
 
     const counts = [
@@ -188,20 +199,25 @@ export function GeminiWatermarkUI() {
             <a className="ms-caption" href="/third-party/gemini-watermark-masks.txt" target="_blank" rel="noreferrer">Logo mask credits &amp; licences</a>
         </div>
     </> : <>
-        <div className="ms-result-summary" role="status">
-            <span className="ms-result-seal">{removed.length ? <Check size={27} /> : <CircleSlash size={27} />}</span>
+        <div className="ms-result-summary" role="status" data-tone={allFailed ? "failure" : undefined}>
+            <span className="ms-result-seal">{removed.length ? <Check size={27} /> : allFailed ? <AlertTriangle size={25} /> : <CircleSlash size={27} />}</span>
             <h3 ref={summary} tabIndex={-1}>{removed.length ? "Sparkle removed." : "Nothing was changed."}</h3>
             <p>{counts}</p>
         </div>
         {removed.length > 0 && <button className="ms-primary" onClick={download}><ArrowDownToLine size={16} />{removed.length > 1 ? `Download ${removed.length} images as ZIP` : "Download image"}</button>}
         {notClean.length + notFound.length > 0 && <p className="ms-caption">Images left unchanged are not in the download; your originals are already those files.</p>}
-        {proc.failedCount > 0 && <button className="ms-secondary" onClick={() => void run(true)}>Retry {proc.failedCount} failed</button>}
-        <button className="ms-text" onClick={reset}>Start a new set</button>
+        {allFailed && <FileChooserButton className="ms-primary" accepts={ACCEPTS} multiple onFiles={files => { reset(); proc.addFiles(files, isImage); setReturning(true); }}>{proc.entries.length > 1 ? "Choose different images" : "Choose a different image"}</FileChooserButton>}
+        {/* Images are read in this browser, so a failure is the file's or the browser's: another attempt would fail the same way. */}
+        {proc.retryableCount > 0 && <button className="ms-secondary" onClick={() => void run("transient")}>{proc.retryableCount > 1 ? `Try ${proc.retryableCount} again` : "Try again"}</button>}
+        {!allFailed && <button className="ms-text" onClick={reset}>Start a new set</button>}
     </>;
 
     return <MediaLayout
         title={title}
-        detail={finished ? "Check the corner before you keep the result." : "Gemini’s visible logo, reversed pixel by pixel."}
+        detail={!finished ? "Gemini’s visible logo, reversed pixel by pixel."
+            : !allFailed ? "Check the corner before you keep the result."
+                : proc.retryableCount ? `Your images are still here. ${retryLine(retryKinds(proc.entries))}`
+                    : proc.entries.length > 1 ? "Nothing was created. The reason is shown with each image." : "Nothing was created. The reason is shown with the image."}
         busy={busy}
         className="gw-workspace"
         settings={settings}
@@ -210,7 +226,8 @@ export function GeminiWatermarkUI() {
             <div className="ms-selected-file"><span>{selected.name}</span><span>{formatFileSize(selected.size)}</span></div>
             {selectedResult?.status === "removed"
                 ? <ImageComparison before={selected.file} after={selectedResult.blob} name={selected.name} />
-                : <MediaPreview file={selected.file} name={selected.name} kind="image" caption={caption} />}
+                : <MediaPreview file={selected.file} name={selected.name} kind="image" caption={caption}
+                    unavailableNote={finished && selected.status === "failed" ? "Your browser cannot preview this file." : undefined} />}
             {selectedResult && zoom && <CornerZoom before={selected.file} after={selectedResult.status === "removed" ? selectedResult.blob : undefined}
                 width={selectedResult.width} height={selectedResult.height} view={zoom.view} caption={zoom.caption} />}
             <div className="ms-file-shelf" aria-label="Your images">
@@ -226,7 +243,7 @@ export function GeminiWatermarkUI() {
                     </article>;
                 })}
             </div>
-            {!finished && <MediaUpload accepts={ACCEPTS} multiple compact disabled={busy} title="Add more images" onFiles={files => proc.addFiles(files, isImage)} />}
+            {!finished && <MediaUpload accepts={ACCEPTS} multiple compact disabled={busy} autoFocus={returning} title="Add more images" onFiles={files => proc.addFiles(files, isImage)} />}
         </>}
         {busy && <MediaBusy label="Looking for the sparkle" done={proc.doneCount + proc.failedCount} total={proc.entries.length} detail="Keep this page open. Your images stay on this device." />}
     </MediaLayout>;

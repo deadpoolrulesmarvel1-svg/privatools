@@ -85,7 +85,7 @@ export function SvgToPngUI() {
         })();
     }, [proc.entries, outNameFor]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/svg-to-png",

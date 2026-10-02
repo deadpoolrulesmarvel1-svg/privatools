@@ -14,8 +14,14 @@
  *   - Per-file status is tracked in a parallel array — UI components render
  *     "queued / running / done / failed" badges off it.
  *
- *   - Partial-failure retry: rerun only files whose status is "failed". The
- *     hook keeps the original blobs from successful runs intact.
+ *   - Partial-failure retry: rerun only files whose status is "failed", or
+ *     with `run(opts, "transient")` only those that failed for a reason that
+ *     can pass (connection, time limit, rate limit, server fault). A file the
+ *     tool refused would fail the same way again. Successful blobs stay intact.
+ *
+ *   - A file the caller's filter refuses is never dropped silently: addFiles
+ *     returns it and, unless told otherwise, says so in a toast that names the
+ *     file and the tool that takes it.
  *
  *   - When N=1 the caller can opt to download the raw blob directly (no zip).
  *     We expose the blobs as `results`; the helper `downloadAll()` does the
@@ -25,7 +31,8 @@ import { useCallback, useRef, useState } from "react";
 import { uploadFile, downloadBlob, buildOutputFilename, chooseDownloadFilename, hasUserMessage, type UploadOptions } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { friendlyError } from "@/lib/utils";
-import { emitToolRun, runOutcome, type ToolErrorKind } from "@/lib/toolRun";
+import { emitToolRun, isTransientFailure, runOutcome, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
+import { reportRejectedFiles } from "@/lib/report-rejected-files";
 
 export type FileStatus = "queued" | "running" | "done" | "failed";
 
@@ -36,6 +43,11 @@ export interface FileEntry {
     size: number;
     status: FileStatus;
     error?: string;
+    /** Why the file failed, in the fixed categories of lib/toolRun.ts. */
+    errorKind?: ToolErrorKind;
+    /** A failure trying again could fix: connection, time limit, rate limit
+     *  or a server fault. False when the tool refused the file itself. */
+    retryable?: boolean;
     /** Server-provided filename from Content-Disposition, if any. */
     outName?: string;
     /** Set once the upload succeeds. */
@@ -83,13 +95,19 @@ export interface UseMultiFileProcessorResult {
     doneCount: number;
     /** Count of entries with status === "failed". */
     failedCount: number;
-    addFiles: (files: FileList | File[], filter?: (f: File) => boolean) => void;
+    /** Count of failed entries that trying again could fix. */
+    retryableCount: number;
+    /** Queue the files the filter accepts and return the ones it refused.
+     *  Refused files are reported in a toast unless `report` is false, for
+     *  callers that show them beside their own intake. */
+    addFiles: (files: FileList | File[], filter?: (f: File) => boolean, options?: { report?: boolean }) => File[];
     removeFile: (id: string) => void;
     clearAll: () => void;
     /** Reorder by moving the entry at `from` to `to`. */
     reorder: (from: number, to: number) => void;
-    /** Start processing all queued + failed files (or just failed if retryOnly). */
-    run: (opts: ProcessOptions, retryOnly?: boolean) => Promise<void>;
+    /** Start processing all queued + failed files; `true` retries only the
+     *  failed ones, `"transient"` only those that trying again could fix. */
+    run: (opts: ProcessOptions, retryOnly?: boolean | "transient") => Promise<void>;
     /** Trigger browser download. Zips if N>1, downloads single blob if N=1. */
     downloadAll: (archiveBaseName: string) => void;
     /** Reset everything back to empty. */
@@ -124,11 +142,13 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
     // we just refuse to start a second pass while one is going.
     const inFlight = useRef(false);
 
-    const addFiles = useCallback((fl: FileList | File[], filter?: (f: File) => boolean) => {
+    const addFiles = useCallback((fl: FileList | File[], filter?: (f: File) => boolean, options?: { report?: boolean }) => {
         const arr = Array.from(fl);
         const accepted = filter ? arr.filter(filter) : arr;
-        if (!accepted.length) return;
-        mutate(prev => [...prev, ...accepted.map(makeEntry)]);
+        const rejected = filter ? arr.filter(file => !accepted.includes(file)) : [];
+        if (rejected.length && options?.report !== false) reportRejectedFiles(rejected);
+        if (accepted.length) mutate(prev => [...prev, ...accepted.map(makeEntry)]);
+        return rejected;
     }, [mutate]);
 
     const removeFile = useCallback((id: string) => {
@@ -152,16 +172,17 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         mutate(() => []);
     }, [mutate]);
 
-    const run = useCallback(async (opts: ProcessOptions, retryOnly = false) => {
+    const run = useCallback(async (opts: ProcessOptions, retryOnly: boolean | "transient" = false) => {
         if (inFlight.current) return;
         inFlight.current = true;
 
         // Snapshot from the ref — synchronous and stale-closure-free.
         const targetIds = entriesRef.current
-            .filter(e => retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
+            .filter(e => retryOnly === "transient" ? e.status === "failed" && e.retryable
+                : retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
             .map(e => e.id);
         // Mark them as queued (clears prior error states for retry path).
-        mutate(prev => prev.map(e => targetIds.includes(e.id) ? { ...e, status: "queued", error: undefined } : e));
+        mutate(prev => prev.map(e => targetIds.includes(e.id) ? { ...e, status: "queued", error: undefined, errorKind: undefined, retryable: undefined } : e));
 
         // Tiny semaphore — N workers pull from a shared cursor.
         const concurrency = Math.max(1, opts.concurrency ?? 3);
@@ -226,8 +247,11 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                     firstFailure ??= e;
                     const raw = e instanceof Error ? e.message : "Failed";
                     const msg = hasUserMessage(e) ? raw : friendlyError(raw, "Processing failed");
+                    const kind = toolErrorKind(e);
+                    // A cancelled file can simply run again.
+                    const retryable = kind === "cancelled" || isTransientFailure(e);
                     mutate(prev => prev.map(x => x.id === id
-                        ? { ...x, status: "failed", error: msg }
+                        ? { ...x, status: "failed", error: msg, errorKind: kind === "cancelled" ? undefined : kind, retryable }
                         : x,
                     ));
                 }
@@ -274,6 +298,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
     // Derive aggregate counts. Cheap to recompute every render.
     const doneCount = entries.filter(e => e.status === "done").length;
     const failedCount = entries.filter(e => e.status === "failed").length;
+    const retryableCount = entries.filter(e => e.status === "failed" && e.retryable).length;
     const busy = entries.some(e => e.status === "queued" || e.status === "running") && inFlight.current;
     const finished = entries.length > 0 && entries.every(e => e.status === "done" || e.status === "failed");
 
@@ -283,6 +308,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         finished,
         doneCount,
         failedCount,
+        retryableCount,
         addFiles,
         removeFile,
         clearAll,

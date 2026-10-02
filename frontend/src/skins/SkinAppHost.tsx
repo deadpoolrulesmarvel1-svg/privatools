@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import DaylightApp from "./extensions/daylight";
 import { canonicalPath, currentRoute, navigateTo } from "@/lib/navigation";
+import { retargetSkipLink } from "./skip-link";
 
 /**
  * Mounts Daylight — the site's design.
@@ -37,42 +38,9 @@ export function SkinAppHost() {
     // its own header, and leaving both shows a second, offset logo.
     useEffect(() => { document.documentElement.classList.add("app-ready"); }, []);
 
-    // The skip link in index.html has to point at Daylight's main element.
-    // It targets `#main-content` (a default that predates Daylight), so
-    // retarget it once the design has mounted. Poll on a timer rather than
-    // rAF: a tab opened in the background gets no animation frames at all,
-    // and the link has to be correct by the time that tab is fronted.
-    useEffect(() => {
-        let tries = 0;
-        let timer = 0;
-        let skipLink: HTMLElement | null = null;
-        const skip = (event: MouseEvent) => {
-            const main = document.querySelector<HTMLElement>("main[id]");
-            if (!main) return;
-            // A fragment is a page route in this app. Move focus directly so
-            // the accessibility link cannot navigate to a nonexistent page.
-            event.preventDefault();
-            main.focus({ preventScroll: true });
-            main.scrollIntoView({ block: "start", behavior: "instant" });
-        };
-        const settle = () => {
-            const prepaint = document.getElementById("prepaint-skip");
-            if (!prepaint) return;
-            const main = document.querySelector("main[id]");
-            if (main) {
-                prepaint.setAttribute("href", `#${main.id}`);
-                skipLink = prepaint;
-                prepaint.addEventListener("click", skip);
-                return;
-            }
-            if (++tries < 40) timer = window.setTimeout(settle, 50);
-        };
-        settle();
-        return () => {
-            window.clearTimeout(timer);
-            skipLink?.removeEventListener("click", skip);
-        };
-    }, []);
+    // The skip link in index.html has to point at Daylight's main element
+    // (skip-link.ts; covered by src/test/skip-link.test.ts).
+    useEffect(() => retargetSkipLink(), []);
 
     // Keep app links in the mounted workspace. Capture-phase also handles
     // React Router links before their own history handler runs.

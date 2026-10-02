@@ -34,7 +34,7 @@ export function ExtractAudioUI() {
     const objectUrl = useMemo(() => (previewFile ? URL.createObjectURL(previewFile) : null), [previewFile]);
     useEffect(() => () => { if (objectUrl) URL.revokeObjectURL(objectUrl); }, [objectUrl]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/extract-audio",

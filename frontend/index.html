@@ -64,6 +64,23 @@
          SkinAppHost sets .app-ready on mount and it retires. */
       .app-ready #prepaint-brand { display: none; }
       #prepaint-shell { background:var(--prepaint-bg); color:var(--prepaint-ink); }
+      /* The skip link is styled here, not with utility classes: Tailwind does
+         not scan this file, and the link has to work before the app loads.
+         Hidden until focused, then a solid action-colour tab over the header. */
+      #prepaint-skip {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+      }
+      #prepaint-skip:focus {
+        position: fixed; z-index: 1000; top: 12px; left: 12px;
+        width: auto; height: auto; margin: 0; padding: 12px 18px;
+        overflow: visible; clip: auto; clip-path: none;
+        border-radius: 10px; background: var(--prepaint-accent); color: var(--prepaint-bg);
+        font: 650 15px/1.2 "Manrope", system-ui, sans-serif; text-decoration: none;
+        outline: 2px solid var(--prepaint-ink); outline-offset: 3px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .2);
+      }
+      html[data-experience="play"] #prepaint-skip:focus { border-radius: 999px; font-family: "Outfit", "Manrope", system-ui, sans-serif; }
       #prepaint-shell header { border-bottom:1px solid var(--prepaint-line); }
       /* Device preference still paints the initial frame when JS is unavailable. */
       @media (prefers-color-scheme: dark) {
@@ -98,11 +115,9 @@
   <body>
     <!-- Air and Play share the mounted tools and account state. The visitor's
          chosen experience and appearance are resolved before hydration. -->
-    <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
-         AppShell renders its own once React mounts and removes this one by id;
-         leaving both would make a keyboard user Tab past the same affordance
-         twice. -->
-    <a id="prepaint-skip" href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
+    <!-- The only skip link. SkinAppHost retargets it at the app's <main> once
+         it mounts; its styles are in the <style> above. -->
+    <a id="prepaint-skip" href="#main-content">Skip to main content</a>
     <div id="prepaint-brand" aria-hidden="true">PrivaTools<em>.</em></div>
     <div id="root">
       <div id="prepaint-shell" style="min-height:100vh;font-family:Manrope,system-ui,sans-serif">

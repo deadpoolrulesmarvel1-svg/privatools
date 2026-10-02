@@ -1,8 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import { useMultiFileProcessor, type ProcessOptions } from "./useMultiFileProcessor";
 import { installNetwork } from "@/test/fake-network";
 import { withUserMessage } from "@/lib/api";
+
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() } }));
 
 const RUN_EVENT = "privatools:tool-run";
 type Detail = Record<string, unknown>;
@@ -99,5 +102,52 @@ describe("useMultiFileProcessor usage events", () => {
     const { result } = renderHook(() => useMultiFileProcessor());
     await act(() => result.current.run(options(async () => ({ blob: new Blob(["ok"]) }))));
     expect(seen).toEqual([]);
+  });
+});
+
+const isPdf = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+const httpError = (status: number) => Object.assign(new Error(`HTTP ${status}`), { __status: status });
+
+describe("useMultiFileProcessor refused files", () => {
+  it("never drops a refused file silently: it is returned and named in a toast with the tool that takes it", () => {
+    vi.mocked(toast.error).mockClear();
+    window.history.pushState({}, "", "/tool/compress-pdf");
+    const { result } = renderHook(() => useMultiFileProcessor());
+    let refused: File[] = [];
+    act(() => { refused = result.current.addFiles([file("report.pdf"), file("holiday.png")], isPdf); });
+    expect(result.current.entries.map(entry => entry.name)).toEqual(["report.pdf"]);
+    expect(refused.map(f => f.name)).toEqual(["holiday.png"]);
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    const [headline, details] = vi.mocked(toast.error).mock.calls[0] as unknown as [string, { description: string; action: { label: string } }];
+    expect(headline).toBe("holiday.png wasn’t added.");
+    expect(details.description).toBe("Compress PDF takes PDF files. Try Image Compressor for PNG files.");
+    expect(details.action.label).toBe("Open Image Compressor");
+    window.history.pushState({}, "", "/");
+  });
+
+  it("stays quiet when every file is taken, or when the caller shows the refusal itself", () => {
+    vi.mocked(toast.error).mockClear();
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => { result.current.addFiles([file("a.pdf")], isPdf); });
+    act(() => { result.current.addFiles([file("b.png")], isPdf, { report: false }); });
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(result.current.entries).toHaveLength(1);
+  });
+});
+
+describe("useMultiFileProcessor retries", () => {
+  it("marks which failures another attempt could fix, and retries only those with \"transient\"", async () => {
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => { result.current.addFiles([file("flaky.txt"), file("broken.txt")]); });
+    const attempts: string[] = [];
+    const process = options(async f => { attempts.push(f.name); throw f.name === "flaky.txt" ? httpError(503) : httpError(400); });
+    await act(() => result.current.run(process));
+    expect(result.current.entries.map(entry => [entry.name, entry.errorKind, entry.retryable]))
+      .toEqual([["flaky.txt", "server", true], ["broken.txt", "bad_input", false]]);
+    expect(result.current.retryableCount).toBe(1);
+    attempts.length = 0;
+    await act(() => result.current.run(options(async () => ({ blob: new Blob(["ok"]) })), "transient"));
+    expect(result.current.entries.map(entry => [entry.name, entry.status])).toEqual([["flaky.txt", "done"], ["broken.txt", "failed"]]);
+    expect(result.current.retryableCount).toBe(0);
   });
 });

@@ -14,8 +14,11 @@ import { Braces, FileText, RotateCcw, ScanEye, ShieldAlert, ShieldCheck, ShieldQ
 import { friendlyError } from "@/lib/utils";
 import { buildOutputFilename, downloadBlob, getErrorDetail, getErrorStatus, uploadFileGetJson } from "@/lib/api";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
-import { emitToolRun } from "@/lib/toolRun";
-import { StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
+import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
+import { retryLine } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
+import { takeAccepted } from "@/lib/report-rejected-files";
+import { StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import {
@@ -50,6 +53,13 @@ export function HiddenTextCheckerUI() {
     const [status, setStatus] = useState<Status>("idle");
     const [progress, setProgress] = useState<number | undefined>();
     const [error, setError] = useState<string | null>(null);
+    // Whether another attempt at the same file could work (connection, time limit, rate limit, server fault).
+    const [retryable, setRetryable] = useState(false);
+    const [failureKind, setFailureKind] = useState<ToolErrorKind | undefined>();
+    // After "Choose a different PDF", focus waits on the button that checks it.
+    const [returning, setReturning] = useState(false);
+    const runButton = useRef<HTMLButtonElement>(null);
+    useEffect(() => { if (returning && !error) { setReturning(false); focusIfIdle(runButton.current); } }, [returning, error]);
     const [report, setReport] = useState<HiddenTextReport | null>(null);
     const [checkedAt, setCheckedAt] = useState<Date>(() => new Date());
     const busy = status === "uploading" || status === "checking";
@@ -58,7 +68,8 @@ export function HiddenTextCheckerUI() {
         let cancelled = false;
         queueMicrotask(() => {
             if (cancelled) return;
-            void consumeFileHandoffs(SLUG).then(files => { if (!cancelled && files[0]) setFile(files[0]); });
+            // A handed-over file that isn't a PDF is named, not checked.
+            void consumeFileHandoffs(SLUG).then(files => { const [pdf] = cancelled ? [] : takeAccepted(files, ".pdf"); if (pdf) setFile(pdf); });
         });
         return () => { cancelled = true; };
     }, []);
@@ -88,6 +99,9 @@ export function HiddenTextCheckerUI() {
             setError(status === 504
                 ? "Checking this PDF took longer than the server allows for one file. Split it into parts with Split PDF and check each part."
                 : detail && (status === 400 || status === 413) ? detail : friendlyError(message, "Couldn't check that PDF."));
+            setRetryable(isTransientFailure(e));
+            const kind = toolErrorKind(e);
+            setFailureKind(kind === "cancelled" ? undefined : kind);
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
@@ -109,6 +123,17 @@ export function HiddenTextCheckerUI() {
         return <HiddenTextReportView report={report} file={file} checkedAt={checkedAt} onReset={reset} />;
     }
 
+    // The shared failure grammar: the reason, a different PDF first, and
+    // "Try again" only when another attempt could work.
+    if (error && file && status === "idle") {
+        return <StudioResult tone="failure" title="This PDF couldn’t be checked."
+            detail={retryable ? `The check didn’t finish. ${retryLine([failureKind])}` : "The check didn’t finish. The reason is below."}>
+            <StudioFile name={file.name} status="error" detail={error} />
+            <StudioActions tone="failure" retryCount={retryable ? 1 : 0} onRetry={() => void run()}
+                choose={{ accepts: ".pdf", label: "Choose a different PDF", onFiles: files => { setFile(files[0]); setError(null); setReturning(true); } }} />
+        </StudioResult>;
+    }
+
     return <StudioLayout options={<div className="htc-options">
         <p className="ts-eyebrow">What it looks for</p>
         <h3>Text a reader can't see</h3>
@@ -116,7 +141,7 @@ export function HiddenTextCheckerUI() {
         <p className="htc-where">Your PDF is uploaded over HTTPS to the PrivaTools server, checked in temporary storage and deleted when the check ends. Nothing in it is changed. The page preview is drawn on your device.</p>
         <p className="htc-where">A check reads up to 500 pages and stops after 20 seconds plus 12 for each MB of the file, 90 at most. Split a larger PDF with Split PDF first.</p>
         <div className="ts-actions">
-            <button type="button" className="ts-primary-button" onClick={() => void run()} disabled={!file || busy}>
+            <button ref={runButton} type="button" className="ts-primary-button" onClick={() => void run()} disabled={!file || busy}>
                 <ScanEye size={16} aria-hidden="true" /> Check for hidden text
             </button>
         </div>
@@ -134,7 +159,6 @@ export function HiddenTextCheckerUI() {
             progress={status === "uploading" ? progress : undefined}
             detail={status === "uploading" ? "Sending it to the server for the check." : "Reading every page's text, colours and layers."}
         />}
-        {error && <div className="ts-error" role="alert">{error}</div>}
     </StudioLayout>;
 }
 
@@ -178,7 +202,7 @@ function HiddenTextReportView({ report, file, checkedAt, onReset }: {
     const stage = useRef<HTMLDivElement>(null);
     const heading = useRef<HTMLHeadingElement>(null);
     // The report replaces the form: take focus to its verdict, so it is read out.
-    useEffect(() => { heading.current?.focus(); }, []);
+    useEffect(() => { focusIfIdle(heading.current); }, []);
     const result = verdict(report);
     const steps = nextSteps(report);
     const reasons = REASON_ORDER.filter(reason => report.summary.byReason[reason] > 0);

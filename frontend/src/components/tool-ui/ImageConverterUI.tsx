@@ -48,7 +48,7 @@ export function ImageConverterUI() {
         })();
     }, [proc.entries, outNameFor, target]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         const params: Record<string, string | number> = { target_format: target };
         await proc.run({

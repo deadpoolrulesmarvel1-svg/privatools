@@ -22,8 +22,66 @@ describe('real media form contracts',()=>{
  it('submits a real region in source image pixels',async()=>{const{container}=render(<RemoveImageWatermarkUI/>);pick(container);const img=screen.getByRole('img',{name:/Select watermark regions/});Object.defineProperties(img,{naturalWidth:{value:720},naturalHeight:{value:480}});fireEvent.load(img);fireEvent.click(screen.getByRole('button',{name:'Add a region'}));fireEvent.change(screen.getByRole('spinbutton',{name:'Region x'}),{target:{value:'100'}});fireEvent.click(screen.getByRole('button',{name:'Clean the selected areas'}));await waitFor(()=>expect(uploadFile).toHaveBeenCalledWith('/remove-image-watermark',image,{regions:JSON.stringify([{x:100,y:192,width:144,height:96}]),method:'telea'},expect.anything()));});
  it('shows and searches metadata including location awareness',async()=>{vi.mocked(uploadFileGetJson).mockResolvedValue({format:'JPEG',mode:'RGB',size:[720,480],exif:{Make:'Synthetic camera'},gps:{GPSLatitude:'12.34'},info:{dpi:[72,72]}});const{container}=render(<ViewExifUI/>);pick(container);fireEvent.click(screen.getByRole('button',{name:'Inspect metadata'}));expect(await screen.findByText('Location data found')).toBeInTheDocument();expect(screen.getByText('Synthetic camera')).toBeInTheDocument();fireEvent.change(screen.getByRole('searchbox',{name:'Search metadata'}),{target:{value:'latitude'}});expect(screen.getByText('GPSLatitude')).toBeInTheDocument();expect(screen.queryByText('Synthetic camera')).not.toBeInTheDocument();});
  it('shows unavailable subtitle rendering clearly and preserves the selected files',async()=>{vi.mocked(postFormData).mockRejectedValue(new Error('Subtitle rendering is unavailable on this server. FFmpeg with libass is required.'));const{container}=render(<AddSubtitlesUI/>);const subtitles=new File(['Hello'],'captions.srt',{type:'text/plain'});Object.defineProperty(subtitles,'text',{value:()=>Promise.resolve('Hello')});fireEvent.change(container.querySelector('input[accept=".srt"]')!,{target:{files:[subtitles]}});fireEvent.change(container.querySelector('input[accept*=".mp4"]')!,{target:{files:[new File(['video'],'clip.mp4',{type:'video/mp4'})]}});fireEvent.click(screen.getByRole('button',{name:'Add subtitles'}));expect(await screen.findByRole('alert')).toHaveTextContent('Subtitle rendering is unavailable on this server.');expect(screen.getByRole('button',{name:'Add subtitles'})).toBeEnabled();expect(screen.getByText('captions.srt')).toBeInTheDocument();expect(container.querySelector('video')).toBeInTheDocument();});
- it('does not present an all-failed batch as a successful result',async()=>{vi.mocked(uploadFile).mockRejectedValue(new Error('That file could not be processed.'));const{container}=render(<ImageCompressorUI/>);pick(container);fireEvent.click(screen.getByRole('button',{name:'Compress images'}));expect(await screen.findByRole('heading',{name:'No result was created.'})).toBeInTheDocument();expect(screen.getByRole('button',{name:'Retry 1 failed'})).toBeEnabled();expect(screen.queryByRole('button',{name:'Download result'})).not.toBeInTheDocument();});
+ it('does not present an all-failed batch as a successful result',async()=>{vi.mocked(uploadFile).mockRejectedValue(new Error('That file could not be processed.'));const{container}=render(<ImageCompressorUI/>);pick(container);fireEvent.click(screen.getByRole('button',{name:'Compress images'}));expect(await screen.findByRole('heading',{name:'No result was created.'})).toBeInTheDocument();expect(screen.getByRole('heading',{name:'This file couldn’t be processed.'})).toBeInTheDocument();expect(screen.getByRole('button',{name:'Choose a different file'})).toBeEnabled();expect(screen.queryByRole('button',{name:/Try .*again|Retry/})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Download result'})).not.toBeInTheDocument();});
+ it('offers another attempt only after a failure that can pass',async()=>{vi.mocked(uploadFile).mockRejectedValue(Object.assign(new Error('The server isn’t responding right now. Try again in a moment.'),{__status:503}));const{container}=render(<ImageCompressorUI/>);pick(container);fireEvent.click(screen.getByRole('button',{name:'Compress images'}));expect(await screen.findByRole('heading',{name:'Let’s try that again.'})).toBeInTheDocument();expect(screen.getByRole('button',{name:'Try again'})).toBeEnabled();expect(screen.getByRole('button',{name:'Choose a different file'})).toBeEnabled();});
 });
+describe('the media studio result', () => {
+  const twoImages = (container: HTMLElement) => fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [image, new File(['not an image'], 'broken.jpg', { type: 'image/jpeg' })] } });
+  const failFor = (name: string, error: Error) => vi.mocked(uploadFile).mockImplementation(async (_endpoint, file) => {
+    if ((file as File).name === name) throw error;
+    return new Response(new Blob(['output'], { type: 'image/png' }));
+  });
+
+  it('says a partial run is partial, with the warning badge, and moves focus to the summary', async () => {
+    failFor('broken.jpg', Object.assign(new Error('That image could not be read.'), { __status: 400 }));
+    const { container } = render(<ImageCompressorUI />);
+    twoImages(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Compress images' }));
+    expect(await screen.findByRole('heading', { name: '1 of 2 files ready.' })).toBeInTheDocument();
+    const summary = screen.getByRole('heading', { level: 3, name: 'Partly finished.' });
+    expect(summary).toHaveFocus();
+    expect(container.querySelector('.ms-result-summary')).toHaveAttribute('data-tone', 'partial');
+    expect(container.querySelector('.ms-result-badge')).not.toBeNull();
+    expect(screen.getByText('1 couldn’t be processed; the reason is shown with the file.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Your files, finished.' })).toBeNull();
+  });
+
+  it('never takes focus from a field the visitor moved to while the run finished', async () => {
+    let finish: (response: Response) => void = () => {};
+    vi.mocked(uploadFile).mockImplementation(() => new Promise<Response>(resolve => { finish = resolve; }));
+    const { container } = render(<><input aria-label="Notes" /><ImageCompressorUI /></>);
+    pick(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Compress images' }));
+    const field = screen.getByRole('textbox', { name: 'Notes' });
+    field.focus();
+    finish(new Response(new Blob(['output'], { type: 'image/png' })));
+    expect(await screen.findByRole('heading', { level: 3, name: 'Your files, finished.' })).not.toHaveFocus();
+    expect(field).toHaveFocus();
+  });
+
+  it('words a passing failure from what went wrong and marks it with the warning triangle', async () => {
+    vi.mocked(uploadFile).mockRejectedValue(Object.assign(new Error('The server isn’t responding right now. Try again in a moment.'), { __status: 503 }));
+    const { container } = render(<ImageCompressorUI />);
+    pick(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Compress images' }));
+    expect(await screen.findByText('Your files are still here. The server couldn’t finish it.')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('The connection or the server got in the way');
+    expect(container.querySelector('.ms-result-seal .lucide-triangle-alert, .ms-result-seal .lucide-alert-triangle')).not.toBeNull();
+    expect(container.querySelector('.ms-result-seal .lucide-arrow-left')).toBeNull();
+  });
+
+  it('stops offering the original for processing once processing it has failed', async () => {
+    vi.mocked(uploadFile).mockRejectedValue(new Error('That file could not be processed.'));
+    const { container } = render(<ImageCompressorUI />);
+    pick(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Compress images' }));
+    await screen.findByRole('heading', { name: 'This file couldn’t be processed.' });
+    fireEvent.error(container.querySelector('.ms-preview img')!);
+    expect(screen.getByText('Your browser cannot preview this file.')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('You can still process the original file.');
+  });
+});
+
 describe('trim selection validation',()=>{
  it.each(['00:99:00','hello','00:00:60','-1:00:00'])('rejects invalid time %s',value=>expect(Number.isNaN(parseMediaTime(value))).toBe(true));
  it('preserves millisecond precision',()=>expect(parseMediaTime(formatMediaTime(61.375))).toBe(61.375));

@@ -20,6 +20,7 @@ import {
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
+import { takeAccepted } from "@/lib/report-rejected-files";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { PdfWatermarkPreview } from "./pdf/PdfWatermarkPreview";
 import { AssetPicker } from "@/components/AssetPicker";
@@ -87,8 +88,8 @@ export function WatermarkUI() {
     }, [errorObj, error]);
 
     const addFiles = (fl: FileList) => {
-        const next: PdfEntry[] = Array.from(fl)
-            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+        // A file that isn't a PDF is named, with the tool that takes it, never dropped silently.
+        const next: PdfEntry[] = takeAccepted(Array.from(fl), ".pdf")
             .map(f => ({ id: `${Date.now().toString(36)}-${++entryCounter}`, file: f, status: "queued" as Status }));
         if (!next.length) return;
         setFiles(prev => [...prev, ...next]);

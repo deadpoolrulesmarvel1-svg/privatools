@@ -59,7 +59,7 @@ export function ImageWatermarkUI() {
         return () => URL.revokeObjectURL(url);
     }, [proc.entries]);
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         await proc.run({
             endpoint: "/image-watermark",

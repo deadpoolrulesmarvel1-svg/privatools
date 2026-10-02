@@ -14,7 +14,8 @@ import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { ResultHandoff } from "./ResultHandoff";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
-import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { FileIntake, StudioActions, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { failureDetail, retryKinds, studioOutcome } from "@/skins/experience/studio-outcome";
 
 type Level =
     | "light" | "recommended" | "extreme" | "custom"
@@ -70,6 +71,8 @@ export function CompressUI() {
     const setCustomQuality = (v: number) => setConfig(c => ({ ...c, customQuality: v }));
     const setCustomMaxDim = (v: number) => setConfig(c => ({ ...c, customMaxDim: v }));
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    // Back from a result, focus returns to the intake rather than the page top.
+    const [returning, setReturning] = useState(false);
 
     const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
@@ -108,10 +111,8 @@ export function CompressUI() {
         queueMicrotask(() => {
             if (cancelled) return;
             void consumeFileHandoffs("compress-pdf").then(files => {
-                if (cancelled || !files.length) return;
-                const rejected = files.filter(f => !isPdfOnly(f));
-                if (rejected.length) toast.error(`${rejected.length} file${rejected.length === 1 ? " was" : "s were"} not added. Compress PDF accepts PDF files.`);
-                proc.addFiles(files, isPdfOnly);
+                // addFiles names any file that isn't a PDF and the tool that takes it.
+                if (!cancelled && files.length) proc.addFiles(files, isPdfOnly);
             });
         });
         return () => { cancelled = true; };
@@ -128,7 +129,7 @@ export function CompressUI() {
         : SAVINGS_BY_LEVEL[level];
     const estimatedOutputBytes = Math.max(1024, Math.round(totalBytes * (1 - estimatedSavingFraction)));
 
-    const process = useCallback(async (retry = false) => {
+    const process = useCallback(async (retry: boolean | "transient" = false) => {
         const params: Record<string, string | number> = { level };
         if (level === "custom") {
             params.jpeg_quality = customQuality;
@@ -172,19 +173,33 @@ export function CompressUI() {
 
     if (phase === "done") {
         const doneEntries = proc.entries.filter(entry => entry.status === "done");
+        const failedCount = proc.entries.filter(entry => entry.status === "failed").length;
+        const tone = studioOutcome(doneEntries.length, failedCount);
         const originalTotal = doneEntries.reduce((sum, entry) => sum + entry.size, 0);
         const outputTotal = doneEntries.reduce((sum, entry) => sum + compressedBytesOf(entry), 0);
-        const saving = originalTotal ? Math.max(0, Math.round((1 - outputTotal / originalTotal) * 100)) : 0;
+        // A file that still has bytes is never "100% smaller": cap the rounded figure at 99.
+        const saving = originalTotal ? Math.min(99, Math.max(0, Math.round((1 - outputTotal / originalTotal) * 100))) : 0;
         const singleDone = doneEntries.length === 1 && proc.entries.length === 1 ? doneEntries[0] : null;
-        return <StudioResult title={proc.doneCount ? saving > 0 ? `A little lighter. ${saving}% smaller.` : "Your PDF is ready." : "These files need another try."}
-            detail={proc.doneCount ? `${formatFileSize(originalTotal)} became ${formatFileSize(outputTotal)}. The download has started.` : "Review the details below, then retry."}>
-            <div className="ts-compression-receipt"><div><span>Before</span><strong>{formatFileSize(originalTotal)}</strong></div><span>→</span><div><span>After</span><strong>{formatFileSize(outputTotal)}</strong></div></div>
+        const several = proc.entries.length > 1;
+        const startOver = (files?: File[]) => {
+            proc.reset(); downloadedRef.current = false;
+            if (files) proc.addFiles(files, isPdfOnly);
+            setReturning(true); setPhase("idle");
+        };
+        const title = tone === "failure" ? several ? "None of these PDFs could be compressed." : "This PDF couldn’t be compressed."
+            : tone === "partial" ? `${doneEntries.length} of ${proc.entries.length} PDFs compressed.`
+            : saving > 0 ? `A little lighter. ${saving}% smaller.` : "Your PDF is ready.";
+        const receipt = `${formatFileSize(originalTotal)} became ${formatFileSize(outputTotal)}${tone === "partial" && saving > 0 ? ` (${saving}% smaller)` : ""}. The download has started.`;
+        const detail = tone === "failure" ? failureDetail(failedCount, retryKinds(proc.entries))
+            : tone === "partial" ? `${receipt} ${failedCount === 1 ? "One file" : `${failedCount} files`} couldn’t be compressed; the reason is below.` : receipt;
+        return <StudioResult tone={tone} title={title} detail={detail}>
+            {tone !== "failure" && <div className="ts-compression-receipt"><div><span>Before</span><strong>{formatFileSize(originalTotal)}</strong></div><span>→</span><div><span>After</span><strong>{formatFileSize(outputTotal)}</strong></div></div>}
             {proc.entries.map(entry => <StudioFile key={entry.id} name={entry.outName || entry.name} status={entry.status === "failed" ? "error" : entry.status}
                 detail={entry.status === "done" ? `${formatFileSize(entry.size)} → ${formatFileSize(compressedBytesOf(entry))}${entry.headers?.["x-target-met"] === "false" ? " · Target could not be reached; smallest result provided" : ""}` : entry.error || "Could not process this file"} />)}
-            <div className="ts-actions">{proc.doneCount > 0 && <button className="ts-primary-button" onClick={() => proc.downloadAll("archive_compressed")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
-                {proc.failedCount > 0 && <button className="ts-secondary-button" onClick={() => { downloadedRef.current = false; void process(true); }}>Retry {proc.failedCount} failed</button>}
-                <button className="ts-text-button" onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }}>Compress more</button>
-            </div>
+            <StudioActions tone={tone} retryCount={proc.retryableCount} onRetry={() => { downloadedRef.current = false; void process("transient"); }}
+                choose={{ accepts: ".pdf", multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: startOver }}
+                primary={<button className="ts-primary-button" onClick={() => proc.downloadAll("archive_compressed")}><Download size={16} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}</button>}
+                more={tone !== "failure" && <button className="ts-text-button" onClick={() => startOver()}>Compress more</button>} />
             {singleDone && <ResultHandoff blob={singleDone.blob ?? null} filename={singleDone.outName || buildOutputFilename(singleDone.name, "compressed", "pdf")} fromSlug="compress-pdf" />}
         </StudioResult>;
     }
@@ -196,7 +211,7 @@ export function CompressUI() {
         </div>
         <div><p className="ts-caption">{totalBytes > 0 ? `Rough estimate: ${formatFileSize(totalBytes)} → ${formatFileSize(estimatedOutputBytes)}. Actual savings depend on the PDF.` : "Text stays readable. Image-heavy PDFs usually have the most room to shrink."}</p><div className="ts-actions"><button className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Minimize2 size={16} /> Compress {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</button><button className="ts-text-button" onClick={resetConfig} disabled={phase === "processing"}>Reset to defaults</button></div></div>
     </>}>
-        <FileIntake accepts=".pdf" multiple label="Upload files" title="Make a little more room." detail={`Choose PDFs to compress · Up to ${MAX_FILE_SIZE_LABEL} each`} compact={proc.entries.length > 0} disabled={phase === "processing"} onFiles={files => proc.addFiles(files, isPdfOnly)} />
+        <FileIntake accepts=".pdf" multiple label="Upload files" title="Make a little more room." detail={`Choose PDFs to compress · Up to ${MAX_FILE_SIZE_LABEL} each`} compact={proc.entries.length > 0} disabled={phase === "processing"} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdfOnly)} />
         {proc.entries.length === 0 && <button type="button" className="ts-text-button" onClick={trySample} disabled={loadingSample}><Sparkles size={15} /> {loadingSample ? "Loading sample…" : "Try with a sample PDF"}</button>}
         {proc.entries.length > 0 && <section aria-label="Selected PDFs">{proc.entries.map(entry => <StudioFile key={entry.id} name={entry.name} detail={entry.error || formatFileSize(entry.size)} status={entry.status === "failed" ? "error" : entry.status} onRemove={phase !== "processing" ? () => proc.removeFile(entry.id) : undefined} />)}</section>}
         {phase === "processing" && <StudioProgress label="Making space for your PDF" detail={`${proc.doneCount} of ${proc.entries.length} files completed. Your originals stay unchanged.`} />}
