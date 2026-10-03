@@ -155,6 +155,28 @@ class TestRotate:
         assert _is_pdf(resp.content)
         assert _no_traceback(resp.content)
 
+    @pytest.mark.parametrize("damage", ["cut short", "header only"])
+    def test_a_pdf_it_cannot_read_is_called_unreadable_like_the_other_page_tools(self, client, sample_pdf, damage):
+        # Rotate answered "Invalid page range syntax", which the page turns
+        # into "One of the page numbers is outside this PDF", for a file it
+        # could not open at all. Extract Pages says the file is corrupt, and
+        # the page then says it is damaged and to try Repair PDF.
+        broken = sample_pdf[: len(sample_pdf) // 3] if damage == "cut short" else b"%PDF-1.7\n" + b"garbage " * 64
+        rotated = client.post("/api/rotate", files={"file": ("broken.pdf", broken, "application/pdf")},
+                              data={"angle": "90", "pages": "all"})
+        extracted = client.post("/api/extract-pages", files={"file": ("broken.pdf", broken, "application/pdf")},
+                                data={"pages": "1"})
+        assert extracted.status_code == 400 and "corrupt" in extracted.json()["detail"]
+        assert rotated.status_code == 400
+        assert rotated.json()["detail"] == extracted.json()["detail"]
+        assert "page" not in rotated.json()["detail"].lower().replace("this pdf", "")
+
+    def test_a_page_outside_the_pdf_is_still_named(self, client, sample_pdf):
+        resp = client.post("/api/rotate", files={"file": ("test.pdf", sample_pdf, "application/pdf")},
+                           data={"angle": "90", "pages": "5"})
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "Page 5 is out of bounds. Valid range is 1-1."
+
 
 # ---------------------------------------------------------------------------
 # /api/organize-pages — reorder + delete pages

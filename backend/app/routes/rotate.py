@@ -79,6 +79,10 @@ async def rotate_pdf(
                 status_code=400,
                 detail="PDF is password-protected — unlock it first",
             ) from exc
+        if "corrupt" in msg:
+            # safe_open_pdf could not read the file at all. Say so, as the
+            # other page tools do, instead of blaming the page range.
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         if "out of range" in msg or "out of bounds" in msg:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         raise HTTPException(
