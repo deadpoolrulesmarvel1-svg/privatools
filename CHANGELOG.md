@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.18] — 2026-10-03 — Saved passwords survive "This session only"
+
+### Tools
+
+- Turning on "This session only" in an AI tool's key settings no longer deletes the key that encrypts the passwords saved in My Stuff. It used to, and after the page was reloaded those passwords could not be read. It now removes only the saved AI keys. Passwords already made unreadable this way can't be recovered; save them again. (#324)
+
 ## [2.7.17] — 2026-10-03 — Subtitle Generator
 
 ### New tool
