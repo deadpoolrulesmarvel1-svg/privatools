@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { recognizeSpeech, type Recognizer } from "./recognize";
+import { recognizeSpeech, withoutRepeat, type Recognizer, type WhisperChunk } from "./recognize";
 import { SAMPLE_RATE } from "./windows";
 
 /** 75 s: sound with a pause every 5.1 s, then 20 s of digital silence. */
@@ -165,8 +165,136 @@ describe("recognising speech window by window", () => {
         for (const segment of result.segments) expect(segment.start < 20 || segment.start >= 50).toBe(true);
     });
 
+    describe("when Whisper stops writing before the speech ends", () => {
+        // The synthetic clip's three sentences, as tone.
+        const clip = () => {
+            const samples = new Float32Array(12 * SAMPLE_RATE);
+            for (const [from, to] of [[1.22, 3.4], [5.32, 7.92], [9.24, 11.5]]) {
+                for (let i = Math.round(from * SAMPLE_RATE); i < to * SAMPLE_RATE; i++) samples[i] = 0.3 * Math.sin(2 * Math.PI * 180 * i / SAMPLE_RATE);
+            }
+            return samples;
+        };
+        const chunk = (start: number, end: number, text: string): WhisperChunk => ({ timestamp: [start, end], text });
+        /** Whisper giving each call's chunks in turn, with the seconds of audio each call was given. */
+        const passes = (...outputs: WhisperChunk[][]) => {
+            const heard: number[] = [];
+            const recognize = vi.fn(async (window: Float32Array) => {
+                heard.push(window.length / SAMPLE_RATE);
+                return { text: "x", chunks: outputs[heard.length - 1] ?? [] };
+            });
+            return { recognize, heard };
+        };
+
+        it("asks again from the sentence it stopped in, and keeps every sentence once", async () => {
+            // Whisper Tiny on the WebM clip wrote the first sentence, timed to 7 s, and stopped.
+            const { recognize, heard } = passes(
+                [chunk(0, 7, " Welcome to the subtitle generator test.")],
+                [chunk(0, 2.8, " This clip was made with a speech synthesizer."), chunk(3.9, 6.4, " Every word should appear in the captions.")],
+            );
+            const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+            expect(heard.length).toBe(2);
+            expect(heard[1]).toBeGreaterThan(6.68);
+            expect(heard[1]).toBeLessThan(6.9);
+            expect(result.segments.map(segment => segment.text)).toEqual([
+                "Welcome to the subtitle generator test.",
+                "This clip was made with a speech synthesizer.",
+                "Every word should appear in the captions.",
+            ]);
+            const [first, second, third] = result.segments;
+            expect(first.start).toBeCloseTo(1.12, 2);
+            expect(first.end).toBeCloseTo(3.65, 2);
+            expect(second.start).toBeGreaterThan(5.1);
+            expect(second.start).toBeLessThan(5.32);
+            expect(third.start).toBeGreaterThan(9);
+            expect(third.start).toBeLessThan(9.24);
+            for (let i = 1; i < result.segments.length; i++) expect(result.segments[i].start).toBeGreaterThanOrEqual(result.segments[i - 1].end);
+        });
+
+        it("writes words heard by both passes once", async () => {
+            const { recognize } = passes(
+                [chunk(0, 7, " Welcome to the subtitle generator test. This clip was")],
+                [chunk(0, 2.8, " This clip was made with a speech synthesizer."), chunk(3.9, 6.4, " Every word should appear.")],
+            );
+            const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+            expect(result.segments.map(segment => segment.text)).toEqual([
+                "Welcome to the subtitle generator test.",
+                "This clip was made with a speech synthesizer.",
+                "Every word should appear.",
+            ]);
+        });
+
+        it("keeps what it has when asking again finds nothing", async () => {
+            const { recognize, heard } = passes([chunk(0, 7, " Welcome to the subtitle generator test.")], []);
+            const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+            expect(heard.length).toBe(2);
+            expect(result.segments.map(segment => segment.text)).toEqual(["Welcome to the subtitle generator test."]);
+        });
+
+        it("asks at most twice more for one window", async () => {
+            const samples = new Float32Array(15 * SAMPLE_RATE);
+            for (const [from, to] of [[0.5, 2], [3, 4.5], [5.5, 7], [8, 9.5], [10.5, 12]]) {
+                for (let i = Math.round(from * SAMPLE_RATE); i < to * SAMPLE_RATE; i++) samples[i] = 0.3 * Math.sin(2 * Math.PI * 180 * i / SAMPLE_RATE);
+            }
+            // Whisper that only ever writes the first sentence it is given.
+            const { recognize, heard } = passes([chunk(0, 2.1, " One.")], [chunk(0, 1.7, " Two.")], [chunk(0, 1.7, " Three.")], [chunk(0, 1.7, " Four.")]);
+            const result = await recognizeSpeech(samples, recognize, { language: "en" });
+            expect(heard.length).toBe(3);
+            expect(result.segments.map(segment => segment.text)).toEqual(["One.", "Two.", "Three."]);
+        });
+
+        it("doesn't ask again over sound with no pauses to tell speech by", async () => {
+            const steady = Float32Array.from({ length: 12 * SAMPLE_RATE }, (_, i) => 0.3 * Math.sin(2 * Math.PI * 220 * i / SAMPLE_RATE));
+            const { recognize, heard } = passes([chunk(0, 3, " Music.")]);
+            await recognizeSpeech(steady, recognize, { language: "en" });
+            expect(heard.length).toBe(1);
+        });
+
+        it("never moves the progress back for the second pass", async () => {
+            const progress: number[] = [];
+            let call = 0;
+            const recognize = vi.fn(async (_audio: Float32Array, _options: Record<string, unknown>, onPosition?: (seconds: number) => void) => {
+                call++;
+                if (call === 1) {
+                    onPosition?.(6.9);
+                    return { text: "x", chunks: [chunk(0, 7, " Welcome.")] };
+                }
+                onPosition?.(1);
+                onPosition?.(3);
+                return { text: "x", chunks: [chunk(0, 2.8, " This clip."), chunk(3.9, 6.4, " Every word.")] };
+            });
+            await recognizeSpeech(clip(), recognize, { language: "en", onProgress: done => progress.push(done) });
+            expect(call).toBe(2);
+            for (let i = 1; i < progress.length; i++) expect(progress[i]).toBeGreaterThanOrEqual(progress[i - 1]);
+            expect(progress).toContain(6.9);
+            expect(progress.some(done => done > 8 && done < 8.3)).toBe(true);
+            expect(progress[progress.length - 1]).toBe(12);
+        });
+    });
+
     it("passes on a recognizer's failure", async () => {
         const recognize = vi.fn(async () => { throw new Error("model failed"); });
         await expect(recognizeSpeech(audio(), recognize, { language: "en" })).rejects.toThrow("model failed");
+    });
+});
+
+describe("dropping words two passes both wrote", () => {
+    it("drops the words the later pass starts with from the end of the earlier one", () => {
+        expect(withoutRepeat("Welcome to the test. This clip was", "This clip was made with a synthesizer.", 1)).toBe("Welcome to the test.");
+        expect(withoutRepeat("Welcome to the test, this clip", "This clip was made.", 1)).toBe("Welcome to the test");
+        expect(withoutRepeat("This clip was made.", "This clip was made with a synthesizer.", 1)).toBe("");
+    });
+
+    it("compares words without case or punctuation", () => {
+        expect(withoutRepeat("It is a speech synthesizer.", "Speech, synthesizer! Then more.", 1)).toBe("It is a");
+    });
+
+    it("keeps the earlier text when the later doesn't start with its last words, or too few match", () => {
+        expect(withoutRepeat("Welcome to the test.", "This clip was made.", 1)).toBe("Welcome to the test.");
+        expect(withoutRepeat("The end of the test.", "Test two begins.", 2)).toBe("The end of the test.");
+        expect(withoutRepeat("The end of the test.", "Test two begins.", 1)).toBe("The end of the");
+    });
+
+    it("compares words in scripts without spaces", () => {
+        expect(withoutRepeat("今日は晴れです。明日は", "明日は雨です。", 1)).toBe("今日は晴れです。");
     });
 });

@@ -13,6 +13,9 @@
  *    after the last (tightenToSpeech), only ever shortened.
  * Where there is no clear difference between speech and silence (music, or
  * speech from end to end), Whisper's own times are kept.
+ *
+ * The same measure tells recognize.ts when Whisper stopped writing before the
+ * speech did (unheardSpeech).
  */
 import { SAMPLE_RATE } from "./windows";
 
@@ -46,17 +49,17 @@ export function noiseFloor(window: Float32Array): number {
     return percentile(levels, 0.1);
 }
 
-/**
- * Pauses of at least a quarter of a second in a window, as [start, end] in
- * seconds: stretches no louder than the floor plus a little of the way to the
- * speech. None when there is no clear difference between the two.
- */
-export function pausesIn(window: Float32Array, floor: number, minimumSeconds = 0.25): [number, number][] {
+/** Each 20 ms frame's level, and the level above which a frame is speech; null when nothing stands clearly above the floor. */
+function voice(window: Float32Array, floor: number): { levels: number[]; threshold: number } | null {
     const frames = Math.ceil(window.length / FRAME);
     const levels = Array.from({ length: frames }, (_, frame) => level(window, frame));
     const peak = percentile(levels, 0.95);
-    if (peak < Math.max(floor * CONTRAST, FLOOR_MINIMUM)) return [];
-    const threshold = floor + (peak - floor) * 0.15;
+    if (peak < Math.max(floor * CONTRAST, FLOOR_MINIMUM)) return null;
+    return { levels, threshold: floor + (peak - floor) * 0.15 };
+}
+
+function quietStretches({ levels, threshold }: { levels: number[]; threshold: number }, minimumSeconds: number): [number, number][] {
+    const frames = levels.length;
     const found: [number, number][] = [];
     let start = -1;
     for (let frame = 0; frame <= frames; frame++) {
@@ -68,6 +71,58 @@ export function pausesIn(window: Float32Array, floor: number, minimumSeconds = 0
         }
     }
     return found;
+}
+
+/**
+ * Pauses of at least a quarter of a second in a window, as [start, end] in
+ * seconds: stretches no louder than the floor plus a little of the way to the
+ * speech. None when there is no clear difference between the two.
+ */
+export function pausesIn(window: Float32Array, floor: number, minimumSeconds = 0.25): [number, number][] {
+    const levels = voice(window, floor);
+    return levels ? quietStretches(levels, minimumSeconds) : [];
+}
+
+/**
+ * The stretches of speech in a window, between its pauses, as [start, end] in
+ * seconds; null when there is no clear difference between speech and silence
+ * (music, steady noise, or speech from end to end).
+ */
+export function speechRuns(window: Float32Array, floor: number): [number, number][] | null {
+    const levels = voice(window, floor);
+    if (!levels) return null;
+    const seconds = window.length / SAMPLE_RATE;
+    const runs: [number, number][] = [];
+    let at = 0;
+    for (const [from, to] of quietStretches(levels, 0.25)) {
+        if (from > at) runs.push([at, from]);
+        at = to;
+    }
+    if (at < seconds) runs.push([at, seconds]);
+    return runs;
+}
+
+/** Whole stretches of speech after Whisper's last segment, this long in all, mean it stopped writing early. */
+const UNHEARD_SECONDS = 1;
+
+/**
+ * Whisper sometimes ends its output before the speech does: on one synthetic
+ * clip Whisper Tiny wrote the first of three sentences, timed it to run into
+ * the second, and wrote nothing more. Given the last segment Whisper wrote in
+ * a window, as [start, end] in seconds, this says where to ask it again: null
+ * unless whole stretches of clear speech, a second or more in all, follow the
+ * segment. Then it is the start of the stretch the segment ends in, when the
+ * segment also holds speech before that stretch (so its words may not be in
+ * the segment's text), or else the start of the first stretch after it.
+ */
+export function unheardSpeech(window: Float32Array, start: number, end: number, floor: number): number | null {
+    const runs = speechRuns(window, floor);
+    if (!runs) return null;
+    const after = runs.filter(([from]) => from >= end);
+    if (after.reduce((sum, [from, to]) => sum + to - from, 0) < UNHEARD_SECONDS) return null;
+    const within = runs.find(([from, to]) => from < end && to > end);
+    const before = within && runs.some(([from, to]) => to <= within[0] && Math.min(to, end) - Math.max(from, start) >= 0.3);
+    return before ? within[0] - LEAD : Math.max(end, after[0][0] - LEAD);
 }
 
 /**
