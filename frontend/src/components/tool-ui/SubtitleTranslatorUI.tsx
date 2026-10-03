@@ -12,7 +12,7 @@
  * The visitor reads each line beside its original and corrects any, then
  * downloads SRT or VTT. Nothing goes to PrivaTools.
  */
-import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Download, Film, Languages, RotateCcw, Sparkles } from "lucide-react";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
@@ -31,6 +31,7 @@ import {
 } from "@/lib/translate/languages";
 import { loadDeviceTranslator, MAX_INPUT_TOKENS } from "@/lib/translate/opusMt";
 import { layoutFor } from "@/lib/subtitles/captions";
+import { convertCueMarkup } from "@/lib/subtitles/cueText";
 import { cuesOf, formatTime, readSubtitleFile, SubtitleFileError, type SubtitleDocument, type SubtitleFormat } from "@/lib/subtitles/subtitleFile";
 import {
     assembleCues, exportSubtitles, guessLanguageFromScript, planTranslation, subPlan, translateOnDevice, translateWithModel, translatedFileName,
@@ -410,33 +411,37 @@ export function SubtitleTranslatorUI() {
         <div>
             <h2>Languages</h2>
             {settings.engine === "device" ? <>
-                <div className="ts-setting">
-                    <label htmlFor={`${ids}-from`}>From</label>
-                    <select id={`${ids}-from`} value={settings.source} disabled={busy} onChange={event => setSource(event.target.value)}>
-                        {availableSources().map(code => <option key={code} value={code}>{languageName(code)}</option>)}
-                    </select>
-                </div>
-                <div className="ts-setting">
-                    <label htmlFor={`${ids}-to`}>Into</label>
-                    <select id={`${ids}-to`} value={settings.target} disabled={busy} onChange={event => setField("target", event.target.value)}>
-                        {targetsFor(settings.source).map(code => <option key={code} value={code}>{languageName(code)}</option>)}
-                    </select>
+                <div className="st-fields">
+                    <div className="ts-setting">
+                        <label htmlFor={`${ids}-from`}>From</label>
+                        <select id={`${ids}-from`} value={settings.source} disabled={busy} onChange={event => setSource(event.target.value)}>
+                            {availableSources().map(code => <option key={code} value={code}>{languageName(code)}</option>)}
+                        </select>
+                    </div>
+                    <div className="ts-setting">
+                        <label htmlFor={`${ids}-to`}>Into</label>
+                        <select id={`${ids}-to`} value={settings.target} disabled={busy} onChange={event => setField("target", event.target.value)}>
+                            {targetsFor(settings.source).map(code => <option key={code} value={code}>{languageName(code)}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <p className="st-hint">{pairNote}{settings.source !== "en" && <> <button type="button" className="st-link" disabled={busy} onClick={() => setField("engine", "byok")}>Use my own AI key</button></>}</p>
                 <p className="st-hint">{modelBytes
                     ? `The ${languageName(settings.source)} → ${languageName(settings.target)} model is in this browser (${formatBytes(modelBytes)}).`
                     : `The ${languageName(settings.source)} → ${languageName(settings.target)} model downloads from Hugging Face on the first run, about ${APPROX_MODEL_MB} MB, and your browser keeps it.`}</p>
             </> : <>
-                <div className="ts-setting">
-                    <label htmlFor={`${ids}-into`}>Translate into</label>
-                    <select id={`${ids}-into`} value={settings.byokTarget} disabled={busy} onChange={event => setField("byokTarget", event.target.value)}>
-                        {BYOK_TARGETS.map(language => <option key={language.code} value={language.name}>{language.name}</option>)}
-                    </select>
-                </div>
-                <div className="ts-setting">
-                    <label htmlFor={`${ids}-model`}>Model (optional)</label>
-                    <input id={`${ids}-model`} type="text" value={settings.byokModel} disabled={busy} spellCheck={false} autoComplete="off"
-                        placeholder={providerById(byok.provider)?.models[0] ?? "provider default"} onChange={event => setField("byokModel", event.target.value)} />
+                <div className="st-fields">
+                    <div className="ts-setting">
+                        <label htmlFor={`${ids}-into`}>Translate into</label>
+                        <select id={`${ids}-into`} value={settings.byokTarget} disabled={busy} onChange={event => setField("byokTarget", event.target.value)}>
+                            {BYOK_TARGETS.map(language => <option key={language.code} value={language.name}>{language.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="ts-setting">
+                        <label htmlFor={`${ids}-model`}>Model (optional)</label>
+                        <input id={`${ids}-model`} type="text" value={settings.byokModel} disabled={busy} spellCheck={false} autoComplete="off"
+                            placeholder={providerById(byok.provider)?.models[0] ?? "provider default"} onChange={event => setField("byokModel", event.target.value)} />
+                    </div>
                 </div>
                 <p className="st-hint">The model works out which language the subtitles are in.</p>
             </>}
@@ -462,6 +467,7 @@ export function SubtitleTranslatorUI() {
                     <p><strong>{chosen.problem.title}</strong> {chosen.problem.detail}{chosen.problem.ass && <> <a href="/tools/subtitle-converter">Open Subtitle Converter</a>.</>}</p>
                 </div>}
                 {chosen.switchedTo && settings.engine === "device" && <p className="st-hint">Its letters are {languageName(chosen.switchedTo)}, so it will be translated from {languageName(chosen.switchedTo)}. Change “From” if that’s wrong.</p>}
+                {doc && !busy && <FirstCues doc={doc} />}
             </section>}
         {settings.engine === "byok" && <details className="st-provider" open={!byok.ready}>
             <summary><span>Your AI key</span><strong>{byok.ready ? providerById(byok.provider)?.label ?? "Key saved" : "Choose your provider and key"}</strong></summary>
@@ -476,6 +482,21 @@ export function SubtitleTranslatorUI() {
                 : `${n(progress.done)} of ${plural(progress.total, "line")}${eta !== null ? ` · about ${Math.max(1, Math.round(eta / 60))} min left at this speed` : ""} · ${where}`} />}
         {!busy && doc && settings.engine === "device" && !modelId && <p className="ts-note">This pair has no model on this device.</p>}
     </StudioLayout>;
+}
+
+/** The file's first cues as read, to check it is the right file, in the language chosen, before a model downloads. */
+function FirstCues({ doc }: { doc: SubtitleDocument }) {
+    const cues = cuesOf(doc);
+    const hours = cues.some(cue => cue.end >= 3600);
+    const shown = cues.slice(0, 5);
+    return <figure className="st-peek">
+        <figcaption>The first {shown.length === 1 ? "cue" : `${shown.length} cues`}, as read</figcaption>
+        <ol>{shown.map((cue, index) => <li key={index}>
+            <span className="st-cue-time">{cueClock(cue.start, hours)}</span>
+            <span dir="auto">{cue.lines.join("\n")}</span>
+        </li>)}</ol>
+        {cues.length > shown.length && <p className="st-hint">and {plural(cues.length - shown.length, "more cue")}.</p>}
+    </figure>;
 }
 
 /* ── The result ──────────────────────────────────────────────────────── */
@@ -494,9 +515,21 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
     const long = cues.filter(cue => cue.long && !cue.edited).length;
     const check = cues.filter(cue => cue.check && !cue.edited).length;
     const lineLength = layoutFor(run.to.code.split("-")[0], "two").maxLineChars;
-    // What the other format leaves out, for the line under the downloads; worked out after typing settles.
-    const settled = useDeferredValue(cues);
-    const conversion = useMemo(() => exportSubtitles(doc, settled, otherFormat, run.to.code).dropped, [doc, settled, otherFormat, run.to.code]);
+    // What the other format leaves out, for the line under the downloads: the same count writeSubtitles
+    // makes, kept per cue text, so a correction recounts one cue rather than the file.
+    const tagCounts = useRef(new Map<string, number>());
+    const conversion = useMemo(() => {
+        let tags = 0;
+        for (const cue of cues) {
+            let count = tagCounts.current.get(cue.text);
+            if (count === undefined) {
+                count = convertCueMarkup(cue.text, ownFormat, otherFormat).dropped;
+                tagCounts.current.set(cue.text, count);
+            }
+            tags += count;
+        }
+        return { tags, settings: cuesOf(doc).filter(cue => cue.settings).length, blocks: doc.blocks.length - cues.length };
+    }, [cues, doc, ownFormat, otherFormat]);
     const [handing, setHanding] = useState(false);
 
     const save = (format: SubtitleFormat) => {
@@ -578,12 +611,41 @@ function marksOf(cue: EditableCue, lineLength: number): { kind: string; label: s
     return marks;
 }
 
+/** How long typing pauses before a correction reaches the result (and its counts); leaving the box sends it at once. */
+const COMMIT_AFTER_MS = 400;
+
+/**
+ * One cue. The box keeps its own draft while the visitor types, so a long
+ * file's thousands of rows are not drawn again on every key; the correction
+ * reaches the result when typing pauses, when the box loses focus (as it
+ * does before any button is pressed), or when the row goes.
+ */
 const CueRow = memo(function CueRow({ index, cue, label, from, to, sourceLang, targetLang, lineLength, onText }: {
     index: number; cue: EditableCue; label: string; from: string; to: string; sourceLang?: string; targetLang: string; lineLength: number;
     onText: (index: number, text: string) => void;
 }) {
+    const [draft, setDraft] = useState(cue.text);
+    const committed = useRef(cue.text);
+    const latest = useRef(cue.text);
+    const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const commit = useCallback(() => {
+        clearTimeout(timer.current);
+        if (latest.current !== committed.current) {
+            committed.current = latest.current;
+            onText(index, latest.current);
+        }
+    }, [index, onText]);
+    // A new text from outside, such as the marked cues translated again, replaces the draft.
+    useEffect(() => {
+        if (cue.text !== committed.current) {
+            committed.current = cue.text;
+            latest.current = cue.text;
+            setDraft(cue.text);
+        }
+    }, [cue.text]);
+    useEffect(() => commit, [commit]);
     const marks = marksOf(cue, lineLength);
-    const rows = Math.min(4, Math.max(2, cue.text.split("\n").length));
+    const rows = Math.min(4, Math.max(2, draft.split("\n").length));
     return <li className="st-cue" data-status={cue.edited ? "edited" : cue.status} data-marked={marks.length > 0 || undefined}>
         <div className="st-cue-meta">
             <span className="st-cue-number">{label}</span>
@@ -591,31 +653,61 @@ const CueRow = memo(function CueRow({ index, cue, label, from, to, sourceLang, t
             {marks.map(mark => <span key={mark.kind + mark.label} className="st-mark" data-kind={mark.kind}>{mark.label}</span>)}
         </div>
         <p className="st-cue-source" lang={sourceLang} dir="auto">{cue.source}</p>
-        <textarea dir="auto" lang={targetLang} rows={rows} value={cue.text} spellCheck
-            aria-label={`Translation of cue ${label}, ${from} to ${to}`} onChange={event => onText(index, event.target.value)} />
+        <textarea dir="auto" lang={targetLang} rows={rows} value={draft} spellCheck
+            aria-label={`Translation of cue ${label}, ${from} to ${to}`} onBlur={commit}
+            onChange={event => {
+                latest.current = event.target.value;
+                setDraft(event.target.value);
+                clearTimeout(timer.current);
+                timer.current = setTimeout(commit, COMMIT_AFTER_MS);
+            }} />
         {cue.status === "failed" && !cue.edited && cue.reason && <p className="st-cue-reason">{cue.reason}</p>}
     </li>;
 });
 
-/** Every cue: its original beside its translation, to read and correct. */
+/**
+ * Cues a page of the check holds. Each row is a text box, and a page of
+ * thousands made every key a long task (about 200 ms a key at 10,000 cues on
+ * a two-core test machine, against under 60 ms at this size).
+ */
+const PAGE_SIZE = 500;
+
+/** Every cue: its original beside its translation, to read and correct, a page at a time. */
 function CueEditor({ result, onEdit }: { result: Result; onEdit: (index: number, text: string) => void }) {
     const { doc, cues, run } = result;
     const timings = cuesOf(doc);
     const hours = timings.some(cue => cue.end >= 3600);
     const lineLength = layoutFor(run.to.code.split("-")[0], "two").maxLineChars;
-    const markedCount = cues.filter(cue => marksOf(cue, lineLength).length > 0).length;
-    const [onlyMarked, setOnlyMarked] = useState(false);
-    const shown = onlyMarked && markedCount ? cues.map((cue, index) => ({ cue, index })).filter(({ cue }) => marksOf(cue, lineLength).length > 0) : cues.map((cue, index) => ({ cue, index }));
+    // The cues marked when "only marked" was turned on: a cue corrected since stays in view while it is worked on.
+    const [onlyMarked, setOnlyMarked] = useState<number[] | null>(null);
+    const [page, setPage] = useState(0);
+    const list = useRef<HTMLOListElement>(null);
+    const marked = useMemo(() => cues.flatMap((cue, index) => (marksOf(cue, lineLength).length > 0 ? [index] : [])), [cues, lineLength]);
+    // The indexes shown, in order: every cue, or the marked ones; then this page of them.
+    const filtered = onlyMarked?.length ? onlyMarked : null;
+    const total = filtered ? filtered.length : cues.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const at = Math.min(page, pages - 1);
+    const first = at * PAGE_SIZE;
+    const shown: number[] = [];
+    for (let k = first; k < Math.min(total, first + PAGE_SIZE); k++) shown.push(filtered ? filtered[k] : k);
+    const turn = (next: number) => { setPage(next); if (list.current) list.current.scrollTop = 0; };
+    const pager = pages > 1 && <nav className="st-pager" aria-label="Pages of cues">
+        <button type="button" className="ts-secondary-button" disabled={at === 0} onClick={() => turn(at - 1)}>Previous {n(PAGE_SIZE)}</button>
+        <span aria-live="polite">{filtered ? "Marked cues" : "Cues"} {n(first + 1)}–{n(first + shown.length)} of {n(total)}</span>
+        <button type="button" className="ts-secondary-button" disabled={at >= pages - 1} onClick={() => turn(at + 1)}>Next {n(Math.min(PAGE_SIZE, total - first - shown.length))}</button>
+    </nav>;
     return <section className="st-editor" aria-labelledby="st-editor-title">
         <div className="st-editor-head">
             <h3 id="st-editor-title">Check the translation <span className="st-badge">Machine translation</span></h3>
             <p>Each cue’s original is beside its translation. Correct any of them: a line break you type stays in the file, and the timing never changes.</p>
-            {markedCount > 0 && <label className="ts-check"><input type="checkbox" checked={onlyMarked} onChange={event => setOnlyMarked(event.target.checked)} />
-                <span>Show only the {plural(markedCount, "marked cue")}</span></label>}
+            {(marked.length > 0 || onlyMarked) && <label className="ts-check"><input type="checkbox" checked={!!onlyMarked} onChange={event => { setOnlyMarked(event.target.checked ? marked : null); setPage(0); }} />
+                <span>Show only the {plural(onlyMarked ? onlyMarked.length : marked.length, "marked cue")}</span></label>}
         </div>
+        {pager}
         <div className="st-columns" aria-hidden="true"><span>Original</span><span>{run.to.name}</span></div>
-        <ol className="st-cues" aria-label="Cues">
-            {shown.map(({ cue, index }) => <CueRow key={index} index={index} cue={cue} label={timings[index].id?.trim() || String(index + 1)}
+        <ol className="st-cues" aria-label="Cues" ref={list}>
+            {shown.map(index => <CueRow key={index} index={index} cue={cues[index]} label={timings[index].id?.trim() || String(index + 1)}
                 from={cueClock(timings[index].start, hours)} to={cueClock(timings[index].end, hours)}
                 sourceLang={run.source} targetLang={run.to.code} lineLength={lineLength} onText={onEdit} />)}
         </ol>

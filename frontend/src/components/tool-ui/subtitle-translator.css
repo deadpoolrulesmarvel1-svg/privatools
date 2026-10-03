@@ -7,7 +7,16 @@
 .st-link { padding: 0; border: 0; background: none; color: hsl(var(--accent)); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .st-link:disabled { opacity: .6; cursor: default; }
 .st-sample { justify-self: start; }
+.st-fields { display: grid; gap: 14px; }
 .st-chosen { display: grid; gap: 10px; min-width: 0; }
+
+/* The chosen file's first cues, as read: the right file, in the language chosen. */
+.st-peek { margin: 4px 0 0; padding: 14px 16px; border-radius: 10px; background: hsl(var(--paper-2)); min-width: 0; }
+.st-peek figcaption { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: hsl(var(--muted-foreground)); }
+.st-peek ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.st-peek li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 13.5px; line-height: 1.45; }
+.st-peek li > span:last-child { white-space: pre-wrap; overflow-wrap: anywhere; }
+.st-peek .st-hint { margin-top: 8px; }
 .st-chosen .ts-error p { margin: 0; }
 .st-chosen .ts-error a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 
@@ -28,13 +37,17 @@
 
 .st-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 0 16px; font-size: 11.5px; font-weight: 600; letter-spacing: .03em; color: hsl(var(--muted-foreground)); }
 
-/* A scroll box of its own, so a film's thousands of cues never make the page endless. */
-.st-cues { list-style: none; margin: 0; padding: 6px; max-height: 34rem; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 6px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--paper-2)); }
+/* A scroll box of its own, so a film's thousands of cues never make the page endless. Block flow, not
+   a grid: a grid of hundreds of rows is laid out again whole when one row's box is typed in. */
+.st-cues { list-style: none; margin: 0; padding: 6px; max-height: 34rem; overflow-y: auto; overscroll-behavior: contain; display: block; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--paper-2)); }
 .st-cue {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "meta meta" "source text" ". reason";
     gap: 6px 14px; align-items: start; padding: 10px; border-radius: 8px; background: hsl(var(--card)); border: 1px solid transparent;
     content-visibility: auto; contain-intrinsic-size: auto 6.5rem;
 }
+.st-cue + .st-cue { margin-top: 6px; }
+.st-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12.5px; color: hsl(var(--muted-foreground)); font-variant-numeric: tabular-nums; }
+.st-pager .ts-secondary-button { padding: 8px 12px; font-size: 12px; }
 .st-cue[data-status=failed] { border-color: hsl(var(--warning) / .55); }
 .st-cue-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
 .st-cue-number { font: 600 12px/1.4 var(--font-mono); color: hsl(var(--foreground)); }
@@ -55,10 +68,12 @@ html[data-experience=play] .st-studio .ts-options { align-items: flex-start; }
 html[data-experience=play] .st-cues { border-radius: 16px; }
 html[data-experience=play] .st-cue { border-radius: 12px; }
 html[data-experience=play] .st-provider { border-radius: 18px; }
+html[data-experience=play] .st-peek { border-radius: 16px; }
 
 @media (max-width: 640px) {
     .st-columns { display: none; }
     .st-cue { grid-template-columns: minmax(0, 1fr); grid-template-areas: "meta" "source" "text" "reason"; padding: 8px; }
     .st-cues { max-height: 30rem; padding: 4px; }
     .st-provider { padding: 12px 14px; }
+    .st-peek li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

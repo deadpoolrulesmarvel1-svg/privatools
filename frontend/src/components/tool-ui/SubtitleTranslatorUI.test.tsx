@@ -159,11 +159,19 @@ describe("translating on this device", () => {
         expect(await vtt.text()).toMatch(/^WEBVTT\n\n1\n00:00:01\.000 --> 00:00:03\.200\nBienvenidos de nuevo al taller\.\n/);
     });
 
-    it("keeps a correction in the file it saves", async () => {
+    it("keeps a correction in the file it saves, once the box is left or typing pauses", async () => {
         await translateOnDevice();
-        fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "¡Bienvenidos otra vez!" } });
+        const box = screen.getAllByRole("textbox")[0];
+        fireEvent.change(box, { target: { value: "¡Bienvenidos otra vez!" } });
+        // Pressing a button takes the focus from the box first.
+        fireEvent.blur(box);
         fireEvent.click(screen.getByRole("button", { name: "Download SRT" }));
         expect(await (mocks.download.mock.calls[0][0] as Blob).text()).toMatch(/^1\n00:00:01,000 --> 00:00:03,200\n¡Bienvenidos otra vez!\n/);
+        // Without leaving the box: the correction is kept once typing pauses.
+        fireEvent.change(screen.getAllByRole("textbox")[1], { target: { value: "Hoy veremos" } });
+        await act(async () => { await new Promise(resolve => setTimeout(resolve, 500)); });
+        fireEvent.click(screen.getByRole("button", { name: "Download SRT" }));
+        expect(await (mocks.download.mock.calls[1][0] as Blob).text()).toContain("00:00:03,400 --> 00:00:05,900\nHoy veremos\n");
     });
 
     it("hands the translated SRT to Add Subtitles in this same page", async () => {
@@ -265,11 +273,51 @@ describe("translating with your own AI key", () => {
         await translateWithKey();
         await screen.findByRole("heading", { name: "2 of 5 cues translated." });
         fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "Willkommen zurück." } });
-        fireEvent.click(screen.getByRole("button", { name: "Translate the 2 marked cues again" }));
+        fireEvent.blur(screen.getAllByRole("textbox")[0]);
+        fireEvent.click(await screen.findByRole("button", { name: "Translate the 2 marked cues again" }));
         await screen.findByRole("heading", { name: "5 cues translated." });
         expect((screen.getAllByRole("textbox") as HTMLTextAreaElement[]).slice(0, 3).map(box => box.value))
             .toEqual(["Willkommen zurück.", "ES Today we're going to look at", "ES how to keep your files private."]);
     });
+
+    it("shows only the marked cues on request, and keeps a cue in view while it is corrected", async () => {
+        anthropic((lines, call) => call <= 2 && lines.some(([, text]) => text.startsWith("Today")) ? "[1] Uno" : echo(lines));
+        await translateWithKey();
+        await screen.findByRole("heading", { name: "2 of 5 cues translated." });
+        fireEvent.click(screen.getByRole("checkbox", { name: "Show only the 3 marked cues" }));
+        expect(screen.getAllByRole("textbox")).toHaveLength(3);
+        const box = screen.getAllByRole("textbox")[0];
+        fireEvent.change(box, { target: { value: "Willkommen zurück." } });
+        fireEvent.blur(box);
+        // Corrected, it is no longer marked, but it stays where the visitor is working.
+        expect(screen.getAllByRole("textbox")).toHaveLength(3);
+        expect(screen.getAllByRole("textbox")[0]).toHaveValue("Willkommen zurück.");
+        expect(screen.getByRole("heading", { name: "3 of 5 cues translated." })).toBeInTheDocument();
+    });
+
+    it("pages a long file's check 500 cues at a time, and saves every cue", async () => {
+        anthropic();
+        localStorage.setItem("privatools.byok.provider", "anthropic");
+        await saveKey("anthropic", "dummy-key-for-tests");
+        const long = Array.from({ length: 1200 }, (_, i) => `${i + 1}\n00:00:${String(i % 60).padStart(2, "0")},000 --> 00:00:${String(i % 60).padStart(2, "0")},500\nLine ${i + 1}.\n`).join("\n");
+        choose(long, "long.srt");
+        await screen.findByText(/SRT · 1,200 cues/);
+        fireEvent.click(screen.getByRole("button", { name: /Your own AI key/ }));
+        await waitFor(() => expect(translateButton()).toBeEnabled());
+        fireEvent.click(translateButton());
+        await screen.findByRole("heading", { name: "1,200 cues translated." }, { timeout: 15000 });
+        expect(screen.getAllByRole("textbox")).toHaveLength(500);
+        expect(screen.getByText("Cues 1–500 of 1,200")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Next 500" }));
+        expect(screen.getByText("Cues 501–1,000 of 1,200")).toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: /^Translation of cue 501,/ })).toHaveValue("ES Line 501.");
+        fireEvent.click(screen.getByRole("button", { name: "Next 200" }));
+        expect(screen.getAllByRole("textbox")).toHaveLength(200);
+        fireEvent.click(screen.getByRole("button", { name: "Download SRT" }));
+        const written = await (mocks.download.mock.calls[0][0] as Blob).text();
+        expect(written.split("\n").filter(line => line.includes("-->"))).toHaveLength(1200);
+        expect(written).toContain("\nES Line 1200.\n");
+    }, 30000);
 
     it("says the key was rejected, and translates nothing", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 401, json: async () => ({}), text: async () => "{}" } as unknown as Response);
