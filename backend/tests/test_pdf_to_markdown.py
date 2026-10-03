@@ -671,6 +671,29 @@ def test_double_spaced_paragraphs_stay_whole_where_full_lines_end_sentences():
     assert [p.strip() for p in out.split("\n\n") if p.strip()] == [" ".join(p) for p in fx.DOUBLE_SPACED]
 
 
+def test_space_between_single_spaced_paragraphs_ends_one_whatever_its_last_line():
+    """A paragraph whose full last line ends without a full stop (a web
+    address) ran on into the next one across the space between them."""
+    paragraphs = [
+        ["The council met on the first Tuesday of every month during the year, and",
+         "the minutes of each meeting were approved at the next one without change."],
+        ["The council publishes its minutes on its website, where anyone may read",
+         "them in full at www.example.org/minutes/2026/every-meeting-held-this-year"],
+        ["A new paragraph starts here, after six points of space, and says something",
+         "else entirely, about the budget for the coming year and its reserves."],
+    ]
+    doc = fitz.open()
+    page = doc.new_page()
+    y = 100.0
+    for lines in paragraphs:
+        for line in lines:
+            page.insert_text((72, y), line, fontsize=10)
+            y += 12.5
+        y += 6
+    out = plain(doc.tobytes())
+    assert [p.strip() for p in out.split("\n\n") if p.strip()] == [" ".join(p) for p in paragraphs]
+
+
 def test_a_table_is_found_on_a_page_whose_text_is_placed_glyph_by_glyph():
     """M4: the page's 1.25 MB of content was taken for too many drawings, though
     almost all of it is text, so its table was not looked for."""

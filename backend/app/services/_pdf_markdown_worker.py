@@ -1533,9 +1533,16 @@ def _continues(block: Block, prev: Line, ln: Line, mark, code: bool, style: "Doc
         # Body text at the document's usual line pitch carries on after a full
         # line, whatever ended it: double-spaced paragraphs are told apart by an
         # indent or by more space, not by a full stop at the end of a line.
-        at_pitch = (style.pitch > 0 and abs(prev.size - style.body) <= 0.6 and abs(ln.size - style.body) <= 0.6
-                    and 0 < ln.base - prev.base <= 1.15 * style.pitch and _full(prev, size))
-        if not at_pitch and not (gap <= 1.6 * size and _wraps(block, prev, ln, size)):
+        body = style.pitch > 0 and abs(prev.size - style.body) <= 0.6 and abs(ln.size - style.body) <= 0.6
+        step = ln.base - prev.base
+        at_pitch = body and 0 < step <= 1.15 * style.pitch and _full(prev, size)
+        # A little past the usual pitch (up to 1.8 times it, where the space
+        # after a paragraph falls), the space is a paragraph's, however the
+        # line before it ended (a web address, a number). Further apart (a
+        # double-spaced passage in a single-spaced file) or where the pitch is
+        # not known, an open-ended full line carries on across it.
+        beyond_pitch = body and 1.15 * style.pitch < step < 1.8 * style.pitch
+        if not at_pitch and (beyond_pitch or not (gap <= 1.6 * size and _wraps(block, prev, ln, size))):
             return False
     if block.kind == "item":
         return ln.x0 >= block.marker_x + 0.5
