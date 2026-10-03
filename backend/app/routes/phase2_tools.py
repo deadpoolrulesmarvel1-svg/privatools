@@ -17,6 +17,7 @@ from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, valida
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
+from ..utils.images import image_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -152,5 +153,9 @@ async def remove_background(
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        # The service's verify() reads a picture's structure, not its pixels:
+        # one whose data is broken fails only when the model's side decodes it.
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("remove-background error")
         raise HTTPException(status_code=500, detail="Background removal failed")
