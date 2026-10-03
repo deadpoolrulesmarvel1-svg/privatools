@@ -26,7 +26,9 @@ export function reportRejectedFiles(rejected: readonly Pick<File, "name" | "type
 export function toastRejection(advice: RejectionAdvice): void {
     const suggestion = advice.suggestion;
     toast.error(advice.headline, {
-        description: [advice.reason, suggestion ? `${advice.suggestionLead}${suggestion.name}${advice.suggestionTail}` : ""].filter(Boolean).join(" "),
+        description: [advice.reason, suggestion
+            ? `${advice.suggestionLead}${suggestion.name}${advice.suggestionTail}${suggestion.then ? `${suggestion.then.name}${advice.thenTail}` : ""}`
+            : ""].filter(Boolean).join(" "),
         // Long enough to read two sentences and reach the action.
         duration: 12_000,
         action: suggestion ? { label: `Open ${suggestion.name}`, onClick: () => navigateTo(suggestion.href) } : undefined,

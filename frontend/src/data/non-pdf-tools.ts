@@ -34,8 +34,8 @@ export interface NonPdfTool {
   clientOnly?: boolean;
   /** Tool can optionally use the visitor's own AI API key (BYOK). */
   byok?: boolean;
-  /** The tool works from the words in a file: a picture it refuses is pointed to OCR (see Tool.needsText in tools.ts). */
-  needsText?: boolean;
+  /** The tool works from the words in a file: a picture it refuses is pointed to OCR (the two kinds are explained at Tool.needsText in tools.ts). */
+  needsText?: true | "pdf";
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
