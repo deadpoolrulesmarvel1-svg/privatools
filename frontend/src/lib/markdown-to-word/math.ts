@@ -124,7 +124,8 @@ const arg = (name: string, children: OmmlNode[]) => el(name, children.length ? c
 const blank = (): Run => ({ kind: "run", text: "\u{200b}" });
 
 function escapeXml(text: string): string {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    // eslint-disable-next-line no-control-regex -- characters XML 1.0 can't hold
+    return text.replace(/[\u{0}-\u{8}\u{b}\u{c}\u{e}-\u{1f}\u{fffe}\u{ffff}\u{d800}-\u{dfff}]/gu, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 export function serializeOmml(nodes: OmmlNode[]): string {
@@ -213,11 +214,20 @@ function fencesOf(node: MathNode): { open: string; close: string; inner: MathNod
     return { open: textOf(first).trim(), close: textOf(last).trim(), inner: kids.slice(1, -1) };
 }
 
+/** Plain brackets Temml groups in an mrow: they stay one item, so a big operator's operand never ends inside them. */
+function isBracketGroup(node: MathNode): boolean {
+    const kids = elements(node);
+    const first = kids[0];
+    const last = kids[kids.length - 1];
+    return kids.length >= 2 && first.name === "mo" && first.attrs.fence === "true" && first.attrs.form === "prefix"
+        && last.name === "mo" && last.attrs.fence === "true" && last.attrs.form === "postfix";
+}
+
 /** Wrappers that only group or style what they hold, whose children join the sequence around them. */
 function isTransparent(node: MathNode): boolean {
     if (node.name === "mstyle" || node.name === "mpadded" || node.name === "semantics") return !colorOf(node, {}).color;
     if (node.name !== "mrow") return false;
-    if (fencesOf(node) || /border\s*:/.test(node.attrs.style ?? "") || colorOf(node, {}).color) return false;
+    if (fencesOf(node) || isBracketGroup(node) || /border\s*:/.test(node.attrs.style ?? "") || colorOf(node, {}).color) return false;
     return true;
 }
 

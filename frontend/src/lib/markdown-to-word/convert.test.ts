@@ -303,9 +303,11 @@ describe("Markdown to Word: the document", () => {
     });
 
     it("never writes characters XML can't hold, and never a table at the end of the body", async () => {
-        const { text, xml } = await convert("Bell\u{7} and \u{1} stray\n\n| a |\n| - |\n| 1 |");
+        const { text, xml, result } = await convert("Bell\u{7} and \u{1} stray, $\\text{a\u{ffff}b}$ and $x\u{fffe}$\n\n| a |\n| - |\n| 1 |");
         xml("word/document.xml");
         expect(text("word/document.xml")).toContain("Bell and  stray");
+        expect(text("word/document.xml")).not.toMatch(/[\u{fffe}\u{ffff}]/u);
+        expect(result.report.equations).toBe(2);
         expect(text("word/document.xml")).toMatch(/<\/w:tbl><w:p\/><w:sectPr>/);
     });
 

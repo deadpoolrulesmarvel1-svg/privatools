@@ -678,7 +678,8 @@ export function splitTableRow(row: string): string[] {
             const length = backtickRun(text, i);
             const close = findClosingRun(text, i + length, length);
             const end = close >= 0 ? close + length : i + length;
-            current += text.slice(i, end);
+            // GitHub (and remark-gfm) show \| inside a code span in a table cell as |.
+            current += text.slice(i, end).replace(/\\\|/g, "|");
             i = end;
             continue;
         }
@@ -837,7 +838,7 @@ interface Bracket {
 }
 
 // Sticky patterns, matched where the parser stands without copying the rest of the text.
-const MAIN_TEXT = /[^\n`[\]\\!<&*_~$]+/y;
+const MAIN_TEXT = /[^\n`[\]\\!<&*_~$:]+/y;
 const LINK_DESTINATION_BRACES = /<(?:[^<>\n\\\0]|\\.)*>/y;
 const LINK_TITLE = /"(?:\\[\s\S]|[^\\"\0])*"|'(?:\\[\s\S]|[^\\'\0])*'|\((?:\\[\s\S]|[^\\()\0])*\)/y;
 const LINK_LABEL = /\[(?:[^\\[\]]|\\.){0,999}\]/y;
@@ -923,11 +924,24 @@ class InlineParser {
             case "<": return this.parseAngle(block);
             case "&": return this.parseEntity(block);
             case "$": return this.parseDollar(block);
+            case ":": return this.parseColon(block);
             default: {
                 const match = matchAt(MAIN_TEXT, this.subject, this.pos);
                 if (!match) return false;
-                this.pos += match[0].length;
-                block.appendChild(new INode("text", match[0]));
+                const text = match[0];
+                // A www. address is read where it starts, as http:// ones are at the colon.
+                for (let at = this.brackets ? -1 : text.indexOf("www."); at >= 0; at = text.indexOf("www.", at + 4)) {
+                    const start = this.pos + at;
+                    if (!addressMayStart(this.subject, start)) continue;
+                    const label = readWebAddress(this.subject, start);
+                    if (!label) continue;
+                    if (at > 0) block.appendChild(new INode("text", text.slice(0, at)));
+                    this.appendAddress(block, label, `http://${label}`);
+                    this.pos = start + label.length;
+                    return true;
+                }
+                this.pos += text.length;
+                block.appendChild(new INode("text", text));
                 return true;
             }
         }
@@ -979,6 +993,38 @@ class InlineParser {
         node.source = source;
         node.line = this.lineOf(this.pos);
         block.appendChild(node);
+    }
+
+    /**
+     * http:// and https:// addresses in running text become links here, as
+     * cmark-gfm finds them (at the colon), so nothing inside one is read as
+     * emphasis, math or an entity: …/__init__.py stays one address. Not inside
+     * brackets, also as cmark-gfm: there an address would run on through
+     * "](…)". The pass after reading still links one left in plain text.
+     */
+    private parseColon(block: INode): boolean {
+        const last = block.lastChild;
+        const scheme = last && last.type === "text" && !this.brackets ? /https?$/.exec(last.literal)?.[0] : undefined;
+        if (scheme) {
+            const start = this.pos - scheme.length;
+            const label = addressMayStart(this.subject, start) ? readWebAddress(this.subject, start) : "";
+            if (label) {
+                last!.literal = last!.literal.slice(0, -scheme.length);
+                this.appendAddress(block, label, label);
+                this.pos = start + label.length;
+                return true;
+            }
+        }
+        this.pos++;
+        block.appendChild(new INode("text", ":"));
+        return true;
+    }
+
+    private appendAddress(block: INode, label: string, href: string) {
+        const link = new INode("link");
+        link.destination = href;
+        link.appendChild(new INode("text", label));
+        block.appendChild(link);
     }
 
     private parseDollar(block: INode): boolean {
@@ -1420,22 +1466,79 @@ function mergeText(parent: INode) {
 }
 
 // GitHub's extended autolinks: www., http:// and https:// addresses and e-mail addresses in running text.
-const BARE_URL = /(^|[\s*_~(])((?:https?:\/\/|www\.)[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+[^\s<]*)/g;
+/** Where a bare web address may start: http://, https:// or www. at the start or after a space, *, _, ~ or (. */
+const ADDRESS_START = /(^|[\s*_~(])(?:https?:\/\/|www\.)/g;
+/** A web address's scheme (none for www.) and domain, read where it stands. */
+const ADDRESS_DOMAIN = /(?:https?:\/\/)?([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+)/y;
+const ADDRESS_PATH = /[^\s<]*/y;
 const BARE_EMAIL = /(^|[^A-Za-z0-9.+_-])([A-Za-z0-9._+-]+@[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+)/g;
 
-/** Trailing punctuation is not part of an address, nor is a closing parenthesis it never opened. */
+/** GitHub's extended autolinks start a line, or follow a space, *, _, ~ or (. */
+function addressMayStart(text: string, at: number): boolean {
+    const before = at > 0 ? text[at - 1] : "\n";
+    return isWhitespaceChar(before) || "*_~(".includes(before);
+}
+
+/**
+ * A valid domain, as cmark-gfm checks it: no underscore in its last two
+ * segments. Like cmark-gfm, a domain of more than ten segments passes
+ * anyway, which keeps rejecting candidates linear.
+ */
+function validDomain(domain: string): boolean {
+    const last = domain.lastIndexOf(".");
+    const second = last > 0 ? domain.lastIndexOf(".", last - 1) : -1;
+    if (!domain.includes("_", second + 1)) return true;
+    let periods = 0;
+    for (let i = 0; i < domain.length && periods <= 10; i++) if (domain[i] === ".") periods++;
+    return periods > 10;
+}
+
+/**
+ * The web address that starts at `at` with http://, https:// or www., as
+ * GitHub's extended autolinks read it, or "" when there is none. The domain
+ * is checked before the rest is read, so a rejected candidate costs only its
+ * domain, and an accepted one always keeps its whole domain.
+ */
+function readWebAddress(text: string, at: number): string {
+    const domain = matchAt(ADDRESS_DOMAIN, text, at);
+    if (!domain || !validDomain(domain[1])) return "";
+    const pathEnd = at + domain[0].length + matchAt(ADDRESS_PATH, text, at + domain[0].length)![0].length;
+    return trimAutolink(text.slice(at, pathEnd));
+}
+
+function isAsciiAlphanumeric(c: string): boolean {
+    return (c >= "0" && c <= "9") || (c >= "A" && c <= "Z") || (c >= "a" && c <= "z");
+}
+
+/**
+ * Trailing punctuation is not part of an address, nor is a closing
+ * parenthesis it never opened, nor an ending that looks like an entity
+ * (&hl;), as cmark-gfm trims them. Unlike cmark-gfm, an unopened ] is trimmed
+ * too, so "[see https://example.com]" links the address alone. Each
+ * character is looked at a bounded number of times.
+ */
 function trimAutolink(url: string): string {
     let end = url.length;
+    let closing = 0;
+    let opening = 0;
+    let closingSquare = 0;
+    let openingSquare = 0;
+    for (const c of url) {
+        if (c === ")") closing++;
+        else if (c === "(") opening++;
+        else if (c === "]") closingSquare++;
+        else if (c === "[") openingSquare++;
+    }
     while (end > 0) {
         const c = url[end - 1];
         if ("?!.,:*_~'\"".includes(c)) { end--; continue; }
-        if (c === ")") {
-            const candidate = url.slice(0, end);
-            if ((candidate.match(/\)/g) || []).length > (candidate.match(/\(/g) || []).length) { end--; continue; }
-        }
+        if (c === ")" && closing > opening) { end--; closing--; continue; }
+        if (c === "]" && closingSquare > openingSquare) { end--; closingSquare--; continue; }
         if (c === ";") {
-            const entity = /&[A-Za-z0-9]+;$/.exec(url.slice(0, end));
-            if (entity) { end -= entity[0].length; continue; }
+            let i = end - 2;
+            while (i >= 0 && isAsciiAlphanumeric(url[i])) i--;
+            end = i >= 0 && i < end - 2 && url[i] === "&" ? i : end - 1;
+            continue;
         }
         break;
     }
@@ -1450,16 +1553,22 @@ function autolink(parent: INode) {
         const text = node.literal;
         if (!/www\.|https?:\/\/|@/.test(text)) continue;
         const found: { start: number; end: number; href: string; label: string }[] = [];
-        for (const match of text.matchAll(BARE_URL)) {
-            const label = trimAutolink(match[2]);
-            if (!/\.[A-Za-z0-9-]+/.test(label.replace(/^https?:\/\//, ""))) continue;
-            const start = match.index! + match[1].length;
+        ADDRESS_START.lastIndex = 0;
+        for (let match = ADDRESS_START.exec(text); match; match = ADDRESS_START.exec(text)) {
+            const start = match.index + match[1].length;
+            const label = readWebAddress(text, start);
+            if (!label) continue;
             found.push({ start, end: start + label.length, href: label.startsWith("www.") ? `http://${label}` : label, label });
+            ADDRESS_START.lastIndex = start + label.length;
         }
+        // Addresses can only overlap web addresses (the e-mail matches don't overlap each other), and both come in text order.
+        const urls = found.length;
+        let u = 0;
         for (const match of text.matchAll(BARE_EMAIL)) {
             const label = match[2].replace(/[._-]+$/, "");
             const start = match.index! + match[1].length;
-            if (!/\.[A-Za-z]{2,}$/.test(label) || found.some(f => start < f.end && start + label.length > f.start)) continue;
+            while (u < urls && found[u].end <= start) u++;
+            if (!/\.[A-Za-z]{2,}$/.test(label) || (u < urls && found[u].start < start + label.length)) continue;
             found.push({ start, end: start + label.length, href: `mailto:${label}`, label });
         }
         if (!found.length) continue;

@@ -140,6 +140,13 @@ describe("tables", () => {
         expect(splitTableRow("a | b")).toEqual(["a", "b"]);
     });
 
+    it("shows an escaped pipe in a code span as |, as GitHub does, but keeps \\| in math, where it means ‖", () => {
+        const table = only("| Type | Example |\n| - | - |\n| union | `string \\| number` |\n| norm | $\\|x\\|$ |");
+        if (table.type !== "table") throw new Error();
+        expect(table.rows[0][1]).toEqual([{ type: "code", value: "string | number" }]);
+        expect(table.rows[1][1]).toMatchObject([{ type: "math", tex: "\\|x\\|" }]);
+    });
+
     it("splits a paragraph whose last line is the header row", () => {
         expect(blocks("Intro text\n| a | b |\n| - | - |\n| 1 | 2 |")).toMatchObject([{ type: "paragraph" }, { type: "table", head: [[{ value: "a" }], [{ value: "b" }]] }]);
     });
@@ -260,6 +267,45 @@ describe("inline content", () => {
             { type: "text", value: "(see " }, { type: "link", href: "https://example.com/x", title: "", children: [{ type: "text", value: "https://example.com/x" }] }, { type: "text", value: ")" },
         ]);
         expect(inlineText(inlines("[not a link] and [x](")).trim()).toBe("[not a link] and [x](");
+    });
+
+    it("reads a bare web address whole, whatever emphasis, math or brackets it holds", () => {
+        const link = (label: string, href = label): Inline => ({ type: "link", href, title: "", children: [{ type: "text", value: label }] });
+        expect(inlines("See https://github.com/org/repo/blob/main/src/__init__.py now")).toEqual([
+            { type: "text", value: "See " }, link("https://github.com/org/repo/blob/main/src/__init__.py"), { type: "text", value: " now" },
+        ]);
+        for (const address of ["https://example.com/_private_/x", "https://example.com/x*y*z", "http://example.com/$plan$/x", "https://example.com/~user/a~b~"]) {
+            const label = address.replace(/~$/, "");
+            expect(inlines(`Docs: ${address}`), address).toEqual([{ type: "text", value: "Docs: " }, link(label), ...(label === address ? [] : [{ type: "text", value: "~" }])]);
+        }
+        expect(inlines("Visit www.example.com/_private_/x.")).toEqual([
+            { type: "text", value: "Visit " }, link("www.example.com/_private_/x", "http://www.example.com/_private_/x"), { type: "text", value: "." },
+        ]);
+        expect(inlines("**https://example.com/docs** and _www.example.org_")).toEqual([
+            { type: "strong", children: [link("https://example.com/docs")] },
+            { type: "text", value: " and " },
+            { type: "emphasis", children: [link("www.example.org", "http://www.example.org")] },
+        ]);
+        // Inside brackets the address is linked after reading, so it can't run on through "](…)".
+        expect(inlines("[see https://example.com/a] and [docs](https://example.com/b)")).toEqual([
+            { type: "text", value: "[see " }, link("https://example.com/a"), { type: "text", value: "] and " },
+            { type: "link", href: "https://example.com/b", title: "", children: [{ type: "text", value: "docs" }] },
+        ]);
+    });
+
+    it("links only what GitHub links: a valid domain, after a space or a delimiter, without trailing punctuation", () => {
+        const plain = "xhttp://example.com, www.a_b.example_c and http://localhost:3000";
+        expect(inlines(plain)).toEqual([{ type: "text", value: plain }]);
+        expect(inlines("Ends with https://example.com/a?b=1&c;.")).toEqual([
+            { type: "text", value: "Ends with " },
+            { type: "link", href: "https://example.com/a?b=1", title: "", children: [{ type: "text", value: "https://example.com/a?b=1" }] },
+            { type: "text", value: "&c;." },
+        ]);
+        expect(inlines("(www.example.com/wiki/Foo_(bar));")).toEqual([
+            { type: "text", value: "(" },
+            { type: "link", href: "http://www.example.com/wiki/Foo_(bar)", title: "", children: [{ type: "text", value: "www.example.com/wiki/Foo_(bar)" }] },
+            { type: "text", value: ");" },
+        ]);
     });
 
     it("never nests a link in a link", () => {

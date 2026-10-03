@@ -1,8 +1,10 @@
 /**
  * Markdown to Word on hostile and random input: it must finish, quickly, and
  * never write a document Word can't read. Each pathological case below is
- * about 100,000 characters; a quadratic path in the parser takes minutes on
- * them, so the time limits are generous on purpose and still catch one.
+ * about 100,000 characters, or more where a quadratic path needs more to show
+ * (each such case took from 20 seconds to over a minute before its fix); a
+ * quadratic path in the parser takes minutes on them, so the time limits are
+ * generous on purpose and still catch one.
  */
 import { describe, expect, it } from "vitest";
 import { unzipSync } from "fflate";
@@ -35,6 +37,11 @@ const PATHOLOGICAL: [string, string][] = [
     ["deep quotes", `${"> ".repeat(20000)}x`],
     ["deep lists", Array.from({ length: 3000 }, (_, i) => `${" ".repeat(i * 2)}- item`).join("\n")],
     ["a long word with an at sign", `${"a".repeat(100000)} me@example.com`],
+    ["many bare e-mail addresses", "a@b.co ".repeat(60000)],
+    ["closing parentheses after an address", `www.example.com${")".repeat(80000)}`],
+    ["entity-like endings after an address", `www.example.com${"&a;".repeat(50000)}`],
+    ["web addresses with invalid domains", `${"(http://a._".repeat(30000)}x`],
+    ["www. after underscores", "_www.a_".repeat(15000)],
     ["many table rows", `| a | b |\n|---|---|\n${"| 1 | `x|y` |\n".repeat(10000)}`],
     ["entity-like text", "&#".repeat(30000)],
 ];

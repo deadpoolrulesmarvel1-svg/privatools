@@ -70,6 +70,12 @@ describe("LaTeX to Word equations", () => {
         // A sum of sums nests, and a sign between terms ends an operand.
         expect(omml("\\sum_i \\sum_j a_{ij}")).toMatch(/^<m:nary>.*<m:e><m:nary>.*<\/m:nary><\/m:e><\/m:nary>$/);
         expect(omml("\\int f\\,dx + \\int g\\,dx").match(/<m:nary>/g)).toHaveLength(2);
+        // Brackets after the operator stay whole in its operand, signs inside them included.
+        const bracketed = omml("\\int (3x^2 + 2x)\\,dx");
+        expect(bracketed).toMatch(/<m:e><m:r>.*>\(<\/m:t>.*>\+<\/m:t>.*>\)<\/m:t>.*>d<\/m:t>.*>x<\/m:t><\/m:r><\/m:e><\/m:nary>$/);
+        expect(texts(bracketed)).toBe("(3x2+2x)\u{2009}dx");
+        expect(omml("\\int_a^b [f(x) + g(x)]\\,dx")).toMatch(/<m:e><m:r>.*>\[<\/m:t>.*>\]<\/m:t>.*<\/m:e><\/m:nary>$/);
+        expect(omml("\\sum_{k=1}^n (a_k + b_k) = S")).toMatch(/>\)<\/m:t><\/m:r><\/m:e><\/m:nary><m:r>.*>=<\/m:t>/);
     });
 
     it("accents, over- and underlines", () => {
@@ -157,9 +163,10 @@ describe("LaTeX to Word equations", () => {
         expect(texts(omml("\\mathbf{x} + \\mathbb{R} + \\mathcal{L}"))).toBe("𝐱+ℝ+ℒ");
     });
 
-    it("escapes what XML needs escaped", () => {
+    it("escapes what XML needs escaped, and leaves out what it can't hold", () => {
         expect(omml("a < b")).toContain(">&lt;</m:t>");
         expect(omml("\\text{a \\& b}").replace(/\u{a0}/gu, " ")).toContain(">a &amp; b</m:t>");
+        expect(omml("\\text{a\u{ffff}b\u{fffe}c}")).toContain(">abc</m:t>");
     });
 
     it("keeps unsupported or invalid LaTeX as text, saying why", () => {
