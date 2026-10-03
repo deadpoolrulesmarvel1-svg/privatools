@@ -1,15 +1,23 @@
 from docx import Document
+from docx.oxml.ns import qn
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from ..utils.filenames import temp_output
 
 
-def word_to_pdf(input_path: str) -> str:
-    """Convert a .docx file to PDF using python-docx + reportlab."""
+def word_to_pdf(input_path: str) -> tuple[str, int]:
+    """Convert a .docx file to PDF using python-docx + reportlab.
+
+    Returns the PDF's path and how many Word equations the body holds. None
+    of them is drawn: Word keeps an equation (OMML, m:oMath) beside its
+    paragraph's text runs, and python-docx's paragraph text leaves it out, so
+    the page says how many the PDF is missing.
+    """
     output_path = temp_output("word", "pdf")
 
     doc = Document(input_path)
+    equations = sum(1 for _ in doc.element.body.iter(qn("m:oMath")))
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
     margin = 72  # 1 inch
@@ -92,4 +100,4 @@ def word_to_pdf(input_path: str) -> str:
         c.setFont("Helvetica", font_size)
 
     c.save()
-    return str(output_path)
+    return str(output_path), equations

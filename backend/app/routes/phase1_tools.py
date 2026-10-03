@@ -52,9 +52,11 @@ async def word_to_pdf(file: UploadFile = File(...)):
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.docx")
         temp.write_bytes(content)
 
-        out = await asyncio.to_thread(word_to_pdf_service.word_to_pdf, str(temp))
+        out, equations = await asyncio.to_thread(word_to_pdf_service.word_to_pdf, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
-        return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup)
+        # The PDF has none of the document's Word equations; the page says how many.
+        return FileResponse(out, filename="converted.pdf", media_type="application/pdf", background=cleanup,
+                            headers={"X-Equations-Left-Out": str(equations)})
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise

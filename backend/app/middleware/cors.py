@@ -27,6 +27,7 @@ SITE_EXPOSED_HEADERS = [
     "X-Request-ID",          # the id in a failure's error report
     "X-Compressed-Size",     # Compress: each file's size afterwards
     "X-Target-Met",          # Compress: whether a target size was reached
+    "X-Equations-Left-Out",  # Word to PDF: how many Word equations the PDF leaves out
     "X-Redaction-Report",    # Redact: what was removed, page by page
     "X-Redact-Hits",         # Smart Redact: how many matches were covered
     "X-Highlight-Hits",      # Highlight: how many matches were marked
