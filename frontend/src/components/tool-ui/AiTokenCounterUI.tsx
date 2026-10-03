@@ -151,7 +151,7 @@ export function AiTokenCounterUI() {
                 input = read.text;
                 const { text: _text, ...rest } = read;
                 source = { ...rest, name: file.name };
-                if (!input.trim()) throw new ReadError("empty", `${file.name} has no text to count.`);
+                if (!/\S/.test(input)) throw new ReadError("empty", `${file.name} has no text to count.`);
             } else {
                 input = text;
                 source = { kind: "paste" };
@@ -257,9 +257,13 @@ export function AiTokenCounterUI() {
             {file ? <StudioFile name={file.name} status="error" detail={failure.message} /> : <p className="ts-error">{failure.message}</p>}
             {failure.code === "pdf-no-text" && <p className="ts-note"><a href="/tool/ocr-pdf">OCR PDF</a> adds a text layer to a scanned PDF; then count the PDF it makes.</p>}
             {failure.code === "pdf-password" && <p className="ts-note"><a href="/tool/unlock-pdf">Unlock PDF</a> removes a password you know. It uploads the PDF to PrivaTools for temporary processing.</p>}
-            <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void count()}
-                choose={{ accepts: ACCEPTS, label: file ? "Choose a different file" : "Choose a file", onFiles: files => { choose(files); backToForm(); } }}
-                more={<button type="button" className="ts-text-button" onClick={backToForm}>{file ? "Back to the form" : "Back to the text"}</button>} />
+            {file
+                ? <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void count()}
+                    choose={{ accepts: ACCEPTS, label: "Choose a different file", onFiles: files => { choose(files); backToForm(); } }}
+                    more={<button type="button" className="ts-text-button" onClick={backToForm}>Back to the form</button>} />
+                // Pasted text that failed is fixed in the box, so going back to it comes first.
+                : <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void count()}
+                    more={<button type="button" className="ts-primary-button" onClick={backToForm}>Back to the text</button>} />}
         </StudioResult>;
     }
 
@@ -318,10 +322,11 @@ export function AiTokenCounterUI() {
     </StudioLayout>;
 }
 
-/** Words for a failure the page didn't word itself: a tokenizer that didn't download, or a browser fault. */
+/** Words for a failure the page didn't word itself: a part of the page that didn't download (a
+ *  tokenizer, or pdf.js for a PDF), or a fault in the browser. */
 function messageFor(error: unknown): string {
-    if (toolErrorKind(error) === "network") return "The tokenizer couldn’t be downloaded. Check that this device is online, then try again.";
-    return "Something in this browser stopped the count. Try again, or try a shorter text.";
+    if (toolErrorKind(error) === "network") return "Part of this page couldn’t be downloaded, so the count didn’t run. Check that this device is online, then try again.";
+    return "Something in this browser stopped the count. Go back and count again, or try a shorter text.";
 }
 
 function ProviderCount({ provider, saved, asked, model, busy, onAsk, onModel, onSave, onRemove }: {
