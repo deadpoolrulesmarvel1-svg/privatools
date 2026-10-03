@@ -16,7 +16,7 @@ import type { AudioChunk } from "../recognize";
 import { ascii, readRange } from "./bytes";
 import { indexMatroska } from "./matroska";
 import { indexMp3 } from "./mp3";
-import { indexMp4 } from "./mp4";
+import { indexMp4, isFragmentedMp4 } from "./mp4";
 import { NoSoundTrack, PIECE_SECONDS, type AudioIndex } from "./types";
 import { indexWav } from "./wav";
 
@@ -27,7 +27,7 @@ export const WHOLE_FILE_SECONDS = 15 * 60;
 /** For a whole-file format whose length the browser cannot tell before decoding. */
 export const WHOLE_FILE_BYTES = 150 * 1024 * 1024;
 
-export type MediaProblem = "unreadable" | "no-sound" | "too-long" | "too-long-whole";
+export type MediaProblem = "empty" | "unreadable" | "no-sound" | "too-long" | "too-long-whole";
 
 /** Why a file's sound cannot be read, in words for the visitor. */
 export class MediaError extends Error {
@@ -89,8 +89,9 @@ async function sniff(file: Blob): Promise<"mp4" | "matroska" | "mp3" | "wav" | "
     return "other";
 }
 
-async function* piecesOf(index: AudioIndex): AsyncGenerator<AudioChunk> {
+async function* piecesOf(index: AudioIndex, signal?: AbortSignal): AsyncGenerator<AudioChunk> {
     for (let i = 0; i < index.pieces.length; i++) {
+        signal?.throwIfAborted();
         const piece = index.pieces[i];
         try {
             yield { start: piece.start, samples: await decodeToMono(await piece.read()) };
@@ -107,44 +108,62 @@ function unreadable(error?: unknown): MediaError {
     return new MediaError("unreadable", "This browser can’t decode the sound in this file.");
 }
 
+/** Why a file's sound is decoded whole, in words for the visitor, by what its first bytes say it is. */
+async function decodedWhole(file: File, kind: Awaited<ReturnType<typeof sniff>>): Promise<string> {
+    const limit = `up to ${minutes(WHOLE_FILE_SECONDS)} of sound`;
+    if (kind === "mp4") {
+        return await isFragmentedMp4(file)
+            ? `This file is written in fragments, as some recorders save video, which this browser decodes whole, ${limit}.`
+            : `Its sound isn’t AAC or MP3, the kinds read a minute at a time, so this browser decodes it whole, ${limit}.`;
+    }
+    if (kind === "matroska") return `It can’t be read a minute at a time, so this browser decodes it whole, ${limit}.`;
+    return `Files in this format are decoded whole in this browser, ${limit}.`;
+}
+
 /**
  * Open a file's sound. Fails with a MediaError, before any model is fetched,
- * when there is no sound track, the format is one the browser cannot read, or
- * the sound is longer than this tool takes. `onRead` hears how far the readers
- * that walk a whole file (WebM, MKV, MP3) have got, in bytes.
+ * when the file is empty or has no sound track, the format is one the browser
+ * cannot read, or the sound is longer than this tool takes. `onRead` hears how
+ * far the readers that walk a whole file (WebM, MKV, MP3) have got, in bytes;
+ * `signal` stops them, and the pieces after them.
  */
-export async function openAudio(file: File, { onRead, measure = playingTime, pieceSeconds = PIECE_SECONDS }: {
+export async function openAudio(file: File, { onRead, measure = playingTime, pieceSeconds = PIECE_SECONDS, signal }: {
     onRead?: (bytes: number) => void;
     /** How long a file plays by the browser's reckoning: playingTime, or a stand-in in tests. */
     measure?: (file: Blob, video: boolean) => Promise<number | null>;
     pieceSeconds?: number;
+    signal?: AbortSignal;
 } = {}): Promise<AudioSource> {
+    if (!file.size) throw new MediaError("empty", "This file is empty, so there is no sound in it.");
     const kind = await sniff(file);
     let index: AudioIndex | null = null;
     try {
         index = kind === "mp4" ? await indexMp4(file, pieceSeconds)
-            : kind === "matroska" ? await indexMatroska(file, { pieceSeconds, onRead })
-            : kind === "mp3" ? await indexMp3(file, { pieceSeconds, onRead })
+            : kind === "matroska" ? await indexMatroska(file, { pieceSeconds, onRead, signal })
+            : kind === "mp3" ? await indexMp3(file, { pieceSeconds, onRead, signal })
             : kind === "wav" ? await indexWav(file, { pieceSeconds })
             : null;
     } catch (error) {
         if (error instanceof NoSoundTrack) throw new MediaError("no-sound", "This file has no sound track, so there is nothing to subtitle.");
+        signal?.throwIfAborted();
         index = null;
     }
+    signal?.throwIfAborted();
     if (index) {
         if (index.durationSeconds > MAX_SECONDS) throw tooLong(index.durationSeconds);
         const found = index;
-        return { container: found.container, durationSeconds: found.durationSeconds, chunks: () => piecesOf(found) };
+        return { container: found.container, durationSeconds: found.durationSeconds, chunks: () => piecesOf(found, signal) };
     }
 
     // The whole-file path: the browser's own decoder, bounded by length.
     const seconds = await measure(file, file.type.startsWith("video/") || kind === "mp4" || kind === "matroska");
+    signal?.throwIfAborted();
     if (seconds === null && file.size > WHOLE_FILE_BYTES) {
-        throw new MediaError("too-long-whole", `This browser can’t tell how long this file plays without decoding all of it, and files in this format are decoded whole, up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
+        throw new MediaError("too-long-whole", `${await decodedWhole(file, kind)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
     }
     if (seconds !== null && seconds > MAX_SECONDS) throw tooLong(seconds);
     if (seconds !== null && seconds > WHOLE_FILE_SECONDS) {
-        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(seconds)} long. Files in this format are decoded whole in the browser, which takes up to ${minutes(WHOLE_FILE_SECONDS)} of sound.`, seconds);
+        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(seconds)} long. ${await decodedWhole(file, kind)}`, seconds);
     }
     let samples: Float32Array;
     try {
@@ -152,8 +171,9 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
     } catch (error) {
         throw unreadable(error);
     }
+    signal?.throwIfAborted();
     if (samples.length / SAMPLE_RATE > WHOLE_FILE_SECONDS + 1) {
-        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(samples.length / SAMPLE_RATE)} long. Files in this format are decoded whole in the browser, which takes up to ${minutes(WHOLE_FILE_SECONDS)} of sound.`, samples.length / SAMPLE_RATE);
+        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(samples.length / SAMPLE_RATE)} long. ${await decodedWhole(file, kind)}`, samples.length / SAMPLE_RATE);
     }
     const decoded = samples;
     return {

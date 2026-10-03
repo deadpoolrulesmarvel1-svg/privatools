@@ -108,9 +108,9 @@ function blockTrack(b: Uint8Array): { track: number; timecode: number } | null {
 /**
  * The sound of a WebM or MKV file as pieces of about a minute, or null when
  * it is not one or has no audio track. `onRead` hears how far through the
- * file the walk is, in bytes.
+ * file the walk is, in bytes; `signal` stops it.
  */
-export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead }: { pieceSeconds?: number; onRead?: (bytes: number) => void } = {}): Promise<AudioIndex | null> {
+export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead, signal }: { pieceSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
     const reader = new WindowedReader(blob);
     const ebml = await headerAt(reader, 0);
     if (!ebml || ebml.id !== ID.EBML || ebml.end === null) return null;
@@ -153,6 +153,7 @@ export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, 
             }
             at = child;
             onRead?.(at);
+            signal?.throwIfAborted();
             continue;
         }
         if (header.end === null) break;

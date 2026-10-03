@@ -222,6 +222,13 @@ async function readMoov(blob: Blob): Promise<Uint8Array | null> {
     return null;
 }
 
+/** Whether an MP4 is written in fragments (its moov lists no samples; OBS and some phones record this way). */
+export async function isFragmentedMp4(blob: Blob): Promise<boolean> {
+    const b = await readMoov(blob);
+    const moov = b ? boxes(b, 0, b.length)[0] : undefined;
+    return Boolean(b && moov?.type === "moov" && childOf(b, moov, "mvex"));
+}
+
 /** The sound of an MP4, MOV or M4A file as pieces of about a minute, or null when this reader cannot pass it on. */
 export async function indexMp4(blob: Blob, pieceSeconds = PIECE_SECONDS): Promise<AudioIndex | null> {
     const b = await readMoov(blob);

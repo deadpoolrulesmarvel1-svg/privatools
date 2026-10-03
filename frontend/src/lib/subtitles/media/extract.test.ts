@@ -117,6 +117,38 @@ describe("opening a file's sound", () => {
         await expect(openAudio(ogg, { measure: async () => MAX_SECONDS + 60 })).rejects.toMatchObject({ problem: "too-long" });
     });
 
+    it("says why a file is decoded whole when it is too long for that", async () => {
+        const tooLong = async () => 16 * 60;
+        const fragmented = await openAudio(fileOf("tone-fragmented.mp4", "video/mp4"), { measure: tooLong }).catch(error => error);
+        expect(fragmented).toMatchObject({ problem: "too-long-whole" });
+        expect(fragmented.message).toBe("This file’s sound is 16 minutes long. This file is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.");
+        const ogg = mediaFile("voice.ogg", "audio/ogg", Uint8Array.of(0x4f, 0x67, 0x67, 0x53, 0, 2, 0, 0, 0, 0, 0, 0));
+        const other = await openAudio(ogg, { measure: tooLong }).catch(error => error);
+        expect(other.message).toBe("This file’s sound is 16 minutes long. Files in this format are decoded whole in this browser, up to 15 minutes of sound.");
+    });
+
+    it("says an empty file is empty, before reading anything", async () => {
+        const empty = mediaFile("empty.mp3", "audio/mpeg", new Uint8Array(0));
+        const error = await openAudio(empty).catch(caught => caught);
+        expect(error).toBeInstanceOf(MediaError);
+        expect(error).toMatchObject({ problem: "empty" });
+        expect(decoded).toHaveLength(0);
+    });
+
+    it("stops reading when asked: the walk through a file, and the pieces after it", async () => {
+        const stopped = new AbortController();
+        stopped.abort();
+        await expect(openAudio(fileOf("tone.webm", "video/webm"), { signal: stopped.signal })).rejects.toMatchObject({ name: "AbortError" });
+        await expect(openAudio(fileOf("tone.mp3", "audio/mpeg"), { signal: stopped.signal })).rejects.toMatchObject({ name: "AbortError" });
+        const later = new AbortController();
+        const source = await openAudio(fileOf("tone.mp4", "video/mp4"), { signal: later.signal, pieceSeconds: 0.5 });
+        const chunks = source.chunks();
+        await chunks.next();
+        later.abort();
+        await expect(chunks.next()).rejects.toMatchObject({ name: "AbortError" });
+        expect(decoded).toHaveLength(1);
+    });
+
     it("refuses a whole-file format it cannot measure when the file is large", async () => {
         const big = mediaFile("big.flac", "audio/flac", new Uint8Array(16));
         Object.defineProperty(big, "size", { value: 400 * 1024 * 1024 });

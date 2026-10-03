@@ -67,8 +67,8 @@ async function sync(reader: WindowedReader, from: number): Promise<number> {
     return -1;
 }
 
-/** The sound of an MP3 file as pieces of about a minute, or null when it is not one. */
-export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead }: { pieceSeconds?: number; onRead?: (bytes: number) => void } = {}): Promise<AudioIndex | null> {
+/** The sound of an MP3 file as pieces of about a minute, or null when it is not one. `signal` stops the walk. */
+export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead, signal }: { pieceSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
     const reader = new WindowedReader(blob);
     const start = await sync(reader, afterId3(await reader.bytes(0, 10)));
     if (start < 0) return null;
@@ -88,7 +88,10 @@ export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRea
         }
         offsets.push(at);
         at += frame.length;
-        if (offsets.length % 4096 === 0) onRead?.(at);
+        if (offsets.length % 4096 === 0) {
+            onRead?.(at);
+            signal?.throwIfAborted();
+        }
     }
     onRead?.(at);
     const end = at;
