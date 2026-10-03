@@ -71,6 +71,14 @@ how to keep your files private.
 <i>Every timing stays where it was.</i>
 `;
 
+/**
+ * Languages Add Subtitles can't draw: the release image's only fonts are
+ * DejaVu Sans, Serif and Mono and OpenSymbol (what its apt-get install pulls
+ * in, checked 2026-10-03), which have no Chinese, Japanese, Korean, Thai or
+ * Devanagari and Bengali letters.
+ */
+const NO_SERVER_FONT = new Set(["zh", "ja", "ko", "th", "hi", "bn"]);
+
 const n = (value: number) => value.toLocaleString("en-US");
 const plural = (count: number, one: string, many = `${one}s`) => `${n(count)} ${count === 1 ? one : many}`;
 const FORMAT_NAME: Record<SubtitleFormat, string> = { srt: "SRT", vtt: "VTT" };
@@ -588,10 +596,12 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
             {failed > 0 && (failed === 1 ? " In both, the cue that wasn’t translated keeps its original text." : ` In both, the ${n(failed)} cues that weren’t translated keep their original text.`)}
             {conversionNote.length > 0 && ` As ${FORMAT_NAME[otherFormat]}, the file leaves out what ${FORMAT_NAME[otherFormat]} can’t hold: ${conversionNote.join(", ")}.`}
         </p>
-        <div className="st-next">
-            <button type="button" className="ts-secondary-button" onClick={() => void burnIn()} disabled={handing}><Film size={16} aria-hidden="true" /> Burn into a video</button>
-            <p className="ts-caption">Add Subtitles burns the translated SRT into your video on the PrivaTools server, which means uploading the video and the subtitles for temporary processing. The translation itself stays on this page until then.</p>
-        </div>
+        {NO_SERVER_FONT.has(run.to.code.split("-")[0])
+            ? <p className="ts-caption st-next">Add Subtitles can’t burn {run.to.name} into a video: it draws subtitles with the DejaVu fonts on the PrivaTools server, which have no {run.to.name} letters, so they would come out as boxes. Load the SRT or VTT in your video player or editor instead.</p>
+            : <div className="st-next">
+                <button type="button" className="ts-secondary-button" onClick={() => void burnIn()} disabled={handing}><Film size={16} aria-hidden="true" /> Burn into a video</button>
+                <p className="ts-caption">Add Subtitles burns the translated SRT into your video on the PrivaTools server, which means uploading the video and the subtitles for temporary processing. The translation itself stays on this page until then.</p>
+            </div>}
     </StudioResult>;
 }
 

@@ -56,7 +56,7 @@
     },
     {
       "q": "How do I put the translated subtitles on my video?",
-      "a": "Upload the SRT or VTT next to the video where you publish it, or load it in your player; a name such as talk.es.srt lets players show the language. To burn the subtitles into the picture, use Add Subtitles, which uploads the video and the subtitles to PrivaTools for temporary processing."
+      "a": "Upload the SRT or VTT next to the video where you publish it, or load it in your player; a name such as talk.es.srt lets players show the language. To burn the subtitles into the picture, use Add Subtitles, which uploads the video and the subtitles to PrivaTools for temporary processing. It draws them with the DejaVu fonts, which have no Chinese, Japanese, Korean, Thai, Hindi or Bengali letters, so subtitles in those languages would come out as boxes there: load them in your player instead."
     },
     {
       "q": "Can it translate subtitles from Subtitle Generator?",

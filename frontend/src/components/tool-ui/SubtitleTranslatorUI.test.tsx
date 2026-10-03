@@ -225,13 +225,13 @@ function anthropic(answer: (lines: [number, string][], call: number) => string =
     });
 }
 
-async function translateWithKey() {
+async function translateWithKey(into = "German") {
     localStorage.setItem("privatools.byok.provider", "anthropic");
     await saveKey("anthropic", "dummy-key-for-tests");
     choose();
     await screen.findByText(/SRT · 5 cues/);
     fireEvent.click(screen.getByRole("button", { name: /Your own AI key/ }));
-    fireEvent.change(screen.getByLabelText("Translate into"), { target: { value: "German" } });
+    fireEvent.change(screen.getByLabelText("Translate into"), { target: { value: into } });
     await waitFor(() => expect(translateButton()).toBeEnabled());
     fireEvent.click(translateButton());
 }
@@ -318,6 +318,16 @@ describe("translating with your own AI key", () => {
         expect(written.split("\n").filter(line => line.includes("-->"))).toHaveLength(1200);
         expect(written).toContain("\nES Line 1200.\n");
     }, 30000);
+
+    it("doesn't offer to burn in a language the server has no font for, and says why", async () => {
+        anthropic();
+        await translateWithKey("Japanese");
+        await screen.findByRole("heading", { name: "5 cues translated." });
+        expect(screen.queryByRole("button", { name: "Burn into a video" })).toBeNull();
+        expect(screen.getByText(/Add Subtitles can’t burn Japanese into a video: it draws subtitles with the DejaVu fonts/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Download VTT" }));
+        expect(mocks.download.mock.calls[0][1]).toBe("talk.ja.vtt");
+    });
 
     it("says the key was rejected, and translates nothing", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 401, json: async () => ({}), text: async () => "{}" } as unknown as Response);
