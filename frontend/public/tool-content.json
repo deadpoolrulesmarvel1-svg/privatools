@@ -2516,7 +2516,7 @@
     "byok": true,
     "accepts": ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac",
     "outputLabel": "transcript.txt",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-03",
     "path": "/tools/transcribe-audio",
     "priority": 0.6
   },

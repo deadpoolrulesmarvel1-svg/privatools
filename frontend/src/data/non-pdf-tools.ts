@@ -585,7 +585,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",
     popularity: 20,
     category: "video-audio", clientOnly: true, byok: true, accepts: ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac", outputLabel: "transcript.txt",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-03",
   },
 
   // ── v1.2.0 additions ──────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Choose a video or recording",
-      "text": "Drop or choose an MP4, MOV, WebM, MKV, MP3, M4A or WAV file with up to 3 hours of sound; how big the video is doesn't matter, because only its sound is read. Ogg, Opus, FLAC and AAC files work up to 15 minutes. The file is read in this browser and is not uploaded."
+      "text": "Drop or choose a video or recording. Most MP4, MOV, M4A, WebM and MKV files, and MP3 and WAV, are read a minute at a time, up to 3 hours of sound however big the video is. Ogg, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The file is read in this browser and is not uploaded."
     },
     {
       "name": "Choose the language and the model",
@@ -24,7 +24,7 @@
   "faq": [
     {
       "q": "Is my video uploaded?",
-      "a": "No. The sound is read from the file and turned into subtitles in your browser, and the video or recording is not sent to PrivaTools or anyone else. What is downloaded is the Whisper model, once, from Hugging Face; your browser keeps it, and AI Studio shows how much space it takes and can remove it."
+      "a": "No. The sound is read from the file and turned into subtitles in your browser, and the video or recording is not sent to PrivaTools or anyone else. What is downloaded is the Whisper model from Hugging Face and the engine that runs it from jsDelivr, once; your browser keeps them, and AI Studio shows the model's size and can remove it."
     },
     {
       "q": "Is it free, and is there a watermark?",
@@ -32,11 +32,11 @@
     },
     {
       "q": "How accurate are the subtitles?",
-      "a": "Good on clear speech from one person at a time. Music, people talking over each other, strong accents, poor microphones and unusual names cause mistakes, and Tiny makes more than Base. Tiny also sometimes stops writing before the speech ends: when clear speech follows its last caption, the tool asks it again from there, but a line can still be missed. Whisper can also write a word or two in a long silence. Read the captions while the file plays before you publish them."
+      "a": "Good on clear speech from one person at a time. Music, people talking over each other, strong accents, poor microphones and unusual names cause mistakes, and Tiny makes more than Base. Tiny also sometimes stops writing before the speech ends: when clear speech follows its last caption, the tool asks it again from there and keeps what that writes only when it reads as speech, so a line can still be missed. Over music or a long silence Whisper can write a word or a stock line such as \"Thank you.\", and where it writes the same words over and over, that stretch is left out and the result says where. Read the captions while the file plays before you publish them."
     },
     {
       "q": "Which languages does it work with?",
-      "a": "The 99 languages Whisper was trained on. Choose the one spoken in the file: this browser version does not detect it, and the wrong choice gives garbled or translated captions. It writes best in widely spoken languages such as English, Spanish, French and German, and much less well in languages with little training data, especially with Tiny."
+      "a": "Whisper's 99 languages. Choose the one spoken in the file: this browser version does not detect it, and the wrong choice gives garbled or translated captions. It writes best in widely spoken languages such as English, Spanish, French and German, and much less well in languages with little training data, especially with Tiny."
     },
     {
       "q": "How long does it take?",
@@ -44,11 +44,11 @@
     },
     {
       "q": "How long can the video be, and how much memory does it need?",
-      "a": "Up to 3 hours of sound. MP4, MOV, M4A, WebM, MKV, MP3 and WAV files are read about a minute at a time, so a long file needs no more memory than a short one; Ogg, Opus, FLAC and AAC files are decoded whole, up to 15 minutes. Whisper needs memory of its own while it runs: in our tests in Chromium, the tab used about 1 GB with Tiny and 2 GB with Base, so choose Tiny on a phone."
+      "a": "Up to 3 hours of sound. Most MP4, MOV, M4A, WebM and MKV files, and MP3 and WAV, are read about a minute at a time, so a long file needs no more memory for its sound than a short one; Ogg, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. Whisper needs memory of its own while it runs: in our tests in Chromium, the tab used about 1 to 2 GB with Tiny and about 2 GB with Base, so choose Tiny on a phone."
     },
     {
-      "q": "Why are some captions a little early or late?",
-      "a": "Whisper times each stretch of speech it writes, but coarsely. The tool moves the change from one stretch to the next into the pause between them, then draws each caption in to where the sound actually is, from a tenth of a second before the first word to a quarter of a second after the last. Over music or steady noise there is no silence to measure, so captions keep Whisper's own timing, which can be a second or two out."
+      "q": "Why are some captions early or late?",
+      "a": "Whisper times each stretch of speech it writes, but coarsely. The tool moves the change from one stretch to the next into the pause between them, then draws each caption in to where the sound actually is, from a tenth of a second before the first word to a quarter of a second after the last. Next to music or steady noise there is no silence to measure, and Whisper can start a caption where the music starts, many seconds before the words. A caption far longer than its words take to say is shortened to about the time they take, kept to its end that borders a pause, which brings most within a second or two of the voice; a caption can still show over music before the words."
     },
     {
       "q": "What is the difference between SRT and VTT?",
@@ -60,7 +60,7 @@
     },
     {
       "q": "What if my file doesn't work?",
-      "a": "The browser has to decode the sound itself. When it can't, because of an unusual codec, an AVI file or a damaged file, the tool says so and nothing is sent anywhere. Extract Audio can make an MP3 of a video's sound on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here."
+      "a": "The browser has to decode the sound itself. When it can't, because of an unusual codec, an AVI file or a damaged file, the tool says so and nothing is sent anywhere. Extract Audio can make an MP3 of an MP4, MOV, WebM, AVI or MKV video's sound, and Audio Converter of a WAV, OGG, FLAC, AAC, M4A or WMA recording, both on the PrivaTools server, which means uploading the file, up to 500 MB, for temporary processing; the MP3 then works here."
     },
     {
       "q": "Can it translate the subtitles into another language?",
