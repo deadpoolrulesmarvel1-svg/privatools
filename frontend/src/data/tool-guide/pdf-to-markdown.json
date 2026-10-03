@@ -28,7 +28,7 @@
     },
     {
       "q": "What about two-column papers and other multi-column layouts?",
-      "a": "Each column is read top to bottom before the next, whether the file draws its text column by column or line by line across the page, and a title or table running across the columns is read in its place between them. Columns are found from the space between them, down to the 10-point gap of a LaTeX paper, in pages of two, three or four columns, justified or not, and a paragraph that carries on into the next column stays whole. Blocks side by side, such as the two addresses on an invoice, are read one after the other. A page whose text flows irregularly around pictures, or a title set beside a block of text, may still come out in a different order than you'd read it, so check the result."
+      "a": "Each column is usually read top to bottom before the next, and a title or table running across the columns is read in its place between them. Columns are found from the space between them, down to the 10-point gap of a LaTeX paper, in pages of two, three or four columns, justified or not, whichever way the file draws its text: a column at a time, or a line at a time across the page. One layout can still be read across: justified columns drawn a line at a time across, with a gap of 10 points or less. A paragraph that carries on into the next column usually stays whole; when it doesn't, it is split where the column ends, in the right order. Blocks side by side, such as the two addresses on an invoice, are read one after the other. A page whose text flows irregularly around pictures, or a title set beside a block of text, may still come out in a different order than you'd read it, so check the result."
     },
     {
       "q": "Can it convert a scanned PDF?",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Are links, code and lists kept?",
-      "a": "Yes. Links to web and email addresses keep their targets as Markdown links; links that run scripts are dropped and their text kept. Text in a monospaced font becomes a fenced code block, indented as on the page, or inline code within a sentence, unless the whole document is set in one, as a printed text file is. Bulleted, numbered and lettered lists keep their nesting: bullets of any shape become Markdown's -, and numbers and letters stay. Bold and italic text stays marked, and footnote marks and exponents become superscripts (<sup>)."
+      "a": "Yes. Links to web and email addresses keep their targets as Markdown links; links that run scripts are dropped and their text kept. Text in a monospaced font becomes a fenced code block, indented as on the page, or inline code within a sentence, unless the whole document is set in one, as a printed text file is. Bulleted, numbered and lettered lists keep their nesting. The usual bullet shapes (•, ◦, ▪, –, ➢, ✓, ★, Word's Symbol and Wingdings bullets, and its \"o\" when set apart from the text) become Markdown's -, and numbers and letters stay; a mark it doesn't know, such as an emoji, stays in the text. Bold and italic text stays marked, and footnote marks and exponents become superscripts (<sup>)."
     },
     {
       "q": "Does the Markdown include text I can't see in the PDF?",

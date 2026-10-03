@@ -176,7 +176,7 @@ export function PdfToMarkdownUI() {
         </button>
     </StudioActionBar>}>
         <FileIntake accepts=".pdf" multiple title="Drop PDFs to turn into Markdown"
-            detail="Headings, lists, tables, code and links come through, and pages set in columns are read column by column."
+            detail="Headings, lists, tables, code and links come through, and pages set in columns are usually read column by column."
             compact={proc.entries.length > 0} disabled={busy} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdf)} />
         <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
         {busy && <StudioProgress label="Converting to Markdown" detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}

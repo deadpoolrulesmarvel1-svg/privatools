@@ -899,7 +899,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "pdf-to-markdown", icon: Code2, name: "PDF to Markdown",
     description: "Markdown with tables, lists and headings, ready for AI",
-    longDescription: "Convert PDF to Markdown for ChatGPT, Claude and other AI tools, for RAG, or for docs and wikis. Headings keep their levels and lists their nesting; tables drawn with lines become GitHub tables, code stays in fenced blocks, links keep their addresses, and pictures become placeholders with their caption or alternative text. Pages set in columns are read one column after the other. Add page markers, leave out repeated headers and footers, and split the result into chunks by heading or by size. Scanned pages need OCR PDF first.",
+    longDescription: "Convert PDF to Markdown for ChatGPT, Claude and other AI tools, for RAG, or for docs and wikis. Headings keep their levels and lists their nesting; tables drawn with lines become GitHub tables, code stays in fenced blocks, links keep their addresses, and pictures become placeholders with their caption or alternative text. Pages set in columns are usually read one column after the other. Add page markers, leave out repeated headers and footers, and split the result into chunks by heading or by size. Scanned pages need OCR PDF first.",
     seoTitle: "PDF to Markdown for LLMs – Tables, Lists and Chunks",
     metaDescription: "Convert PDF to Markdown with tables, nested lists, headings, code and links, in reading order across columns. Add page markers or split it into chunks for AI.",
     synonyms: "md markdown llm ai chatgpt claude rag chunks tables gfm github readme docs obsidian",

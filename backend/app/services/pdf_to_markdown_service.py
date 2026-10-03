@@ -44,6 +44,8 @@ CHUNK_MIN, CHUNK_MAX, CHUNK_DEFAULT = 500, 50_000, 4000
 # too busy to finish.
 TIME_LIMIT_SECONDS = 90
 _MAX_OUTPUT_BYTES = 64 * 1024
+# How running out of memory can end the worker, besides saying so.
+_OUT_OF_MEMORY_SIGNALS = frozenset({signal.SIGSEGV, signal.SIGBUS, signal.SIGABRT, signal.SIGKILL})
 
 # The words match safe_open_pdf's, which the other PDF tools use, and pass
 # through the page's friendlyError() as written.
@@ -115,8 +117,8 @@ def convert(path: str, opts: dict) -> tuple[str, dict]:
     one. Raises ValueError, with a message for the user, when the file needs a
     password, cannot be read, none of its pages can be read, or it has no
     pages; TooManyPagesError (413) past MAX_PAGES; FileTooLargeError (413) when
-    it needs more memory than the worker may use, or the worker is killed
-    without an answer (how running out of memory can end it); UnconvertibleError (422) when
+    it needs more memory than the worker may use, or the worker crashes or is
+    killed without an answer (how running out of memory can end it); UnconvertibleError (422) when
     it has no text to convert or needs more CPU time than its pages allow;
     ToolTimeoutError (504) past TIME_LIMIT_SECONDS; and ProcessingError (500)
     on any other failure.
@@ -142,9 +144,11 @@ def convert(path: str, opts: dict) -> tuple[str, dict]:
         remove_files(target)
         logger.warning("pdf-to-markdown: a %d-byte file ran out of CPU time", os.path.getsize(path))
         raise UnconvertibleError(TOO_SLOW_MESSAGE)
-    if process.returncode < 0 and not process.stdout.strip():
-        # Killed by a signal before it answered. Under its memory limit MuPDF
-        # cannot always report a failed allocation, and crashes instead.
+    if -process.returncode in _OUT_OF_MEMORY_SIGNALS and not process.stdout.strip():
+        # Crashed or killed before it answered. Under its memory limit MuPDF
+        # cannot always report a failed allocation, and crashes instead; the
+        # kernel's out-of-memory killer sends SIGKILL. A worker stopped by a
+        # shutdown (SIGTERM, SIGINT) failed for no fault of the file's.
         remove_files(target)
         logger.warning("pdf-to-markdown: the worker died of signal %d on a %d-byte file",
                        -process.returncode, os.path.getsize(path))

@@ -22,24 +22,30 @@ What is kept, and how it is found (PyMuPDF only, no models):
   through those spaces is no gutter), blocks of lines side by side (MuPDF
   keeps each in a block of its own, where a label and its value share one),
   two bulleted lists, or a sidebar beside running text. Drawing order inside
-  the file does not matter, and a paragraph that carries on into the next
-  column stays whole. Along a line, pieces run left to right, or right to
-  left where most of its letters do.
+  the file mostly does not matter: justified columns drawn a line at a time
+  across, with each line ending in a space and a gap of 10 points or less,
+  can still be read across. A paragraph that carries on into the next
+  column stays whole when its column ends on a full line. Along a line,
+  pieces run left to right, or right to left where most of its letters do.
+  A page frame, drawn as one rectangle or as four sides, is no table.
 - Headings, from the sizes of the document's type: body text is the most
   common size outside running headers, footers and ruled tables, and larger
   sizes used for short lines are heading levels, the largest first; a
   sentence in larger type is not one. A short line all in bold at body size
   is a heading one level below those. "1. Introduction" in a heading's type
   is a numbered heading, not a list.
-- Paragraphs, joined from their lines, also at one and a half or double
-  spacing, where a full line that stops mid-sentence carries on; a word
-  broken at the end of a line by a hyphen is joined again, and Chinese or
-  Japanese lines join without a space.
+- Paragraphs, joined from their lines. At one and a half or double spacing
+  a line carries on after a full line, at the document's usual line pitch
+  (``usual_pitch``) whatever ended it, otherwise when it stopped
+  mid-sentence; a first-line indent (from the right margin, right to left)
+  starts a paragraph. A word broken at the end of a line by a hyphen is
+  joined again, and Chinese or Japanese lines join without a space.
 - Lists: a line starting with a bullet (of many shapes, Word's Courier "o"
   among them), a number or a letter, with the lines under it. Nesting comes
-  from how far each mark is indented. Numbers, letters and Roman numerals
-  count only in a run (1., 2.), so "A. Smith", or "12." starting a wrapped
-  line, stays a sentence, and a dash that starts a wrapped line stays text.
+  from how far each mark is indented. Letters and Roman numerals count only
+  in a run (a., b.), so "A. Smith" stays a sentence; a number or a dash
+  that starts a wrapped line ("... to / 12. The chair") stays text, and a
+  scene break ("* * *") is no list.
 - Tables drawn with ruled lines (PyMuPDF's table finder), and tables ruled
   only across, by thin rules above, below and under their header row (as
   LaTeX's booktabs draws them) or only under the header and at the foot,
@@ -114,12 +120,12 @@ MAX_OUTPUT_BYTES = 64 * 1024 * 1024
 MAX_REPORT_BYTES = 64 * 1024
 # Past this many pieces of text on one page, columns are not looked for and
 # lines are read top to bottom; past this many drawing items, tables are not.
-# A page whose content holds more than MAX_CONTENT_BYTES (about 50,000 lines
-# drawn) is not even asked for its drawings: listing a million of them takes
-# more memory than the process has.
+# A page whose content holds more than MAX_PATH_OPERATORS path operators is
+# not even asked for its drawings: listing a million of them takes more
+# memory than the process has. Text, however much there is, is not counted.
 MAX_PAGE_PIECES = 6000
 MAX_TABLE_DRAWINGS = 6000
-MAX_CONTENT_BYTES = 1_000_000
+MAX_PATH_OPERATORS = 50_000
 # Chunk sizes, in characters of Markdown.
 CHUNK_MIN, CHUNK_MAX, CHUNK_DEFAULT = 500, 50_000, 4000
 # Bounds on the structure tree walked for pictures' alternative text.
@@ -624,24 +630,34 @@ class Ruling:
     crowded: bool = False                           # too much drawn to read the drawings at all
 
 
-def drawn_bytes(page: fitz.Page, limit: int) -> int:
-    """How much the page's content streams hold, with every form they draw
-    (each counted once), stopping past ``limit``: a cheap measure of how much
-    reading its drawings would cost, taken before they are read."""
+# A path operator (move, line, curve, rectangle) in a content stream.
+_PATH_OPERATOR = re.compile(rb"(?<=\s)(?:re|[mlcvy])(?=\s)")
+
+
+def drawn_operators(page: fitz.Page, limit: int) -> int:
+    """How many path operators the page's content streams hold, with every
+    form they draw (each counted once), counted to just past ``limit``: a
+    cheap measure of what reading its drawings would cost, taken before
+    they are read. Text is not counted, so a page whose text is placed
+    glyph by glyph keeps its tables."""
     doc = page.parent
-    total = 0
+    count = 0
     try:
         xrefs = list(page.get_contents()) + [x[0] for x in page.get_xobjects()]
     except Exception:  # noqa: BLE001 - a page whose resources cannot be read has no drawings to read
         return limit + 1
     for xref in xrefs:
         try:
-            total += len(doc.xref_stream(xref) or b"")
-        except Exception:  # noqa: BLE001
+            data = doc.xref_stream(xref) or b""
+        except Exception as exc:  # noqa: BLE001
+            if isinstance(exc, MemoryError) or _is_memory(exc):
+                return limit + 1
             continue
-        if total > limit:
-            break
-    return total
+        for _ in _PATH_OPERATOR.finditer(data):
+            count += 1
+            if count > limit:
+                return count
+    return count
 
 
 def _rules(page: fitz.Page, frame: Frame) -> Ruling:
@@ -651,7 +667,7 @@ def _rules(page: fitz.Page, frame: Frame) -> Ruling:
     times as much). A filled or framed rectangle bounds a region but is not
     a rule, and one covering half the page or more (a slide's background, a
     page border) bounds nothing: it would make the whole page a table."""
-    if drawn_bytes(page, MAX_CONTENT_BYTES) > MAX_CONTENT_BYTES:
+    if drawn_operators(page, MAX_PATH_OPERATORS) > MAX_PATH_OPERATORS:
         return Ruling([], [], 0, crowded=True)
     matrix = frame.unrot
     horizontal: list[tuple[float, float, float]] = []
@@ -1350,6 +1366,8 @@ def _marker(line: Line) -> tuple[str, str] | None:
     rest = line.text[m.end():].strip()
     if not rest and kind != "bullet":
         return None
+    if kind == "bullet" and rest and all(ch in _BULLETS or ch.isspace() for ch in rest):
+        return None  # "* * *", a scene break
     return kind, m.group(kind)
 
 
@@ -1364,31 +1382,37 @@ def _mark_value(mark: str, kind: str) -> int | None:
     return None
 
 
-def line_marks(lines: list[Line | Piece], style: "DocStyle") -> list[tuple[str, str] | None]:
-    """Each line's list mark, or None. A bullet is a mark wherever it is.
-    A number, letter or Roman numeral is one only on a line not set in a
-    heading's type (there, "1. Introduction" is a numbered heading), and only
-    in a run: another line at the same indent carries the next or the
-    previous value, so "12." starting a wrapped line, or "A. Smith", stays
-    text."""
+def line_marks(lines: list[Line | Piece], style: "DocStyle") -> list[tuple[str, str, bool] | None]:
+    """Each line's list mark, as (kind, mark, in a run), or None. A bullet is
+    a mark wherever it is. A number, letter or Roman numeral is one only on
+    a line not set in a heading's type (there, "1. Introduction" is a
+    numbered heading). A letter or Roman numeral is one only in a run:
+    another line at the same indent carries the next or the previous value,
+    so "A. Smith" stays a sentence. A number is one alone too ("1." of a
+    list of one, or "3." left alone at the top of a page), unless its line
+    carries on a wrapped sentence ("... to / 12. The chair"), which
+    ``_continues`` decides."""
     marks = []
     for ln in lines:
         mark = _marker(ln) if isinstance(ln, Line) else None
         if mark and mark[0] != "bullet" and style.level_for(ln.size):
             mark = None
-        marks.append(mark)
+        marks.append((mark[0], mark[1], False) if mark else None)
     numbered = [(i, ln.x0, marks[i][1]) for i, ln in enumerate(lines) if marks[i] and marks[i][0] != "bullet"]
     for i, x, text in numbered:
-        found = None
+        found, run = None, False
         for kind in ("num", "alpha", "roman"):
             v = _mark_value(text, kind)
             if v is None:
                 continue
             if any(j != i and abs(xj - x) <= 3 and (w := _mark_value(other, kind)) is not None and abs(w - v) == 1
                    for j, xj, other in numbered):
+                found, run = kind, True
+                break
+            if kind == "num":
                 found = kind
                 break
-        marks[i] = (found, text) if found else None
+        marks[i] = (found, text, run) if found else None
     return marks
 
 
@@ -1448,28 +1472,38 @@ def column(ln: Line) -> tuple[float, float]:
     return left, right
 
 
-def _open_end(prev: Line, size: float) -> bool:
-    """Whether ``prev`` is a full line that stops mid-sentence: it fills
-    its column, nearly, and is ten letters long at least, and no full stop
-    ends it."""
+def _full(prev: Line, size: float) -> bool:
+    """Whether ``prev`` fills its column, nearly, and is ten letters long at
+    least: a line the text wrapped after."""
     if prev.x1 - prev.x0 < 10 * size:
         return False
     left, right = column(prev)
-    if prev.x1 - prev.x0 < 0.85 * (right - left):
+    return prev.x1 - prev.x0 >= 0.85 * (right - left)
+
+
+def _open_end(prev: Line, size: float) -> bool:
+    """Whether ``prev`` is a full line (``_full``) that stops mid-sentence:
+    no full stop ends it."""
+    if not _full(prev, size):
         return False
     end = _REFERENCE.sub("", prev.text.rstrip()).rstrip(_CLOSERS)
-    return bool(end) and not end.endswith(_SENTENCE_END)
+    # Nor does a bullet (a right-to-left list set with its bullets on the
+    # left reads as one line, each bullet after its item); a dash, a hyphen
+    # or a middle dot may stop a line mid-sentence.
+    return bool(end) and not end.endswith(_SENTENCE_END) and not (end[-1] in _BULLETS and end[-1] not in _DASHES + "*·")
 
 
 def _wraps(block: Block, prev: Line, ln: Line, size: float) -> bool:
     """Whether the text wrapped from ``prev`` onto ``ln``: ``prev`` is a full
     line that stops mid-sentence (``_open_end``), and ``ln`` starts at the
-    block's margin. This joins the lines of a paragraph set at one and a
-    half or double spacing."""
+    block's margin (the right one, right to left). This joins the lines of a
+    paragraph set at one and a half or double spacing."""
     if prev.bold != ln.bold or abs(ln.size - prev.size) > 0.6 or not _open_end(prev, size):
         return False
     if block.kind == "item":
         return ln.x0 >= block.marker_x + 0.5
+    if _rtl(prev.pieces + ln.pieces):
+        return abs(ln.x1 - max(x.x1 for x in block.lines)) <= 0.8 * size
     return abs(ln.x0 - min(x.x0 for x in block.lines)) <= 0.8 * size
 
 
@@ -1490,19 +1524,30 @@ def _continues(block: Block, prev: Line, ln: Line, mark, code: bool, style: "Doc
     if ln.bold != prev.bold and (ln.bold or prev.bold) and abs(ln.size - style.body) < 0.6:
         return False  # a bold line of its own at body size starts or ends a heading
     # A dash or middle dot that starts a wrapped line ("... one of them /
-    # – a motion ...") is not a bullet.
-    if mark and not (block.kind == "para" and mark[0] == "bullet" and mark[1] in _DASHES + "·"
-                     and _wraps(block, prev, ln, size)):
+    # – a motion ..."), or a number outside a run ("... to / 12. The chair"),
+    # is not a list mark.
+    loose = mark is not None and ((mark[0] == "bullet" and mark[1] in _DASHES + "·") or (mark[0] == "num" and not mark[2]))
+    if mark and not (loose and block.kind == "para" and _wraps(block, prev, ln, size)):
         return False
-    if gap > max(0.45 * size, 2.5) and not (gap <= 1.6 * size and _wraps(block, prev, ln, size)):
-        return False
+    if gap > max(0.45 * size, 2.5):
+        # Body text at the document's usual line pitch carries on after a full
+        # line, whatever ended it: double-spaced paragraphs are told apart by an
+        # indent or by more space, not by a full stop at the end of a line.
+        at_pitch = (style.pitch > 0 and abs(prev.size - style.body) <= 0.6 and abs(ln.size - style.body) <= 0.6
+                    and 0 < ln.base - prev.base <= 1.15 * style.pitch and _full(prev, size))
+        if not at_pitch and not (gap <= 1.6 * size and _wraps(block, prev, ln, size)):
+            return False
     if block.kind == "item":
         return ln.x0 >= block.marker_x + 0.5
-    heading_like = prev.size >= style.body + 1
+    if prev.size >= style.body + 1:
+        return True  # a heading's lines
+    # An indented first line starts a paragraph. Right to left, the indent is
+    # from the right margin, and a short last line still ends there.
+    if _rtl(prev.pieces + ln.pieces):
+        margin = max(x.x1 for x in block.lines)
+        return not (ln.x1 < prev.x1 - 0.8 * size and ln.x1 < margin - 0.8 * size)
     margin = min(x.x0 for x in block.lines)
-    if not heading_like and ln.x0 > prev.x0 + 0.8 * size and ln.x0 > margin + 0.8 * size:
-        return False  # an indented first line starts a paragraph
-    return True
+    return not (ln.x0 > prev.x0 + 0.8 * size and ln.x0 > margin + 0.8 * size)
 
 
 # ── The document's type sizes ────────────────────────────────────────────────
@@ -1514,12 +1559,28 @@ class DocStyle:
     levels: dict[float, int] = field(default_factory=dict)   # heading size -> level
     bold_level: int = 2
     code_fonts: bool = True                                   # monospace means code
+    pitch: float = 0.0                                        # body text's usual baseline to baseline, or 0
 
     def level_for(self, size: float) -> int:
         for s, lv in self.levels.items():
             if abs(size - s) <= 0.6:
                 return lv
         return 0
+
+
+def usual_pitch(pitches: Counter, body: float) -> float:
+    """The most common step from one line of body text to the next, when
+    seen at least three times; 0 when not known, or when it is wider than
+    double spacing (2.6 times the type), where lines may as well stand
+    apart."""
+    found: Counter = Counter()
+    for (size, step), n in pitches.items():
+        if abs(size - body) <= 0.6:
+            found[step] += n
+    if not found:
+        return 0.0
+    step, n = found.most_common(1)[0]
+    return step if n >= 3 and step <= 2.6 * body else 0.0
 
 
 def doc_style(sizes: Counter, mono_chars: int, all_chars: int, heading_sizes: Counter) -> DocStyle:
@@ -1762,6 +1823,23 @@ def _near(image: Piece, block: Block) -> bool:
     return close and overlap > 0
 
 
+# Words a title may end with, full stop and all ("Water Supply Ltd.").
+_ABBREVIATIONS = frozenset("ltd inc co corp plc llc llp bros st dr jr sr no nos vol vols ed eds pty gmbh ag sa bv nv "
+                           "etc al fig figs".split())
+
+
+def _ends_sentence(text: str) -> bool:
+    """Whether a line ends as a sentence does: with a comma or semicolon left
+    over, or a full stop after a word that is not an initial ("U.S.") or an
+    abbreviation ("Ltd.")."""
+    if text.endswith((",", ";")):
+        return True
+    if not text.endswith(".") or re.search(r"(?:^|[^A-Za-z])[A-Z]\.$", text):
+        return False
+    words = text.rstrip(".").split()
+    return not words or re.sub(r"[^a-z]", "", words[-1].lower()) not in _ABBREVIATIONS
+
+
 def _heading_level(b: Block, style: DocStyle) -> int:
     if len(b.lines) > 3:
         return 0
@@ -1770,9 +1848,8 @@ def _heading_level(b: Block, style: DocStyle) -> int:
         return 0
     level = style.level_for(b.size)
     if level:
-        # A sentence in larger type (a summary under a title) is not a
-        # heading: a full stop after a word ends it, where "U.S." does not.
-        return 0 if re.search(r"[,;]$|[^A-Z.]\.$", text) else level
+        # A sentence in larger type (a summary under a title) is not a heading.
+        return 0 if _ends_sentence(text) else level
     # A short bold line at body size; not one with wide gaps inside, which
     # is a table's row of column names.
     if (len(b.lines) == 1 and b.lines[0].bold and not b.lines[0].gapped and abs(b.size - style.body) < 0.6
@@ -1903,6 +1980,7 @@ class Survey:
     bands: list[list[tuple]]        # each page's band lines (band_lines)
     with_text: int                  # pages with any text
     rulings: list[Ruling | None]    # each page's ruled lines, for the second pass
+    pitches: Counter                # (type size, step from one line to the next) -> times seen
 
 
 def survey(doc: fitz.Document) -> Survey:
@@ -1917,6 +1995,7 @@ def survey(doc: fitz.Document) -> Survey:
     mono = total = 0
     bands: list[list[tuple]] = []
     rulings: list[Ruling | None] = []
+    pitches: Counter = Counter()
     with_text = 0
     for page in doc:
         try:
@@ -1933,6 +2012,7 @@ def survey(doc: fitz.Document) -> Survey:
         rulings.append(ruling)
         regions = ruling.regions if ruling else []
         page_chars = 0
+        last = None   # (size, baseline, left edge) of the last body line read
         for line in lines:
             if not _along(line, frame):
                 continue
@@ -1942,6 +2022,22 @@ def survey(doc: fitz.Document) -> Survey:
             in_band = _band(frame, box) is not None
             text = "".join(s["text"] for s in line["spans"])
             n_line = len(text.strip())
+            first = next((sp for sp in line["spans"] if sp["text"].strip()), None)
+            if first is not None and not (in_table or in_band):
+                # The step from one line to the next below it, at the same size
+                # and margin: the document's line pitch (``usual_pitch``). The
+                # pieces MuPDF split a justified line into are one line, from
+                # its leftmost.
+                line_size = round(first["size"] * 2) / 2
+                base = first["origin"][1] if frame.unrot is None else (fitz.Point(first["origin"]) * frame.unrot).y
+                if last is not None and abs(base - last[1]) < 0.3 * line_size:
+                    last = (last[0], last[1], min(last[2], box.x0))
+                else:
+                    if last is not None and last[0] == line_size and abs(box.x0 - last[2]) <= 2 * line_size:
+                        step = base - last[1]
+                        if 0.5 * line_size < step < 3 * line_size:
+                            pitches[(line_size, round(step * 2) / 2)] += 1
+                    last = (line_size, base, box.x0)
             for s in line["spans"]:
                 n = len(s["text"].strip())
                 if not n:
@@ -1964,7 +2060,7 @@ def survey(doc: fitz.Document) -> Survey:
     # A page that is all table but for its title has too little text
     # outside to tell the body's size from.
     body_sizes = sizes if sum(sizes.values()) >= 100 else every_size
-    return Survey(body_sizes, heading_sizes, mono, total, bands, with_text, rulings)
+    return Survey(body_sizes, heading_sizes, mono, total, bands, with_text, rulings, pitches)
 
 
 def convert(doc: fitz.Document, options: Options, *, cap_cpu=None) -> Result:
@@ -1980,6 +2076,7 @@ def convert(doc: fitz.Document, options: Options, *, cap_cpu=None) -> Result:
 
     first = survey(doc)
     style = doc_style(first.sizes, first.mono, first.total, first.heading_sizes)
+    style.pitch = usual_pitch(first.pitches, style.body)
     repeated = repeated_lines(first.bands, first.with_text, style.body) if options.remove_headers_footers else set()
     try:
         figures = tagged_figures(doc)

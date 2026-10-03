@@ -641,13 +641,72 @@ def test_a_truncated_pdf_is_called_damaged():
 def test_a_page_drawing_too_much_is_converted_without_its_drawings(monkeypatch):
     """S9: the drawings were all read before their number was checked."""
     monkeypatch.setattr(worker, "MAX_TABLE_DRAWINGS", 1000)
-    monkeypatch.setattr(worker, "MAX_CONTENT_BYTES", 50_000)
+    monkeypatch.setattr(worker, "MAX_PATH_OPERATORS", 5_000)
     calls = []
     original = fitz.Page.get_cdrawings
     monkeypatch.setattr(fitz.Page, "get_cdrawings", lambda self, *a, **k: calls.append(1) or original(self, *a, **k))
     out = plain(fx.many_strokes(20_000))
     assert "A map with many strokes." in out
     assert calls == []
+
+
+# ── Round 2 of the review ────────────────────────────────────────────────────
+
+def test_a_one_item_numbered_list_stays_a_list():
+    """M2: numbers had to come in a run, so a list of one became a sentence."""
+    out = plain(fx.one_item_list())
+    assert out == "One more thing to remember:\n\n1. Only one step in this list\n\nThat is all.\n"
+
+
+def test_a_lists_last_item_alone_on_the_next_page_stays_a_list_item():
+    """M2: "3. Pack the car" at the top of page 2 had no neighbour, so it was text."""
+    out = plain(fx.list_across_pages())
+    assert "1. Book the hotel\n2. Buy the tickets" in out
+    assert "\n3. Pack the car\n" in out and "3\\." not in out
+
+
+def test_double_spaced_paragraphs_stay_whole_where_full_lines_end_sentences():
+    """M3: at double spacing, a full line ending a sentence ended the paragraph."""
+    out = plain(fx.double_spaced())
+    assert [p.strip() for p in out.split("\n\n") if p.strip()] == [" ".join(p) for p in fx.DOUBLE_SPACED]
+
+
+def test_a_table_is_found_on_a_page_whose_text_is_placed_glyph_by_glyph():
+    """M4: the page's 1.25 MB of content was taken for too many drawings, though
+    almost all of it is text, so its table was not looked for."""
+    out = plain(fx.glyph_by_glyph_with_table())
+    assert "| Cell 0-0 | Cell 0-1 | Cell 0-2 | Cell 0-3 | Cell 0-4 |" in out
+
+
+def test_a_right_to_left_paragraph_keeps_its_short_last_line():
+    """M6: the short last line, set against the right margin, starts further
+    right, which the indent test took for a new paragraph."""
+    assert plain(fx.hebrew_paragraph()).strip() == fx.HEBREW_PARAGRAPH
+
+
+def test_a_scene_break_of_asterisks_is_not_a_list():
+    """N-a: "* * *" became a list item, "- \\* \\*"."""
+    out = plain(fx.scene_break())
+    assert out == "The first part ends here.\n\n\\* \\* \\*\n\nThe second part begins.\n"
+
+
+def test_a_title_ending_in_an_abbreviation_stays_a_heading():
+    """N-e: a full stop after a letter ended a "sentence", so "Ltd." lost the title."""
+    assert plain(fx.company_title()).startswith(f"# {fx.TITLE_LTD}\n\n")
+
+
+def test_the_guide_claims_no_more_than_the_engine_does():
+    """M5: the columns and lists answers promised more than the engine does.
+    Justified columns drawn a line at a time across, with a narrow gap, can be
+    read across; a paragraph can split where a column ends; and bullets the
+    converter doesn't know stay text."""
+    from backend.app.tool_content import TOOL_FAQ
+
+    answers = {item["q"]: item["a"] for item in TOOL_FAQ["pdf-to-markdown"]}
+    columns = answers["What about two-column papers and other multi-column layouts?"]
+    lists = answers["Are links, code and lists kept?"]
+    assert "can still be read across" in columns and "usually stays whole" in columns
+    assert "bullets of any shape" not in lists and "a mark it doesn't know" in lists
 
 
 # ── Limits and the worker process ────────────────────────────────────────────
@@ -854,11 +913,14 @@ def test_a_conversion_out_of_cpu_time_is_a_422_that_says_so(client, monkeypatch,
 @pytest.mark.parametrize("body", [
     "print('{\"ok\": false, \"error\": \"too_large\"}')\n",
     "import os, signal\nos.kill(os.getpid(), signal.SIGSEGV)\n",
+    "import os, signal\nos.kill(os.getpid(), signal.SIGBUS)\n",
+    "import os, signal\nos.kill(os.getpid(), signal.SIGABRT)\n",
     "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n",
-], ids=["says-so", "crashed", "killed"])
+], ids=["says-so", "segfault", "bus-error", "abort", "killed"])
 def test_a_conversion_out_of_memory_is_a_413(client, monkeypatch, tmp_path, body):
     """S9: running out of memory under the limit can crash MuPDF rather than
-    raise, so a worker killed without an answer is a 413 too."""
+    raise, so a worker that crashes or is killed without an answer is a 413
+    too."""
     _stub_worker(tmp_path, monkeypatch, body)
     resp = post(client, fx.headings())
     assert resp.status_code == 413
@@ -877,7 +939,10 @@ def test_a_page_drawing_a_great_deal_converts_without_its_drawings(client):
     "print('not json')\n",
     "print('{\"ok\": true}')\n",
     "print('{\"ok\": false, \"error\": \"too_many_pages\"}')\n",
-], ids=["garbage", "ok-without-output", "refusal-without-counts"])
+    # N-b: stopped by a shutdown, not out of memory.
+    "import os, signal\nos.kill(os.getpid(), signal.SIGTERM)\n",
+    "import os, signal\nos.kill(os.getpid(), signal.SIGINT)\n",
+], ids=["garbage", "ok-without-output", "refusal-without-counts", "terminated", "interrupted"])
 def test_a_conversion_that_fails_gives_a_500(client, monkeypatch, tmp_path, body):
     _stub_worker(tmp_path, monkeypatch, body)
     resp = post(client, fx.headings())

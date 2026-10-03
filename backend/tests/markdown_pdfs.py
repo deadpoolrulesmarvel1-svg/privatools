@@ -969,6 +969,122 @@ def thematic_breaks() -> bytes:
     return doc.tobytes()
 
 
+# ── From the re-review of round 1 ───────────────────────────────────────────
+
+def one_item_list() -> bytes:
+    """A list of one numbered item after a sentence that introduces it."""
+    doc = fitz.open()
+    page = doc.new_page()
+    for y, line in ((100, "One more thing to remember:"), (124, "1. Only one step in this list"), (152, "That is all.")):
+        page.insert_text((72, y), line, fontsize=11)
+    return doc.tobytes()
+
+
+def list_across_pages() -> bytes:
+    """A numbered list whose last item is alone at the top of the next page."""
+    doc = fitz.open()
+    first = doc.new_page()
+    for y, line in ((100, "Before the trip:"), (124, "1. Book the hotel"), (142, "2. Buy the tickets")):
+        first.insert_text((72, y), line, fontsize=11)
+    second = doc.new_page()
+    for y, line in ((80, "3. Pack the car"), (108, "Then set off early.")):
+        second.insert_text((72, y), line, fontsize=11)
+    return doc.tobytes()
+
+
+DOUBLE_SPACED = [
+    ["The council spent most of the year on the plans for the water works and the roads",
+     "around them, and in the autumn it finally signed the contract for the new depot.",
+     "Work started in November, a month later than planned, because the supplier of the",
+     "steel frames was hit by the same rise in prices that pushed up the cost of borrowing.",
+     "The depot should open in the spring."],
+    ["Next year the council will turn to the bridges, starting with the oldest one on",
+     "the river road, which has been closed to lorries since the floods two winters ago.",
+     "A survey of the others is due by the end of the summer."],
+]
+
+
+def double_spaced() -> bytes:
+    """Two paragraphs at double spacing (11-point type, a 22-point pitch), the
+    second known by its first-line indent; two full lines in the first end
+    sentences."""
+    doc = fitz.open()
+    page = doc.new_page()
+    y = 90
+    for n, paragraph in enumerate(DOUBLE_SPACED):
+        for i, line in enumerate(paragraph):
+            page.insert_text((94 if n and not i else 72, y), line, fontsize=11)
+            y += 22
+    return doc.tobytes()
+
+
+def glyph_by_glyph_with_table() -> bytes:
+    """A ruled 5 x 5 table above text placed glyph by glyph, as some writers do:
+    about 1.25 MB of content, almost none of it drawing."""
+    import pikepdf
+
+    ops = ["0.5 w"]
+    x0, y0, cw, rh = 60.0, 600.0, 95.0, 18.0
+    for r in range(6):
+        ops.append(f"{x0} {y0 + r * rh} m {x0 + 5 * cw} {y0 + r * rh} l S")
+    for c in range(6):
+        ops.append(f"{x0 + c * cw} {y0} m {x0 + c * cw} {y0 + 5 * rh} l S")
+    ops.append("BT /F1 9 Tf")
+    for r in range(5):
+        for c in range(5):
+            ops.append(f"1 0 0 1 {x0 + c * cw + 4} {y0 + (4 - r) * rh + 5} Tm (Cell {r}-{c}) Tj")
+    text = "Every glyph of this paragraph is placed on its own by the writer of the file. "
+    size, y = 0, 560.0
+    while size < 1_250_000:
+        x = 60.0
+        for ch in text:
+            op = f"1 0 0 1 {x:.3f} {y:.3f} Tm ({ch}) Tj"
+            ops.append(op)
+            size += len(op) + 1
+            x += 4.8
+        y = 560.0 if y < 559.9 else y - 0.001  # over and over on one line: small on the page, large in the file
+    ops.append("ET")
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1,
+                                                BaseFont=pikepdf.Name.Helvetica))
+    pdf.pages.append(pikepdf.Page(pikepdf.Dictionary(
+        Type=pikepdf.Name.Page, MediaBox=[0, 0, 595, 842], Resources=pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=font)),
+        Contents=pdf.make_stream("\n".join(ops).encode()))))
+    out = io.BytesIO()
+    pdf.save(out, compress_streams=True)
+    return out.getvalue()
+
+
+HEBREW_PARAGRAPH = ("טיפלה הרשות ב־41.2 מיליון מטרים בשנת 2025. הביקוש הגיע לשיא ביולי, כאשר המחוז המזרחי "
+                    "צרך 18 אחוזים יותר מהממוצע. הדליפות ירדו בשנה השלישית ברציפות.")
+
+
+def hebrew_paragraph() -> bytes:
+    """A Hebrew paragraph over three lines, the last one short (MuPDF's own fonts)."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_htmlbox(fitz.Rect(72, 72, 330, 300), f'<p dir="rtl">{HEBREW_PARAGRAPH}</p>', css="p {font-size: 12pt}")
+    doc.subset_fonts()
+    return doc.tobytes()
+
+
+def scene_break() -> bytes:
+    """Two paragraphs with a scene break of spaced asterisks between them."""
+    doc = fitz.open()
+    page = doc.new_page()
+    for y, line in ((100, "The first part ends here."), (130, "* * *"), (160, "The second part begins.")):
+        page.insert_text((72 if line[0] != "*" else 280, y), line, fontsize=11)
+    return doc.tobytes()
+
+
+TITLE_LTD = "Water Supply Ltd."
+
+
+def company_title() -> bytes:
+    """A company's name as the title, ending in "Ltd.", over its first paragraph."""
+    return _build([Paragraph(TITLE_LTD, H1), Paragraph(HEADINGS_TEXT["body"], BODY)])
+
+
 # ── Refusals ─────────────────────────────────────────────────────────────────
 
 def blank_pages() -> bytes:
