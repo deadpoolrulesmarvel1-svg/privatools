@@ -107,7 +107,7 @@ describe("counting on the device", () => {
         fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [new File([strToU8("not a zip at all")], "report.docx")] } });
         fireEvent.click(countButton());
         expect(await screen.findByRole("heading", { name: "This file couldn’t be counted." }, SLOW)).toBeInTheDocument();
-        expect(screen.getByText(/report\.docx couldn't be read as a Word document/)).toBeInTheDocument();
+        expect(screen.getByText(/report\.docx couldn’t be read as a Word document/)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Choose a different file" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
         expect(network).not.toHaveBeenCalled();

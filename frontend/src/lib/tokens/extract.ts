@@ -100,7 +100,7 @@ class XmlTooLarge extends Error {}
  * text, field codes, and formatting.
  */
 export async function readDocxText(bytes: Uint8Array, { name = "This file" }: { name?: string } = {}): Promise<string> {
-    const unreadable = () => new ReadError("docx-unreadable", `${name} couldn't be read as a Word document. It may be damaged, or an older .doc file renamed: save it as .docx and try again.`);
+    const unreadable = () => new ReadError("docx-unreadable", `${name} couldn’t be read as a Word document. It may be damaged, or an older .doc file renamed: save it as .docx and try again.`);
     let xml: Uint8Array | undefined;
     try {
         xml = unzipSync(bytes, {
@@ -197,9 +197,9 @@ export async function readPdfText(data: Uint8Array, { name = "This PDF", signal,
         doc = await task.promise;
     } catch (error) {
         if ((error as Error)?.name === "PasswordException") {
-            throw new ReadError("pdf-password", `${name} needs a password to open, so its text can't be read. If you know the password, Unlock PDF can remove it first; that tool uploads the PDF to PrivaTools for temporary processing.`);
+            throw new ReadError("pdf-password", `${name} needs a password to open, so its text can’t be read. If you know the password, Unlock PDF can remove it first; that tool uploads the PDF to PrivaTools for temporary processing.`);
         }
-        throw new ReadError("pdf-unreadable", `${name} couldn't be read as a PDF. It may be damaged or not a PDF at all.`);
+        throw new ReadError("pdf-unreadable", `${name} couldn’t be read as a PDF. It may be damaged or not a PDF at all.`);
     }
     try {
         const texts: string[] = [];
@@ -253,7 +253,7 @@ export async function readFileText(file: File, { signal, onProgress, pdfjs }: Fi
         result = { text: await readDocxText(bytes, { name }), kind: "docx" };
     } else {
         const decoded = decodeText(bytes);
-        if (!decoded) throw new ReadError("binary", `${name} doesn't look like a text file: it holds binary data. Choose a text, PDF or Word file, or paste the text instead.`);
+        if (!decoded) throw new ReadError("binary", `${name} doesn’t look like a text file: it holds binary data. Choose a text, PDF or Word file, or paste the text instead.`);
         result = { text: decoded.text, kind: "text", encoding: decoded.encoding };
     }
     checkTextLength(result.text);

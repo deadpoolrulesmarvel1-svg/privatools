@@ -68,7 +68,7 @@ describe("text and code files", () => {
 
     it("refuses a binary file named like text", async () => {
         const error = await failure(readFileText(file(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x08, 0x00]), "notes.txt")));
-        expect(error.message).toBe("notes.txt doesn't look like a text file: it holds binary data. Choose a text, PDF or Word file, or paste the text instead.");
+        expect(error.message).toBe("notes.txt doesn’t look like a text file: it holds binary data. Choose a text, PDF or Word file, or paste the text instead.");
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 
@@ -130,7 +130,7 @@ describe("Word files", () => {
     it("says when a .docx is not a Word document", async () => {
         for (const bytes of [strToU8("plain text, not a zip"), zipSync({ "hello.txt": strToU8("hi") })]) {
             const error = await failure(readFileText(file(bytes, "report.docx")));
-            expect(error.message).toBe("report.docx couldn't be read as a Word document. It may be damaged, or an older .doc file renamed: save it as .docx and try again.");
+            expect(error.message).toBe("report.docx couldn’t be read as a Word document. It may be damaged, or an older .doc file renamed: save it as .docx and try again.");
             expect(toolErrorKind(error)).toBe("bad_input");
         }
     });
@@ -164,7 +164,7 @@ describe("PDFs", () => {
 
     it("says when a file is not a readable PDF", async () => {
         const error = await failure(readFileText(file("%PDF-1.7 not really", "broken.pdf"), { pdfjs: legacyPdfjs }));
-        expect(error.message).toBe("broken.pdf couldn't be read as a PDF. It may be damaged or not a PDF at all.");
+        expect(error.message).toBe("broken.pdf couldn’t be read as a PDF. It may be damaged or not a PDF at all.");
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 
@@ -174,7 +174,7 @@ describe("PDFs", () => {
             getDocument: () => ({ promise: Promise.reject(Object.assign(new Error("No password given"), { name: "PasswordException" })), destroy: async () => {} }),
         } as unknown as PdfjsLike;
         const error = await failure(readFileText(file("%PDF-1.7", "locked.pdf"), { pdfjs: async () => locked }));
-        expect(error.message).toBe("locked.pdf needs a password to open, so its text can't be read. If you know the password, Unlock PDF can remove it first; that tool uploads the PDF to PrivaTools for temporary processing.");
+        expect(error.message).toBe("locked.pdf needs a password to open, so its text can’t be read. If you know the password, Unlock PDF can remove it first; that tool uploads the PDF to PrivaTools for temporary processing.");
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 });
