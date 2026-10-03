@@ -225,6 +225,8 @@ _WASM_EVAL_PATHS = {
     "/tools/transcribe-audio",
     # Subtitle Generator runs the same Whisper models as Transcribe Audio.
     "/tools/subtitle-generator",
+    # Subtitle Translator runs Translate PDF's OPUS-MT pairs on the device.
+    "/tools/subtitle-translator",
     # In-browser tesseract OCR runs its wasm core inside a blob worker.
     "/tool/ocr-pdf",
     "/tools/image-ocr",
@@ -269,6 +271,9 @@ _BYOK_PATHS = {
     # GPT counts run in the tab; Claude and Gemini counts come from the
     # providers' count methods, with the visitor's key, when asked.
     "/tools/ai-token-counter",
+    # With the visitor's key, the subtitles' text goes to their provider in
+    # numbered batches; without one it is translated on the device.
+    "/tools/subtitle-translator",
 }
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,

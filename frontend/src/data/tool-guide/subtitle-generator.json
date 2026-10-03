@@ -64,7 +64,7 @@
     },
     {
       "q": "Can it translate the subtitles into another language?",
-      "a": "No. It writes what is said, in the language it is said in."
+      "a": "Not by itself: it writes what is said, in the language it is said in. To translate the subtitles, download the SRT, open Subtitle Translator and choose the downloaded file."
     }
   ]
 }

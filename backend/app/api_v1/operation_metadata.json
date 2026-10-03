@@ -1547,6 +1547,11 @@
       "slug": "ai-token-counter",
       "name": "AI Token Counter",
       "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "subtitle-translator",
+      "name": "Subtitle Translator",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
     }
   ]
 }

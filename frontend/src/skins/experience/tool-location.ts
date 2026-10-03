@@ -110,6 +110,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Stays on your device",
         detail: "The sound is read and turned into subtitles in this browser. Whisper downloads once, about 74 MB for Base or 41 MB for Tiny, and the video or recording never leaves your browser.",
     },
+    // Read on the device; translated there by a model it downloads, or by the visitor's provider with their key.
+    "subtitle-translator": {
+        kind: "ai",
+        label: "This device or your AI key",
+        detail: "The file is read in this browser. On this device, a translation model downloads once for each language pair, about 107 MB, and the subtitles never leave your browser. With your own API key, the subtitles’ text goes from your browser straight to the provider you choose, never through PrivaTools.",
+    },
     "translate-pdf": {
         kind: "ai",
         label: "This device or your AI key",

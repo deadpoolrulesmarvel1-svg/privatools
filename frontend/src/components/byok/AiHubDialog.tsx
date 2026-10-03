@@ -112,7 +112,7 @@ export function AiHubContent({ active = true, onNavigate, studio = false }: { ac
                 })}</div>
                 {translateCached.length > 0 && <section className="pt-translation-cache"><h3>Your translation pairs</h3>{translateCached.map(c => <div key={c.hfId}><Check size={16} /><span>{c.hfId.replace("Xenova/", "")}</span><small>{formatBytes(c.bytes)}</small><button onClick={() => void remove(c.hfId)} disabled={!!busyId} aria-label={`Remove ${c.hfId}`} className="pt-studio-button is-secondary"><Trash2 size={14} /></button></div>)}</section>}
                 {err && <p role="alert" className="pt-form-error">{err}</p>}
-                <p className="pt-model-footnote">Translation pairs download inside Translate PDF. A download can continue after you leave this page. Removing a model clears this browser’s copy; the tool can download it again.</p>
+                <p className="pt-model-footnote">Translation pairs download inside Translate PDF and Subtitle Translator. A download can continue after you leave this page. Removing a model clears this browser’s copy; the tool can download it again.</p>
             </TabsContent>
             {!studio && <div className="pt-ai-quick-links">{AI_TOOLS.map(tool => <a key={tool.href} href={tool.href} onClick={onNavigate}>{tool.label}<ArrowUpRight size={13} /></a>)}</div>}
         </Tabs>

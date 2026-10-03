@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 225 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 226 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -156,6 +156,7 @@ PrivaTools offers 225 tools for PDFs, images, video, audio, documents, archives,
 - [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
 - [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert SRT, VTT, and ASS subtitles to SRT or VTT
 - [Subtitle Generator](https://privatools.me/tools/subtitle-generator): Turn the speech in a video or recording into subtitles
+- [Subtitle Translator](https://privatools.me/tools/subtitle-translator): Translate SRT or VTT subtitles into another language
 - [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify, minify or validate JSON and XML in your browser
 - [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
 - [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text as Base64
