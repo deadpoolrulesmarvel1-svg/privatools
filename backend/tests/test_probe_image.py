@@ -182,10 +182,13 @@ def test_the_probe_uploads_the_document_as_the_office_route_reads_it(probe, clie
     assert received == [(".docx", probe.equation_docx())]
 
 
-def test_only_a_freshly_booted_image_converts_the_equation(probe, monkeypatch):
+@pytest.mark.parametrize("pages_pass", [False, True])
+def test_only_a_freshly_booted_image_converts_the_equation(probe, monkeypatch, pages_pass):
     """The deploy's --running probe checks live containers, including older
-    releases from before the Math module (the rollout's fallback to the
-    canonical container), so it never converts anything."""
+    releases from before the Math module: the rollout's fallback to the
+    canonical container, and --rollback, where the checkout's newer probe
+    checks an older image. So it never converts anything, whether its page
+    checks fail or, as in a normal deploy, all pass."""
     uploads = []
     pdf_text = {"text": "Before x\ny after.\n"}
 
@@ -195,10 +198,12 @@ def test_only_a_freshly_booted_image_converts_the_equation(probe, monkeypatch):
 
     monkeypatch.setattr(probe, "post_file", post_file)
     monkeypatch.setattr(probe, "pdf_text", lambda _container, _pdf: pdf_text["text"])
-    # Every page check runs and fails; what matters is that none uploads.
-    monkeypatch.setattr(probe, "fetch", lambda *_args, **_kwargs: (404, b""))
-    monkeypatch.setattr(probe, "read_manifest", lambda _container: {})
-    assert probe.probe_running(["--running", "c0ffee", "--url", "http://127.0.0.1:9", "--sha", "some-sha"]) == 1
+    if pages_pass:
+        monkeypatch.setattr(probe, "check_serving", lambda *_args: [])
+    else:
+        monkeypatch.setattr(probe, "fetch", lambda *_args, **_kwargs: (404, b""))
+        monkeypatch.setattr(probe, "read_manifest", lambda _container: {})
+    assert probe.probe_running(["--running", "c0ffee", "--url", "http://127.0.0.1:9", "--sha", "some-sha"]) == (0 if pages_pass else 1)
     assert uploads == []
 
     monkeypatch.setattr(probe, "compose", lambda *args, **_kwargs: subprocess.CompletedProcess(args, 0, "", ""))
