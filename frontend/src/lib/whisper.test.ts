@@ -1,4 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
+
+// Whisper on the page: these tests check when the page would load it, and never run it.
+const onPage = vi.hoisted(() => ({ imported: vi.fn() }));
+vi.mock("@huggingface/transformers", () => {
+    onPage.imported();
+    return { env: {}, pipeline: vi.fn(async () => Object.assign(async () => ({ text: "" }), { model: { sessions: {} } })) };
+});
 import { LOCAL_MODELS } from "./localModels";
 import { toolErrorKind } from "./toolRun";
 import { stopWhisper, WHISPER, WhisperWorker, yieldBetweenSteps } from "./whisper";
@@ -158,6 +165,34 @@ describe("stopping Whisper", () => {
             await loadWhisper("tiny", () => {});
             expect(instances).toHaveLength(2);
             expect(instances[1].terminated).toBe(false);
+        } finally {
+            stopWhisper();
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it("stops a load with the worker, and never loads Whisper on the page instead", async () => {
+        stopWhisper();
+        const instances: { terminated: boolean }[] = [];
+        // A worker that never finishes loading, as while the model downloads.
+        class Loading {
+            terminated = false;
+            onmessage: ((event: { data: WhisperReply }) => void) | null = null;
+            constructor() { instances.push(this); }
+            postMessage() {}
+            terminate() { this.terminated = true; }
+        }
+        vi.stubGlobal("Worker", Loading);
+        try {
+            const { loadWhisper } = await import("./whisper");
+            const loading = loadWhisper("tiny", () => {});
+            await Promise.resolve();
+            stopWhisper();
+            await expect(loading).rejects.toMatchObject({ name: "AbortError" });
+            expect(instances[0].terminated).toBe(true);
+            // Give an import a chance to start, had the loader fallen back to the page.
+            for (let i = 0; i < 20; i++) await Promise.resolve();
+            expect(onPage.imported).not.toHaveBeenCalled();
         } finally {
             stopWhisper();
             vi.unstubAllGlobals();

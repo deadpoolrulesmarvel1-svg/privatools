@@ -262,9 +262,11 @@ export async function loadWhisper(size: WhisperSize, onProgress: (percent: numbe
                 return worker.request({ type: "run", hfId, audio: copy, options, positions: Boolean(onPosition) }, onPosition, [copy.buffer]) as ReturnType<WhisperPipeline>;
             };
         } catch (error) {
-            // A download that failed would fail on the page too: say so. Anything else means this
-            // browser cannot run Whisper in a worker, so it runs on the page.
-            if ((error as { __kind?: string }).__kind === "network") throw error;
+            // A download that failed would fail on the page too, and a load stopped by stopWhisper
+            // was stopped on purpose: say so. Anything else means this browser cannot run Whisper
+            // in a worker, so it runs on the page.
+            const { __kind, name } = error as { __kind?: string; name?: string };
+            if (__kind === "network" || name === "AbortError") throw error;
         }
     }
     return loadOnPage(size, onProgress);
