@@ -164,6 +164,19 @@ if (eagerDataChunks.length > 0) {
   console.error("Import gpt-tokenizer's encodings only through the dynamic import() in src/lib/tokens/encoders.ts, and start the workers only from src/lib/tokens/engine.ts.");
 }
 
-if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0) {
+// A worker is started by its URL, not imported, so the walk above can't see one
+// started on every page. Its file name in any chunk every page loads means it is.
+const workerFiles = chunks.map((chunk) => chunk.name).filter((name) => dataChunk(name) && /\.worker-/.test(name));
+const eagerWorkerStarts = [...eagerChunks].flatMap((name) => {
+  const source = readFileSync(join(assetsDir.pathname, name), "utf8");
+  return workerFiles.filter((worker) => source.includes(worker)).map((worker) => `${name} names ${worker}`);
+});
+if (eagerWorkerStarts.length > 0) {
+  console.error("\nA lazy worker is started from the chunks every page loads:");
+  for (const line of eagerWorkerStarts) console.error(`- ${line}`);
+  console.error("Start the token workers only from src/lib/tokens/engine.ts, which only the AI Token Counter imports, and only through a dynamic import().");
+}
+
+if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0) {
   process.exit(1);
 }
