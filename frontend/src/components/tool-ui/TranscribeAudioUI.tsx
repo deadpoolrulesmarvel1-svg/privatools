@@ -11,9 +11,10 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
  *     recording never leaves the tab. This version of Whisper does not detect
  *     the language (it writes English unless told otherwise), so the visitor
  *     chooses it.
- *   · Your own key: the provider's transcription API (OpenAI, Groq, or a
- *     self-hosted OpenAI-compatible server) — much better accuracy, the
- *     audio goes browser → provider directly, never through PrivaTools.
+ *   · Your own key: the speech-to-text endpoint of a provider that has one
+ *     (`transcribeModel` in lib/byok/providers.ts), or a self-hosted
+ *     OpenAI-compatible server — much better accuracy, the audio goes
+ *     browser → provider directly, never through PrivaTools.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Ban, CheckCircle2, Copy, Download, FileAudio, Loader2, Mic, RotateCcw, Check } from "lucide-react";
@@ -26,7 +27,7 @@ import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
 import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { transcribe } from "@/lib/byok/client";
-import { providerById, supportsTranscription, TRANSCRIBE_MODELS } from "@/lib/byok/providers";
+import { providerById, supportsTranscription, transcriptionProviderNames } from "@/lib/byok/providers";
 import { ByokError } from "@/lib/byok/errors";
 
 interface Segment { start: number; end: number; text: string; }
@@ -55,7 +56,8 @@ export function TranscribeAudioUI() {
     // Closing the page ends a run, and stops Whisper with it.
     useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); stopWhisper(); }, []);
 
-    const byokProviderOk = byok.ready && supportsTranscription(providerById(byok.provider) ?? { shape: "anthropic" } as never);
+    const transcriber = providerById(byok.provider);
+    const byokProviderOk = byok.ready && !!transcriber && supportsTranscription(transcriber);
 
     const run = useCallback(async () => {
         if (!file) return;
@@ -65,7 +67,7 @@ export function TranscribeAudioUI() {
         setError(null); setText(""); setSegments([]);
         try {
             if (engine === "byok") {
-                if (!byokProviderOk) throw withErrorKind(new Error("Pick a provider with a transcription API (OpenAI, Groq, or self-hosted) and save a key first."), "provider");
+                if (!byokProviderOk) throw withErrorKind(new Error(`Pick a provider with a transcription API (${transcriptionProviderNames()}) and save a key first.`), "provider");
                 const apiKey = await getKey(byok.provider);
                 if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
                 const controller = new AbortController();
@@ -221,7 +223,7 @@ export function TranscribeAudioUI() {
                                 engine === "byok" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40")}>
                             <span className="block text-[13.5px] font-medium text-foreground">My own API key</span>
                             <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                                Quality depends on your model. OpenAI, Groq, or self-hosted — audio goes directly to your provider.
+                                Quality depends on your model. {transcriptionProviderNames()} — audio goes directly to your provider.
                             </span>
                         </button>
                     </div>
@@ -255,14 +257,14 @@ export function TranscribeAudioUI() {
                             <ByokPanel byok={byok} purpose="This recording is sent to the provider you choose, using your key." />
                             {byok.ready && !byokProviderOk && (
                                 <p className="text-[12px] text-copper flex items-center gap-1.5">
-                                    <AlertCircle size={12} /> {providerById(byok.provider)?.label} has no transcription API — pick OpenAI, Groq, or a self-hosted endpoint.
+                                    <AlertCircle size={12} /> {transcriber?.label} has no transcription API — pick {transcriptionProviderNames()}.
                                 </p>
                             )}
                             {byokProviderOk && (
                                 <label className="block">
                                     <span className="font-medium text-[11px] text-muted-foreground">Model (optional)</span>
                                     <input type="text" value={byokModel} onChange={e => setByokModel(e.target.value)}
-                                        placeholder={TRANSCRIBE_MODELS[byok.provider] ?? "whisper-1"}
+                                        placeholder={transcriber?.transcribeModel}
                                         className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono" />
                                 </label>
                             )}

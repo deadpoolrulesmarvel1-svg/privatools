@@ -8,15 +8,24 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ decode: vi.fn(), load: vi.fn(), stop: vi.fn(), toolRun: vi.fn() }));
+// A saved key for whichever provider a test picks; the key is a dummy.
+const byok = vi.hoisted(() => ({ provider: "together" }));
 vi.mock("@/lib/whisper", async original => ({ ...(await original<object>()), decodeToMono: mocks.decode, loadWhisper: mocks.load, stopWhisper: mocks.stop }));
 vi.mock("@/lib/toolRun", async original => ({ ...(await original<object>()), emitToolRun: mocks.toolRun }));
 vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoff: vi.fn(async () => null), consumeFileHandoffs: vi.fn(async () => []) }));
+vi.mock("@/hooks/useByok", () => ({
+    useByok: () => ({ loading: false, configured: [byok.provider], provider: byok.provider, ready: true, sessionOnly: false,
+        selectProvider: vi.fn(), save: vi.fn(), forget: vi.fn(), setSession: vi.fn() }),
+}));
+vi.mock("@/components/byok/ByokPanel", () => ({ ByokPanel: () => null }));
+vi.mock("@/lib/byok/keyStore", () => ({ getKey: vi.fn(async () => "dummy-key-value"), getBaseUrl: vi.fn(() => undefined) }));
 
 import { TranscribeAudioUI } from "./TranscribeAudioUI";
 
 beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.decode.mockResolvedValue(new Float32Array(16000));
+    vi.restoreAllMocks();
 });
 
 function start() {
@@ -56,5 +65,33 @@ describe("Transcribe Audio on this device", () => {
         await waitFor(() => expect(mocks.stop).toHaveBeenCalledTimes(1));
         view.unmount();
         expect(mocks.stop).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("Transcribe Audio with your own key", () => {
+    function startWithKey(provider: string) {
+        byok.provider = provider;
+        const view = start();
+        fireEvent.click(screen.getByRole("button", { name: /^My own API key/ }));
+        return view;
+    }
+
+    it("sends Together its own transcription model, not whisper-1", async () => {
+        const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ text: "Hello from a synthetic recording." })));
+        startWithKey("together");
+        expect(screen.getByLabelText("Model (optional)")).toHaveAttribute("placeholder", "openai/whisper-large-v3");
+        fireEvent.click(screen.getByRole("button", { name: /Transcribe$/ }));
+        await screen.findByText("Hello from a synthetic recording.");
+        expect(f.mock.calls[0][0]).toBe("https://api.together.xyz/v1/audio/transcriptions");
+        expect((f.mock.calls[0][1]!.body as FormData).get("model")).toBe("openai/whisper-large-v3");
+    });
+
+    it("does not offer DeepSeek, which has no transcription endpoint, and sends nothing", () => {
+        const f = vi.spyOn(globalThis, "fetch");
+        startWithKey("deepseek");
+        expect(screen.getByText(/DeepSeek has no transcription API — pick OpenAI, OpenRouter, Groq, Together AI, Mistral or a self-hosted endpoint\./)).toBeInTheDocument();
+        expect(screen.queryByLabelText("Model (optional)")).toBeNull();
+        expect(screen.getByRole("button", { name: /Transcribe$/ })).toBeDisabled();
+        expect(f).not.toHaveBeenCalled();
     });
 });

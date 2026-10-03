@@ -73,7 +73,7 @@ async function renderPdfPages(
   const workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer(), isEvalSupported: false }).promise;
   if (pdf.numPages > MAX_CLIENT_PAGES) {
     throw new Error(
       `This PDF has ${pdf.numPages} pages — the AI-key and in-browser engines read up to ${MAX_CLIENT_PAGES} at a time. Use the server engine for bigger documents.`,

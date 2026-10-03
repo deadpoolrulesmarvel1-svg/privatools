@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { friendlyError } from "@/lib/utils";
-import { complete } from "./client";
+import { complete, transcribe } from "./client";
 import type { ByokError } from "./errors";
 
 afterEach(() => vi.restoreAllMocks());
@@ -189,4 +189,30 @@ describe("when Claude stops short", () => {
 it("does not present an empty successful HTTP response as an AI answer", async () => {
   mockFetch(200, {choices:[]});
   await expect(complete({providerId:'openai-compatible', apiKey:'synthetic-local',model:'missing-model',baseUrl:'http://localhost:11434',messages:[]})).rejects.toMatchObject({userMessage:expect.stringMatching(/returned no answer/)});
+});
+
+describe("transcribe", () => {
+  const audio = () => new Blob(["synthetic audio"], { type: "audio/wav" });
+
+  it.each([
+    ["together", "https://api.together.xyz/v1/audio/transcriptions", "openai/whisper-large-v3"],
+    ["mistral", "https://api.mistral.ai/v1/audio/transcriptions", "voxtral-mini-latest"],
+    ["openrouter", "https://openrouter.ai/api/v1/audio/transcriptions", "openai/whisper-large-v3"],
+    ["groq", "https://api.groq.com/openai/v1/audio/transcriptions", "whisper-large-v3"],
+  ])("sends %s its own model when the model box is left empty, and reads the JSON answer", async (providerId, url, model) => {
+    const f = mockFetch(200, { text: " Hello from a synthetic recording. " });
+    await expect(transcribe({ providerId, apiKey: "dummy-key-value", model: "", file: audio() })).resolves.toBe("Hello from a synthetic recording.");
+    expect(f.mock.calls[0][0]).toBe(url);
+    const body = f.mock.calls[0][1]!.body as FormData;
+    expect(body.get("model")).toBe(model);
+    expect(body.has("response_format")).toBe(false);
+  });
+
+  it.each(["deepseek", "anthropic", "gemini"])("refuses %s, which has no transcription endpoint, without sending anything", async providerId => {
+    const f = vi.spyOn(globalThis, "fetch");
+    const refused = transcribe({ providerId, apiKey: "dummy-key-value", model: "", file: audio() });
+    await expect(refused).rejects.toMatchObject({ kind: "Unsupported" });
+    await expect(refused).rejects.toMatchObject({ userMessage: expect.stringMatching(/use OpenAI, OpenRouter, Groq, Together AI, Mistral or a self-hosted endpoint\.$/) });
+    expect(f).not.toHaveBeenCalled();
+  });
 });

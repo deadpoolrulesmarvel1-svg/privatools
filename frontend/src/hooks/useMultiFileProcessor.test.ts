@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
-import { useMultiFileProcessor, type ProcessOptions } from "./useMultiFileProcessor";
+import { useMultiFileProcessor, type FileEntry, type ProcessOptions } from "./useMultiFileProcessor";
 import { installNetwork } from "@/test/fake-network";
 import { withUserMessage } from "@/lib/api";
 
@@ -149,5 +149,23 @@ describe("useMultiFileProcessor retries", () => {
     await act(() => result.current.run(options(async () => ({ blob: new Blob(["ok"]) })), "transient"));
     expect(result.current.entries.map(entry => [entry.name, entry.status])).toEqual([["flaky.txt", "done"], ["broken.txt", "failed"]]);
     expect(result.current.retryableCount).toBe(0);
+  });
+});
+
+describe("useMultiFileProcessor's run result", () => {
+  it("resolves with the files the run took, as it left them, which a callback made before the run cannot see", async () => {
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => { result.current.addFiles([file("done.txt"), file("refused.txt")]); });
+    // What a callback made in this render holds: Bates Numbering read its counts after the run.
+    const before = result.current;
+    let ran: FileEntry[] = [];
+    await act(async () => {
+      ran = await before.run(options(async f => { if (f.name === "refused.txt") throw httpError(400); return { blob: new Blob(["ok"]) }; }));
+    });
+    expect(ran.map(entry => [entry.name, entry.status])).toEqual([["done.txt", "done"], ["refused.txt", "failed"]]);
+    expect(before.doneCount).toBe(0);
+    let again: FileEntry[] = [];
+    await act(async () => { again = await result.current.run(options(async () => ({ blob: new Blob(["ok"]) })), true); });
+    expect(again.map(entry => [entry.name, entry.status])).toEqual([["refused.txt", "done"]]);
   });
 });

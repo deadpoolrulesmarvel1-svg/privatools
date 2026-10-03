@@ -31,4 +31,16 @@ export default tseslint.config(
       "no-empty": "off",
     },
   },
+  {
+    // lib/zod.ts turns off zod's eval probe before any schema is built; a
+    // direct import could build one first, and the CSP reports the probe.
+    files: ["**/*.{ts,tsx}"],
+    ignores: ["src/lib/zod.ts"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{ name: "zod", message: "Import z from @/lib/zod, which sets jitless before any schema is built." }],
+        patterns: [{ group: ["zod/*"], message: "Import z from @/lib/zod, which sets jitless before any schema is built." }],
+      }],
+    },
+  },
 );

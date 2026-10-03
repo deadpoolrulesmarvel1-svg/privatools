@@ -128,8 +128,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "word-to-pdf": [
         {"name": "Add the Word document", "text": "Drop or select a .docx file up to 500 MB. Older .doc files are not accepted here; Office to PDF handles a wider range of formats."},
-        {"name": "Convert to PDF", "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, headers, footers and links are left out."},
-        {"name": "Download and check the PDF", "text": "Open the PDF and check it: everything is set in one typeface, and any text that was in tables, text boxes, headers or footers is missing."},
+        {"name": "Convert to PDF", "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, equations, headers, footers and links are left out."},
+        {"name": "Download and check the PDF", "text": "Open the PDF and check it: everything is set in one typeface, any text that was in tables, text boxes, headers or footers is missing, and so is every equation."},
     ],
     "epub-to-pdf": [
         {"name": "Upload an EPUB file", "text": "Select an .epub e-book file up to 500 MB."},
@@ -1363,7 +1363,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How long does conversion take?", "a": "It depends on the size and complexity of the document. Each conversion starts LibreOffice with a fresh profile, and a conversion still running after two minutes is stopped with a timeout error, so split very large documents first."},
     ],
     "word-to-pdf": [
-        {"q": "Will the PDF look exactly like my Word document?", "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."},
+        {"q": "Will the PDF look exactly like my Word document?", "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, equations, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."},
+        {"q": "Are equations kept?", "a": "No. Word keeps an equation apart from the text of its paragraph, and only that text is carried over, so each equation is left out and the words around it close up: a line reading \"Before x/y after.\", with x/y as an equation, comes out as \"Before after.\" The result says how many equations were left out. Office to PDF keeps Word equations."},
         {"q": "Why do the fonts look different?", "a": "Because every paragraph is set in Helvetica, whatever fonts the document uses, and characters outside Western European scripts, such as Cyrillic or Chinese, do not print correctly. Office to PDF keeps the document's fonts where the server has them."},
         {"q": "Which file types can I convert?", "a": "This page takes .docx. For .doc, .odt, .rtf, spreadsheets or presentations, use Office to PDF, which accepts a wider set of formats."},
         {"q": "Are comments and tracked changes included?", "a": "Accept or reject tracked changes and remove comments before converting if you do not want them to appear. Converting exactly the version you intend to share avoids surprises."},

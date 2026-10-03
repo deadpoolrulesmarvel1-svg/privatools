@@ -106,8 +106,11 @@ export interface UseMultiFileProcessorResult {
     /** Reorder by moving the entry at `from` to `to`. */
     reorder: (from: number, to: number) => void;
     /** Start processing all queued + failed files; `true` retries only the
-     *  failed ones, `"transient"` only those that trying again could fix. */
-    run: (opts: ProcessOptions, retryOnly?: boolean | "transient") => Promise<void>;
+     *  failed ones, `"transient"` only those that trying again could fix.
+     *  Resolves with the entries this run took, as it left them. Read the
+     *  outcome from that, not from `entries` or the counts: a callback made in
+     *  an earlier render still holds that render's values after the await. */
+    run: (opts: ProcessOptions, retryOnly?: boolean | "transient") => Promise<FileEntry[]>;
     /** Trigger browser download. Zips if N>1, downloads single blob if N=1. */
     downloadAll: (archiveBaseName: string) => void;
     /** Reset everything back to empty. */
@@ -172,8 +175,8 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         mutate(() => []);
     }, [mutate]);
 
-    const run = useCallback(async (opts: ProcessOptions, retryOnly: boolean | "transient" = false) => {
-        if (inFlight.current) return;
+    const run = useCallback(async (opts: ProcessOptions, retryOnly: boolean | "transient" = false): Promise<FileEntry[]> => {
+        if (inFlight.current) return [];
         inFlight.current = true;
 
         // Snapshot from the ref — synchronous and stale-closure-free.
@@ -273,6 +276,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed, ...(missKind ? { errorKind: missKind } : {}) }, firstFailure);
 
         inFlight.current = false;
+        return touched;
     }, [mutate]);
 
     const downloadAll = useCallback((archiveBaseName: string) => {
