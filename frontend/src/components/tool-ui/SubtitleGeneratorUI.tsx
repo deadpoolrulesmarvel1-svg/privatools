@@ -11,12 +11,13 @@
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Captions, Download } from "lucide-react";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { nonPdfTools } from "@/data/non-pdf-tools";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { listCachedModels, formatBytes } from "@/lib/localModels";
 import { subtitleTime, toSrt, toVtt, type SpeechSegment } from "@/lib/speechTranscript";
-import { loadWhisper, WHISPER, type WhisperSize } from "@/lib/whisper";
+import { loadWhisper, stopWhisper, WHISPER, type WhisperSize } from "@/lib/whisper";
 import { buildCues, layoutFor, type CaptionStyle } from "@/lib/subtitles/captions";
 import { isSpeechLanguage, languageName, SPEECH_LANGUAGES } from "@/lib/subtitles/languages";
 import { MAX_SECONDS, MediaError, openAudio } from "@/lib/subtitles/media/extract";
@@ -30,7 +31,14 @@ const SLUG = "subtitle-generator";
 const ACCEPTS = ".mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.oga,.opus,.flac,.aac";
 const VIDEO = /\.(mp4|m4v|mov|webm|mkv)$/i;
 
-const DEFAULTS: { model: WhisperSize; language: string; style: CaptionStyle } = { model: "base", language: "en", style: "two" };
+type Settings = { model: WhisperSize; language: string; style: CaptionStyle };
+
+/** Base, or Tiny on a phone-sized screen or a device that says it has 4 GB of memory or less: Whisper Base needs about 2 GB. */
+function suggestedModel(): WhisperSize {
+    const memory = (navigator as { deviceMemory?: number }).deviceMemory;
+    if (typeof memory === "number" && memory <= 4) return "tiny";
+    return typeof window.matchMedia === "function" && window.matchMedia("(max-width: 560px)").matches ? "tiny" : "base";
+}
 
 const STYLES: { id: CaptionStyle; label: string; use: string }[] = [
     { id: "two", label: "Two lines", use: "For players, TV and YouTube." },
@@ -54,6 +62,7 @@ function cueClock(seconds: number, hours: boolean): string {
 }
 
 function minutesLeft(seconds: number): string {
+    if (seconds < 60) return "less than a minute left";
     if (seconds < 90) return "about a minute left";
     return `about ${Math.round(seconds / 60)} minutes left`;
 }
@@ -68,6 +77,8 @@ interface Result {
     doneSeconds: number;
     totalSeconds: number;
     unreadable: { start: number; end: number }[];
+    /** Stretches where Whisper wrote only a loop, left out. */
+    unclear: { start: number; end: number }[];
     language: string;
     model: WhisperSize;
     seconds: number;
@@ -87,31 +98,54 @@ interface Failure {
     help?: ReactNode;
 }
 
-const PIECE_FORMATS = "MP4, MOV, M4A, WebM, MKV, MP3 and WAV";
+/** Whether another PrivaTools tool takes this file: its type, by the tool's own list, and its size. */
+function takes(slug: string, file: File): boolean {
+    const extension = /\.[^.]+$/.exec(file.name)?.[0].toLowerCase();
+    const tool = nonPdfTools.find(entry => entry.slug === slug);
+    return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= MAX_FILE_SIZE;
+}
+
+/** A tool that can save the sound as an MP3, which this page reads up to 3 hours, and what using it means. */
+function mp3Maker(file: File): ReactNode {
+    const video = VIDEO.test(file.name);
+    if (video && takes("extract-audio", file)) {
+        return <><a href="/tools/extract-audio">Extract Audio</a> can save its sound as an MP3 on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 3600} hours.</>;
+    }
+    if (!video && takes("audio-converter", file)) {
+        return <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 3600} hours.</>;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        return <>It is larger than the {MAX_FILE_SIZE_LABEL} PrivaTools takes for upload, so save it as MP4 or MP3 with a video or audio app on your device; those work here up to {MAX_SECONDS / 3600} hours.</>;
+    }
+    return <>A video or audio app on your device can save it as MP4 or MP3, which work here up to {MAX_SECONDS / 3600} hours.</>;
+}
 
 function failureFor(error: unknown, file: File): Failure {
     if (error instanceof MediaError) {
+        if (error.problem === "empty") return { title: "This file is empty.", detail: "It holds no data, so there is no sound to read. Choose the file again, or a copy that plays.", reason: "Empty file", retryable: false, kind: "bad_input" };
         if (error.problem === "no-sound") return { title: "This file has no sound track.", detail: "There is nothing in it to subtitle.", reason: "No sound track", retryable: false, kind: "bad_input" };
         if (error.problem === "too-long") return {
             title: "This file is too long to subtitle here.", detail: error.message, reason: `Longer than ${MAX_SECONDS / 3600} hours of sound`, retryable: false, kind: "too_large",
-            help: <>To subtitle it in parts, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing.</>,
+            help: takes("trim-media", file)
+                ? <>To subtitle it in parts of up to {MAX_SECONDS / 3600} hours, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing.</>
+                : <>To subtitle it, cut it into parts of up to {MAX_SECONDS / 3600} hours with a video or audio app on your device{file.size > MAX_FILE_SIZE ? `: it is larger than the ${MAX_FILE_SIZE_LABEL} PrivaTools takes for upload` : ""}.</>,
         };
         if (error.problem === "too-long-whole") return {
-            title: "This file is too long to read whole.", detail: error.message, reason: "Too long for this format", retryable: false, kind: "too_large",
-            help: <>{PIECE_FORMATS} files are read a minute at a time, up to {MAX_SECONDS / 3600} hours. <a href="/tools/audio-converter">Audio Converter</a> can make an MP3 of it on the PrivaTools server, which means uploading the recording for temporary processing.</>,
+            title: "This file is too long to read whole.", detail: error.message, reason: "Too long for this format", retryable: false, kind: "too_large", help: mp3Maker(file),
         };
         return {
             title: "This browser can’t read the sound in this file.", detail: "Nothing was sent anywhere.", reason: error.message, retryable: false, kind: "bad_input",
-            help: VIDEO.test(file.name)
-                ? <><a href="/tools/extract-audio">Extract Audio</a> can take the sound out as an MP3 on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here. A different browser may also be able to read it.</>
-                : <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here. A different browser may also be able to read it.</>,
+            help: <>{mp3Maker(file)} A different browser may also be able to read it.</>,
         };
     }
     const kind = toolErrorKind(error);
+    if (kind === "cancelled") {
+        return { title: "The subtitles weren’t finished.", detail: "Whisper was stopped before it finished, as it is when the page is left. Generate them again to start over.", reason: "Stopped", retryable: true };
+    }
     if (kind === "network" || kind === "timeout") {
         return { title: "Whisper couldn’t be downloaded.", detail: `The model comes from Hugging Face on the first run. ${retryLine([kind])}`, reason: "The model download didn’t finish", retryable: isTransientFailure(error), kind };
     }
-    return { title: "Subtitles couldn’t be made.", detail: "Something failed in this browser while the subtitles were being made. Closing other tabs frees memory, and Whisper Tiny needs less than Base.", reason: error instanceof Error && error.message ? error.message : "Whisper stopped with an error", retryable: false, kind: kind === "cancelled" ? undefined : kind };
+    return { title: "Subtitles couldn’t be made.", detail: "Something failed in this browser while the subtitles were being made. Closing other tabs frees memory, and Whisper Tiny needs less than Base.", reason: error instanceof Error && error.message ? error.message : "Whisper stopped with an error", retryable: false, kind };
 }
 
 /** The first chunk, already read, then the rest. */
@@ -121,13 +155,14 @@ async function* resume(first: IteratorResult<AudioChunk>, rest: AsyncGenerator<A
 }
 
 export function SubtitleGeneratorUI() {
-    const [stored, , { setField }] = useToolDefaults(SLUG, DEFAULTS);
+    const [defaults] = useState<Settings>(() => ({ model: suggestedModel(), language: "en", style: "two" }));
+    const [stored, , { setField }] = useToolDefaults(SLUG, defaults);
     // A remembered value from an older version is checked before it is used.
     const settings = useMemo(() => ({
-        model: stored.model === "tiny" ? "tiny" : "base",
+        model: stored.model === "tiny" || stored.model === "base" ? stored.model : defaults.model,
         language: isSpeechLanguage(stored.language) ? stored.language : "en",
         style: STYLES.some(style => style.id === stored.style) ? stored.style : "two",
-    } as typeof DEFAULTS), [stored.model, stored.language, stored.style]);
+    } as Settings), [stored.model, stored.language, stored.style, defaults.model]);
     const [file, setFile] = useState<File | null>(null);
     const [phase, setPhase] = useState<Phase>("idle");
     const [readPercent, setReadPercent] = useState<number | undefined>();
@@ -140,6 +175,7 @@ export function SubtitleGeneratorUI() {
     const [returning, setReturning] = useState(false);
     const run = useRef(0);
     const stop = useRef<AbortController | null>(null);
+    const reading = useRef<AbortController | null>(null);
     const busy = phase === "reading" || phase === "model" || phase === "listening" || phase === "stopping";
 
     // What is really in this browser's model cache, for the model choices.
@@ -147,8 +183,8 @@ export function SubtitleGeneratorUI() {
         void listCachedModels().then(models => setCached(Object.fromEntries(models.map(model => [model.hfId, model.bytes]))));
     }, []);
     useEffect(() => { refreshCache(); }, [refreshCache]);
-    // Leaving the page ends a run: its result would have nowhere to go.
-    useEffect(() => () => { run.current++; stop.current?.abort(); }, []);
+    // Leaving the page ends a run, and Whisper with it: its result would have nowhere to go.
+    useEffect(() => () => { run.current++; stop.current?.abort(); reading.current?.abort(); stopWhisper(); }, []);
 
     const generate = useCallback(async () => {
         if (!file || busy) return;
@@ -156,13 +192,15 @@ export function SubtitleGeneratorUI() {
         const current = () => id === run.current;
         const controller = new AbortController();
         stop.current = controller;
+        const read = new AbortController();
+        reading.current = read;
         const { model, language, style } = settings;
         setFailure(null);
         setResult(null);
         setReadPercent(undefined);
         setPhase("reading");
         try {
-            const source = await openAudio(file, { onRead: bytes => { if (current()) setReadPercent((bytes / file.size) * 100); } });
+            const source = await openAudio(file, { signal: read.signal, onRead: bytes => { if (current()) setReadPercent((bytes / file.size) * 100); } });
             const chunks = source.chunks();
             // The first piece is decoded before the model is fetched: a file this browser can't read fails here.
             const first = await chunks.next();
@@ -187,17 +225,25 @@ export function SubtitleGeneratorUI() {
             if (!cues.length) {
                 // Stopped before any words: back to the settings, as a cancel.
                 if (heard.stopped) { setPhase("idle"); return; }
+                if (heard.unclear.length) {
+                    emitToolRun({ outcome: "error", files: 1, errorKind: "browser" });
+                    setFailure({ title: "Whisper couldn’t make out the words.", detail: `It wrote the same words over and over, so they were left out.${model === "tiny" ? " The Base model may hear them better." : ""} Check that ${languageName(language)} is the language spoken.`, reason: "Whisper repeated itself", retryable: false, kind: "browser", settings: true });
+                    setPhase("failed");
+                    return;
+                }
                 emitToolRun({ outcome: "error", files: 1, errorKind: "bad_input" });
                 setFailure({ title: "No speech was found.", detail: `Whisper heard no words it could write down. If people do speak in it, check that ${languageName(language)} is the language they speak${model === "tiny" ? ", or try the Base model" : ""}.`, reason: "No speech found", retryable: false, kind: "bad_input", settings: true });
                 setPhase("failed");
                 return;
             }
-            // A run the visitor stopped is not counted; one with stretches the browser couldn't decode is partial.
-            if (!heard.stopped) emitToolRun(heard.unreadable.length ? { outcome: "partial", files: 1, errorKind: "browser" } : { outcome: "success", files: 1 });
-            setResult({ cues, written: cues.length, stopped: heard.stopped, doneSeconds: heard.doneSeconds, totalSeconds: heard.totalSeconds, unreadable: heard.unreadable, language, model, seconds });
+            // A run the visitor stopped is not counted; one with stretches left without captions is partial.
+            if (!heard.stopped) emitToolRun(heard.unreadable.length || heard.unclear.length ? { outcome: "partial", files: 1, errorKind: "browser" } : { outcome: "success", files: 1 });
+            setResult({ cues, written: cues.length, stopped: heard.stopped, doneSeconds: heard.doneSeconds, totalSeconds: heard.totalSeconds, unreadable: heard.unreadable, unclear: heard.unclear, language, model, seconds });
             setPhase("done");
         } catch (error) {
             if (!current()) return;
+            // A failed run may leave Whisper's worker unable to run again: the next one starts a new worker.
+            if (!(error instanceof MediaError)) stopWhisper();
             const found = failureFor(error, file);
             emitToolRun({ outcome: "error", files: 1, errorKind: found.kind }, error);
             setFailure(found);
@@ -214,6 +260,9 @@ export function SubtitleGeneratorUI() {
         }
         run.current++;
         stop.current?.abort();
+        reading.current?.abort();
+        // A model still loading is stopped with the worker; the download starts again next time.
+        if (phase === "model") stopWhisper();
         setPhase("idle");
     };
 
@@ -288,7 +337,7 @@ export function SubtitleGeneratorUI() {
                     <span>{size === "base" ? "More accurate, slower." : "Faster, less accurate."} {bytes ? `In this browser (${formatBytes(bytes)}).` : `Downloads ${WHISPER[size].size.replace("~", "about ")} once.`}</span>
                 </button>;
             })}</div>
-            <p className="sg-hint">Whisper runs on this device’s processor. On a two-core test computer, Base took about 45 seconds per minute of sound and used about 2 GB of memory; Tiny took about 20 seconds and 1 GB. Most laptops are faster. On a phone, choose Tiny.</p>
+            <p className="sg-hint">Whisper runs on this device’s processor. On a two-core test computer, Base took about 45 seconds per minute of sound and used about 2 GB of memory; Tiny took about 20 seconds and 1 to 2 GB. Most laptops are faster. On a phone, choose Tiny.</p>
         </div>
         <div>
             <h2>Captions</h2>
@@ -333,13 +382,18 @@ function SubtitleResult({ file, result, onEdit, onStartOver }: { file: File; res
     const stem = file.name.replace(/\.[^.]+$/, "") || "subtitles";
     const kept = result.cues.filter(cue => cue.text.trim());
     const gaps = result.unreadable.reduce((sum, range) => sum + (range.end - range.start), 0);
-    const tone = result.stopped || gaps > 0 ? "partial" : "success";
+    const ranges = (list: { start: number; end: number }[]) => list.map(range => `${clock(range.start)}–${clock(range.end)}`).join(", ");
+    const missing = [
+        gaps > 0 ? `This browser couldn’t decode ${clock(gaps)} of the sound (${ranges(result.unreadable)}), so that part has none.` : "",
+        result.unclear.length ? `Whisper wrote the same words over and over at ${ranges(result.unclear)}, so they were left out and that part has none.` : "",
+    ].filter(Boolean).join(" ");
+    const tone = result.stopped || missing ? "partial" : "success";
     const title = result.stopped ? `Subtitles for the first ${clock(result.doneSeconds)}.`
-        : gaps > 0 ? "Subtitles, with a gap." : `${result.written.toLocaleString()} ${result.written === 1 ? "caption" : "captions"} written.`;
+        : missing ? (result.unreadable.length + result.unclear.length > 1 ? "Subtitles, with gaps." : "Subtitles, with a gap.")
+            : `${result.written.toLocaleString()} ${result.written === 1 ? "caption" : "captions"} written.`;
     const detail = result.stopped
         ? `You stopped at ${clock(result.doneSeconds)} of ${clock(result.totalSeconds)}, so the rest has no captions. Check these before you download them.`
-        : gaps > 0
-            ? `This browser couldn’t decode ${clock(gaps)} of the sound (${result.unreadable.map(range => `${clock(range.start)}–${clock(range.end)}`).join(", ")}), so that part has none. Check the rest before you download.`
+        : missing ? `${missing} Check the rest before you download.`
             : "Play the file and read along: correct any words, then download.";
     const save = (format: "srt" | "vtt") => downloadBlob(
         new Blob([format === "srt" ? toSrt(result.cues) : toVtt(result.cues)], { type: format === "srt" ? "application/x-subrip;charset=utf-8" : "text/vtt;charset=utf-8" }),

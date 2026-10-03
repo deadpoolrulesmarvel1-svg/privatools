@@ -8,9 +8,9 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AudioChunk } from "@/lib/subtitles/recognize";
 
-const mocks = vi.hoisted(() => ({ open: vi.fn(), load: vi.fn(), download: vi.fn(), toolRun: vi.fn(), cached: vi.fn() }));
+const mocks = vi.hoisted(() => ({ open: vi.fn(), load: vi.fn(), stop: vi.fn(), download: vi.fn(), toolRun: vi.fn(), cached: vi.fn() }));
 vi.mock("@/lib/subtitles/media/extract", async original => ({ ...(await original<object>()), openAudio: mocks.open }));
-vi.mock("@/lib/whisper", async original => ({ ...(await original<object>()), loadWhisper: mocks.load }));
+vi.mock("@/lib/whisper", async original => ({ ...(await original<object>()), loadWhisper: mocks.load, stopWhisper: mocks.stop }));
 vi.mock("@/lib/api", async original => ({ ...(await original<object>()), downloadBlob: mocks.download }));
 vi.mock("@/lib/toolRun", async original => ({ ...(await original<object>()), emitToolRun: mocks.toolRun }));
 vi.mock("@/lib/localModels", async original => ({ ...(await original<object>()), listCachedModels: mocks.cached }));
@@ -147,8 +147,38 @@ describe("the Subtitle Generator page", () => {
         expect(await screen.findByRole("heading", { level: 2, name: "This browser can’t read the sound in this file." })).toBeInTheDocument();
         expect(screen.getByText("Nothing was sent anywhere.")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Extract Audio" })).toHaveAttribute("href", "/tools/extract-audio");
-        expect(screen.getByText(/can take the sound out as an MP3 on the PrivaTools server, which means uploading the video for temporary processing/)).toBeInTheDocument();
+        expect(screen.getByText(/can save its sound as an MP3 on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here, up to 3 hours/)).toBeInTheDocument();
         expect(mocks.load).not.toHaveBeenCalled();
+    });
+
+    it("offers a helper only when it takes the file, by its type and size", async () => {
+        mocks.open.mockRejectedValue(new MediaError("unreadable", "This browser can’t decode the sound in this file."));
+        // Extract Audio takes no .m4v, and Audio Converter no .opus.
+        choose("clip.m4v", "video/mp4");
+        generate();
+        await screen.findByRole("heading", { level: 2, name: "This browser can’t read the sound in this file." });
+        expect(screen.queryByRole("link", { name: "Extract Audio" })).toBeNull();
+        expect(screen.getByText(/A video or audio app on your device can save it as MP4 or MP3, which work here up to 3 hours/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Choose a different file" }));
+    });
+
+    it("says why a long fragmented MP4 is refused, and points it to Extract Audio, not Audio Converter", async () => {
+        mocks.open.mockRejectedValue(new MediaError("too-long-whole", "This file’s sound is 16 minutes long. This file is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.", 960));
+        choose("obs.mp4", "video/mp4");
+        generate();
+        expect(await screen.findByRole("heading", { level: 2, name: "This file is too long to read whole." })).toBeInTheDocument();
+        expect(screen.getByText(/written in fragments/)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Extract Audio" })).toHaveAttribute("href", "/tools/extract-audio");
+        expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
+    });
+
+    it("says an empty file is empty", async () => {
+        mocks.open.mockRejectedValue(new MediaError("empty", "This file is empty, so there is no sound in it."));
+        choose("empty.mp3", "audio/mpeg");
+        generate();
+        expect(await screen.findByRole("heading", { level: 2, name: "This file is empty." })).toBeInTheDocument();
+        expect(screen.queryByRole("link")).toBeNull();
+        expect(mocks.stop).not.toHaveBeenCalled();
     });
 
     it("refuses sound longer than three hours before fetching the model", async () => {
@@ -221,6 +251,79 @@ describe("the Subtitle Generator page", () => {
         expect(heading.closest("[data-tone]")).toHaveAttribute("data-tone", "partial");
         expect(screen.getByText(/couldn’t decode 1:00 of the sound \(1:00–2:00\)/)).toBeInTheDocument();
         expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "partial", files: 1, errorKind: "browser" });
+    });
+
+    it("leaves out a stretch Whisper wrote as a loop, and says where it was", async () => {
+        const loop = ` ${Array.from({ length: 30 }, () => "the option to be").join(" ")}`;
+        mocks.open.mockResolvedValue(source(20));
+        // The window, then its first half, loop; its second half is silence.
+        let calls = 0;
+        mocks.load.mockImplementation(async () => async () => (++calls <= 2 ? { text: "x", chunks: [
+            { timestamp: [0.5, 2.5] as [number, number], text: " Welcome to the test." },
+            { timestamp: [3, 6] as [number, number], text: loop },
+        ] } : { text: "", chunks: [] }));
+        choose();
+        generate();
+        const heading = await screen.findByRole("heading", { level: 2, name: "Subtitles, with a gap." });
+        expect(heading.closest("[data-tone]")).toHaveAttribute("data-tone", "partial");
+        expect(screen.getByText(/Whisper wrote the same words over and over at 0:03–0:06, so they were left out/)).toBeInTheDocument();
+        const captions = within(screen.getByRole("list", { name: "Captions" })).getAllByRole("textbox");
+        expect(captions.map(caption => (caption as HTMLTextAreaElement).value)).toEqual(["Welcome to the test."]);
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "partial", files: 1, errorKind: "browser" });
+    });
+
+    it("says Whisper couldn't make out the words when all it wrote was a loop", async () => {
+        const loop = ` ${Array.from({ length: 30 }, () => "the option to be").join(" ")}`;
+        mocks.open.mockResolvedValue(source(20));
+        mocks.load.mockImplementation(async () => async () => ({ text: "x", chunks: [{ timestamp: [0.5, 6] as [number, number], text: loop }] }));
+        choose();
+        generate();
+        expect(await screen.findByRole("heading", { level: 2, name: "Whisper couldn’t make out the words." })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+        expect(screen.getByRole("button", { name: "Change the language or model" })).toBeInTheDocument();
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "error", files: 1, errorKind: "browser" });
+    });
+
+    it("stops Whisper when a run fails, so the next run gets a new worker", async () => {
+        mocks.open.mockResolvedValue(source(20));
+        mocks.load.mockImplementation(async () => async () => { throw new Error("session run failed"); });
+        choose();
+        generate();
+        expect(await screen.findByRole("heading", { level: 2, name: "Subtitles couldn’t be made." })).toBeInTheDocument();
+        expect(mocks.stop).toHaveBeenCalled();
+    });
+
+    it("stops Whisper when the page closes mid-run", async () => {
+        mocks.open.mockResolvedValue(source(95, [{ start: 0, samples: talk(95) }]));
+        mocks.load.mockImplementation(async () => () => new Promise(() => {}));
+        const view = choose();
+        generate();
+        await screen.findByRole("button", { name: "Stop and keep what’s done" });
+        expect(mocks.stop).not.toHaveBeenCalled();
+        view.unmount();
+        expect(mocks.stop).toHaveBeenCalled();
+    });
+
+    it("stops the model download with Cancel", async () => {
+        mocks.open.mockResolvedValue(source(20));
+        mocks.load.mockImplementation(() => new Promise(() => {}));
+        choose();
+        generate();
+        await screen.findByText("Downloading Whisper Base");
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(mocks.stop).toHaveBeenCalled();
+        expect(screen.getByRole("button", { name: /Generate subtitles/ })).toBeEnabled();
+    });
+
+    it("chooses Whisper Tiny first on a phone-sized screen", () => {
+        const matchMedia = vi.fn((query: string) => ({ matches: query === "(max-width: 560px)", media: query, addEventListener() {}, removeEventListener() {} }));
+        vi.stubGlobal("matchMedia", matchMedia);
+        try {
+            render(<MemoryRouter><SubtitleGeneratorUI /></MemoryRouter>);
+            expect(screen.getByRole("button", { name: /Whisper Tiny/ })).toHaveAttribute("aria-pressed", "true");
+        } finally {
+            vi.unstubAllGlobals();
+        }
     });
 
     it("links the burn-in tool and says what it uploads", async () => {
