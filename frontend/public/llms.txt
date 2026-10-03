@@ -104,7 +104,7 @@ PrivaTools offers 226 tools for PDFs, images, video, audio, documents, archives,
 - [PDF Stamp](https://privatools.me/tool/stamp-pdf): Add CONFIDENTIAL, DRAFT, or custom stamps
 - [E-Sign PDF](https://privatools.me/tool/esign-pdf): Quick draw-and-place signature on any PDF
 - [PDF Table Extractor](https://privatools.me/tool/extract-tables): Extract tables from PDF pages to CSV
-- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Extract PDF content as clean Markdown format
+- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Markdown with tables, lists and headings, ready for AI
 - [White-Out / Eraser](https://privatools.me/tool/whiteout-pdf): Cover content on PDF with white boxes
 - [Annotate PDF](https://privatools.me/tool/annotate-pdf): Add highlights, underlines, and sticky notes
 - [Highlight PDF](https://privatools.me/tool/highlight-pdf): Highlight every match of a word or phrase

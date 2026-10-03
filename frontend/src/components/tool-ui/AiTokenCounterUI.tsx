@@ -15,6 +15,8 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, Hash } from "lucide-react";
 import { buildOutputFilename, downloadBlob, formatFileSize } from "@/lib/api";
+import { consumeFileHandoff } from "@/lib/file-handoff";
+import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { countTokens } from "@/lib/byok/client";
 import { ByokError } from "@/lib/byok/errors";
@@ -261,6 +263,23 @@ export function AiTokenCounterUI() {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [phase, canCount, count]);
+
+    // One file handed over within this document arrives chosen; it moves in
+    // this tab's memory, and nothing is uploaded. Most pages' CSP lacks this
+    // page's AI providers, so coming from them loads a new document, which the
+    // file does not survive. Several files are left for a tool that takes them.
+    useEffect(() => {
+        let cancelled = false;
+        // Claim it only once the effect survives StrictMode's setup replay.
+        queueMicrotask(() => {
+            if (cancelled) return;
+            void consumeFileHandoff("ai-token-counter").then(handed => {
+                const [file] = cancelled || !handed ? [] : takeAccepted([handed], ACCEPTS);
+                if (file) { setFile(file); setFailure(null); }
+            });
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     const backToForm = () => { setResult(null); setFailure(null); setReturning(true); setPhase("idle"); };
     const startOver = () => { setFile(null); setText(""); backToForm(); };

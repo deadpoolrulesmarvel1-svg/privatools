@@ -633,9 +633,9 @@ Extract tables from PDF to CSV online for free. Automatically detect tables draw
 
 URL: https://privatools.me/tool/pdf-to-markdown
 
-Extract PDF content as clean Markdown format
+Markdown with tables, lists and headings, ready for AI
 
-Convert PDF to Markdown online for free — extract content with automatic heading detection, bold text preservation, and clean formatting. Perfect for converting documents to web content, wikis, and documentation.
+Convert PDF to Markdown for ChatGPT, Claude and other AI tools, for RAG, or for docs and wikis. Headings keep their levels and lists their nesting; tables drawn with lines become GitHub tables, code stays in fenced blocks, links keep their addresses, and pictures become placeholders with their caption or alternative text. Pages set in columns are usually read one column after the other. Add page markers, leave out repeated headers and footers, and split the result into chunks by heading or by size. Scanned pages need OCR PDF first.
 
 ### White-Out / Eraser
 
