@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cueParts } from "./cueText";
 import {
     MAX_SUBTITLE_BYTES, MAX_SUBTITLE_CUES, SubtitleFileError, cuesOf, decodeSubtitleBytes, formatTime, parseSubtitles,
     readSubtitleFile, writeSubtitles,
@@ -240,6 +241,23 @@ describe("files that can't be translated say why", () => {
         await expect(readSubtitleFile(big)).rejects.toMatchObject({ problem: "too-large", title: "huge.srt is larger than 4 MB.", __kind: "too_large" });
         const many = Array.from({ length: MAX_SUBTITLE_CUES + 1 }, (_, i) => `${i + 1}\n00:00:01,000 --> 00:00:02,000\nHi\n`).join("\n");
         await expect(readSubtitleFile(new File([many], "many.srt"))).rejects.toMatchObject({ problem: "too-many-cues" });
+    });
+
+    it("reads lines shaped to make a regular expression backtrack in a moment, not minutes", () => {
+        const hostile = [
+            "1", "00:00:01,000 --> 00:00:02,000",
+            "<a ".repeat(20000), "-".repeat(50000) + ">", " ".repeat(50000) + "x", "&amp".repeat(20000), "{\\an".repeat(20000),
+            "", "2", "00:00:03,000 --> 00:00:04,000", "Two", "\r\n".repeat(40) + "z",
+        ].join("\n");
+        const started = performance.now();
+        const doc = parseSubtitles(hostile);
+        const lines = cuesOf(doc)[0].lines;
+        const parts = cueParts(lines);
+        const { text } = writeSubtitles(doc, { format: "vtt", texts: [lines.join("\n")] });
+        expect(performance.now() - started).toBeLessThan(5000);
+        expect(parts).toHaveLength(1);
+        expect(text).not.toContain("-->>");
+        expect(text.split("\n").filter(line => line.includes("-->"))).toHaveLength(2);
     });
 
     it("tags every refusal as the visitor's input for analytics", () => {

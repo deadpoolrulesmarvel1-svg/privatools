@@ -158,9 +158,9 @@ export function decodeSubtitleBytes(bytes: Uint8Array, name = "This file"): { te
 
 /* ── Timing ──────────────────────────────────────────────────────────── */
 
-/** [hours:]minutes:seconds[.,fraction], minutes and seconds below 60. */
-const TIME = String.raw`(?:(\d+):)?([0-5]?\d):([0-5]?\d)(?:[.,](\d{1,3}))?`;
-const TIMING = new RegExp(String.raw`^\s*${TIME}\s*-->\s*${TIME}(?:[ \t]+(.*?))?\s*$`);
+/** [hours:]minutes:seconds[.,fraction], minutes and seconds below 60. Every repeat is bounded, so no line can make it backtrack for long. */
+const TIME = String.raw`(?:(\d{1,4}):)?([0-5]?\d):([0-5]?\d)(?:[.,](\d{1,3}))?`;
+const TIMING = new RegExp(String.raw`^[ \t]*${TIME}[ \t]*-->[ \t]*${TIME}(?:[ \t]+([^\r\n]*))?$`);
 /** Something meant as a time, such as 00:01:02,500 or 01:02.500. */
 const LOOKS_LIKE_TIME = /\d:\d{2}[:.,]\d/;
 const NUMBER_LINE = /^\s*\d+\s*$/;
@@ -289,7 +289,10 @@ export function parseSubtitles(text: string, { name = "This file", encoding = "U
     const crlf = (body.match(/\r\n/g)?.length ?? 0);
     const breaks = body.match(/\r\n|\r|\n/g)?.length ?? 0;
     const newline = breaks > 0 && crlf * 2 >= breaks ? "\r\n" : "\n";
-    const trailing = /(?:\r\n|\r|\n)*$/.exec(body)?.[0] ?? "";
+    // Scanned from the end: a regex for "line breaks at the end" backtracks badly on a long run of them.
+    let bodyEnd = body.length;
+    while (bodyEnd > 0 && (body[bodyEnd - 1] === "\n" || body[bodyEnd - 1] === "\r")) bodyEnd--;
+    const trailing = body.slice(bodyEnd);
     const trailingNewlines = trailing.match(/\r\n|\r|\n/g)?.length ?? 0;
     const lines = body.slice(0, body.length - trailing.length).split(/\r\n|\r|\n/);
 
@@ -346,16 +349,27 @@ export interface WriteOptions {
     language?: string;
 }
 
-/** Every "-->" made "->", which both formats would read as a timing line; repeated so "--->" goes too. */
+/**
+ * Every "-->" made "->", which both formats would read as a timing line: a run
+ * of dashes before ">" becomes one, so "--->" goes too. One pass, so a long
+ * run of dashes costs no more than its length.
+ */
 export function withoutArrow(line: string): string {
-    let text = line;
-    while (text.includes("-->")) text = text.split("-->").join("->");
-    return text;
+    if (!line.includes("-->")) return line;
+    let out = "";
+    let dashes = 0;
+    for (const ch of line) {
+        if (ch === "-") { dashes++; continue; }
+        out += ch === ">" && dashes >= 2 ? "-" : "-".repeat(dashes);
+        out += ch;
+        dashes = 0;
+    }
+    return out + "-".repeat(dashes);
 }
 
 /** A cue's text as lines a file can hold: a blank line would end the cue, so none is kept. */
 function cueLines(text: string): string[] {
-    return text.replace(/\r\n?/g, "\n").split("\n").map(line => withoutArrow(line).replace(/\s+$/, "")).filter(line => line.trim() !== "");
+    return text.replace(/\r\n?/g, "\n").split("\n").map(line => withoutArrow(line).trimEnd()).filter(line => line.trim() !== "");
 }
 
 /**

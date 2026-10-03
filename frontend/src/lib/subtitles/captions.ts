@@ -114,6 +114,9 @@ export function wrapCaption(text: string, layout: CaptionLayout): string[] | nul
     return wrapAtoms(atomize(tidy(text)), layout);
 }
 
+/** Letters of scripts written without spaces between words, for the modules that join and cut such text. */
+export { NO_SPACE_SCRIPT };
+
 /**
  * Where a line may break in the text with its spaces collapsed: offsets into
  * that text, by the same rules as wrapping (at a space, or between words of a

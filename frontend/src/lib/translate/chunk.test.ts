@@ -49,4 +49,8 @@ describe("joining two pieces of text", () => {
         expect(joinWords("สวัสดี", "ครับ")).toBe("สวัสดีครับ");
         expect(joinWords("", "alone")).toBe("alone");
     });
+
+    it("keeps the space between Korean words, which are written with spaces", () => {
+        expect(joinWords("오늘은", "이야기하겠습니다")).toBe("오늘은 이야기하겠습니다");
+    });
 });

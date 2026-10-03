@@ -11,7 +11,7 @@
  * context it needs to pick agreement and word order.
  */
 
-import { breakOffsets } from "@/lib/subtitles/captions";
+import { breakOffsets, NO_SPACE_SCRIPT } from "@/lib/subtitles/captions";
 
 /** Conservative: ~4 characters per token, well inside the 512-token limit. */
 export const DEFAULT_MAX_CHARS = 900;
@@ -47,8 +47,6 @@ function splitOversized(sentence: string, maxChars: number): string[] {
 
 /* ── By the model's own tokens ───────────────────────────────────────── */
 
-/** Letters of scripts written without spaces between words: Thai, Lao, Burmese, Khmer, Japanese kana and Chinese characters. */
-const NO_SPACE_SCRIPT = /[฀-໿က-႟ក-៿぀-ヿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]/;
 
 /** Two pieces of text as one: with a space, unless both sides are a script written without spaces. */
 export function joinWords(a: string, b: string): string {

@@ -53,6 +53,10 @@ describe("taking a cue apart", () => {
         expect(cueParts(["我们今天", "要讨论隐私"])[0].text).toBe("我们今天要讨论隐私");
     });
 
+    it("keeps the space between two lines of Korean, which is written with spaces", () => {
+        expect(cueParts(["오늘은 개인정보에 대해", "이야기하겠습니다"])[0].text).toBe("오늘은 개인정보에 대해 이야기하겠습니다");
+    });
+
     it("marks a part of only music notes or numbers as nothing to translate", () => {
         expect(pick(["♪♪"])[0]).toMatchObject({ text: "", translatable: false });
         expect(pick(["1984"])[0]).toMatchObject({ translatable: false });
@@ -68,7 +72,7 @@ describe("putting a translated cue back", () => {
         expect(lines).toHaveLength(2);
         expect(lines[0].startsWith("{\\an8}<i>")).toBe(true);
         expect(lines[1].endsWith("</i>")).toBe(true);
-        expect(text.replace(/\{\\an8\}|<\/?i>/g, "").replace("\n", " ")).toBe("Fui a la tienda y compré leche y un poco de pan para el fin de semana.");
+        expect(text.replace(/\{\\an8\}|<\/?i>/g, "").split("\n").join(" ")).toBe("Fui a la tienda y compré leche y un poco de pan para el fin de semana.");
         for (const line of text.replace(/\{\\an8\}|<\/?i>/g, "").split("\n")) expect(Array.from(line).length).toBeLessThanOrEqual(42);
     });
 
@@ -87,7 +91,7 @@ describe("putting a translated cue back", () => {
         const { text, long } = renderCue(cueParts(["Words."]), [words], "srt", TWO);
         expect(long).toBe(true);
         expect(text.split("\n")).toHaveLength(2);
-        expect(text.replace("\n", " ")).toBe(words);
+        expect(text.split("\n").join(" ")).toBe(words);
     });
 
     it("breaks a line inside carried tags without cutting one", () => {

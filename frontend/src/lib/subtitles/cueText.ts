@@ -16,7 +16,7 @@
  * what the other format can't show is left out and counted.
  */
 import type { SubtitleFormat } from "./subtitleFile";
-import { breakOffsets, wrapCaption, type CaptionLayout } from "./captions";
+import { breakOffsets, NO_SPACE_SCRIPT, wrapCaption, type CaptionLayout } from "./captions";
 
 type Token =
     | { type: "text"; value: string }
@@ -25,8 +25,9 @@ type Token =
     /** An SSA override carried in SRT text, such as {\an8}. */
     | { type: "override"; raw: string };
 
-const TAG = /<(\/?)([a-zA-Z][a-zA-Z0-9]*|\d[\d:.]*)((?:[.\s][^<>]*)?)>/y;
-const OVERRIDE = /\{\\[^{}]*\}/y;
+// Tags and overrides are short; bounding them keeps a line full of "<" from making every try scan to its end.
+const TAG = /<(\/?)([a-zA-Z][a-zA-Z0-9]{0,15}|\d[\d:.]{0,15})((?:[.\s][^<>]{0,240})?)>/y;
+const OVERRIDE = /\{\\[^{}]{0,240}\}/y;
 
 function tokenize(text: string): Token[] {
     const tokens: Token[] = [];
@@ -63,7 +64,7 @@ const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: "\"
 
 /** Character references as characters: &amp; and the rest WebVTT names, and numeric ones. */
 export function decodeEntities(text: string): string {
-    return text.replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, ref: string) => {
+    return text.replace(/&(#\d{1,7}|#x[0-9a-f]{1,6}|[a-z]{1,8});/gi, (whole, ref: string) => {
         if (ref[0] === "#") {
             const code = ref[1] === "x" || ref[1] === "X" ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
             return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
@@ -112,7 +113,6 @@ const DASH = /^[-–—‐](?![-–—‐])(?=\s*[^\s\d])/;
 /** A speaker's label in capitals, such as "JOHN: " or "MAN 2: ". */
 const SPEAKER = /^[A-Z][A-Z0-9 .'’-]*[A-Z0-9]:\s+(?=\S)/;
 const NOTES = /^[♪♫♬]+/;
-const NO_SPACE_SCRIPT = /[฀-໿က-႟ក-៿぀-ヿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]/;
 
 /** What a line shows: its text without tags and overrides. */
 function shown(line: string): string {
@@ -195,7 +195,10 @@ function frame(tokens: Token[]): { before: Token[]; core: Token[]; after: Token[
         const token = tokens[j - 1];
         if (token.type === "tag" && token.closing) { after.unshift(token); j--; continue; }
         if (token.type === "text") {
-            const tail = /(?:\s|[♪♫♬])+$/.exec(token.value)?.[0] ?? "";
+            // Spaces and music notes at the end, scanned from the end rather than matched, which backtracks on long runs.
+            let cut = token.value.length;
+            while (cut > 0 && /[\s♪♫♬]/.test(token.value[cut - 1])) cut--;
+            const tail = token.value.slice(cut);
             if (tail.length === token.value.length) { after.unshift(token); j--; continue; }
             if (tail) {
                 after.unshift({ type: "text", value: tail });
@@ -259,9 +262,26 @@ function words(core: Token[]): { text: string; markup: string; plainDrops: numbe
         if (balanced && SIMPLE.has(token.name)) markup += `<${token.name}>`;
         else markupDrops++;
     }
-    // Spaces just inside a span move outside it, so words and tags line up for wrapping.
-    markup = markup.replace(/<(i|b|u)>(\s+)/g, "$2<$1>").replace(/(\s+)<\/(i|b|u)>/g, "</$2>$1");
-    return { text: tidy(text), markup: tidy(markup).replace(/<(i|b|u)><\/\1>/g, ""), plainDrops, markupDrops };
+    return { text: tidy(text), markup: tidy(spacesOutsideSpans(markup)).replace(/<(i|b|u)><\/\1>/g, ""), plainDrops, markupDrops };
+}
+
+/**
+ * Spaces just inside a span moved outside it ("<i> no </i>" to " <i>no</i> "),
+ * so words and tags line up for wrapping. Done by hand at each closing tag: a
+ * pattern of spaces before a tag backtracks over every long run of spaces.
+ */
+function spacesOutsideSpans(markup: string): string {
+    const opened = markup.replace(/<(i|b|u)>(\s+)/g, "$2<$1>");
+    let out = "";
+    let from = 0;
+    for (const match of opened.matchAll(/<\/(?:i|b|u)>/g)) {
+        const at = match.index ?? 0;
+        let spaces = at;
+        while (spaces > from && /\s/.test(opened[spaces - 1])) spaces--;
+        out += opened.slice(from, spaces) + match[0] + opened.slice(spaces, at);
+        from = at + match[0].length;
+    }
+    return out + opened.slice(from);
 }
 
 /**
@@ -310,7 +330,7 @@ function breakMarkup(markup: string, offsets: number[]): string {
         if (token.type !== "text") { out += token.raw; continue; }
         for (const ch of token.value) {
             if (next < offsets.length && seen === offsets[next]) {
-                out = out.replace(/\s+$/, "") + "\n";
+                out = out.trimEnd() + "\n";
                 next++;
                 if (/\s/.test(ch)) { seen += ch.length; continue; }
             }
