@@ -138,9 +138,12 @@ def image_read_error(exc: BaseException) -> tuple[int, str] | None:
     friendlyError() turns those into its PDF advice. "not an image" maps to
     its image message.
 
-    A library that rewords the error it caught, as ReportLab's ImageReader
-    does ("identity=[ImageReader@...] failed to read next frame"), keeps the
-    original as the new error's cause or context, which is read too.
+    An error raised `from` another is read with its cause. One raised while
+    another was being handled is read with that one only when its message
+    repeats the other's: ReportLab's ImageReader rewords what it caught that
+    way ("identity=[ImageReader@...] failed to read next frame"). Any other
+    error raised in an `except` around a failed read, such as a KeyError in
+    a fallback, is a fault of its own and stays a logged 500.
     """
     seen: set[int] = set()
     while exc is not None and id(exc) not in seen:
@@ -150,9 +153,20 @@ def image_read_error(exc: BaseException) -> tuple[int, str] | None:
             return answer
         if exc.__cause__ is not None:
             exc = exc.__cause__
+        elif exc.__suppress_context__ or not _rewords(exc, exc.__context__):
+            exc = None
         else:
-            exc = None if exc.__suppress_context__ else exc.__context__
+            exc = exc.__context__
     return None
+
+
+def _rewords(outer: BaseException, inner: BaseException | None) -> bool:
+    """Whether `outer` repeats the message of `inner`, the error it was raised
+    while handling."""
+    if inner is None:
+        return False
+    message = str(inner)
+    return bool(message) and message in str(outer)
 
 
 def _image_read_error(exc: BaseException) -> tuple[int, str] | None:

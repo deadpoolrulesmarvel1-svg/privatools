@@ -308,6 +308,51 @@ def test_only_the_codecs_own_failures_are_blamed_on_the_file(error):
     assert image_read_error(_raised(error)) is None
 
 
+def _error_while_handling_a_decode_error() -> KeyError:
+    """A KeyError raised in an `except` around a failed Image.open: a bug in
+    a fallback, which happened while the decode error was being handled."""
+    try:
+        try:
+            Image.open(io.BytesIO(JUNK))
+        except Exception:
+            {}["fallback"]
+    except KeyError as caught:
+        return caught
+    raise AssertionError("no KeyError")
+
+
+def test_an_error_raised_while_handling_a_decode_error_is_not_blamed_on_the_file():
+    assert image_read_error(_error_while_handling_a_decode_error()) is None
+
+
+def test_the_catch_all_answers_it_with_a_logged_500(caplog):
+    import asyncio
+
+    from starlette.requests import Request
+
+    from backend.app.middleware.error_handlers import builtin_exception_handler
+
+    request = Request({"type": "http", "method": "POST", "path": "/api/example", "raw_path": b"/api/example",
+                       "query_string": b"", "headers": [], "scheme": "http", "server": ("testserver", 80), "root_path": ""})
+    with caplog.at_level("ERROR", logger="privatools.errors"):
+        response = asyncio.run(builtin_exception_handler(request, _error_while_handling_a_decode_error()))
+    assert response.status_code == 500
+    assert "Unhandled exception" in caplog.text
+
+
+def test_a_decode_error_reworded_by_the_code_that_caught_it_is_still_recognised():
+    # ReportLab's ImageReader re-raises the same type with its own words in
+    # front of the original's: "\nidentity=[ImageReader@...] failed to read next frame".
+    try:
+        try:
+            with Image.open(io.BytesIO(BROKEN["garbled.webp"][0])) as picture:
+                picture.load()
+        except OSError as inner:
+            raise OSError(f"\nidentity=[ImageReader@0x0 filename='sig.webp'] {inner}")
+    except OSError as caught:
+        assert image_read_error(caught) == (400, STOPS_EARLY)
+
+
 def test_a_pillow_error_on_the_way_out_is_not_blamed_on_the_file():
     with pytest.raises(OSError) as caught:
         Image.new("RGBA", (4, 4)).save(io.BytesIO(), "JPEG")  # cannot write mode RGBA as JPEG
