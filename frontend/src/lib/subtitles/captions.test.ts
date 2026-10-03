@@ -173,6 +173,20 @@ describe("building cues from recognised speech", () => {
         expect(cues.map(cue => cue.text)).toEqual(["Before.", "Last.", "Very last."]);
     });
 
+    it("gives cues with no time at the very end of the audio the time back to the cue before", () => {
+        // A sentence ending at 4 s, then two segments Whisper timed past the end of a 5 s file.
+        const cues = buildCues([
+            { start: 2, end: 4, text: "A sentence first." },
+            { start: 5, end: 5, text: "Last words here." },
+            { start: 5, end: 5, text: "And these." },
+        ], TWO_LINES, 5);
+        expect(cues.map(cue => cue.text)).toEqual(["A sentence first.", "Last words here.", "And these."]);
+        expect(cues[1].start).toBeGreaterThanOrEqual(cues[0].end);
+        expect(cues[1].start).toBeLessThan(4.3);
+        for (const cue of cues.slice(1)) expect(cue.end - cue.start).toBeGreaterThan(0.3);
+        expect(cues[2].end).toBe(5);
+    });
+
     it("ends a cue at a Devanagari danda, and never starts a line with an Arabic question mark", () => {
         const hindi = buildCues([{ start: 0, end: 9, text: "नमस्ते दोस्तों। आज हम उपशीर्षक जनरेटर का प्रयोग करके छोटे वीडियो के लिए कैप्शन बनाएंगे।" }], TWO_LINES);
         expect(hindi[0].text).toBe("नमस्ते दोस्तों।");

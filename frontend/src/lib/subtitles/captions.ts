@@ -224,12 +224,16 @@ function settle(cues: SpeechSegment[], totalSeconds?: number): SpeechSegment[] {
     for (let first = 0; first < sorted.length;) {
         let next = first + 1;
         while (next < sorted.length && sorted[next].start - sorted[first].start < 0.001) next++;
-        if (next - first > 1) {
-            const group = sorted.slice(first, next);
-            const from = group[0].start;
-            const longest = Math.max(...group.map(cue => cue.end)) - from;
-            const until = Math.min(sorted[next]?.start ?? end, end, from + Math.max(longest, CAPTION_TIMING.minSeconds * group.length));
-            if (until > from) shareTime(group.map(cue => cue.text), from, until).forEach((shared, i) => { group[i].start = shared.start; group[i].end = shared.end; });
+        const group = sorted.slice(first, next);
+        const from = group[0].start;
+        const longest = Math.max(...group.map(cue => cue.end)) - from;
+        const share = (start: number, until: number) => shareTime(group.map(cue => cue.text), start, until).forEach((shared, i) => { group[i].start = shared.start; group[i].end = shared.end; });
+        const until = Math.min(sorted[next]?.start ?? end, end, from + Math.max(longest, CAPTION_TIMING.minSeconds * group.length));
+        if (group.length > 1 && until > from) share(from, until);
+        else if (!longest && until <= from) {
+            // No time left after them, at the very end of the audio: they share the time back to the cue before.
+            const back = Math.max(sorted[first - 1]?.end ?? 0, from - CAPTION_TIMING.minSeconds * group.length);
+            if (back < from) share(back, from);
         }
         first = next;
     }
