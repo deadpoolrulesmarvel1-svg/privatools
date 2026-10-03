@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import * as db from "@/lib/localStore/db";
-import { _resetForTests } from "@/lib/localStore/crypto";
+import { _resetForTests, decryptString, encryptString } from "@/lib/localStore/crypto";
 import { eraseEverything } from "@/lib/localStore/inventory";
 import { clearKey, getKey, listConfigured, saveKey, setSessionOnly } from "./keyStore";
 
@@ -27,6 +27,22 @@ describe("keyStore", () => {
     await saveKey("openai", "sk-session-only-value");
     expect(await getKey("openai")).toBe("sk-session-only-value");
     expect(await db.keys("secrets")).toHaveLength(0);
+  });
+
+  it("switching to session-only removes the saved AI keys but never the vault's key", async () => {
+    // The password vault keeps its encryption key in the same store. Clearing
+    // the whole store made every saved password unreadable after a reload.
+    await saveKey("anthropic", "sk-ant-persisted-value");
+    const password = await encryptString("vault password");
+    expect(await db.keys("secrets")).toContain("vault-key");
+
+    await setSessionOnly(true);
+
+    const left = await db.keys("secrets");
+    expect(left).toContain("vault-key");
+    expect(left.filter((key) => key.startsWith("byok:"))).toEqual([]);
+    _resetForTests(); // a reload: the key is read back from storage
+    expect(await decryptString(password)).toBe("vault password");
   });
 
   it("clearKey removes it", async () => {
