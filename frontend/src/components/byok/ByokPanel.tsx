@@ -16,18 +16,27 @@
 import { useId, useState } from "react";
 import { ArrowRight, Check, ExternalLink, Eye, EyeOff, KeyRound, LockKeyhole, Trash2 } from "lucide-react";
 
-import { PROVIDERS, providerById } from "@/lib/byok/providers";
+import { PROVIDERS, type Provider } from "@/lib/byok/providers";
 import { getBaseUrl, saveBaseUrl } from "@/lib/byok/keyStore";
 import { cn } from "@/lib/utils";
 import type { UseByok } from "@/hooks/useByok";
+
+/** Shown before "Explore all", when the page offers them. */
+const FAMILIAR = ["anthropic", "openai", "gemini", "openai-compatible"];
 
 export interface ByokPanelProps {
     byok: UseByok;
     /** Shown above the picker, e.g. what the key will be used for here. */
     purpose?: string;
+    /**
+     * The providers this page can use, such as only those that transcribe on
+     * Transcribe Audio. Every provider when absent. One chosen on another page
+     * that this page cannot use is listed nowhere and gets no key form here.
+     */
+    offers?: (provider: Provider) => boolean;
 }
 
-export function ByokPanel({ byok, purpose }: ByokPanelProps) {
+export function ByokPanel({ byok, purpose, offers }: ByokPanelProps) {
     const headingId = useId();
     const [showAllProviders, setShowAllProviders] = useState(false);
     const [draft, setDraft] = useState("");
@@ -36,8 +45,9 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
 
-    const selected = providerById(byok.provider);
-    const isConfigured = byok.provider ? byok.configured.includes(byok.provider) : false;
+    const offered = offers ? PROVIDERS.filter(offers) : PROVIDERS;
+    const selected = offered.find(p => p.id === byok.provider);
+    const isConfigured = selected ? byok.configured.includes(selected.id) : false;
 
     async function onSave() {
         if (!byok.provider || !draft.trim()) return;
@@ -78,7 +88,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                 <h2 id={headingId}>Choose your AI company.</h2>
                 <p>{purpose || "Connect a provider you already use. Your key stays under your control."}</p>
                 <div className="pt-provider-grid">
-                    {PROVIDERS.filter(p => showAllProviders || ["anthropic", "openai", "gemini", "openai-compatible"].includes(p.id) || byok.provider === p.id || byok.configured.includes(p.id)).map(p => <button key={p.id} type="button" disabled={busy} aria-pressed={byok.provider === p.id}
+                    {offered.filter(p => showAllProviders || FAMILIAR.includes(p.id) || byok.provider === p.id || byok.configured.includes(p.id)).map(p => <button key={p.id} type="button" disabled={busy} aria-pressed={byok.provider === p.id}
                         onClick={() => { byok.selectProvider(p.id); setBaseUrl(getBaseUrl(p.id) ?? ""); setDraft(""); setReveal(false); setError(""); }}
                         className={cn("pt-provider-choice", byok.provider === p.id && "is-selected")}>
                         <span className="pt-provider-letter" aria-hidden="true">{p.label.charAt(0)}</span>
@@ -86,7 +96,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                         {byok.provider === p.id ? <Check size={15} aria-hidden="true" /> : <ArrowRight size={15} aria-hidden="true" />}
                     </button>)}
                 </div>
-                <button type="button" className="pt-studio-link pt-provider-expand" aria-expanded={showAllProviders} onClick={() => setShowAllProviders(v => !v)}>{showAllProviders ? "Fewer providers" : `Explore all ${PROVIDERS.length} providers`}<ArrowRight size={15} /></button>
+                <button type="button" className="pt-studio-link pt-provider-expand" aria-expanded={showAllProviders} onClick={() => setShowAllProviders(v => !v)}>{showAllProviders ? "Fewer providers" : `Explore all ${offered.length} providers`}<ArrowRight size={15} /></button>
             </section>
 
             <section className="pt-byok-connection" aria-label="Provider connection settings">
@@ -117,7 +127,7 @@ export function ByokPanel({ byok, purpose }: ByokPanelProps) {
                     <span><strong>This session only</strong><small>Don’t keep the key after I close the tab. Use this on a shared or borrowed computer.</small></span>
                 </label>
                 {error && <p role="alert" className="pt-form-error">{error}</p>}
-                {byok.ready && <p className="pt-form-success"><Check size={16} /> Key configured for {selected?.label}.</p>}
+                {byok.ready && selected && <p className="pt-form-success"><Check size={16} /> Key configured for {selected.label}.</p>}
             </section>
 
             <details className="pt-byok-privacy"><summary><LockKeyhole size={15} /> Where your key and files go</summary>

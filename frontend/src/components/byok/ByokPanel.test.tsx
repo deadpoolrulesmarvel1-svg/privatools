@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as db from "@/lib/localStore/db";
 import { _resetForTests } from "@/lib/localStore/crypto";
+import { supportsTranscription } from "@/lib/byok/providers";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "./ByokPanel";
 
@@ -60,6 +61,34 @@ describe("ByokPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Explore all 9 providers" }));
     expect(screen.getByRole("button", { name: /DeepSeek/ })).toBeVisible();
     expect(screen.getByRole("button", { name: "Fewer providers" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("offers only the providers a page allows, the familiar ones first", async () => {
+    const hook = renderHook(() => useByok());
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    render(<ByokPanel byok={hook.result.current} offers={supportsTranscription} />);
+    expect(screen.getByRole("button", { name: /^OpenAI/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Local or self-hosted/ })).toBeInTheDocument();
+    for (const name of [/^Anthropic/, /^Google Gemini/, /^DeepSeek/]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Explore all 6 providers" }));
+    for (const name of [/^OpenRouter/, /^Groq/, /^Together AI/, /^Mistral/]) {
+      expect(screen.getByRole("button", { name })).toBeVisible();
+    }
+    for (const name of [/^Anthropic/, /^Google Gemini/, /^DeepSeek/]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+  });
+
+  it("asks for no key for a provider the page does not allow, even one chosen on another page", async () => {
+    const hook = renderHook(() => useByok());
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    hook.result.current.selectProvider("anthropic");
+    await waitFor(() => expect(hook.result.current.provider).toBe("anthropic"));
+    render(<ByokPanel byok={hook.result.current} offers={supportsTranscription} />);
+    expect(screen.queryByLabelText("Anthropic (Claude) API key")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "A key opens the door." })).toBeInTheDocument();
   });
 
   it("explains the CSP limit on custom endpoints instead of letting it fail silently", async () => {
