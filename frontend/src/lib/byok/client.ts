@@ -184,5 +184,7 @@ function blockedMessage(provider: Provider): string {
     if (provider.refusalsUnreadable) {
         return `The browser could not read ${label}'s answer. ${label} answers that way when it refuses the key, so check the key on ${label}'s site first. If it is correct and active, check that this device is online and that no extension or filtering proxy is stopping the request.${noProxy}`;
     }
-    return `The browser blocked the request to ${label}, or it got no answer. If you are using a custom endpoint it is probably not on the allowed list; otherwise check that this device is online and that no extension or filtering proxy is stopping the request.${noProxy}`;
+    // Only the custom endpoint can be an address this page's policy doesn't allow.
+    const check = provider.customBaseUrl ? "If you are using a custom endpoint it is probably not on the allowed list; otherwise check" : "Check";
+    return `The browser blocked the request to ${label}, or it got no answer. ${check} that this device is online and that no extension or filtering proxy is stopping the request.${noProxy}`;
 }

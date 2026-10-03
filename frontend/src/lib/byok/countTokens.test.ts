@@ -153,6 +153,8 @@ describe("what a refusal says", () => {
         expect(shown).toMatchObject({ kind: "CspBlocked" });
         expect(shown!.userMessage).toContain("blocked the request to Anthropic (Claude)");
         expect(shown!.userMessage).toContain("will not route your key or your file through its own server");
+        // This page offers no custom endpoint, so the message names none.
+        expect(shown!.userMessage).not.toContain("custom endpoint");
         expect(friendlyError(shown!.userMessage)).toBe(shown!.userMessage);
     });
 
