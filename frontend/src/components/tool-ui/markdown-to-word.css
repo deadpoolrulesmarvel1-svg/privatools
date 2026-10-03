@@ -1,0 +1,38 @@
+/* Markdown to Word: the Markdown box above the file intake, the note under
+   the page sizes, and the result's lists of what stayed as LaTeX or was left
+   out. Colours come from the experience tokens, so Air and Play, light and
+   dark, each keep their own. */
+
+.mdw-paste { display: grid; gap: 10px; min-width: 0; }
+.mdw-paste-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mdw-paste-head h2 { margin: 0; font: 600 20px/1.2 var(--pt-display); letter-spacing: -.03em; }
+.mdw-hint { margin: 0; max-width: 68ch; font-size: 13px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+
+.mdw-editor { min-width: 0; border: 1px solid hsl(var(--input)); border-radius: 10px; overflow: hidden; background: hsl(var(--card)); }
+.mdw-editor:focus-within { outline: 2px solid hsl(var(--accent)); outline-offset: 2px; }
+.mdw-editor textarea { display: block; width: 100%; height: 22rem; min-height: 10rem; max-height: 75vh; padding: 14px 16px; border: 0; resize: vertical; background: hsl(var(--paper-2)); color: hsl(var(--foreground)); font: 13px/1.6 var(--font-mono); tab-size: 4; }
+.mdw-editor textarea:focus { outline: none; }
+.mdw-editor textarea::placeholder { color: hsl(var(--muted-foreground)); }
+.mdw-editor textarea:read-only { cursor: wait; }
+.mdw-editor-bar { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 7px 14px; border-top: 1px solid hsl(var(--border)); font-size: 12px; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+.mdw-editor-bar span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdw-editor-bar span:last-child { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+.mdw-note { margin: 12px 0 0; }
+
+.mdw-report { display: grid; gap: 8px; min-width: 0; }
+.mdw-report h3 { margin: 6px 0 0; font: 600 16px/1.3 var(--pt-display); letter-spacing: -.01em; }
+.mdw-report p { margin: 0; max-width: 72ch; font-size: 13px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.mdw-report ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.mdw-report li { display: grid; gap: 3px; min-width: 0; padding: 10px 12px; border-left: 3px solid hsl(var(--warning)); border-radius: 0 8px 8px 0; background: hsl(var(--paper-2)); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.mdw-report li code { font: 12.5px/1.5 var(--font-mono); white-space: pre-wrap; }
+.mdw-report li strong { font-weight: 600; }
+.mdw-report li span { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.mdw-next { margin: 4px 0 0; max-width: 72ch; }
+
+html[data-experience=play] .mdw-editor { border-radius: 16px; }
+html[data-experience=play] .mdw-report li { border-radius: 0 12px 12px 0; }
+
+@media (max-width: 560px) {
+    .mdw-editor textarea { height: 15rem; padding: 12px; }
+}

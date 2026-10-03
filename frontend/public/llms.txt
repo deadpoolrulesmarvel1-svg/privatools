@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 224 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -163,6 +163,7 @@ PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives,
 - [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
 - [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
 - [Markdown Editor & HTML](https://privatools.me/tools/markdown-html): Convert Markdown writing into web-ready HTML
+- [Markdown to Word](https://privatools.me/tools/markdown-to-word): Turn Markdown or an AI answer into an editable Word document
 - [HEIC to JPG](https://privatools.me/tools/heic-to-jpg): Convert iPhone HEIC/HEIF photos to JPEG
 - [Background Remover](https://privatools.me/tools/remove-background): Make backgrounds transparent with browser or server AI
 - [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images

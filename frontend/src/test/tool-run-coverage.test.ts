@@ -23,6 +23,7 @@ const BROWSER_ONLY_RUNNERS = [
     "src/components/tool-ui/ChatPdfUI.tsx",
     "src/components/tool-ui/TranscribeAudioUI.tsx",
     "src/components/tool-ui/SubtitleConverterUI.tsx",
+    "src/components/tool-ui/MarkdownToWordUI.tsx",
     "src/components/tool-ui/JsonXmlFormatterUI.tsx",
     "src/components/tool-ui/TextDiffUI.tsx",
     "src/components/tool-ui/HashGeneratorUI.tsx",

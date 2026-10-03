@@ -68,6 +68,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Temporary server processing",
         detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
     },
+    // On the device only, and it never fetches what the Markdown points to: the flags' default would not say so.
+    "markdown-to-word": {
+        kind: "device",
+        label: "Stays on your device",
+        detail: "Your Markdown is turned into a Word document in this browser and is not uploaded. Links stay links, and images at web addresses are never downloaded: only images inside the Markdown itself are added.",
+    },
     // Tools whose input is not a file: the sentence names what is sent.
     "url-to-pdf": {
         kind: "server",

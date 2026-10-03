@@ -1,0 +1,54 @@
+{
+  "howto": [
+    {
+      "name": "Paste or open the Markdown",
+      "text": "Paste Markdown into the box, such as an answer copied with the copy button under a ChatGPT or Claude reply, which copies the Markdown with its tables and equations. Or open a .md, .markdown or .txt file of up to 10 MB: it opens in the same box, where you can edit it first."
+    },
+    {
+      "name": "Choose the page size",
+      "text": "Letter (8.5 × 11 in) or A4 (210 × 297 mm), each with one-inch margins. The tool starts on the size your browser's region usually uses and remembers your choice."
+    },
+    {
+      "name": "Convert to Word",
+      "text": "Click Convert to Word. The document is built in your browser and downloads as a .docx named after your file or its first heading. Nothing is uploaded."
+    },
+    {
+      "name": "Check what the result lists",
+      "text": "An equation written in LaTeX the tool doesn't convert stays in the document as its LaTeX, in a code font, and the result lists it with its line and the reason. Images at web addresses are listed too: they are never downloaded, and their alt text stays in the document."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How do I get ChatGPT's equations into Word?",
+      "a": "Copy the answer with the copy button under it, which gives Markdown with each equation as LaTeX between $…$, $$…$$, \\(…\\) or \\[…\\]. Paste it here and convert. Each equation becomes a native Word equation (Office Math) that you can click and edit in Word's equation editor, not a picture."
+    },
+    {
+      "q": "Which LaTeX does it convert?",
+      "a": "Fractions and binomials, sub- and superscripts, square and n-th roots, Greek letters and symbols, operators, sums, products, integrals and limits, accents such as hats, bars, dots and vector arrows, over- and underbraces, brackets that grow with \\left and \\right, matrices, cases, and aligned or gathered lines, along with \\text, \\operatorname, \\color, \\boxed and \\cancel. Anything else, such as \\prescript or a command it doesn't know, stays in the document as its LaTeX text and is listed in the result, rather than becoming a wrong equation."
+    },
+    {
+      "q": "Do tables come out as Word tables?",
+      "a": "Yes. A Markdown table becomes a Word table in the Table Grid style, with the header row bold, shaded and repeated at the top of each page, and each column's alignment kept. Columns share the page width by how much they hold, and a table of seven or more columns uses smaller text so it stays readable on the page."
+    },
+    {
+      "q": "Can I open the result in Google Docs?",
+      "a": "Yes: upload the .docx to Google Drive and open it with Google Docs. Text, headings, lists and tables come across, but Google Docs imports Word equations imperfectly, so some can change or lose part of their layout. Check them there, or keep the document in Word, where they stay equations you can edit."
+    },
+    {
+      "q": "Is my text uploaded?",
+      "a": "No. The document is built in your browser and the Markdown never leaves your device. Converting loads the converter's code from PrivaTools, and the equation converter's when the Markdown has equations; nothing is sent with those requests. Unless you turn analytics off on the Privacy page, Google Analytics receives an event saying the tool ran and whether it worked, never the text."
+    },
+    {
+      "q": "What happens to images?",
+      "a": "Images written into the Markdown itself, as data: URIs holding a PNG, JPEG or GIF, are embedded and sized to fit the page. An image at a web address is never downloaded, since that would send a request you didn't ask for: it is left out, the result names it, and its alt text stays in the document as a link to the address."
+    },
+    {
+      "q": "What else becomes Word structure?",
+      "a": "Headings use Heading 1 to 6, lists are numbered by Word in List Paragraph (keeping their start numbers and nesting), task list items become check boxes you can tick in Word, block quotes use Quote, and code blocks keep their line breaks in Consolas in the HTML Preformatted style. Web and e-mail links become hyperlinks, and links to a heading in the text jump to it. Because these are Word's own styles, choosing a theme or changing a style in Word restyles the whole document."
+    },
+    {
+      "q": "Does it work with Claude and other assistants?",
+      "a": "Yes. Any Markdown works: answers from Claude or another assistant whose copy button copies Markdown, README files, and notes exported as .md. Text copied by selecting it on the page, rather than with a copy button, has usually lost its Markdown, so tables and equations may not come through."
+    }
+  ]
+}

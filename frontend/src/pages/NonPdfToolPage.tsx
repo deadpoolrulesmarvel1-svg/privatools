@@ -51,6 +51,7 @@ const LazyExtractArchiveUI = lazyNamed(() => import("@/components/tool-ui/Extrac
 const LazyCreateZipUI = lazyNamed(() => import("@/components/tool-ui/CreateZipUI"), "CreateZipUI");
 const LazyCsvJsonUI = lazyNamed(() => import("@/components/tool-ui/CsvJsonUI"), "CsvJsonUI");
 const LazyMarkdownHtmlUI = lazyNamed(() => import("@/components/tool-ui/MarkdownHtmlUI"), "MarkdownHtmlUI");
+const LazyMarkdownToWordUI = lazyNamed(() => import("@/components/tool-ui/MarkdownToWordUI"), "MarkdownToWordUI");
 const LazyImageOcrUI = lazyNamed(() => import("@/components/tool-ui/ImageOcrUI"), "ImageOcrUI");
 const LazyBarcodeGeneratorUI = lazyNamed(() => import("@/components/tool-ui/BarcodeGeneratorUI"), "BarcodeGeneratorUI");
 const LazyUrlToPdfUI = lazyNamed(() => import("@/components/tool-ui/UrlToPdfUI"), "UrlToPdfUI");
@@ -186,6 +187,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "create-zip": return <LazyCreateZipUI />;
     case "csv-json": return <LazyCsvJsonUI />;
     case "markdown-html": return <LazyMarkdownHtmlUI />;
+    case "markdown-to-word": return <LazyMarkdownToWordUI />;
     case "image-ocr": return <LazyImageOcrUI />;
     case "generate-barcode": return <LazyBarcodeGeneratorUI />;
     case "url-to-pdf": return <LazyUrlToPdfUI />;

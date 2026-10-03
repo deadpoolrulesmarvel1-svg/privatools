@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 224 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -1100,6 +1100,14 @@ URL: https://privatools.me/tools/markdown-html
 Convert Markdown writing into web-ready HTML
 
 Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with a live preview. Perfect for blog posts, documentation, and README files.
+
+### Markdown to Word
+
+URL: https://privatools.me/tools/markdown-to-word
+
+Turn Markdown or an AI answer into an editable Word document
+
+Convert Markdown to an editable Word document (.docx) in your browser. Paste a ChatGPT or Claude answer, or open a .md or .txt file: headings, lists and task lists, tables, code blocks, quotes and links become real Word structure in Word's built-in styles, and LaTeX equations become native Word equations you can edit, not pictures. Nothing is uploaded. Equations outside the supported LaTeX stay as their LaTeX text, and the result lists them. Images are added only when they are inside the Markdown as data (PNG, JPEG or GIF); images at web addresses are never downloaded, and their alt text stays in the document.
 
 ### HEIC to JPG
 
