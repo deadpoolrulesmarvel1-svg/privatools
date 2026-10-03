@@ -100,6 +100,24 @@ export function BatesUI() {
     const sample = `${prefix}${String(startNumber).padStart(digits, "0")}${suffix}`;
     const canProcess = proc.entries.length > 0 && phase !== "processing";
 
+    // Move the active matter on by the pages a confirmed stamp numbered. Gaps
+    // in a Bates sequence are a real problem in discovery, so this runs only
+    // after the server confirmed the stamp, never optimistically.
+    const advanceMatter = useCallback(async (countPages: () => Promise<number>) => {
+        if (!matter) return;
+        try {
+            const pages = await countPages();
+            if (pages > 0) {
+                const updated = await counters.advanceCounter(matter.id, pages);
+                setMatter(updated);
+                setAdvancedTo(counters.formatNext(updated));
+            }
+        } catch {
+            /* counting failed — leave the counter untouched rather than
+               guessing, and let the user correct it in /my-stuff */
+        }
+    }, [matter]);
+
     const process = useCallback(async (retry: boolean | "transient" = false) => {
         setPhase("processing");
         setBatchFailure(null);
@@ -125,6 +143,8 @@ export function BatesUI() {
                 setBatch({ zip, manifest, files: files.length });
                 setPhase("done");
                 emitToolRun({ outcome: "success", files: files.length });
+                // The set is numbered whole: the matter moves on by every page in it.
+                await advanceMatter(async () => manifest ? manifest.reduce((n, m) => n + m.pages, 0) : countPdfPages(files, blobBytes));
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : "Failed";
                 const kind = toolErrorKind(e);
@@ -145,24 +165,10 @@ export function BatesUI() {
         }, retry);
         setPhase("done");
 
-        // Advance the matter's counter ONLY for files that actually succeeded.
-        // Gaps in a Bates sequence are a real problem in discovery, so we never
-        // advance optimistically, and never for a failed file.
+        // Only the files that were actually stamped, never a failed one.
         const stamped = ran.filter(e => e.status === "done").map(e => e.file);
-        if (matter && stamped.length > 0) {
-            try {
-                const pages = await countPdfPages(stamped, blobBytes);
-                if (pages > 0) {
-                    const updated = await counters.advanceCounter(matter.id, pages);
-                    setMatter(updated);
-                    setAdvancedTo(counters.formatNext(updated));
-                }
-            } catch {
-                /* counting failed — leave the counter untouched rather than
-                   guessing, and let the user correct it in /my-stuff */
-            }
-        }
-    }, [proc, prefix, suffix, startNumber, digits, position, matter]);
+        if (stamped.length > 0) await advanceMatter(() => countPdfPages(stamped, blobBytes));
+    }, [proc, prefix, suffix, startNumber, digits, position, advanceMatter]);
 
     // The single-file queue's result downloads once; the batch set downloads in process().
     useDownloadOnce(phase === "done" && !batch && !batchFailure, proc.doneCount, () => proc.downloadAll("archive_bates"));
@@ -198,7 +204,7 @@ export function BatesUI() {
         const manifest = batch.manifest;
         const pages = manifest?.reduce((n, m) => n + m.pages, 0) ?? 0;
         return <StudioResult title={manifest ? `Numbered ${manifest[0]?.firstBates} to ${manifest[manifest.length - 1]?.lastBates}.` : `${batch.files} PDFs numbered from ${sample}.`}
-            detail={`${batch.files} files · one continuous sequence${manifest ? ` · ${pages} pages` : ""}. ${downloadStarted(2)}`}>
+            detail={`${batch.files} files · one continuous sequence${manifest ? ` · ${pages} pages` : ""}. ${downloadStarted(2)}${advancedTo ? ` ${matter?.name} continues at ${advancedTo} next time.` : ""}`}>
             {manifest && <section className="ts-receipt" aria-label="Numbering manifest">
                 <h3>Numbering manifest</h3>
                 <dl className="ts-fields">{manifest.map(m => <div key={m.index}><dt>{m.file ?? `File ${m.index + 1}`}</dt><dd>{m.firstBates} – {m.lastBates}</dd></div>)}</dl>

@@ -7,14 +7,14 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { uploadFile } from "@/lib/api";
+import { uploadFile, uploadFiles } from "@/lib/api";
 import { countPdfPages } from "@/lib/pdfMeta";
 import * as counters from "@/lib/localStore/counters";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BatesUI } from "./BatesUI";
 
 vi.mock("@/lib/api", async original => ({
-    ...await original<typeof import("@/lib/api")>(), uploadFile: vi.fn(), downloadBlob: vi.fn(),
+    ...await original<typeof import("@/lib/api")>(), uploadFile: vi.fn(), uploadFiles: vi.fn(), downloadBlob: vi.fn(),
 }));
 // Three pages a file, as pdf.js would count them.
 vi.mock("@/lib/pdfMeta", () => ({ countPdfPages: vi.fn(async (files: File[]) => files.length * 3) }));
@@ -56,5 +56,27 @@ describe("Bates Numbering's matter", () => {
         await screen.findByRole("heading", { name: /couldn’t be numbered/ });
         expect((await counters.getCounter(matter.id))?.next).toBe(101);
         expect(screen.queryByText(/continues at/)).toBeNull();
+    });
+
+    it("continues after the pages a production set holds, as its manifest counts them", async () => {
+        const manifest = [
+            { index: 0, pages: 2, firstBates: "SYN-000101", lastBates: "SYN-000102", file: "one.pdf" },
+            { index: 1, pages: 3, firstBates: "SYN-000103", lastBates: "SYN-000105", file: "two.pdf" },
+        ];
+        vi.mocked(uploadFiles).mockResolvedValue({
+            blob: async () => new Blob(["PK synthetic"]), headers: new Headers({ "X-Bates-Manifest": JSON.stringify(manifest) }),
+        } as Response);
+        const { matter, container } = await openWithMatter("Production v. Example");
+        stamp(container, [pdf("one.pdf"), pdf("two.pdf")]);
+        expect(await screen.findByText(/Production v\. Example continues at SYN-000106 next time\./)).toBeInTheDocument();
+        expect((await counters.getCounter(matter.id))?.next).toBe(106);
+    });
+
+    it("leaves the matter where it was when the production set could not be numbered", async () => {
+        vi.mocked(uploadFiles).mockRejectedValue(Object.assign(new Error("'two.pdf' is not a PDF"), { __status: 400 }));
+        const { matter, container } = await openWithMatter("Refused set v. Example");
+        stamp(container, [pdf("one.pdf"), pdf("two.pdf")]);
+        await screen.findByRole("heading", { name: "None of these PDFs could be numbered." });
+        expect((await counters.getCounter(matter.id))?.next).toBe(101);
     });
 });
