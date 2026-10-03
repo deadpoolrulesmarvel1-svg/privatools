@@ -29,6 +29,20 @@ except Exception:  # pragma: no cover — Pillow is a hard dep, this is defence-
     pass
 
 # ---------------------------------------------------------------------------
+# Pillow refuses a cut-off picture
+# ---------------------------------------------------------------------------
+# Pillow's default, so a cut-off upload is a 400 that says so (images.py)
+# rather than a picture filled in with blank pixels. WeasyPrint switches it
+# off for the whole process when it is imported, so WeasyPrint is only ever
+# imported through weasyprint_loader.load_weasyprint(), which switches it back.
+try:
+    from PIL import ImageFile as _PILImageFile
+
+    _PILImageFile.LOAD_TRUNCATED_IMAGES = False
+except Exception:  # pragma: no cover — Pillow is a hard dep
+    pass
+
+# ---------------------------------------------------------------------------
 # HEIC/HEIF decoding
 # ---------------------------------------------------------------------------
 # Pillow can't read HEIC on its own. pillow-heif adds the codec, but only in a

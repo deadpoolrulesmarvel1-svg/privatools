@@ -13,6 +13,7 @@ DNS lookup + TLS handshake per host per worker process.
 from __future__ import annotations
 
 import http.client
+import io
 import ipaddress
 import logging
 import os
@@ -29,6 +30,7 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.weasyprint_loader import load_weasyprint
 
 logger = logging.getLogger(__name__)
 
@@ -203,26 +205,56 @@ def _weasyprint_url_fetcher(url: str, timeout: int = 15, ssl_context=None):
     scheme = url.split(":", 1)[0].lower()
     if scheme in ("http", "https"):
         result = safe_url_fetch(url, max_bytes=_MAX_SUBRESOURCE_BYTES, timeout=timeout)
-        from weasyprint.urls import URLFetcherResponse
+        _refuse_cut_off_png(result.body)
+        urls = load_weasyprint().urls
 
         content_type = result.content_type or "application/octet-stream"
         if result.encoding and "charset=" not in content_type.lower():
             content_type = f"{content_type}; charset={result.encoding}"
-        return URLFetcherResponse(
+        return urls.URLFetcherResponse(
             result.final_url, result.body, {"Content-Type": content_type}
         )
     if scheme == "data":
-        from weasyprint.urls import URLFetcher
-
-        return URLFetcher(
+        urls = load_weasyprint().urls
+        response = urls.URLFetcher(
             timeout=timeout, ssl_context=ssl_context, allowed_protocols={"data"}
         ).fetch(url)
+        try:
+            body = response.read()
+        finally:
+            response.close()
+        _refuse_cut_off_png(body)
+        return urls.URLFetcherResponse(response.url, body, response.headers, response.status)
     raise HTTPException(status_code=400, detail=f"Blocked URL scheme: {scheme or 'unknown'}")
+
+
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+def _refuse_cut_off_png(body: bytes) -> None:
+    """Raise for a PNG whose data stops early or is broken, so that WeasyPrint
+    leaves the picture out, as it does any picture it cannot fetch or read.
+
+    WeasyPrint decodes a PNG only while it writes the PDF, outside the code
+    that leaves out a broken picture, and Pillow refuses a cut-off one in
+    every worker (utils/weasyprint_loader.py): one such PNG failed the whole
+    page. verify() reads the chunks and their checksums without decoding the
+    pixels, which is enough for a file cut short.
+    """
+    if not body.startswith(_PNG_SIGNATURE):
+        return
+    from PIL import Image
+
+    try:
+        with Image.open(io.BytesIO(body)) as picture:
+            picture.verify()
+    except Exception as exc:
+        raise ValueError("This PNG stops early or is broken.") from exc
 
 
 def _make_weasyprint_url_fetcher():
     """Create a WeasyPrint 70 fetcher without loading native libraries at boot."""
-    from weasyprint.urls import URLFetcher
+    URLFetcher = load_weasyprint().urls.URLFetcher
 
     class ValidatingURLFetcher(URLFetcher):
         def fetch(self, url, headers=None):
@@ -241,15 +273,17 @@ def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
         # ImportError so the orchestrator falls straight through to fitz.
         raise ImportError("WeasyPrint native libraries not available on this host")
     try:
-        from weasyprint import HTML
-        # url_fetcher so sub-resources in attacker-supplied HTML (<img src=
-        # "file:///etc/passwd">, http://169.254.169.254/...) are SSRF-validated
-        # rather than fetched by WeasyPrint's permissive default fetcher.
-        HTML(string=_wrap_html(html_content), url_fetcher=_make_weasyprint_url_fetcher()).write_pdf(output_path)
-        _weasyprint_ok = True
+        HTML = load_weasyprint().HTML
     except (ImportError, OSError):
         _weasyprint_ok = False
         raise
+    # url_fetcher so sub-resources in attacker-supplied HTML (<img src=
+    # "file:///etc/passwd">, http://169.254.169.254/...) are SSRF-validated
+    # rather than fetched by WeasyPrint's permissive default fetcher. Only a
+    # WeasyPrint that cannot load marks it unavailable: an OSError from one
+    # page's rendering sent every later page in the worker to PyMuPDF.
+    HTML(string=_wrap_html(html_content), url_fetcher=_make_weasyprint_url_fetcher()).write_pdf(output_path)
+    _weasyprint_ok = True
 
 
 def _fitz_html_to_pdf(html_content: str, output_path: str) -> None:
