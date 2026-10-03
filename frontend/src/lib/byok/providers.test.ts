@@ -264,6 +264,24 @@ describe("Anthropic request body", () => {
   });
 });
 
+describe("OpenAI suggestions", () => {
+  /**
+   * OpenAI's reasoning models, the o-series and gpt-5 onwards, refuse
+   * max_tokens with a 400 ("Unsupported parameter: 'max_tokens' is not
+   * supported with this model. Use 'max_completion_tokens' instead."; its
+   * chat-completions reference: max_tokens "is not compatible with o-series
+   * models"). While OpenAI requests send max_tokens, suggesting one gives the
+   * visitor that 400.
+   */
+  it("suggests no OpenAI reasoning model while OpenAI requests send max_tokens", () => {
+    const openai = providerById("openai")!;
+    const body = JSON.parse(buildRequest(openai, { apiKey: "k", model: openai.models[0], messages: [{ role: "user", content: "hi" }] }).body);
+    const reasoning = openai.models.filter(model => /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(model));
+    if ("max_tokens" in body) expect(reasoning).toEqual([]);
+    expect(openai.models.length).toBeGreaterThan(0);
+  });
+});
+
 describe("stoppedShort", () => {
   const anthropic = () => providerById("anthropic")!;
 

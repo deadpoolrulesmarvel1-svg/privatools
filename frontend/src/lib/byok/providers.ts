@@ -135,12 +135,17 @@ export const PROVIDERS: Provider[] = [
     },
     {
         // o3-mini shuts down on 2026-10-23 (OpenAI's notice of 2026-04-22),
-        // which names gpt-5.6-sol as its substitute. gpt-4o and gpt-4o-mini
-        // are not on the deprecations page. gpt-4o-mini-transcribe was
+        // and was never callable from here anyway. OpenAI-shaped requests
+        // send max_tokens, which OpenAI's reasoning models (the o-series and
+        // gpt-5 onwards, gpt-5.6-sol included, the substitute that notice
+        // names) refuse with a 400: "Use 'max_completion_tokens' instead".
+        // Suggest one only once requests to OpenAI send that instead
+        // (providers.test.ts checks). gpt-4o and gpt-4o-mini take max_tokens
+        // and are not on the deprecations page. gpt-4o-mini-transcribe was
         // deprecated on 2026-08-26 and shuts down on 2027-02-26, replaced by
         // gpt-transcribe or gpt-live-transcribe: change it before then.
         id: "openai", label: "OpenAI", origin: "https://api.openai.com",
-        shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "gpt-5.6-sol"], transcribeModel: "gpt-4o-mini-transcribe",
+        shape: "openai", models: ["gpt-4o", "gpt-4o-mini"], transcribeModel: "gpt-4o-mini-transcribe",
         keysUrl: "https://platform.openai.com/api-keys", refusalsUnreadable: true,
     },
     {
