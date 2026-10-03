@@ -98,10 +98,12 @@ const NOT_A_JOB = new Set((
 ).split(" "));
 
 // Words many unrelated tools share. A match on "convert", "format", "extract"
-// or "remove" says nothing about the job: Extract Audio is not Extract Pages.
+// or "remove" says nothing about the job: Extract Audio is not Extract Pages,
+// and counting pages is not counting tokens.
 const GENERIC = new Set((
     "convert converter conversion format formats create creator generate generator make maker "
-    + "check checker view viewer extract extractor remove remover add edit editor batch tool tools"
+    + "check checker view viewer extract extractor remove remover add edit editor batch tool tools "
+    + "count counter counting"
 ).split(" "));
 
 // Tools that take something away. A watermark tool and a watermark remover share
