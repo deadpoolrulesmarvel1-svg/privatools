@@ -238,8 +238,9 @@ def _refuse_cut_off_png(body: bytes) -> None:
     WeasyPrint decodes a PNG only while it writes the PDF, outside the code
     that leaves out a broken picture, and Pillow refuses a cut-off one in
     every worker (utils/weasyprint_loader.py): one such PNG failed the whole
-    page. verify() reads the chunks and their checksums without decoding the
-    pixels, which is enough for a file cut short.
+    page. load() decodes the pixels as WeasyPrint will: verify(), which reads
+    only the chunks and their checksums, let through a PNG whose chunks are
+    whole but whose compressed data is broken, and that failed the page too.
     """
     if not body.startswith(_PNG_SIGNATURE):
         return
@@ -247,7 +248,7 @@ def _refuse_cut_off_png(body: bytes) -> None:
 
     try:
         with Image.open(io.BytesIO(body)) as picture:
-            picture.verify()
+            picture.load()
     except Exception as exc:
         raise ValueError("This PNG stops early or is broken.") from exc
 

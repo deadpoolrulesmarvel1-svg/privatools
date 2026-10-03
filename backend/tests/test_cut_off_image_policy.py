@@ -133,3 +133,38 @@ def test_a_rendering_error_does_not_switch_the_worker_to_pymupdf(monkeypatch):
     output = html_service.html_to_pdf("<p>This page falls back to PyMuPDF.</p>")
     Path(output).unlink(missing_ok=True)
     assert html_service._weasyprint_ok is not False
+
+
+def _png_with_broken_data() -> bytes:
+    """A PNG whose chunks and checksums are whole but whose compressed pixel
+    data is not: verify() passes it, decoding it fails."""
+    import struct
+    import zlib
+
+    width, height = 64, 48
+    rows = b"".join(b"\x00" + bytes((200, 30, 30)) * width for _ in range(height))
+    data = bytearray(zlib.compress(rows))
+    for i in range(10, len(data) - 4, 7):
+        data[i] ^= 0x5A
+
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", bytes(data)) + chunk(b"IEND", b"")
+
+
+def test_a_png_whose_data_is_broken_is_left_out_too(tmp_path, monkeypatch):
+    """Its chunks are whole, so verify() let it through and WeasyPrint failed
+    the page when it decoded it (HTML to PDF's PyMuPDF fallback then failed
+    too, a 500; URL to PDF answered 500)."""
+    monkeypatch.setattr(html_service, "_weasyprint_ok", None)
+    uri = "data:image/png;base64," + base64.b64encode(_png_with_broken_data()).decode()
+    output = tmp_path / "page.pdf"
+    try:
+        html_service._weasyprint_html_to_pdf(f'<h1>Before</h1><img src="{uri}"><p>After</p>', str(output))
+    except ImportError as exc:
+        pytest.skip(f"WeasyPrint's native libraries are not available here: {exc}")
+    with fitz.open(output) as document:
+        assert "Before" in document[0].get_text() and "After" in document[0].get_text()
+        assert not document[0].get_images()
