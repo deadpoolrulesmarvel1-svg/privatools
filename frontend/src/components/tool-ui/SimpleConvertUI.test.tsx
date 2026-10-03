@@ -2,7 +2,7 @@
  * Word to PDF sets each paragraph's text and leaves out every Word equation
  * (python-docx's paragraph text has none). The server says how many in
  * X-Equations-Left-Out, and the result names the count on the file's row with
- * the tool that keeps them. The API is stubbed; the files are synthetic.
+ * a link to the tool that keeps them. The API is stubbed; the files are synthetic.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -33,12 +33,12 @@ describe("Word to PDF's equations", () => {
     it.each([
         ["2", "2 equations were left out. Office to PDF keeps them."],
         ["1", "1 equation was left out. Office to PDF keeps it."],
-    ])("says on the file's row when %s were left out", async (count, note) => {
+    ])("says on the file's row when %s were left out, and links the tool that keeps them", async (count, note) => {
         vi.mocked(uploadFileWithProgress).mockResolvedValue(answer(count));
         convert("maths.docx");
         await screen.findByRole("heading", { name: "Your conversion is ready." });
-        // The row reads "<size> · <note>".
-        expect(screen.getByText(text => text.endsWith(` · ${note}`))).toBeInTheDocument();
+        expect(screen.getByText((_, element) => element?.tagName === "P" && element.textContent === note)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Office to PDF" })).toHaveAttribute("href", "/tool/office-to-pdf");
     });
 
     it.each([["0"], [null]])("says nothing about equations when the answer counts %s", async count => {

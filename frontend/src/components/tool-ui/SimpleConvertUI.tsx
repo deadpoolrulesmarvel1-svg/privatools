@@ -49,16 +49,19 @@ interface QueueItem {
     retryable?: boolean;
     /** Why it failed, so the result can name the cause of a failure worth retrying. */
     errorKind?: ToolErrorKind;
-    /** What the conversion left out of the result, said on its row. */
-    note?: string;
+    /** How many Word equations the conversion left out (Word to PDF), said on its row. */
+    equationsLeftOut?: number;
 }
 
 /** Word to PDF sets each paragraph's text and draws no Word equation; the
  *  server says how many the document had (X-Equations-Left-Out). */
-function equationsNote(header: string | null): string | undefined {
+function equationsLeftOut(header: string | null): number | undefined {
     const count = Number(header);
-    if (!Number.isSafeInteger(count) || count <= 0) return undefined;
-    return count === 1 ? "1 equation was left out. Office to PDF keeps it." : `${count} equations were left out. Office to PDF keeps them.`;
+    return Number.isSafeInteger(count) && count > 0 ? count : undefined;
+}
+
+function EquationsNote({ count }: { count: number }) {
+    return <p>{count === 1 ? "1 equation was left out." : `${count} equations were left out.`} <a href="/tool/office-to-pdf">Office to PDF</a> keeps {count === 1 ? "it" : "them"}.</p>;
 }
 
 export function SimpleConvertUI({ slug, label, outputExt, outputFilename, acceptFileTypes, description }: SimpleConvertUIProps) {
@@ -150,7 +153,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                     plannedName(item.file.name),
                     getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
                 );
-                setItem(item.id, { status: "done", blob, outName, note: equationsNote(res.headers.get("X-Equations-Left-Out")) });
+                setItem(item.id, { status: "done", blob, outName, equationsLeftOut: equationsLeftOut(res.headers.get("X-Equations-Left-Out")) });
                 done++;
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
@@ -224,8 +227,10 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             detail={tone === "failure" ? failureDetail(failCount, retryKinds(items))
                 : tone === "partial" ? `${downloadStarted(doneItems.length)} ${partialLine(failCount)}`
                 : single ? "The download has started. A copy is ready here whenever you need it." : `${downloadStarted(doneItems.length)} Each file can also be downloaded on its own.`}>
-            {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || (item.blob ? [formatFileSize(item.blob.size), item.note].filter(Boolean).join(" · ") : formatFileSize(item.file.size))}
-                status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined} />)}
+            {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || formatFileSize(item.blob ? item.blob.size : item.file.size)}
+                status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined}>
+                {item.blob && item.equationsLeftOut ? <EquationsNote count={item.equationsLeftOut} /> : null}
+            </StudioFile>)}
             <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
                 choose={{ accepts: acceptFileTypes, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}
                 primary={doneItems.length > 0 && <button className="ts-primary-button" onClick={downloadResults}>{doneItems.length > 1 ? <Archive size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />} {downloadAgainLabel(doneItems.length)}</button>}
