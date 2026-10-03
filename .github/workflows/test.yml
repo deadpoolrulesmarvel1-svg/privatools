@@ -47,7 +47,7 @@ jobs:
             tesseract-ocr-fra tesseract-ocr-deu tesseract-ocr-spa \
             libzbar0 poppler-utils ffmpeg qpdf \
             libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
-            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui \
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui libreoffice-math-nogui \
             fonts-dejavu fonts-liberation shared-mime-info
 
       # The SPA-fallback tests assert real static files are served, so they

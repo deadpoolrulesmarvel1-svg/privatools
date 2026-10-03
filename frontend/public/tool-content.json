@@ -651,7 +651,7 @@
     "category": "to-pdf",
     "accepts": ".odt",
     "outputLabel": "document.pdf",
-    "lastReviewed": "2026-09-24",
+    "lastReviewed": "2026-10-03",
     "path": "/tool/odt-to-pdf",
     "priority": 0.6
   },

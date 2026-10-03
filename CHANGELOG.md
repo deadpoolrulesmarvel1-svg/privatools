@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.20] — 2026-10-03 — Equations survive Office to PDF
+
+### Tools
+
+- Office to PDF now keeps the equations in Word documents. Before, each one came out as a blank space in the PDF, with no warning, because the server's LibreOffice had no Math module. ODT to PDF also lays out LibreOffice Math formulas again when a file stores them without a drawing. (#327)
+
 ## [2.7.19] — 2026-10-03 — AI Token Counter
 
 ### New tool

@@ -55,7 +55,7 @@ uses), install:
 sudo apt-get install -y \
   tesseract-ocr tesseract-ocr-eng poppler-utils ffmpeg qpdf libzbar0 \
   libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
-  libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui
+  libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui libreoffice-math-nogui
 
 # From the repo root: Python 3.12 virtual environment from the hashed lock
 # (needs uv). CI installs the same lock with
