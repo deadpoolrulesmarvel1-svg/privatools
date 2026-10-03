@@ -28,9 +28,29 @@ const chunks = entries
   })
   .sort((a, b) => b.gzipKiB - a.gzipKiB);
 
-const offenders = chunks.filter((chunk) => chunk.rawKiB > maxRawKiB || chunk.gzipKiB > maxGzipKiB);
+// Data tables allowed past the per-chunk budget, each held to a ceiling of
+// its own: gpt-tokenizer's rank tables, which the AI Token Counter imports
+// only when a visitor counts (src/lib/tokens/gpt.ts). They are lists of
+// strings, not code a page runs as it loads, and no page may load them
+// eagerly (checked below with the entry and preloads). A table that grows past
+// its ceiling, or turns eager, still fails; nothing else is exempt.
+const DATA_CHUNKS = [
+  { pattern: /^o200k_base-[\w-]+\.js$/, rawKiB: 2100, gzipKiB: 1060, what: "gpt-tokenizer's o200k_base rank table" },
+  { pattern: /^cl100k_base-[\w-]+\.js$/, rawKiB: 1000, gzipKiB: 460, what: "gpt-tokenizer's cl100k_base rank table" },
+];
+const dataChunk = (name) => DATA_CHUNKS.find((data) => data.pattern.test(name));
+
+const offenders = chunks.filter((chunk) => {
+  const data = dataChunk(chunk.name);
+  return data
+    ? chunk.rawKiB > data.rawKiB || chunk.gzipKiB > data.gzipKiB
+    : chunk.rawKiB > maxRawKiB || chunk.gzipKiB > maxGzipKiB;
+});
 
 console.log(`JS bundle budget: raw <= ${maxRawKiB} KiB, gzip <= ${maxGzipKiB} KiB per chunk`);
+for (const data of DATA_CHUNKS) {
+  console.log(`  except lazy data: ${data.what}, raw <= ${data.rawKiB} KiB, gzip <= ${data.gzipKiB} KiB`);
+}
 for (const chunk of chunks.slice(0, 20)) {
   console.log(`${chunk.gzipKiB.toFixed(1).padStart(7)} KiB gzip  ${chunk.rawKiB.toFixed(1).padStart(7)} KiB raw  ${chunk.name}`);
 }
@@ -128,6 +148,14 @@ if (eagerBlogChunks.length > 0) {
   console.log(`\nBlog data: absent from all ${eagerChunks.size} chunks loaded on every page (entry, preloads and their static imports).`);
 }
 
-if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0) {
+// The data tables' own ceilings hold only while they stay lazy.
+const eagerDataChunks = [...eagerChunks].filter((name) => dataChunk(name));
+if (eagerDataChunks.length > 0) {
+  console.error("\nLazy data tables are in the chunks every page loads:");
+  for (const name of eagerDataChunks) console.error(`- ${name} (${dataChunk(name).what})`);
+  console.error("Import gpt-tokenizer's encodings only through the dynamic import() in src/lib/tokens/gpt.ts.");
+}
+
+if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0) {
   process.exit(1);
 }

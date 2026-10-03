@@ -113,9 +113,11 @@ export default defineConfig({
     },
     // Target modern browsers for smaller output
     target: "es2020",
-    // The only expected >600 kB JS chunk is the lazy-loaded
-    // @huggingface/transformers runtime for AI PDF tools. Keep the warning
-    // below 1 MB so accidental eager bundles still fail loudly.
+    // The expected >600 kB JS chunks are lazy: the @huggingface/transformers
+    // runtime for AI PDF tools, and gpt-tokenizer's two rank tables for the
+    // AI Token Counter, which this warning names on every build
+    // (scripts/check-bundle-size.mjs gives them ceilings of their own). Keep
+    // the warning below 1 MB so accidental eager bundles still fail loudly.
     chunkSizeWarningLimit: 900,
   },
   esbuild: {
