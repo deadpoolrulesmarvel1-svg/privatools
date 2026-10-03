@@ -3,13 +3,14 @@
  *
  * Kept that way deliberately: the promises this feature makes — the key goes
  * nowhere but the provider, never into a URL, never into an error message —
- * are only auditable if there is exactly one place to check.
+ * are only auditable if there is exactly one place to check. Three calls:
+ * `complete`, `transcribe` and `countTokens`.
  */
 
 import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
-    buildRequest, buildTranscribeRequest, parseResponse, parseTranscribeResponse,
-    providerById, stoppedShort, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
+    buildCountTokensRequest, buildRequest, buildTranscribeRequest, parseCountTokensResponse, parseResponse, parseTranscribeResponse,
+    providerById, stoppedShort, supportsTokenCount, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
 } from "./providers";
 import { redact, registerSecret } from "./redact";
 
@@ -115,6 +116,49 @@ export async function transcribe(args: TranscribeArgs): Promise<string> {
     }
     if (!res.ok) throw await refusal(res, { label: provider.label, model, customEndpoint: provider.customBaseUrl });
     return parseTranscribeResponse(await res.text()).trim();
+}
+
+export interface CountTokensArgs {
+    providerId: string;
+    apiKey: string;
+    model: string;
+    /** Sent as it is, as one user message. */
+    text: string;
+    signal?: AbortSignal;
+}
+
+/**
+ * How many tokens the provider's own tokenizer makes of the text, from its
+ * count method (Anthropic's count_tokens, Gemini's countTokens): nothing is
+ * generated. Only providers with such a method; the text goes nowhere else.
+ */
+export async function countTokens(args: CountTokensArgs): Promise<number> {
+    const provider = providerById(args.providerId);
+    if (!provider) {
+        throw new ByokError("Unsupported", `unknown provider ${args.providerId}`,
+            "That provider is not supported. Pick one from the list.");
+    }
+    if (!supportsTokenCount(provider)) {
+        throw new ByokError("Unsupported", `no token count on ${provider.id}`,
+            `${provider.label} has no token-count method this page can use.`);
+    }
+    registerSecret(args.apiKey);
+    const req = buildCountTokensRequest(provider, args);
+
+    let res: Response;
+    try {
+        res = await fetch(req.url, { method: "POST", headers: req.headers, body: req.body, signal: args.signal });
+    } catch (err) {
+        if ((err as Error)?.name === "AbortError") throw new ByokError("Aborted", "aborted", "Cancelled.");
+        throw new ByokError("CspBlocked", `fetch failed: ${String(redact((err as Error).message))}`, blockedMessage(provider));
+    }
+    if (!res.ok) throw await refusal(res, { label: provider.label, model: args.model });
+    const count = parseCountTokensResponse(provider, await res.json().catch(() => undefined));
+    if (count === undefined) {
+        throw new ByokError("Unknown", "no token count in the answer",
+            `${provider.label} answered without a token count. Try again, or check the model name.`);
+    }
+    return count;
 }
 
 /**
