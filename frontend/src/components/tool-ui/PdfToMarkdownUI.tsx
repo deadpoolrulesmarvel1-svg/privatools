@@ -15,8 +15,9 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Copy, FileCode2 } from "lucide-react";
-import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { Check, Copy, FileCode2, Hash } from "lucide-react";
+import { consumeFileHandoffs, storeFileHandoff } from "@/lib/file-handoff";
+import { navigateTo } from "@/lib/navigation";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioActionBar, StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
@@ -123,8 +124,10 @@ export function PdfToMarkdownUI() {
             fileDetail={entry => reportSummary(readReport(entry), entry.blob?.size ?? entry.size)}
             onDownload={() => proc.downloadAll("markdown")} onRetry={() => void process("transient")}
             onStartOver={startOver} more="Convert another PDF">
-            {single && !single.entry.outName?.toLowerCase().endsWith(".zip") && single.entry.blob
-                && <MarkdownPreview blob={single.entry.blob} />}
+            {single && single.entry.blob && !single.entry.outName?.toLowerCase().endsWith(".zip") && <>
+                <MarkdownPreview blob={single.entry.blob} />
+                <CountTokens blob={single.entry.blob} name={single.entry.outName || "document.md"} />
+            </>}
         </ProcessorResult>;
     }
 
@@ -198,6 +201,28 @@ function ConversionNotes({ reports, several }: { reports: { entry: FileEntry; re
     }
     if (!notes.length) return null;
     return <ul className="pdf2md-notes" aria-label="About this conversion">{notes.map(n => <li key={n.key}>{n.text}</li>)}</ul>;
+}
+
+/** Counting tokens is AI Token Counter's job: hand it the Markdown, in this tab. */
+function CountTokens({ blob, name }: { blob: Blob; name: string }) {
+    const [sending, setSending] = useState(false);
+    const send = async () => {
+        setSending(true);
+        try {
+            const file = new File([await blob.arrayBuffer()], name, { type: "text/markdown" });
+            await storeFileHandoff(file, "ai-token-counter");
+        } catch {
+            // The counter still opens; the downloaded file can be chosen there.
+        } finally {
+            navigateTo("/tools/ai-token-counter");
+        }
+    };
+    return <p className="pdf2md-next">
+        <button type="button" className="ts-secondary-button" disabled={sending} onClick={() => void send()}>
+            <Hash size={15} aria-hidden="true" /> Count its tokens
+        </button>
+        <span>AI Token Counter counts it for GPT on this device, and for Claude or Gemini with your own key. The Markdown moves to it in this tab; nothing is uploaded again.</span>
+    </p>;
 }
 
 /** The Markdown as text, to copy or read before use: never rendered as HTML. */

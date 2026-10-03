@@ -15,6 +15,8 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, Hash } from "lucide-react";
 import { buildOutputFilename, downloadBlob, formatFileSize } from "@/lib/api";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { countTokens } from "@/lib/byok/client";
 import { ByokError } from "@/lib/byok/errors";
@@ -261,6 +263,22 @@ export function AiTokenCounterUI() {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [phase, canCount, count]);
+
+    // A file handed over by another tool (PDF to Markdown's "Count its tokens",
+    // a selection made on the home page) arrives chosen. It moves in this
+    // tab's memory; nothing is uploaded.
+    useEffect(() => {
+        let cancelled = false;
+        // Claim it only once the effect survives StrictMode's setup replay.
+        queueMicrotask(() => {
+            if (cancelled) return;
+            void consumeFileHandoffs("ai-token-counter").then(files => {
+                const [handed] = cancelled ? [] : takeAccepted(files, ACCEPTS);
+                if (handed) { setFile(handed); setFailure(null); }
+            });
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     const backToForm = () => { setResult(null); setFailure(null); setReturning(true); setPhase("idle"); };
     const startOver = () => { setFile(null); setText(""); backToForm(); };

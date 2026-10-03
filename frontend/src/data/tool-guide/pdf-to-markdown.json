@@ -14,13 +14,13 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The Markdown downloads by itself, and a single file can also be copied or previewed on the page. The result names any page without a text layer, which is left out, and the repeated lines that were removed."
+      "text": "Click Convert. The Markdown downloads by itself, and a single file can also be copied, previewed, or handed to AI Token Counter on the page. The result names any page without a text layer, which is left out, and the repeated lines that were removed."
     }
   ],
   "faq": [
     {
       "q": "How do I convert a PDF to Markdown for ChatGPT, Claude or another LLM?",
-      "a": "Convert it here, then paste the Markdown into the chat or upload the .md file. LLM-ready means the Markdown keeps the structure a model reads a document by: headings by level, lists, tables as GitHub tables, code in fenced blocks and links with their addresses, without running headers, footers and page numbers breaking up the text. Page markers (<!-- page 3 -->) let the model say which page it is quoting, and chunks split a long document to fit an upload or context limit, or to load into a retrieval (RAG) index."
+      "a": "Convert it here, then paste the Markdown into the chat or upload the .md file. LLM-ready means the Markdown keeps the structure a model reads a document by: headings by level, lists, tables as GitHub tables, code in fenced blocks and links with their addresses, without running headers, footers and page numbers breaking up the text. Page markers (<!-- page 3 -->) let the model say which page it is quoting, and chunks split a long document to fit an upload or context limit, or to load into a retrieval (RAG) index. To see how many tokens it uses, choose Count its tokens on the result: AI Token Counter counts it for GPT on your device, and the Markdown is not uploaded again."
     },
     {
       "q": "Does it convert tables?",

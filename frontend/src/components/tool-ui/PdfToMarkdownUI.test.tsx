@@ -11,13 +11,15 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ upload: vi.fn(), download: vi.fn() }));
+const mocks = vi.hoisted(() => ({ upload: vi.fn(), download: vi.fn(), navigate: vi.fn() }));
 vi.mock("@/lib/api", async (original) => ({
     ...(await original<object>()),
     uploadFile: mocks.upload,
     downloadBlob: mocks.download,
 }));
+vi.mock("@/lib/navigation", async (original) => ({ ...(await original<object>()), navigateTo: mocks.navigate }));
 
+import { clearFileHandoffs, consumeFileHandoffs } from "@/lib/file-handoff";
 import { PdfToMarkdownUI } from "./PdfToMarkdownUI";
 import { pageList, reportSummary, type MarkdownReport } from "./pdf-to-markdown-report";
 
@@ -56,6 +58,8 @@ const show = () => render(<MemoryRouter><PdfToMarkdownUI /></MemoryRouter>);
 beforeEach(() => {
     mocks.upload.mockReset();
     mocks.download.mockReset();
+    mocks.navigate.mockReset();
+    clearFileHandoffs();
     localStorage.clear();
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
 });
@@ -136,6 +140,30 @@ describe("PDF to Markdown", () => {
         fireEvent.click(within(preview).getByRole("button", { name: /Copy Markdown/ }));
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(MARKDOWN);
         expect(await within(preview).findByRole("button", { name: /Copied/ })).toBeInTheDocument();
+    });
+
+    it("hands the Markdown to the AI Token Counter on this device", async () => {
+        mocks.upload.mockResolvedValueOnce(answer(report()));
+        const view = show();
+        choose(view);
+        await convert(view);
+        const before = mocks.upload.mock.calls.length;
+        fireEvent.click(await screen.findByRole("button", { name: /Count its tokens/ }));
+        await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/tools/ai-token-counter"));
+        const [handed] = await consumeFileHandoffs("ai-token-counter");
+        expect(handed.name).toBe("report.md");
+        expect(await handed.text()).toBe(MARKDOWN);
+        // Nothing is sent again to count it.
+        expect(mocks.upload.mock.calls.length).toBe(before);
+    });
+
+    it("offers no token count for a ZIP of chunks, which the counter cannot read", async () => {
+        mocks.upload.mockResolvedValueOnce(answer(report({ chunks: 3 }), "PK", "report_chunks.zip"));
+        const view = show();
+        choose(view);
+        fireEvent.click(screen.getByRole("button", { name: /By heading/ }));
+        await convert(view);
+        expect(screen.queryByRole("button", { name: /Count its tokens/ })).toBeNull();
     });
 
     it("shows a refused scan's own reason, offers another file and no retry", async () => {
