@@ -213,6 +213,14 @@ describe("translating with your own AI key", () => {
         expect(result.outcomes.every(outcome => outcome?.status === "done")).toBe(true);
     });
 
+    it("counts a reply line that is only a speaker's dash as not translated", async () => {
+        const doc = parseSubtitles("1\n00:00:01,000 --> 00:00:02,000\n- Are you coming?\n- Yes.\n");
+        const plan = planTranslation(doc);
+        const { engine } = model(() => ["- ¿Vienes?", "-"]);
+        const cues = assembleCues(doc, plan, (await translateWithModel(plan, engine)).outcomes, TWO);
+        expect(cues[0]).toMatchObject({ status: "failed", text: "- ¿Vienes?\n- Yes.", reason: "The model returned this line empty." });
+    });
+
     it("keeps formatting inside the words only when the reply carries exactly the same spans", async () => {
         const doc = parseSubtitles("1\n00:00:01,000 --> 00:00:02,000\nI said <i>no</i>.\n\n2\n00:00:03,000 --> 00:00:04,000\nShe said <b>yes</b>.\n");
         const plan = planTranslation(doc);

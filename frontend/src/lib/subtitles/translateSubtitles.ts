@@ -266,7 +266,8 @@ export async function translateWithModel(plan: TranslationPlan, translateLines: 
         if (replies.length !== batch.length) throw Object.assign(new Error("count"), { name: "NumberedReplyError" });
         replies.forEach((reply, k) => {
             const { text, dropped } = received(plan.items[batch[k]], reply);
-            outcomes[batch[k]] = { status: "done", text, dropped };
+            // A speaker's dash and nothing else is no translation: the cue keeps its own words.
+            outcomes[batch[k]] = /\p{L}|\p{N}/u.test(text) ? { status: "done", text, dropped } : { status: "failed", reason: "The model returned this line empty." };
         });
     };
     for (const batch of batchItems(plan, limits)) {
