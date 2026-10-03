@@ -6,17 +6,21 @@
     },
     {
       "name": "Convert to PDF",
-      "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, headers, footers and links are left out."
+      "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, equations, headers, footers and links are left out."
     },
     {
       "name": "Download and check the PDF",
-      "text": "Open the PDF and check it: everything is set in one typeface, and any text that was in tables, text boxes, headers or footers is missing."
+      "text": "Open the PDF and check it: everything is set in one typeface, any text that was in tables, text boxes, headers or footers is missing, and so is every equation."
     }
   ],
   "faq": [
     {
       "q": "Will the PDF look exactly like my Word document?",
-      "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."
+      "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, equations, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."
+    },
+    {
+      "q": "Are equations kept?",
+      "a": "No. Word keeps an equation apart from the text of its paragraph, and only that text is carried over, so each equation is left out and the words around it close up: a line reading \"Before x/y after.\", with x/y as an equation, comes out as \"Before after.\" Office to PDF keeps Word equations."
     },
     {
       "q": "Why do the fonts look different?",

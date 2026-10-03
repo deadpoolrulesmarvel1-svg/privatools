@@ -1091,7 +1091,7 @@
     "slug": "word-to-pdf",
     "name": "Word to PDF",
     "description": "Convert .docx Word documents to PDF",
-    "longDescription": "Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.",
+    "longDescription": "Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, equations, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.",
     "seoTitle": "Convert Word to PDF Online – Simple Text Layout",
     "metaDescription": "Upload a docx file and get a simple A4 PDF of its text, with headings and bold or italic paragraphs kept. Free, no Microsoft Office needed.",
     "synonyms": "docx ms word convert export doc to pdf",
@@ -1099,7 +1099,7 @@
     "category": "to-pdf",
     "accepts": ".docx",
     "outputLabel": "converted.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-10-03",
     "path": "/tool/word-to-pdf",
     "priority": 0.8
   },
