@@ -780,6 +780,7 @@
     "/pdf-to-markdown": {
       "category": "Document and PDF conversion",
       "response_media": [
+        "application/zip",
         "text/markdown"
       ],
       "tool_aliases": [

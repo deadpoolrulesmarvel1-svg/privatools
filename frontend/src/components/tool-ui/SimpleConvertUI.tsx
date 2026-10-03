@@ -241,7 +241,6 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
 }
 
 // Pre-built components for each conversion tool
-export function PdfToMarkdownUI2() { return <SimpleConvertUI slug="pdf-to-markdown" label="Convert to Markdown" outputExt="md" outputFilename="document.md" acceptFileTypes=".pdf" description="Extract content as clean Markdown format" />; }
 export function ExtractImagesUI() { return <SimpleConvertUI slug="extract-images" label="Extract Images" outputExt="zip" outputFilename="images.zip" acceptFileTypes=".pdf" description="Download all embedded images as a ZIP archive" />; }
 export function ExtractTablesUI() { return <SimpleConvertUI slug="extract-tables" label="Extract Tables" outputExt="csv" outputFilename="tables.csv" acceptFileTypes=".pdf" description="Detect and extract tables into CSV format" />; }
 export function PdfToPdfaUI() { return <SimpleConvertUI slug="pdf-to-pdfa" label="Convert to PDF/A" outputExt="pdf" outputFilename="archive.pdf" acceptFileTypes=".pdf" description="Convert to ISO-standard PDF/A for long-term archiving" />; }

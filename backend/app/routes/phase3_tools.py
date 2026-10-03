@@ -6,6 +6,7 @@ import logging
 import re
 import uuid
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -22,10 +23,13 @@ from ..services import (
     svg_to_png_service,
     url_to_pdf_service,
 )
+from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
-from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
+from ..utils.route_helpers import (
+    MAX_SIZE, cleanup_on_error, read_upload, safe_header_filename, safe_stem, stream_upload_to_disk,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -103,28 +107,64 @@ async def url_to_pdf(request: Request, url: str = Form(...)):
 
 # ─── PDF → Markdown ───────────────────────────────────────
 @router.post("/pdf-to-markdown")
-async def pdf_to_markdown(file: UploadFile = File(...)):
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
+async def pdf_to_markdown(
+    file: UploadFile = File(...),
+    page_markers: bool = Form(True),
+    remove_headers_footers: bool = Form(True),
+    chunk: Literal["none", "headings", "size"] = Form("none"),
+    chunk_size: int = Form(pdf_to_markdown_service.CHUNK_DEFAULT, ge=pdf_to_markdown_service.CHUNK_MIN,
+                           le=pdf_to_markdown_service.CHUNK_MAX),
+    chunk_output: Literal["zip", "single"] = Form("zip"),
+):
+    """Convert a PDF to Markdown: headings, paragraphs, lists, tables, code,
+    links and picture placeholders, in reading order across columns.
+
+    ``page_markers`` puts ``<!-- page N -->`` before each page;
+    ``remove_headers_footers`` drops lines repeated at the top or bottom of
+    most pages. ``chunk`` splits the Markdown at headings or at about
+    ``chunk_size`` characters, into a ZIP of .md files or, with
+    ``chunk_output=single``, one file with ``<!-- chunk N of M -->`` between
+    the parts. The X-Markdown-Report header says what was found, and which
+    pages had no text layer. The limits are in pdf_to_markdown_service.
+    """
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+    opts = pdf_to_markdown_service.options(
+        page_markers=page_markers, remove_headers_footers=remove_headers_footers,
+        chunk=chunk, chunk_size=chunk_size, chunk_output=chunk_output,
+    )
 
     ensure_temp_dir()
-    temp = None
+    path = get_temp_path(f"pdf2md_{uuid.uuid4().hex}.pdf")
     out = None
     try:
-        content = await _read_upload(file, label="PDF file")
-        validate_pdf_content(content)
-        temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        temp.write_bytes(content)
-        out = await asyncio.to_thread(pdf_to_markdown_service.pdf_to_markdown, str(temp))
-        cleanup = BackgroundTask(remove_files, str(temp), out)
-        return FileResponse(out, filename="document.md", media_type="text/markdown", background=cleanup)
+        await stream_upload_to_disk(file, path, label="PDF", validate=validate_pdf_content)
+        # A wait for the bounded worker process, which is stopped after its
+        # time limit; the heavy pool keeps the waits bounded too.
+        out, report = await run_bounded(pdf_to_markdown_service.convert, str(path), opts)
     except HTTPException:
-        _cleanup_on_error(temp, out)
         raise
-    except Exception as e:
-        _cleanup_on_error(temp, out)
+    except ValueError as exc:
+        # Password-protected, unreadable, or no pages.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ToolError:
+        # Too many pages or too much memory (413), nothing to convert or too
+        # much work (422), too slow (504) or failed (500): the global handler
+        # gives each its status and message.
+        raise
+    except Exception as exc:
         logger.exception("pdf-to-markdown error")
-        raise HTTPException(status_code=500, detail="Conversion failed")
+        raise HTTPException(status_code=500, detail="Conversion failed") from exc
+    finally:
+        remove_files(str(path))
+
+    stem = safe_stem(file.filename, "document")
+    zipped = pdf_to_markdown_service.is_zip(opts)
+    name = safe_header_filename(f"{stem}_chunks.zip" if zipped else f"{stem}.md", "document.md")
+    # The Markdown is the document's own text: never store it anywhere.
+    headers = {"X-Markdown-Report": pdf_to_markdown_service.report_header(report), "Cache-Control": "no-store"}
+    return FileResponse(out, filename=name, headers=headers, background=BackgroundTask(remove_files, out),
+                        media_type="application/zip" if zipped else "text/markdown; charset=utf-8")
 
 
 # ─── SVG → PNG ────────────────────────────────────────────

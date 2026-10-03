@@ -1,0 +1,22 @@
+/* PDF to Markdown: spacing inside the options, the result's notes and the
+   plain-text preview. Colours come from the experience tokens, so Air and
+   Play, light and dark, each draw them in their own palette. */
+
+.pdf2md-setting { margin-top: 12px; }
+.ts-options .ts-check + .ts-caption { margin: 0 0 12px 28px; }
+
+/* "Read this first" notes, in the intake notice's colours (DESIGN.md: --warning-soft). */
+.pdf2md-notes { display: grid; gap: 8px; margin: 0 0 4px; padding: 14px 16px 14px 32px; border-radius: 10px;
+    border: 1px solid hsl(var(--warning) / .38); background: hsl(var(--warning-soft)); color: hsl(var(--foreground));
+    font-size: 13px; line-height: 1.6; }
+.pdf2md-notes li { overflow-wrap: anywhere; }
+.pdf2md-notes a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 2px; }
+
+.pdf2md-preview { display: grid; gap: 10px; min-width: 0; margin-top: 8px; }
+.pdf2md-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pdf2md-preview-head h3 { font-size: 15px; font-weight: 650; margin: 0; }
+.pdf2md-preview pre { margin: 0; max-height: 360px; overflow: auto; padding: 16px 18px; border-radius: 9px;
+    border: 1px solid hsl(var(--border)); background: hsl(var(--paper-2)); color: hsl(var(--foreground));
+    font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    white-space: pre-wrap; overflow-wrap: anywhere; }
+.pdf2md-preview pre:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
