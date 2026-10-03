@@ -32,7 +32,7 @@
     },
     {
       "q": "Why does an MKV with 5.1 surround sound fail?",
-      "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"Processing failed. Please try again.\" Stereo, mono and AAC 5.1 tracks convert normally."
+      "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"A processing tool failed on this file. Try a different file or simpler settings.\" Stereo, mono and AAC 5.1 tracks convert normally."
     },
     {
       "q": "How long a video can I convert?",

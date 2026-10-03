@@ -11,17 +11,15 @@ from pathlib import Path
 
 import fitz  # PyMuPDF
 
-from ..utils.exceptions import ValidationError
+from ..utils.cleanup import open_pdf_document
 from ..utils.filenames import temp_output
 
 
 def pdf_to_svg(input_path: str) -> str:
-    doc = fitz.open(input_path)
+    # A PDF that needs a password, cannot be read or has no pages is refused
+    # with a 400 in the site's own words.
+    doc = open_pdf_document(input_path)
     try:
-        page_count = len(doc)
-        if page_count == 0:
-            raise ValidationError("Cannot convert an empty PDF.")
-
         svg_paths: list[str] = []
         for i, page in enumerate(doc):
             svg_text = page.get_svg_image(matrix=fitz.Identity)

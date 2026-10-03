@@ -44,7 +44,7 @@
     },
     {
       "q": "What limits apply?",
-      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per video and the request five minutes once the upload has arrived, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per video and the request five minutes once the upload has arrived, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A video that runs out of time shows \"The server took too long. Try a smaller file or try again.\" and can be retried from the list."
     },
     {
       "q": "What happens to my videos on the server?",

@@ -3,7 +3,8 @@
 These all share the same constraints:
   - input goes to a temp .mp4/.mov/etc, output to a temp file
   - ffmpeg invoked via subprocess with a hard timeout
-  - non-zero ffmpeg exit raises ValueError so the route returns a clean 400
+  - a failed or timed-out ffmpeg run raises a ToolError (400 or 504), which
+    the routes pass through, and leaves no partial output behind
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from contextlib import contextmanager
 from fractions import Fraction
 from pathlib import Path
 
@@ -67,6 +69,22 @@ def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | No
         last = (proc.stderr or "").strip().splitlines()
         msg = last[-1] if last else f"ffmpeg exited with code {proc.returncode}"
         raise ValidationError(f"ffmpeg failed: {msg}")
+
+
+@contextmanager
+def _removed_on_failure(output_path):
+    """Delete `output_path` if the work inside fails.
+
+    FFmpeg writes its output as it goes, so a run stopped at its time limit
+    leaves part of a file behind, at a path the route never learns because
+    the service raised instead of returning it. It would stay in the temp
+    directory until the 10-minute sweep.
+    """
+    try:
+        yield
+    except BaseException:
+        Path(output_path).unlink(missing_ok=True)
+        raise
 
 
 def _probe_duration(input_path: str) -> float:
@@ -135,6 +153,10 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
             story.append(RLImage(str(f), width=w * ratio, height=h * ratio))
         doc.build(story)
         return str(output_path)
+    except BaseException:
+        # ReportLab writes the PDF as it builds it; see _removed_on_failure.
+        Path(output_path).unlink(missing_ok=True)
+        raise
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
@@ -166,7 +188,8 @@ def video_convert(input_path: str, target_format: str) -> str:
                  "-c:a", "aac", "-movflags", "+faststart"]
     args.append(str(output_path))
     # The same timeline in another format, so its chapter markers still fit.
-    _run_ffmpeg(args, chapters=True)
+    with _removed_on_failure(output_path):
+        _run_ffmpeg(args, chapters=True)
     return str(output_path)
 
 
@@ -190,13 +213,14 @@ def video_resize(input_path: str, preset: str = "720p") -> str:
         )
     w, h = VIDEO_PRESETS[preset]
     output_path = temp_output("video_resize", "mp4")
-    _run_ffmpeg([
-        "-i", input_path,
-        "-vf", f"scale={w}:{h}",
-        "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
-        "-c:a", "aac", "-movflags", "+faststart",
-        str(output_path),
-    ], chapters=True)
+    with _removed_on_failure(output_path):
+        _run_ffmpeg([
+            "-i", input_path,
+            "-vf", f"scale={w}:{h}",
+            "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
+            "-c:a", "aac", "-movflags", "+faststart",
+            str(output_path),
+        ], chapters=True)
     return str(output_path)
 
 
@@ -207,14 +231,15 @@ def video_thumbnail(input_path: str, time_seconds: float = 1.0) -> str:
     if time_seconds < 0:
         time_seconds = 0
     output_path = temp_output("video_thumb", "jpg")
-    _run_ffmpeg([
-        "-ss", str(time_seconds),
-        "-i", input_path,
-        "-frames:v", "1",
-        "-vf", "scale=1280:-1",
-        "-q:v", "3",
-        str(output_path),
-    ])
+    with _removed_on_failure(output_path):
+        _run_ffmpeg([
+            "-ss", str(time_seconds),
+            "-i", input_path,
+            "-frames:v", "1",
+            "-vf", "scale=1280:-1",
+            "-q:v", "3",
+            str(output_path),
+        ])
     return str(output_path)
 
 
@@ -223,15 +248,16 @@ def video_thumbnail(input_path: str, time_seconds: float = 1.0) -> str:
 
 def gif_to_mp4(input_path: str) -> str:
     output_path = temp_output("gif_to_mp4", "mp4")
-    _run_ffmpeg([
-        "-i", input_path,
-        # H.264 needs even dimensions; the pad filter keeps it safe for any input.
-        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-crf", "23", "-preset", "veryfast",
-        "-movflags", "+faststart",
-        str(output_path),
-    ])
+    with _removed_on_failure(output_path):
+        _run_ffmpeg([
+            "-i", input_path,
+            # H.264 needs even dimensions; the pad filter keeps it safe for any input.
+            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-crf", "23", "-preset", "veryfast",
+            "-movflags", "+faststart",
+            str(output_path),
+        ])
     return str(output_path)
 
 
@@ -531,13 +557,14 @@ def audio_merge(input_paths: list[str]) -> str:
         inputs += ["-i", p]
     n = len(input_paths)
     filter_complex = "".join(f"[{i}:a:0]" for i in range(n)) + f"concat=n={n}:v=0:a=1[a]"
-    _run_ffmpeg([
-        *inputs,
-        "-filter_complex", filter_complex,
-        "-map", "[a]",
-        "-c:a", "libmp3lame", "-q:a", "2",
-        str(output_path),
-    ])
+    with _removed_on_failure(output_path):
+        _run_ffmpeg([
+            *inputs,
+            "-filter_complex", filter_complex,
+            "-map", "[a]",
+            "-c:a", "libmp3lame", "-q:a", "2",
+            str(output_path),
+        ])
     return str(output_path)
 
 

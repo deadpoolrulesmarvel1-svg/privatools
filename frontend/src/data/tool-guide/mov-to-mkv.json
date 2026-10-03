@@ -40,7 +40,7 @@
     },
     {
       "q": "What limits apply?",
-      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes once the upload has arrived, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes once the upload has arrived, so long high-resolution clips may not finish; when that happens the page shows \"The server took too long. Try a smaller file or try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."
     },
     {
       "q": "What happens to my MOV on the server?",

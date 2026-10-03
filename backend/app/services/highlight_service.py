@@ -11,6 +11,7 @@ from typing import Iterable, Tuple
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.colors import parse_hex_color
 from ..utils.filenames import temp_output
 
@@ -57,7 +58,9 @@ def highlight_text(
     flags = 0 if case_sensitive else fitz.TEXT_DEHYPHENATE
     total_hits = 0
 
-    doc = fitz.open(input_path)
+    # A PDF that needs a password, cannot be read or has no pages is refused
+    # with a 400 in the site's own words.
+    doc = open_pdf_document(input_path)
     try:
         for page in doc:
             quads: Iterable[fitz.Quad]
