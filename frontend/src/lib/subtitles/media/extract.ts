@@ -108,15 +108,20 @@ function unreadable(error?: unknown): MediaError {
     return new MediaError("unreadable", "This browser can’t decode the sound in this file.");
 }
 
-/** Why a file's sound is decoded whole, in words for the visitor, by what its first bytes say it is. */
-async function decodedWhole(file: File, kind: Awaited<ReturnType<typeof sniff>>): Promise<string> {
+/**
+ * Why a file's sound is decoded whole, in words for the visitor, by what its
+ * first bytes say it is: a sentence that opens a message, or one that follows
+ * a sentence about the file.
+ */
+async function decodedWhole(file: File, kind: Awaited<ReturnType<typeof sniff>>, opens: boolean): Promise<string> {
     const limit = `up to ${minutes(WHOLE_FILE_SECONDS)} of sound`;
+    const it = opens ? "This file" : "It";
     if (kind === "mp4") {
         return await isFragmentedMp4(file)
-            ? `This file is written in fragments, as some recorders save video, which this browser decodes whole, ${limit}.`
-            : `Its sound isn’t AAC or MP3, the kinds read a minute at a time, so this browser decodes it whole, ${limit}.`;
+            ? `${it} is written in fragments, as some recorders save video, which this browser decodes whole, ${limit}.`
+            : `${opens ? "This file’s" : "Its"} sound isn’t AAC or MP3, the kinds read a minute at a time, so this browser decodes it whole, ${limit}.`;
     }
-    if (kind === "matroska") return `It can’t be read a minute at a time, so this browser decodes it whole, ${limit}.`;
+    if (kind === "matroska") return `${it} can’t be read a minute at a time, so this browser decodes it whole, ${limit}.`;
     return `Files in this format are decoded whole in this browser, ${limit}.`;
 }
 
@@ -159,11 +164,11 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
     const seconds = await measure(file, file.type.startsWith("video/") || kind === "mp4" || kind === "matroska");
     signal?.throwIfAborted();
     if (seconds === null && file.size > WHOLE_FILE_BYTES) {
-        throw new MediaError("too-long-whole", `${await decodedWhole(file, kind)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
+        throw new MediaError("too-long-whole", `${await decodedWhole(file, kind, true)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
     }
     if (seconds !== null && seconds > MAX_SECONDS) throw tooLong(seconds);
     if (seconds !== null && seconds > WHOLE_FILE_SECONDS) {
-        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(seconds)} long. ${await decodedWhole(file, kind)}`, seconds);
+        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(seconds)} long. ${await decodedWhole(file, kind, false)}`, seconds);
     }
     let samples: Float32Array;
     try {
@@ -173,7 +178,7 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
     }
     signal?.throwIfAborted();
     if (samples.length / SAMPLE_RATE > WHOLE_FILE_SECONDS + 1) {
-        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(samples.length / SAMPLE_RATE)} long. ${await decodedWhole(file, kind)}`, samples.length / SAMPLE_RATE);
+        throw new MediaError("too-long-whole", `This file’s sound is ${minutes(samples.length / SAMPLE_RATE)} long. ${await decodedWhole(file, kind, false)}`, samples.length / SAMPLE_RATE);
     }
     const decoded = samples;
     return {

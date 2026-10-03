@@ -121,7 +121,7 @@ describe("opening a file's sound", () => {
         const tooLong = async () => 16 * 60;
         const fragmented = await openAudio(fileOf("tone-fragmented.mp4", "video/mp4"), { measure: tooLong }).catch(error => error);
         expect(fragmented).toMatchObject({ problem: "too-long-whole" });
-        expect(fragmented.message).toBe("This file’s sound is 16 minutes long. This file is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.");
+        expect(fragmented.message).toBe("This file’s sound is 16 minutes long. It is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.");
         const ogg = mediaFile("voice.ogg", "audio/ogg", Uint8Array.of(0x4f, 0x67, 0x67, 0x53, 0, 2, 0, 0, 0, 0, 0, 0));
         const other = await openAudio(ogg, { measure: tooLong }).catch(error => error);
         expect(other.message).toBe("This file’s sound is 16 minutes long. Files in this format are decoded whole in this browser, up to 15 minutes of sound.");

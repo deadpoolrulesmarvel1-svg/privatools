@@ -163,7 +163,7 @@ describe("the Subtitle Generator page", () => {
     });
 
     it("says why a long fragmented MP4 is refused, and points it to Extract Audio, not Audio Converter", async () => {
-        mocks.open.mockRejectedValue(new MediaError("too-long-whole", "This file’s sound is 16 minutes long. This file is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.", 960));
+        mocks.open.mockRejectedValue(new MediaError("too-long-whole", "This file’s sound is 16 minutes long. It is written in fragments, as some recorders save video, which this browser decodes whole, up to 15 minutes of sound.", 960));
         choose("obs.mp4", "video/mp4");
         generate();
         expect(await screen.findByRole("heading", { level: 2, name: "This file is too long to read whole." })).toBeInTheDocument();
