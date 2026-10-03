@@ -904,7 +904,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Convert PDF to Markdown with tables, nested lists, headings, code and links, in reading order across columns. Add page markers or split it into chunks for AI.",
     synonyms: "md markdown llm ai chatgpt claude rag chunks tables gfm github readme docs obsidian",
     popularity: 138,
-    category: "from-pdf", accepts: ".pdf", outputLabel: "Markdown: a .md file, or a ZIP of chunks",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "Markdown: a .md file, or a ZIP of chunks", needsText: true,
     lastReviewed: "2026-10-03",
   },
   {

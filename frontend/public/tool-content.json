@@ -1213,6 +1213,7 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "Markdown: a .md file, or a ZIP of chunks",
+    "needsText": true,
     "lastReviewed": "2026-10-03",
     "path": "/tool/pdf-to-markdown",
     "priority": 0.6
