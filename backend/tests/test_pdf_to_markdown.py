@@ -340,6 +340,19 @@ def test_chunks_by_size_stay_under_the_size_and_lose_nothing(tmp_path):
     assert re.sub(r"\s+", " ", joined).count("Sentence") == re.sub(r"\s+", " ", whole).count("Sentence")
 
 
+def test_chunks_by_size_keep_each_paragraph_whole_when_it_fits(tmp_path):
+    """A paragraph that fits in a chunk of its own is moved there whole, not cut to fill the last one."""
+    whole = md(fx.narrow_gutter(), page_markers=False)
+    paragraphs = [p.strip() for p in whole.split("\n\n") if p.startswith("Sentence")]
+    _, parts = chunks(fx.narrow_gutter(), tmp_path, chunk="size", chunk_size=1200, page_markers=False)
+    pieces = [p for _, text in parts for p in text.strip().split("\n\n") if p.startswith("Sentence")]
+    for paragraph in paragraphs:
+        if len(paragraph) <= 1200 - 60:
+            assert paragraph in pieces, paragraph[:40]
+    # A paragraph longer than a chunk is cut between sentences.
+    assert all(piece.endswith(".") for piece in pieces)
+
+
 def test_a_chunk_that_starts_mid_page_names_its_page(tmp_path):
     _, parts = chunks(fx.narrow_gutter(), tmp_path, chunk="size", chunk_size=800)
     assert all(text.startswith("<!-- page 1 -->") for _, text in parts)

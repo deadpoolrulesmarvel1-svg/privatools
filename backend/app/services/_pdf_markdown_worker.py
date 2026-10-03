@@ -1635,6 +1635,9 @@ _CUTTABLE = ("para", "item", "table", "code")
 
 
 def _by_size(blocks: list[Block], limit: int, markers: bool) -> list[list[Block]]:
+    """Blocks packed into chunks of at most ``limit`` characters. A block that
+    does not fit starts the next chunk whole; only a block longer than a chunk
+    is cut (``_cut``)."""
     queue = list(reversed(blocks))
     chunks: list[list[Block]] = [[]]
     used = 0
@@ -1642,14 +1645,6 @@ def _by_size(blocks: list[Block], limit: int, markers: bool) -> list[list[Block]
         b = queue.pop()
         cost = len(b.md) + 2
         if used + cost > limit and _has_content(chunks[-1]):
-            room = limit - used - 2
-            if b.kind in _CUTTABLE and room >= max(200, limit // 4):
-                first, rest = _cut(b, room)
-                if rest is not None and len(first.md) <= room:
-                    chunks[-1].append(first)
-                    used += len(first.md) + 2
-                    queue.append(rest)
-                    continue
             used = _start_chunk(chunks, b, markers)
         if used + cost > limit and b.kind in _CUTTABLE:
             first, rest = _cut(b, max(limit - used - 2, 100))
@@ -1683,7 +1678,8 @@ def _cut(b: Block, size: int) -> tuple[Block, Block | None]:
                 Block(b.page, b.kind, md="\n".join(head + rest + tail)))
     text = b.md
     ends = [m.end() for m in re.finditer(r"[.!?][)\]\"'’”]*\s+", text[:size + 1])]
-    cut = ends[-1] if ends and ends[-1] >= size // 3 else text.rfind(" ", 0, size + 1)
+    # Between sentences; between words only when one sentence is longer than the room.
+    cut = ends[-1] if ends else text.rfind(" ", 0, size + 1)
     if cut <= 0:
         cut = size
     first, rest = text[:cut].rstrip(), text[cut:].lstrip()

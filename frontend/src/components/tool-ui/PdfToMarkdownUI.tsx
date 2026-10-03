@@ -163,7 +163,7 @@ export function PdfToMarkdownUI() {
                     onClick={() => setField("chunkOutput", "single")}><strong>One .md file</strong><span><code className="pdf2md-code">&lt;!-- chunk 2 of 7 --&gt;</code> between parts</span></button>
             </div>}
             <p className="ts-caption">{chunk === "headings" ? "Splits before each heading of the two highest levels in the document."
-                : chunk === "size" ? "Splits between paragraphs, list items and table rows, so no chunk ends mid-sentence unless one sentence is longer than a chunk."
+                : chunk === "size" ? "Splits between paragraphs, list items and table rows; a paragraph or table longer than a chunk is split between its sentences or rows."
                 : "Split the Markdown into parts to fit an AI's upload or context limits."}</p>
         </div>
         <div>
