@@ -65,7 +65,7 @@ export function ChatPdfUI() {
         try {
             const pdfjsLib = await loadPdfjs();
             const buf = await f.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+            const pdf = await pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
             loadedPdf = pdf;
             const pages: string[] = [];
             for (let i = 1; i <= pdf.numPages; i++) {

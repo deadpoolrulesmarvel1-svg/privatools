@@ -579,7 +579,7 @@ URL: https://privatools.me/tool/word-to-pdf
 
 Convert .docx Word documents to PDF
 
-Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.
+Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, equations, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.
 
 ### Excel to PDF
 
@@ -1283,7 +1283,7 @@ URL: https://privatools.me/tools/transcribe-audio
 
 Speech to text in your browser — or with your own AI key
 
-Transcribe audio with an on-device Whisper model or your own OpenAI, Groq, or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.
+Transcribe audio with an on-device Whisper model or your own OpenAI, OpenRouter, Groq, Together AI, Mistral or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.
 
 ### View EXIF Data
 

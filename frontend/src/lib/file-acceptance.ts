@@ -18,6 +18,7 @@ interface CatalogueEntry {
     synonyms?: string;
     popularity?: number;
     comingSoon?: boolean;
+    needsText?: boolean;
     href: string;
 }
 
@@ -114,6 +115,9 @@ const TAKES_AWAY = new Set("remove remover delete strip erase clean unwatermark 
 // metadata, so these tools never send a file to a converter.
 const ABOUT_THE_ORIGINAL = new Set(["exif", "metadata"]);
 
+// The job of reading the words in a picture of a page.
+const READS_PICTURES = new Set(["ocr"]);
+
 function words(text: string): string[] {
     return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 }
@@ -146,6 +150,10 @@ function conversionTargets(slug: string): string[] {
 }
 
 const IMAGE_FORMATS = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "heic", "heif"];
+
+// Files made of pixels: a PDF made from one holds a picture of its words, not words.
+const PIXEL_FORMATS = new Set([...IMAGE_FORMATS, "mp4", "mov", "webm", "avi", "mkv", "m4v"]);
+
 const TARGET_FORMATS: Record<string, string[]> = {
     word: ["docx", "doc"], excel: ["xlsx", "xls"], powerpoint: ["pptx", "ppt"], text: ["txt"], markdown: ["md"],
     image: IMAGE_FORMATS, images: IMAGE_FORMATS, jpg: ["jpg", "jpeg"], jpeg: ["jpg", "jpeg"], tif: ["tiff", "tif"], tiff: ["tiff", "tif"],
@@ -198,8 +206,10 @@ export interface ToolSuggestion {
     name: string;
     href: string;
     /** "same-job": the same job for this format. "convert": the suggestion
-     *  turns the file into something this tool takes. */
-    relation: "same-job" | "convert";
+     *  turns the file into something this tool takes. "read-text": this tool
+     *  works from words, the file is a picture of them, and the suggestion
+     *  reads them (OCR). */
+    relation: "same-job" | "convert" | "read-text";
     /** For "convert": the format it produces ("PDF", "JPG", "image"). */
     into?: string;
 }
@@ -221,12 +231,16 @@ const SAME_JOB = 3;
  * file into what this tool takes ("Image to PDF" for a PNG dropped on Merge
  * PDF), which `prefer: "convert"` puts first. A tool that merely opens the
  * file is not advice, so then nothing is suggested; neither is a tool that
- * accepts any file.
+ * accepts any file. A tool that works from a file's words (`needsText` in the
+ * registry) gets nothing from a picture or a video made into a PDF, which
+ * holds no text: for those it suggests only OCR, which reads the picture's
+ * words, or nothing.
  */
 export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, prefer = "same-job", accepts }: { fromSlug?: string; prefer?: "same-job" | "convert"; accepts?: string } = {}): ToolSuggestion | null {
     // A converter handed what it makes needs no other tool: PDF to Text would only undo Text to PDF.
     if (alreadyMade(file, fromSlug)) return null;
     const from = fromSlug ? BY_SLUG.get(fromSlug) : undefined;
+    const wordsFromPixels = !!from?.needsText && PIXEL_FORMATS.has(extensionOf(file.name));
     const job = from ? jobWords(from.slug) : [];
     const removes = from ? takesAway(from.slug) : false;
     // A surface that is not a registered tool (Pipeline, Batch) still says what it takes.
@@ -236,6 +250,11 @@ export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, pr
     let best: { entry: CatalogueEntry; score: number; relation: ToolSuggestion["relation"]; into?: string } | null = null;
     for (const entry of CATALOGUE) {
         if (entry.slug === fromSlug || entry.comingSoon || !takesFileExplicitly(entry, file)) continue;
+        if (wordsFromPixels) {
+            if (!words(entry.slug).some(word => READS_PICTURES.has(word))) continue;
+            if (!best || (entry.popularity ?? 999) < (best.entry.popularity ?? 999)) best = { entry, score: 0, relation: "read-text" };
+            continue;
+        }
         const own = words(entry.slug);
         const synonyms = words(entry.synonyms ?? "");
         const targets = conversionTargets(entry.slug);
@@ -320,7 +339,9 @@ export function adviseRejection(rejected: readonly Pick<File, "name" | "type">[]
     const suggestion = suggestToolFor(first, { fromSlug: slug, prefer, accepts: takesFrom });
     let suggestionLead = "";
     let suggestionTail = "";
-    if (suggestion?.relation === "convert" && suggestion.into) {
+    if (suggestion?.relation === "read-text") {
+        suggestionTail = others === 0 ? " can read the text in it." : " can read the text in them.";
+    } else if (suggestion?.relation === "convert" && suggestion.into) {
         const target = suggestion.into;
         suggestionTail = others === 0 ? ` can turn it into ${article(target)} ${target} first.` : ` can turn them into ${target}s first.`;
     } else if (suggestion) {

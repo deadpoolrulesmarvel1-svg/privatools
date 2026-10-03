@@ -257,7 +257,7 @@ describe("useMultiFileProcessor: PDF to Word, Protect, Remove Blank Pages, Page 
         const { result } = renderHook(() => useMultiFileProcessor());
         act(() => result.current.addFiles([sizedFile("thesis.pdf", 60 * MB)]));
 
-        let run!: Promise<void>;
+        let run!: Promise<unknown>;
         act(() => { run = result.current.run({ endpoint: "/pdf-to-word", outputExt: "docx", outputSuffix: null }); });
         await act(() => advance(2 * MINUTE));
         await act(() => run);
@@ -273,7 +273,7 @@ describe("useMultiFileProcessor: PDF to Word, Protect, Remove Blank Pages, Page 
         const { result } = renderHook(() => useMultiFileProcessor());
         act(() => result.current.addFiles([sizedFile("secret.pdf", 60 * MB)]));
 
-        let run!: Promise<void>;
+        let run!: Promise<unknown>;
         act(() => { run = result.current.run({ endpoint: "/protect", outputExt: "pdf", outputSuffix: "protected",
             uploadOptions: { retry: noRetry } }); });
         await act(() => advance(20 * SECOND + GIVE_UP - SECOND));

@@ -89,14 +89,20 @@ export async function updateCounter(
   return updated;
 }
 
-/** Advance after a CONFIRMED successful stamp. Never call optimistically. */
-export async function advanceCounter(id: string, pages: number): Promise<BatesCounter> {
+/**
+ * Move past a CONFIRMED successful stamp of `pages` pages numbered from
+ * `start`. Never call optimistically. The counter goes to where that stamp
+ * stopped, so it never issues those numbers again, and never moves back: a
+ * stamp that started below it (a replacement page, say) leaves it where it is.
+ */
+export async function advanceCounter(id: string, start: number, pages: number): Promise<BatesCounter> {
   if (!Number.isFinite(pages) || pages <= 0) {
     throw new Error("pages must be a positive number");
   }
+  if (!Number.isFinite(start)) throw new Error("start must be a number");
   const existing = await getCounter(id);
   if (!existing) throw new Error("No such counter");
-  return updateCounter(id, { next: existing.next + Math.floor(pages) });
+  return updateCounter(id, { next: Math.max(existing.next, Math.floor(start) + Math.floor(pages)) });
 }
 
 export async function deleteCounter(id: string): Promise<void> {

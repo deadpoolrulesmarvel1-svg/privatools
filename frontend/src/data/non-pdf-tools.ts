@@ -34,6 +34,8 @@ export interface NonPdfTool {
   clientOnly?: boolean;
   /** Tool can optionally use the visitor's own AI API key (BYOK). */
   byok?: boolean;
+  /** The tool works from the words in a file: a picture it refuses is pointed to OCR (see Tool.needsText in tools.ts). */
+  needsText?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -519,7 +521,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "token counter token calculator gpt token counter claude token counter gemini token counter openai token calculator llm cost calculator tiktoken tokenizer pdf too large for claude",
     popularity: 38,
     // `accepts` repeats ACCEPTS in lib/tokens/extract.ts (lib/tokens/extract.test.ts holds them together).
-    category: "developer", clientOnly: true, byok: true, accepts: ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.html,.htm,.yaml,.yml,.toml,.log,.srt,.vtt,.tex,.py,.js,.mjs,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.h,.cpp,.cs,.swift,.kt,.sql,.sh,.css,.pdf,.docx,text/*", outputLabel: "token counts",
+    category: "developer", clientOnly: true, byok: true, needsText: true, accepts: ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.html,.htm,.yaml,.yml,.toml,.log,.srt,.vtt,.tex,.py,.js,.mjs,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.h,.cpp,.cs,.swift,.kt,.sql,.sh,.css,.pdf,.docx,text/*", outputLabel: "token counts",
     lastReviewed: "2026-10-03",
   },
   {
@@ -591,7 +593,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
     description: "Speech to text in your browser — or with your own AI key",
-    longDescription: "Transcribe audio with an on-device Whisper model or your own OpenAI, Groq, or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.",
+    longDescription: "Transcribe audio with an on-device Whisper model or your own OpenAI, OpenRouter, Groq, Together AI, Mistral or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.",
     seoTitle: "Transcribe Audio Online Free – Whisper or Your AI Key",
     metaDescription: "Transcribe speech into text with an on-device Whisper model, or connect your own AI key instead. Local mode keeps recordings on your device.",
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",

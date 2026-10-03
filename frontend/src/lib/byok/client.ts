@@ -10,7 +10,7 @@
 import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
     buildCountTokensRequest, buildRequest, buildTranscribeRequest, parseCountTokensResponse, parseResponse, parseTranscribeResponse,
-    providerById, stoppedShort, supportsTokenCount, supportsTranscription, TRANSCRIBE_MODELS, type Message, type Provider,
+    providerById, stoppedShort, supportsTokenCount, supportsTranscription, transcriptionProviderNames, type Message, type Provider,
 } from "./providers";
 import { redact, registerSecret } from "./redact";
 
@@ -92,19 +92,19 @@ export interface TranscribeArgs {
     signal?: AbortSignal;
 }
 
-/** Audio → text through the user's own key (OpenAI-style providers only). */
+/** Audio → text through the user's own key, for providers with a speech-to-text endpoint. */
 export async function transcribe(args: TranscribeArgs): Promise<string> {
     const provider = providerById(args.providerId);
     if (!provider) {
         throw new ByokError("Unsupported", `unknown provider ${args.providerId}`,
             "That provider is not supported. Pick one from the list.");
     }
-    if (!supportsTranscription(provider)) {
+    if (!supportsTranscription(provider) || !provider.transcribeModel) {
         throw new ByokError("Unsupported", `no transcription on ${provider.id}`,
-            `${provider.label} has no audio transcription API — use OpenAI, Groq, or a self-hosted endpoint.`);
+            `${provider.label} has no audio transcription API — use ${transcriptionProviderNames()}.`);
     }
     registerSecret(args.apiKey);
-    const model = args.model.trim() || TRANSCRIBE_MODELS[provider.id] || "whisper-1";
+    const model = args.model.trim() || provider.transcribeModel;
     const req = buildTranscribeRequest(provider, { ...args, model });
 
     let res: Response;

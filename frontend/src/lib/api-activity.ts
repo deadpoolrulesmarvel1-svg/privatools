@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 const count = z.number().finite().int().nonnegative();
 const duration = z.number().finite().nonnegative();

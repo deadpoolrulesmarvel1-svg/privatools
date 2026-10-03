@@ -32,6 +32,19 @@ export interface Provider {
      * (Gemini 2.0 Flash, shut down 2026-06-01, did until 2026-09-28).
      */
     models: string[];
+    /**
+     * The model Transcribe Audio sends when the visitor names none. Set only
+     * for a provider with an OpenAI-style speech-to-text endpoint
+     * (audio/transcriptions), which is what offers it there: each provider
+     * names its own models, and "whisper-1" is OpenAI's alone. Read from each
+     * provider's documentation on 2026-10-03.
+     */
+    transcribeModel?: string;
+    /**
+     * The `language` to send for a provider that does not detect the spoken
+     * language unless asked. Together's defaults to "en"; "auto" detects it.
+     */
+    transcribeLanguage?: string;
     /** True when the user supplies the base URL (local or self-hosted). */
     customBaseUrl?: boolean;
     keysUrl?: string;
@@ -99,7 +112,7 @@ export const PROVIDERS: Provider[] = [
     },
     {
         id: "openai", label: "OpenAI", origin: "https://api.openai.com",
-        shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "o3-mini"],
+        shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "o3-mini"], transcribeModel: "gpt-4o-mini-transcribe",
         keysUrl: "https://platform.openai.com/api-keys", refusalsUnreadable: true,
     },
     {
@@ -110,30 +123,35 @@ export const PROVIDERS: Provider[] = [
         keysUrl: "https://aistudio.google.com/apikey",
     },
     {
+        // Speech to text since July 2026, at /api/v1/audio/transcriptions.
         id: "openrouter", label: "OpenRouter", origin: "https://openrouter.ai", apiPath: "/api/v1",
-        shape: "openai", models: ["openrouter/auto"], keysUrl: "https://openrouter.ai/keys",
+        shape: "openai", models: ["openrouter/auto"], transcribeModel: "openai/whisper-large-v3", keysUrl: "https://openrouter.ai/keys",
     },
     {
         // Groq's named replacement for Llama 3.3 70B, which it shut down for
         // free and developer plans on 2026-08-16 (Enterprise only since).
         id: "groq", label: "Groq", origin: "https://api.groq.com", apiPath: "/openai/v1",
-        shape: "openai", models: ["openai/gpt-oss-120b"], keysUrl: "https://console.groq.com/keys",
+        shape: "openai", models: ["openai/gpt-oss-120b"], transcribeModel: "whisper-large-v3", keysUrl: "https://console.groq.com/keys",
     },
     {
+        // The model its transcription reference names, and its default.
         id: "together", label: "Together AI", origin: "https://api.together.xyz",
-        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
+        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"], transcribeModel: "openai/whisper-large-v3", transcribeLanguage: "auto",
     },
     {
+        // Mistral transcribes with its Voxtral models.
         id: "mistral", label: "Mistral", origin: "https://api.mistral.ai",
-        shape: "openai", models: ["mistral-large-latest"],
+        shape: "openai", models: ["mistral-large-latest"], transcribeModel: "voxtral-mini-latest",
     },
     {
         id: "deepseek", label: "DeepSeek", origin: "https://api.deepseek.com",
         shape: "openai", models: ["deepseek-flash"],
     },
     {
+        // A self-hosted server names its models itself; whisper-1 is the
+        // OpenAI name many of them answer to, and the visitor can type another.
         id: "openai-compatible", label: "Local or self-hosted (OpenAI-compatible)",
-        origin: "http://localhost", shape: "openai", models: [], customBaseUrl: true,
+        origin: "http://localhost", shape: "openai", models: [], transcribeModel: "whisper-1", customBaseUrl: true,
     },
 ];
 
@@ -274,15 +292,16 @@ export function stoppedShort(p: Provider, json: unknown): "declined" | "cut-off"
     return undefined;
 }
 
-/** Providers whose API exposes OpenAI-style /v1/audio/transcriptions. */
+/** Providers with an OpenAI-style speech-to-text endpoint (audio/transcriptions). */
 export function supportsTranscription(p: Provider): boolean {
-    return p.shape === "openai";
+    return p.shape === "openai" && !!p.transcribeModel;
 }
 
-export const TRANSCRIBE_MODELS: Record<string, string> = {
-    openai: "gpt-4o-mini-transcribe",
-    groq: "whisper-large-v3",
-};
+/** "OpenAI, OpenRouter, Groq, Together AI, Mistral or a self-hosted endpoint". */
+export function transcriptionProviderNames(): string {
+    const names = PROVIDERS.filter(supportsTranscription).map((p) => (p.customBaseUrl ? "a self-hosted endpoint" : p.label));
+    return names.length > 1 ? `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}` : names.join("");
+}
 
 export function buildTranscribeRequest(
     p: Provider,
@@ -295,7 +314,10 @@ export function buildTranscribeRequest(
     const body = new FormData();
     body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));
     body.append("model", input.model);
-    body.append("response_format", "text");
+    if (p.transcribeLanguage) body.append("language", p.transcribeLanguage);
+    // No response_format: JSON with a "text" field is every provider's
+    // default, while "text" is not one Together or OpenRouter documents, and
+    // Mistral documents no response_format at all.
     return {
         url: `${root}/audio/transcriptions`,
         // No content-type: the browser sets the multipart boundary itself.
@@ -305,7 +327,7 @@ export function buildTranscribeRequest(
 }
 
 export function parseTranscribeResponse(raw: string): string {
-    // response_format=text returns plain text; some servers still send JSON.
+    // JSON with a "text" field by default; some self-hosted servers answer plain text.
     try {
         const j = JSON.parse(raw) as { text?: string };
         if (typeof j.text === "string") return j.text;

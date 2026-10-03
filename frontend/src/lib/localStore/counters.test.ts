@@ -24,14 +24,26 @@ describe("localStore/counters", () => {
 
   it("advances by the number of pages stamped", async () => {
     const c = await counters.createCounter({ name: "M", prefix: "M-", next: 400 });
-    const after = await counters.advanceCounter(c.id, 12);
+    const after = await counters.advanceCounter(c.id, 400, 12);
     expect(after.next).toBe(412);
+  });
+
+  it("moves past a stamp that started above it, so the next one cannot repeat its numbers", async () => {
+    const c = await counters.createCounter({ name: "M", next: 9 });
+    const after = await counters.advanceCounter(c.id, 500, 3);
+    expect(after.next).toBe(503);
+  });
+
+  it("never moves back for a stamp that started below it", async () => {
+    const c = await counters.createCounter({ name: "M", next: 101 });
+    const after = await counters.advanceCounter(c.id, 50, 3);
+    expect(after.next).toBe(101);
   });
 
   it("keeps counters independent", async () => {
     const a = await counters.createCounter({ name: "A", next: 10 });
     const b = await counters.createCounter({ name: "B", next: 500 });
-    await counters.advanceCounter(a.id, 5);
+    await counters.advanceCounter(a.id, 10, 5);
     expect((await counters.getCounter(b.id))!.next).toBe(500);
   });
 
@@ -43,8 +55,8 @@ describe("localStore/counters", () => {
 
   it("rejects a negative or zero advance", async () => {
     const c = await counters.createCounter({ name: "M" });
-    await expect(counters.advanceCounter(c.id, 0)).rejects.toThrow(/pages/i);
-    await expect(counters.advanceCounter(c.id, -3)).rejects.toThrow(/pages/i);
+    await expect(counters.advanceCounter(c.id, 1, 0)).rejects.toThrow(/pages/i);
+    await expect(counters.advanceCounter(c.id, 1, -3)).rejects.toThrow(/pages/i);
   });
 
   it("tracks the active counter", async () => {

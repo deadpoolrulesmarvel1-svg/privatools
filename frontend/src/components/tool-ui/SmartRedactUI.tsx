@@ -96,7 +96,7 @@ async function extractPdfText(file: File, onPage: (n: number, total: number) => 
     const workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
     pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
     const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pdf = await pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
     const pages: string[] = [];
     for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
