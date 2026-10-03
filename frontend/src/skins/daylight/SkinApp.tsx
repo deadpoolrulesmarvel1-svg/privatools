@@ -1601,7 +1601,7 @@ export default class DaylightSkinApp extends React.Component {
                     <Accordion type="single" collapsible className="dl-acc">
                         <AccordionItem value="models">
                             <AccordionTrigger>On-device AI models download from a CDN once</AccordionTrigger>
-                            <AccordionContent>Summarize, Smart Redact, Translate, Remove Background, Transcribe Audio and in-browser OCR fetch model weights or engine files — not your files — on first use, then cache them in your browser. The AI hub in the top bar lists every installed model with its real size and removes any of them. Your document still never leaves the browser.</AccordionContent>
+                            <AccordionContent>Summarize, Smart Redact, Translate, Remove Background, Transcribe Audio, Subtitle Generator and in-browser OCR fetch model weights or engine files — not your files — on first use, then cache them in your browser. The AI hub in the top bar lists every installed model with its real size and removes any of them. Your document still never leaves the browser.</AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="byok">
                             <AccordionTrigger>Your own AI key means trusting the provider you picked</AccordionTrigger>

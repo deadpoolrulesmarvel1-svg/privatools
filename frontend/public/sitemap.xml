@@ -141,6 +141,7 @@
   <url><loc>https://privatools.me/tools/video-merge</loc><lastmod>2026-10-01</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/audio-merge</loc><lastmod>2026-10-01</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/subtitle-converter</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/subtitle-generator</loc><lastmod>2026-10-03</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/json-xml-formatter</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/text-diff</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/base64</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -170,7 +171,7 @@
   <url><loc>https://privatools.me/tools/merge-images</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/image-upscaler</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/audio-converter</loc><lastmod>2026-10-01</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/transcribe-audio</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/transcribe-audio</loc><lastmod>2026-10-03</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/view-exif</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tools/webp-to-jpg</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/webp-to-png</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>

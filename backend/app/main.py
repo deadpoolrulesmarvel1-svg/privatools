@@ -223,6 +223,8 @@ _WASM_EVAL_PATHS = {
     "/tool/translate-pdf",
     "/tools/remove-background",
     "/tools/transcribe-audio",
+    # Subtitle Generator runs the same Whisper models as Transcribe Audio.
+    "/tools/subtitle-generator",
     # In-browser tesseract OCR runs its wasm core inside a blob worker.
     "/tool/ocr-pdf",
     "/tools/image-ocr",

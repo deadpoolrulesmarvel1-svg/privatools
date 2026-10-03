@@ -10,6 +10,20 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.17] — 2026-10-03 — Subtitle Generator
+
+### New tool
+
+- Subtitle Generator makes SRT and VTT subtitles from a video or audio file, on your device. The sound is read in the browser and Whisper writes the captions; nothing is uploaded. Whisper Base (about 74 MB) or Tiny (about 41 MB) downloads once from Hugging Face, with the engine that runs it from jsDelivr. You check and edit the captions beside the playing video, then download SRT or VTT. Most MP4 and MOV files, and WebM, MKV, MP3, M4A and WAV, are read a minute at a time, up to 3 hours. Other formats are read whole, up to 15 minutes. (#319)
+
+### Tools
+
+- Transcribe Audio no longer freezes the page while Whisper runs. It lets you choose the spoken language; it used to transcribe everything as English. Cancel now stops it. (#319)
+
+### Other
+
+- The frontend dependency audit accepts a listed, expiring exception for an advisory that has no fix: braces, which Tailwind CSS 3 uses only while the site is built. The exception expires on 2026-11-15, and any other high or critical advisory still fails the build. (#320)
+
 ## [2.7.16] — 2026-10-02 — Every tool ends the same honest way
 
 ### Tools
