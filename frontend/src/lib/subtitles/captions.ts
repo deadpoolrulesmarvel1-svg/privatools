@@ -114,6 +114,23 @@ export function wrapCaption(text: string, layout: CaptionLayout): string[] | nul
     return wrapAtoms(atomize(tidy(text)), layout);
 }
 
+/**
+ * Where a line may break in the text with its spaces collapsed: offsets into
+ * that text, by the same rules as wrapping (at a space, or between words of a
+ * script written without spaces, never before closing punctuation).
+ */
+export function breakOffsets(text: string): number[] {
+    const atoms = atomize(tidy(text));
+    const offsets: number[] = [];
+    let at = 0;
+    for (let i = 0; i < atoms.length; i++) {
+        // At the start of a word: after the space, where there is one.
+        if (!atoms[i].space && canBreakBefore(atoms, i)) offsets.push(at);
+        at += atoms[i].text.length;
+    }
+    return offsets;
+}
+
 /** Where to end the cue that starts at atom `from`. */
 function cueEnd(atoms: Atom[], from: number, layout: CaptionLayout): number {
     const capacity = layout.maxLineChars * layout.maxLines;
