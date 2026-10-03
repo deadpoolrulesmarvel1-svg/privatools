@@ -25,7 +25,7 @@ import { AiTokenCounterUI } from "@/components/tool-ui/AiTokenCounterUI";
 
 vi.mock("@/skins/daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("@/skins/experience/ToolGuide", () => ({ ToolGuide: () => <section><h2>How to use this tool</h2><h3>A question</h3></section> }));
-vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []) }));
+vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []), consumeFileHandoff: vi.fn(async () => null) }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/components/tool-ui/merge-preview", () => ({
     openMergePreview: vi.fn(async () => ({

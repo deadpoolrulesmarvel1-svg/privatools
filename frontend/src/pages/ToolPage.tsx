@@ -128,7 +128,7 @@ const LazyPdfToExcelUI = lazyNamed(() => import("@/components/tool-ui/PdfToExcel
 const LazyPdfToPptxUI = lazyNamed(() => import("@/components/tool-ui/PdfToPptxUI"), "PdfToPptxUI");
 
 const loadSimpleConvertUI = () => import("@/components/tool-ui/SimpleConvertUI");
-const LazyPdfToMarkdownUI2 = lazyNamed(loadSimpleConvertUI, "PdfToMarkdownUI2");
+const LazyPdfToMarkdownUI = lazyNamed(() => import("@/components/tool-ui/PdfToMarkdownUI"), "PdfToMarkdownUI");
 const LazyExtractImagesUI = lazyNamed(loadSimpleConvertUI, "ExtractImagesUI");
 const LazyExtractTablesUI = lazyNamed(loadSimpleConvertUI, "ExtractTablesUI");
 const LazyPdfToPdfaUI = lazyNamed(loadSimpleConvertUI, "PdfToPdfaUI");
@@ -365,7 +365,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "pdf-to-word": return <LazyPdfToWordUI />;
     case "pdf-to-excel": return <LazyPdfToExcelUI />;
     case "pdf-to-pptx": return <LazyPdfToPptxUI />;
-    case "pdf-to-markdown": return <LazyPdfToMarkdownUI2 />;
+    case "pdf-to-markdown": return <LazyPdfToMarkdownUI />;
     case "extract-images": return <LazyExtractImagesUI />;
     case "extract-tables": return <LazyExtractTablesUI />;
     case "pdf-to-pdfa": return <LazyPdfToPdfaUI />;

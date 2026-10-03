@@ -111,7 +111,7 @@ describe("tools that work from a file's words", () => {
     const readers = [...tools, ...nonPdfTools].filter(tool => "needsText" in tool && tool.needsText).map(tool => tool.slug);
 
     it("are marked in the registry", () => {
-        expect(readers).toEqual(expect.arrayContaining(["pdf-to-text", "ai-token-counter", "chat-with-pdf", "summarize-pdf", "translate-pdf", "pdf-to-word"]));
+        expect(readers).toEqual(expect.arrayContaining(["pdf-to-text", "ai-token-counter", "chat-with-pdf", "summarize-pdf", "translate-pdf", "pdf-to-word", "pdf-to-markdown"]));
         // Their own job is not reading words: they keep working on the page itself.
         for (const slug of ["merge-pdf", "compress-pdf", "ocr-pdf", "image-ocr", "image-to-pdf"]) expect(readers).not.toContain(slug);
     });
