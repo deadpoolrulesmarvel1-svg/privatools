@@ -19,6 +19,7 @@ from starlette.background import BackgroundTask
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.images import image_read_error
 from ..utils.concurrency import run_bounded
+from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
 from ..services.media_trim_service import AUDIO_EXTENSIONS, VIDEO_ENCODERS, trim_command
 from ..services.ffmpeg_capabilities import ogg_encoder
@@ -171,6 +172,8 @@ def _run_ffmpeg(cmd: list[str], timeout: int, chapters: bool = False) -> None:
         raise HTTPException(status_code=408, detail="Media processing timed out") from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.decode("utf-8", errors="ignore").strip()
+        if unreadable_input(cmd, stderr):
+            raise HTTPException(status_code=400, detail=NOT_MEDIA) from exc
         detail = "ffmpeg failed to process the file"
         if stderr:
             detail = f"{detail}: {stderr.splitlines()[-1][:200]}"

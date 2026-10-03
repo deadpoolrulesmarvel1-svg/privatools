@@ -21,6 +21,7 @@ from pathlib import Path
 
 from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
+from .media_errors import NOT_MEDIA, unreadable_input
 from .media_metadata import with_metadata_options
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,8 @@ def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | No
         raise ValidationError("ffmpeg is not installed on this server.") from exc
 
     if proc.returncode != 0:
+        if unreadable_input(args, proc.stderr or ""):
+            raise ValidationError(NOT_MEDIA)
         # Trim ffmpeg stderr so the user gets the most relevant line.
         last = (proc.stderr or "").strip().splitlines()
         msg = last[-1] if last else f"ffmpeg exited with code {proc.returncode}"
