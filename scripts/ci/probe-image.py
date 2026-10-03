@@ -4,7 +4,7 @@
     python3 scripts/ci/probe-image.py IMAGE
     python3 scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA
 
-The second form runs the same checks against a container that is already
+The second form runs the page checks against a container that is already
 running and starts, stops and removes nothing. The zero-downtime deploy
 (deploy/oracle-vm/rollout.sh) uses it as its real-page probe: a release whose
 /readyz is ready but which cannot serve the homepage, a tool page or the
@@ -25,6 +25,14 @@ homepage advertises, server-rendered tool pages and the sitemap. Expected
 values come from the tool manifest inside the container, read as the app user
 reads it, never from literals here.
 
+The first form also converts a .docx holding one Word equation through
+/api/office-to-pdf and requires the equation's text in the PDF. An image
+without LibreOffice's Math module converts that document anyway, with a blank
+where the equation was. --running skips this check: the rollout runs this file
+from a checkout that can be newer than the container it probes (its fallback
+to the canonical container), and a release from before the Math module would
+fail it.
+
 It uses its own compose project, so it cannot touch a deployment's containers
 or volumes, but it does publish the compose file's port. To run it beside
 something already on that port, add a file with a `ports: !override` entry
@@ -37,6 +45,7 @@ removed either way.
 from __future__ import annotations
 
 import html
+import io
 import json
 import os
 import re
@@ -45,6 +54,8 @@ import signal
 import subprocess
 import sys
 import time
+import unicodedata
+import zipfile
 from collections.abc import Callable
 from http.client import HTTPException
 from pathlib import Path
@@ -78,6 +89,47 @@ UNKNOWN_TOOL_PAGE = "/tool/this-slug-does-not-exist"
 # sitemap must also list every tool the manifest does.
 SITEMAP_FLOOR = 200
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+
+# Office to PDF must keep a Word equation. LibreOffice's Writer imports one
+# (OMML) as a Math object, and without the Math module it prints a blank there
+# and reports success. LibreOffice gets 120 s for a conversion.
+OFFICE_TO_PDF = "/api/office-to-pdf"
+OFFICE_TIMEOUT_SECONDS = 150
+# One sentence with one equation in it, the fraction x over y. The words around
+# it contain neither letter, so finding both in the PDF means it was drawn.
+EQUATION_CONTEXT = ("Before", "after.")
+EQUATION_TERMS = ("x", "y")
+WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+MATH_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
+EQUATION_DOCX = {
+    "[Content_Types].xml": (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/word/document.xml"'
+        ' ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        '</Types>'),
+    "_rels/.rels": (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Target="word/document.xml"'
+        ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/>'
+        '</Relationships>'),
+    "word/document.xml": (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<w:document xmlns:w="{WORD_NS}" xmlns:m="{MATH_NS}"><w:body><w:p>'
+        f'<w:r><w:t xml:space="preserve">{EQUATION_CONTEXT[0]} </w:t></w:r>'
+        f'<m:oMath><m:f><m:num><m:r><m:t>{EQUATION_TERMS[0]}</m:t></m:r></m:num>'
+        f'<m:den><m:r><m:t>{EQUATION_TERMS[1]}</m:t></m:r></m:den></m:f></m:oMath>'
+        f'<w:r><w:t xml:space="preserve"> {EQUATION_CONTEXT[1]}</w:t></w:r>'
+        '</w:p></w:body></w:document>'),
+}
+# Run in the container, which has PyMuPDF; this file is standard library only.
+PDF_TEXT_SCRIPT = (
+    "import sys, pymupdf\n"
+    "pdf = pymupdf.open(stream=sys.stdin.buffer.read(), filetype='pdf')\n"
+    "sys.stdout.buffer.write(''.join(page.get_text() for page in pdf).encode())\n")
 
 # URLError and socket timeouts are OSErrors too.
 NETWORK_ERRORS = (OSError, HTTPException)
@@ -310,6 +362,68 @@ def check_sitemap(base_url: str, manifest: dict[str, dict]) -> str:
     return f"{len(entries)} <url> entries, every manifest tool among them"
 
 
+def equation_docx() -> bytes:
+    """The EQUATION_DOCX parts as a .docx file, the same bytes on every call."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as package:
+        for name, xml in EQUATION_DOCX.items():
+            package.writestr(zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0)), xml,
+                             compress_type=zipfile.ZIP_DEFLATED)
+    return buffer.getvalue()
+
+
+def multipart_file(filename: str, content: bytes) -> tuple[str, bytes]:
+    """The Content-Type and body of a form carrying one file in the `file` field, which the Office route reads."""
+    boundary = secrets.token_hex(16)
+    body = b"".join((
+        f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+        "Content-Type: application/octet-stream\r\n\r\n".encode(),
+        content,
+        f"\r\n--{boundary}--\r\n".encode(),
+    ))
+    return f"multipart/form-data; boundary={boundary}", body
+
+
+def post_file(base_url: str, path: str, filename: str, content: bytes, timeout: float) -> tuple[int, bytes]:
+    """Status and body of an upload, without raising on 4xx and 5xx."""
+    content_type, body = multipart_file(filename, content)
+    headers = {**request_headers(), "Content-Type": content_type}
+    request = Request(base_url + path, data=body, headers=headers, method="POST")
+    try:
+        with _opener.open(request, timeout=timeout) as response:
+            return response.status, response.read()
+    except HTTPError as error:
+        return error.code, error.read()
+
+
+def pdf_text(container: str, pdf: bytes) -> str:
+    """The PDF's text, as PyMuPDF in the container reads it."""
+    shown = subprocess.run(["docker", "exec", "--interactive", container, "python", "-c", PDF_TEXT_SCRIPT],
+                           input=pdf, capture_output=True, timeout=60, check=False)
+    error = shown.stderr.decode("utf-8", "replace").strip()
+    expect(shown.returncode == 0, f"cannot read the PDF in the container: {error[-300:]}")
+    return shown.stdout.decode("utf-8", "replace")
+
+
+def check_equation_text(text: str) -> str:
+    """The PDF shows the equation, not only the words around it."""
+    # NFKC folds mathematical italic letters, such as U+1D465, into x and y.
+    text = unicodedata.normalize("NFKC", text)
+    shown = " ".join(text.split())
+    expect(all(word in text for word in EQUATION_CONTEXT), f"the PDF lacks the document's words: {shown[:200]!r}")
+    missing = [term for term in EQUATION_TERMS if term not in text]
+    expect(not missing, f"the PDF has the words around the Word equation but not its {' and '.join(missing)}: "
+           f"{shown[:200]!r}. Is LibreOffice's Math module installed?")
+    return f"the Word equation's {' and '.join(EQUATION_TERMS)} are in the PDF: {shown[:80]!r}"
+
+
+def check_office_equation(base_url: str, container: str) -> str:
+    status, body = post_file(base_url, OFFICE_TO_PDF, "equation.docx", equation_docx(), OFFICE_TIMEOUT_SECONDS)
+    expect(status == 200, f"HTTP {status} {body[:300].decode('utf-8', 'replace')}")
+    expect(body.startswith(b"%PDF-"), f"the answer is not a PDF: {body[:20]!r}")
+    return check_equation_text(pdf_text(container, body))
+
+
 def run_checks(checks: list[tuple[str, Callable[[], str]]], failed: list[str]) -> None:
     for name, check in checks:
         try:
@@ -332,7 +446,10 @@ def probe(image: str, build_sha: str) -> list[str]:
     print(f"ready after {wait_until_ready(base_url, container):.1f} s")
     failed: list[str] = []
     run_checks([("async job supervisor", lambda: check_supervisor(container))], failed)
-    return failed + check_serving(base_url, build_sha, container)
+    failed += check_serving(base_url, build_sha, container)
+    # Never in check_serving, which --running shares: see the module docstring.
+    run_checks([(f"POST {OFFICE_TO_PDF}", lambda: check_office_equation(base_url, container))], failed)
+    return failed
 
 
 def check_serving(base_url: str, build_sha: str, container: str) -> list[str]:

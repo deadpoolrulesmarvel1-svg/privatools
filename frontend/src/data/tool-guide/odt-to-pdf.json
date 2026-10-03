@@ -28,7 +28,7 @@
     },
     {
       "q": "Are formulas made in LibreOffice Math converted?",
-      "a": "Check them in the PDF. The server installs LibreOffice's Writer, Calc and Impress components but not the Math module that lays out formulas, so an equation can come out differently from your screen, or be missing."
+      "a": "Yes. When LibreOffice saves an .odt, it stores a drawing of each formula, and the PDF shows that drawing, so a formula looks as it did when the file was last saved, except that a font the server does not have is replaced, as in the rest of the document. In a file without those drawings, which some other programs write, the server's LibreOffice Math module lays each formula out again in the server's fonts, so it can look slightly different from your screen."
     },
     {
       "q": "Do macros run during the conversion?",

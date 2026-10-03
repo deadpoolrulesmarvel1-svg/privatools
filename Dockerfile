@@ -43,6 +43,11 @@ FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4d
 # login's compatibility prefix: source-package versions are not valid floors
 # for those binaries. See https://packages.debian.org/trixie/<package>.
 # Updating this list invalidates the apt layer; stale mirrors fail the checks.
+#
+# Office to PDF needs LibreOffice's Math module as well as Writer, Calc and
+# Impress. Writer imports each Word equation as a Math object, and without the
+# module it prints a blank where the equation was and reports success. The
+# image probe (scripts/ci/probe-image.py) converts a .docx with an equation.
 RUN set -eu; \
     security_minimums='bsdutils=1:2.41.5-0+deb13u1 \
         gzip=1.13-1+deb13u1 \
@@ -98,6 +103,7 @@ RUN set -eu; \
     libreoffice-writer-nogui \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \
+    libreoffice-math-nogui \
     qpdf; \
     for specification in $security_minimums; do \
         package=${specification%%=*}; \

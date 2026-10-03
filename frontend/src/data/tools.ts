@@ -505,7 +505,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "openoffice libreoffice convert",
     popularity: 119,
     category: "to-pdf", accepts: ".odt", outputLabel: "document.pdf",
-    lastReviewed: "2026-09-24",
+    lastReviewed: "2026-10-03",
   },
   {
     slug: "office-to-pdf", icon: FileBox, name: "Office to PDF",
