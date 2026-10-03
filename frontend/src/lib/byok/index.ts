@@ -5,7 +5,7 @@
  * user chose. Nothing passes through PrivaTools — see
  * docs/superpowers/specs/2026-08-21-byok-ai-design.md.
  */
-export { complete, type CompleteArgs } from "./client";
+export { complete, countTokens, type CompleteArgs, type CountTokensArgs } from "./client";
 export { PROVIDERS, providerById, type Provider, type Message } from "./providers";
 export {
     saveKey, getKey, clearKey, listConfigured, setSessionOnly, isSessionOnly,

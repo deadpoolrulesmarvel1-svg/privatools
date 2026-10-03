@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
   QrCode, Merge, Maximize2, Type,
-  Eraser, Sparkles, Captions,
+  Eraser, Sparkles, Captions, Coins,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -509,6 +509,18 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     popularity: 96,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "stats",
     lastReviewed: "2026-09-24",
+  },
+  {
+    slug: "ai-token-counter", icon: Coins, name: "AI Token Counter",
+    description: "Count tokens in text or files for GPT, Claude and Gemini",
+    longDescription: "Count how many tokens a text uses for OpenAI's GPT models, exactly and in your browser, with the o200k_base and cl100k_base tokenizers. Paste text, or open a text, Markdown, CSV, JSON, code, PDF or Word (.docx) file: it is read on your device and not uploaded. Claude and Gemini counts come from Anthropic's and Google's own token-counting methods, only if you add your own API key and choose to count with it; the text then goes from your browser straight to that provider. Enter prices per million tokens to estimate a cost, or split long text into chunks of a set number of GPT tokens.",
+    seoTitle: "Token Counter for GPT, Claude and Gemini – Text, PDF, Word",
+    metaDescription: "Count GPT tokens exactly in your browser, and Claude or Gemini tokens with your own API key. Paste text or open a PDF, Word, Markdown or code file.",
+    synonyms: "token counter token calculator gpt token counter claude token counter gemini token counter openai token calculator llm cost calculator tiktoken tokenizer pdf too large for claude",
+    popularity: 38,
+    // `accepts` repeats ACCEPTS in lib/tokens/extract.ts (lib/tokens/extract.test.ts holds them together).
+    category: "developer", clientOnly: true, byok: true, accepts: ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.html,.htm,.yaml,.yml,.toml,.log,.srt,.vtt,.tex,.py,.js,.mjs,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.h,.cpp,.cs,.swift,.kt,.sql,.sh,.css,.pdf,.docx,text/*", outputLabel: "token counts",
+    lastReviewed: "2026-10-03",
   },
   {
     slug: "color-converter", icon: ImageIcon, name: "Color Converter",

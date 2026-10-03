@@ -120,6 +120,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Your choice of AI, then temporary server processing",
         detail: "Choose how personal data is found before running. On this device, a model downloads once and nothing leaves the tab; with your own API key, the document’s text goes to the provider you choose. When you apply, the PDF and the strings you selected are sent to PrivaTools to be removed, then deleted on response.",
     },
+    // GPT counts and file reading stay on the device; Claude and Gemini only with the visitor's key, when they ask.
+    "ai-token-counter": {
+        kind: "ai",
+        label: "This device or your AI key",
+        detail: "Files are read and GPT tokens are counted in this browser, so nothing is uploaded. With your own Anthropic or Google key, and only when you choose to count with it, the text you count goes from your browser straight to that provider, never through PrivaTools.",
+    },
 };
 
 export function toolLocation(tool: { slug: string; clientOnly?: boolean; byok?: boolean }): ToolLocation {

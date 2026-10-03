@@ -21,6 +21,7 @@ import { WatermarkUI } from "@/components/tool-ui/WatermarkUI";
 import { MetadataUI } from "@/components/tool-ui/MetadataUI";
 import { ProtectUI } from "@/components/tool-ui/ProtectUI";
 import { SubtitleGeneratorUI } from "@/components/tool-ui/SubtitleGeneratorUI";
+import { AiTokenCounterUI } from "@/components/tool-ui/AiTokenCounterUI";
 
 vi.mock("@/skins/daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("@/skins/experience/ToolGuide", () => ({ ToolGuide: () => <section><h2>How to use this tool</h2><h3>A question</h3></section> }));
@@ -67,6 +68,8 @@ const CASES: Case[] = [
     { name: "JSON / XML Formatter", tool: { slug: "json-xml-formatter", name: "JSON / XML Formatter", description: "Prettify, minify or validate JSON and XML in your browser", category: "developer", clientOnly: true }, ui: () => <JsonXmlFormatterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: '{"a":1}' } }) },
     { name: "Subtitle Generator", tool: { slug: "subtitle-generator", name: "Subtitle Generator", description: "Turn the speech in a video or recording into subtitles", category: "video-audio", clientOnly: true }, ui: () => <SubtitleGeneratorUI />, choose: c => fileInput(c, [mp4("talk.mp4")]) },
     { name: "Hidden Text Checker", tool: { slug: "hidden-text-checker", name: "Hidden Text Checker", description: "Find text in a PDF that readers can't see", category: "security" }, ui: () => <HiddenTextCheckerUI />, choose: c => fileInput(c, [pdf("notes.pdf")]) },
+    { name: "AI Token Counter, pasted text", tool: { slug: "ai-token-counter", name: "AI Token Counter", description: "Count tokens in text or files for GPT, Claude and Gemini", category: "developer", clientOnly: true }, ui: () => <AiTokenCounterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: "Count these tokens." } }) },
+    { name: "AI Token Counter, a file", tool: { slug: "ai-token-counter", name: "AI Token Counter", description: "Count tokens in text or files for GPT, Claude and Gemini", category: "developer", clientOnly: true }, ui: () => <AiTokenCounterUI />, choose: c => fileInput(c, [new File(["notes"], "notes.txt", { type: "text/plain" })]) },
     // Screens moved onto the shared kit in step 2b: their options are h2 parts of the tool.
     { name: "Crop PDF", tool: { slug: "crop-pdf", name: "Crop PDF", description: "Trim the margins of a PDF", category: "edit" }, ui: () => <CropUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
     { name: "Watermark PDF", tool: { slug: "watermark", name: "Watermark PDF", description: "Add a watermark to a PDF", category: "edit" }, ui: () => <WatermarkUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },

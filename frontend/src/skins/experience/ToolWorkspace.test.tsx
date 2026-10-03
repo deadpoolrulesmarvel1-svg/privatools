@@ -120,7 +120,9 @@ describe("where the file goes", () => {
         // Translate renders a PDF of the translated text on the server; Smart Redact removes the selections there.
         expect(detail("translate-pdf")).toMatch(/“Save as PDF” sends the translated text, never the original file, to PrivaTools to be rendered, then deletes it\.$/);
         expect(detail("smart-redact")).toMatch(/When you apply, the PDF and the strings you selected are sent to PrivaTools to be removed, then deleted on response\.$/);
-        for (const slug of ["summarize-pdf", "chat-with-pdf", "transcribe-audio"]) expect(detail(slug)).not.toMatch(/also use PrivaTools|sent to PrivaTools|PrivaTools to /);
+        for (const slug of ["summarize-pdf", "chat-with-pdf", "transcribe-audio", "ai-token-counter"]) expect(detail(slug)).not.toMatch(/also use PrivaTools|sent to PrivaTools|PrivaTools to /);
+        // The token counter counts GPT here and asks a provider only with the visitor's key, when they choose.
+        expect(detail("ai-token-counter")).toBe("Files are read and GPT tokens are counted in this browser, so nothing is uploaded. With your own Anthropic or Google key, and only when you choose to count with it, the text you count goes from your browser straight to that provider, never through PrivaTools.");
         // Where an on-device engine exists, it is named.
         for (const slug of ["summarize-pdf", "transcribe-audio", "translate-pdf", "smart-redact"]) expect(detail(slug)).toMatch(/On this device/);
         // A tool that can use the visitor's AI key always gets words of its own: what goes where differs per tool.

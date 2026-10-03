@@ -234,7 +234,7 @@ load-bearing.
   Cache API "transformers-cache") and BYOK (`lib/byok/*`). The top-bar AI hub
   (`AiHubDialog`) manages both; `lib/localModels.ts` is the model registry and
   does honest cache introspection — never invent an "installed" state.
-- **BYOK client is two functions** (`complete`, `transcribe`) in
+- **BYOK client is three functions** (`complete`, `transcribe`, `countTokens`) in
   `lib/byok/client.ts` — the only network calls in the package, on purpose.
   Message content accepts image parts; `buildRequest` maps them per provider
   shape. Tasks (`tasks.ts`) fence document text per call — keep that.

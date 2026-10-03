@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 224 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 225 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -1220,6 +1220,14 @@ URL: https://privatools.me/tools/word-counter
 Live counts of words, characters, sentences, lines
 
 Count words, characters, sentences, paragraphs, and lines online for free. Includes reading-time estimate at 220 wpm. Runs entirely in your browser — paste sensitive text without worry.
+
+### AI Token Counter
+
+URL: https://privatools.me/tools/ai-token-counter
+
+Count tokens in text or files for GPT, Claude and Gemini
+
+Count how many tokens a text uses for OpenAI's GPT models, exactly and in your browser, with the o200k_base and cl100k_base tokenizers. Paste text, or open a text, Markdown, CSV, JSON, code, PDF or Word (.docx) file: it is read on your device and not uploaded. Claude and Gemini counts come from Anthropic's and Google's own token-counting methods, only if you add your own API key and choose to count with it; the text then goes from your browser straight to that provider. Enter prices per million tokens to estimate a cost, or split long text into chunks of a set number of GPT tokens.
 
 ### Color Converter
 

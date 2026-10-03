@@ -28,9 +28,37 @@ const chunks = entries
   })
   .sort((a, b) => b.gzipKiB - a.gzipKiB);
 
-const offenders = chunks.filter((chunk) => chunk.rawKiB > maxRawKiB || chunk.gzipKiB > maxGzipKiB);
+// Data tables allowed past the per-chunk budget, each held to a ceiling of
+// its own: gpt-tokenizer's rank tables, which the AI Token Counter loads only
+// when a visitor counts. Each encoding has a worker that builds its one table
+// into its own script (src/lib/tokens/tokens-*.worker.ts), started only on
+// Count; the page's own copies (src/lib/tokens/encoders.ts) load only where no
+// worker can start. They are lists of strings, not code a page runs as it
+// loads, and no page may load them eagerly (checked below with the entry and
+// preloads). A table that grows past its ceiling, or turns eager, still
+// fails; nothing else is exempt. No ceiling here passes 2048 KiB: the backend
+// compresses responses with Brotli only up to 2 MiB (middleware/brotli.py),
+// and a larger script goes out with gzip made on the fly, about 1.4 seconds
+// of server time for each download of 3 MB.
+const DATA_CHUNKS = [
+  { pattern: /^o200k_base-[\w-]+\.js$/, rawKiB: 2048, gzipKiB: 1060, what: "gpt-tokenizer's o200k_base rank table" },
+  { pattern: /^cl100k_base-[\w-]+\.js$/, rawKiB: 1000, gzipKiB: 460, what: "gpt-tokenizer's cl100k_base rank table" },
+  { pattern: /^tokens-o200k\.worker-[\w-]+\.js$/, rawKiB: 2048, gzipKiB: 1060, what: "the AI Token Counter's o200k_base worker, with its table" },
+  { pattern: /^tokens-cl100k\.worker-[\w-]+\.js$/, rawKiB: 1050, gzipKiB: 480, what: "the AI Token Counter's cl100k_base worker, with its table and the Word reader" },
+];
+const dataChunk = (name) => DATA_CHUNKS.find((data) => data.pattern.test(name));
+
+const offenders = chunks.filter((chunk) => {
+  const data = dataChunk(chunk.name);
+  return data
+    ? chunk.rawKiB > data.rawKiB || chunk.gzipKiB > data.gzipKiB
+    : chunk.rawKiB > maxRawKiB || chunk.gzipKiB > maxGzipKiB;
+});
 
 console.log(`JS bundle budget: raw <= ${maxRawKiB} KiB, gzip <= ${maxGzipKiB} KiB per chunk`);
+for (const data of DATA_CHUNKS) {
+  console.log(`  except lazy data: ${data.what}, raw <= ${data.rawKiB} KiB, gzip <= ${data.gzipKiB} KiB`);
+}
 for (const chunk of chunks.slice(0, 20)) {
   console.log(`${chunk.gzipKiB.toFixed(1).padStart(7)} KiB gzip  ${chunk.rawKiB.toFixed(1).padStart(7)} KiB raw  ${chunk.name}`);
 }
@@ -128,6 +156,27 @@ if (eagerBlogChunks.length > 0) {
   console.log(`\nBlog data: absent from all ${eagerChunks.size} chunks loaded on every page (entry, preloads and their static imports).`);
 }
 
-if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0) {
+// The data tables' own ceilings hold only while they stay lazy.
+const eagerDataChunks = [...eagerChunks].filter((name) => dataChunk(name));
+if (eagerDataChunks.length > 0) {
+  console.error("\nLazy data tables are in the chunks every page loads:");
+  for (const name of eagerDataChunks) console.error(`- ${name} (${dataChunk(name).what})`);
+  console.error("Import gpt-tokenizer's encodings only through the dynamic import() in src/lib/tokens/encoders.ts, and start the workers only from src/lib/tokens/engine.ts.");
+}
+
+// A worker is started by its URL, not imported, so the walk above can't see one
+// started on every page. Its file name in any chunk every page loads means it is.
+const workerFiles = chunks.map((chunk) => chunk.name).filter((name) => dataChunk(name) && /\.worker-/.test(name));
+const eagerWorkerStarts = [...eagerChunks].flatMap((name) => {
+  const source = readFileSync(join(assetsDir.pathname, name), "utf8");
+  return workerFiles.filter((worker) => source.includes(worker)).map((worker) => `${name} names ${worker}`);
+});
+if (eagerWorkerStarts.length > 0) {
+  console.error("\nA lazy worker is started from the chunks every page loads:");
+  for (const line of eagerWorkerStarts) console.error(`- ${line}`);
+  console.error("Start the token workers only from src/lib/tokens/engine.ts, which only the AI Token Counter imports, and only through a dynamic import().");
+}
+
+if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0) {
   process.exit(1);
 }
