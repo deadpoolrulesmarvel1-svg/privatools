@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
   QrCode, Merge, Maximize2, Type,
-  Eraser, Sparkles,
+  Eraser, Sparkles, Captions,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -249,6 +249,17 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     popularity: 68,
     category: "video-audio", clientOnly: true, accepts: ".srt,.vtt,.ass", outputLabel: "subtitles.vtt",
     lastReviewed: "2026-09-18",
+  },
+  {
+    slug: "subtitle-generator", icon: Captions, name: "Subtitle Generator",
+    description: "Turn the speech in a video or recording into subtitles",
+    longDescription: "Generate subtitles from a video or audio file in your browser. Whisper, an open speech-recognition model, listens on your device and writes timed captions of up to two lines; you read and correct them while the video plays, then download SRT or VTT. Nothing is uploaded: the first run downloads the model, about 74 MB for Base or 41 MB for Tiny, and your browser keeps it. It works best on clear speech; music, people talking over each other and strong accents cause mistakes. Files can hold up to 3 hours of sound.",
+    seoTitle: "Subtitle Generator – Video or Audio to SRT, No Upload",
+    metaDescription: "Generate subtitles from a video or recording in your browser with Whisper, check and correct them, then download SRT or VTT. Nothing is uploaded.",
+    synonyms: "auto subtitle generator generate subtitles video to srt audio to srt srt generator vtt captions caption generator closed captions speech to subtitles transcribe video whisper offline no watermark",
+    popularity: 18,
+    category: "video-audio", clientOnly: true, accepts: ".mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.oga,.opus,.flac,.aac", outputLabel: "subtitles (.srt or .vtt)",
+    lastReviewed: "2026-10-03",
   },
 
   // ── Developer & Text ────────────────────────────────────────────────────────
@@ -574,7 +585,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",
     popularity: 20,
     category: "video-audio", clientOnly: true, byok: true, accepts: ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac", outputLabel: "transcript.txt",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-10-03",
   },
 
   // ── v1.2.0 additions ──────────────────────────────────────────────────────

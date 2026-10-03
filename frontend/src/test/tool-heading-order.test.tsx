@@ -20,6 +20,7 @@ import { CropUI } from "@/components/tool-ui/CropUI";
 import { WatermarkUI } from "@/components/tool-ui/WatermarkUI";
 import { MetadataUI } from "@/components/tool-ui/MetadataUI";
 import { ProtectUI } from "@/components/tool-ui/ProtectUI";
+import { SubtitleGeneratorUI } from "@/components/tool-ui/SubtitleGeneratorUI";
 
 vi.mock("@/skins/daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("@/skins/experience/ToolGuide", () => ({ ToolGuide: () => <section><h2>How to use this tool</h2><h3>A question</h3></section> }));
@@ -64,6 +65,7 @@ const CASES: Case[] = [
     { name: "Compress Video", tool: { slug: "compress-video", name: "Compress Video", description: "Reduce video file size for email or messaging", category: "video-audio" }, ui: () => <CompressVideoUI />, choose: c => fileInput(c, [mp4("clip.mp4")]) },
     { name: "Gemini Watermark Remover", tool: { slug: "gemini-watermark-remover", name: "Gemini Watermark Remover", description: "Take the visible Gemini sparkle off AI-generated images", category: "image", clientOnly: true }, ui: () => <GeminiWatermarkUI />, choose: c => fileInput(c, [png("gemini.png")]) },
     { name: "JSON / XML Formatter", tool: { slug: "json-xml-formatter", name: "JSON / XML Formatter", description: "Prettify, minify or validate JSON and XML in your browser", category: "developer", clientOnly: true }, ui: () => <JsonXmlFormatterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: '{"a":1}' } }) },
+    { name: "Subtitle Generator", tool: { slug: "subtitle-generator", name: "Subtitle Generator", description: "Turn the speech in a video or recording into subtitles", category: "video-audio", clientOnly: true }, ui: () => <SubtitleGeneratorUI />, choose: c => fileInput(c, [mp4("talk.mp4")]) },
     { name: "Hidden Text Checker", tool: { slug: "hidden-text-checker", name: "Hidden Text Checker", description: "Find text in a PDF that readers can't see", category: "security" }, ui: () => <HiddenTextCheckerUI />, choose: c => fileInput(c, [pdf("notes.pdf")]) },
     // Screens moved onto the shared kit in step 2b: their options are h2 parts of the tool.
     { name: "Crop PDF", tool: { slug: "crop-pdf", name: "Crop PDF", description: "Trim the margins of a PDF", category: "edit" }, ui: () => <CropUI />, choose: c => fileInput(c, [pdf("report.pdf")]) },
