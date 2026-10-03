@@ -12,6 +12,8 @@ html[data-experience] .dl-root {--dl-paper:var(--pt-bg);--dl-paper-2:var(--pt-pa
 html[data-experience] .dl-root :is(h1,h2,h3,h4,.font-display) {font-family:var(--pt-display);}
 html[data-experience] .dl-root {--font-sans:var(--pt-font);--font-display:var(--pt-display);--font-mono:'DM Mono',monospace;}
 html[data-experience] :is(button,input,textarea,select){font-family:var(--pt-font);}
+/* Manrope's standard ligatures draw "--", "->" and "<-" as one dash or arrow, so "<!-- page 3 -->" read "<!– page 3 –>"; its fi and fl are not missed. Form fields take the browser's font settings, not the page's. Play's Outfit has no such ligature (skins/experience/ligatures.test.ts). */
+html[data-experience='air'],html[data-experience='air'] :is(button,input,textarea,select){font-variant-ligatures:no-common-ligatures;}
 html[data-experience] :is(button,a,input,textarea,select):focus-visible{outline:2px solid var(--pt-action);outline-offset:4px;}
 html[data-experience] button:disabled{cursor:not-allowed;opacity:.55;}
 .pt-shell{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:'header' 'main' 'footer';min-height:100dvh;}
