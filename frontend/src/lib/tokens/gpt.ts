@@ -1,10 +1,14 @@
 /**
  * GPT token counts, exact and on this device, with gpt-tokenizer (MIT, pinned
  * in package.json): a JavaScript port of OpenAI's tiktoken encodings. Each
- * encoding's rank table is a large module, about 2.4 MB (o200k_base) and
- * 1.2 MB (cl100k_base) before compression, so it is imported only when a
- * count needs it; the browser then keeps it like any other script.
+ * encoding's rank table is a large module, about 2 MB (o200k_base) and 1 MB
+ * (cl100k_base) before compression, so it loads only when a count needs it:
+ * in its own worker (tokens-o200k.worker.ts, tokens-cl100k.worker.ts), or,
+ * where no worker starts, imported on the page (encoders.ts). This module
+ * imports neither table, so the workers built from it each carry only their
+ * own.
  */
+import { abortError } from "./errors";
 
 export type GptEncodingId = "o200k_base" | "cl100k_base";
 
@@ -56,27 +60,15 @@ export interface GptEncoder {
  */
 export const AS_PLAIN_TEXT: EncodeOptions = Object.freeze({ disallowedSpecial: new Set<string>() });
 
-const loaded = new Map<GptEncodingId, Promise<GptEncoder>>();
-
-export function loadGptEncoder(id: GptEncodingId): Promise<GptEncoder> {
-    let encoder = loaded.get(id);
-    if (!encoder) {
-        encoder = (id === "o200k_base" ? import("gpt-tokenizer/encoding/o200k_base") : import("gpt-tokenizer/encoding/cl100k_base"))
-            .then(module => module as GptEncoder);
-        // A failed download may succeed on the next attempt.
-        encoder.catch(() => loaded.delete(id));
-        loaded.set(id, encoder);
-    }
-    return encoder;
+/** An encoder with the encoding it counts with. */
+export interface NamedEncoder {
+    id: GptEncodingId;
+    encoder: GptEncoder;
 }
 
 /** Lets the page paint and take input between slices of work. */
 export function nextTask(): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, 0));
-}
-
-function abortError(): DOMException {
-    return new DOMException("The count was cancelled.", "AbortError");
 }
 
 export function throwIfAborted(signal?: AbortSignal): void {
@@ -87,20 +79,25 @@ export interface ScanOptions {
     signal?: AbortSignal;
     /** Characters read so far; called between slices and once at the end. */
     onProgress?: (done: number, total: number) => void;
-    /** How long to work before giving the page a turn. */
+    /** How long to work between progress reports and, when yielding, turns for the page. */
     sliceMs?: number;
+    /**
+     * Give the page a turn between slices, so a long text neither freezes the
+     * tab nor stops Cancel. Off in the token workers, which have no page to
+     * keep drawing and which Cancel ends outright.
+     */
+    yields?: boolean;
 }
 
 /**
  * Walk the text piece by piece, as the encoder splits it before merging
  * bytes into tokens. The pieces cover the text end to end, so their lengths
- * add up to the text's and the tokens to its exact count; between slices the
- * page gets a turn, so a long text neither freezes the tab nor stops Cancel.
+ * add up to the text's and the tokens to its exact count.
  */
 export async function scanPieces(
     text: string, encoder: GptEncoder,
     onPiece: (piece: string, tokens: number) => void,
-    { signal, onProgress, sliceMs = 30 }: ScanOptions = {},
+    { signal, onProgress, sliceMs = 30, yields = true }: ScanOptions = {},
 ): Promise<void> {
     throwIfAborted(signal);
     let done = 0;
@@ -112,7 +109,7 @@ export async function scanPieces(
         onPiece(piece, tokens.length);
         if (++pieces % 1024 === 0 && performance.now() - since >= sliceMs) {
             onProgress?.(done, text.length);
-            await nextTask();
+            if (yields) await nextTask();
             throwIfAborted(signal);
             since = performance.now();
         }

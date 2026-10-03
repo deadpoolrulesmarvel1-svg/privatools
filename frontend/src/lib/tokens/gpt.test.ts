@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import * as knownModels from "gpt-tokenizer/models";
 import { DEFAULT_ENCODING, modelToEncodingMap } from "gpt-tokenizer/mapping";
-import { GPT_ENCODINGS, countGptTokens, loadGptEncoder, type GptEncodingId } from "./gpt";
+import { GPT_ENCODINGS, countGptTokens, type GptEncodingId } from "./gpt";
+import { loadGptEncoder } from "./encoders";
 
 /**
  * Reference tokenizations from OpenAI's own tiktoken, as its cookbook "How to
@@ -56,6 +57,21 @@ describe("GPT token counts", () => {
         const text = "word ".repeat(200_000);
         const run = countGptTokens(text, encoder, { signal: controller.signal, sliceMs: 0, onProgress: () => controller.abort() });
         await expect(run).rejects.toMatchObject({ name: "AbortError" });
+    });
+
+    it("in the worker, reports progress without stopping for turns it has no page to give", async () => {
+        const encoder = await loadGptEncoder("o200k_base");
+        const text = "word and more words, ".repeat(50_000);
+        const timers = vi.spyOn(globalThis, "setTimeout");
+        try {
+            const seen: number[] = [];
+            const count = await countGptTokens(text, encoder, { yields: false, sliceMs: 0, onProgress: done => seen.push(done) });
+            expect(count).toBe(encoder.countTokens(text, { disallowedSpecial: new Set() }));
+            expect(seen.length).toBeGreaterThan(2);
+            expect(timers).not.toHaveBeenCalled();
+        } finally {
+            timers.mockRestore();
+        }
     });
 });
 

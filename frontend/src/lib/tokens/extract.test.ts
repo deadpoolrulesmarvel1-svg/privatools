@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { toolErrorKind } from "@/lib/toolRun";
 import { nonPdfToolBySlug } from "@/data/non-pdf-tools";
-import { ACCEPTS, MAX_FILE_BYTES, MAX_TEXT_CHARS, checkTextLength, decodeText, readDocxText, readFileText, readPdfText, type PdfjsLike } from "./extract";
+import { ACCEPTS, MAX_FILE_BYTES, MAX_TEXT_CHARS, checkTextLength, decodeText, readFileText, readPdfText, type PdfjsLike } from "./extract";
+import { MAX_DOCX_XML_BYTES, readDocxText, wordBodyText } from "./docx";
 
 const legacyPdfjs = async () => (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as PdfjsLike;
 
@@ -107,8 +108,45 @@ describe("text and code files", () => {
     });
 });
 
+const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+
+/** The reader this page had before the worker: DOMParser and a walk. The scan must read every document as it did. */
+function domReading(xml: string): string | null {
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    if (doc.getElementsByTagName("parsererror").length || !doc.documentElement) return null;
+    const out: string[] = [];
+    const walk = (parent: Element) => {
+        for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
+            const name = child.localName;
+            if (child.namespaceURI === MC_NS) {
+                if (name === "AlternateContent") {
+                    const choice = [...child.children].find(alt => alt.namespaceURI === MC_NS && (alt.localName === "Choice" || alt.localName === "Fallback"));
+                    if (choice) walk(choice);
+                }
+                continue;
+            }
+            if (child.namespaceURI !== W_NS) { walk(child); continue; }
+            if (name.endsWith("Pr")) continue;
+            switch (name) {
+                case "t": out.push(child.textContent ?? ""); break;
+                case "tab": out.push("\t"); break;
+                case "br": case "cr": out.push("\n"); break;
+                case "noBreakHyphen": out.push("-"); break;
+                case "delText": case "instrText": case "moveFrom": break;
+                case "p": walk(child); out.push("\n"); break;
+                default: walk(child);
+            }
+        }
+    };
+    walk(doc.documentElement);
+    return out.join("").replace(/\n$/, "");
+}
+
+const documentXml = (body: string, namespaces = W) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<w:document ${namespaces}><w:body>${body}</w:body></w:document>`;
+
 describe("Word files", () => {
-    it("reads the body's paragraphs, tabs, breaks and tables, and nothing deleted or hidden in a field code", async () => {
+    it("reads the body's paragraphs, tabs, breaks and tables, and nothing deleted or hidden in a field code", () => {
         const body = [
             '<w:p><w:r><w:t>First </w:t></w:r><w:r><w:t xml:space="preserve">paragraph &amp; more</w:t></w:r></w:p>',
             "<w:p><w:r><w:t>Tab</w:t><w:tab/><w:t>stop</w:t><w:br/><w:t>new line</w:t></w:r></w:p>",
@@ -119,7 +157,70 @@ describe("Word files", () => {
             "<w:p><w:r><w:t>Last line</w:t></w:r></w:p>",
             '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/></w:sectPr>',
         ].join("");
-        expect(await readDocxText(docx(body))).toBe("First paragraph & more\nTab\tstop\nnew line\nkept\ncell one\ncell two\ntext box\n\n\nLast line");
+        expect(readDocxText(docx(body))).toBe("First paragraph & more\nTab\tstop\nnew line\nkept\ncell one\ncell two\ntext box\n\n\nLast line");
+    });
+
+    it("reads markup as XML does: entities, CDATA, line ends, quoted '>', comments and instructions", () => {
+        const body = [
+            '<w:p w:rsidR="00A>11"><w:r><w:t xml:space=\'preserve\'>a > b &lt;c&gt; &amp; &quot;d&quot; &apos;e&apos; &#65;&#x42;&#x1F642;</w:t></w:r></w:p>',
+            "<w:p><w:r><w:t><![CDATA[x < y & z]]></w:t></w:r></w:p>",
+            "<w:p><w:r><w:t>one\r\ntwo\rthree</w:t></w:r></w:p>",
+            "<!-- <w:p><w:r><w:t>a comment</w:t></w:r></w:p> --><?mso-application progid=\"Word.Document\"?>",
+            "<w:p><w:r><w:t>end</w:t></w:r></w:p>",
+        ].join("");
+        expect(wordBodyText(documentXml(body))).toBe("a > b <c> & \"d\" 'e' AB🙂\nx < y & z\none\ntwo\nthree\nend");
+    });
+
+    it("goes by namespace, not by prefix", () => {
+        const prefixed = `<x:document xmlns:x="${W_NS}"><x:body><x:p><x:r><x:t>prefixed</x:t></x:r></x:p><x:p><x:r><x:t>twice</x:t></x:r></x:p></x:body></x:document>`;
+        expect(wordBodyText(prefixed)).toBe("prefixed\ntwice");
+        expect(wordBodyText(`<document xmlns="${W_NS}"><body><p><r><t>default namespace</t></r></p></body></document>`)).toBe("default namespace");
+        // A "t" from another vocabulary holds no Word text, and an inner declaration can rebind a prefix.
+        const other = documentXml(`<w:p><o:t xmlns:o="urn:example:other">hidden</o:t><w:r><w:t>shown</w:t></w:r><w:r xmlns:w="urn:example:not-word"><w:t>not Word</w:t></w:r></w:p>`);
+        expect(wordBodyText(other)).toBe("shown");
+    });
+
+    it("reads moved text once, a non-breaking hyphen as a hyphen, and no tab stops", () => {
+        const body = [
+            '<w:p><w:pPr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:t>left</w:t></w:r></w:p>',
+            "<w:p><w:moveFrom><w:r><w:t>moved away</w:t></w:r></w:moveFrom><w:moveTo><w:r><w:t>moved here</w:t></w:r></w:moveTo></w:p>",
+            "<w:p><w:r><w:t>well</w:t><w:noBreakHyphen/><w:t>known</w:t><w:cr/><w:t>next</w:t></w:r></w:p>",
+        ].join("");
+        expect(wordBodyText(documentXml(body))).toBe("left\nmoved here\nwell-known\nnext");
+    });
+
+    it("refuses markup that isn't well formed", () => {
+        for (const body of [
+            "<w:p><w:r><w:t>unclosed</w:t></w:r>",
+            "<w:p><w:r><w:t>crossed</w:p></w:r></w:t>",
+            "<w:p><w:r><w:t>stray < sign</w:t></w:r></w:p>",
+            "<w:p><w:r><w:t unquoted=value>bad attribute</w:t></w:r></w:p>",
+        ]) {
+            expect(wordBodyText(documentXml(body)), body).toBeNull();
+            expect(domReading(documentXml(body)), body).toBeNull();
+        }
+    });
+
+    it("reads every generated document exactly as DOMParser did", () => {
+        const pieces = [
+            "<w:r><w:t>word</w:t></w:r>", '<w:r><w:t xml:space="preserve"> spaced &amp; </w:t></w:r>', "<w:r><w:tab/></w:r>", "<w:r><w:br/></w:r>",
+            "<w:r><w:cr/></w:r>", "<w:r><w:noBreakHyphen/></w:r>", "<w:r><w:rPr><w:b/><w:tab/></w:rPr><w:t>bold</w:t></w:r>",
+            "<w:del><w:r><w:delText>gone</w:delText></w:r></w:del>", "<w:ins><w:r><w:t>added</w:t></w:r></w:ins>",
+            "<w:r><w:instrText>PAGE</w:instrText></w:r>", "<w:moveFrom><w:r><w:t>from</w:t></w:r></w:moveFrom>",
+            "<w:r><w:t><![CDATA[a<b]]></w:t></w:r>", "<!-- note -->", "<w:r><w:t>数据 🙂</w:t></w:r>",
+            '<mc:AlternateContent><mc:Choice Requires="wps"><w:r><w:t>first</w:t></w:r></mc:Choice><mc:Fallback><w:r><w:t>second</w:t></w:r></mc:Fallback></mc:AlternateContent>',
+            "<mc:Ignorable/>", "<wps:wsp><w:txbxContent><w:p><w:r><w:t>box</w:t></w:r></w:p></w:txbxContent></wps:wsp>",
+        ];
+        let seed = 99;
+        const random = () => { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; return seed >>> 8; };
+        for (let round = 0; round < 300; round++) {
+            const paragraphs = Array.from({ length: 1 + (random() % 6) }, () => {
+                const runs = Array.from({ length: random() % 6 }, () => pieces[random() % pieces.length]).join("");
+                return random() % 5 ? `<w:p>${runs}</w:p>` : `<w:tbl><w:tr><w:tc><w:p>${runs}</w:p></w:tc></w:tr></w:tbl>`;
+            });
+            const xml = documentXml(paragraphs.join(""));
+            expect(wordBodyText(xml), xml).toBe(domReading(xml));
+        }
     });
 
     it("reads a Word file through the same entry point as other files", async () => {
@@ -127,19 +228,26 @@ describe("Word files", () => {
         expect(read).toEqual({ text: "Hello Word", kind: "docx" });
     });
 
+    it("hands a Word file to the reader it is given: the page's is the token worker", async () => {
+        const seen: Array<[number, string]> = [];
+        const read = await readFileText(file(docx("<w:p/>"), "letter.docx"), { readDocx: async (bytes, name) => { seen.push([bytes.length, name]); return "from the worker"; } });
+        expect(read).toEqual({ text: "from the worker", kind: "docx" });
+        expect(seen).toEqual([[docx("<w:p/>").length, "letter.docx"]]);
+    });
+
     it("says when a .docx is not a Word document", async () => {
-        for (const bytes of [strToU8("plain text, not a zip"), zipSync({ "hello.txt": strToU8("hi") })]) {
+        for (const bytes of [strToU8("plain text, not a zip"), zipSync({ "hello.txt": strToU8("hi") }), docx("<w:p><w:r><w:t>unclosed</w:r></w:p>")]) {
             const error = await failure(readFileText(file(bytes, "report.docx")));
             expect(error.message).toBe("report.docx couldn’t be read as a Word document. It may be damaged, or an older .doc file renamed: save it as .docx and try again.");
             expect(toolErrorKind(error)).toBe("bad_input");
         }
     });
 
-    it("refuses a Word file whose text would unpack beyond what the page reads", async () => {
-        const huge = new Uint8Array(70 * 1024 * 1024).fill(0x20);
-        const bytes = zipSync({ "word/document.xml": huge }, { level: 9 });
+    it("refuses a Word file whose document part unpacks to more than 32 MB, markup included", async () => {
+        const huge = new Uint8Array(MAX_DOCX_XML_BYTES + 1).fill(0x20);
+        const bytes = zipSync({ "word/document.xml": huge }, { level: 1 });
         const error = await failure(readFileText(file(bytes, "bomb.docx")));
-        expect(error.message).toMatch(/^bomb\.docx holds more document text than this page reads at once/);
+        expect(error.message).toBe("bomb.docx is too large to read here: its main document part, markup included, unpacks to more than 32 MB. Split it into smaller documents and count each one.");
         expect(toolErrorKind(error)).toBe("too_large");
     });
 });
@@ -156,9 +264,17 @@ describe("PDFs", () => {
         expect(seen).toEqual([1, 2, 3]);
     });
 
-    it("says when a PDF has no text to count", async () => {
+    it("says when a PDF has no text to count, leaving the tool that helps to the page", async () => {
         const error = await failure(readPdfText(textPdf([[], []]), { pdfjs: legacyPdfjs }));
-        expect(error.message).toBe("This PDF has no text to count: its 2 pages are probably images, such as a scan. OCR PDF can add a text layer first.");
+        expect(error.message).toBe("This PDF has no text to count: its 2 pages are probably images, such as a scan.");
+        expect(error).toMatchObject({ code: "pdf-no-text" });
+        expect(toolErrorKind(error)).toBe("bad_input");
+    });
+
+    it("says a PDF with no pages has none, rather than calling it a scan", async () => {
+        const error = await failure(readFileText(file(textPdf([]), "nopages.pdf"), { pdfjs: legacyPdfjs }));
+        expect(error.message).toBe("nopages.pdf has no pages.");
+        expect(error).toMatchObject({ code: "empty" });
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 
@@ -168,13 +284,14 @@ describe("PDFs", () => {
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 
-    it("says when a PDF needs a password, and where to remove it", async () => {
+    it("says when a PDF needs a password, leaving the tool that removes one to the page", async () => {
         const locked: PdfjsLike = {
             GlobalWorkerOptions: {},
             getDocument: () => ({ promise: Promise.reject(Object.assign(new Error("No password given"), { name: "PasswordException" })), destroy: async () => {} }),
         } as unknown as PdfjsLike;
         const error = await failure(readFileText(file("%PDF-1.7", "locked.pdf"), { pdfjs: async () => locked }));
-        expect(error.message).toBe("locked.pdf needs a password to open, so its text can’t be read. If you know the password, Unlock PDF can remove it first; that tool uploads the PDF to PrivaTools for temporary processing.");
+        expect(error.message).toBe("locked.pdf needs a password to open, so its text can’t be read.");
+        expect(error).toMatchObject({ code: "pdf-password" });
         expect(toolErrorKind(error)).toBe("bad_input");
     });
 });

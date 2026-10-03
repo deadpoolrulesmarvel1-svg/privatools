@@ -8,7 +8,7 @@ import { strToU8 } from "fflate";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as db from "@/lib/localStore/db";
 import { _resetForTests } from "@/lib/localStore/crypto";
-import { listConfigured, saveKey } from "@/lib/byok/keyStore";
+import { clearKey, listConfigured, saveKey, setSessionOnly } from "@/lib/byok/keyStore";
 import { formatCost } from "@/lib/tokens/cost";
 
 const mocks = vi.hoisted(() => ({ download: vi.fn() }));
@@ -37,11 +37,13 @@ beforeEach(async () => {
     clipboard = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: clipboard } });
 });
-afterEach(() => {
+afterEach(async () => {
     window.removeEventListener(RUN_EVENT, listen);
     cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    // keyStore keeps the session-only setting in memory, across tests.
+    await setSessionOnly(false);
 });
 
 const paste = (value: string) => fireEvent.change(screen.getByLabelText("Or paste text"), { target: { value } });
@@ -70,13 +72,17 @@ describe("counting on the device", () => {
         expect(within(row(/o200k_base/)).getByText("6 tokens")).toBeInTheDocument();
         expect(within(row(/cl100k_base/)).getByText("6 tokens")).toBeInTheDocument();
         expect(within(row(/o200k_base/)).getByText("Exact. Counted on this device.")).toBeInTheDocument();
-        // No bare number for Claude or Gemini without a key.
-        for (const [family, company] of [["Claude", "Anthropic"], ["Gemini", "Google"]]) {
+        // No bare number for Claude or Gemini without a key. Anthropic calls its count an estimate, so only Gemini's is "exact".
+        for (const [family, line] of [
+            ["Claude", "A Claude count needs your Anthropic key. This page doesn’t guess one."],
+            ["Gemini", "An exact Gemini count needs your Google key. This page doesn’t guess one."],
+        ]) {
             const item = row(new RegExp(`^${family}`));
             expect(within(item).getByText("No count")).toBeInTheDocument();
-            expect(item).toHaveTextContent(`An exact ${family} count needs your ${company} key. This page doesn’t guess one.`);
+            expect(item).toHaveTextContent(line);
             expect(item.textContent).not.toMatch(/\d/);
         }
+        expect(row(/^Claude/).textContent).not.toMatch(/exact/i);
         expect(network).not.toHaveBeenCalled();
         expect(runs).toEqual([{ outcome: "success" }]);
     });
@@ -121,6 +127,19 @@ describe("counting on the device", () => {
         fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [new File([""], "blank.txt", { type: "text/plain" })] } });
         fireEvent.click(countButton());
         expect(await screen.findByText("blank.txt is empty.", undefined, SLOW)).toBeInTheDocument();
+    });
+
+    it("refuses a run the tokenizer would take minutes over, says where it starts, and leads back to the text", async () => {
+        render(<AiTokenCounterUI />);
+        paste(`>sequence\n${"ACGT".repeat(6000)}\n`);
+        fireEvent.click(countButton());
+        expect(await screen.findByRole("heading", { name: "This text couldn’t be counted." }, SLOW)).toBeInTheDocument();
+        expect(screen.getByText(/^This text has 24,000 letters in a row with no space, digit or punctuation between them, starting “ACGTACGTACGTACGT…”\./)).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
+        expect(runs).toEqual([{ outcome: "error", errorKind: "bad_input" }]);
+        expect(network).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Back to the text" }));
+        expect(await screen.findByLabelText("Or paste text")).toHaveValue(`>sequence\n${"ACGT".repeat(6000)}\n`);
     });
 });
 
@@ -202,6 +221,38 @@ describe("Claude and Gemini, with the visitor's own key", () => {
         fireEvent.click(screen.getByRole("button", { name: "Remove key" }));
         expect(await screen.findByLabelText("Google AI Studio API key")).toBeInTheDocument();
         expect(await listConfigured()).toEqual([]);
+    });
+
+    it("reads the saved keys again when the page comes back into view and before it counts", async () => {
+        render(<AiTokenCounterUI />);
+        expect(screen.getByLabelText("Anthropic API key")).toBeInTheDocument();
+        // A key saved elsewhere on the page (the AI hub) or in another tab.
+        await saveKey("anthropic", DUMMY_KEY);
+        paste("A short prompt.");
+        fireEvent.click(countButton());
+        await screen.findByRole("heading", { name: "Token counts for your text" }, SLOW);
+        expect(row(/^Claude/)).toHaveTextContent("Not asked. Tick “Count with Claude” to ask Anthropic, with your key.");
+        expect(network).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Change the text or options" }));
+        expect(await screen.findByRole("checkbox", { name: /Count with Claude/ })).not.toBeChecked();
+        await clearKey("anthropic");
+        fireEvent.focus(window);
+        expect(await screen.findByLabelText("Anthropic API key")).toBeInTheDocument();
+    });
+
+    it("ticks “This session only” at once, and deletes the AI keys saved in this browser and nothing else", async () => {
+        await saveKey("anthropic", DUMMY_KEY);
+        // The password vault keeps its own key in the same store.
+        await db.put("secrets", "vault-key", "the vault's key stays");
+        render(<AiTokenCounterUI />);
+        await screen.findByText(/Key saved on this device/);
+        const box = screen.getByRole("checkbox", { name: /This session only/ });
+        expect(box.closest("label")).toHaveTextContent("Keep AI keys in this tab’s memory until you reload or close it, and delete every AI key saved in this browser. Nothing else is deleted.");
+        fireEvent.click(box);
+        expect(box).toBeChecked();
+        await waitFor(async () => expect(await db.keys("secrets")).toEqual(["vault-key"]));
+        expect(await db.get("secrets", "vault-key")).toBe("the vault's key stays");
+        expect(await screen.findByLabelText("Anthropic API key")).toBeInTheDocument();
     });
 });
 

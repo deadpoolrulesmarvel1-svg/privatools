@@ -2,26 +2,30 @@
  * AiTokenCounterUI — how many tokens a text or a file uses for current AI models.
  *
  * GPT counts are exact and made in this tab with gpt-tokenizer (o200k_base
- * and cl100k_base). Claude and Gemini have no tokenizer this page can run, so
- * their counts come only from the providers' own count methods, with the
- * visitor's key, when the visitor ticks that provider and presses Count: the
- * text then goes from this browser straight to the provider (lib/byok's
- * countTokens). Without a key the page shows no Claude or Gemini number at
- * all, rather than a guess. Files are read here (lib/tokens/extract.ts);
- * nothing is uploaded to PrivaTools. Prices are entered by the visitor:
- * there is no built-in price table to go stale.
+ * and cl100k_base), in a worker (lib/tokens/engine.ts), so the page keeps
+ * answering and Cancel stops a count at once. Claude and Gemini have no
+ * tokenizer this page can run, so their counts come only from the providers'
+ * own count methods, with the visitor's key, when the visitor ticks that
+ * provider and presses Count: the text then goes from this browser straight
+ * to the provider (lib/byok's countTokens). Without a key the page shows no
+ * Claude or Gemini number at all, rather than a guess. Files are read here
+ * (lib/tokens/extract.ts); nothing is uploaded to PrivaTools. Prices are
+ * entered by the visitor: there is no built-in price table to go stale.
  */
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, Hash } from "lucide-react";
-import { buildOutputFilename, downloadBlob, formatFileSize, withErrorKind } from "@/lib/api";
+import { buildOutputFilename, downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { countTokens } from "@/lib/byok/client";
 import { ByokError } from "@/lib/byok/errors";
 import { clearKey, getKey, isSessionOnly, listConfigured, saveKey, setSessionOnly } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
-import { GPT_ENCODINGS, countGptTokens, gptEncoding, loadGptEncoder, modelList, type GptEncodingId } from "@/lib/tokens/gpt";
-import { ACCEPTS, ReadError, checkTextLength, readFileText, type FileText, type ReadFailure } from "@/lib/tokens/extract";
-import { MAX_CHUNK_TOKENS, MIN_CHUNK_TOKENS, TooManyChunksError, chunkPreview, chunksAsText, splitIntoChunks, validChunkSize, type Chunk } from "@/lib/tokens/split";
+import { GPT_ENCODINGS, gptEncoding, modelList, type GptEncodingId } from "@/lib/tokens/gpt";
+import { ReadError, type ReadFailure } from "@/lib/tokens/errors";
+import { ACCEPTS, checkTextLength, readFileText, type FileText } from "@/lib/tokens/extract";
+import { createTokenEngine, type TokenEngine } from "@/lib/tokens/engine";
+import { textStats } from "@/lib/tokens/jobs";
+import { MAX_CHUNK_TOKENS, MIN_CHUNK_TOKENS, TooManyChunksError, chunkPreview, chunksAsText, validChunkSize, type Chunk } from "@/lib/tokens/split";
 import { costFor, formatCost, parseAmount } from "@/lib/tokens/cost";
 import { FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { focusIfIdle } from "@/skins/experience/focus-result";
@@ -31,27 +35,17 @@ import "./ai-token-counter.css";
 
 type ProviderId = "anthropic" | "gemini";
 
-/** The providers with a count method of their own, as the page names them. */
-const PROVIDERS: ReadonlyArray<{ id: ProviderId; family: string; company: string; keyLabel: string }> = [
-    { id: "anthropic", family: "Claude", company: "Anthropic", keyLabel: "Anthropic API key" },
-    { id: "gemini", family: "Gemini", company: "Google", keyLabel: "Google AI Studio API key" },
+/**
+ * The providers with a count method of their own, as the page names them.
+ * Anthropic calls its count an estimate, so only Google's is called exact.
+ */
+const PROVIDERS: ReadonlyArray<{ id: ProviderId; family: string; company: string; keyLabel: string; noKey: string }> = [
+    { id: "anthropic", family: "Claude", company: "Anthropic", keyLabel: "Anthropic API key", noKey: "A Claude count needs your Anthropic key. This page doesn’t guess one." },
+    { id: "gemini", family: "Gemini", company: "Google", keyLabel: "Google AI Studio API key", noKey: "An exact Gemini count needs your Google key. This page doesn’t guess one." },
 ];
 
 const n = (value: number) => value.toLocaleString("en-US");
 const plural = (count: number, one: string, many = `${one}s`) => `${n(count)} ${count === 1 ? one : many}`;
-
-/** Characters as people count them (code points, so an emoji is one), and words between spaces. */
-function textStats(text: string): { characters: number; words: number } {
-    let characters = 0;
-    for (let i = 0; i < text.length; i++) {
-        const code = text.charCodeAt(i);
-        if (code < 0xdc00 || code > 0xdfff) characters++;
-    }
-    let words = 0;
-    const word = /\S+/g;
-    while (word.exec(text)) words++;
-    return { characters, words };
-}
 
 type ProviderOutcome =
     | { id: ProviderId; status: "counted"; model: string; tokens: number }
@@ -71,24 +65,48 @@ interface Failure { message: string; code?: ReadFailure; retryable: boolean; kin
 
 type Phase = "idle" | "running" | "done" | "failed";
 
-/** Which providers have a key saved in this browser, and the controls ByokPanel offers for them. */
+/**
+ * Which providers have a key saved in this browser, and the controls ByokPanel
+ * offers for them. The list is read again whenever the page comes back into
+ * view and before every count, so a key saved or removed elsewhere (the AI
+ * hub, another tab) counts as it is now.
+ */
 function useSavedKeys() {
     const [saved, setSaved] = useState<string[]>([]);
     const [sessionOnly, setSessionOnlyState] = useState(isSessionOnly);
-    const refresh = useCallback(async () => {
-        try { setSaved(await listConfigured()); } catch { setSaved([]); }
+    const refresh = useCallback(async (): Promise<string[]> => {
+        let list: string[];
+        try { list = await listConfigured(); } catch { list = []; }
+        setSaved(list);
+        return list;
     }, []);
     useEffect(() => {
-        let alive = true;
-        listConfigured().then(list => { if (alive) setSaved(list); }).catch(() => {});
-        return () => { alive = false; };
-    }, []);
+        void refresh();
+        const onFocus = () => void refresh();
+        const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisible);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisible);
+        };
+    }, [refresh]);
     return {
         saved,
         sessionOnly,
+        refresh,
         save: async (id: ProviderId, key: string) => { await saveKey(id, key); await refresh(); },
         remove: async (id: ProviderId) => { await clearKey(id); await refresh(); },
-        setSession: async (on: boolean) => { await setSessionOnly(on); setSessionOnlyState(on); await refresh(); },
+        setSession: async (on: boolean) => {
+            // The box follows the click at once; the setting the store ends up with has the last word.
+            setSessionOnlyState(on);
+            try {
+                await setSessionOnly(on);
+            } finally {
+                setSessionOnlyState(isSessionOnly());
+                await refresh();
+            }
+        },
     };
 }
 
@@ -100,6 +118,7 @@ export function AiTokenCounterUI() {
     const [result, setResult] = useState<CountResult | null>(null);
     const [failure, setFailure] = useState<Failure | null>(null);
     const keys = useSavedKeys();
+    const refreshKeys = keys.refresh;
     const [asked, setAsked] = useState<Record<ProviderId, boolean>>({ anthropic: false, gemini: false });
     const [models, setModels] = useState<Record<ProviderId, string>>({
         anthropic: providerById("anthropic")?.models[0] ?? "",
@@ -111,6 +130,7 @@ export function AiTokenCounterUI() {
     // Back from a result: focus returns to the text or the count button, never from elsewhere.
     const [returning, setReturning] = useState(false);
     const abort = useRef<AbortController | null>(null);
+    const tokens = useRef<TokenEngine | null>(null);
     const textBox = useRef<HTMLTextAreaElement>(null);
     const runButton = useRef<HTMLButtonElement>(null);
     const ids = useId();
@@ -126,7 +146,8 @@ export function AiTokenCounterUI() {
     const modelsOk = PROVIDERS.every(({ id }) => !asked[id] || !keys.saved.includes(id) || models[id].trim().length > 0);
     const canCount = hasInput && !busy && chunkSizeOk && modelsOk;
 
-    useEffect(() => () => abort.current?.abort(), []);
+    // Leaving the page cancels a count and ends the worker.
+    useEffect(() => () => { abort.current?.abort(); tokens.current?.stop(); }, []);
     useEffect(() => {
         if (!returning || phase !== "idle") return;
         setReturning(false);
@@ -138,6 +159,7 @@ export function AiTokenCounterUI() {
         const controller = new AbortController();
         abort.current = controller;
         const { signal } = controller;
+        const engine = (tokens.current ??= createTokenEngine());
         setPhase("running");
         setFailure(null);
         setResult(null);
@@ -147,7 +169,11 @@ export function AiTokenCounterUI() {
             if (file) {
                 const label = `Reading ${file.name} on this device`;
                 setStep({ label });
-                const read = await readFileText(file, { signal, onProgress: (page, pages) => setStep({ label, detail: `Page ${n(page)} of ${n(pages)}`, progress: (page / pages) * 100 }) });
+                const read = await readFileText(file, {
+                    signal,
+                    onProgress: (page, pages) => setStep({ label, detail: `Page ${n(page)} of ${n(pages)}`, progress: (page / pages) * 100 }),
+                    readDocx: (bytes, name) => engine.readDocx(bytes, name, { signal }),
+                });
                 input = read.text;
                 const { text: _text, ...rest } = read;
                 source = { ...rest, name: file.name };
@@ -160,17 +186,26 @@ export function AiTokenCounterUI() {
 
             const counting = "Counting GPT tokens on this device";
             setStep({ label: counting, detail: "Loading the tokenizers" });
-            const encoders = await Promise.all(GPT_ENCODINGS.map(encoding => loadGptEncoder(encoding.id)));
-            const gpt = {} as Record<GptEncodingId, number>;
-            for (const [index, encoding] of GPT_ENCODINGS.entries()) {
-                gpt[encoding.id] = await countGptTokens(input, encoders[index], {
-                    signal,
-                    onProgress: (done, total) => setStep({ label: counting, detail: encoding.id, progress: ((index + (total ? done / total : 1)) / GPT_ENCODINGS.length) * 100 }),
-                });
+            const counted = await engine.count(input, { signal, onProgress: (fraction, detail) => setStep({ label: counting, detail, progress: fraction * 100 }) });
+
+            let splitResult: CountResult["split"];
+            let splitFailure: unknown;
+            if (split) {
+                const label = "Splitting into chunks";
+                setStep({ label, detail: chunkEncoding });
+                try {
+                    const chunks = await engine.split(input, chunkTokens, chunkEncoding, { signal, onProgress: fraction => setStep({ label, detail: chunkEncoding, progress: fraction * 100 }) });
+                    splitResult = { encoding: chunkEncoding, maxTokens: chunkTokens, chunks };
+                } catch (error) {
+                    if (signal.aborted) throw error;
+                    splitFailure = error;
+                    splitResult = { error: error instanceof TooManyChunksError ? error.message : "The text couldn’t be split. The counts above are complete." };
+                }
             }
 
-            // Only a provider the visitor ticked, with a key saved, is asked; nothing else leaves this browser.
-            const asking = PROVIDERS.filter(({ id }) => asked[id] && keys.saved.includes(id) && models[id].trim().length > 0);
+            // Only a provider the visitor ticked, with a key saved now, is asked; nothing else leaves this browser.
+            const saved = await refreshKeys();
+            const asking = PROVIDERS.filter(({ id }) => asked[id] && saved.includes(id) && models[id].trim().length > 0);
             if (asking.length) {
                 setStep({
                     label: asking.length > 1 ? "Asking Anthropic and Google for their counts" : `Asking ${asking[0].company} for its count`,
@@ -179,7 +214,7 @@ export function AiTokenCounterUI() {
             }
             let firstProviderFailure: unknown;
             const providers = await Promise.all(PROVIDERS.map(async ({ id, company }): Promise<ProviderOutcome> => {
-                if (!asking.some(provider => provider.id === id)) return { id, status: keys.saved.includes(id) ? "not-asked" : "no-key" };
+                if (!asking.some(provider => provider.id === id)) return { id, status: saved.includes(id) ? "not-asked" : "no-key" };
                 const model = models[id].trim();
                 try {
                     const apiKey = await getKey(id);
@@ -192,23 +227,7 @@ export function AiTokenCounterUI() {
                 }
             }));
 
-            let splitResult: CountResult["split"];
-            let splitFailure: unknown;
-            if (split) {
-                const label = "Splitting into chunks";
-                setStep({ label, detail: chunkEncoding });
-                const encoder = encoders[GPT_ENCODINGS.findIndex(encoding => encoding.id === chunkEncoding)];
-                try {
-                    const chunks = await splitIntoChunks(input, chunkTokens, encoder, { signal, onProgress: (done, total) => setStep({ label, detail: chunkEncoding, progress: total ? (done / total) * 100 : 100 }) });
-                    splitResult = { encoding: chunkEncoding, maxTokens: chunkTokens, chunks };
-                } catch (error) {
-                    if (signal.aborted) throw error;
-                    splitFailure = error instanceof TooManyChunksError ? withErrorKind(error, "bad_input") : error;
-                    splitResult = { error: error instanceof TooManyChunksError ? error.message : "The text couldn’t be split. The counts above are complete." };
-                }
-            }
-
-            setResult({ source, ...textStats(input), gpt, providers, split: splitResult });
+            setResult({ source, characters: counted.characters, words: counted.words, gpt: counted.gpt, providers, split: splitResult });
             setPhase("done");
             const cause = firstProviderFailure ?? splitFailure;
             emitToolRun({ outcome: cause ? "partial" : "success", ...(file ? { files: 1 } : {}) }, cause);
@@ -230,7 +249,7 @@ export function AiTokenCounterUI() {
         } finally {
             if (abort.current === controller) abort.current = null;
         }
-    }, [canCount, file, text, asked, keys.saved, models, split, chunkEncoding, chunkTokens]);
+    }, [canCount, file, text, asked, refreshKeys, models, split, chunkEncoding, chunkTokens]);
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -388,12 +407,22 @@ function ProviderCount({ provider, saved, asked, model, busy, onAsk, onModel, on
     </fieldset>;
 }
 
+/**
+ * keyStore's session-only switch. Ticking it deletes the AI keys saved in
+ * this browser, for every provider and every tool, and nothing else: the
+ * password vault's key shares their store and stays.
+ */
 function SessionOnly({ on, busy, onChange }: { on: boolean; busy: boolean; onChange: (on: boolean) => Promise<void> }) {
     const [error, setError] = useState("");
+    const change = (next: boolean) => {
+        setError("");
+        onChange(next).catch(() => setError(next
+            ? "Not every AI key saved in this browser could be deleted. Untick this box and tick it again to retry."
+            : "That couldn’t be changed. Try again."));
+    };
     return <>
-        <label className="ts-check atc-session"><input type="checkbox" checked={on} disabled={busy}
-            onChange={event => { setError(""); onChange(event.target.checked).catch(() => setError("That couldn’t be changed. Your previous setting still applies.")); }} />
-            <span><strong>This session only.</strong> Keep keys only until this tab closes, and remove the keys saved in this browser. Use it on a shared or borrowed computer.</span></label>
+        <label className="ts-check atc-session"><input type="checkbox" checked={on} disabled={busy} onChange={event => change(event.target.checked)} />
+            <span><strong>This session only.</strong> Keep AI keys in this tab’s memory until you reload or close it, and delete every AI key saved in this browser. Nothing else is deleted. Use it on a shared or borrowed computer.</span></label>
         {error && <p role="alert" className="ts-caption" data-invalid="true">{error}</p>}
     </>;
 }
@@ -461,7 +490,7 @@ function ProviderRow({ outcome }: { outcome: ProviderOutcome }) {
         <span className="atc-count-name">{provider.family}</span>
         <strong className="atc-count-value">No count</strong>
         <span className="atc-count-how">{outcome.status === "no-key"
-            ? `An exact ${provider.family} count needs your ${provider.company} key. This page doesn’t guess one.`
+            ? provider.noKey
             : `Not asked. Tick “Count with ${provider.family}” to ask ${provider.company}, with your key.`}</span>
     </li>;
 }

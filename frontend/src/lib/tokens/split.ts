@@ -10,8 +10,13 @@
  * piece longer than a chunk (a long run with no spaces) is cut between
  * characters. Every chunk's count is the tokenizer's count of the chunk's
  * own text, checked when the chunk is made.
+ *
+ * Progress covers two passes over the text: finding where chunks end, then
+ * counting each chunk on its own. Both report as they go and, on the page's
+ * thread, give the page a turn between slices and stop on Cancel.
  */
-import { AS_PLAIN_TEXT, scanPieces, throwIfAborted, type GptEncoder, type GptEncodingId, type ScanOptions } from "./gpt";
+import { tagged } from "./errors";
+import { AS_PLAIN_TEXT, nextTask, scanPieces, throwIfAborted, type GptEncoder, type GptEncodingId, type ScanOptions } from "./gpt";
 
 export const MIN_CHUNK_TOKENS = 10;
 export const MAX_CHUNK_TOKENS = 1_000_000;
@@ -28,6 +33,8 @@ export class TooManyChunksError extends Error {
     constructor() {
         super(`That would make more than ${MAX_CHUNKS.toLocaleString("en-US")} chunks. Choose a larger chunk size.`);
         this.name = "TooManyChunksError";
+        // A setting the visitor chose, as the analytics category has it.
+        tagged(this, "bad_input");
     }
 }
 
@@ -37,7 +44,8 @@ export function validChunkSize(value: number): boolean {
 
 export async function splitIntoChunks(text: string, maxTokens: number, encoder: GptEncoder, options: ScanOptions = {}): Promise<Chunk[]> {
     if (!validChunkSize(maxTokens)) throw new RangeError(`A chunk size is a whole number from ${MIN_CHUNK_TOKENS} to ${MAX_CHUNK_TOKENS.toLocaleString("en-US")} tokens.`);
-    throwIfAborted(options.signal);
+    const { signal, onProgress, sliceMs = 30, yields = true } = options;
+    throwIfAborted(signal);
     const count = (part: string) => encoder.countTokens(part, AS_PLAIN_TEXT);
     const spans: Array<[number, number]> = [];
     let start = 0;       // where the chunk being filled starts
@@ -97,21 +105,34 @@ export async function splitIntoChunks(text: string, maxTokens: number, encoder: 
         offset += piece.length;
         if (piece.endsWith("\n")) lineEnd = { at: offset, tokens };
         afterSpace = /\s$/.test(piece);
-    }, options);
+    }, { signal, sliceMs, yields, onProgress: onProgress && ((done, total) => onProgress(done, total * 2)) });
     close(offset);
 
+    // The second pass: each chunk counted on its own, its edges trimmed.
     const chunks: Chunk[] = [];
+    let since = performance.now();
     for (const [from, to] of spans) {
         const raw = text.slice(from, to);
         const trimmed = raw.trim();
-        if (!trimmed) continue;
-        // Trimming the edges can, rarely, change how the edge pieces merge;
-        // keep the untrimmed text then, whose count fits by construction.
-        const trimmedTokens = count(trimmed);
-        const chunk = trimmedTokens <= maxTokens ? { text: trimmed, tokens: trimmedTokens } : { text: raw, tokens: count(raw) };
-        if (chunk.tokens > maxTokens) throw new Error("A chunk came out larger than the chunk size.");
-        chunks.push(chunk);
+        if (trimmed) {
+            // Trimming the edges can, rarely, change how the edge pieces merge;
+            // keep the untrimmed text then, whose count fits by construction.
+            const trimmedTokens = count(trimmed);
+            const chunk = trimmedTokens <= maxTokens ? { text: trimmed, tokens: trimmedTokens } : { text: raw, tokens: count(raw) };
+            if (chunk.tokens > maxTokens) throw new Error("A chunk came out larger than the chunk size.");
+            chunks.push(chunk);
+        }
+        throwIfAborted(signal);
+        if (performance.now() - since >= sliceMs) {
+            onProgress?.(text.length + to, text.length * 2);
+            if (yields) {
+                await nextTask();
+                throwIfAborted(signal);
+            }
+            since = performance.now();
+        }
     }
+    onProgress?.(text.length * 2, text.length * 2);
     return chunks;
 }
 

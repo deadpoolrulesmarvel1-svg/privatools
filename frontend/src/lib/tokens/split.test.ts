@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { loadGptEncoder, type GptEncoder } from "./gpt";
+import type { GptEncoder } from "./gpt";
+import { loadGptEncoder } from "./encoders";
 import { MAX_CHUNKS, MIN_CHUNK_TOKENS, TooManyChunksError, chunkPreview, chunksAsText, splitIntoChunks } from "./split";
 
 const PLAIN = { disallowedSpecial: new Set<string>() };
@@ -111,6 +112,42 @@ describe("splitting text into chunks of GPT tokens", () => {
         const controller = new AbortController();
         controller.abort();
         await expect(splitIntoChunks(prose(5), 50, encoder, { signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+    });
+
+    it("reports progress across both passes, in order, to the end", async () => {
+        const encoder = await loadGptEncoder("o200k_base");
+        const seen: number[] = [];
+        await splitIntoChunks(prose(300), 50, encoder, { sliceMs: 0, onProgress: (done, total) => seen.push(done / total) });
+        expect([...seen].sort((a, b) => a - b)).toEqual(seen);
+        expect(seen.some(fraction => fraction > 0 && fraction < 0.5)).toBe(true);
+        expect(seen.some(fraction => fraction > 0.5 && fraction < 1)).toBe(true);
+        expect(seen[seen.length - 1]).toBe(1);
+    });
+
+    it("gives the page turns while it counts each chunk, and stops there when asked", async () => {
+        const encoder = await loadGptEncoder("o200k_base");
+        const text = prose(300);
+        // A timer set early in the second pass runs before the split ends: the page got a turn.
+        let timerSet = false;
+        let timerRan = false;
+        await splitIntoChunks(text, 50, encoder, {
+            sliceMs: 0,
+            onProgress: (done, total) => {
+                if (done / total > 0.5 && !timerSet) { timerSet = true; setTimeout(() => { timerRan = true; }, 0); }
+            },
+        });
+        expect(timerSet && timerRan).toBe(true);
+
+        const controller = new AbortController();
+        const fractions: number[] = [];
+        const run = splitIntoChunks(text, 50, encoder, {
+            signal: controller.signal, sliceMs: 0,
+            onProgress: (done, total) => { fractions.push(done / total); if (done / total > 0.5) controller.abort(); },
+        });
+        await expect(run).rejects.toMatchObject({ name: "AbortError" });
+        // It was counting chunks, past the halfway mark and short of the end, when it stopped.
+        expect(Math.max(...fractions)).toBeGreaterThan(0.5);
+        expect(Math.max(...fractions)).toBeLessThan(1);
     });
 });
 

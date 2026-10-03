@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_TEXT_CHARS } from "@/lib/tokens/extract";
 
 const mocks = vi.hoisted(() => ({ load: vi.fn() }));
-vi.mock("@/lib/tokens/gpt", async original => ({ ...await original<object>(), loadGptEncoder: mocks.load }));
+vi.mock("@/lib/tokens/encoders", async original => ({ ...await original<object>(), loadGptEncoder: mocks.load }));
 import { AiTokenCounterUI } from "./AiTokenCounterUI";
 
 let runs: Array<Record<string, unknown>> = [];

@@ -22,8 +22,9 @@
 .atc-session{font-size:12px;line-height:1.5}
 .atc-session strong{font-weight:650}
 .atc-split-fields{display:grid;gap:12px}
-.tool-studio .ts-caption[data-invalid=true]{color:hsl(var(--destructive))}
-.tool-studio input[aria-invalid=true]{border-color:hsl(var(--destructive))}
+/* Only this page's fields: the stylesheet stays loaded after an in-app move to another tool. */
+.atc-studio .ts-caption[data-invalid=true],.atc-cost .ts-caption[data-invalid=true],.atc-chunks .ts-caption[data-invalid=true]{color:hsl(var(--destructive))}
+.atc-studio input[aria-invalid=true],.atc-cost input[aria-invalid=true]{border-color:hsl(var(--destructive))}
 
 /* The result. */
 .atc-counts{list-style:none;margin:0;padding:0;display:grid;gap:10px}

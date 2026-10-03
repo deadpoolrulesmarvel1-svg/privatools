@@ -29,14 +29,22 @@ const chunks = entries
   .sort((a, b) => b.gzipKiB - a.gzipKiB);
 
 // Data tables allowed past the per-chunk budget, each held to a ceiling of
-// its own: gpt-tokenizer's rank tables, which the AI Token Counter imports
-// only when a visitor counts (src/lib/tokens/gpt.ts). They are lists of
-// strings, not code a page runs as it loads, and no page may load them
-// eagerly (checked below with the entry and preloads). A table that grows past
-// its ceiling, or turns eager, still fails; nothing else is exempt.
+// its own: gpt-tokenizer's rank tables, which the AI Token Counter loads only
+// when a visitor counts. Each encoding has a worker that builds its one table
+// into its own script (src/lib/tokens/tokens-*.worker.ts), started only on
+// Count; the page's own copies (src/lib/tokens/encoders.ts) load only where no
+// worker can start. They are lists of strings, not code a page runs as it
+// loads, and no page may load them eagerly (checked below with the entry and
+// preloads). A table that grows past its ceiling, or turns eager, still
+// fails; nothing else is exempt. No ceiling here passes 2048 KiB: the backend
+// compresses responses with Brotli only up to 2 MiB (middleware/brotli.py),
+// and a larger script goes out with gzip made on the fly, about 1.4 seconds
+// of server time for each download of 3 MB.
 const DATA_CHUNKS = [
-  { pattern: /^o200k_base-[\w-]+\.js$/, rawKiB: 2100, gzipKiB: 1060, what: "gpt-tokenizer's o200k_base rank table" },
+  { pattern: /^o200k_base-[\w-]+\.js$/, rawKiB: 2048, gzipKiB: 1060, what: "gpt-tokenizer's o200k_base rank table" },
   { pattern: /^cl100k_base-[\w-]+\.js$/, rawKiB: 1000, gzipKiB: 460, what: "gpt-tokenizer's cl100k_base rank table" },
+  { pattern: /^tokens-o200k\.worker-[\w-]+\.js$/, rawKiB: 2048, gzipKiB: 1060, what: "the AI Token Counter's o200k_base worker, with its table" },
+  { pattern: /^tokens-cl100k\.worker-[\w-]+\.js$/, rawKiB: 1050, gzipKiB: 480, what: "the AI Token Counter's cl100k_base worker, with its table and the Word reader" },
 ];
 const dataChunk = (name) => DATA_CHUNKS.find((data) => data.pattern.test(name));
 
@@ -153,7 +161,7 @@ const eagerDataChunks = [...eagerChunks].filter((name) => dataChunk(name));
 if (eagerDataChunks.length > 0) {
   console.error("\nLazy data tables are in the chunks every page loads:");
   for (const name of eagerDataChunks) console.error(`- ${name} (${dataChunk(name).what})`);
-  console.error("Import gpt-tokenizer's encodings only through the dynamic import() in src/lib/tokens/gpt.ts.");
+  console.error("Import gpt-tokenizer's encodings only through the dynamic import() in src/lib/tokens/encoders.ts, and start the workers only from src/lib/tokens/engine.ts.");
 }
 
 if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0) {
