@@ -10,8 +10,8 @@
 .cmp-versus { font-size: .5em; font-weight: 400; color: var(--pt-muted); vertical-align: middle; letter-spacing: -.025em; }
 .cmp-directory-mark { width: 235px; padding: 22px 0 22px 30px; border-left: 1px solid var(--pt-line); color: var(--pt-muted); }
 .cmp-directory-mark > span, .cmp-directory-mark > p { font-size: 11px; line-height: 1.6; }
-.cmp-directory-mark strong { display: block; margin: 14px 0; font: 450 108px/.92 var(--pt-display); letter-spacing: -.08em; color: var(--pt-ink); }
-.cmp-directory-mark strong i { display: block; margin: 14px 0 0; font: 450 16px/1.4 var(--pt-font); letter-spacing: -.02em; }
+.cmp-directory-mark strong { display: block; margin: 14px 0; font-style: normal; font-weight: 450; font-size: 108px; line-height: .92; font-family: var(--pt-display); letter-spacing: -.08em; color: var(--pt-ink); }
+.cmp-directory-mark strong i { display: block; margin: 14px 0 0; font-style: normal; font-weight: 450; font-size: 16px; line-height: 1.4; font-family: var(--pt-font); letter-spacing: -.02em; }
 .cmp-directory-intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 35px; margin: 0 0 37px; }
 .cmp-directory-intro > p { max-width: 655px; font-size: 13px; line-height: 1.8; color: var(--pt-muted); }
 .cmp-review-note { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; line-height: 1.7; color: var(--pt-muted); }
@@ -33,7 +33,7 @@
 .cmp-result-count { font-size: 11px; line-height: 1.6; color: var(--pt-muted); margin: 1px 0 10px; }
 .cmp-product-entry { border-bottom: 1px solid var(--pt-line); }
 .cmp-product-link { display: grid; grid-template-columns: 1.05fr 1fr auto; align-items: center; gap: 27px; padding: 26px 0; color: var(--pt-ink); }
-.cmp-product-title h2 { font: 550 25px/1.25 var(--pt-display); letter-spacing: -.65px; margin: 7px 0 11px; }
+.cmp-product-title h2 { font-style: normal; font-weight: 550; font-size: 25px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.65px; margin: 7px 0 11px; }
 .cmp-product-title p { font-size: 12px; line-height: 1.8; color: var(--pt-muted); }
 .cmp-product-fit { padding-left: 23px; border-left: 1px solid var(--pt-line); }
 .cmp-product-fit > span { font-size: 10px; color: var(--pt-muted); }
@@ -46,10 +46,10 @@
 .cmp-product-link:hover h2 { color: var(--pt-action); }
 .cmp-text-link { display: inline-flex; align-items: center; gap: 9px; background: transparent; border: 0; padding: 0; color: var(--pt-action); font: inherit; font-size: 12px; font-weight: 550; line-height: 1.6; cursor: pointer; }
 .cmp-empty { padding: 45px 15px; }
-.cmp-empty h2 { font: 550 25px/1.3 var(--pt-display); margin: 0 0 12px; }
+.cmp-empty h2 { font-style: normal; font-weight: 550; font-size: 25px; line-height: 1.3; font-family: var(--pt-display); margin: 0 0 12px; }
 .cmp-empty p { font-size: 13px; color: var(--pt-muted); margin-bottom: 20px; }
 .cmp-methodology { max-width: 780px; margin: 60px 0 48px 225px; }
-.cmp-methodology h2, .cmp-processing-note h2, .cmp-section-intro h2, .cmp-answer h2, .cmp-tradeoffs > h2, .cmp-next h2 { font: 550 29px/1.3 var(--pt-display); letter-spacing: -.8px; margin: 9px 0 17px; text-wrap: balance; }
+.cmp-methodology h2, .cmp-processing-note h2, .cmp-section-intro h2, .cmp-answer h2, .cmp-tradeoffs > h2, .cmp-next h2 { font-style: normal; font-weight: 550; font-size: 29px; line-height: 1.3; font-family: var(--pt-display); letter-spacing: -.8px; margin: 9px 0 17px; text-wrap: balance; }
 .cmp-methodology p { font-size: 13px; line-height: 1.9; color: var(--pt-muted); margin: 12px 0 0; }
 .cmp-processing-note { display: grid; grid-template-columns: .8fr 1.2fr; gap: 42px; padding: 34px 0; border-block: 1px solid var(--pt-line); margin-top: 48px; }
 .cmp-processing-note > div:first-child > p { font-size: 11px; color: var(--pt-muted); line-height: 1.8; }
@@ -67,7 +67,7 @@
 .cmp-answer { padding-bottom: 30px; }
 .cmp-answer > p { font-size: 16px; line-height: 1.95; color: var(--pt-ink); max-width: 770px; }
 .cmp-overview, .cmp-deep { max-width: 770px; margin-top: 43px; }
-.cmp-overview h2, .cmp-deep h2 { font: 550 29px/1.3 var(--pt-display); letter-spacing: -.8px; margin: 9px 0 17px; text-wrap: balance; }
+.cmp-overview h2, .cmp-deep h2 { font-style: normal; font-weight: 550; font-size: 29px; line-height: 1.3; font-family: var(--pt-display); letter-spacing: -.8px; margin: 9px 0 17px; text-wrap: balance; }
 .cmp-deep h2 { font-size: 24px; letter-spacing: -.6px; }
 .cmp-overview > p, .cmp-deep > p { font-size: 14px; line-height: 1.9; color: var(--pt-muted); margin: 0 0 14px; }
 .cmp-checked { max-width: 700px; font-size: 12px; line-height: 1.8; color: var(--pt-muted); }
@@ -78,7 +78,7 @@
 .cmp-choice { padding: 28px 0 23px; border-top: 2px solid var(--pt-line); }
 .cmp-choice-us { border-color: var(--pt-action); }
 .cmp-choice-caption { font-size: 10px; color: var(--pt-muted); }
-.cmp-choice h2 { font: 550 28px/1.25 var(--pt-display); letter-spacing: -.8px; margin: 12px 0 23px; text-wrap: balance; }
+.cmp-choice h2 { font-style: normal; font-weight: 550; font-size: 28px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.8px; margin: 12px 0 23px; text-wrap: balance; }
 .cmp-choice h2 em { font-style: normal; color: var(--pt-muted); font-weight: 450; }
 .cmp-choice ul { display: grid; gap: 16px; list-style: none; margin: 0; padding: 0; }
 .cmp-choice li { display: flex; align-items: flex-start; gap: 11px; font-size: 12px; line-height: 1.85; color: var(--pt-muted); }
