@@ -102,6 +102,29 @@ const ANTHROPIC_MAX_TOKENS = 16_000;
  */
 const TAKES_EFFORT = /^claude-(?:(?:opus|sonnet|fable|mythos)-(?:4-[6-9]|[5-9](?:-\d+)?)|opus-4-5|mythos-preview)(?:-\d{8})?$/;
 
+/*
+ * Every suggested and default model below was checked on 2026-10-03 against
+ * the provider's public model list and deprecations page, without a key; none
+ * is retired or retiring within 60 days. Sources, all read 2026-10-03:
+ *   Anthropic   platform.claude.com/docs/en/about-claude/model-deprecations
+ *               and .../models/overview (Sonnet 5.5 active, retiring not
+ *               before 2027-09-28; Haiku 4.5 active, no deprecation notice,
+ *               and Anthropic gives at least 60 days' notice)
+ *   OpenAI      developers.openai.com/api/docs/deprecations and
+ *               .../docs/models/all (see below)
+ *   Gemini      ai.google.dev/gemini-api/docs/models and .../deprecations,
+ *               both last updated 2026-10-01 (3.8 Flash and 3.5 Flash-Lite
+ *               stable, no shutdown date announced)
+ *   OpenRouter  openrouter.ai/openrouter/auto and
+ *               openrouter.ai/openai/whisper-large-v3
+ *   Groq        console.groq.com/docs/models and .../docs/deprecations
+ *   Together AI docs.together.ai/docs/serverless-models and .../deprecations
+ *   Mistral     docs.mistral.ai quickstart (mistral-large-latest) and its
+ *               offline transcription guide (voxtral-mini-latest serves
+ *               Voxtral Mini Transcribe 2)
+ *   DeepSeek    api-docs.deepseek.com/quick_start/pricing (deepseek-flash
+ *               serves DeepSeek-V4.1-Flash)
+ */
 export const PROVIDERS: Provider[] = [
     {
         // Sonnet 4.5 was deprecated on 2026-09-30 and retires on 2026-11-30;
@@ -111,8 +134,13 @@ export const PROVIDERS: Provider[] = [
         keysUrl: "https://console.anthropic.com/settings/keys",
     },
     {
+        // o3-mini shuts down on 2026-10-23 (OpenAI's notice of 2026-04-22),
+        // which names gpt-5.6-sol as its substitute. gpt-4o and gpt-4o-mini
+        // are not on the deprecations page. gpt-4o-mini-transcribe was
+        // deprecated on 2026-08-26 and shuts down on 2027-02-26, replaced by
+        // gpt-transcribe or gpt-live-transcribe: change it before then.
         id: "openai", label: "OpenAI", origin: "https://api.openai.com",
-        shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "o3-mini"], transcribeModel: "gpt-4o-mini-transcribe",
+        shape: "openai", models: ["gpt-4o", "gpt-4o-mini", "gpt-5.6-sol"], transcribeModel: "gpt-4o-mini-transcribe",
         keysUrl: "https://platform.openai.com/api-keys", refusalsUnreadable: true,
     },
     {
