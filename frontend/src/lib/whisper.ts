@@ -13,6 +13,13 @@
  * The worker starts from a blob: URL so it runs under the page's own policy,
  * which allows the model runtime; where a worker cannot run Whisper, it runs
  * on the page instead, giving the page a turn between steps.
+ *
+ * A model step in the worker runs to its end whether or not anyone still
+ * waits for it, and transformers.js runs a model's steps one after another,
+ * so a run that is cancelled or left behind would keep the processor busy
+ * and hold up the next one. stopWhisper ends the worker: the tools call it
+ * on cancel, when they close, and after a run fails, and the page calls it
+ * when it is hidden for good or put away.
  */
 import workerUrl from "./whisper.worker?worker&url";
 import { withErrorKind } from "./api";
@@ -95,19 +102,28 @@ export class WhisperWorker {
     private readonly worker: Worker;
     private next = 1;
     private readonly pending = new Map<number, Pending>();
+    /** The blob: address the worker started from, released once the worker has answered. */
+    private wrapper: string | null;
     broken = false;
 
     constructor(create: (wrapper: string) => Worker = wrapper => new Worker(wrapper, { name: "whisper" })) {
         // A blob: worker runs under the page's policy; one loaded from its own URL would get that URL's, which forbids WebAssembly.
         const script = new URL(workerUrl, location.href).href;
-        const wrapper = URL.createObjectURL(new Blob([`importScripts(${JSON.stringify(script)});`], { type: "text/javascript" }));
-        this.worker = create(wrapper);
+        this.wrapper = URL.createObjectURL(new Blob([`importScripts(${JSON.stringify(script)});`], { type: "text/javascript" }));
+        this.worker = create(this.wrapper);
         this.worker.onmessage = (event: MessageEvent<WhisperReply>) => this.receive(event.data);
         this.worker.onerror = event => { event.preventDefault?.(); this.fail(new Error(event.message || "The Whisper worker stopped.")); };
         this.worker.onmessageerror = () => this.fail(new Error("The Whisper worker sent a message the page could not read."));
     }
 
+    private release() {
+        if (this.wrapper) URL.revokeObjectURL(this.wrapper);
+        this.wrapper = null;
+    }
+
     private receive(reply: WhisperReply) {
+        // Its first answer means the worker has loaded its script, so the address it came from can go.
+        this.release();
         const waiting = this.pending.get(reply.id);
         if (!waiting) return;
         if (reply.type === "progress") { waiting.onProgress?.(reply.percent); return; }
@@ -118,10 +134,19 @@ export class WhisperWorker {
     }
 
     private fail(error: Error) {
+        if (this.broken) return;
         this.broken = true;
         for (const waiting of this.pending.values()) waiting.reject(error);
         this.pending.clear();
         this.worker.terminate();
+        this.release();
+    }
+
+    /** End the worker and whatever it is doing; whatever waits on it fails as stopped. */
+    terminate(): void {
+        const stopped = new Error("Whisper was stopped.");
+        stopped.name = "AbortError";
+        this.fail(stopped);
     }
 
     request(message: Unnumbered<WhisperRequest>, onProgress?: (percent: number) => void, transfer: Transferable[] = []): Promise<unknown> {
@@ -135,17 +160,34 @@ export class WhisperWorker {
 }
 
 let shared: WhisperWorker | null | undefined;
+let watchingPage = false;
 
-/** The page's Whisper worker, or null where workers cannot start. */
+/**
+ * Stop Whisper on this page: end the worker, so a model step for a run that
+ * nobody waits for any more stops using the processor and memory. The next
+ * run starts a new worker, which loads the model from the browser's cache.
+ */
+export function stopWhisper(): void {
+    shared?.terminate();
+    shared = undefined;
+}
+
+/** The page's Whisper worker, or null where workers cannot start. A worker that stopped is replaced. */
 function whisperWorker(): WhisperWorker | null {
+    if (shared?.broken) shared = undefined;
     if (shared === undefined) {
         try {
             shared = typeof Worker === "function" && typeof URL.createObjectURL === "function" ? new WhisperWorker() : null;
         } catch {
             shared = null;
         }
+        // A page that is closed, or put away in the back-forward cache, needs no Whisper running.
+        if (shared && !watchingPage && typeof addEventListener === "function") {
+            addEventListener("pagehide", stopWhisper);
+            watchingPage = true;
+        }
     }
-    return shared && !shared.broken ? shared : null;
+    return shared;
 }
 
 /* ── On the page ─────────────────────────────────────────────────────── */

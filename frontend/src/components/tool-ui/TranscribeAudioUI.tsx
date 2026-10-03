@@ -1,5 +1,6 @@
 import { transcriptTime as fmtTime, transcriptSrt as toSrt } from "@/lib/speechTranscript";
-import { decodeToMono, loadWhisper, WHISPER, type WhisperSize } from "@/lib/whisper";
+import { decodeToMono, loadWhisper, stopWhisper, WHISPER, type WhisperSize } from "@/lib/whisper";
+import { SPEECH_LANGUAGES } from "@/lib/subtitles/languages";
 import { ToolCopyButton } from "./SpecialistTools";
 import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
@@ -7,7 +8,9 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
  *
  *   · On this device: OpenAI Whisper (tiny/base) through transformers.js.
  *     The model downloads once (~41/74 MB), caches in the browser, and the
- *     recording never leaves the tab.
+ *     recording never leaves the tab. This version of Whisper does not detect
+ *     the language (it writes English unless told otherwise), so the visitor
+ *     chooses it.
  *   · Your own key: the provider's transcription API (OpenAI, Groq, or a
  *     self-hosted OpenAI-compatible server) — much better accuracy, the
  *     audio goes browser → provider directly, never through PrivaTools.
@@ -33,6 +36,7 @@ export function TranscribeAudioUI() {
     const [file, setFile] = useState<File | null>(null);
     const [engine, setEngine] = useState<"local" | "byok">("local");
     const [whisper, setWhisper] = useState<WhisperSize>("tiny");
+    const [language, setLanguage] = useState("en");
     const [byokModel, setByokModel] = useState("");
     const [phase, setPhase] = useState<"idle" | "decoding" | "loading-model" | "transcribing" | "done">("idle");
     const [modelPct, setModelPct] = useState(0);
@@ -48,7 +52,8 @@ export function TranscribeAudioUI() {
         consumeFileHandoff("transcribe-audio").then(f => { if (!cancelled && f) setFile(f); });
         return () => { cancelled = true; };
     }, []);
-    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); }, []);
+    // Closing the page ends a run, and stops Whisper with it.
+    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); stopWhisper(); }, []);
 
     const byokProviderOk = byok.ready && supportsTranscription(providerById(byok.provider) ?? { shape: "anthropic" } as never);
 
@@ -94,6 +99,8 @@ export function TranscribeAudioUI() {
                 chunk_length_s: 30,
                 stride_length_s: 5,
                 return_timestamps: true,
+                language,
+                task: "transcribe",
             });
             if (cancelRef.current || current !== runId.current) return;
             const segs: Segment[] = (result.chunks ?? [])
@@ -107,6 +114,8 @@ export function TranscribeAudioUI() {
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current || current !== runId.current) return;
+            // A failed run may leave Whisper's worker unable to run again: the next one starts a new worker.
+            if (engine === "local") stopWhisper();
             const msg = e instanceof ByokError ? e.userMessage
                 : e instanceof Error && /decodeAudioData|decoding/i.test(e.message) ? "Couldn't decode that file — convert it to MP3 or WAV first (the Audio Converter tool does this)."
                 : e instanceof Error ? e.message : "Transcription failed";
@@ -114,7 +123,7 @@ export function TranscribeAudioUI() {
             setPhase("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, engine, whisper, byokModel, byok.provider, byokProviderOk]);
+    }, [file, engine, whisper, language, byokModel, byok.provider, byokProviderOk]);
 
     const stem = (file?.name ?? "recording").replace(/\.[^.]+$/, "");
     const busy = phase === "decoding" || phase === "loading-model" || phase === "transcribing";
@@ -230,6 +239,17 @@ export function TranscribeAudioUI() {
                         </div>
                     )}
 
+                    {engine === "local" && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <label htmlFor="transcribe-language" className="font-medium text-[11px] text-muted-foreground">Language spoken</label>
+                            <select id="transcribe-language" value={language} onChange={event => setLanguage(event.target.value)} disabled={busy}
+                                className="rounded-md border border-border bg-card px-2 py-1 text-[12px] text-foreground">
+                                {SPEECH_LANGUAGES.map(option => <option key={option.code} value={option.code}>{option.name}</option>)}
+                            </select>
+                            <span className="text-[11px] text-muted-foreground">Whisper here doesn’t detect it, so choose the one spoken.</span>
+                        </div>
+                    )}
+
                     {engine === "byok" && (
                         <>
                             <ByokPanel byok={byok} purpose="This recording is sent to the provider you choose, using your key." />
@@ -269,7 +289,7 @@ export function TranscribeAudioUI() {
                             <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${modelPct}%` }} />
                         </div>
                     )}
-                    <button onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
+                    <button onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); if (engine === "local") stopWhisper(); setPhase("idle"); }}
                         className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors">
                         <Ban size={11} /> Cancel
                     </button>

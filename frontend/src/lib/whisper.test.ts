@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { LOCAL_MODELS } from "./localModels";
 import { toolErrorKind } from "./toolRun";
-import { WHISPER, WhisperWorker, yieldBetweenSteps } from "./whisper";
+import { stopWhisper, WHISPER, WhisperWorker, yieldBetweenSteps } from "./whisper";
 import type { WhisperReply } from "./whisper-protocol";
 
 /** A stand-in for the Whisper worker: records what the page sends and lets the test answer. */
@@ -25,6 +25,35 @@ describe("talking to the Whisper worker", () => {
         let wrapper = "";
         new WhisperWorker(url => { wrapper = url; return fake as unknown as Worker; });
         expect(wrapper).toMatch(/^blob:/);
+    });
+
+    it("releases the wrapper's address once the worker has answered", async () => {
+        const revoke = vi.spyOn(URL, "revokeObjectURL");
+        try {
+            const { fake, sent, reply } = fakeWorker();
+            let wrapper = "";
+            const worker = new WhisperWorker(url => { wrapper = url; return fake as unknown as Worker; });
+            const loading = worker.request({ type: "load", hfId: "Xenova/whisper-tiny", bytes: 1 });
+            expect(revoke).not.toHaveBeenCalledWith(wrapper);
+            reply({ type: "ready", id: sent[0].message.id });
+            await loading;
+            expect(revoke).toHaveBeenCalledWith(wrapper);
+        } finally {
+            revoke.mockRestore();
+        }
+    });
+
+    it("ends the worker on terminate, failing whatever waits on it as stopped", async () => {
+        const { fake } = fakeWorker();
+        const worker = new WhisperWorker(() => fake as unknown as Worker);
+        const running = worker.request({ type: "run", hfId: "Xenova/whisper-tiny", audio: new Float32Array(16), options: {} });
+        worker.terminate();
+        const error = await running.catch((caught: Error) => caught);
+        expect((error as Error).name).toBe("AbortError");
+        expect(toolErrorKind(error)).toBe("cancelled");
+        expect(fake.terminate).toHaveBeenCalledTimes(1);
+        worker.terminate();
+        expect(fake.terminate).toHaveBeenCalledTimes(1);
     });
 
     it("matches each answer to its request and passes on download progress", async () => {
@@ -94,6 +123,59 @@ describe("talking to the Whisper worker", () => {
         expect(fake.terminate).toHaveBeenCalled();
         await expect(worker.request({ type: "load", hfId: "Xenova/whisper-tiny", bytes: 1 })).rejects.toThrow(/stopped/);
         reply({ type: "ready", id: 1 });
+    });
+});
+
+describe("stopping Whisper", () => {
+    /** A Worker stand-in that loads at once and never finishes a run, as a long window would not. */
+    function standIns() {
+        const instances: { terminated: boolean; sent: { type: string }[] }[] = [];
+        class StandIn {
+            terminated = false;
+            sent: { type: string }[] = [];
+            onmessage: ((event: { data: WhisperReply }) => void) | null = null;
+            constructor() { instances.push(this); }
+            postMessage(message: { id: number; type: string }) {
+                this.sent.push(message);
+                if (message.type === "load") queueMicrotask(() => this.onmessage?.({ data: { type: "ready", id: message.id } }));
+            }
+            terminate() { this.terminated = true; }
+        }
+        vi.stubGlobal("Worker", StandIn);
+        return instances;
+    }
+
+    it("ends the worker mid-run, and the next run starts a new one", async () => {
+        stopWhisper();
+        const instances = standIns();
+        try {
+            const { loadWhisper } = await import("./whisper");
+            const asr = await loadWhisper("tiny", () => {});
+            const running = asr(new Float32Array(16000), { language: "en" });
+            stopWhisper();
+            await expect(running).rejects.toMatchObject({ name: "AbortError" });
+            expect(instances[0].terminated).toBe(true);
+            await loadWhisper("tiny", () => {});
+            expect(instances).toHaveLength(2);
+            expect(instances[1].terminated).toBe(false);
+        } finally {
+            stopWhisper();
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it("ends the worker when the page is hidden", async () => {
+        stopWhisper();
+        const instances = standIns();
+        try {
+            const { loadWhisper } = await import("./whisper");
+            await loadWhisper("base", () => {});
+            window.dispatchEvent(new Event("pagehide"));
+            expect(instances[0].terminated).toBe(true);
+        } finally {
+            stopWhisper();
+            vi.unstubAllGlobals();
+        }
     });
 });
 
