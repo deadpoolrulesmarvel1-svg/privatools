@@ -56,6 +56,23 @@ describe("Batch retries", () => {
         expect(sent()).toEqual(["photo.png", "fake.png"]);
     });
 
+    it.each([
+        ["one file is done and the other was refused", ["photo.png", "fake.png"]],
+        ["every file is done", ["photo.png", "holiday.png"]],
+    ])("counts no files in its run button once %s", async (_case, names) => {
+        api.postFormData.mockImplementation(async (_endpoint: string, build: () => FormData) => {
+            if ((build().get("file") as File).name === "fake.png") throw httpError(400, "That file isn’t a readable image.");
+            return ok();
+        });
+        const container = setup(names.map(png));
+        fireEvent.click(screen.getByRole("button", { name: "Process 2" }));
+        await waitFor(() => expect(sent()).toEqual(names));
+        const header = within(container.querySelector(".pt-workflow-header") as HTMLElement);
+        // Two files are still listed, but nothing is left to run: it used to say "Process 2".
+        await waitFor(() => expect(header.getByRole("button", { name: /^Process/ })).toBeDisabled());
+        expect(header.getByRole("button", { name: /^Process/ })).toHaveAccessibleName("Process");
+    });
+
     it("offers \"Try again\" for a server fault and sends only that file again", async () => {
         let busy = true;
         api.postFormData.mockImplementation(async (_endpoint: string, build: () => FormData) => {
