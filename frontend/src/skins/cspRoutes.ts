@@ -6,7 +6,7 @@
  */
 export const CSP_TRANSFORMER_PATHS = [
   "/ai", "/tool/summarize-pdf", "/tool/smart-redact", "/tool/translate-pdf",
-  "/tools/remove-background", "/tools/transcribe-audio",
+  "/tools/remove-background", "/tools/transcribe-audio", "/tools/subtitle-generator",
 ] as const;
 export const CSP_OCR_PATHS = ["/tool/ocr-pdf", "/tools/image-ocr"] as const;
 export const CSP_BYOK_PATHS = [

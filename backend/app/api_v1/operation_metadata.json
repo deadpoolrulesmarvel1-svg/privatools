@@ -1537,6 +1537,11 @@
       "slug": "gemini-watermark-remover",
       "name": "Gemini Watermark Remover",
       "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "subtitle-generator",
+      "name": "Subtitle Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
     }
   ]
 }
