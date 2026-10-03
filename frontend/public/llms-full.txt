@@ -635,7 +635,7 @@ URL: https://privatools.me/tool/pdf-to-markdown
 
 Markdown with tables, lists and headings, ready for AI
 
-Convert PDF to Markdown for ChatGPT, Claude and other AI tools, for RAG, or for docs and wikis. Headings keep their levels and nested lists their marks; tables drawn with lines become GitHub tables, code stays in fenced blocks, links keep their addresses, and pictures become placeholders with their caption or alternative text. Multi-column pages are read in order. Add page markers, leave out repeated headers and footers, and split the result into chunks by heading or by size. Scanned pages need OCR PDF first.
+Convert PDF to Markdown for ChatGPT, Claude and other AI tools, for RAG, or for docs and wikis. Headings keep their levels and lists their nesting; tables drawn with lines become GitHub tables, code stays in fenced blocks, links keep their addresses, and pictures become placeholders with their caption or alternative text. Pages set in columns are read one column after the other. Add page markers, leave out repeated headers and footers, and split the result into chunks by heading or by size. Scanned pages need OCR PDF first.
 
 ### White-Out / Eraser
 

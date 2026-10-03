@@ -15,7 +15,7 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, Hash } from "lucide-react";
 import { buildOutputFilename, downloadBlob, formatFileSize } from "@/lib/api";
-import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { consumeFileHandoff } from "@/lib/file-handoff";
 import { takeAccepted } from "@/lib/report-rejected-files";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { countTokens } from "@/lib/byok/client";
@@ -264,17 +264,18 @@ export function AiTokenCounterUI() {
         return () => window.removeEventListener("keydown", onKey);
     }, [phase, canCount, count]);
 
-    // A file handed over by another tool (PDF to Markdown's "Count its tokens",
-    // a selection made on the home page) arrives chosen. It moves in this
-    // tab's memory; nothing is uploaded.
+    // One file handed over within this document arrives chosen; it moves in
+    // this tab's memory, and nothing is uploaded. Most pages' CSP lacks this
+    // page's AI providers, so coming from them loads a new document, which the
+    // file does not survive. Several files are left for a tool that takes them.
     useEffect(() => {
         let cancelled = false;
         // Claim it only once the effect survives StrictMode's setup replay.
         queueMicrotask(() => {
             if (cancelled) return;
-            void consumeFileHandoffs("ai-token-counter").then(files => {
-                const [handed] = cancelled ? [] : takeAccepted(files, ACCEPTS);
-                if (handed) { setFile(handed); setFailure(null); }
+            void consumeFileHandoff("ai-token-counter").then(handed => {
+                const [file] = cancelled || !handed ? [] : takeAccepted([handed], ACCEPTS);
+                if (file) { setFile(file); setFailure(null); }
             });
         });
         return () => { cancelled = true; };

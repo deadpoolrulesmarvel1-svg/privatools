@@ -11,17 +11,16 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ upload: vi.fn(), download: vi.fn(), navigate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ upload: vi.fn(), download: vi.fn() }));
 vi.mock("@/lib/api", async (original) => ({
     ...(await original<object>()),
     uploadFile: mocks.upload,
     downloadBlob: mocks.download,
 }));
-vi.mock("@/lib/navigation", async (original) => ({ ...(await original<object>()), navigateTo: mocks.navigate }));
 
 import { clearFileHandoffs, consumeFileHandoffs } from "@/lib/file-handoff";
 import { PdfToMarkdownUI } from "./PdfToMarkdownUI";
-import { pageList, reportSummary, type MarkdownReport } from "./pdf-to-markdown-report";
+import { SCAN_MESSAGE, pageList, reportSummary, type MarkdownReport } from "./pdf-to-markdown-report";
 
 const MARKDOWN = "<!-- page 1 -->\n\n# Quarterly Engineering Notes\n\n| Name | Role |\n| --- | --- |\n| Ada | Analyst |\n";
 // The server's words for a scan (pdf_to_markdown_service.SCAN_MESSAGE).
@@ -58,7 +57,6 @@ const show = () => render(<MemoryRouter><PdfToMarkdownUI /></MemoryRouter>);
 beforeEach(() => {
     mocks.upload.mockReset();
     mocks.download.mockReset();
-    mocks.navigate.mockReset();
     clearFileHandoffs();
     localStorage.clear();
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
@@ -145,19 +143,20 @@ describe("PDF to Markdown", () => {
         expect(await within(preview).findByRole("button", { name: /Copied/ })).toBeInTheDocument();
     });
 
-    it("hands the Markdown to the AI Token Counter on this device", async () => {
+    it("links to AI Token Counter and says how to bring the Markdown there", async () => {
+        // The counter's page loads as a document of its own (its CSP allows
+        // the AI providers), so no file can be handed over in memory: the
+        // page says to choose the downloaded file or paste the Markdown.
         mocks.upload.mockResolvedValueOnce(answer(report()));
         const view = show();
         choose(view);
         await convert(view);
-        const before = mocks.upload.mock.calls.length;
-        fireEvent.click(await screen.findByRole("button", { name: /Count its tokens/ }));
-        await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/tools/ai-token-counter"));
-        const [handed] = await consumeFileHandoffs("ai-token-counter");
-        expect(handed.name).toBe("report.md");
-        expect(await handed.text()).toBe(MARKDOWN);
-        // Nothing is sent again to count it.
-        expect(mocks.upload.mock.calls.length).toBe(before);
+        const link = await screen.findByRole("link", { name: "AI Token Counter" });
+        expect(link).toHaveAttribute("href", "/tools/ai-token-counter");
+        expect(link.closest("p")).toHaveTextContent(
+            "To count its tokens, open AI Token Counter, then choose the downloaded .md file or paste the Markdown.");
+        expect(screen.queryByRole("button", { name: /tokens/i })).toBeNull();
+        expect(await consumeFileHandoffs("ai-token-counter")).toEqual([]);
     });
 
     it("offers no token count for a ZIP of chunks, which the counter cannot read", async () => {
@@ -166,7 +165,7 @@ describe("PDF to Markdown", () => {
         choose(view);
         fireEvent.click(screen.getByRole("button", { name: /By heading/ }));
         await convert(view);
-        expect(screen.queryByRole("button", { name: /Count its tokens/ })).toBeNull();
+        expect(screen.queryByRole("link", { name: "AI Token Counter" })).toBeNull();
     });
 
     it("shows a refused scan's own reason, offers another file and no retry", async () => {
@@ -180,6 +179,17 @@ describe("PDF to Markdown", () => {
         expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
         expect(screen.getByRole("link", { name: "OCR PDF" })).toHaveAttribute("href", "/tool/ocr-pdf");
         expect(mocks.download).not.toHaveBeenCalled();
+    });
+
+    it("knows a scan's refusal by its exact words, not by a mention of OCR PDF", async () => {
+        expect(SCAN_MESSAGE).toBe(SCAN);
+        const other = "Converting this PDF took too long. OCR PDF cannot help with this one.";
+        mocks.upload.mockRejectedValueOnce(Object.assign(new Error(other), { __status: 422, __detail: other }));
+        const view = show();
+        choose(view);
+        await convert(view);
+        expect(screen.getByText(other)).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "OCR PDF" })).toBeNull();
     });
 
     it("converts several PDFs and downloads them in one ZIP", async () => {

@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose what the Markdown keeps",
-      "text": "Page markers put <!-- page 3 --> before each page, so you or an AI can cite pages; they don't show when the Markdown is displayed. Remove repeated headers and footers leaves out lines repeated at the top or bottom of most pages, such as running titles and page numbers. Both are on unless you switch them off."
+      "text": "Page markers put <!-- page 3 --> before each page, so you or an AI can cite pages; they don't show when the Markdown is displayed. Remove repeated headers and footers leaves out lines that repeat at the top or bottom of at least 40% of the pages, such as running titles and page numbers; a line whose only change is the page number counts as repeated. A line inside a table, or one that runs straight on into the text below it, stays. Both are on unless you switch them off."
     },
     {
       "name": "Split it into chunks (optional)",
@@ -14,21 +14,21 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The Markdown downloads by itself, and a single file can also be copied, previewed, or handed to AI Token Counter on the page. The result names any page without a text layer, which is left out, and the repeated lines that were removed."
+      "text": "Click Convert. The Markdown downloads by itself, and a single file can also be previewed and copied on the page. The result names any page without a text layer, which is left out, and the repeated lines that were removed."
     }
   ],
   "faq": [
     {
       "q": "How do I convert a PDF to Markdown for ChatGPT, Claude or another LLM?",
-      "a": "Convert it here, then paste the Markdown into the chat or upload the .md file. LLM-ready means the Markdown keeps the structure a model reads a document by: headings by level, lists, tables as GitHub tables, code in fenced blocks and links with their addresses, without running headers, footers and page numbers breaking up the text. Page markers (<!-- page 3 -->) let the model say which page it is quoting, and chunks split a long document to fit an upload or context limit, or to load into a retrieval (RAG) index. To see how many tokens it uses, choose Count its tokens on the result: AI Token Counter counts it for GPT on your device, and the Markdown is not uploaded again."
+      "a": "Convert it here, then paste the Markdown into the chat or upload the .md file. LLM-ready means the Markdown keeps the structure a model reads a document by: headings by level, lists, tables as GitHub tables, code in fenced blocks and links with their addresses, without running headers, footers and page numbers breaking up the text. Page markers (<!-- page 3 -->) let the model say which page it is quoting, and chunks split a long document to fit an upload or context limit, or to load into a retrieval (RAG) index. To see how many tokens it uses, open AI Token Counter, then choose the downloaded .md file or paste the Markdown: it counts for GPT on your device, and for Claude or Gemini with your own API key, which sends the text to that provider."
     },
     {
       "q": "Does it convert tables?",
-      "a": "Tables drawn with ruled lines become GitHub-flavoured Markdown tables, with a bold first row as the header row, and so do tables ruled only above, below and under their header, as LaTeX papers draw them. A cell whose text wraps stays one cell; Markdown cannot merge cells, so a merged cell's text sits in its first cell and the rest are left empty. A table laid out with spaces alone, with no lines at all, is not recognized as a table: each row comes out as a line of text, kept together."
+      "a": "Tables drawn with ruled lines become GitHub-flavoured Markdown tables, with a bold first row as the header row, and so do tables ruled only across: above, below and under their header, as LaTeX papers draw them, or only under their header and at their foot, as many invoices do. A cell whose text wraps stays one cell; Markdown cannot merge cells, so a merged cell's text sits in its first cell and the rest are left empty. A table laid out with spaces alone, with no lines at all, is not recognized as a table: each row comes out as a line of text, kept together."
     },
     {
       "q": "What about two-column papers and other multi-column layouts?",
-      "a": "Each column is read top to bottom before the next, whatever order the file draws its text in, and a title or table running across the columns is read in its place between them. Columns are found from the space between them, down to the 10-point gap of a LaTeX paper. A page whose text flows irregularly around pictures may still come out in a different order than you'd read it, so check the result."
+      "a": "Each column is read top to bottom before the next, whether the file draws its text column by column or line by line across the page, and a title or table running across the columns is read in its place between them. Columns are found from the space between them, down to the 10-point gap of a LaTeX paper, in pages of two, three or four columns, justified or not, and a paragraph that carries on into the next column stays whole. Blocks side by side, such as the two addresses on an invoice, are read one after the other. A page whose text flows irregularly around pictures, or a title set beside a block of text, may still come out in a different order than you'd read it, so check the result."
     },
     {
       "q": "Can it convert a scanned PDF?",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Are links, code and lists kept?",
-      "a": "Yes. Links to web and email addresses keep their targets as Markdown links; links that run scripts are dropped and their text kept. Text in a monospaced font becomes a fenced code block, indented as on the page, or inline code within a sentence, unless the whole document is set in one, as a printed text file is. Bulleted, numbered and lettered lists keep their marks and nesting, and bold and italic text stays marked."
+      "a": "Yes. Links to web and email addresses keep their targets as Markdown links; links that run scripts are dropped and their text kept. Text in a monospaced font becomes a fenced code block, indented as on the page, or inline code within a sentence, unless the whole document is set in one, as a printed text file is. Bulleted, numbered and lettered lists keep their nesting: bullets of any shape become Markdown's -, and numbers and letters stay. Bold and italic text stays marked, and footnote marks and exponents become superscripts (<sup>)."
     },
     {
       "q": "Does the Markdown include text I can't see in the PDF?",

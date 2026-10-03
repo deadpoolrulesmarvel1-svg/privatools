@@ -1,12 +1,12 @@
 /**
- * A file handed to the AI Token Counter by another tool (PDF to Markdown's
- * "Count its tokens", or a selection made on the home page) arrives chosen,
- * ready to count. The hand-off keeps the File in this tab's memory; nothing
- * is uploaded to make it work.
+ * A file handed to the AI Token Counter by another tool in the same document
+ * arrives chosen, ready to count. The hand-off keeps the File in this tab's
+ * memory; nothing is uploaded to make it work. The counter takes one file, so
+ * a selection of several is left for a tool that takes them all.
  */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearFileHandoffs, storeFileHandoffs } from "@/lib/file-handoff";
+import { clearFileHandoffs, consumeFileHandoffs, storeFileHandoffs } from "@/lib/file-handoff";
 import { AiTokenCounterUI } from "./AiTokenCounterUI";
 
 afterEach(() => {
@@ -24,6 +24,16 @@ describe("a file handed to the AI Token Counter", () => {
         expect(await screen.findByText("report.md")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /Count tokens/ })).toBeEnabled();
         expect(network).not.toHaveBeenCalled();
+    });
+
+    it("leaves a selection of several files for a tool that takes them", async () => {
+        await storeFileHandoffs([new File(["a"], "a.md", { type: "text/markdown" }),
+            new File(["b"], "b.md", { type: "text/markdown" })], "ai-token-counter");
+        render(<AiTokenCounterUI />);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        expect(screen.queryByText("a.md")).toBeNull();
+        expect(screen.getByRole("button", { name: /Count tokens/ })).toBeDisabled();
+        expect((await consumeFileHandoffs("ai-token-counter")).map(f => f.name)).toEqual(["a.md", "b.md"]);
     });
 
     it("leaves a file meant for another tool alone", async () => {

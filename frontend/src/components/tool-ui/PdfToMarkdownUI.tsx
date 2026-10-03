@@ -11,20 +11,21 @@
  * A finished run downloads once, as every converter does (DESIGN.md, the
  * download policy); a single Markdown file can also be copied and previewed
  * here. The preview is plain text: the document's Markdown is never rendered
- * as HTML on this page.
+ * as HTML on this page. Counting its tokens is AI Token Counter's job, linked
+ * from the result; that page needs a document of its own (its CSP allows the
+ * AI providers), so the Markdown goes there as the downloaded file or pasted.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Copy, FileCode2, Hash } from "lucide-react";
-import { consumeFileHandoffs, storeFileHandoff } from "@/lib/file-handoff";
-import { navigateTo } from "@/lib/navigation";
+import { Check, Copy, FileCode2 } from "lucide-react";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useMultiFileProcessor, type FileEntry } from "@/hooks/useMultiFileProcessor";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioActionBar, StudioLayout, StudioProgress } from "@/skins/experience/ToolStudio";
 import { ProcessorFiles, ProcessorResult } from "@/skins/experience/ProcessorStudio";
 import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
 import { fileCount } from "@/skins/experience/file-format-label";
-import { MAX_PAGES, count, pageList, readReport, reportSummary, type MarkdownReport } from "./pdf-to-markdown-report";
+import { MAX_PAGES, SCAN_MESSAGE, count, pageList, readReport, reportSummary, type MarkdownReport } from "./pdf-to-markdown-report";
 import "./pdf-to-markdown.css";
 
 const SLUG = "pdf-to-markdown";
@@ -122,7 +123,7 @@ export function PdfToMarkdownUI() {
         // Pages left out (no text layer, or unreadable) make a result to read before use.
         const leftOut = reports.some(({ report }) => !!report && (report.pagesWithoutTextCount > 0 || report.pagesNotReadCount > 0));
         // A scan refused for having no text at all: OCR PDF is the way on.
-        const scanRefused = proc.entries.some(e => e.status === "failed" && (e.error ?? "").includes("OCR PDF"));
+        const scanRefused = proc.entries.some(e => e.status === "failed" && e.error === SCAN_MESSAGE);
         return <ProcessorResult proc={proc} verb="converted" accepts=".pdf" title={title} detail={detail} attention={leftOut}
             receipt={<ConversionNotes reports={reports} several={done.length > 1} />}
             fileDetail={entry => reportSummary(readReport(entry), entry.blob?.size ?? entry.size)}
@@ -131,7 +132,7 @@ export function PdfToMarkdownUI() {
             {scanRefused && <p className="pdf2md-hint"><Link to="/tool/ocr-pdf">OCR PDF</Link> adds a text layer to a scanned PDF; then convert the PDF it makes.</p>}
             {single && single.entry.blob && !single.entry.outName?.toLowerCase().endsWith(".zip") && <>
                 <MarkdownPreview blob={single.entry.blob} />
-                <CountTokens blob={single.entry.blob} name={single.entry.outName || "document.md"} />
+                <p className="pdf2md-hint">To count its tokens, open <Link to="/tools/ai-token-counter">AI Token Counter</Link>, then choose the downloaded .md file or paste the Markdown.</p>
             </>}
         </ProcessorResult>;
     }
@@ -144,7 +145,7 @@ export function PdfToMarkdownUI() {
             <p className="ts-caption">Puts <code className="pdf2md-code">&lt;!-- page 3 --&gt;</code> before each page: hidden when the Markdown is displayed, there for you or an AI to cite.</p>
             <label className="ts-check"><input type="checkbox" checked={removeHeadersFooters} disabled={busy}
                 onChange={e => setField("removeHeadersFooters", e.target.checked)} /> Remove repeated headers and footers</label>
-            <p className="ts-caption">Leaves out lines repeated at the top or bottom of most pages, such as running titles and page numbers.</p>
+            <p className="ts-caption">Leaves out lines that repeat at the top or bottom of at least 40% of the pages, such as running titles and page numbers. Lines in a table stay.</p>
         </div>
         <div>
             <h2>Chunks</h2>
@@ -175,7 +176,7 @@ export function PdfToMarkdownUI() {
         </button>
     </StudioActionBar>}>
         <FileIntake accepts=".pdf" multiple title="Drop PDFs to turn into Markdown"
-            detail="Headings, lists, tables, code and links come through in reading order, columns included."
+            detail="Headings, lists, tables, code and links come through, and pages set in columns are read column by column."
             compact={proc.entries.length > 0} disabled={busy} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdf)} />
         <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
         {busy && <StudioProgress label="Converting to Markdown" detail={`${proc.doneCount} of ${proc.entries.length} files completed`} />}
@@ -206,28 +207,6 @@ function ConversionNotes({ reports, several }: { reports: { entry: FileEntry; re
     }
     if (!notes.length) return null;
     return <ul className="pdf2md-notes" aria-label="About this conversion">{notes.map(n => <li key={n.key}>{n.text}</li>)}</ul>;
-}
-
-/** Counting tokens is AI Token Counter's job: hand it the Markdown, in this tab. */
-function CountTokens({ blob, name }: { blob: Blob; name: string }) {
-    const [sending, setSending] = useState(false);
-    const send = async () => {
-        setSending(true);
-        try {
-            const file = new File([await blob.arrayBuffer()], name, { type: "text/markdown" });
-            await storeFileHandoff(file, "ai-token-counter");
-        } catch {
-            // The counter still opens; the downloaded file can be chosen there.
-        } finally {
-            navigateTo("/tools/ai-token-counter");
-        }
-    };
-    return <p className="pdf2md-next">
-        <button type="button" className="ts-secondary-button" disabled={sending} onClick={() => void send()}>
-            <Hash size={15} aria-hidden="true" /> Count its tokens
-        </button>
-        <span>AI Token Counter counts it for GPT on this device, and for Claude or Gemini with your own key. The Markdown moves to it in this tab; nothing is uploaded again.</span>
-    </p>;
 }
 
 /** The Markdown as text, to copy or read before use: never rendered as HTML. */

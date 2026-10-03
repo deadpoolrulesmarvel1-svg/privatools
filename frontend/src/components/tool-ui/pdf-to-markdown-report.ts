@@ -9,6 +9,11 @@ import type { FileEntry } from "@/hooks/useMultiFileProcessor";
 /** The server's page limit (pdf_to_markdown_service.MAX_PAGES): stated here, enforced there. */
 export const MAX_PAGES = 1000;
 
+/** The server's answer to a PDF with no text layer at all (pdf_to_markdown_service.SCAN_MESSAGE,
+ *  which a backend test holds equal). The page answers it with a link to OCR PDF. */
+export const SCAN_MESSAGE = "This PDF's pages are pictures without a text layer, as a scan's are, so there is nothing to convert yet. "
+    + "Run the file through OCR PDF first, then convert the result.";
+
 export interface MarkdownReport {
     pages: number;
     headings: number;
