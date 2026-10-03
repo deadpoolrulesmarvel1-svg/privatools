@@ -240,6 +240,42 @@ describe("recognising speech window by window", () => {
             expect(result.segments.map(segment => segment.text)).toEqual(["Thank you.", "Thank you so much for coming."]);
         });
 
+        // The re-review's table: whatever follows it, the second pass's real sentence is kept.
+        const rows: [string, string, WhisperChunk][] = [
+            ["the sentence after it", " Welcome to the subtitle generator test.", chunk(3.9, 6.4, " Every word should appear in the captions.")],
+            ["a spoken \"Thank you.\"", " Welcome to the subtitle generator test.", chunk(3.9, 6.4, " Thank you.")],
+            ["the first sentence said again", " Welcome to the subtitle generator test.", chunk(3.9, 6.4, " Welcome to the subtitle generator test.")],
+            ["a sentence sharing words with the first", " Thank you all for coming to the meeting today.", chunk(3.9, 6.4, " The meeting is today.")],
+            ["a short reply Whisper timed long", " Welcome to the subtitle generator test.", chunk(3.9, 6.4, " Yes.")],
+        ];
+        for (const [what, first, third] of rows) {
+            it(`keeps the second pass's real sentence when ${what} follows it`, async () => {
+                const { recognize } = passes([chunk(0, 7, first)], [chunk(0, 2.8, " This clip was made with a speech synthesizer."), third]);
+                const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+                const texts = result.segments.map(segment => segment.text);
+                expect(texts[0]).toBe(first.trim());
+                expect(texts).toContain("This clip was made with a speech synthesizer.");
+            });
+        }
+
+        it("keeps a line said again later, and a stock line only from the first pass", async () => {
+            const { recognize } = passes([chunk(0, 7, " Welcome to the subtitle generator test.")],
+                [chunk(0, 2.8, " This clip was made with a speech synthesizer."), chunk(3.9, 6.4, " Welcome to the subtitle generator test.")]);
+            const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+            expect(result.segments.map(segment => segment.text)).toEqual([
+                "Welcome to the subtitle generator test.", "This clip was made with a speech synthesizer.", "Welcome to the subtitle generator test.",
+            ]);
+        });
+
+        it("leaves out a second-pass segment that says again what the first pass wrote for the same stretch, and asks no more", async () => {
+            const { recognize, heard } = passes([chunk(0, 7, " Welcome to the subtitle generator test.")],
+                [chunk(0, 2.8, " Welcome to the subtitle generator test, they said."), chunk(3.9, 6.4, " Every word should appear in the captions.")],
+                [chunk(0, 1, " Never asked.")]);
+            const result = await recognizeSpeech(clip(), recognize, { language: "en" });
+            expect(heard).toHaveLength(2);
+            expect(result.segments.map(segment => segment.text)).toEqual(["Welcome to the subtitle generator test.", "Every word should appear in the captions."]);
+        });
+
         it("keeps what it has when asking again finds nothing", async () => {
             const { recognize, heard } = passes([chunk(0, 7, " Welcome to the subtitle generator test.")], []);
             const result = await recognizeSpeech(clip(), recognize, { language: "en" });
@@ -333,9 +369,8 @@ describe("recognising speech window by window", () => {
             ["a lone interjection", [chunk(0.3, 2.3, " Oh")]],
             ["punctuation", [chunk(0.5, 6, " .")]],
             ["a loop", [chunk(0.2, 5.3, ` ${Array.from({ length: 40 }, () => "Oh,").join(" ")}`)]],
-            ["a second copy of a sentence, worded differently", [chunk(0.1, 2.9, " This recording was made with a speech synthesizer, so they say.")]],
+            ["a loop cut into segments", Array.from({ length: 8 }, (_, i) => chunk(i * 0.6, i * 0.6 + 0.5, " Oh, oh, oh."))],
             ["far too little text for its time", [chunk(0.2, 7.9, " Go.")]],
-            ["real-looking words followed by a stock line", [chunk(0.5, 2.5, " And so we begin."), chunk(3, 7, " Thanks for watching!")]],
         ];
         for (const [kind, invented] of inventions) {
             it(`adds nothing when the second pass writes ${kind}, and asks no more`, async () => {
@@ -345,6 +380,43 @@ describe("recognising speech window by window", () => {
                 expect(result.segments.map(segment => segment.text)).toEqual(["Welcome to the subtitle generator review.", "This recording was made with a speech synthesizer."]);
             });
         }
+    });
+
+    describe("a real chant or refrain", () => {
+        // The re-review's real-lines talk: Whisper Base's first pass over its second window, as tone where each line is.
+        const lines = ["Let's go, let's go, let's go, let's go.", "No, no, no, no, no.", "The train to the city leaves from platform 4.", "I'm sorry.",
+            "Sorry, could you say that again?", "Bye bye.", "See you next time.", "We will meet again on Friday afternoon.", "Thank you.", "Thanks for watching!"];
+        const voiced = () => {
+            const samples = new Float32Array(30 * SAMPLE_RATE);
+            for (let i = 0; i < samples.length; i++) if ((i / SAMPLE_RATE) % 3 < 2.2) samples[i] = 0.3 * Math.sin(2 * Math.PI * 180 * i / SAMPLE_RATE);
+            return samples;
+        };
+
+        it("keeps a window of real lines as Whisper wrote them, without hearing it again", async () => {
+            const { recognize, heard } = passes(lines.map((line, i) => chunk(i * 3, i * 3 + 2.2, ` ${line}`)));
+            const result = await recognizeSpeech(voiced(), recognize, { language: "en" });
+            expect(heard).toHaveLength(1);
+            expect(result.segments.map(segment => segment.text)).toEqual(lines);
+            expect(result.unclear).toEqual([]);
+        });
+
+        it("keeps a long chant when hearing it again writes mostly the same words", async () => {
+            const chant = ` ${Array.from({ length: 12 }, () => "Let's go,").join(" ")} let's go!`;
+            const first = [chunk(0, 8.2, chant), ...lines.slice(2).map((line, i) => chunk(9 + i * 3, 11.2 + i * 3, ` ${line}`))];
+            // With repeats banned, the halves write the chant shorter, and the rest the same.
+            const again = (cut: number, half: number) => half === 0
+                ? [chunk(0, 8.2, " Let's go, let's go. Let's go, let's go!"), ...first.slice(1).filter(c => c.timestamp[1]! <= cut)]
+                : first.slice(1).filter(c => c.timestamp[0]! >= cut).map(c => chunk(c.timestamp[0]! - cut, c.timestamp[1]! - cut, c.text));
+            const heard: { seconds: number; options: Record<string, unknown> }[] = [];
+            const recognize = vi.fn(async (window: Float32Array, options: Record<string, unknown>) => {
+                heard.push({ seconds: window.length / SAMPLE_RATE, options });
+                return { text: "x", chunks: heard.length === 1 ? first : again(heard[1].seconds, heard.length - 2) };
+            });
+            const result = await recognizeSpeech(voiced(), recognize, { language: "en" });
+            expect(heard).toHaveLength(3);
+            expect(result.segments[0].text).toBe(chant.trim());
+            expect(result.unclear).toEqual([]);
+        });
     });
 
     describe("when Whisper writes one phrase over and over", () => {
@@ -430,6 +502,31 @@ describe("recognising speech window by window", () => {
             expect(result.unclear).toHaveLength(2);
             expect(result.unclear[0]).toEqual({ start: 0, end: 9.5 });
         });
+    });
+
+    it("leaves out a stock line Whisper writes over silence, and keeps one over speech", async () => {
+        // Sound from 1 to 3 s and from 6 to 8 s; silence between and after.
+        const samples = new Float32Array(10 * SAMPLE_RATE);
+        for (const [from, to] of [[1, 3], [6, 8]]) {
+            for (let i = from * SAMPLE_RATE; i < to * SAMPLE_RATE; i++) samples[i] = 0.3 * Math.sin(2 * Math.PI * 180 * i / SAMPLE_RATE);
+        }
+        const { recognize } = passes([chunk(0.9, 3.1, " Welcome to the review."), chunk(3.6, 5.4, " Thank you."), chunk(5.9, 8.1, " Thank you.")]);
+        const result = await recognizeSpeech(samples, recognize, { language: "en" });
+        expect(result.segments.map(segment => [segment.text, Math.round(segment.start)])).toEqual([["Welcome to the review.", 1], ["Thank you.", 6]]);
+    });
+
+    it("cuts a segment holding two sentences at the clear pause between them", async () => {
+        // Two sentences, 1 to 3.2 s and 4.4 to 7 s, written by Whisper as one segment.
+        const samples = new Float32Array(9 * SAMPLE_RATE);
+        for (const [from, to] of [[1, 3.2], [4.4, 7]]) {
+            for (let i = from * SAMPLE_RATE; i < to * SAMPLE_RATE; i++) samples[i] = 0.3 * Math.sin(2 * Math.PI * 180 * i / SAMPLE_RATE);
+        }
+        const { recognize } = passes([chunk(0.9, 7.2, " Coffee and tea are served in the hall. The river flows slowly past the old mill.")]);
+        const result = await recognizeSpeech(samples, recognize, { language: "en" });
+        expect(result.segments.map(segment => segment.text)).toEqual(["Coffee and tea are served in the hall.", "The river flows slowly past the old mill."]);
+        expect(result.segments[0].end).toBeLessThan(3.6);
+        expect(result.segments[1].start).toBeGreaterThan(4.2);
+        expect(result.segments[1].start).toBeLessThan(4.4);
     });
 
     it("passes on a recognizer's failure", async () => {

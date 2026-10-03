@@ -279,3 +279,51 @@ export function fitToText(window: Float32Array, segments: { start: number; end: 
         });
     }
 }
+
+/**
+ * Whether [start, end] holds no voice, in a window where voice stands clear
+ * of the quiet: every 20 ms frame of it is quiet. False where the window has
+ * no clear quiet to judge by (music or noise throughout).
+ */
+export function quietThroughout(window: Float32Array, start: number, end: number, floor: number): boolean {
+    const sound = voice(window, floor);
+    if (!sound) return false;
+    const first = Math.max(0, Math.floor(start * FRAMES_PER_SECOND));
+    const last = Math.min(sound.levels.length, Math.ceil(end * FRAMES_PER_SECOND));
+    for (let frame = first; frame < last; frame++) if (sound.levels[frame] > sound.threshold) return false;
+    return true;
+}
+
+/** Where a sentence ends inside a text and another begins: after its closing mark, and any quote or bracket. */
+const SENTENCE_BREAK = /(?<=[.!?…؟۔।॥]["'”’»)\]]*)\s+(?=\S)|(?<=[。！？]["'”’»」』)）]*)(?=\S)/u;
+/** A pause between sentences: at least this long. */
+const SENTENCE_PAUSE = 0.4;
+/** A sentence of three words or more, or six characters of Chinese or Japanese, written without spaces. */
+const longEnough = (sentence: string) => sentence.split(/\s+/).length >= 3 || (/[\u3040-\u30ff\u3400-\u9fff]/u.test(sentence) && Array.from(sentence).length >= 6);
+
+/**
+ * Whisper sometimes writes two or more sentences as one segment, and a
+ * caption holding both shows the second as early as the first: 2.8 s early
+ * once on the 18-minute test talk. A segment whose sentences are each three
+ * words or more (six characters of Chinese or Japanese), with as many clear
+ * pauses inside it (0.4 s or more) as there are breaks between the
+ * sentences, is cut at those pauses: each sentence
+ * ends a quarter second into the pause after it and starts a tenth of a
+ * second before the voice after the pause before it. Any other segment is
+ * left whole. Times are seconds within `window`.
+ */
+export function splitAtPauses<T extends { start: number; end: number; text: string }>(window: Float32Array, segments: readonly T[], floor: number): T[] {
+    const pauses = pausesIn(window, floor, SENTENCE_PAUSE);
+    return segments.flatMap(segment => {
+        const sentences = segment.text.split(SENTENCE_BREAK).map(part => part.trim()).filter(Boolean);
+        if (sentences.length < 2 || !sentences.every(longEnough)) return [segment];
+        const inside = pauses.filter(([from, to]) => from > segment.start + 0.3 && to < segment.end - 0.3);
+        if (inside.length !== sentences.length - 1) return [segment];
+        return sentences.map((text, i) => ({
+            ...segment,
+            text,
+            start: i === 0 ? segment.start : inside[i - 1][1] - LEAD,
+            end: i === sentences.length - 1 ? segment.end : Math.min(inside[i][1], inside[i][0] + HANG),
+        }));
+    });
+}

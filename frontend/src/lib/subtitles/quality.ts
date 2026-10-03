@@ -50,6 +50,18 @@ export function isLoop(text: string): boolean {
     return new TextEncoder().encode(text).length >= LOOP_MIN_BYTES && compressionRatio(text) > LOOP_RATIO;
 }
 
+/** A single segment is judged a loop only from this long: a chant or a phrase said again rarely gets there. */
+const LONG_LOOP_BYTES = 100;
+
+/**
+ * Whether one segment is a loop long enough that speech rarely makes one:
+ * Whisper Base's correct "Let's go, let's go, let's go, let's go." (39 bytes,
+ * ratio 2.6) is not, the 18-minute talk's "the option to be" loop is.
+ */
+export function isLongLoop(text: string): boolean {
+    return new TextEncoder().encode(text).length >= LONG_LOOP_BYTES && isLoop(text);
+}
+
 /**
  * Whether text uses far too few different words for its length: under two in
  * five, over thirty words or more. Speech of that length uses well over half;
@@ -119,17 +131,26 @@ function sharedWords(a: string[], b: string[]): number {
     return previous[b.length];
 }
 
+const plainWords = (text: string) => wordsOf(text).map(({ word }) => word);
+
 /**
- * Whether `text` says again what `earlier` already says: most of its words,
- * three or more, appear in it in the same order, or, for one or two words,
- * the same words appear together.
+ * Whether two texts say mostly the same: at least four words in the same
+ * order, and most of the words of the shorter one. Used on what two passes
+ * wrote for the same stretch of sound, never on a whole window: two
+ * sentences of one talk share words like "this is the" in order all the time.
  */
-export function repeats(text: string, earlier: string): boolean {
-    const words = wordsOf(text).map(({ word }) => word);
-    const before = wordsOf(earlier).map(({ word }) => word);
-    if (!words.length || !before.length) return false;
-    if (words.length < 3) return ` ${before.join(" ")} `.includes(` ${words.join(" ")} `);
-    return sharedWords(words, before) / words.length >= 0.6;
+export function sharesMost(a: string, b: string): boolean {
+    const first = plainWords(a);
+    const second = plainWords(b);
+    const shared = sharedWords(first, second);
+    return shared >= 4 && shared >= 0.6 * Math.min(first.length, second.length);
+}
+
+/** Whether two passes over the same sound wrote mostly the same words: shared in order, at least seven in ten of the longer. */
+export function mostlySame(a: string, b: string): boolean {
+    const first = plainWords(a);
+    const second = plainWords(b);
+    return first.length > 0 && sharedWords(first, second) >= 0.7 * Math.max(first.length, second.length);
 }
 
 const IDEOGRAPH = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u;

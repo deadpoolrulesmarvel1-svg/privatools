@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compressionRatio, hasWords, isLoop, isStockLine, LOOP_RATIO, repeats, speechUnits, tooFewWords, tooSparse, wordsOf } from "./quality";
+import { compressionRatio, hasWords, isLongLoop, isLoop, isStockLine, LOOP_RATIO, mostlySame, sharesMost, speechUnits, tooFewWords, tooSparse, wordsOf } from "./quality";
 
 describe("telling a loop from speech", () => {
     // From the synthetic test talks, and the loop Whisper Tiny wrote in one of them.
@@ -32,6 +32,24 @@ describe("telling a loop from speech", () => {
         expect(tooFewWords("Yes, yes, yes.")).toBe(false);
     });
 
+    it("takes a chant or a phrase said again in one segment for speech, and only a long loop for a loop", () => {
+        // Real lines from the re-review's synthetic talk, each one segment as Whisper Base wrote them.
+        for (const line of [
+            "Let's go, let's go, let's go, let's go.",
+            "No, no, no, no, no, no.",
+            "Thank you, thank you, thank you, thank you.",
+            "Thank you. Thank you. Thank you. Thank you.",
+            "Happy birthday to you, happy birthday to you.",
+            "One more time, one more time, one more time.",
+            "We will, we will rock you. We will, we will rock you.",
+        ]) expect(isLongLoop(line), line).toBe(false);
+        expect(isLongLoop(Array.from({ length: 12 }, () => "the option to be").join(" "))).toBe(true);
+        // A window of real lines is no loop either.
+        const window = ["Let's go, let's go, let's go, let's go.", "No, no, no, no, no.", "The train to the city leaves from platform 4.", "I'm sorry.",
+            "Sorry, could you say that again?", "Bye bye.", "See you next time.", "We will meet again on Friday afternoon.", "Thank you.", "Thanks for watching!"].join(" ");
+        expect(isLoop(window)).toBe(false);
+    });
+
     it("is quick on a long loop", () => {
         const started = performance.now();
         expect(isLoop("oh ".repeat(3000))).toBe(true);
@@ -61,15 +79,39 @@ describe("what Whisper writes when it hears no speech", () => {
         expect(isStockLine("The quick brown fox jumps over the lazy dog.")).toBe(false);
     });
 
-    it("knows a second, differently worded copy of a sentence already written", () => {
-        // Whisper Tiny's two versions of the clip's fourth sentence.
-        const earlier = "Welcome to the subtitle generator review. The quick round function is over the lazy dog.";
-        expect(repeats("The quick round thanks for watching, so over the lazy dog.", earlier)).toBe(true);
-        expect(repeats("Every sentence should appear once in the captions.", earlier)).toBe(false);
-        // One or two words repeat only when the same words stand together.
-        expect(repeats("lazy dog", earlier)).toBe(true);
-        expect(repeats("dog lazy", earlier)).toBe(false);
-        expect(repeats("Hello.", "")).toBe(false);
+    it("knows a second, differently worded copy of what the first pass wrote for the same stretch", () => {
+        // Whisper Tiny's two versions of the music clip's fourth sentence.
+        expect(sharesMost("The quick round thanks for watching, so over the lazy dog.", "is over the lazy dog.")).toBe(true);
+        expect(sharesMost("The quick round thanks for watching, so over the lazy dog.", "The quick round function is over the lazy dog.")).toBe(true);
+        expect(sharesMost("Every sentence should appear once in the captions.", "The quick round function is over the lazy dog.")).toBe(false);
+        // Under four shared words is never the same speech.
+        expect(sharesMost("lazy dog", "is over the lazy dog.")).toBe(false);
+        expect(sharesMost("Yes.", "Yes.")).toBe(false);
+        expect(sharesMost("Hello there, everyone.", "")).toBe(false);
+    });
+
+    it("doesn't take a new sentence for a repeat because it shares a few words in order", () => {
+        // The re-review's sentences, each against the ordinary sentence it shares most with.
+        for (const [text, earlier] of [
+            ["This is the last sentence.", "This is the plan for the next two weeks."],
+            ["We start with the first item.", "Let us start with the budget for next quarter."],
+            ["The budget is due today.", "Let us start with the budget for next quarter."],
+            ["Is this the plan?", "This is the plan for the next two weeks."],
+            ["Let us start again.", "Let us start with the budget for next quarter."],
+            ["Today.", "Thank you so much for coming today."],
+            ["Next week.", "This is the plan for the next two weeks."],
+        ]) expect(sharesMost(text, earlier), text).toBe(false);
+        // The same thanks, heard twice over the same stretch, is the same speech.
+        expect(sharesMost("Thank you for coming.", "Thank you so much for coming today.")).toBe(true);
+    });
+
+    it("knows two passes over the same sound wrote mostly the same words", () => {
+        // Whisper Base's chant, then the same window heard again with repeats banned.
+        expect(mostlySame("Let's go, let's go, let's go, let's go. No, no, no, no, no. The train to the city leaves from platform 4.",
+            "Let's go, let's go. Let's Go. No, no, no. No, No. The train to the city leaves from platform 4.")).toBe(true);
+        expect(mostlySame(Array.from({ length: 30 }, () => "the option to be").join(" "),
+            "Coffee and tea are served in the hall. The river flows slowly past the old mill. Our neighbours have a friendly black cat.")).toBe(false);
+        expect(mostlySame("", "Anything.")).toBe(false);
     });
 
     it("knows a segment holds far too little text for its time", () => {
