@@ -53,6 +53,9 @@ describe("SubRip", () => {
 
     it("never writes a timing arrow inside cue text", () => {
         expect(toSrt([{ start: 0, end: 1, text: "a --> b" }])).toBe("1\n00:00:00,000 --> 00:00:01,000\na -> b\n");
+        // One pass would turn "--->" into "-->".
+        expect(toSrt([{ start: 0, end: 1, text: "a ---> b ----> c" }])).toBe("1\n00:00:00,000 --> 00:00:01,000\na -> b -> c\n");
+        expect(toVtt([{ start: 0, end: 1, text: "a ---> b" }]).split("\n").slice(3).join("\n")).not.toContain("--");
     });
 
     it("writes nothing for no cues", () => {

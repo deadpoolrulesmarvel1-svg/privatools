@@ -21,12 +21,19 @@ export function transcriptTime(seconds: number): string {
 }
 
 /**
- * A cue's lines as both formats can carry them: a blank line ends a cue, so
- * none is kept, and "-->" would read as a timing line, so it becomes "->".
+ * A line with every "-->" made "->": both formats read the arrow as a timing
+ * line. One pass would leave "--->" as "-->", so it repeats until none is left.
  */
+function withoutArrow(line: string): string {
+    let text = line;
+    while (text.includes("-->")) text = text.split("-->").join("->");
+    return text;
+}
+
+/** A cue's lines as both formats can carry them: a blank line ends a cue, so none is kept, and no line holds "-->". */
 function cueLines(text: string): string[] {
     return text.replace(/\r\n?/g, "\n").split("\n")
-        .map(line => line.replace(/-->/g, "->").replace(/[ \t\f\v]+/g, " ").trim())
+        .map(line => withoutArrow(line).replace(/[ \t\f\v]+/g, " ").trim())
         .filter(Boolean);
 }
 
