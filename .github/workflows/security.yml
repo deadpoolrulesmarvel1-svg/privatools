@@ -28,7 +28,9 @@ jobs:
         run: npm ci
       - name: Audit frontend dependencies
         working-directory: frontend
-        run: npm audit --audit-level=high
+        # npm audit --audit-level=high, except the advisories audit-exceptions.json
+        # lists, each with its reason and an expiry (scripts/audit-check.mjs).
+        run: node scripts/audit-check.mjs
       - name: Type-check and build
         working-directory: frontend
         run: |
