@@ -1,0 +1,7 @@
+{
+  "GHSA-vfj7-8cjw-p6xm": {
+    "packages": ["braces"],
+    "reason": "Stack exhaustion from deeply nested brace patterns. braces reaches us only through tailwindcss 3 (chokidar, fast-glob, micromatch), a devDependency that expands the static content globs in tailwind.config.ts at build time; no visitor input reaches it and it is not in the shipped bundle. No patched braces exists (3.0.3 is the latest, from 2024); Tailwind 4 drops it, which is the held major tracked in #231.",
+    "expires": "2026-11-15"
+  }
+}
