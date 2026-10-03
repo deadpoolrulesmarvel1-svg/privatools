@@ -79,4 +79,49 @@ describe("Bates Numbering's matter", () => {
         await screen.findByRole("heading", { name: "None of these PDFs could be numbered." });
         expect((await counters.getCounter(matter.id))?.next).toBe(101);
     });
+
+    // A typed Start numbers outside the matter's own run. The matter moves to
+    // where that stamp stopped, so it never issues those numbers again, and it
+    // never moves back.
+    it("continues after the pages stamped from a typed Start", async () => {
+        vi.mocked(uploadFile).mockResolvedValue({ blob: async () => new Blob(["%PDF stamped"]), headers: new Headers() } as Response);
+        const { matter, container } = await openWithMatter("Supplemental v. Example");
+        fireEvent.change(screen.getByLabelText("Start"), { target: { value: "500" } });
+        stamp(container, [pdf("supplemental.pdf")]);
+        expect(await screen.findByText(/Supplemental v\. Example continues at SYN-000503 next time\./)).toBeInTheDocument();
+        expect((await counters.getCounter(matter.id))?.next).toBe(503);
+    });
+
+    it("continues after a production set numbered from a typed Start", async () => {
+        const manifest = [
+            { index: 0, pages: 2, firstBates: "SYN-000500", lastBates: "SYN-000501", file: "one.pdf" },
+            { index: 1, pages: 3, firstBates: "SYN-000502", lastBates: "SYN-000504", file: "two.pdf" },
+        ];
+        vi.mocked(uploadFiles).mockResolvedValue({
+            blob: async () => new Blob(["PK synthetic"]), headers: new Headers({ "X-Bates-Manifest": JSON.stringify(manifest) }),
+        } as Response);
+        const { matter, container } = await openWithMatter("Supplemental set v. Example");
+        fireEvent.change(screen.getByLabelText("Start"), { target: { value: "500" } });
+        stamp(container, [pdf("one.pdf"), pdf("two.pdf")]);
+        expect(await screen.findByText(/Supplemental set v\. Example continues at SYN-000505 next time\./)).toBeInTheDocument();
+        expect((await counters.getCounter(matter.id))?.next).toBe(505);
+    });
+
+    it("stays where it was after a stamp from a typed Start below it", async () => {
+        vi.mocked(uploadFile).mockResolvedValue({ blob: async () => new Blob(["%PDF stamped"]), headers: new Headers() } as Response);
+        const { matter, container } = await openWithMatter("Replacement v. Example");
+        fireEvent.change(screen.getByLabelText("Start"), { target: { value: "50" } });
+        stamp(container, [pdf("replacement.pdf")]);
+        expect(await screen.findByText(/Replacement v\. Example continues at SYN-000101 next time\./)).toBeInTheDocument();
+        expect((await counters.getCounter(matter.id))?.next).toBe(101);
+    });
+
+    it("leaves the matter alone when the stamp used another prefix", async () => {
+        vi.mocked(uploadFile).mockResolvedValue({ blob: async () => new Blob(["%PDF stamped"]), headers: new Headers() } as Response);
+        const { matter, container } = await openWithMatter("Elsewhere v. Example");
+        fireEvent.change(screen.getByLabelText("Prefix"), { target: { value: "OTHER-" } });
+        stamp(container, [pdf("other.pdf")]);
+        expect(await screen.findByText(/Elsewhere v\. Example stays at SYN-000101: these numbers aren’t in its format\./)).toBeInTheDocument();
+        expect((await counters.getCounter(matter.id))?.next).toBe(101);
+    });
 });
