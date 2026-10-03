@@ -10,6 +10,21 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.21] — 2026-10-03 — Fixes for Word to PDF, Transcribe Audio, Bates Numbering and more
+
+### Tools
+
+- Word to PDF says how many Word equations it left out, with a link to Office to PDF, which keeps them, and its guide says so too. An equation in a text box is counted once. (#330)
+- Transcribe Audio offers only providers that can transcribe, each with a model it serves. DeepSeek, which has no speech-to-text service, is no longer offered. Together AI, Mistral and OpenRouter are asked for models they serve instead of OpenAI's `whisper-1`, and Together AI is asked to detect the spoken language, which it otherwise takes to be English. (#330)
+- A picture dropped on PDF to Text, PDF to Word, Chat with PDF, Summarize, Translate or the AI Token Counter is pointed to Image OCR, which reads its text, instead of Image to PDF, whose PDF would have no text to read. (#330)
+- Bates Numbering matters now move on after each stamped file and each production set; before, the matter never moved. A stamp from a typed Start moves the matter to where that stamp stopped, and never back. A stamp with another prefix or number of digits leaves the matter where it is, and the result says so. (#330)
+- Rotate PDF calls a PDF it can't open damaged, instead of blaming a page number. (#330)
+- Batch no longer shows a file count on its run button when nothing is left to run. (#330)
+
+### Other
+
+- Pages no longer log a Content Security Policy violation on every load, and the PDF tools that read files in the browser no longer log one for PDFs that contain PostScript functions. (#330)
+
 ## [2.7.20] — 2026-10-03 — Equations survive Office to PDF
 
 ### Tools
