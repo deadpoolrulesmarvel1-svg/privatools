@@ -25,10 +25,13 @@ export async function setSessionOnly(on: boolean): Promise<void> {
     sessionOnly = on;
     if (on) {
         // Awaited, not fire-and-forget: switching to session-only must finish
-        // removing the persisted key before anything can report that nothing
-        // is stored. A `void db.clear()` here races the single guarantee this
-        // mode exists to provide.
-        await db.clear("secrets");
+        // removing the persisted keys before anything can report that nothing
+        // is stored. Only the AI keys: the password vault keeps its encryption
+        // key in the same store, and clearing the whole store made every saved
+        // password unreadable after a reload.
+        for (const key of await db.keys("secrets")) {
+            if (key.startsWith(PREFIX)) await db.del("secrets", key);
+        }
     } else {
         sessionKeys.clear();
     }
