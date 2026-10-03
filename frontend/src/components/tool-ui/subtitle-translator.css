@@ -1,0 +1,64 @@
+/* Subtitle Translator: the options' notes, the chosen file, the key panel and
+   the check of the translation (each cue's original beside its translation).
+   Colours come from the experience tokens, so Air and Play, light and dark,
+   each keep their own. */
+
+.st-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.st-link { padding: 0; border: 0; background: none; color: hsl(var(--accent)); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.st-link:disabled { opacity: .6; cursor: default; }
+.st-sample { justify-self: start; }
+.st-chosen { display: grid; gap: 10px; min-width: 0; }
+.st-chosen .ts-error p { margin: 0; }
+.st-chosen .ts-error a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+.st-provider { border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 14px 18px; background: hsl(var(--card)); min-width: 0; }
+.st-provider > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; min-height: 36px; cursor: pointer; }
+.st-provider > summary span { font: 600 17px/1.25 var(--pt-display); letter-spacing: -.02em; }
+.st-provider > summary strong { font-size: 12.5px; font-weight: 500; color: hsl(var(--muted-foreground)); }
+.st-provider[open] > .pt-byok { margin-top: 18px; }
+
+.ts-note p { margin: 0; }
+.ts-note p + p { margin-top: 6px; }
+
+.st-editor { display: grid; gap: 12px; min-width: 0; margin-top: 4px; }
+.st-editor-head { display: grid; gap: 6px; }
+.st-editor-head h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; font: 600 17px/1.25 var(--pt-display); letter-spacing: -.02em; }
+.st-editor-head p { margin: 0; font-size: 12.5px; line-height: 1.55; color: hsl(var(--muted-foreground)); max-width: 72ch; }
+.st-badge { padding: 3px 9px; border-radius: 999px; background: hsl(var(--warning-soft)); color: hsl(var(--foreground)); font: 600 11px/1.4 var(--pt-font, inherit); letter-spacing: .02em; }
+
+.st-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 0 16px; font-size: 11.5px; font-weight: 600; letter-spacing: .03em; color: hsl(var(--muted-foreground)); }
+
+/* A scroll box of its own, so a film's thousands of cues never make the page endless. */
+.st-cues { list-style: none; margin: 0; padding: 6px; max-height: 34rem; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 6px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--paper-2)); }
+.st-cue {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "meta meta" "source text" ". reason";
+    gap: 6px 14px; align-items: start; padding: 10px; border-radius: 8px; background: hsl(var(--card)); border: 1px solid transparent;
+    content-visibility: auto; contain-intrinsic-size: auto 6.5rem;
+}
+.st-cue[data-status=failed] { border-color: hsl(var(--warning) / .55); }
+.st-cue-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.st-cue-number { font: 600 12px/1.4 var(--font-mono); color: hsl(var(--foreground)); }
+.st-cue-time { font: 12px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; color: hsl(var(--muted-foreground)); white-space: nowrap; }
+.st-mark { padding: 2px 8px; border-radius: 999px; font-size: 11px; line-height: 1.4; background: hsl(var(--paper-2)); color: hsl(var(--muted-foreground)); }
+.st-mark[data-kind=failed], .st-mark[data-kind=check] { background: hsl(var(--warning-soft)); color: hsl(var(--foreground)); }
+.st-cue-source { grid-area: source; margin: 0; padding: 7px 9px; border-left: 2px solid hsl(var(--border)); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.45; color: hsl(var(--muted-foreground)); }
+.st-cue textarea { grid-area: text; width: 100%; min-height: 3.4rem; padding: 7px 9px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font: 14px/1.45 var(--pt-font, inherit); resize: vertical; }
+.st-cue textarea:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 0; }
+.st-cue-reason { grid-area: reason; margin: 0; font-size: 12px; line-height: 1.5; color: hsl(var(--foreground)); }
+
+.st-saves { margin: 0; max-width: 78ch; overflow-wrap: anywhere; }
+.st-next { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 14px; border-top: 1px solid hsl(var(--border)); }
+.st-next .ts-caption { flex: 1 1 22rem; margin: 0; max-width: 72ch; }
+
+/* Play sets the option groups side by side; they differ in height, so their headings line up at the top. */
+html[data-experience=play] .st-studio .ts-options { align-items: flex-start; }
+html[data-experience=play] .st-cues { border-radius: 16px; }
+html[data-experience=play] .st-cue { border-radius: 12px; }
+html[data-experience=play] .st-provider { border-radius: 18px; }
+
+@media (max-width: 640px) {
+    .st-columns { display: none; }
+    .st-cue { grid-template-columns: minmax(0, 1fr); grid-template-areas: "meta" "source" "text" "reason"; padding: 8px; }
+    .st-cues { max-height: 30rem; padding: 4px; }
+    .st-provider { padding: 12px 14px; }
+}
