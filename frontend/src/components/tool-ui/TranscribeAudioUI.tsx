@@ -1,5 +1,5 @@
 import { transcriptTime as fmtTime, transcriptSrt as toSrt } from "@/lib/speechTranscript";
-import { modelProgress } from "@/lib/modelProgress";
+import { decodeToMono, loadWhisper, WHISPER, type WhisperSize } from "@/lib/whisper";
 import { ToolCopyButton } from "./SpecialistTools";
 import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
@@ -25,46 +25,8 @@ import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { transcribe } from "@/lib/byok/client";
 import { providerById, supportsTranscription, TRANSCRIBE_MODELS } from "@/lib/byok/providers";
 import { ByokError } from "@/lib/byok/errors";
-import { configureTransformers } from "@/lib/transformersEnv";
-
-type WhisperSize = "tiny" | "base";
-const WHISPER: Record<WhisperSize, { hfId: string; label: string; size: string }> = {
-    tiny: { hfId: "Xenova/whisper-tiny", label: "Tiny", size: "~41 MB" },
-    base: { hfId: "Xenova/whisper-base", label: "Base", size: "~74 MB" },
-};
 
 interface Segment { start: number; end: number; text: string; }
-
-// One pipeline per model size, kept across runs.
-const asrCache = new Map<string, Promise<unknown>>();
-async function getAsr(hfId: string, onProgress: (pct: number) => void) {
-    const cached = asrCache.get(hfId);
-    if (cached) { onProgress(100); return cached; }
-    const promise = (async () => {
-        const { pipeline, env } = await import("@huggingface/transformers");
-        configureTransformers(env);
-        return pipeline("automatic-speech-recognition", hfId, {
-            progress_callback: modelProgress(onProgress, 41 * 1024 * 1024),
-        } as never);
-    })();
-    asrCache.set(hfId, promise);
-    try { return await promise; } catch (e) { asrCache.delete(hfId); throw e; }
-}
-
-/** Decode any browser-supported audio file to mono 16 kHz Float32. */
-async function decodeTo16kMono(file: File): Promise<Float32Array> {
-    const ctx = new AudioContext({ sampleRate: 16000 });
-    try {
-        const buf = await ctx.decodeAudioData(await file.arrayBuffer());
-        if (buf.numberOfChannels === 1) return buf.getChannelData(0);
-        const a = buf.getChannelData(0), b = buf.getChannelData(1);
-        const mono = new Float32Array(buf.length);
-        for (let i = 0; i < buf.length; i++) mono[i] = (a[i] + b[i]) / 2;
-        return mono;
-    } finally {
-        void ctx.close();
-    }
-}
 
 export function TranscribeAudioUI() {
     const byok = useByok();
@@ -121,14 +83,11 @@ export function TranscribeAudioUI() {
             }
             // Validate and decode before downloading a model.
             setPhase("decoding");
-            const audio = await decodeTo16kMono(file);
+            const audio = await decodeToMono(await file.arrayBuffer());
             if (cancelRef.current || current !== runId.current) return;
             setPhase("loading-model");
             setModelPct(0);
-            const asr = await getAsr(WHISPER[whisper].hfId, setModelPct) as (
-                audio: Float32Array,
-                opts: Record<string, unknown>,
-            ) => Promise<{ text?: string; chunks?: Array<{ timestamp: [number, number | null]; text: string }> }>;
+            const asr = await loadWhisper(whisper, setModelPct);
             if (cancelRef.current || current !== runId.current) return;
             setPhase("transcribing");
             const result = await asr(audio, {
