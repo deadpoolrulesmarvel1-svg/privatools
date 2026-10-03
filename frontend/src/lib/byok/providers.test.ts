@@ -108,6 +108,14 @@ describe("transcription", () => {
     expect(request.body.has("response_format")).toBe(false);
   });
 
+  it("asks Together to detect the language, as the others do unasked", () => {
+    for (const id of Object.keys(TRANSCRIPTION)) {
+      const request = buildTranscribeRequest(providerById(id)!, { apiKey: "k", model: "m", file: audio() });
+      // Together's language defaults to "en", which heard every recording as English.
+      expect(request.body.get("language"), id).toBe(id === "together" ? "auto" : null);
+    }
+  });
+
   it("names the providers that can transcribe", () => {
     expect(transcriptionProviderNames()).toBe("OpenAI, OpenRouter, Groq, Together AI, Mistral or a self-hosted endpoint");
   });

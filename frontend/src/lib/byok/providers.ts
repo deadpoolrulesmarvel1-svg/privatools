@@ -40,6 +40,11 @@ export interface Provider {
      * provider's documentation on 2026-10-03.
      */
     transcribeModel?: string;
+    /**
+     * The `language` to send for a provider that does not detect the spoken
+     * language unless asked. Together's defaults to "en"; "auto" detects it.
+     */
+    transcribeLanguage?: string;
     /** True when the user supplies the base URL (local or self-hosted). */
     customBaseUrl?: boolean;
     keysUrl?: string;
@@ -131,7 +136,7 @@ export const PROVIDERS: Provider[] = [
     {
         // The model its transcription reference names, and its default.
         id: "together", label: "Together AI", origin: "https://api.together.xyz",
-        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"], transcribeModel: "openai/whisper-large-v3",
+        shape: "openai", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"], transcribeModel: "openai/whisper-large-v3", transcribeLanguage: "auto",
     },
     {
         // Mistral transcribes with its Voxtral models.
@@ -309,6 +314,7 @@ export function buildTranscribeRequest(
     const body = new FormData();
     body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));
     body.append("model", input.model);
+    if (p.transcribeLanguage) body.append("language", p.transcribeLanguage);
     // No response_format: JSON with a "text" field is every provider's
     // default, while "text" is not one Together or OpenRouter documents, and
     // Mistral documents no response_format at all.
