@@ -24,6 +24,39 @@ function advisoryId(via) {
   return match ? match[0] : (via.url || `npm advisory ${via.source}`);
 }
 
+/** Exceptions must be revisited at least this often. */
+const MAX_DAYS = 90;
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Why an exception's expiry can't stand, or null. It must be a real
+ * YYYY-MM-DD date, at most MAX_DAYS ahead: a typo must not make an
+ * exception permanent.
+ */
+function expiryProblem(expires, today) {
+  if (typeof expires !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(expires)) return 'has no valid expiry (YYYY-MM-DD)';
+  const date = new Date(`${expires}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== expires) return 'has no valid expiry (YYYY-MM-DD)';
+  if (date.getTime() + DAY <= today.getTime()) return `expired on ${expires}`;
+  if (date.getTime() - today.getTime() > MAX_DAYS * DAY) return `expires ${expires}, more than ${MAX_DAYS} days out`;
+  return null;
+}
+
+/**
+ * Why this isn't a report the check understands, or null. Anything else
+ * fails the build: a gate that can't read its input must not pass it.
+ */
+export function reportProblem(report) {
+  if (!report || report.auditReportVersion !== 2 || typeof report.vulnerabilities !== 'object' || report.vulnerabilities === null) {
+    return 'not an npm audit v2 report';
+  }
+  const listed = Object.values(report.vulnerabilities).filter(entry => BLOCKING.has(entry?.severity)).length;
+  const counts = report.metadata?.vulnerabilities || {};
+  const counted = (counts.high || 0) + (counts.critical || 0);
+  if (listed !== counted) return `the report counts ${counted} high or critical but lists ${listed}`;
+  return null;
+}
+
 /** A fix that isn't a major upgrade: `true`, or a fix object not marked major. */
 function nonBreakingFix(fixAvailable) {
   return fixAvailable === true || (typeof fixAvailable === 'object' && fixAvailable !== null && !fixAvailable.isSemVerMajor);
@@ -44,8 +77,10 @@ export function blockingAdvisories(report, exceptions, today = new Date()) {
       const exception = exceptions[id];
       const where = `${id} in ${name} (${via.severity}): ${via.title}`;
       if (!exception) { reasons.push(where); continue; }
-      if (!(exception.packages || []).includes(name)) { reasons.push(`${where}; its exception covers only ${(exception.packages || []).join(', ') || 'no package'}`); continue; }
-      if (!exception.expires || new Date(`${exception.expires}T23:59:59Z`) < today) { reasons.push(`${where}; its exception expired on ${exception.expires}`); continue; }
+      const packages = Array.isArray(exception.packages) ? exception.packages : [];
+      if (!packages.includes(name)) { reasons.push(`${where}; its exception covers only ${packages.join(', ') || 'no package'}`); continue; }
+      const expiry = expiryProblem(exception.expires, today);
+      if (expiry) { reasons.push(`${where}; its exception ${expiry}`); continue; }
       if (nonBreakingFix(entry.fixAvailable)) reasons.push(`${where}; a fix is available that isn't a major upgrade, so apply it and remove the exception`);
     }
   }
@@ -62,11 +97,16 @@ function main() {
     console.error(`npm audit gave no report (exit ${run.status}):\n${run.stderr}`);
     process.exit(2);
   }
-  if (report.error) { console.error(`npm audit failed: ${JSON.stringify(report.error)}`); process.exit(2); }
+  if (report.error) { console.error(`npm audit failed: ${report.message || ''} ${JSON.stringify(report.error)}`); process.exit(2); }
+  const problem = reportProblem(report);
+  if (problem) { console.error(`npm audit gave a report this check can't read (${problem}); failing closed.`); process.exit(2); }
   const blocked = blockingAdvisories(report, exceptions);
   const counts = report.metadata?.vulnerabilities || {};
   console.log(`npm audit: ${JSON.stringify(counts)}`);
-  for (const [id, exception] of Object.entries(exceptions)) console.log(`Excepted until ${exception.expires}: ${id} (${exception.packages.join(', ')}). ${exception.reason}`);
+  for (const [id, exception] of Object.entries(exceptions)) {
+    const packages = Array.isArray(exception.packages) ? exception.packages.join(', ') : 'no package';
+    console.log(`Excepted until ${exception.expires}: ${id} (${packages})${exception.issue ? `, tracked in ${exception.issue}` : ''}. ${exception.reason}`);
+  }
   if (blocked.length) {
     console.error(`\n${blocked.length} high or critical advisor${blocked.length === 1 ? 'y blocks' : 'ies block'} the build:\n- ${blocked.join('\n- ')}`);
     process.exit(1);

@@ -1,7 +1,10 @@
 {
   "GHSA-vfj7-8cjw-p6xm": {
-    "packages": ["braces"],
-    "reason": "Stack exhaustion from deeply nested brace patterns. braces reaches us only through tailwindcss 3 (chokidar, fast-glob, micromatch), a devDependency that expands the static content globs in tailwind.config.ts at build time; no visitor input reaches it and it is not in the shipped bundle. No patched braces exists (3.0.3 is the latest, from 2024); Tailwind 4 drops it, which is the held major tracked in #231.",
-    "expires": "2026-11-15"
+    "packages": [
+      "braces"
+    ],
+    "issue": "#231",
+    "expires": "2026-11-15",
+    "reason": "Stack exhaustion from deeply nested brace patterns. braces reaches us only through tailwindcss 3 (via chokidar, fast-glob and micromatch), which the lockfile pulls in twice: as a devDependency, and as the peer of tailwindcss-animate, which sits in dependencies but is loaded only by tailwind.config.ts. Both routes run at build time, expanding the static content globs in tailwind.config.ts and the dev server's watch globs; no visitor input reaches braces and none of its code is in the shipped bundle or the image (the Dockerfile copies only frontend/dist). No patched braces exists (3.0.3, from 2024, is the latest); Tailwind 4 drops it (held major, #231)."
   }
 }

@@ -382,8 +382,11 @@ CSP-walker and guide-export tests catch most misses.
   vulnerable code can't be reached, and an expiry date. It stops covering
   its advisory on that date or once npm reports a non-major fix; any other
   high or critical advisory still fails the build. Use it only when the
-  only fix is a held major. The first one (GHSA-vfj7-8cjw-p6xm, braces via
-  tailwindcss 3, build-time only) expires 2026-11-15; Tailwind 4 removes it.
+  only fix is a held major, and never more than 90 days out (the check
+  refuses a malformed or longer expiry, and a report it can't read). The
+  first one (GHSA-vfj7-8cjw-p6xm: braces via tailwindcss 3, also as
+  tailwindcss-animate's peer, so npm counts it as production, though it
+  runs only at build time) expires 2026-11-15; Tailwind 4 removes it.
 - **npm lockfile rule:** regenerate `package-lock.json` with the npm CI runs,
   not a local one. CI pins Node 26 and uses its bundled npm, which a job log
   shows under "Environment details" (11.19.1 on 2026-09-18), e.g.
