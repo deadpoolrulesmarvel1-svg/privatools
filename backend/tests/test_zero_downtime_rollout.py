@@ -301,10 +301,26 @@ elif name == "docker":
 '''
 
 
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
+def reserve_ports(count: int) -> list[socket.socket]:
+    """COUNT loopback ports, as sockets bound to them and not listening.
+
+    Each socket stays bound while the next port is chosen, so the ports
+    differ: two probes that each release their port can be handed the same
+    one. Close the sockets once the ports are no longer needed. Until then no
+    other process can take a port, and a connection to one is refused, which
+    is what the rollout's check for a free interim port looks for.
+    """
+    held: list[socket.socket] = []
+    try:
+        for _ in range(count):
+            probe = socket.socket()
+            held.append(probe)
+            probe.bind(("127.0.0.1", 0))
+    except BaseException:
+        for probe in held:
+            probe.close()
+        raise
+    return held
 
 
 def bash() -> str:
@@ -326,7 +342,8 @@ class Host:
             script = self.bin / name
             script.write_text(f"#!{sys.executable}\n" + FAKE)
             script.chmod(0o755)
-        self.canonical_port, self.interim_port = free_port(), free_port()
+        self.reserved = reserve_ports(2)
+        self.canonical_port, self.interim_port = (probe.getsockname()[1] for probe in self.reserved)
         self.upstream = tmp_path / "privatools-upstream.conf"
         self.set_upstream(self.canonical_port)
         self.site = tmp_path / "site.conf"
@@ -347,6 +364,10 @@ class Host:
             "traffic": True,
         }
         self.save()
+
+    def close(self):
+        for probe in self.reserved:
+            probe.close()
 
     def save(self):
         (self.root / "world.json").write_text(json.dumps(self.world))
@@ -414,7 +435,45 @@ class Host:
 
 @pytest.fixture
 def host(tmp_path):
-    return Host(tmp_path)
+    simulated = Host(tmp_path)
+    yield simulated
+    simulated.close()
+
+
+def test_the_simulated_host_never_gets_one_port_for_both_containers(tmp_path, monkeypatch):
+    # A kernel may hand a port it has just released straight back: two
+    # separate probes returned the same port for 17 pairs in 200,000 on the
+    # dev VM. With one port for both, the rollout reads the upstream as naming
+    # the interim container, logs "resuming" and exits 3, and a release gate
+    # fails. This kernel always hands out the lowest port nobody holds.
+    held: set[int] = set()
+
+    class LowestFreePort:
+        def __init__(self, *args, **kwargs):
+            self.port = None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            self.close()
+
+        def bind(self, address):
+            self.port = min(set(range(40000, 40010)) - held)
+            held.add(self.port)
+
+        def getsockname(self):
+            return ("127.0.0.1", self.port)
+
+        def close(self):
+            held.discard(self.port)
+
+    monkeypatch.setattr(socket, "socket", LowestFreePort)
+    simulated = Host(tmp_path)
+    try:
+        assert simulated.canonical_port != simulated.interim_port
+    finally:
+        simulated.close()
 
 
 def steps(events: list[list]) -> list[tuple]:
