@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, providerById, stoppedShort } from "./providers";
+import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, providerById, stoppedShort, supportsTranscription, transcriptionProviderNames } from "./providers";
 
 /**
  * Where each provider serves its API, from its own documentation. Checked on
@@ -66,6 +66,50 @@ describe("provider endpoints", () => {
       .toBe("https://api.groq.com/openai/v1/audio/transcriptions");
     expect(buildTranscribeRequest(providerById("openai")!, { apiKey: "k", model: "whisper-1", file }).url)
       .toBe("https://api.openai.com/v1/audio/transcriptions");
+  });
+});
+
+/**
+ * Speech to text, from each provider's own documentation, read 2026-10-03:
+ * OpenAI's audio/transcriptions; Groq's, under /openai/v1; Together's, whose
+ * API reference lists openai/whisper-large-v3 as its model and default;
+ * Mistral's, whose models are Voxtral (voxtral-mini-latest); and OpenRouter's
+ * /api/v1/audio/transcriptions, added in July 2026, which takes OpenAI-style
+ * multipart uploads. None of them serves a model called "whisper-1" except
+ * OpenAI. DeepSeek, Anthropic and Gemini have no transcription endpoint.
+ */
+const TRANSCRIPTION: Record<string, { url: string; model: string }> = {
+  openai: { url: "https://api.openai.com/v1/audio/transcriptions", model: "gpt-4o-mini-transcribe" },
+  openrouter: { url: "https://openrouter.ai/api/v1/audio/transcriptions", model: "openai/whisper-large-v3" },
+  groq: { url: "https://api.groq.com/openai/v1/audio/transcriptions", model: "whisper-large-v3" },
+  together: { url: "https://api.together.xyz/v1/audio/transcriptions", model: "openai/whisper-large-v3" },
+  mistral: { url: "https://api.mistral.ai/v1/audio/transcriptions", model: "voxtral-mini-latest" },
+};
+
+describe("transcription", () => {
+  const audio = () => new Blob(["synthetic audio"], { type: "audio/wav" });
+
+  it("is offered only by providers with a speech-to-text endpoint, and a self-hosted server", () => {
+    expect(PROVIDERS.filter(supportsTranscription).map(p => p.id).sort())
+      .toEqual([...Object.keys(TRANSCRIPTION), "openai-compatible"].sort());
+    for (const id of ["deepseek", "anthropic", "gemini"]) {
+      expect(() => buildTranscribeRequest(providerById(id)!, { apiKey: "k", model: "m", file: audio() })).toThrow(/no OpenAI-style transcription/);
+    }
+  });
+
+  it.each(Object.entries(TRANSCRIPTION))("%s gets its own model at its documented endpoint", (id, { url, model }) => {
+    const provider = providerById(id)!;
+    expect(provider.transcribeModel).toBe(model);
+    const request = buildTranscribeRequest(provider, { apiKey: "k", model, file: audio() });
+    expect(request.url).toBe(url);
+    expect(request.body.get("model")).toBe(model);
+    // JSON is every one's default; Together and OpenRouter document no "text"
+    // answer, and Mistral no response_format at all.
+    expect(request.body.has("response_format")).toBe(false);
+  });
+
+  it("names the providers that can transcribe", () => {
+    expect(transcriptionProviderNames()).toBe("OpenAI, OpenRouter, Groq, Together AI, Mistral or a self-hosted endpoint");
   });
 });
 

@@ -593,7 +593,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
     description: "Speech to text in your browser — or with your own AI key",
-    longDescription: "Transcribe audio with an on-device Whisper model or your own OpenAI, Groq, or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.",
+    longDescription: "Transcribe audio with an on-device Whisper model or your own OpenAI, OpenRouter, Groq, Together AI, Mistral or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.",
     seoTitle: "Transcribe Audio Online Free – Whisper or Your AI Key",
     metaDescription: "Transcribe speech into text with an on-device Whisper model, or connect your own AI key instead. Local mode keeps recordings on your device.",
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",

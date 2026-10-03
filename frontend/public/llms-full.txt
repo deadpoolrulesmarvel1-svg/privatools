@@ -1283,7 +1283,7 @@ URL: https://privatools.me/tools/transcribe-audio
 
 Speech to text in your browser — or with your own AI key
 
-Transcribe audio with an on-device Whisper model or your own OpenAI, Groq, or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.
+Transcribe audio with an on-device Whisper model or your own OpenAI, OpenRouter, Groq, Together AI, Mistral or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.
 
 ### View EXIF Data
 
