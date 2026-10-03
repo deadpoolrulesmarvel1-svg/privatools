@@ -90,9 +90,11 @@ def cpu_budget(pages: int) -> int:
     return int(min(CPU_SECONDS_MAX, CPU_SECONDS_BASE + CPU_SECONDS_PER_PAGE * pages))
 
 
-def options(*, page_markers: bool = True, remove_headers_footers: bool = True, chunk: str = "none",
+def options(*, page_markers: bool = False, remove_headers_footers: bool = False, chunk: str = "none",
             chunk_size: int = CHUNK_DEFAULT, chunk_output: str = "zip") -> dict:
-    """The worker's options, as the route received them (FastAPI has checked their values)."""
+    """The worker's options, as the route received them (FastAPI has checked
+    their values). The page sends every one; API callers get plain Markdown
+    with nothing left out unless they ask."""
     return {
         "page_markers": bool(page_markers),
         "remove_headers_footers": bool(remove_headers_footers),
@@ -113,7 +115,8 @@ def convert(path: str, opts: dict) -> tuple[str, dict]:
     one. Raises ValueError, with a message for the user, when the file needs a
     password, cannot be read, none of its pages can be read, or it has no
     pages; TooManyPagesError (413) past MAX_PAGES; FileTooLargeError (413) when
-    it needs more memory than the worker may use; UnconvertibleError (422) when
+    it needs more memory than the worker may use, or the worker is killed
+    without an answer (how running out of memory can end it); UnconvertibleError (422) when
     it has no text to convert or needs more CPU time than its pages allow;
     ToolTimeoutError (504) past TIME_LIMIT_SECONDS; and ProcessingError (500)
     on any other failure.
@@ -139,6 +142,13 @@ def convert(path: str, opts: dict) -> tuple[str, dict]:
         remove_files(target)
         logger.warning("pdf-to-markdown: a %d-byte file ran out of CPU time", os.path.getsize(path))
         raise UnconvertibleError(TOO_SLOW_MESSAGE)
+    if process.returncode < 0 and not process.stdout.strip():
+        # Killed by a signal before it answered. Under its memory limit MuPDF
+        # cannot always report a failed allocation, and crashes instead.
+        remove_files(target)
+        logger.warning("pdf-to-markdown: the worker died of signal %d on a %d-byte file",
+                       -process.returncode, os.path.getsize(path))
+        raise FileTooLargeError(TOO_BIG_MESSAGE)
     outcome = _outcome(process)
     if outcome.get("ok") is True and target.is_file():
         outcome.pop("ok")

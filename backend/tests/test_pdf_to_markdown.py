@@ -408,6 +408,206 @@ def test_a_heading_at_the_foot_of_a_page_goes_with_what_follows_it(tmp_path):
                            "The closing text starts on the next page.\n")
 
 
+# ── Round 1 of the review: each case is the review's, rebuilt with bundled fonts ──
+
+def plain(data: bytes, **options) -> str:
+    return md(data, page_markers=False, **options)
+
+
+def test_header_and_footer_removal_keeps_every_row_of_a_long_borderless_table():
+    """B2: rows whose numbers differ were taken for a running footer, and the
+    column names repeated at the top of each page for a running header."""
+    out = plain(fx.statement_table())
+    for row in fx.statement_rows():
+        assert row[1] in out, row[1]
+    assert out.count("Description") == 4  # the column names, on each of the four pages
+    facts = report(fx.statement_table())
+    assert facts["headersFootersRemoved"] == 0 and facts["removedLines"] == []
+
+
+def test_a_ruled_tables_header_row_is_kept_and_not_reported_as_removed():
+    out = plain(fx.statement_table(ruled=True))
+    assert out.count("| Date | Reference | Description | Amount |") == 4
+    assert all(f"| {row[1]} |" in out for row in fx.statement_rows())
+    assert report(fx.statement_table(ruled=True))["removedLines"] == []
+
+
+@pytest.mark.parametrize("make", [fx.headers_and_footers, fx.sample_report, fx.slide_deck, fx.statement_table],
+                         ids=["report", "sample", "slides", "statement"])
+def test_lines_reported_as_removed_are_gone_from_the_markdown(make):
+    result = worker.convert(fitz.open(stream=make(), filetype="pdf"), worker.Options(page_markers=False))
+    out = worker._md(result.blocks)
+    lines = {line.strip("| ") for line in out.splitlines()}
+    for line in result.report["removedLines"]:
+        # A slide number ("1") is gone as a line; words are gone everywhere.
+        assert line not in (out if re.search(r"[A-Za-z]", line) else lines), line
+
+
+def test_page_numbers_and_literal_running_lines_are_still_removed():
+    facts = report(fx.headers_and_footers())
+    assert set(facts["removedLines"]) == {fx.RUNNING_HEADER, "Page 1 of 4", fx.RUNNING_FOOTER}
+
+
+def test_slides_with_a_background_rectangle_keep_titles_and_lists():
+    """B3: a page-sized background made every slide one table."""
+    out = plain(fx.slide_deck())
+    assert sum(line.startswith("| ---") for line in out.splitlines()) == 1 and "| Team | Q2 | Q3 |" in out
+    assert "# Board Update: Q3 2026" in out and "## Agenda" in out
+    assert "- Results for the quarter\n- Customer growth\n  - New regions\n  - Retention\n- Risks and next steps" in out
+    assert "[Image: Figure 2: Customers by region, end of Q3]" in out
+    assert fx.DECK_FOOTER not in out
+    # S8: the bullets are body text, not headings, though the footer is the most common small size.
+    assert "#" not in "\n".join(line for line in out.splitlines() if "Revenue up" in line)
+
+
+def test_two_lists_side_by_side_on_a_slide_are_read_one_after_the_other():
+    out = plain(fx.slide_deck())
+    assert in_order(out, "Option A: build", "Own the platform", "18 months to launch", "Option B: partner",
+                    "Launch in 6 months", "Less control")
+
+
+@pytest.mark.parametrize("uri", [
+    'https://example.com/a"><img src=x onerror=alert(1)>',
+    "https://example.com/a>b<script>alert(1)</script>",
+    "https://example.com/x y(1)",
+])
+def test_a_link_address_cannot_carry_markup(uri):
+    """B4: an address was wrapped in <...> as it was, so a > in it let raw HTML through."""
+    import mistune
+
+    out = plain(fx.link_to(uri))
+    html = mistune.create_markdown(escape=False)(out)
+    assert "<img" not in html and "<script" not in html
+    assert html.count("<a ") <= 1 and "Read the guide here before you start." in html
+
+
+def test_a_link_address_keeps_working_once_encoded():
+    out = plain(fx.link_to("https://example.com/search?q=a b&lang=en"))
+    assert out.strip() == "[Read the guide here before you start.](https://example.com/search?q=a%20b&lang=en)"
+
+
+def test_justified_german_columns_read_down_each_column():
+    """B5: wide word spaces split justified lines, and the columns were read across."""
+    out = plain(fx.german_columns())
+    assert [int(n) for n in re.findall(r"\[(\d+)\]", out)] == list(range(1, 16))
+    assert len([p for p in out.split("\n\n") if p.strip()]) == 15
+
+
+def test_three_narrow_justified_columns_read_down_each_column():
+    out = plain(fx.three_narrow_columns())
+    assert [int(n) for n in re.findall(r"\[(\d+)\]", out)] == list(range(1, 25))
+    assert len([p for p in out.split("\n\n") if p.strip()]) == 24
+
+
+def test_four_justified_columns_read_down_each_column():
+    out = plain(fx.four_columns())
+    assert [int(n) for n in re.findall(r"\[(\d+)\]", out)] == list(range(1, 49))
+
+
+def test_numbered_section_headings_stay_headings():
+    """S1: "1. Introduction" in heading type became an ordered-list item."""
+    out = plain(fx.numbered_headings())
+    for section, sub, text in fx.NUMBERED_SECTIONS:
+        assert f"## {section}\n\n### {sub}\n\n{text}" in out
+
+
+def test_superscripts_are_marked_not_glued_to_their_numbers():
+    """S2: 2019 with a footnote mark 3 came out as 20193."""
+    out = plain(fx.superscripts())
+    assert "4.2×10<sup>7</sup> m<sup>3</sup> in 2019<sup>3</sup>" in out
+    assert "12 km<sup>2</sup> of catchment" in out
+
+
+def test_right_to_left_text_keeps_its_order():
+    """S3: the pieces of a Hebrew line were put in left-to-right order."""
+    assert plain(fx.hebrew()).strip() == fx.HEBREW_SENTENCE
+
+
+def test_addresses_side_by_side_stay_apart_and_label_rows_stay_rows():
+    """S4: the bill-to and ship-to addresses were read line by line across."""
+    out = plain(fx.invoice())
+    lines = [line for line in out.splitlines() if line.strip()]
+    bill = [i for i, line in enumerate(lines) if any(part in line for part in fx.BILL_TO[2:])]
+    ship = [i for i, line in enumerate(lines) if "Riverside" in line or "LS10" in line]
+    assert max(bill) < min(ship)
+    for label, value in fx.INVOICE_META:
+        assert f"**{label}** {value}" in out
+    assert "| Description | Qty | Unit price | Amount |" in out
+
+
+def test_a_table_ruled_only_under_its_header_keeps_its_header():
+    """S13: with no rule above the column names, the first item became the header."""
+    out = plain(fx.invoice(lined=False))
+    assert "| Description | Qty | Unit price | Amount |\n| --- | --- | --- | --- |\n| Annual support plan (Gold) |" in out
+
+
+@pytest.mark.parametrize("leading", [1.5, 2.0])
+def test_paragraphs_at_one_and_a_half_or_double_spacing_stay_whole(leading):
+    """S5: every line of a loosely spaced paragraph became a paragraph of its own."""
+    out = plain(fx.spaced_lines(leading))
+    assert [p.strip() for p in out.split("\n\n") if p.strip()] == fx.SPACED_PARAGRAPHS
+
+
+@pytest.mark.parametrize("line_height", [1.3, 1.6])
+def test_chinese_lines_join_without_a_space(line_height):
+    out = plain(fx.chinese(line_height))
+    assert out.strip() == fx.CHINESE
+
+
+def test_a_wrapped_line_starting_with_a_dash_or_a_number_is_not_a_list_item():
+    """S6: a dash or "12." at the start of a wrapped line began a list."""
+    out = plain(fx.dash_wraps())
+    assert "\n- " not in out and "\n12. " not in out and "\n\\- " not in out
+    assert len([p for p in out.split("\n\n") if p.strip()]) == 1
+
+
+def test_more_bullet_marks_make_list_items():
+    """S7: arrows, boxes, stars, guillemets, middle dots and Word's Courier "o" were not marks."""
+    out = plain(fx.bullet_variety())
+    for _, text in fx.BULLET_VARIETY:
+        assert f"- {text}" in out
+    assert "- Market Street\n  - North side\n  - South side\n- Harbour Road" in out
+    assert "`o`" not in out
+
+
+def test_short_notes_between_small_tables_are_not_headings():
+    """S8: the body size came from the table cells, so the notes looked like headings."""
+    out = plain(fx.tables_and_notes())
+    for q in range(1, 4):
+        assert f"\nThe table below lists sales for quarter {q}.\n" in out
+    assert "#" not in "\n".join(line for line in out.splitlines() if "table below" in line)
+
+
+def test_a_picture_is_kept_on_a_page_whose_text_is_all_in_a_table():
+    """S11: the page counted as having no text once the table took it."""
+    out = plain(fx.picture_and_table())
+    assert "[Image]" in out and "| Region | Hives |" in out
+
+
+def test_thematic_break_lookalikes_stay_text():
+    out = plain(fx.thematic_breaks())
+    assert "\\---" in out and "\\___" in out and "\\*\\*\\*" in out
+
+
+def test_a_truncated_pdf_is_called_damaged():
+    """N1: the first half of a file was refused as having no pages."""
+    with pytest.raises(worker.Refusal) as refusal:
+        md(fx.truncated())
+    assert refusal.value.kind in ("corrupt", "unreadable")
+
+
+def test_a_page_drawing_too_much_is_converted_without_its_drawings(monkeypatch):
+    """S9: the drawings were all read before their number was checked."""
+    monkeypatch.setattr(worker, "MAX_TABLE_DRAWINGS", 1000)
+    monkeypatch.setattr(worker, "MAX_CONTENT_BYTES", 50_000)
+    calls = []
+    original = fitz.Page.get_cdrawings
+    monkeypatch.setattr(fitz.Page, "get_cdrawings", lambda self, *a, **k: calls.append(1) or original(self, *a, **k))
+    out = plain(fx.many_strokes(20_000))
+    assert "A map with many strokes." in out
+    assert calls == []
+
+
 # ── Limits and the worker process ────────────────────────────────────────────
 
 def test_the_service_states_the_workers_limits():
@@ -418,6 +618,17 @@ def test_the_service_states_the_workers_limits():
         (worker.CHUNK_MIN, worker.CHUNK_MAX, worker.CHUNK_DEFAULT)
     assert service.cpu_budget(100) == worker.cpu_budget(100) == 22
     assert service.cpu_budget(10_000) == worker.CPU_SECONDS_MAX
+
+
+def test_the_page_states_the_services_limit_and_knows_its_scan_refusal():
+    """The page states the page limit and answers a scan's refusal with a
+    link to OCR PDF, by the refusal's exact words (N9)."""
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[2] / "frontend/src/components/tool-ui/pdf-to-markdown-report.ts").read_text()
+    assert f"export const MAX_PAGES = {service.MAX_PAGES};" in source
+    declared = re.search(r"export const SCAN_MESSAGE = (.*?);\n", source, re.S).group(1)
+    assert "".join(re.findall(r'"((?:[^"\\]|\\.)*)"', declared)) == service.SCAN_MESSAGE
 
 
 def test_too_many_pages_is_refused_before_any_page_is_read():
@@ -484,17 +695,20 @@ def test_the_route_answers_with_markdown_and_a_report(client):
     facts = json.loads(resp.headers["x-markdown-report"])
     assert facts["pages"] == 2 and facts["tables"] == 1 and facts["chunks"] == 1
     assert "| Name | Role | Started |" in resp.text
-    assert resp.text.startswith("<!-- page 1 -->\n\n# Quarterly Engineering Notes")
+    # API callers get no page markers, and nothing left out, unless they ask.
+    assert "<!--" not in resp.text and fx.RUNNING_HEADER in resp.text and facts["headersFootersRemoved"] == 0
 
 
 def test_the_route_reads_its_options(client):
-    resp = post(client, fx.headers_and_footers(), page_markers=False, remove_headers_footers=False)
+    resp = post(client, fx.sample_report(), page_markers=True, remove_headers_footers=True)
     assert resp.status_code == 200
-    assert "<!--" not in resp.text and fx.RUNNING_HEADER in resp.text
+    assert resp.text.startswith("<!-- page 1 -->\n\n# Quarterly Engineering Notes")
+    assert fx.RUNNING_HEADER not in resp.text
+    assert json.loads(resp.headers["x-markdown-report"])["headersFootersRemoved"] == 2
 
 
 def test_the_route_sends_chunks_as_a_zip(client):
-    resp = post(client, fx.headers_and_footers(), chunk="headings")
+    resp = post(client, fx.headers_and_footers(), chunk="headings", remove_headers_footers=True)
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/zip"
     assert 'filename="report_chunks.zip"' in resp.headers["content-disposition"]
@@ -504,7 +718,7 @@ def test_the_route_sends_chunks_as_a_zip(client):
 
 
 def test_the_route_sends_chunks_in_one_file_when_asked(client):
-    resp = post(client, fx.headers_and_footers(), chunk="headings", chunk_output="single")
+    resp = post(client, fx.headers_and_footers(), chunk="headings", chunk_output="single", remove_headers_footers=True)
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "text/markdown; charset=utf-8"
     assert resp.text.count("<!-- chunk ") == 4
@@ -595,19 +809,33 @@ def test_a_conversion_out_of_cpu_time_is_a_422_that_says_so(client, monkeypatch,
     assert resp.json()["detail"] == service.TOO_SLOW_MESSAGE
 
 
-def test_a_conversion_out_of_memory_is_a_413(client, monkeypatch, tmp_path):
-    _stub_worker(tmp_path, monkeypatch, "print('{\"ok\": false, \"error\": \"too_large\"}')\n")
+@pytest.mark.parametrize("body", [
+    "print('{\"ok\": false, \"error\": \"too_large\"}')\n",
+    "import os, signal\nos.kill(os.getpid(), signal.SIGSEGV)\n",
+    "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n",
+], ids=["says-so", "crashed", "killed"])
+def test_a_conversion_out_of_memory_is_a_413(client, monkeypatch, tmp_path, body):
+    """S9: running out of memory under the limit can crash MuPDF rather than
+    raise, so a worker killed without an answer is a 413 too."""
+    _stub_worker(tmp_path, monkeypatch, body)
     resp = post(client, fx.headings())
     assert resp.status_code == 413
     assert "Split PDF" in resp.json()["detail"]
 
 
+def test_a_page_drawing_a_great_deal_converts_without_its_drawings(client):
+    """S9: a page drawing a million strokes crashed the worker while it listed
+    them; a page past the content limit is now converted without them."""
+    resp = post(client, fx.many_strokes(120_000))
+    assert resp.status_code == 200
+    assert resp.text.strip() == "A map with many strokes."
+
+
 @pytest.mark.parametrize("body", [
-    "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n",
     "print('not json')\n",
     "print('{\"ok\": true}')\n",
     "print('{\"ok\": false, \"error\": \"too_many_pages\"}')\n",
-], ids=["killed", "garbage", "ok-without-output", "refusal-without-counts"])
+], ids=["garbage", "ok-without-output", "refusal-without-counts"])
 def test_a_conversion_that_fails_gives_a_500(client, monkeypatch, tmp_path, body):
     _stub_worker(tmp_path, monkeypatch, body)
     resp = post(client, fx.headings())

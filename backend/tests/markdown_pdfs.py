@@ -598,6 +598,377 @@ def markdown_lookalikes() -> bytes:
     return doc.tobytes()
 
 
+# ── From the review of round 1 (bundled fonts only, so CI draws the same) ────
+
+STATEMENT_HEAD = ["Date", "Reference", "Description", "Amount"]
+
+
+def statement_rows(count: int = 130) -> list[list[str]]:
+    return [[f"{(d % 28) + 1:02d}/03/2026", f"TX{1000 + d}", f"Payment to supplier number {d % 17}",
+             f"{(d * 37) % 900 + 10}.{d % 100:02d}"] for d in range(count)]
+
+
+def statement_table(ruled: bool = False) -> bytes:
+    """A bank statement's table over four pages, half-inch margins, its column
+    names repeated at the top of every page: no running header in sight."""
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.lib.units import inch
+
+    out = io.BytesIO()
+    m = 0.5 * inch
+    doc = BaseDocTemplate(out, pagesize=LETTER, leftMargin=m, rightMargin=m, topMargin=m, bottomMargin=m)
+    doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(m, m, LETTER[0] - 2 * m, LETTER[1] - 2 * m)])])
+    table = Table([STATEMENT_HEAD] + statement_rows(), colWidths=[90, 90, 260, 90], repeatRows=1)
+    style = [("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 9), ("FONT", (0, 1), (-1, -1), "Helvetica", 9)]
+    if ruled:
+        style.append(("GRID", (0, 0), (-1, -1), 0.5, colors.black))
+    table.setStyle(TableStyle(style))
+    doc.build([table])
+    return out.getvalue()
+
+
+DECK_FOOTER = "Harbour Placeholder Group · Board update · Confidential"
+
+
+def slide_deck() -> bytes:
+    """Seven 16:9 slides as presentation software exports them: a page-sized
+    background rectangle, a coloured bar, a title, bullets, a footer and a
+    slide number. One slide has two lists side by side, one a picture with a
+    caption, one a ruled table."""
+    width, height = 960, 540
+    doc = fitz.open()
+    sans, sans_bold = fitz.Font("helv"), fitz.Font("hebo")
+
+    def slide(n, title, bullets=(), twocol=None, image=None, table=None, title_size=36):
+        page = doc.new_page(width=width, height=height)
+        page.draw_rect(page.rect, color=None, fill=(0.97, 0.97, 1.0))
+        page.draw_rect(fitz.Rect(0, 0, width, 8), color=None, fill=(0.15, 0.3, 0.6))
+        tw = fitz.TextWriter(page.rect)
+        tw.append((60, 90), title, font=sans_bold, fontsize=title_size)
+
+        def put(x, y, items, size):
+            for level, text in items:
+                fs = size if level == 0 else size - 4
+                tw.append((x + level * 40, y), "•" if level == 0 else "–", font=sans, fontsize=fs)
+                tw.append((x + level * 40 + 28, y), text, font=sans, fontsize=fs)
+                y += fs * 1.6
+            return y
+
+        if bullets:
+            put(70, 160, bullets, 24)
+        if twocol:
+            tw.append((70, 160), twocol[0][0], font=sans_bold, fontsize=26)
+            tw.append((520, 160), twocol[1][0], font=sans_bold, fontsize=26)
+            put(70, 210, [(0, t) for t in twocol[0][1]], 22)
+            put(520, 210, [(0, t) for t in twocol[1][1]], 22)
+        if image:
+            page.insert_image(fitz.Rect(200, 130, 760, 430), stream=_chart_png())
+            tw.append((300, 465), image, font=sans, fontsize=18)
+        if table:
+            x0, y0, cw, rh = 120, 140, 240, 44
+            for r, row in enumerate(table):
+                for c, cell in enumerate(row):
+                    tw.append((x0 + c * cw + 12, y0 + r * rh + 30), cell, font=sans_bold if r == 0 else sans, fontsize=20)
+            for r in range(len(table) + 1):
+                page.draw_line((x0, y0 + r * rh), (x0 + cw * len(table[0]), y0 + r * rh))
+            for c in range(len(table[0]) + 1):
+                page.draw_line((x0 + c * cw, y0), (x0 + c * cw, y0 + rh * len(table)))
+        tw.append((60, height - 24), DECK_FOOTER, font=sans, fontsize=11)
+        tw.append((width - 60, height - 24), str(n), font=sans, fontsize=11)
+        tw.write_text(page)
+
+    slide(1, "Board Update: Q3 2026", [(0, "Prepared for the board meeting of 9 October")], title_size=44)
+    slide(2, "Agenda", [(0, "Results for the quarter"), (0, "Customer growth"), (1, "New regions"), (1, "Retention"),
+                        (0, "Risks and next steps")])
+    slide(3, "Results for the quarter", [(0, "Revenue up 12% to £4.1m"), (0, "Margin held at 31%"),
+                                         (1, "Energy costs offset by pricing"), (0, "Cash at quarter end: £2.6m")])
+    slide(4, "Two options for 2027", twocol=(("Option A: build", ["Own the platform", "18 months to launch", "£1.2m up front"]),
+                                             ("Option B: partner", ["Launch in 6 months", "Revenue share of 20%", "Less control"])))
+    slide(5, "Customers by region", image="Figure 2: Customers by region, end of Q3")
+    slide(6, "Headcount", table=[["Team", "Q2", "Q3"], ["Engineering", "24", "28"], ["Sales", "11", "13"], ["Support", "7", "7"]])
+    slide(7, "Thank you", [(0, "Questions?")], title_size=44)
+    return doc.tobytes(garbage=3, deflate=True)
+
+
+def link_to(uri: str) -> bytes:
+    """One sentence, its whole width a link to ``uri``."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 100), "Read the guide here before you start.", fontsize=11)
+    page.insert_link({"kind": fitz.LINK_URI, "from": fitz.Rect(72, 88, 300, 104), "uri": uri})
+    return doc.tobytes()
+
+
+GERMAN_PARAGRAPHS = [
+    "Die Stadtverwaltung bestätigte, dass die Grundstücksverkehrsgenehmigung für das Wasserwerk erteilt wurde. "
+    "Die Bauarbeiten beginnen voraussichtlich im Frühjahr, sofern die Umweltverträglichkeitsprüfung abgeschlossen ist.",
+    "Die Versorgungsunternehmen rechnen mit Investitionskosten von rund zwölf Millionen Euro. Die Finanzierung "
+    "erfolgt über Bundeszuschüsse und eine Kreditaufnahme der Gemeindewerke.",
+    "Bürgerinnen und Bürger können sich bei der Informationsveranstaltung im Gemeindezentrum über die "
+    "Trinkwasserversorgung und die geplanten Leitungserneuerungsmaßnahmen informieren.",
+]
+
+
+def _numbered(paragraphs: list[str], copies: int) -> list[str]:
+    """The paragraphs, repeated, each ending with its number in brackets."""
+    return [f"{p} [{n + 1}]" for n, p in enumerate(paragraphs * copies)]
+
+
+def german_columns() -> bytes:
+    """Two justified columns of German text, as a newsletter sets them: long
+    compounds leave wide word spaces, which split lines into short pieces.
+    Each paragraph ends with its number, so the order can be checked."""
+    out = io.BytesIO()
+    doc = BaseDocTemplate(out, pagesize=A4)
+    doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(50, 60, 240, 720, id="l"), Frame(305, 60, 240, 720, id="r")])])
+    style = ParagraphStyle("de", fontName="Times-Roman", fontSize=10, leading=12, alignment=TA_JUSTIFY, spaceAfter=8)
+    doc.build([Paragraph(t, style) for t in _numbered(GERMAN_PARAGRAPHS, 5)])
+    return out.getvalue()
+
+
+LONG_WORD_PARAGRAPHS = [
+    "Telecommunications infrastructure modernisation requires extraordinary interdepartmental collaboration, "
+    "notwithstanding considerable organisational counterproductiveness.",
+    "Characteristically, environmentally conscientious municipalities incentivise neighbourhood decarbonisation "
+    "through straightforward intergovernmental arrangements.",
+    "Representatives acknowledged unprecedented responsibilities, recommending comprehensive internationalisation "
+    "of semiconductor manufacturing capabilities.",
+]
+
+
+def three_narrow_columns() -> bytes:
+    """Three justified columns 160 points wide, of long English words: 24
+    paragraphs, which fill two columns and most of the third."""
+    out = io.BytesIO()
+    doc = BaseDocTemplate(out, pagesize=A4)
+    frames = [Frame(40 + i * 175, 60, 160, 720, id=f"c{i}") for i in range(3)]
+    doc.addPageTemplates([PageTemplate(id="p", frames=frames)])
+    style = ParagraphStyle("long", fontName="Times-Roman", fontSize=10, leading=12, alignment=TA_JUSTIFY, spaceAfter=8)
+    doc.build([Paragraph(t, style) for t in _numbered(LONG_WORD_PARAGRAPHS, 8)])
+    return out.getvalue()
+
+
+def four_columns() -> bytes:
+    """Four justified columns 118 points wide, as a newsletter sets them,
+    over two pages."""
+    out = io.BytesIO()
+    doc = BaseDocTemplate(out, pagesize=A4)
+    doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(40 + i * 132, 60, 118, 720, id=f"c{i}") for i in range(4)])])
+    style = ParagraphStyle("four", fontName="Times-Roman", fontSize=9, leading=11, alignment=TA_JUSTIFY, spaceAfter=6)
+    doc.build([Paragraph(t, style) for t in _numbered(COLUMN_PARAGRAPHS, 12)])
+    return out.getvalue()
+
+
+NUMBERED_SECTIONS = [("1. Introduction", "1.1 Background", "Allotments were first surveyed in the spring."),
+                     ("2. Method", "2.1 Sampling", "Every tenth plot was visited twice a month."),
+                     ("3. Results", "3.1 Yields", "Most plots grew more than the year before.")]
+
+
+def numbered_headings() -> bytes:
+    h2 = ParagraphStyle("nh2", parent=H2, fontSize=15)
+    h3 = ParagraphStyle("nh3", parent=H3, fontSize=12)
+    story: list = [Paragraph("Allotment Survey", H1)]
+    for section, sub, text in NUMBERED_SECTIONS:
+        story += [Paragraph(section, h2), Paragraph(sub, h3), Paragraph(text, BODY)]
+    return _build(story)
+
+
+SUPERSCRIPT_TEXT = ('The reservoir held 4.2×10<super>7</super> m<super>3</super> in 2019<super>3</super>, '
+                    'spread over 12 km<super>2</super> of catchment.')
+
+
+def superscripts() -> bytes:
+    return _build([Paragraph(SUPERSCRIPT_TEXT, BODY)])
+
+
+HEBREW_SENTENCE = "טיפלה הרשות ב־41.2 מיליון מטרים בשנת 2025."
+
+
+def hebrew() -> bytes:
+    """A Hebrew sentence with numbers in it, set right to left (MuPDF's own fonts)."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_htmlbox(fitz.Rect(72, 72, 520, 200), f'<p dir="rtl">{HEBREW_SENTENCE}</p>', css="p {font-size: 12pt}")
+    doc.subset_fonts()
+    return doc.tobytes()
+
+
+BILL_TO = ["Bill to", "Contoso Example plc", "Attn: Accounts Payable", "4 Mill Lane", "Leeds LS1 4AA"]
+SHIP_TO = ["Ship to", "Contoso Example plc", "Unit 9, Riverside Park", "Leeds LS10 1XX"]
+INVOICE_META = [("Invoice no.", "INV-2026-0417"), ("Invoice date", "2 March 2026"), ("Due date", "1 April 2026"),
+                ("PO number", "PO-55812")]
+INVOICE_ITEMS = [["Description", "Qty", "Unit price", "Amount"],
+                 ["Annual support plan (Gold)", "1", "£4,800.00", "£4,800.00"],
+                 ["On-site training day, two trainers", "2", "£950.00", "£1,900.00"],
+                 ["Replacement sensor kit", "12", "£42.50", "£510.00"]]
+
+
+def invoice(lined: bool = True) -> bytes:
+    """An invoice: bill-to and ship-to addresses side by side, a box of
+    label and value pairs, the line items (ruled as a grid, or ruled only
+    under the header and at the foot), and the totals."""
+    small = ParagraphStyle("small", fontName="Helvetica", fontSize=9, leading=11.5)
+    small_bold = ParagraphStyle("small-bold", parent=small, fontName="Helvetica-Bold")
+    from reportlab.lib.enums import TA_RIGHT
+
+    right = ParagraphStyle("right", parent=small, alignment=TA_RIGHT)
+    right_bold = ParagraphStyle("right-bold", parent=small_bold, alignment=TA_RIGHT)
+    meta = Table([[Paragraph("<b>%s</b><br/>%s" % (BILL_TO[0], "<br/>".join(BILL_TO[1:])), small),
+                   Paragraph("<b>%s</b><br/>%s" % (SHIP_TO[0], "<br/>".join(SHIP_TO[1:])), small),
+                   Table([[Paragraph(k, small_bold), Paragraph(v, right)] for k, v in INVOICE_META], colWidths=[70, 90])]],
+                 colWidths=[150, 150, WIDTH - 2 * MARGIN - 300])
+    meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    items = Table([[Paragraph(c, small_bold if r == 0 else small) if i == 0 else Paragraph(c, right_bold if r == 0 else right)
+                    for i, c in enumerate(row)] for r, row in enumerate(INVOICE_ITEMS)], colWidths=[260, 50, 80, 90])
+    style = [("VALIGN", (0, 0), (-1, -1), "TOP")]
+    if lined:
+        style += [("GRID", (0, 0), (-1, -1), 0.5, colors.grey)]
+    else:
+        style += [("LINEBELOW", (0, 0), (-1, 0), 1, colors.black), ("LINEBELOW", (0, -1), (-1, -1), 0.6, colors.black),
+                  ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#f2f4f7"))]
+    items.setStyle(TableStyle(style))
+    return _build([Paragraph("Invoice", H1), meta, Spacer(1, 18), items, Spacer(1, 8),
+                   Paragraph("<b>Total due</b> £7,210.00", small), Spacer(1, 10),
+                   Paragraph("Payment is due within 30 days. Please pay by bank transfer, quoting the invoice number.", small)])
+
+
+SPACED_PARAGRAPHS = [
+    "The committee met four times this year and heard from residents in every ward, most of them about parking.",
+    "Its report recommends a trial of residents' permits on three streets, a review after six months, and a "
+    "survey of businesses before any wider scheme is proposed to the council for a final decision.",
+]
+
+
+def spaced_lines(leading: float) -> bytes:
+    """Two paragraphs in a 240-point column, set at ``leading`` times the type
+    size, as 1.5 or double spacing sets them."""
+    style = ParagraphStyle(f"spaced{leading}", fontName="Helvetica", fontSize=11, leading=11 * leading,
+                           spaceAfter=11 * leading)
+    out = io.BytesIO()
+    doc = BaseDocTemplate(out, pagesize=A4)
+    doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(MARGIN, MARGIN, 240, HEIGHT - 2 * MARGIN)])])
+    doc.build([Paragraph(t, style) for t in SPACED_PARAGRAPHS])
+    return out.getvalue()
+
+
+CHINESE = ("二〇二五年，本市共处理自来水四千一百二十"
+           "万立方米，比上年增长百分之三点五。七月"
+           "份用水量达到全年最高，东区用水量比五年"
+           "平均水平高出百分之十八。")
+
+
+def chinese(line_height: float = 1.3) -> bytes:
+    """A Chinese paragraph wrapped over several lines (MuPDF's own CJK font)."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_htmlbox(fitz.Rect(72, 72, 300, 400), f"<p>{CHINESE}</p>", css=f"p {{font-size: 11pt; line-height: {line_height}}}")
+    doc.subset_fonts()
+    return doc.tobytes()
+
+
+def dash_wraps() -> bytes:
+    """A paragraph whose wrapped lines happen to start with a dash and a number."""
+    doc = fitz.open()
+    page = doc.new_page()
+    lines = ["The meeting heard three petitions from residents, one of them late and two of them",
+             "\u2013 a motion on parking and another on the market \u2013 already debated in the spring. The chair",
+             "said that the committee would answer all of them in writing before the end of the month,",
+             "12. a deadline which the clerk read into the record before the meeting closed for the day."]
+    tw = fitz.TextWriter(page.rect)
+    for i, line in enumerate(lines):
+        tw.append((72, 100 + i * 14), line, font=fitz.Font("helv"), fontsize=10)
+    tw.write_text(page)
+    return doc.tobytes()
+
+
+BULLET_VARIETY = [("→", "Arrow item"), ("☐", "Box item"), ("★", "Star item"),
+                  ("»", "Guillemet item"), ("·", "Middle dot item")]
+
+
+def bullet_variety() -> bytes:
+    """Lists marked with arrows, boxes, stars, guillemets and middle dots (MuPDF's
+    own fonts), and a Word list whose second level uses a Courier "o"."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 70), "Before the list.", fontname="helv", fontsize=11)
+    html = "".join(f"<p>{mark} {text}</p>" for mark, text in BULLET_VARIETY)
+    page.insert_htmlbox(fitz.Rect(72, 80, 400, 300), html, css="p {font-size: 11pt; margin: 0 0 4pt 0}")
+    tw = fitz.TextWriter(page.rect)
+    helv, cour = fitz.Font("helv"), fitz.Font("cour")
+    y = 330
+    for level, mark, text in [(0, "•", "Market Street"), (1, "o", "North side"), (1, "o", "South side"),
+                              (0, "•", "Harbour Road")]:
+        x = 72 + level * 36
+        tw.append((x, y), mark, font=cour if mark == "o" else helv, fontsize=11)
+        tw.append((x + 18, y), text, font=helv, fontsize=11)
+        y += 16
+    tw.write_text(page)
+    page.insert_text((72, y + 20), "After the list.", fontname="helv", fontsize=11)
+    doc.subset_fonts()
+    return doc.tobytes()
+
+
+def tables_and_notes() -> bytes:
+    """A page of small-type ruled tables with short notes in body type between them."""
+    note = ParagraphStyle("note", fontName="Helvetica", fontSize=11, leading=14, spaceAfter=6)
+    story: list = [Paragraph("Quarterly figures", H1)]
+    for q in range(1, 4):
+        story.append(Paragraph(f"The table below lists sales for quarter {q}.", note))
+        rows = [["Region", "Units", "Revenue"]] + [[f"Region {r}", str(100 * r + q), f"{1000 * r + q}.00"] for r in range(1, 7)]
+        t = Table(rows, colWidths=[120, 80, 100])
+        t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.black), ("FONT", (0, 0), (-1, -1), "Helvetica", 9)]))
+        story += [t, Spacer(1, 8)]
+    return _build(story)
+
+
+def picture_and_table() -> bytes:
+    """A page whose only text is in a ruled table, beside a picture."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_image(fitz.Rect(72, 72, 392, 232), stream=_chart_png())
+    top = 280
+    for r in range(3):
+        page.draw_line((72, top + r * 20), (472, top + r * 20))
+    for x in (72, 272, 472):
+        page.draw_line((x, top), (x, top + 40))
+    page.insert_text((76, top + 14), "Region", fontname="hebo", fontsize=10)
+    page.insert_text((276, top + 14), "Hives", fontname="hebo", fontsize=10)
+    page.insert_text((76, top + 34), "Harbour", fontsize=10)
+    page.insert_text((276, top + 34), "42", fontsize=10)
+    return doc.tobytes()
+
+
+def many_strokes(count: int) -> bytes:
+    """A page drawing ``count`` short strokes, as a detailed map does, and a line of text."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 60), "A map with many strokes.", fontsize=11)
+    page.clean_contents()
+    xref = page.get_contents()[0]
+    strokes = b"".join(b"%d %d m %d %d l " % (30 + i % 500, 80 + (i // 500) % 600, 32 + i % 500, 82 + (i // 500) % 600)
+                       for i in range(count))
+    doc.update_stream(xref, doc.xref_stream(xref) + b"\nq 0.2 w " + strokes + b"S Q")
+    return doc.tobytes()
+
+
+def truncated() -> bytes:
+    """A PDF cut short, as an interrupted download leaves it: its page's
+    content and font arrived, but not the page, the page tree, the catalog or
+    the cross-reference table, which this file writes after them."""
+    content = b"".join(b"BT /F1 10 Tf 72 %d Td (Line %d of the report.) Tj ET\n" % (800 - 12 * i, i) for i in range(60))
+    objects = [b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream",
+               b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    return b"%PDF-1.7\n" + b"".join(b"%d 0 obj\n" % n + body + b"\nendobj\n" for n, body in enumerate(objects, 1))
+
+
+def thematic_breaks() -> bytes:
+    doc = fitz.open()
+    page = doc.new_page()
+    for i, line in enumerate(["Before the rules.", "---", "___", "***", "After the rules."]):
+        page.insert_text((72, 100 + i * 30), line, fontsize=11)
+    return doc.tobytes()
+
+
 # ── Refusals ─────────────────────────────────────────────────────────────────
 
 def blank_pages() -> bytes:

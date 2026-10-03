@@ -109,8 +109,8 @@ async def url_to_pdf(request: Request, url: str = Form(...)):
 @router.post("/pdf-to-markdown")
 async def pdf_to_markdown(
     file: UploadFile = File(...),
-    page_markers: bool = Form(True),
-    remove_headers_footers: bool = Form(True),
+    page_markers: bool = Form(False),
+    remove_headers_footers: bool = Form(False),
     chunk: Literal["none", "headings", "size"] = Form("none"),
     chunk_size: int = Form(pdf_to_markdown_service.CHUNK_DEFAULT, ge=pdf_to_markdown_service.CHUNK_MIN,
                            le=pdf_to_markdown_service.CHUNK_MAX),
@@ -119,9 +119,11 @@ async def pdf_to_markdown(
     """Convert a PDF to Markdown: headings, paragraphs, lists, tables, code,
     links and picture placeholders, in reading order across columns.
 
-    ``page_markers`` puts ``<!-- page N -->`` before each page;
-    ``remove_headers_footers`` drops lines repeated at the top or bottom of
-    most pages. ``chunk`` splits the Markdown at headings or at about
+    ``page_markers`` puts ``<!-- page N -->`` before each page, and
+    ``remove_headers_footers`` leaves out lines repeated at the top or bottom
+    of at least 40% of the pages (the same on each but for a page number),
+    unless they sit in a table or run straight on into the text; both are
+    off unless asked for. ``chunk`` splits the Markdown at headings or at about
     ``chunk_size`` characters, into a ZIP of .md files or, with
     ``chunk_output=single``, one file with ``<!-- chunk N of M -->`` between
     the parts. The X-Markdown-Report header says what was found, and which
