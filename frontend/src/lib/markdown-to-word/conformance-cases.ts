@@ -4,11 +4,14 @@
  * the parser's tree as HTML and compares.
  *
  * Written for the review of the parser (pull request #322). Many inputs and
- * expected outputs are examples from the CommonMark Spec and the GitHub
- * Flavored Markdown Spec, by John MacFarlane and contributors, licensed
- * under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/):
+ * expected outputs are adapted from examples in the CommonMark Spec and the
+ * GitHub Flavored Markdown Spec, by John MacFarlane and contributors,
+ * licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/):
  * https://spec.commonmark.org/0.31.2/ and https://github.github.com/gfm/.
- * This file shares them under the same licence.
+ * Changes: the expected HTML is rewritten for this test's renderer, and some
+ * examples are shortened or combined. This file as a whole is licensed under
+ * CC BY-SA 4.0. It is test data only: nothing in the app imports it, and it
+ * is not part of the build or the image.
  */
 export const CONFORMANCE_CASES: [id: string, markdown: string, html: string][] = [
     // ── Tabs ──

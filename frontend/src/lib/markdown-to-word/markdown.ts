@@ -1127,19 +1127,22 @@ class InlineParser {
                 const match = matchAt(MAIN_TEXT, this.subject, this.pos);
                 if (!match) return false;
                 const text = match[0];
-                // A www. address is read where it starts, as http:// ones are at the colon.
-                for (let at = this.brackets ? -1 : text.indexOf("www."); at >= 0; at = text.indexOf("www.", at + 4)) {
+                // A www. address is read where it starts, as http:// ones are at the colon. Every
+                // address in this run is taken here, so the run is never matched again from inside it.
+                let done = 0;
+                for (let at = this.brackets ? -1 : text.indexOf("www."); at >= 0; at = text.indexOf("www.", Math.max(at + 4, done))) {
                     const start = this.pos + at;
                     if (!addressMayStart(this.subject, start)) continue;
                     const label = readWebAddress(this.subject, start);
                     if (!label) continue;
-                    if (at > 0) block.appendChild(new INode("text", text.slice(0, at)));
+                    if (at > done) block.appendChild(new INode("text", text.slice(done, at)));
                     this.appendAddress(block, label, `http://${label}`);
-                    this.pos = start + label.length;
-                    return true;
+                    done = at + label.length;
+                    // An address that runs past this run (into *, _ or $) ends the reading here.
+                    if (done >= text.length) { this.pos += done; return true; }
                 }
+                if (done < text.length) block.appendChild(new INode("text", text.slice(done)));
                 this.pos += text.length;
-                block.appendChild(new INode("text", text));
                 return true;
             }
         }

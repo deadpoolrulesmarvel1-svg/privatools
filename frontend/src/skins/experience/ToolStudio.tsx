@@ -158,8 +158,9 @@ export function StudioResult({ title, detail, children, onReset, tone = "success
 
 /**
  * A result's actions in the shared order. A failure leads with a fresh file,
- * opened straight from the button; otherwise the caller's primary action
- * (usually the download) leads. "Try again" appears only when some failures
+ * opened straight from the button, or, for a tool that starts from pasted
+ * text and passes no `choose`, with its own primary action; otherwise the
+ * caller's primary action (usually the download) leads. "Try again" appears only when some failures
  * could pass on another attempt (connection, time limit, rate limit, server
  * fault), never for a file the tool refused.
  */

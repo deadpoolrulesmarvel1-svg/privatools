@@ -43,6 +43,7 @@ const PATHOLOGICAL: [string, string][] = [
     ["entity-like endings after an address", `www.example.com${"&a;".repeat(100000)}`],
     ["web addresses with invalid domains", `${"(http://a._".repeat(30000)}x`],
     ["www. after underscores", "_www.a_".repeat(15000)],
+    ["many www. addresses on one line", "see www.a.bc ".repeat(30000)],
     ["a long run of spaces inside a line", `a${" ".repeat(100000)}b`],
     ["a long run of tabs inside a line", `a${"\t".repeat(25000)}b`],
     ["a heading with a long run of spaces", `# a${" ".repeat(100000)}b ##`],
