@@ -8,13 +8,24 @@
  * a click on Stop, which ends the run after the window in hand and keeps what
  * is done.
  *
- * When Whisper stops writing before the speech in a window ends, it is asked
- * again from the speech it left out, at most twice a window (timing.ts says
- * where), and words the second pass repeats are kept once.
+ * What Whisper writes is checked (quality.ts). Punctuation alone is left
+ * out. A window written as one phrase over and over, as a whole or within a
+ * segment, is heard again in two halves, cut at a pause near its middle, with
+ * no three words allowed to repeat (openai-whisper decodes again on a loop;
+ * where a window's boundaries fall changes what Whisper writes). The looping
+ * segments of a half that still loops are left out, and a half that still
+ * loops, or uses far too few different words, is left out whole; either way
+ * its stretch is reported, like one the browser could not decode. When Whisper stops
+ * writing before the speech in a window ends, it is asked again from the
+ * speech it left out, at most twice a window (timing.ts says where); a
+ * second pass that writes what Whisper writes over music or noise (a stock
+ * line, a loop, a repeat of the window's words, or far too little text for
+ * its time) adds nothing, and the window is not asked again.
  */
 import type { SpeechSegment } from "@/lib/speechTranscript";
-import { noiseFloor, pausesIn, snapToPauses, tightenToSpeech, unheardSpeech } from "./timing";
-import { isSilent, SAMPLE_RATE, windowEnd } from "./windows";
+import { hasWords, isLoop, isStockLine, repeats, tooFewWords, tooSparse, wordsOf } from "./quality";
+import { fitToText, noiseFloor, pausesIn, snapToPauses, tightenToSpeech, unheardSpeech } from "./timing";
+import { isSilent, middleCut, SAMPLE_RATE, windowEnd } from "./windows";
 
 /** A timed piece of Whisper's output, in seconds from the start of the audio it was given. */
 export interface WhisperChunk { timestamp: [number | null, number | null]; text: string }
@@ -46,6 +57,8 @@ export interface RecognizedSpeech {
     stopped: boolean;
     /** Stretches the browser could not decode, in seconds: no words come from them. */
     unreadable: { start: number; end: number }[];
+    /** Stretches where Whisper wrote only a loop, in seconds: their words are left out. */
+    unclear: { start: number; end: number }[];
 }
 
 /** A task boundary rather than a microtask: the page draws and handles input before the next window. */
@@ -59,32 +72,53 @@ const round = (seconds: number) => Math.round(seconds * 1000) / 1000;
 /** How many more times Whisper is asked for speech it left out of one window. */
 const RETRIES = 2;
 
-type WordSegmenter = new (locale?: string, options?: { granularity: "word" }) => { segment(text: string): Iterable<{ segment: string; index: number; isWordLike?: boolean }> };
-const Segmenter = (Intl as unknown as { Segmenter?: WordSegmenter }).Segmenter;
-const segmenter = Segmenter ? new Segmenter(undefined, { granularity: "word" }) : null;
+type Timed = { start: number; end: number; text: string };
 
-/** The words of a text, compared without case or punctuation, with where each starts. */
-function wordsOf(text: string): { word: string; index: number }[] {
-    const words = segmenter
-        ? [...segmenter.segment(text)].filter(part => part.isWordLike).map(part => ({ word: part.segment, index: part.index }))
-        : [...text.matchAll(/\S+/g)].map(match => ({ word: match[0], index: match.index ?? 0 }));
-    return words
-        .map(({ word, index }) => ({ word: word.normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, ""), index }))
-        .filter(({ word }) => word);
-}
+const textOf = (segments: readonly Timed[]) => segments.map(segment => segment.text).join(" ");
 
 /**
  * `earlier` without the words at its end that `later` starts with: the same
- * speech, written by two passes over it. At least `fewest` words must match.
+ * speech, written by two passes over the same stretch. At most `most` words
+ * go, the ones that can lie in that stretch, and never all of them.
  */
-export function withoutRepeat(earlier: string, later: string, fewest: number): string {
+export function withoutRepeat(earlier: string, later: string, most: number): string {
     const first = wordsOf(earlier);
     const second = wordsOf(later);
-    for (let count = Math.min(first.length, second.length); count >= Math.max(1, fewest); count--) {
+    for (let count = Math.min(first.length - 1, second.length, most); count >= 1; count--) {
         const tail = first.slice(first.length - count);
         if (tail.every((word, i) => word.word === second[i].word)) return earlier.slice(0, tail[0].index).replace(/[\s,;:–—-]+$/u, "");
     }
     return earlier;
+}
+
+/**
+ * Whether a second pass wrote speech rather than what Whisper writes over
+ * music or noise: no segment of it a stock line, a loop, far too little text
+ * for its time, or a repeat of what the window already says.
+ */
+function wroteSpeech(more: readonly Timed[], before: string): boolean {
+    if (isLoop(textOf(more))) return false;
+    return more.every(segment => !isStockLine(segment.text) && !isLoop(segment.text) && !tooSparse(segment) && !repeats(segment.text, before));
+}
+
+const plain = (text: string) => wordsOf(text).map(({ word }) => word).join(" ");
+
+/**
+ * The segments of a window that still loops after Whisper heard it again,
+ * without the looping ones: a segment that loops on its own, or three or more
+ * in a row that say the same. When what is left still loops, nothing is kept.
+ */
+function withoutLoops(segments: readonly Timed[]): { kept: Timed[]; dropped: Timed[] } {
+    const looping = segments.map(segment => isLoop(segment.text));
+    for (let i = 0; i < segments.length;) {
+        let j = i + 1;
+        while (j < segments.length && plain(segments[j].text) === plain(segments[i].text)) j++;
+        if (j - i >= 3) for (let k = i; k < j; k++) looping[k] = true;
+        i = j;
+    }
+    let kept = segments.filter((_, i) => !looping[i]);
+    if (isLoop(textOf(kept))) kept = [];
+    return { kept, dropped: segments.filter(segment => !kept.includes(segment)) };
 }
 
 async function* single(samples: Float32Array): AsyncGenerator<AudioChunk> {
@@ -101,6 +135,7 @@ export async function recognizeSpeech(audio: Float32Array | AsyncIterable<AudioC
     let totalSeconds = audio instanceof Float32Array ? audio.length / SAMPLE_RATE : options.totalSeconds ?? 0;
     const segments: SpeechSegment[] = [];
     const unreadable: { start: number; end: number }[] = [];
+    const unclear: { start: number; end: number }[] = [];
     // Audio received but not yet recognised, starting `pendingStart` samples into the audio.
     let pending = new Float32Array(0);
     let pendingStart = 0;
@@ -126,12 +161,12 @@ export async function recognizeSpeech(audio: Float32Array | AsyncIterable<AudioC
         onProgress?.(done, totalSeconds);
     };
 
-    /** Whisper's segments for the window from `at` seconds in, in seconds within the window. */
-    const listen = async (window: Float32Array, offset: number, at = 0) => {
-        const audio = window.subarray(Math.round(at * SAMPLE_RATE));
+    /** Whisper's segments for the window from `at` seconds in, to `until`, in seconds within the window, none of punctuation alone. */
+    const listen = async (window: Float32Array, offset: number, at = 0, extra: Record<string, unknown> = {}, until?: number): Promise<Timed[]> => {
+        const audio = window.subarray(Math.round(at * SAMPLE_RATE), until === undefined ? undefined : Math.round(until * SAMPLE_RATE));
         const seconds = audio.length / SAMPLE_RATE;
         // Within a window, progress follows the timestamps Whisper writes as it goes.
-        const output = await recognize(audio, { return_timestamps: true, language, task: "transcribe" },
+        const output = await recognize(audio, { return_timestamps: true, language, task: "transcribe", ...extra },
             position => report(offset + at + clamp(position, 0, seconds)));
         const found = output.chunks ?? (output.text?.trim() ? [{ timestamp: [0, seconds] as [number, number], text: output.text }] : []);
         // A segment Whisper left open, or timed past the audio it was given, ends with that audio.
@@ -139,7 +174,54 @@ export async function recognizeSpeech(audio: Float32Array | AsyncIterable<AudioC
             const [begin, end] = chunk.timestamp;
             const start = clamp(begin ?? 0, 0, seconds);
             return { start: at + start, end: at + clamp(end ?? seconds, start, seconds), text: chunk.text.trim() };
-        }).filter(segment => segment.text);
+        }).filter(segment => hasWords(segment.text));
+    };
+
+    /** A stretch, in seconds from the start of the audio, whose words were left out; one that touches the last joins it. */
+    const leaveOut = (start: number, end: number) => {
+        const previous = unclear[unclear.length - 1];
+        if (previous && start - previous.end <= 1) previous.end = Math.max(previous.end, round(end));
+        else unclear.push({ start: round(start), end: round(end) });
+    };
+
+    /** What Whisper heard in one window, checked, in seconds within the window. */
+    const hearWindow = async (window: Float32Array, offset: number, floor: number): Promise<Timed[]> => {
+        let timed = await listen(window, offset);
+        // A loop over the whole window, or inside one segment of it.
+        const loops = (segments: readonly Timed[]) => isLoop(textOf(segments)) || segments.some(segment => isLoop(segment.text));
+        if (loops(timed)) {
+            const seconds = window.length / SAMPLE_RATE;
+            const cut = middleCut(window) / SAMPLE_RATE;
+            timed = [];
+            for (const [from, to] of [[0, cut], [cut, seconds]]) {
+                const half = await listen(window, offset, from, { no_repeat_ngram_size: 3 }, to);
+                const { kept, dropped } = loops(half) ? withoutLoops(half) : { kept: half, dropped: [] as Timed[] };
+                if (tooFewWords(textOf(kept)) || loops(kept)) {
+                    leaveOut(offset + from, offset + to);
+                    continue;
+                }
+                for (const segment of dropped) leaveOut(offset + segment.start, offset + segment.end);
+                timed.push(...kept);
+            }
+        }
+        for (let retry = 0; retry < RETRIES && timed.length && !signal?.aborted; retry++) {
+            const last = timed[timed.length - 1];
+            const resume = unheardSpeech(window, last.start, last.end, floor);
+            if (resume === null) break;
+            const more = await listen(window, offset, resume);
+            if (!more.length) break;
+            // Asked again from inside the last segment, Whisper may write some of its words again:
+            // no more of them than can lie in the stretch both passes heard.
+            const inside = resume < last.end;
+            const words = wordsOf(last.text).length;
+            const shared = inside ? Math.ceil(words * (last.end - resume) / Math.max(last.end - last.start, 0.001)) : 0;
+            const trimmed = shared ? withoutRepeat(last.text, more[0].text, shared) : last.text;
+            if (!wroteSpeech(more, textOf([...timed.slice(0, -1), { ...last, text: trimmed }]))) break;
+            last.text = trimmed;
+            if (inside) last.end = resume;
+            timed.push(...more);
+        }
+        return timed;
     };
 
     const recogniseReady = async (final: boolean) => {
@@ -152,28 +234,20 @@ export async function recognizeSpeech(audio: Float32Array | AsyncIterable<AudioC
             const window = rest.subarray(0, length);
             const offset = (pendingStart + from) / SAMPLE_RATE;
             if (!isSilent(window)) {
-                const timed = await listen(window, offset);
                 const floor = noiseFloor(window);
-                for (let retry = 0; retry < RETRIES && timed.length && !signal?.aborted; retry++) {
-                    const last = timed[timed.length - 1];
-                    const resume = unheardSpeech(window, last.start, last.end, floor);
-                    if (resume === null) break;
-                    const more = await listen(window, offset, resume);
-                    if (!more.length) break;
-                    // Asked again from inside the last segment, Whisper may write some of its words again.
-                    const inside = resume < last.end;
-                    last.text = withoutRepeat(last.text, more[0].text, inside ? 1 : 2);
-                    if (inside) last.end = resume;
-                    if (!last.text) timed.pop();
-                    timed.push(...more);
-                }
+                const timed = await hearWindow(window, offset, floor);
                 // Whisper's segment times are coarse: shared boundaries move into the pause between
-                // sentences, then each segment is drawn in to the sound inside it (timing.ts).
+                // sentences, each segment is drawn in to the sound inside it, and a run still far
+                // longer than its text takes to say gets the time its text takes (timing.ts).
                 snapToPauses(timed, pausesIn(window, floor));
-                for (const segment of timed) {
+                const fitted = timed.map(segment => {
                     const [begin, end] = tightenToSpeech(window, segment.start, segment.end, floor) ?? [segment.start, segment.end];
-                    const start = round(offset + begin);
-                    let stop = round(offset + end);
+                    return { start: begin, end, text: segment.text };
+                });
+                fitToText(window, fitted);
+                for (const segment of fitted) {
+                    const start = round(offset + segment.start);
+                    let stop = round(offset + segment.end);
                     // No words come from a stretch the browser could not decode: it was silence to Whisper.
                     if (unreadable.some(range => start >= range.start && start < range.end)) continue;
                     for (const range of unreadable) if (start < range.start && stop > range.start) stop = range.start;
@@ -203,5 +277,5 @@ export async function recognizeSpeech(audio: Float32Array | AsyncIterable<AudioC
     }
     if (!stopped) await recogniseReady(true);
     const doneSeconds = stopped ? pendingStart / SAMPLE_RATE : Math.max(totalSeconds, pendingStart / SAMPLE_RATE);
-    return { segments, doneSeconds, totalSeconds: stopped ? totalSeconds : doneSeconds, stopped, unreadable };
+    return { segments, doneSeconds, totalSeconds: stopped ? totalSeconds : doneSeconds, stopped, unreadable, unclear };
 }

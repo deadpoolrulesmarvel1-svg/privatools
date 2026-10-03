@@ -14,9 +14,15 @@
  * Where there is no clear difference between speech and silence (music, or
  * speech from end to end), Whisper's own times are kept.
  *
+ * After both, a run of segments still far longer than its text takes to
+ * say, which Whisper writes when music or noise comes before or after the
+ * words, is given the time its text takes, from its end that borders a pause
+ * (fitToText).
+ *
  * The same measure tells recognize.ts when Whisper stopped writing before the
  * speech did (unheardSpeech).
  */
+import { speechUnits } from "./quality";
 import { SAMPLE_RATE } from "./windows";
 
 /** 20 ms frames: Whisper's own timestamp step. */
@@ -176,4 +182,100 @@ export function tightenToSpeech(window: Float32Array, start: number, end: number
     const tightEnd = Math.min(end, (first + off + 1) / FRAMES_PER_SECOND + HANG);
     if (tightEnd <= tightStart) return null;
     return [Math.round(tightStart * 1000) / 1000, Math.round(tightEnd * 1000) / 1000];
+}
+
+/** A run of segments is far too long for its text past this: slower than six letters a second, with two seconds to spare. */
+const SLOW_RATE = 6;
+const SLOW_SPARE = 2;
+/** The time such a run is given: its text at twelve letters a second, with 0.6 s to spare. */
+const USUAL_RATE = 12;
+const USUAL_SPARE = 0.6;
+/** How much of the sound either side of a run is looked at to tell whether a pause borders it. */
+const BORDER = 0.3;
+/** The loudest stretch must be this much louder than the rest of the run to be taken for the voice. */
+const LOUDER = 1.2;
+
+/**
+ * Whisper often starts a segment where music or noise before the words
+ * begins, or ends one where it goes on after them: on a synthetic test clip
+ * with music between its sentences, Whisper Tiny started the sentences after
+ * music 8 to 15 seconds early, and Whisper Base ran its first sentence on into
+ * the music after it. After tightening, the end of a segment that borders a
+ * pause is where the voice starts or stops; the end that runs into music does
+ * not border one.
+ *
+ * So a run of segments, each starting within 0.3 s of the last one's end,
+ * that lasts far longer than its text takes to say (two seconds longer than
+ * at six letters a second) is given the time its text takes at twelve letters
+ * a second, with 0.6 s to spare, from the end of it that borders a pause.
+ * When neither end does, it gets the loudest stretch of that length inside it,
+ * since a voice is mixed above the sound around it, if that stretch is
+ * clearly louder than the rest; otherwise, or when both ends border a pause,
+ * or nothing in the window tells sound from quiet, Whisper's times stand. The
+ * run's segments share its time by the length of their text. Times are
+ * seconds within `window`, changed in place.
+ */
+export function fitToText(window: Float32Array, segments: { start: number; end: number; text: string }[]): void {
+    let sound: { levels: number[]; threshold: number } | null | undefined;
+    let sums: Float64Array | null = null;
+    for (let first = 0; first < segments.length;) {
+        let last = first;
+        while (last + 1 < segments.length && segments[last + 1].start - segments[last].end <= 0.3) last++;
+        const group = segments.slice(first, last + 1);
+        first = last + 1;
+        const units = group.map(segment => speechUnits(segment.text));
+        const total = units.reduce((sum, value) => sum + value, 0) + group.length - 1;
+        const start = group[0].start;
+        const end = group[group.length - 1].end;
+        if (!total || end - start <= total / SLOW_RATE + SLOW_SPARE) continue;
+        if (sound === undefined) sound = voice(window, noiseFloor(window));
+        if (!sound) continue;
+        const { levels, threshold } = sound;
+        const frame = (seconds: number) => Math.max(0, Math.min(levels.length, Math.round(seconds * FRAMES_PER_SECOND)));
+        /** Whether most of [from, to) is quiet; false where any of it lies outside the window, which can't tell. */
+        const quiet = (from: number, to: number) => {
+            if (from < 0 || to * FRAMES_PER_SECOND > levels.length) return false;
+            const a = frame(from);
+            const b = frame(to);
+            let count = 0;
+            for (let f = a; f < b; f++) if (levels[f] <= threshold) count++;
+            return b > a && count >= (b - a) * 0.8;
+        };
+        const length = Math.min(end - start, total / USUAL_RATE + USUAL_SPARE);
+        const startHeld = quiet(start - BORDER, start);
+        const endHeld = quiet(end, end + BORDER);
+        let at: number;
+        if (startHeld && endHeld) continue;
+        if (startHeld) at = start;
+        else if (endHeld) at = end - length;
+        else {
+            if (!sums) {
+                sums = new Float64Array(levels.length + 1);
+                for (let f = 0; f < levels.length; f++) sums[f + 1] = sums[f] + levels[f];
+            }
+            const prefix = sums;
+            const mean = (from: number, to: number) => {
+                const a = frame(from);
+                const b = frame(to);
+                return b > a ? (prefix[b] - prefix[a]) / (b - a) : 0;
+            };
+            at = start;
+            let loudest = mean(start, start + length);
+            for (let from = start; from + length <= end; from += 1 / FRAMES_PER_SECOND) {
+                const value = mean(from, from + length);
+                if (value > loudest) { loudest = value; at = from; }
+            }
+            const all = frame(end) - frame(start);
+            const inside = frame(at + length) - frame(at);
+            const rest = all > inside ? (prefix[frame(end)] - prefix[frame(start)] - (prefix[frame(at + length)] - prefix[frame(at)])) / (all - inside) : 0;
+            if (loudest < rest * LOUDER) continue;
+        }
+        const stop = at + length >= end - 1e-6 ? end : at + length;
+        let cursor = at;
+        group.forEach((segment, i) => {
+            segment.start = cursor;
+            cursor = i === group.length - 1 ? stop : Math.min(stop, cursor + length * (units[i] + 1) / total);
+            segment.end = cursor;
+        });
+    }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { noiseFloor, pausesIn, snapToPauses, speechRuns, tightenToSpeech, unheardSpeech } from "./timing";
+import { fitToText, noiseFloor, pausesIn, snapToPauses, speechRuns, tightenToSpeech, unheardSpeech } from "./timing";
 import { SAMPLE_RATE } from "./windows";
 
 /** A window of `seconds` with a tone in each [from, to) span and `noise` everywhere. */
@@ -134,5 +134,87 @@ describe("finding speech Whisper left out", () => {
     it("asks nothing over music or steady noise, where speech can't be told from the rest", () => {
         const loud = window(12, [[0, 12]]);
         expect(unheardSpeech(loud, 0, 3, noiseFloor(loud))).toBeNull();
+    });
+});
+
+describe("fitting a run far longer than its text to the time its text takes", () => {
+    const tone = (t: number, level: number, pitch: number) => level * Math.sin(2 * Math.PI * pitch * t);
+    /** Notes with short gaps, quieter than the voice, as music under a video. */
+    const music = (t: number) => (t % 0.6 < 0.45 ? tone(t, 0.08, 330) : 0);
+    /** Music from 0 to 10 s, a louder voice from 10 to 13 s, then a pause. */
+    const musicThenVoice = () => Float32Array.from({ length: 14 * SAMPLE_RATE }, (_, i) => {
+        const t = i / SAMPLE_RATE;
+        return t < 10 ? music(t) : t < 13 ? tone(t, 0.3, 180) : 0;
+    });
+    const sentence = "This recording was made with a speech synthesizer.";
+    const textTime = sentence.length / 12 + 0.6;
+
+    it("ends a sentence Whisper started where the music did at the pause after it, in the time its words take", () => {
+        // Whisper Tiny's segment started with the music, 10 s before the words.
+        const segments = [{ start: 0, end: 13.4, text: sentence }];
+        fitToText(musicThenVoice(), segments);
+        expect(segments[0].end).toBe(13.4);
+        expect(segments[0].start).toBeCloseTo(13.4 - textTime, 5);
+        // Its time, 4.8 s at twelve letters a second, holds all of the 3 s voice.
+        expect(segments[0].start).toBeLessThanOrEqual(10);
+    });
+
+    it("starts a sentence Whisper ran on into the music after it at the pause before it", () => {
+        // Whisper Base's first sentence: a pause, the voice from 1 to 3.2 s, a pause, then music to the window's end.
+        const window = Float32Array.from({ length: 20 * SAMPLE_RATE }, (_, i) => {
+            const t = i / SAMPLE_RATE;
+            return t < 1 ? 0 : t < 3.2 ? tone(t, 0.3, 180) : t < 5 ? 0 : music(t);
+        });
+        const segments = [{ start: 0.9, end: 20, text: "Welcome to the subtitle generator review." }];
+        fitToText(window, segments);
+        expect(segments[0].start).toBe(0.9);
+        expect(segments[0].end).toBeCloseTo(0.9 + "Welcome to the subtitle generator review.".length / 12 + 0.6, 5);
+    });
+
+    it("puts a sentence with music on both sides on the louder stretch its words need", () => {
+        const window = Float32Array.from({ length: 16 * SAMPLE_RATE }, (_, i) => {
+            const t = i / SAMPLE_RATE;
+            return t < 8 ? music(t) : t < 11 ? tone(t, 0.3, 180) : music(t);
+        });
+        const segments = [{ start: 0, end: 16, text: sentence }];
+        fitToText(window, segments);
+        expect(segments[0].start).toBeGreaterThan(6);
+        expect(segments[0].start).toBeLessThanOrEqual(8);
+        expect(segments[0].end).toBeGreaterThanOrEqual(11);
+    });
+
+    it("shares the time between a run's segments by the length of their text", () => {
+        const segments = [{ start: 0, end: 7, text: "This recording was made" }, { start: 7, end: 13.4, text: "with a speech synthesizer." }];
+        fitToText(musicThenVoice(), segments);
+        expect(segments[0].end).toBe(segments[1].start);
+        expect(segments[1].end).toBe(13.4);
+        const share = (segments[0].end - segments[0].start) / (segments[1].end - segments[0].start);
+        expect(share).toBeGreaterThan(0.4);
+        expect(share).toBeLessThan(0.55);
+    });
+
+    it("doesn't take the window's own start for a pause before a run", () => {
+        // A window cut in a short gap of the music: Whisper starts at its first moment, the voice is at 10 s.
+        const window = Float32Array.from({ length: 14 * SAMPLE_RATE }, (_, i) => {
+            const t = i / SAMPLE_RATE;
+            return t < 0.05 ? 0 : t < 10 ? music(t) : t < 13 ? tone(t, 0.3, 180) : 0;
+        });
+        const segments = [{ start: 0.04, end: 13.4, text: sentence }];
+        fitToText(window, segments);
+        expect(segments[0].end).toBe(13.4);
+        expect(segments[0].start).toBeCloseTo(13.4 - textTime, 5);
+    });
+
+    it("leaves a segment its text could fill, and segments apart from each other", () => {
+        const segments = [{ start: 1, end: 4, text: "Welcome to the subtitle generator test." }, { start: 5, end: 6, text: "Yes." }];
+        fitToText(musicThenVoice(), segments);
+        expect(segments).toEqual([{ start: 1, end: 4, text: "Welcome to the subtitle generator test." }, { start: 5, end: 6, text: "Yes." }]);
+    });
+
+    it("leaves Whisper's times where nothing tells the voice from the sound around it", () => {
+        const steady = Float32Array.from({ length: 14 * SAMPLE_RATE }, (_, i) => tone(i / SAMPLE_RATE, 0.2, 220));
+        const segments = [{ start: 0, end: 13.4, text: sentence }];
+        fitToText(steady, segments);
+        expect(segments).toEqual([{ start: 0, end: 13.4, text: sentence }]);
     });
 });

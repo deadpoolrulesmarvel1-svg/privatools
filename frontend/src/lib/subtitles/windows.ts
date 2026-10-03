@@ -59,7 +59,16 @@ export function windowEnd(samples: Float32Array, final: boolean): number | null 
     if (frames <= most) return final ? length : null;
     const latest = final ? Math.min(most, frames - MIN_TAIL_SECONDS * FRAMES_PER_SECOND) : most;
     const earliest = Math.max(1, Math.min(latest, most - SEARCH_SECONDS * FRAMES_PER_SECOND));
-    // Loudness over 250 ms around each frame, so a cut lands in a real pause rather than the gap inside a word.
+    return Math.min(length, quietestFrame(samples, earliest, latest) * FRAME);
+}
+
+/**
+ * The quietest frame from `earliest` to `latest`, the latest of equals, by
+ * the loudness over 250 ms around each, so a cut lands in a real pause rather
+ * than the gap inside a word.
+ */
+function quietestFrame(samples: Float32Array, earliest: number, latest: number): number {
+    const frames = Math.ceil(samples.length / FRAME);
     const levels = new Float32Array(latest + 3);
     for (let frame = Math.max(0, earliest - 2); frame <= Math.min(frames - 1, latest + 2); frame++) levels[frame] = frameLevel(samples, frame * FRAME);
     const quiet = (frame: number) => {
@@ -68,14 +77,21 @@ export function windowEnd(samples: Float32Array, final: boolean): number | null 
         for (let i = Math.max(0, frame - 2); i <= Math.min(frames - 1, frame + 2); i++, n++) sum += levels[i];
         return sum / n;
     };
-    // The quietest point, the latest of equals, so windows stay as long as they can.
     let cut = latest;
     let quietest = quiet(latest);
     for (let frame = latest - 1; frame >= earliest; frame--) {
         const level = quiet(frame);
         if (level < quietest) { cut = frame; quietest = level; }
     }
-    return Math.min(length, cut * FRAME);
+    return cut;
+}
+
+/** Where to cut a window in two: its quietest point between two fifths and three fifths of the way, in samples. */
+export function middleCut(samples: Float32Array): number {
+    const frames = Math.ceil(samples.length / FRAME);
+    const earliest = Math.max(1, Math.floor(frames * 0.4));
+    const latest = Math.max(earliest, Math.min(frames - 1, Math.ceil(frames * 0.6)));
+    return Math.min(samples.length, quietestFrame(samples, earliest, latest) * FRAME);
 }
 
 /** Windows covering all of 16 kHz mono `samples`, in order, each at most 30 seconds long. */
