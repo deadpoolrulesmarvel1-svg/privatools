@@ -115,11 +115,14 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     }
 
     // ── Page / range errors ─────────────────────────────────────────────────
+    // A typing mistake first: "Invalid page range syntax" and "Invalid page
+    // number 'abc'" (a token that is not a number) also contain "invalid page".
+    if ((m.includes("page range") && (m.includes("invalid") || m.includes("malformed") || m.includes("syntax")))
+        || m.includes("invalid page number")) {
+        return "That page range isn't valid. Use formats like \"1-3, 5, 7-end\".";
+    }
     if (m.includes("page out of range") || m.includes("invalid page") || m.includes("page number")) {
         return "One of the page numbers is outside this PDF. Check the page count and try again.";
-    }
-    if (m.includes("page range") && (m.includes("invalid") || m.includes("malformed"))) {
-        return "That page range isn't valid. Use formats like \"1-3, 5, 7-end\".";
     }
 
     // ── Network / transport ─────────────────────────────────────────────────
