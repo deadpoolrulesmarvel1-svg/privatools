@@ -4,14 +4,22 @@ Production runs async jobs. The deploy's first deploy after the cut-over
 makes a release's job supervisor take the queue only after traffic has moved
 (the old supervisor cannot hand over), so CI must have seen that supervisor
 take the lock in a booted image before any release is tagged.
+
+A booted image must also keep a Word equation through Office to PDF: without
+LibreOffice's Math module the conversion succeeds with a blank where the
+equation was. Only CI checks that, never the deploy's --running probe.
 """
 from __future__ import annotations
 
 import importlib.util
+import io
 import os
+import subprocess
+import zipfile
 from pathlib import Path
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from xml.etree import ElementTree
 
 import pytest
 
@@ -112,3 +120,94 @@ def test_the_page_probe_expects_the_heading_the_server_renders(probe, monkeypatc
     monkeypatch.setattr(probe, "fetch", lambda *_args, **_kwargs: (200, b"<h1>Something else</h1>"))
     with pytest.raises(probe.CheckFailed):
         probe.check_tool_page("http://127.0.0.1:1", path, manifest)
+
+
+# ── Office to PDF keeps a Word equation (the CI image only) ──────────────────
+
+MATH = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
+WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def test_the_equation_document_is_a_sentence_around_one_fraction(probe):
+    import docx  # python-docx: a reader independent of the probe
+
+    data = probe.equation_docx()
+    assert data == probe.equation_docx()
+    with zipfile.ZipFile(io.BytesIO(data)) as package:
+        assert sorted(package.namelist()) == sorted(probe.EQUATION_DOCX)
+        body = ElementTree.fromstring(package.read("word/document.xml"))
+    assert len(list(body.iter(f"{MATH}oMath"))) == 1
+    (fraction,) = body.iter(f"{MATH}f")
+    assert [t.text for t in fraction.find(f"{MATH}num").iter(f"{MATH}t")] == [probe.EQUATION_TERMS[0]]
+    assert [t.text for t in fraction.find(f"{MATH}den").iter(f"{MATH}t")] == [probe.EQUATION_TERMS[1]]
+    # The words around the equation hold neither of its letters, so finding
+    # both in the PDF means the equation was drawn.
+    words = "".join(t.text for t in body.iter(f"{WORD}t"))
+    assert words.split() == list(probe.EQUATION_CONTEXT)
+    assert not set("".join(probe.EQUATION_TERMS)) & set(words)
+    assert docx.Document(io.BytesIO(data)).paragraphs[0].text.split() == list(probe.EQUATION_CONTEXT)
+
+
+@pytest.mark.parametrize("text,ok", [
+    ("Before x\ny after.\n", True),  # what the PDF from an image with the Math module reads
+    ("Before \U0001d465\n\U0001d466 after.\n", True),  # mathematical italic x and y
+    ("Before  after.\n", False),  # an image without it: a blank where the equation was
+    ("Before x after.\n", False),  # half a fraction
+    ("", False),  # no text at all
+])
+def test_the_equation_check_wants_the_equation_not_only_its_sentence(probe, text, ok):
+    if ok:
+        assert "are in the PDF" in probe.check_equation_text(text)
+    else:
+        with pytest.raises(probe.CheckFailed):
+            probe.check_equation_text(text)
+
+
+def test_the_probe_uploads_the_document_as_the_office_route_reads_it(probe, client, monkeypatch, tmp_path):
+    from backend.app.services import office_to_pdf_service
+
+    received = []
+
+    async def convert(input_path):
+        received.append((Path(input_path).suffix, Path(input_path).read_bytes()))
+        output = tmp_path / "converted.pdf"
+        output.write_bytes(b"%PDF-1.7\n%%EOF\n")
+        return str(output)
+
+    monkeypatch.setattr(office_to_pdf_service, "office_to_pdf", convert)
+    content_type, body = probe.multipart_file("equation.docx", probe.equation_docx())
+    response = client.post(probe.OFFICE_TO_PDF, content=body, headers={"Content-Type": content_type})
+    assert response.status_code == 200, response.text
+    assert response.content.startswith(b"%PDF-")
+    assert received == [(".docx", probe.equation_docx())]
+
+
+def test_only_a_freshly_booted_image_converts_the_equation(probe, monkeypatch):
+    """The deploy's --running probe checks live containers, including older
+    releases from before the Math module (the rollout's fallback to the
+    canonical container), so it never converts anything."""
+    uploads = []
+    pdf_text = {"text": "Before x\ny after.\n"}
+
+    def post_file(_base_url, path, filename, content, _timeout):
+        uploads.append((path, filename, content))
+        return 200, b"%PDF-1.7\n"
+
+    monkeypatch.setattr(probe, "post_file", post_file)
+    monkeypatch.setattr(probe, "pdf_text", lambda _container, _pdf: pdf_text["text"])
+    # Every page check runs and fails; what matters is that none uploads.
+    monkeypatch.setattr(probe, "fetch", lambda *_args, **_kwargs: (404, b""))
+    monkeypatch.setattr(probe, "read_manifest", lambda _container: {})
+    assert probe.probe_running(["--running", "c0ffee", "--url", "http://127.0.0.1:9", "--sha", "some-sha"]) == 1
+    assert uploads == []
+
+    monkeypatch.setattr(probe, "compose", lambda *args, **_kwargs: subprocess.CompletedProcess(args, 0, "", ""))
+    monkeypatch.setattr(probe, "container_id", lambda: "c0ffee")
+    monkeypatch.setattr(probe, "published_url", lambda: "http://127.0.0.1:9")
+    monkeypatch.setattr(probe, "wait_until_ready", lambda _base_url, _container: 0.0)
+    monkeypatch.setattr(probe, "check_supervisor", lambda _container: "the job supervisor holds the job queue")
+    check = f"POST {probe.OFFICE_TO_PDF}"
+    assert check not in probe.probe("some-image", "some-sha")
+    assert uploads == [(probe.OFFICE_TO_PDF, "equation.docx", probe.equation_docx())]
+    pdf_text["text"] = "Before  after.\n"
+    assert check in probe.probe("some-image", "some-sha")
