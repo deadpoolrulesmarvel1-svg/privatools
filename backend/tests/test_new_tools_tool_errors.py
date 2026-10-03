@@ -140,3 +140,27 @@ def test_a_pdf_that_needs_a_password_says_so(quiet_client, locked_pdf, route, da
     response = quiet_client.post(route, files={"file": ("doc.pdf", locked_pdf, "application/pdf")}, data=data)
     assert response.status_code == 400, response.text
     assert response.json()["detail"] == PdfEncryptedError.default_detail
+
+
+@pytest.mark.parametrize("route", FFMPEG_ROUTES)
+@pytest.mark.parametrize("fault,status", [
+    ("missing", 503),    # no ffmpeg binary on the server
+    ("killed", 500),     # the kernel's OOM killer
+    ("disk-full", 500),  # the temp volume is full
+])
+def test_a_server_fault_in_ffmpeg_is_not_blamed_on_the_file(quiet_client, monkeypatch, route, fault, status):
+    real_run = subprocess.run
+
+    def ffmpeg_fails(command, *args, **kwargs):
+        if command and command[0] == "ffmpeg" and "-encoders" not in command:
+            if fault == "missing":
+                raise FileNotFoundError(2, "No such file or directory", "ffmpeg")
+            if fault == "killed":
+                return subprocess.CompletedProcess(command, -9, "", "")
+            return subprocess.CompletedProcess(command, 1, "", "Error opening output files: No space left on device\n")
+        return real_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", ffmpeg_fails)
+    _, _, files, data = ROUTES[route]
+    response = quiet_client.post(route, files=files, data=data)
+    assert response.status_code == status, response.text

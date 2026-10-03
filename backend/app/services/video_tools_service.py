@@ -3,8 +3,10 @@
 These all share the same constraints:
   - input goes to a temp .mp4/.mov/etc, output to a temp file
   - ffmpeg invoked via subprocess with a hard timeout
-  - a failed or timed-out ffmpeg run raises a ToolError (400 or 504), which
-    the routes pass through, and leaves no partial output behind
+  - a failed or timed-out ffmpeg run raises a ToolError, which the routes
+    pass through, and leaves no partial output behind: 400 when the file is
+    at fault, 504 when it runs out of time, and 500 or 503 when the server
+    is at fault
 """
 
 from __future__ import annotations
@@ -19,12 +21,16 @@ from contextlib import contextmanager
 from fractions import Fraction
 from pathlib import Path
 
-from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
+from ..utils.exceptions import DependencyError, ProcessingError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
 from .media_errors import NOT_MEDIA, unreadable_input
 from .media_metadata import with_metadata_options
 
 logger = logging.getLogger(__name__)
+
+# What FFmpeg says when the machine, not the file, ran out: the routes pass a
+# ToolError through, so these must not become a 400 that blames the upload.
+_SERVER_FAULTS = ("No space left on device", "Cannot allocate memory")
 
 # Seconds. Re-encoding 1080p30 at the veryfast preset costs about 111 CPU-seconds
 # a minute (v2.7.5 image), so on production's 1.8 CPUs this covers a little
@@ -63,14 +69,20 @@ def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | No
             f"ffmpeg timed out after {timeout}s — try a shorter clip."
         ) from exc
     except FileNotFoundError as exc:
-        raise ValidationError("ffmpeg is not installed on this server.") from exc
+        # The server's fault (503), not the file's: the routes pass it through.
+        raise DependencyError("ffmpeg is not installed on this server.") from exc
 
     if proc.returncode != 0:
-        if unreadable_input(args, proc.stderr or ""):
+        stderr = proc.stderr or ""
+        if unreadable_input(args, stderr):
             raise ValidationError(NOT_MEDIA)
         # Trim ffmpeg stderr so the user gets the most relevant line.
-        last = (proc.stderr or "").strip().splitlines()
+        last = stderr.strip().splitlines()
         msg = last[-1] if last else f"ffmpeg exited with code {proc.returncode}"
+        # Killed by a signal (the kernel's OOM killer), or out of disk or
+        # memory: a 500 the page can offer to retry, not the visitor's file.
+        if proc.returncode < 0 or any(reason in stderr for reason in _SERVER_FAULTS):
+            raise ProcessingError(f"ffmpeg could not finish: {msg}")
         raise ValidationError(f"ffmpeg failed: {msg}")
 
 
