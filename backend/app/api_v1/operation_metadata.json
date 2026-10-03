@@ -1542,6 +1542,11 @@
       "slug": "subtitle-generator",
       "name": "Subtitle Generator",
       "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "ai-token-counter",
+      "name": "AI Token Counter",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
     }
   ]
 }

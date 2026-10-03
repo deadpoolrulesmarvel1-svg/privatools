@@ -1,0 +1,74 @@
+{
+  "howto": [
+    {
+      "name": "Paste text or choose a file",
+      "text": "Paste a prompt, a document or some code into the box, or choose a text, Markdown, CSV, JSON or code file, a PDF or a Word document (.docx), up to 100 MB. A file is read in your browser when you count; nothing is uploaded."
+    },
+    {
+      "name": "Add a key for Claude or Gemini, if you want their counts",
+      "text": "GPT tokens are always counted on your device. For Claude or Gemini, save your own Anthropic or Google API key under Claude and Gemini. Saving a key ticks Count with Claude or Count with Gemini; with a key saved earlier, tick it yourself. Check the model name. Only while that box is ticked, when you count, does the text go from your browser straight to that provider's token-counting method."
+    },
+    {
+      "name": "Count",
+      "text": "Press Count tokens. You get exact GPT counts for o200k_base (GPT-5.5, GPT-5, GPT-4.1, GPT-4o, o4-mini, o3 and o1) and cl100k_base (GPT-4, GPT-4 Turbo and GPT-3.5 Turbo), the characters and words, and the provider counts you asked for. Without a key, the Claude and Gemini rows say so instead of showing a guess."
+    },
+    {
+      "name": "Estimate the cost",
+      "text": "Pick a count, then enter your provider's current input and output prices in US dollars per million tokens and the output tokens you expect. The page works out the input, output and total; it keeps no price list of its own, because prices change."
+    },
+    {
+      "name": "Split long text, if you need to",
+      "text": "Under Split into chunks, tick the box and set the tokens per chunk, from 10 to 1,000,000. Each chunk ends between words, at a line end when one is near, and holds at most that many GPT tokens, counted on its own. Copy a chunk, or download them all as one .txt file with a line naming each chunk."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is my text or file uploaded?",
+      "a": "Not to PrivaTools. Files are read and GPT tokens are counted in your browser. The text leaves your device only while Count with Claude or Count with Gemini is ticked, which needs your own Anthropic or Google key (saving a key ticks its box): then, when you count, it goes from your browser straight to that provider, under your agreement with them, and never through PrivaTools."
+    },
+    {
+      "q": "Why does a Claude count need my API key?",
+      "a": "Anthropic has not published the tokenizer current Claude models use, so no page can count Claude tokens by itself. Anthropic's token-counting endpoint can, and it needs an API key; Anthropic says token counting is free to use, within per-minute limits that depend on your account. Anthropic also calls the result an estimate: a real request can differ by a small amount, and the count can include a few tokens Anthropic adds and does not bill. Without a key, this page shows no Claude number rather than a guess."
+    },
+    {
+      "q": "Why not estimate Claude or Gemini from the GPT count?",
+      "a": "Because no fixed ratio holds. Each model family splits text with its own vocabulary, and Anthropic says Claude 4.7 and later models make about 30% more tokens of the same text than earlier Claude models. The difference also depends on the language and on how much code or punctuation the text holds, so the page shows only counts it can stand behind."
+    },
+    {
+      "q": "Why do the counts differ between models?",
+      "a": "Each tokenizer has its own vocabulary of text pieces. o200k_base, which gpt-tokenizer maps to GPT-5.5, GPT-5, GPT-4.1, GPT-4o and the o-series models, has about 200,000; cl100k_base, for GPT-4 and GPT-3.5, has about 100,000. With the larger vocabulary the same text usually takes fewer tokens, most of all in languages other than English. Claude and Gemini use tokenizers of their own again."
+    },
+    {
+      "q": "Does Gemini need a key too?",
+      "a": "For a Gemini count, yes. This page does not download a Gemini tokenizer, so the count comes from Google's countTokens method, with your Google AI Studio key. It counts the text for the model you name without asking the model for an answer."
+    },
+    {
+      "q": "Does counting with my key cost anything?",
+      "a": "Anthropic says its token counting is free to use, with a per-minute limit that depends on your account's usage tier. Google's countTokens counts the text without generating a reply; check your Google AI Studio account for the limits on your key. Neither runs unless its Count with box is ticked (saving a key ticks it) and you press Count tokens."
+    },
+    {
+      "q": "Does the PDF count match what Claude or ChatGPT will use?",
+      "a": "Not necessarily. This page counts the PDF's text, read page by page with pdf.js. Anthropic says that when a PDF itself is sent to Claude through its API, each page is also converted into an image, so that request uses image tokens on top of the text. Chat apps can add instructions or formatting of their own too. Treat the count as the size of the text itself. A scanned PDF has no text to count until OCR PDF adds a text layer."
+    },
+    {
+      "q": "How are Word files read?",
+      "a": "The text of the document's body is counted: paragraphs, tables cell by cell, text boxes, tabs and line breaks, with tracked changes as if accepted. Headers, footers, footnotes, endnotes and comments are left out, as are deleted text and field codes. An older .doc file has to be saved as .docx first."
+    },
+    {
+      "q": "How does splitting into chunks work?",
+      "a": "The text is split with the GPT tokenizer you pick, at the points where the tokenizer itself divides text, so a chunk never cuts a character in two and its count is exactly the tokenizer's count of that chunk on its own. Chunks end between words, at a line end when one falls in the second half of the chunk; a single run longer than a chunk, such as a long string with no spaces, is cut between characters. Spaces and line breaks at the start and end of each chunk are left off."
+    },
+    {
+      "q": "How is the cost worked out?",
+      "a": "Input cost is the count you pick times your input price per million tokens, divided by 1,000,000; output cost is the output tokens you expect times your output price, the same way. The page has no prices built in, because providers change them, so copy yours from your provider's pricing page. Cached input, batch and long-context prices differ from the standard ones."
+    },
+    {
+      "q": "Which GPT models does it count for?",
+      "a": "gpt-tokenizer, the open-source library this page uses, maps GPT-5.5, GPT-5, GPT-4.1, GPT-4o, o4-mini, o3 and o1 to o200k_base, and GPT-4, GPT-4 Turbo and GPT-3.5 Turbo to cl100k_base; those are the models the page names. The counts are of the text itself: an API request adds a few tokens for each message's format."
+    },
+    {
+      "q": "Are there size limits?",
+      "a": "Files up to 100 MB, and up to 20 million characters of text at a time, which is several million tokens and more than current models take in one request. A Word file is refused when its main document part, markup included, unpacks to more than 32 MB. An unbroken run of more than 20,000 letters, symbols or spaces, such as a long DNA sequence on one line, is refused too: the GPT tokenizer slows down sharply on runs that long. Each provider has request limits of its own; a text too large for one is reported in its row."
+    }
+  ]
+}

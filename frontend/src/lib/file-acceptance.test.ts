@@ -89,6 +89,13 @@ describe("suggestToolFor", () => {
         expect(suggestToolFor(file(name), { fromSlug })).toBeNull();
     });
 
+    it("does not take counting pages and counting tokens for one job", () => {
+        // "counter" names no job: a page count and a token count are different things.
+        expect(suggestToolFor(file("report.docx"), { fromSlug: "pdf-page-counter" })).toMatchObject({ slug: "word-to-pdf", relation: "convert" });
+        expect(suggestToolFor(file("notes.txt"), { fromSlug: "pdf-page-counter" })?.slug).not.toBe("ai-token-counter");
+        expect(suggestToolFor(file("photo.png"), { fromSlug: "ai-token-counter" })?.slug).not.toBe("pdf-page-counter");
+    });
+
     it("never sends a file back through a round trip or into a format the tool can't take", () => {
         // Text to PDF makes PDFs: PDF to Text would only undo it.
         expect(suggestToolFor(file("report.pdf"), { fromSlug: "txt-to-pdf" })).toBeNull();

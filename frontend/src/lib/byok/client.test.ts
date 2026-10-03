@@ -115,6 +115,22 @@ describe("what a refusal says", () => {
     expect(shown).toContain("blocked the request to Groq");
     expect(friendlyError(shown)).toBe(shown);
   });
+
+  it("mentions an endpoint off the allowed list only for the custom endpoint, the one that can be", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    const shownFor = async (providerId: string, baseUrl?: string) => {
+      try {
+        await complete({ providerId, apiKey: "synthetic-key-value", model: "m", baseUrl, messages: [] });
+      } catch (e) {
+        return (e as ByokError).userMessage;
+      }
+      throw new Error("expected a failure");
+    };
+    const hosted = await shownFor("groq");
+    expect(hosted).not.toContain("custom endpoint");
+    expect(hosted).toContain("Check that this device is online");
+    expect(await shownFor("openai-compatible", "http://localhost:11434")).toContain("If you are using a custom endpoint it is probably not on the allowed list; otherwise check that this device is online");
+  });
 });
 
 /**

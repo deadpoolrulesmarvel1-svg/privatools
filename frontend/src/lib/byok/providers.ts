@@ -312,3 +312,49 @@ export function parseTranscribeResponse(raw: string): string {
     } catch { /* plain text */ }
     return raw;
 }
+
+/**
+ * Providers with a token-count method of their own: Anthropic's
+ * /v1/messages/count_tokens and Gemini's models.countTokens. Neither writes an
+ * answer; each says how many tokens the provider's tokenizer for the named
+ * model makes of the text sent as one user message. No public tokenizer
+ * matches current Claude models, so for Claude this is the only exact source.
+ */
+export function supportsTokenCount(p: Provider): boolean {
+    return p.shape === "anthropic" || p.shape === "gemini";
+}
+
+export function buildCountTokensRequest(p: Provider, input: { apiKey: string; model: string; text: string }): PreparedRequest {
+    if (p.shape === "anthropic") {
+        return {
+            url: `${p.origin}/v1/messages/count_tokens`,
+            headers: {
+                "content-type": "application/json",
+                "x-api-key": input.apiKey,
+                "anthropic-version": ANTHROPIC_VERSION,
+                // Without this the browser request is rejected outright.
+                "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({ model: input.model, messages: [{ role: "user", content: input.text }] }),
+        };
+    }
+    if (p.shape === "gemini") {
+        // Google's model list names models "models/gemini-…"; the path takes the bare id.
+        const model = input.model.trim().replace(/^models\//, "");
+        return {
+            // The key goes in a header, never ?key=, as for generateContent.
+            url: `${p.origin}/v1beta/models/${encodeURIComponent(model)}:countTokens`,
+            headers: { "content-type": "application/json", "x-goog-api-key": input.apiKey },
+            body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: input.text }] }] }),
+        };
+    }
+    throw new Error(`${p.label} has no token-count method`);
+}
+
+/** The count in a successful answer, or undefined when it holds none. */
+export function parseCountTokensResponse(p: Provider, json: unknown): number | undefined {
+    if (!json || typeof json !== "object") return undefined;
+    const j = json as { input_tokens?: unknown; totalTokens?: unknown };
+    const value = p.shape === "anthropic" ? j.input_tokens : p.shape === "gemini" ? j.totalTokens : undefined;
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}

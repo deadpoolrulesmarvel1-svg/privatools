@@ -26,6 +26,14 @@ describe("document policy boundaries", () => {
     expect(documentNavigationFor("/tool/chat-with-pdf", "/ai")).toBe("/ai");
   });
 
+  it("loads the token counter as its own document, for its provider access, from any other page", () => {
+    expect(documentNavigationFor("/", "/tools/ai-token-counter")).toBe("/tools/ai-token-counter");
+    expect(documentNavigationFor("/tools/word-counter", "#/tool/ai-token-counter")).toBe("/tools/ai-token-counter");
+    // A provider page's policy already allows it; ordinary tools stay in the token counter's document.
+    expect(documentNavigationFor("/tool/chat-with-pdf", "/tools/ai-token-counter")).toBeNull();
+    expect(documentNavigationFor("/tools/ai-token-counter", "/tools/word-counter")).toBeNull();
+  });
+
   it("does not equate OCR's worker policy with Transformers' runtime policy", () => {
     expect(documentNavigationFor("/tool/ocr-pdf", "/tool/summarize-pdf")).toBe("/tool/summarize-pdf");
     expect(documentNavigationFor("/tool/summarize-pdf", "/tool/ocr-pdf")).toBeNull();
