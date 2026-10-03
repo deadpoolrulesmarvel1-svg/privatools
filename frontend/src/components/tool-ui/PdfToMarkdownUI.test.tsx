@@ -72,6 +72,7 @@ describe("PDF to Markdown", () => {
         choose(view);
         const heading = await convert(view);
         expect(heading).toHaveTextContent("Your Markdown is ready.");
+        expect(view.container.querySelector(".ts-result")).toHaveAttribute("data-tone", "success");
         const [endpoint, file, params] = mocks.upload.mock.calls[0];
         expect(endpoint).toBe("/pdf-to-markdown");
         expect(file.name).toBe("report.pdf");
@@ -116,8 +117,10 @@ describe("PDF to Markdown", () => {
         choose(view);
         await convert(view);
         const notes = screen.getByRole("list", { name: "About this conversion" });
-        expect(notes).toHaveTextContent("Pages 2 and 5 have no text layer, as a scan doesn’t, so they are not in the Markdown.");
+        expect(notes).toHaveTextContent("Pages 2 and 5 have no text layer (they may be scans), so they are not in the Markdown.");
         expect(within(notes).getByRole("link", { name: "OCR PDF" })).toHaveAttribute("href", "/tool/ocr-pdf");
+        // Pages were left out, so the result asks to be read first: the partial badge, not the plain check.
+        expect(view.container.querySelector(".ts-result")).toHaveAttribute("data-tone", "partial");
     });
 
     it("lists the repeated lines it left out", async () => {
@@ -175,6 +178,7 @@ describe("PDF to Markdown", () => {
         expect(screen.getByText(SCAN)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Choose a different file" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
+        expect(screen.getByRole("link", { name: "OCR PDF" })).toHaveAttribute("href", "/tool/ocr-pdf");
         expect(mocks.download).not.toHaveBeenCalled();
     });
 

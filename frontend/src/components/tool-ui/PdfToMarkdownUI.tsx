@@ -119,11 +119,16 @@ export function PdfToMarkdownUI() {
         const detail = done.length > 1
             ? `The ZIP download has started: ${zipped ? "a ZIP of chunks" : "one .md file"} per PDF inside.`
             : zipped && chunks > 1 ? "The ZIP download has started: one .md file per chunk." : "The download has started.";
-        return <ProcessorResult proc={proc} verb="converted" accepts=".pdf" title={title} detail={detail}
+        // Pages left out (no text layer, or unreadable) make a result to read before use.
+        const leftOut = reports.some(({ report }) => !!report && (report.pagesWithoutTextCount > 0 || report.pagesNotReadCount > 0));
+        // A scan refused for having no text at all: OCR PDF is the way on.
+        const scanRefused = proc.entries.some(e => e.status === "failed" && (e.error ?? "").includes("OCR PDF"));
+        return <ProcessorResult proc={proc} verb="converted" accepts=".pdf" title={title} detail={detail} attention={leftOut}
             receipt={<ConversionNotes reports={reports} several={done.length > 1} />}
             fileDetail={entry => reportSummary(readReport(entry), entry.blob?.size ?? entry.size)}
             onDownload={() => proc.downloadAll("markdown")} onRetry={() => void process("transient")}
             onStartOver={startOver} more="Convert another PDF">
+            {scanRefused && <p className="pdf2md-hint"><Link to="/tool/ocr-pdf">OCR PDF</Link> adds a text layer to a scanned PDF; then convert the PDF it makes.</p>}
             {single && single.entry.blob && !single.entry.outName?.toLowerCase().endsWith(".zip") && <>
                 <MarkdownPreview blob={single.entry.blob} />
                 <CountTokens blob={single.entry.blob} name={single.entry.outName || "document.md"} />
@@ -136,7 +141,7 @@ export function PdfToMarkdownUI() {
             <h2>For reading and for AI</h2>
             <label className="ts-check"><input type="checkbox" checked={pageMarkers} disabled={busy}
                 onChange={e => setField("pageMarkers", e.target.checked)} /> Page markers</label>
-            <p className="ts-caption">Puts &lt;!-- page 3 --&gt; before each page: hidden when the Markdown is displayed, there for you or an AI to cite.</p>
+            <p className="ts-caption">Puts <code className="pdf2md-code">&lt;!-- page 3 --&gt;</code> before each page: hidden when the Markdown is displayed, there for you or an AI to cite.</p>
             <label className="ts-check"><input type="checkbox" checked={removeHeadersFooters} disabled={busy}
                 onChange={e => setField("removeHeadersFooters", e.target.checked)} /> Remove repeated headers and footers</label>
             <p className="ts-caption">Leaves out lines repeated at the top or bottom of most pages, such as running titles and page numbers.</p>
@@ -155,7 +160,7 @@ export function PdfToMarkdownUI() {
                 <button type="button" className="ts-choice" aria-pressed={chunkOutput === "zip"} disabled={busy}
                     onClick={() => setField("chunkOutput", "zip")}><strong>ZIP of .md files</strong><span>One file per chunk</span></button>
                 <button type="button" className="ts-choice" aria-pressed={chunkOutput === "single"} disabled={busy}
-                    onClick={() => setField("chunkOutput", "single")}><strong>One .md file</strong><span>&lt;!-- chunk 2 of 7 --&gt; between parts</span></button>
+                    onClick={() => setField("chunkOutput", "single")}><strong>One .md file</strong><span><code className="pdf2md-code">&lt;!-- chunk 2 of 7 --&gt;</code> between parts</span></button>
             </div>}
             <p className="ts-caption">{chunk === "headings" ? "Splits before each heading of the two highest levels in the document."
                 : chunk === "size" ? "Splits between paragraphs, list items and table rows, so no chunk ends mid-sentence unless one sentence is longer than a chunk."
@@ -189,7 +194,7 @@ function ConversionNotes({ reports, several }: { reports: { entry: FileEntry; re
         const who = several ? `${entry.name}: ` : "";
         if (report.pagesWithoutTextCount > 0) {
             const one = report.pagesWithoutTextCount === 1;
-            notes.push({ key: `${entry.id}-scan`, text: <>{who}{one ? "Page" : "Pages"} {pageList(report.pagesWithoutText, report.pagesWithoutTextCount)} {one ? "has" : "have"} no text layer, as a scan doesn’t, so {one ? "it is" : "they are"} not in the Markdown. Run the PDF through <Link to="/tool/ocr-pdf">OCR PDF</Link>, then convert it again to include {one ? "it" : "them"}.</> });
+            notes.push({ key: `${entry.id}-scan`, text: <>{who}{one ? "Page" : "Pages"} {pageList(report.pagesWithoutText, report.pagesWithoutTextCount)} {one ? "has" : "have"} no text layer ({one ? "it may be a scan" : "they may be scans"}), so {one ? "it is" : "they are"} not in the Markdown. Run the PDF through <Link to="/tool/ocr-pdf">OCR PDF</Link>, then convert it again to include {one ? "it" : "them"}.</> });
         }
         if (report.pagesNotReadCount > 0) {
             const one = report.pagesNotReadCount === 1;

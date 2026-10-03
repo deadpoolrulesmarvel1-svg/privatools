@@ -3,6 +3,10 @@
    Play, light and dark, each draw them in their own palette. */
 
 .pdf2md-setting { margin-top: 12px; }
+/* Markers as typed, in every font: the site's contextual alternates ("calt")
+   draw Manrope's "--" as one dash, which would misstate the marker. */
+.pdf2md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: .95em;
+    font-variant-ligatures: none; font-feature-settings: normal; white-space: nowrap; }
 .ts-options .ts-check + .ts-caption { margin: 0 0 12px 28px; }
 
 /* "Read this first" notes, in the intake notice's colours (DESIGN.md: --warning-soft). */
@@ -18,8 +22,10 @@
 .pdf2md-preview pre { margin: 0; max-height: 360px; overflow: auto; padding: 16px 18px; border-radius: 9px;
     border: 1px solid hsl(var(--border)); background: hsl(var(--paper-2)); color: hsl(var(--foreground));
     font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    white-space: pre-wrap; overflow-wrap: anywhere; }
+    white-space: pre-wrap; overflow-wrap: anywhere; font-variant-ligatures: none; font-feature-settings: normal; }
 .pdf2md-preview pre:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
 
 .pdf2md-next { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: 4px 0 0; }
 .pdf2md-next > span { flex: 1 1 18rem; min-width: 0; font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.pdf2md-hint { margin: 4px 0 0; font-size: 13px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.pdf2md-hint a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 2px; }
