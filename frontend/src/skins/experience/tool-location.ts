@@ -72,7 +72,7 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
     "markdown-to-word": {
         kind: "device",
         label: "Stays on your device",
-        detail: "Your Markdown is turned into a Word document in this browser and is not uploaded. Links stay links, and images at web addresses are never downloaded: only images inside the Markdown itself are added.",
+        detail: "Your Markdown is turned into a Word document in this browser and is not uploaded. Web and e-mail links stay links, and images at web addresses are never downloaded: only images inside the Markdown itself are added.",
     },
     // Tools whose input is not a file: the sentence names what is sent.
     "url-to-pdf": {

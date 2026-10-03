@@ -247,6 +247,11 @@ describe("StudioActions", () => {
         expect(buttons).toEqual(["Choose a different file", "Compress more"]);
     });
 
+    it("leads a failure with the page's own primary when its input isn't a file", () => {
+        render(<StudioActions tone="failure" retryCount={1} onRetry={vi.fn()} primary={<button>Back to the text</button>} more={<button>Open a file</button>} />);
+        expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Back to the text", "Try again", "Open a file"]);
+    });
+
     it("offers \"Try again\" only for failures another attempt could fix", () => {
         const onRetry = vi.fn();
         actions("failure", 2, onRetry);

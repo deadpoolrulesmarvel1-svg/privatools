@@ -88,7 +88,7 @@ describe("Markdown to Word page", () => {
         await paste("Fine: $x^2$.\n\nNot mapped: $\\notamacro{x}$\n\n![A chart](https://example.com/charts/sales.png)\n\n<img src=\"https://example.com/b.gif\" alt=\"B\">");
         await convert();
         expect(await screen.findByRole("heading", { name: "Ready, with 3 things to check." })).toHaveFocus();
-        expect(screen.getByText("The download has started. 1 equation stayed as LaTeX and 2 images were left out; each is listed below. Everything else converted.")).toBeInTheDocument();
+        expect(screen.getByText("The download has started. 1 equation stayed as LaTeX and 2 images were left out; each is listed below.")).toBeInTheDocument();
         expect(screen.getByText("$\\notamacro{x}$")).toBeInTheDocument();
         expect(screen.getByText("Line 3: \\notamacro isn’t supported.")).toBeInTheDocument();
         expect(screen.getByText("sales.png")).toBeInTheDocument();
@@ -151,6 +151,17 @@ describe("Markdown to Word page", () => {
         }
     });
 
+    it("refuses a file dropped on the box with the same words as the intake, and opens one it takes", async () => {
+        render(<MarkdownToWordUI />);
+        const drop = (file: File) => act(async () => { fireEvent.drop(box(), { dataTransfer: { files: [file], types: ["Files"] } }); });
+        await drop(new File(["%PDF-1.7"], "report.pdf", { type: "application/pdf" }));
+        expect(screen.getByRole("alert")).toHaveTextContent("report.pdf wasn’t added. Markdown to Word takes MD or TXT files. Try PDF to Word for PDF files.");
+        expect(box().value).toBe("");
+        await drop(new File(["# Dropped"], "notes.markdown"));
+        await waitFor(() => expect(box().value).toBe("# Dropped"));
+        expect(screen.queryByRole("alert")).toBeNull();
+    });
+
     it("reads UTF-16 and older single-byte files as text", async () => {
         const { container } = render(<MarkdownToWordUI />);
         const utf16 = new Uint8Array([0xff, 0xfe, ...[..."# Été"].flatMap(c => [c.charCodeAt(0), 0])]);
@@ -166,9 +177,11 @@ describe("Markdown to Word page", () => {
         await paste("x".repeat(10 * 1024 * 1024 + 1));
         await convert();
         expect(await screen.findByRole("heading", { name: "This Markdown is too long to convert." })).toHaveFocus();
-        expect(screen.getByText(/^Nothing was created\./)).toBeInTheDocument();
+        // The limit counts characters, and so does the detail.
+        expect(screen.getByText("Nothing was created. It has 10,485,761 characters; this tool converts up to about 10 million at a time. Split it, and convert each part.")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
-        expect(screen.getByRole("button", { name: "Choose a different file" })).toBeInTheDocument();
+        // Pasted Markdown is the usual input, so going back to it leads.
+        expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Back to the Markdown", "Open a different file"]);
         expect(downloads).toEqual([]);
         expect(runs).toEqual([{ outcome: "error", files: 1, errorKind: "too_large" }]);
         await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Back to the Markdown" })); });

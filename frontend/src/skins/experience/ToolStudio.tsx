@@ -171,9 +171,10 @@ export function StudioActions({ tone, retryCount = 0, onRetry, choose, primary, 
 }) {
     const retry = retryCount > 0 && onRetry
         ? <button type="button" className="ts-secondary-button" onClick={onRetry}>{retryCount > 1 ? `Try ${retryCount} again` : "Try again"}</button> : null;
+    // A failure leads with a different file; a page whose input isn't a file (pasted text) leads with its own primary instead.
     return <div className="ts-actions">
-        {tone === "failure"
-            ? choose && <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
+        {tone === "failure" && choose
+            ? <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
             : primary}
         {retry}{more}
     </div>;

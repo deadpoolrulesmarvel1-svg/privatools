@@ -13,9 +13,9 @@ import { Download, FileText, Sparkles, X } from "lucide-react";
 import { downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun, isTransientFailure, toolErrorKind } from "@/lib/toolRun";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
-import type { RejectionAdvice } from "@/lib/file-acceptance";
+import { adviseRejection, partitionByAccept, type RejectionAdvice } from "@/lib/file-acceptance";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-import { FileIntake, IntakeNotice, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { FileChooserButton, FileIntake, IntakeNotice, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { downloadAgainLabel, downloadStarted, retryLine } from "@/skins/experience/studio-outcome";
 import { useDownloadOnce } from "@/skins/experience/useDownloadOnce";
 import { focusIfIdle } from "@/skins/experience/focus-result";
@@ -188,8 +188,9 @@ export function MarkdownToWordUI() {
             if (!current()) return;
             const kind = toolErrorKind(error);
             emitToolRun({ outcome: "error", files: 1 }, error);
+            // The limit counts characters, so the detail does too.
             setFailure(kind === "too_large"
-                ? { title: "This Markdown is too long to convert.", detail: `Nothing was created. It is ${formatFileSize(text.length)}; this tool converts up to 10 MB at a time. Split it, and convert each part.`, retryable: false }
+                ? { title: "This Markdown is too long to convert.", detail: `Nothing was created. It has ${plural(text.length, "character")}; this tool converts up to about ${Math.round(MAX_TEXT / 1e6)} million at a time. Split it, and convert each part.`, retryable: false }
                 : isTransientFailure(error)
                     ? { title: "The Word document couldn’t be made.", detail: `Nothing was created. The converter didn’t finish loading. ${retryLine([kind === "cancelled" ? undefined : kind])}`, retryable: true }
                     : { title: "The Word document couldn’t be made.", detail: "Nothing was created. Something failed in this browser while the document was being made. Closing other tabs frees memory for a very long document.", retryable: false });
@@ -233,20 +234,21 @@ export function MarkdownToWordUI() {
 
     if (phase === "failed" && failure) {
         return <StudioResult tone="failure" title={failure.title} detail={failure.detail}>
+            {/* The Markdown is most often pasted, so going back to it leads; another file is the alternative. */}
             <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void convert()}
-                choose={{ accepts: ACCEPTS, label: "Choose a different file", onFiles: openFromResult }}
-                more={<button type="button" className="ts-text-button" onClick={backToEditor}>Back to the Markdown</button>} />
+                primary={<button type="button" className="ts-primary-button" onClick={backToEditor}>Back to the Markdown</button>}
+                more={<FileChooserButton accepts={ACCEPTS} onFiles={openFromResult} className="ts-text-button">Open a different file</FileChooserButton>} />
         </StudioResult>;
     }
 
     const takeDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
         const files = Array.from(event.dataTransfer?.files ?? []);
         if (!files.length || busy) return;
-        // A file dropped on the box opens in it, as one chosen with the button would.
+        // A file dropped on the box opens in it, checked and refused as one chosen with the button would be.
         event.preventDefault();
-        const accepted = files.filter(file => /\.(md|markdown|txt)$/i.test(file.name));
+        const { accepted, rejected } = partitionByAccept(files, ACCEPTS);
         if (!accepted.length) {
-            setReadProblem(notice(`${files[0].name} wasn’t opened.`, "Markdown to Word takes MD, MARKDOWN or TXT files."));
+            setReadProblem(adviseRejection(rejected, { accepts: ACCEPTS, fromSlug: SLUG }));
             return;
         }
         void openFiles(accepted);
@@ -300,7 +302,7 @@ function MarkdownToWordResult({ done, onDownload, onEdit, onStartOver }: { done:
     // A partial run's heading stays short; the detail says what is to check, and the lists below say which.
     return <StudioResult tone={missing ? "partial" : "success"}
         title={missing ? `Ready, with ${plural(toCheck, "thing")} to check.` : "Your Word document is ready."}
-        detail={missing ? `${downloadStarted(1)} ${missing}; each is listed below. Everything else converted.` : downloadStarted(1)}>
+        detail={missing ? `${downloadStarted(1)} ${missing}; each is listed below.` : downloadStarted(1)}>
         <StudioFile name={done.name} status="done" detail={`Word document · ${formatFileSize(done.blob.size)}`} />
         {stats.length > 0 && <dl className="ts-stats">{stats.map(([label, count]) => <div key={label}><dt>{label}</dt><dd>{count.toLocaleString()}</dd></div>)}</dl>}
         {report.equationsAsText.length > 0 && <section className="mdw-report" aria-labelledby="mdw-equations-title">
