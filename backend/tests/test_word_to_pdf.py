@@ -78,6 +78,33 @@ def test_the_answer_says_how_many_equations_were_left_out(client):
     assert res.content.startswith(b"%PDF-")
 
 
+def text_box_with_an_equation() -> bytes:
+    """One equation in a text box, written as Word writes a text box: an
+    mc:AlternateContent with a DrawingML choice and a VML fallback, each with
+    its own copy of the box's content."""
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    box = f'<w:txbxContent xmlns:w="{w}"><w:p>{FRACTION}</w:p></w:txbxContent>'
+    run = (
+        f'<w:r xmlns:w="{w}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'
+        ' xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"'
+        ' xmlns:v="urn:schemas-microsoft-com:vml"><mc:AlternateContent>'
+        f'<mc:Choice Requires="wps"><w:drawing><wps:wsp><wps:txbx>{box}</wps:txbx></wps:wsp></w:drawing></mc:Choice>'
+        f'<mc:Fallback><w:pict><v:shape><v:textbox>{box}</v:textbox></v:shape></w:pict></mc:Fallback>'
+        '</mc:AlternateContent></w:r>'
+    )
+    document = docx.Document()
+    document.add_paragraph("A text box holds one equation.")._p.append(parse_xml(run))
+    out = io.BytesIO()
+    document.save(out)
+    return out.getvalue()
+
+
+def test_an_equation_in_a_text_box_counts_once(client):
+    res = client.post("/api/word-to-pdf", files={"file": ("box.docx", text_box_with_an_equation(), DOCX)})
+    assert res.status_code == 200, res.text
+    assert res.headers["X-Equations-Left-Out"] == "1"
+
+
 def test_a_document_without_equations_says_none_were_left_out(client):
     res = client.post("/api/word-to-pdf", files={"file": ("plain.docx", word_document(["Plain text."]), DOCX)})
     assert res.status_code == 200, res.text

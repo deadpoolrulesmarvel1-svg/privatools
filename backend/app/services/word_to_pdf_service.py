@@ -5,6 +5,10 @@ from reportlab.pdfgen import canvas
 
 from ..utils.filenames import temp_output
 
+# Word writes a text box twice, as a DrawingML choice and a VML fallback, so an
+# equation in one appears in both. python-docx maps no prefix for this namespace.
+_FALLBACK = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback"
+
 
 def word_to_pdf(input_path: str) -> tuple[str, int]:
     """Convert a .docx file to PDF using python-docx + reportlab.
@@ -17,7 +21,10 @@ def word_to_pdf(input_path: str) -> tuple[str, int]:
     output_path = temp_output("word", "pdf")
 
     doc = Document(input_path)
-    equations = sum(1 for _ in doc.element.body.iter(qn("m:oMath")))
+    equations = sum(
+        1 for m in doc.element.body.iter(qn("m:oMath"))
+        if not any(a.tag == _FALLBACK for a in m.iterancestors())
+    )
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
     margin = 72  # 1 inch
