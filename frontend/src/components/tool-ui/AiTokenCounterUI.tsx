@@ -11,7 +11,7 @@
  * nothing is uploaded to PrivaTools. Prices are entered by the visitor:
  * there is no built-in price table to go stale.
  */
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, Hash } from "lucide-react";
 import { buildOutputFilename, downloadBlob, formatFileSize, withErrorKind } from "@/lib/api";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
@@ -115,12 +115,16 @@ export function AiTokenCounterUI() {
     const runButton = useRef<HTMLButtonElement>(null);
     const ids = useId();
 
-    const stats = useMemo(() => textStats(text), [text]);
+    // The live figures under the box follow the text a moment behind, so typing in a long paste stays quick.
+    const shownText = useDeferredValue(text);
+    const stats = useMemo(() => textStats(shownText), [shownText]);
     const chunkTokens = Number(chunkSize);
     const chunkSizeOk = !split || validChunkSize(chunkTokens);
-    const hasInput = Boolean(file) || text.trim().length > 0;
+    const hasInput = Boolean(file) || /\S/.test(text);
     const busy = phase === "running";
-    const canCount = hasInput && !busy && chunkSizeOk;
+    // A ticked provider needs a model to count for.
+    const modelsOk = PROVIDERS.every(({ id }) => !asked[id] || !keys.saved.includes(id) || models[id].trim().length > 0);
+    const canCount = hasInput && !busy && chunkSizeOk && modelsOk;
 
     useEffect(() => () => abort.current?.abort(), []);
     useEffect(() => {
@@ -371,7 +375,7 @@ function ProviderCount({ provider, saved, asked, model, busy, onAsk, onModel, on
                 </div>
                 <div className="atc-key-actions">
                     <button type="button" className="ts-secondary-button" disabled={!draft.trim()} onClick={() => void save()}>Save key</button>
-                    {details?.keysUrl && <a href={details.keysUrl} target="_blank" rel="noreferrer noopener">Get a {provider.company} key</a>}
+                    {details?.keysUrl && <a href={details.keysUrl} target="_blank" rel="noreferrer noopener">Get a key from {provider.company}</a>}
                 </div>
             </div>
         </>}
@@ -479,7 +483,7 @@ function CostEstimate({ counts }: { counts: Array<{ id: string; label: string; t
     if (!chosen) return null;
     return <section className="atc-cost" aria-labelledby={`${id}-title`}>
         <h3 id={`${id}-title`}>Estimate the cost</h3>
-        <p className="ts-caption">Enter your provider’s current prices. This page keeps no price list, because prices change.</p>
+        <p className="ts-caption">Enter your provider’s current prices, in US dollars per million tokens. This page keeps no price list, because prices change.</p>
         <div className="atc-cost-fields">
             <div className="ts-setting atc-cost-which">
                 <label htmlFor={`${id}-which`}>Count to price</label>
@@ -487,8 +491,8 @@ function CostEstimate({ counts }: { counts: Array<{ id: string; label: string; t
                     {counts.map(count => <option key={count.id} value={count.id}>{count.label}: {plural(count.tokens, "token")}</option>)}
                 </select>
             </div>
-            {field("in", "Input price, US$ per million tokens", inputPrice, setInputPrice, inPrice, "decimal")}
-            {field("out", "Output price, US$ per million tokens", outputPrice, setOutputPrice, outPrice, "decimal")}
+            {field("in", "Input price, $ per 1M tokens", inputPrice, setInputPrice, inPrice, "decimal")}
+            {field("out", "Output price, $ per 1M tokens", outputPrice, setOutputPrice, outPrice, "decimal")}
             {field("out-tokens", "Output tokens you expect", outputTokens, setOutputTokens, outTokens, "numeric")}
         </div>
         <dl className="ts-stats atc-cost-sums" aria-live="polite">

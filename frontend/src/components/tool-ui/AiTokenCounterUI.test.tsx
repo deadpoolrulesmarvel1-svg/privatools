@@ -178,6 +178,18 @@ describe("Claude and Gemini, with the visitor's own key", () => {
         expect(document.body.innerHTML).not.toContain(DUMMY_KEY);
     });
 
+    it("won't count while a ticked provider has no model named", async () => {
+        await saveKey("anthropic", DUMMY_KEY);
+        render(<AiTokenCounterUI />);
+        fireEvent.click(await screen.findByRole("checkbox", { name: /Count with Claude/ }));
+        paste("Some text.");
+        expect(countButton()).toBeEnabled();
+        fireEvent.change(screen.getByLabelText("Model"), { target: { value: "  " } });
+        expect(countButton()).toBeDisabled();
+        expect(screen.getByText("Enter the model to count for.")).toBeInTheDocument();
+        expect(network).not.toHaveBeenCalled();
+    });
+
     it("saves a key typed here, ticks that provider, and removes it again", async () => {
         render(<AiTokenCounterUI />);
         const field = screen.getByLabelText("Google AI Studio API key");
@@ -201,12 +213,12 @@ describe("cost and chunks", () => {
         await screen.findByRole("heading", { name: "Token counts for your text" }, SLOW);
         const sums = () => [...document.querySelectorAll(".atc-cost-sums dd")].map(dd => dd.textContent);
         expect(sums()).toEqual(["—", "—", "—"]);
-        fireEvent.change(screen.getByLabelText("Input price, US$ per million tokens"), { target: { value: "2.50" } });
-        fireEvent.change(screen.getByLabelText("Output price, US$ per million tokens"), { target: { value: "10" } });
+        fireEvent.change(screen.getByLabelText("Input price, $ per 1M tokens"), { target: { value: "2.50" } });
+        fireEvent.change(screen.getByLabelText("Output price, $ per 1M tokens"), { target: { value: "10" } });
         fireEvent.change(screen.getByLabelText("Output tokens you expect"), { target: { value: "1000" } });
         expect(sums()).toEqual([formatCost(6 * 2.5 / 1e6), formatCost(0.01), formatCost(6 * 2.5 / 1e6 + 0.01)]);
         expect(sums()[0]).toBe("$0.000015");
-        fireEvent.change(screen.getByLabelText("Input price, US$ per million tokens"), { target: { value: "abc" } });
+        fireEvent.change(screen.getByLabelText("Input price, $ per 1M tokens"), { target: { value: "abc" } });
         expect(screen.getByText("Enter a number, such as 2.50.")).toBeInTheDocument();
     });
 
