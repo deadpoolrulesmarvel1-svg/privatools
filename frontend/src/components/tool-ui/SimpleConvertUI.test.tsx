@@ -37,7 +37,8 @@ describe("Word to PDF's equations", () => {
         vi.mocked(uploadFileWithProgress).mockResolvedValue(answer(count));
         convert("maths.docx");
         await screen.findByRole("heading", { name: "Your conversion is ready." });
-        expect(screen.getByText(new RegExp(note.replace(/\./g, "\\.")))).toBeInTheDocument();
+        // The row reads "<size> · <note>".
+        expect(screen.getByText(text => text.endsWith(` · ${note}`))).toBeInTheDocument();
     });
 
     it.each([["0"], [null]])("says nothing about equations when the answer counts %s", async count => {
