@@ -76,6 +76,11 @@ async def esign_pdf(
         )
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="signed.pdf", media_type="application/pdf", background=cleanup)
+    except ToolError:
+        # The service's refusal of a signature picture it cannot read: the
+        # global handler answers with its own status and words.
+        _cleanup_on_error(temp, out)
+        raise
     except ValueError as e:
         _cleanup_on_error(temp, out)
         raise HTTPException(status_code=400, detail=str(e))

@@ -4,8 +4,9 @@ import io
 import fitz  # PyMuPDF
 from PIL import Image, UnidentifiedImageError
 
-from ..utils.exceptions import ValidationError
+from ..utils.exceptions import FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
+from ..utils.images import image_read_error
 from ..utils.page_space import drawing_unturned
 
 
@@ -47,8 +48,14 @@ def esign_pdf(input_path: str, signature_data: str,
             sig_bytes = buf.getvalue()
     except UnidentifiedImageError as exc:
         raise ValidationError("Signature isn't a recognised image format.") from exc
-    except (OSError, ValueError) as exc:
-        raise ValidationError(f"Signature image is invalid: {exc}") from exc
+    except Exception as exc:
+        # A picture its decoder cannot read gets the wording every image tool
+        # gives (utils.images); Pillow's own words never reach the page.
+        known = image_read_error(exc)
+        if known is None and not isinstance(exc, (OSError, ValueError)):
+            raise
+        status, detail = known or (400, "The signature must be a PNG, JPG or WebP picture.")
+        raise (FileTooLargeError if status == 413 else ValidationError)(detail) from exc
 
     doc = fitz.open(input_path)
     try:

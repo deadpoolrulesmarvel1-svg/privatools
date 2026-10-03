@@ -9,6 +9,7 @@ so on). The page then offered "Try again" for a file that can never work.
 
 from __future__ import annotations
 
+import base64
 import io
 import random
 import struct
@@ -140,9 +141,10 @@ def _broken_samples() -> dict[str, tuple[bytes, str]]:
     """file name -> (bytes, what Pillow or its plugin raises for it)."""
     webp, heic = _encoded("WEBP", quality=80), _encoded("HEIF")
     tiff = _encoded("TIFF", compression="tiff_deflate")
-    png = _encoded("PNG")
+    png, jpeg = _encoded("PNG"), _encoded("JPEG", quality=90)
     rows = b"".join(b"\x07" + b"\x10" * (96 * 3) for _ in range(64))  # filter type 7 does not exist
     samples = {
+        "cut-off.jpg": (jpeg[: len(jpeg) // 2], "image file is truncated"),
         "cut-off.webp": (webp[: len(webp) // 2], "could not create decoder object"),
         "garbled.webp": (_garbled(webp, 40, 11), "failed to read next frame"),
         # The strips, not the directory, which Pillow writes after them.
@@ -225,6 +227,49 @@ def test_a_signature_its_codec_cannot_decode_is_a_400(quiet_client, sample_pdf):
     )
     assert response.status_code == 400, response.text
     assert response.json()["detail"] == STOPS_EARLY
+
+
+@pytest.mark.parametrize("name", ["cut-off.jpg", "garbled.webp", "bad-filter.png", "rle-overrun.bmp"])
+def test_a_watermark_picture_its_codec_cannot_decode_is_a_400(quiet_client, sample_pdf, name):
+    # Watermark PDF only verify()s the picture, which reads its structure,
+    # and answered 500 once the watermark was drawn.
+    response = quiet_client.post(
+        "/api/watermark",
+        files={"file": ("doc.pdf", sample_pdf, "application/pdf"),
+               "watermark_image": (name, BROKEN[name][0], "application/octet-stream")},
+    )
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == STOPS_EARLY
+
+
+def test_a_watermark_picture_past_the_pixel_cap_is_a_413(quiet_client, sample_pdf):
+    response = quiet_client.post(
+        "/api/watermark",
+        files={"file": ("doc.pdf", sample_pdf, "application/pdf"), "watermark_image": ("huge.png", _bomb_png(), "image/png")},
+    )
+    assert response.status_code == 413, response.text
+    assert response.json()["detail"] == "Image is too large to process safely. Try a smaller image."
+
+
+def _esign(quiet_client, sample_pdf, picture: bytes):
+    signature = "data:image/png;base64," + base64.b64encode(picture).decode()
+    return quiet_client.post("/api/esign-pdf", files={"file": ("doc.pdf", sample_pdf, "application/pdf")},
+                             data={"signature": signature, "page": "1", "x": "100", "y": "600"})
+
+
+@pytest.mark.parametrize("name", ["cut-off.jpg", "garbled.webp", "bad-filter.png", "garbled.heic"])
+def test_an_uploaded_signature_its_codec_cannot_decode_is_a_400(quiet_client, sample_pdf, name):
+    # E-Sign's service raised a ValidationError the route's `except ValueError`
+    # missed (500), worded with Pillow's own words.
+    response = _esign(quiet_client, sample_pdf, BROKEN[name][0])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == STOPS_EARLY
+
+
+def test_an_uploaded_signature_that_is_not_a_picture_is_a_400(quiet_client, sample_pdf):
+    response = _esign(quiet_client, sample_pdf, JUNK)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "Signature isn't a recognised image format."
 
 
 def test_remove_background_answers_a_decoder_failure_with_a_400(quiet_client, monkeypatch):

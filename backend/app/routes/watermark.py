@@ -10,6 +10,7 @@ from starlette.background import BackgroundTask
 from PIL import Image
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload
 from ..services import watermark_service
 
@@ -79,6 +80,9 @@ async def watermark_pdf(
             try:
                 with Image.open(io.BytesIO(image_bytes)) as img:
                     img.verify()
+            except Image.DecompressionBombError as exc:
+                # Past the pixel cap: 413, as on every other route.
+                raise HTTPException(status_code=413, detail=image_read_error(exc)[1]) from exc
             except Exception as exc:
                 raise HTTPException(
                     status_code=400,
@@ -124,5 +128,9 @@ async def watermark_pdf(
             + ([str(watermark_image_path)] if watermark_image_path is not None else [])
         )
         remove_files(*to_remove)
+        # verify() above reads the picture's structure, not its pixels: one
+        # whose data stops early or is broken fails only when it is drawn.
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
