@@ -42,10 +42,11 @@ export function layoutFor(language: string, style: CaptionStyle): CaptionLayout 
 
 // Characters of scripts written without spaces between words.
 const NO_SPACE_SCRIPT = /[฀-໿က-႟ក-៿぀-ヿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]/;
-// What may not begin a line: closing punctuation, and the Japanese marks that belong to the word before.
-const CLOSING = /^[.,!?;:%…)\]}»”’"'。、，．！？；：」』）】〕〉》ーゝゞヽヾ々〜]/;
-const SENTENCE_END = /[.!?…。！？]["'”’»」』)）]*$/;
-const CLAUSE_END = /[,;:—–、，；：]["'”’»」』)）]*$/;
+// What may not begin a line: closing punctuation, the Japanese marks that belong to the word before,
+// and the Arabic, Urdu and Devanagari marks that end a clause or sentence.
+const CLOSING = /^[.,!?;:%…)\]}»”’"'。、，．！？；：」』）】〕〉》ーゝゞヽヾ々〜؟،؛۔।॥]/;
+const SENTENCE_END = /[.!?…。！？؟۔।॥]["'”’»」』)）]*$/;
+const CLAUSE_END = /[,;:—–、，；：،؛]["'”’»」』)）]*$/;
 
 interface Atom { text: string; space: boolean; noSpace: boolean }
 
@@ -207,37 +208,49 @@ function limitDuration(cue: SpeechSegment, layout: CaptionLayout): SpeechSegment
 
 const round = (seconds: number) => Math.round(seconds * 1000) / 1000;
 
-/** In time order, never overlapping, each up long enough to read, none outside the audio, times to the millisecond. */
+/**
+ * In time order, never overlapping, each up long enough to read where the
+ * next leaves room, none outside the audio, times in whole milliseconds.
+ * Cues that start at the same moment share the time until the next one by
+ * the length of their text.
+ */
 function settle(cues: SpeechSegment[], totalSeconds?: number): SpeechSegment[] {
     const end = totalSeconds ?? Number.POSITIVE_INFINITY;
     const sorted = cues.map(cue => ({ ...cue })).sort((a, b) => a.start - b.start || a.end - b.end);
-    sorted.forEach((cue, index) => {
+    for (const cue of sorted) {
         cue.start = Math.min(Math.max(0, cue.start), end);
         cue.end = Math.min(Math.max(cue.end, cue.start), end);
-        const previous = sorted[index - 1];
-        if (previous && previous.end > cue.start) previous.end = Math.max(previous.start, cue.start);
-    });
-    sorted.forEach((cue, index) => {
-        if (cue.end - cue.start >= CAPTION_TIMING.minSeconds) return;
-        const limit = Math.min(sorted[index + 1]?.start ?? Number.POSITIVE_INFINITY, end);
-        cue.end = Math.max(cue.end, Math.min(cue.start + CAPTION_TIMING.minSeconds, limit));
-    });
-    sorted.forEach((cue, index) => {
-        if (cue.end - cue.start >= 0.05) return;
-        // No time of its own (it starts where the next does): share the next cue's time by text length.
-        const next = sorted[index + 1];
-        if (next && next.end > cue.start) {
-            const split = cue.start + (next.end - cue.start) * (chars(cue.text) / (chars(cue.text) + chars(next.text)));
-            cue.end = split;
-            next.start = Math.max(next.start, split);
-        } else {
-            cue.end = Math.min(cue.start + CAPTION_TIMING.minSeconds, Math.max(end, cue.start + 0.05));
+    }
+    for (let first = 0; first < sorted.length;) {
+        let next = first + 1;
+        while (next < sorted.length && sorted[next].start - sorted[first].start < 0.001) next++;
+        if (next - first > 1) {
+            const group = sorted.slice(first, next);
+            const from = group[0].start;
+            const longest = Math.max(...group.map(cue => cue.end)) - from;
+            const until = Math.min(sorted[next]?.start ?? end, end, from + Math.max(longest, CAPTION_TIMING.minSeconds * group.length));
+            if (until > from) shareTime(group.map(cue => cue.text), from, until).forEach((shared, i) => { group[i].start = shared.start; group[i].end = shared.end; });
         }
+        first = next;
+    }
+    // In whole milliseconds from here, so rounding can't make two cues touch or overlap.
+    const ms = sorted.map(cue => ({ start: Math.round(cue.start * 1000), end: Math.round(cue.end * 1000), text: cue.text }));
+    const last = Number.isFinite(end) ? Math.round(end * 1000) : Number.POSITIVE_INFINITY;
+    ms.forEach((cue, index) => {
+        const following = ms[index + 1]?.start ?? last;
+        cue.end = Math.min(cue.end, following);
+        if (cue.end - cue.start < CAPTION_TIMING.minSeconds * 1000) cue.end = Math.max(cue.end, Math.min(cue.start + CAPTION_TIMING.minSeconds * 1000, following, last));
     });
-    return sorted.map(cue => {
-        const start = round(cue.start);
-        return { start, end: Math.max(round(cue.end), start + 0.001), text: cue.text };
-    });
+    // Last of all, from the end back: no cue runs into the next, and each lasts at least a millisecond.
+    let limit = last;
+    for (let index = ms.length - 1; index >= 0; index--) {
+        const cue = ms[index];
+        cue.end = Math.min(cue.end, limit);
+        if (cue.end - cue.start < 1) cue.start = Math.max(0, cue.end - 1);
+        if (cue.end - cue.start < 1) cue.end = cue.start + 1;
+        limit = cue.start;
+    }
+    return ms.map(cue => ({ start: cue.start / 1000, end: cue.end / 1000, text: cue.text }));
 }
 
 /**

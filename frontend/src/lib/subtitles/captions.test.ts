@@ -143,6 +143,46 @@ describe("building cues from recognised speech", () => {
         for (const cue of cues) expect(cue.end).toBeGreaterThan(cue.start);
     });
 
+    it("shares the time until the next cue between cues that start at the same moment", () => {
+        // Whisper's segments timed past a window all end up at its end.
+        const cues = buildCues([
+            { start: 10, end: 10, text: "One." },
+            { start: 10, end: 10, text: "Two." },
+            { start: 10, end: 10, text: "Three." },
+            { start: 12, end: 14, text: "Next." },
+        ], TWO_LINES);
+        expect(cues.map(cue => cue.text)).toEqual(["One.", "Two.", "Three.", "Next."]);
+        for (let i = 0; i < cues.length; i++) {
+            expect(cues[i].end).toBeGreaterThan(cues[i].start);
+            if (i) expect(cues[i].start).toBeGreaterThanOrEqual(cues[i - 1].end);
+        }
+        expect(cues[2].end).toBeLessThanOrEqual(12);
+    });
+
+    it("never overlaps cues at the very end of the audio, and keeps them inside it", () => {
+        const cues = buildCues([
+            { start: 4, end: 4.5, text: "Before." },
+            { start: 5, end: 5, text: "Last." },
+            { start: 5, end: 5, text: "Very last." },
+        ], TWO_LINES, 5);
+        for (let i = 0; i < cues.length; i++) {
+            expect(cues[i].end).toBeGreaterThan(cues[i].start);
+            expect(cues[i].end).toBeLessThanOrEqual(5);
+            if (i) expect(cues[i].start).toBeGreaterThanOrEqual(cues[i - 1].end);
+        }
+        expect(cues.map(cue => cue.text)).toEqual(["Before.", "Last.", "Very last."]);
+    });
+
+    it("ends a cue at a Devanagari danda, and never starts a line with an Arabic question mark", () => {
+        const hindi = buildCues([{ start: 0, end: 9, text: "नमस्ते दोस्तों। आज हम उपशीर्षक जनरेटर का प्रयोग करके छोटे वीडियो के लिए कैप्शन बनाएंगे।" }], TWO_LINES);
+        expect(hindi[0].text).toBe("नमस्ते दोस्तों।");
+        const urdu = buildCues([{ start: 0, end: 9, text: "آج ہم سب یہاں جمع ہیں۔ یہ ویڈیو آپ کو سب ٹائٹل بنانے کا آسان طریقہ قدم بہ قدم دکھاتی ہے۔" }], TWO_LINES);
+        expect(urdu[0].text).toBe("آج ہم سب یہاں جمع ہیں۔");
+        for (const lines of [wrapCaption("هل يمكنك أن تسمعني الآن بوضوح من فضلك يا صديقي العزيز ؟ نعم", TWO_LINES)!]) {
+            for (const line of lines) expect(line.startsWith("؟")).toBe(false);
+        }
+    });
+
     it("writes times to the millisecond", () => {
         const cues = buildCues([{ start: 0.12345, end: 2.98765, text: "Rounded." }], TWO_LINES);
         expect(cues[0]).toEqual({ start: 0.123, end: 2.988, text: "Rounded." });
