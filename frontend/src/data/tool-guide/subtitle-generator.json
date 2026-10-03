@@ -32,7 +32,7 @@
     },
     {
       "q": "How accurate are the subtitles?",
-      "a": "Good on clear speech from one person at a time. Music, people talking over each other, strong accents, poor microphones and unusual names cause mistakes, and Tiny makes more than Base. Tiny also sometimes stops writing before the speech ends: when clear speech follows its last caption, the tool asks it again from there and keeps what that writes only when it reads as speech, so a line can still be missed. Over music or a long silence Whisper can write a word or a stock line such as \"Thank you.\", and where it writes the same words over and over, that stretch is left out and the result says where. Read the captions while the file plays before you publish them."
+      "a": "Good on clear speech from one person at a time. Music, people talking over each other, strong accents, poor microphones and unusual names cause mistakes, and Tiny makes more than Base. Tiny also sometimes stops writing before the speech ends: when clear speech follows its last caption, the tool asks it again from there and keeps each line of that only when it reads as speech, so a line can still be missed. Over music Whisper can write a word or a stock line such as \"Thank you.\"; one it writes over silence is left out. Where it writes the same words over and over, that stretch is heard again, and left out if it still repeats, with the result saying where; a real chant or refrain stays as it was said. Read the captions while the file plays before you publish them."
     },
     {
       "q": "Which languages does it work with?",
