@@ -31,6 +31,13 @@ export interface Tool {
   clientOnly?: boolean;
   /** Tool can optionally use the visitor's own AI API key (BYOK). */
   byok?: boolean;
+  /**
+   * The tool works from the words in a file (extracting, reading, counting or
+   * translating them), so a scan or a picture gives it nothing. A picture it
+   * refuses is pointed to OCR, never to Image to PDF, whose PDF has no text
+   * (lib/file-acceptance.ts).
+   */
+  needsText?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -638,7 +645,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "PDF to Text pulls readable content from text-based and searchable documents into a clean plain-text file. Free tool, works instantly, no sign-up.",
     synonyms: "txt plain extract content",
     popularity: 136,
-    category: "from-pdf", accepts: ".pdf", outputLabel: "content.txt",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "content.txt", needsText: true,
     lastReviewed: "2026-09-18",
   },
   {
@@ -649,7 +656,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "PDF to Word extracts text with its fonts and colours, plus images, into an editable document; layout and tables need tidying. Free, temporary server processing.",
     synonyms: "doc docx convert export editable pdf to docx",
     popularity: 4,
-    category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx", needsText: true,
     lastReviewed: "2026-09-18",
   },
 
@@ -941,7 +948,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Get an AI summary of a PDF using a local model that runs in your browser, or your own AI provider key. Pick the summary length you need.",
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
-    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "summary.txt",
+    category: "advanced", clientOnly: true, byok: true, needsText: true, accepts: ".pdf", outputLabel: "summary.txt",
     lastReviewed: "2026-09-18",
   },
   {
@@ -963,7 +970,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Ask questions about a document with text extracted in your browser and sent straight to the AI provider you choose. Free, private, your own API key.",
     synonyms: "ask pdf chat document ai question answer chatpdf talk",
     popularity: 30,
-    category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
+    category: "advanced", clientOnly: true, byok: true, needsText: true, accepts: ".pdf", outputLabel: "answer.txt",
     lastReviewed: "2026-09-28",
   },
   {
@@ -1098,7 +1105,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Translate the extracted text of a PDF with a language model in your browser or your own AI provider connection. Local mode keeps the file on your device.",
     synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
     popularity: 45,
-    clientOnly: true, byok: true,
+    clientOnly: true, byok: true, needsText: true,
     category: "advanced", accepts: ".pdf", outputLabel: "translated text",
     lastReviewed: "2026-09-18",
   },

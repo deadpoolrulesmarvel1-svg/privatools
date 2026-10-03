@@ -104,6 +104,52 @@ describe("suggestToolFor", () => {
     });
 });
 
+describe("tools that work from a file's words", () => {
+    // Image to PDF makes a PDF of the picture's pixels, with no text in it, so
+    // PDF to Text, the AI pages and the token counter would find nothing to
+    // read there. OCR reads the words in the picture.
+    const readers = [...tools, ...nonPdfTools].filter(tool => "needsText" in tool && tool.needsText).map(tool => tool.slug);
+
+    it("are marked in the registry", () => {
+        expect(readers).toEqual(expect.arrayContaining(["pdf-to-text", "ai-token-counter", "chat-with-pdf", "summarize-pdf", "translate-pdf", "pdf-to-word"]));
+        // Their own job is not reading words: they keep working on the page itself.
+        for (const slug of ["merge-pdf", "compress-pdf", "ocr-pdf", "image-ocr", "image-to-pdf"]) expect(readers).not.toContain(slug);
+    });
+
+    it("send a picture to OCR, never to Image to PDF", () => {
+        expect(readers.length).toBeGreaterThan(0);
+        for (const fromSlug of readers) {
+            for (const name of ["scan.png", "receipt.jpg", "page.webp", "fax.tiff"]) {
+                for (const prefer of ["same-job", "convert"] as const) {
+                    expect(suggestToolFor(file(name), { fromSlug, prefer }), `${fromSlug} ${name} ${prefer}`).toMatchObject({ slug: "image-ocr", relation: "read-text" });
+                }
+            }
+        }
+    });
+
+    it("say what OCR does with it", () => {
+        expect(adviseRejection([file("scan.png")], { fromSlug: "pdf-to-text" })!.text)
+            .toBe("scan.png wasn’t added. PDF to Text takes PDF files. Image OCR can read the text in it.");
+        expect(adviseRejection([file("a.png"), file("b.jpg")], { fromSlug: "summarize-pdf" })!.text)
+            .toBe("a.png and 1 other file weren’t added. Summarize PDF (AI) takes PDF files. Image OCR can read the text in them.");
+    });
+
+    it("suggest nothing for a picture no OCR tool takes, or a video, rather than a PDF of its pixels", () => {
+        expect(suggestToolFor(file("photo.heic"), { fromSlug: "pdf-to-text" })).toBeNull();
+        expect(suggestToolFor(file("talk.mp4", "video/mp4"), { fromSlug: "chat-with-pdf" })).toBeNull();
+    });
+
+    it("still send a document with text through the converter that keeps it", () => {
+        expect(suggestToolFor(file("report.docx"), { fromSlug: "pdf-to-text" })).toMatchObject({ relation: "convert", into: "PDF" });
+        expect(suggestToolFor(file("notes.txt"), { fromSlug: "chat-with-pdf" })).toMatchObject({ slug: "txt-to-pdf", relation: "convert" });
+    });
+
+    it("leave a tool that works on the page itself with Image to PDF", () => {
+        expect(suggestToolFor(file("photo.png"), { fromSlug: "merge-pdf", prefer: "convert" })).toMatchObject({ slug: "image-to-pdf", relation: "convert" });
+        expect(suggestToolFor(file("photo.png"), { fromSlug: "rotate-pdf", prefer: "convert" })).toMatchObject({ slug: "image-to-pdf", relation: "convert" });
+    });
+});
+
 describe("adviseRejection", () => {
     it("names the file, says what the tool takes and points to the tool that takes it", () => {
         const advice = adviseRejection([file("holiday.png", "image/png")], { fromSlug: "compress-pdf" })!;

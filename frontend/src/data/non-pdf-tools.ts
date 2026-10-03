@@ -34,6 +34,8 @@ export interface NonPdfTool {
   clientOnly?: boolean;
   /** Tool can optionally use the visitor's own AI API key (BYOK). */
   byok?: boolean;
+  /** The tool works from the words in a file: a picture it refuses is pointed to OCR (see Tool.needsText in tools.ts). */
+  needsText?: boolean;
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -519,7 +521,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "token counter token calculator gpt token counter claude token counter gemini token counter openai token calculator llm cost calculator tiktoken tokenizer pdf too large for claude",
     popularity: 38,
     // `accepts` repeats ACCEPTS in lib/tokens/extract.ts (lib/tokens/extract.test.ts holds them together).
-    category: "developer", clientOnly: true, byok: true, accepts: ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.html,.htm,.yaml,.yml,.toml,.log,.srt,.vtt,.tex,.py,.js,.mjs,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.h,.cpp,.cs,.swift,.kt,.sql,.sh,.css,.pdf,.docx,text/*", outputLabel: "token counts",
+    category: "developer", clientOnly: true, byok: true, needsText: true, accepts: ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.html,.htm,.yaml,.yml,.toml,.log,.srt,.vtt,.tex,.py,.js,.mjs,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.h,.cpp,.cs,.swift,.kt,.sql,.sh,.css,.pdf,.docx,text/*", outputLabel: "token counts",
     lastReviewed: "2026-10-03",
   },
   {
