@@ -65,7 +65,7 @@ export async function makePdfJsOpener(): Promise<OpenPdf> {
   return async (data: Uint8Array, password?: string) => {
     // pdf.js transfers the underlying buffer, so hand it a fresh copy per
     // attempt — otherwise the second candidate sees a detached ArrayBuffer.
-    const task = pdfjsLib.getDocument({ data: data.slice(), password });
+    const task = pdfjsLib.getDocument({ data: data.slice(), password, isEvalSupported: false });
     const doc = await task.promise;
     void doc.destroy();
     return doc;

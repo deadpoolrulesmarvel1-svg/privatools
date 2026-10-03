@@ -18,7 +18,7 @@ async function pdfJsOpener(): Promise<OpenForCount> {
   const workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
   defaultOpener = async (data: Uint8Array) => {
-    const doc = await pdfjsLib.getDocument({ data: data.slice() }).promise;
+    const doc = await pdfjsLib.getDocument({ data: data.slice(), isEvalSupported: false }).promise;
     return doc;
   };
   return defaultOpener;
