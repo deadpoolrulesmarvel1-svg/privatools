@@ -27,6 +27,7 @@ const BROWSER_ONLY_RUNNERS = [
     "src/components/tool-ui/TextDiffUI.tsx",
     "src/components/tool-ui/HashGeneratorUI.tsx",
     "src/components/tool-ui/CsvJsonUI.tsx",
+    "src/components/tool-ui/AiTokenCounterUI.tsx",
 ];
 /** Files whose only backend call is the per-file worker handed to useMultiFileProcessor, which reports for them. */
 const ENGINE_WORKERS = ["src/components/tool-ui/RemoveExifUI.tsx"];

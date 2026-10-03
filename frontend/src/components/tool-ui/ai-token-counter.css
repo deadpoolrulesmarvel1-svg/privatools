@@ -1,0 +1,64 @@
+/* AI Token Counter: the paste box, the key fields in the options, and the
+   result's counts, cost and chunks. Colours come from the experience tokens,
+   so Air and Play, light and dark, all follow. */
+
+.atc-paste textarea{display:block;width:100%;min-height:13rem;padding:12px 14px;border:1px solid hsl(var(--input));border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font:13px/1.6 var(--font-mono);resize:vertical}
+.atc-paste textarea::placeholder{color:hsl(var(--muted-foreground))}
+.atc-paste textarea:focus-visible{outline:2px solid hsl(var(--accent));outline-offset:2px}
+.atc-paste textarea:disabled{opacity:.65}
+
+.atc-options-group{display:grid;gap:14px;align-content:start;min-width:0}
+.atc-provider{display:grid;gap:10px;min-width:0;margin:0;padding:14px 0 0;border:0;border-top:1px solid hsl(var(--border))}
+.atc-provider legend{float:left;width:100%;padding:0;margin:0 0 2px;font-size:13px;font-weight:650;color:hsl(var(--foreground))}
+.atc-provider legend+*{clear:left}
+.atc-provider .ts-check,.atc-session{align-items:flex-start}
+.atc-provider .ts-check input,.atc-session input{margin-top:1px}
+.atc-provider .ts-setting input{font-size:13px}
+.atc-key-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.atc-key-actions .ts-secondary-button{padding:10px 14px}
+.atc-key-actions a{font-size:12px;color:hsl(var(--accent));text-underline-offset:3px}
+.atc-key-state{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.atc-key-state .ts-text-button{padding:0;text-decoration:underline;text-underline-offset:3px}
+.atc-session{font-size:12px;line-height:1.5}
+.atc-session strong{font-weight:650}
+.atc-split-fields{display:grid;gap:12px}
+.tool-studio .ts-caption[data-invalid=true]{color:hsl(var(--destructive))}
+.tool-studio input[aria-invalid=true]{border-color:hsl(var(--destructive))}
+
+/* The result. */
+.atc-counts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.atc-count{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:4px 16px;padding:14px 16px;border:1px solid hsl(var(--border));border-radius:10px;background:hsl(var(--card))}
+.atc-count-name{font-size:13px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
+.atc-count-name code{margin-left:6px;font:12px var(--font-mono);font-weight:400;color:hsl(var(--muted-foreground));white-space:nowrap}
+.atc-count-value{font:600 20px/1.2 var(--pt-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.atc-count-how{grid-column:1/-1;font-size:12px;line-height:1.55;color:hsl(var(--muted-foreground))}
+.atc-count[data-state=none] .atc-count-value{font-size:15px;color:hsl(var(--muted-foreground))}
+.atc-count[data-state=failed]{border-color:hsl(var(--warning));background:hsl(var(--warning-soft))}
+.atc-count[data-state=failed] .atc-count-value{font-size:15px}
+.atc-count[data-state=failed] .atc-count-how{color:hsl(var(--foreground))}
+
+.atc-cost,.atc-chunks{display:grid;gap:12px;min-width:0;padding-top:20px;margin-top:6px;border-top:1px solid hsl(var(--border))}
+.ts-result .atc-cost h3,.ts-result .atc-chunks h3{font:600 18px/1.25 var(--pt-display);letter-spacing:-.02em;margin:0}
+.atc-cost .ts-caption,.atc-chunks .ts-caption{margin:0}
+.atc-cost-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:12px}
+.atc-cost-which{grid-column:1/-1}
+.atc-cost .ts-setting>label{line-height:1.4}
+.atc-chunk-actions{padding-top:0}
+.atc-chunk-list{list-style:none;margin:0;padding:0 2px 0 0;display:grid;gap:8px;max-height:30rem;overflow-y:auto}
+.atc-chunk-list li{min-width:0;padding:10px 14px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card))}
+.atc-chunk-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.atc-chunk-head strong{font-size:13px}
+.atc-chunk-head span{font-size:12px;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums}
+.atc-chunk-head .ts-text-button{margin-left:auto;padding:4px 0}
+.atc-chunk-list p{margin:4px 0 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere;color:hsl(var(--foreground))}
+
+html[data-experience=play] .atc-paste textarea,html[data-experience=play] .atc-count{border-radius:14px}
+html[data-experience=play] .atc-chunk-list li{border-radius:12px}
+html[data-experience=play] .atc-studio .ts-options{align-items:stretch}
+html[data-experience=play] .atc-studio .ts-options>.atc-options-group{flex:1 1 18rem}
+
+@media(max-width:540px){
+  .atc-count{grid-template-columns:minmax(0,1fr)}
+  .atc-count-value{text-align:left}
+  .atc-chunk-list{max-height:24rem}
+}

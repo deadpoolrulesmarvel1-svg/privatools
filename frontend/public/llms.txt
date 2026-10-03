@@ -2,7 +2,7 @@
 
 > Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 224 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -177,6 +177,7 @@ PrivaTools offers 223 tools for PDFs, images, video, audio, documents, archives,
 - [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
 - [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
 - [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
+- [AI Token Counter](https://privatools.me/tools/ai-token-counter): Count tokens in text or files for GPT, Claude and Gemini
 - [Color Converter](https://privatools.me/tools/color-converter): Convert a HEX color to RGB, RGBA, and HSL
 - [URL Encoder / Decoder](https://privatools.me/tools/url-encoder): Percent-encode or decode URLs in your browser
 - [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes from an uploaded image

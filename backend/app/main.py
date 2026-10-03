@@ -264,6 +264,9 @@ _BYOK_PATHS = {
     "/tools/transcribe-audio",
     "/tool/ocr-pdf",
     "/tools/image-ocr",
+    # GPT counts run in the tab; Claude and Gemini counts come from the
+    # providers' count methods, with the visitor's key, when asked.
+    "/tools/ai-token-counter",
 }
 
 # Curated on purpose. `connect-src https:` would let a page reach any host,
