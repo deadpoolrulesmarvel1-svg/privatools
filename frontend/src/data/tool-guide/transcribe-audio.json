@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose where it runs",
-      "text": "On this device uses Whisper in your browser: Tiny, about 41 MB, is faster, and Base, about 74 MB, is more accurate. The model downloads once and is cached. With your own API key, the audio goes to your chosen provider instead."
+      "text": "On this device uses Whisper in your browser: Tiny, about 41 MB, is faster, and Base, about 74 MB, is more accurate. Choose the language spoken too, since this browser version of Whisper doesn't detect it. The model downloads once and is cached. With your own API key, the audio goes to your chosen provider instead."
     },
     {
       "name": "Transcribe",
@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "Is my recording uploaded?",
-      "a": "Not with the on-device engine: the audio is decoded and transcribed in your browser. What is downloaded is the Whisper model itself, fetched once from a public model host and cached. If you choose your own API key, the audio goes from your browser directly to that provider, not through PrivaTools."
+      "a": "Not with the on-device engine: the audio is decoded and transcribed in your browser. What is downloaded is the Whisper model from Hugging Face and the engine that runs it from jsDelivr, once; your browser keeps them, and AI Studio shows the model's size and can remove it. If you choose your own API key, the audio goes from your browser directly to that provider, not through PrivaTools."
     },
     {
       "q": "Tiny or Base — which model should I use?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Which languages does it understand?",
-      "a": "Whisper is multilingual and detects the language itself. Accuracy is best for widely spoken languages and drops for less common ones, especially with the smaller Tiny model."
+      "a": "On this device, Whisper's 99 languages: choose the one spoken, because this browser version doesn't detect it and writes English unless you pick another. Accuracy is best for widely spoken languages and drops for less common ones, especially with the smaller Tiny model. With your own key, the provider's model usually detects the language itself."
     },
     {
       "q": "Why is transcription slow?",

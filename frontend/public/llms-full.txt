@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 224 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 225 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -1036,6 +1036,14 @@ URL: https://privatools.me/tools/subtitle-converter
 Convert SRT, VTT, and ASS subtitles to SRT or VTT
 
 Convert subtitles online for free — turn SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) files into SRT or VTT. Useful when your player supports one format but your subtitles are in another.
+
+### Subtitle Generator
+
+URL: https://privatools.me/tools/subtitle-generator
+
+Turn the speech in a video or recording into subtitles
+
+Generate subtitles from a video or audio file in your browser. Whisper, an open speech-recognition model, listens on your device and writes timed captions of up to two lines; you read and correct them while the video plays, then download SRT or VTT. Nothing is uploaded: the first run downloads the model, about 74 MB for Base or 41 MB for Tiny, and your browser keeps it. It works best on clear speech; music, people talking over each other and strong accents cause mistakes. Files can hold up to 3 hours of sound.
 
 ### JSON / XML Formatter
 

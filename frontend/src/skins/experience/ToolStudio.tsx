@@ -131,10 +131,10 @@ export function StudioActionBar({ ready, count, children, className = "" }: { re
     </div>;
 }
 
-export function StudioProgress({ label = "Working on your file", progress, detail, onCancel }: { label?: string; progress?: number; detail?: string; onCancel?: () => void }) {
+export function StudioProgress({ label = "Working on your file", progress, detail, onCancel, cancelLabel = "Cancel" }: { label?: string; progress?: number; detail?: string; onCancel?: () => void; cancelLabel?: string }) {
     const value = progress === undefined ? undefined : Math.max(0, Math.min(100, progress));
     // The label is a status line, not a heading: it appears and goes with the run, so it never breaks the page's heading order.
-    return <section className="ts-progress" role="status" aria-live="polite"><div className="ts-progress-heading"><span className="ts-orbit" aria-hidden="true"><i /><i /><i /></span><div><strong className="ts-progress-title">{label}</strong>{detail && <p>{detail}</p>}</div>{onCancel && <button type="button" onClick={onCancel} className="ts-text-button">Cancel</button>}</div><div className="ts-progress-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} data-indeterminate={value === undefined}><i style={value === undefined ? undefined : { transform: `scaleX(${value / 100})` }} /></div>{value !== undefined && <span className="ts-progress-value">{Math.round(value)}%</span>}</section>;
+    return <section className="ts-progress" role="status" aria-live="polite"><div className="ts-progress-heading"><span className="ts-orbit" aria-hidden="true"><i /><i /><i /></span><div><strong className="ts-progress-title">{label}</strong>{detail && <p>{detail}</p>}</div>{onCancel && <button type="button" onClick={onCancel} className="ts-text-button">{cancelLabel}</button>}</div><div className="ts-progress-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} data-indeterminate={value === undefined}><i style={value === undefined ? undefined : { transform: `scaleX(${value / 100})` }} /></div>{value !== undefined && <span className="ts-progress-value">{Math.round(value)}%</span>}</section>;
 }
 
 /**

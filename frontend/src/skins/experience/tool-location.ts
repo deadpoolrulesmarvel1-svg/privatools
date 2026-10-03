@@ -110,6 +110,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "This device or your AI key",
         detail: "Choose where the AI runs before transcribing. On this device, Whisper downloads once and the recording never leaves your browser. With your own API key, the audio goes directly to the provider you choose.",
     },
+    // On the device only, but the first run downloads the model: the flags' default would not say so.
+    "subtitle-generator": {
+        kind: "device",
+        label: "Stays on your device",
+        detail: "The sound is read and turned into subtitles in this browser. Whisper downloads once, about 74 MB for Base or 41 MB for Tiny, and the video or recording never leaves your browser.",
+    },
     "translate-pdf": {
         kind: "ai",
         label: "This device or your AI key",
