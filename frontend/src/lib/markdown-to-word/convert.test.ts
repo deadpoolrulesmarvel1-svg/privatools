@@ -180,8 +180,8 @@ describe("Markdown to Word: the document", () => {
         expect(body).toMatch(/<w:r><w:rPr><w:i\/><w:iCs\/><\/w:rPr><w:t xml:space="preserve">italic<\/w:t><\/w:r>/);
         expect(body).toMatch(/<w:r><w:rPr><w:strike\/><\/w:rPr><w:t xml:space="preserve">struck<\/w:t><\/w:r>/);
         expect(body).toMatch(/<w:r><w:rPr><w:rStyle w:val="HTMLCode"\/><\/w:rPr><w:t xml:space="preserve">inline code<\/w:t><\/w:r>/);
-        // A horizontal rule is a paragraph with a rule under it.
-        expect(body).toContain("<w:p><w:pPr><w:pBdr><w:bottom w:val=\"single\" w:sz=\"6\" w:space=\"1\" w:color=\"auto\"/></w:pBdr></w:pPr></w:p>");
+        // A horizontal rule is a paragraph with a rule under it; this one comes after the table, so it has space above.
+        expect(body).toContain("<w:p><w:pPr><w:pBdr><w:bottom w:val=\"single\" w:sz=\"6\" w:space=\"1\" w:color=\"auto\"/></w:pBdr><w:spacing w:before=\"160\"/></w:pPr></w:p>");
     });
 
     it("links to web addresses and to headings in the document", async () => {
@@ -318,6 +318,28 @@ describe("Markdown to Word: the document", () => {
         expect(body).toContain("<w:tblInd w:w=\"720\" w:type=\"dxa\"/>");
         // A list inside a quote is indented past the quote, with the hanging number.
         expect(body).toMatch(/<w:numPr><w:ilvl w:val="0"\/><w:numId w:val="1"\/><\/w:numPr><w:ind w:left="1440" w:hanging="360"\/>/);
+        expectSchemaOrder(xml("word/document.xml"));
+    });
+
+    it("keeps tabs in code, spaces what follows a table, and bookmarks a heading that opens a list item", async () => {
+        const { text, xml } = await convert([
+            "```make", "all:", "\tpython train.py", "```", "",
+            "| a |", "| - |", "| 1 |", "",
+            "After the table.", "",
+            "1. First item", "", "   Its second paragraph.", "",
+            "2. ## A heading item", "",
+            "> | b |", "> | - |", "> | 2 |", "",
+            "After the quote's table, [back to the heading](#a-heading-item).",
+        ].join("\n"));
+        const body = text("word/document.xml");
+        expect(body).toContain("<w:t xml:space=\"preserve\">all:</w:t><w:br/><w:tab/><w:t xml:space=\"preserve\">python train.py</w:t>");
+        expect(body).toMatch(/<\/w:tbl><w:p><w:pPr><w:spacing w:before="160"\/><\/w:pPr><w:r><w:t xml:space="preserve">After the table\.<\/w:t>/);
+        // After a quote that ends with a table too.
+        expect(body).toMatch(/<\/w:tbl><w:p><w:pPr><w:spacing w:before="160"\/><\/w:pPr><w:r><w:t xml:space="preserve">After the quote's table/);
+        // Every paragraph of a loose list's items keeps its spacing, not only the numbered one.
+        expect(body).toMatch(/<w:pStyle w:val="ListParagraph"\/><w:contextualSpacing w:val="0"\/><\/w:pPr><w:r><w:t xml:space="preserve">Its second paragraph\.<\/w:t>/);
+        expect(body).toMatch(/<w:bookmarkStart w:id="\d+" w:name="_a_heading_item"\/><w:r><w:rPr><w:b\/><w:bCs\/><\/w:rPr><w:t xml:space="preserve">A heading item<\/w:t><\/w:r><w:bookmarkEnd w:id="\d+"\/>/);
+        expect(body).toContain("<w:hyperlink w:anchor=\"_a_heading_item\" w:history=\"1\">");
         expectSchemaOrder(xml("word/document.xml"));
     });
 

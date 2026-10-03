@@ -11,6 +11,38 @@
  * GitHub's tables, task lists, ~~strikethrough~~ and bare web addresses, and
  * LaTeX math in $…$, $$…$$, \(…\) and \[…\].
  *
+ * conformance.test.ts holds it to CommonMark 0.31.2 and GFM 0.29 on 320
+ * cases. Where it differs from them, it does so on purpose:
+ *
+ * - Strikethrough takes two tildes, ~~like this~~: a single ~ stays as typed,
+ *   so "~5 minutes" reads as written. (GFM strikes ~this~ too.)
+ * - Math, which neither has. $…$ follows Pandoc: no space just inside either
+ *   dollar and no digit after the closing one, so "$5 and $10" stays prices.
+ *   $$…$$ and \(…\) are math inside a line. $$ or \[ starting a line opens
+ *   display math, which may interrupt a paragraph; with text after the opener
+ *   only when a later line closes it before a blank line, and one never
+ *   closed is read as the text it was. So a line "\[x\]" is an equation, not
+ *   CommonMark's escaped "[x]".
+ * - Table rows: a pipe inside a code span or inline math never splits the
+ *   cell, escaped or not. In a code span \| shows as |, as on GitHub; in math
+ *   it stays \|, which LaTeX reads as a double bar. (GFM splits at every
+ *   unescaped pipe, and shows \| as | everywhere.)
+ * - Raw HTML isn't kept. Formatting tags (<b>, <sup>, <kbd> and the like)
+ *   become formatting, <br> a line break and <img> an image; other tags are
+ *   left out with their text, comments are dropped, and an HTML block's lines
+ *   are read as Markdown.
+ * - Named character references are HTML 4's set, with &apos; and &check;.
+ *   HTML5's other names (&HilbertSpace;) stay as typed.
+ * - Bare addresses. A web address is also linked inside brackets that don't
+ *   make a link, and never takes a ] it didn't open. It needs a domain with a
+ *   period, so http://localhost:3000 stays text, as GFM's text says and
+ *   cmark-gfm doesn't. An e-mail address needs a top-level domain of two
+ *   letters or more; mailto: and xmpp: prefixes aren't read.
+ * - Footnotes stay as typed: [^1] and its "[^1]: note" line both stay text,
+ *   where CommonMark would read the line as a link definition and drop it.
+ * - Limits for hostile input: quotes and lists nested deeper than 48, link
+ *   brackets deeper than 64 and emphasis deeper than 64 are read as text.
+ *
  * Nothing here fetches anything: links and images are only recorded.
  */
 
@@ -75,7 +107,29 @@ function isPunctuationChar(c: string): boolean {
     return UNICODE_PUNCTUATION.test(c);
 }
 
-/** Expand tabs to the next multiple of four columns, as CommonMark measures indentation. */
+/**
+ * Where `text` ends once the characters in `chars` are taken off the end of
+ * its first `end` characters. A pattern such as / +$/ does this in time
+ * that grows with the square of a long run inside the text.
+ */
+function endWithout(text: string, chars: string, end: number): number {
+    while (end > 0 && chars.includes(text[end - 1])) end--;
+    return end;
+}
+
+/** An ATX heading's text, without its closing #s, which need a space or tab before them unless they are all there is. */
+function atxHeadingText(text: string): string {
+    let end = endWithout(text, " \t", text.length);
+    const hashes = endWithout(text, "#", end);
+    if (hashes < end && (hashes === 0 || text[hashes - 1] === " " || text[hashes - 1] === "\t")) end = hashes;
+    return text.slice(0, end).trim();
+}
+
+/**
+ * Expand tabs to the next multiple of four columns, as CommonMark measures
+ * indentation. Only structure is read from the expanded line: content is
+ * taken from the line as typed, so tabs in code and text stay tabs.
+ */
 function expandTabs(line: string): string {
     if (!line.includes("\t")) return line;
     let out = "";
@@ -88,21 +142,41 @@ function expandTabs(line: string): string {
 
 // ── Entities ──────────────────────────────────────────────────────────────────
 
-/** The named character references people write by hand; any other stays as typed. */
-const NAMED_ENTITIES: Record<string, string> = {
-    amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: "\u{a0}", ensp: "\u{2002}", emsp: "\u{2003}", thinsp: "\u{2009}",
-    copy: "©", reg: "®", trade: "™", hellip: "…", mdash: "—", ndash: "–", lsquo: "‘", rsquo: "’", sbquo: "‚",
-    ldquo: "“", rdquo: "”", bdquo: "„", laquo: "«", raquo: "»", lsaquo: "‹", rsaquo: "›", deg: "°", plusmn: "±",
-    times: "×", divide: "÷", middot: "·", bull: "•", euro: "€", pound: "£", yen: "¥", cent: "¢", sect: "§",
-    para: "¶", frac12: "½", frac14: "¼", frac34: "¾", sup1: "¹", sup2: "²", sup3: "³", micro: "µ", dagger: "†",
-    Dagger: "‡", permil: "‰", prime: "′", Prime: "″", larr: "←", rarr: "→", uarr: "↑", darr: "↓", harr: "↔",
-    rArr: "⇒", lArr: "⇐", hArr: "⇔", le: "≤", ge: "≥", ne: "≠", asymp: "≈", equiv: "≡", infin: "∞", minus: "−",
-    radic: "√", sum: "∑", prod: "∏", part: "∂", nabla: "∇", isin: "∈", notin: "∉", cap: "∩", cup: "∪",
-    sub: "⊂", sup: "⊃", and: "∧", or: "∨", not: "¬", forall: "∀", exist: "∃", empty: "∅", alpha: "α", beta: "β",
-    gamma: "γ", delta: "δ", epsilon: "ε", theta: "θ", lambda: "λ", mu: "μ", pi: "π", sigma: "σ", tau: "τ", phi: "φ",
-    omega: "ω", Delta: "Δ", Sigma: "Σ", Omega: "Ω", Pi: "Π", check: "✓", iexcl: "¡", iquest: "¿", shy: "\u{ad}",
-    zwj: "\u{200d}", zwnj: "\u{200c}",
-};
+/**
+ * Named character references: HTML 4's whole set (Latin-1, Greek, symbols and
+ * punctuation), with &apos; and &check;, at their HTML5 values. HTML5's other
+ * names, some two thousand and mostly mathematical (&HilbertSpace;), stay as
+ * typed: their table would add about a third to the converter's size.
+ */
+const NAMED_ENTITIES = new Map<string, string>();
+/** Latin-1's names, for U+00A0 to U+00FF in order. */
+const LATIN1_ENTITIES =
+    "nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute " +
+    "micro para middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring " +
+    "AElig Ccedil Egrave Eacute Ecirc Euml Igrave Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml " +
+    "times Oslash Ugrave Uacute Ucirc Uuml Yacute THORN szlig agrave aacute acirc atilde auml aring aelig ccedil " +
+    "egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde ograve oacute ocirc otilde ouml divide oslash " +
+    "ugrave uacute ucirc uuml yacute thorn yuml";
+/** The other names, each followed by its code point in hexadecimal. */
+const OTHER_ENTITIES =
+    "quot 22 amp 26 apos 27 lt 3c gt 3e OElig 152 oelig 153 Scaron 160 scaron 161 Yuml 178 fnof 192 circ 2c6 tilde " +
+    "2dc Alpha 391 Beta 392 Gamma 393 Delta 394 Epsilon 395 Zeta 396 Eta 397 Theta 398 Iota 399 Kappa 39a Lambda " +
+    "39b Mu 39c Nu 39d Xi 39e Omicron 39f Pi 3a0 Rho 3a1 Sigma 3a3 Tau 3a4 Upsilon 3a5 Phi 3a6 Chi 3a7 Psi 3a8 " +
+    "Omega 3a9 alpha 3b1 beta 3b2 gamma 3b3 delta 3b4 epsilon 3b5 zeta 3b6 eta 3b7 theta 3b8 iota 3b9 kappa 3ba " +
+    "lambda 3bb mu 3bc nu 3bd xi 3be omicron 3bf pi 3c0 rho 3c1 sigmaf 3c2 sigma 3c3 tau 3c4 upsilon 3c5 phi 3c6 " +
+    "chi 3c7 psi 3c8 omega 3c9 thetasym 3d1 upsih 3d2 piv 3d6 ensp 2002 emsp 2003 thinsp 2009 zwnj 200c zwj 200d " +
+    "lrm 200e rlm 200f ndash 2013 mdash 2014 lsquo 2018 rsquo 2019 sbquo 201a ldquo 201c rdquo 201d bdquo 201e " +
+    "dagger 2020 Dagger 2021 bull 2022 hellip 2026 permil 2030 prime 2032 Prime 2033 lsaquo 2039 rsaquo 203a oline " +
+    "203e frasl 2044 euro 20ac image 2111 weierp 2118 real 211c trade 2122 alefsym 2135 larr 2190 uarr 2191 rarr " +
+    "2192 darr 2193 harr 2194 crarr 21b5 lArr 21d0 uArr 21d1 rArr 21d2 dArr 21d3 hArr 21d4 forall 2200 part 2202 " +
+    "exist 2203 empty 2205 nabla 2207 isin 2208 notin 2209 ni 220b prod 220f sum 2211 minus 2212 lowast 2217 radic " +
+    "221a prop 221d infin 221e ang 2220 and 2227 or 2228 cap 2229 cup 222a int 222b there4 2234 sim 223c cong 2245 " +
+    "asymp 2248 ne 2260 equiv 2261 le 2264 ge 2265 sub 2282 sup 2283 nsub 2284 sube 2286 supe 2287 oplus 2295 " +
+    "otimes 2297 perp 22a5 sdot 22c5 lceil 2308 rceil 2309 lfloor 230a rfloor 230b loz 25ca spades 2660 clubs 2663 " +
+    "hearts 2665 diams 2666 check 2713 lang 27e8 rang 27e9";
+LATIN1_ENTITIES.split(" ").forEach((name, index) => NAMED_ENTITIES.set(name, String.fromCodePoint(0xa0 + index)));
+const otherEntities = OTHER_ENTITIES.split(" ");
+for (let i = 0; i + 1 < otherEntities.length; i += 2) NAMED_ENTITIES.set(otherEntities[i], String.fromCodePoint(parseInt(otherEntities[i + 1], 16)));
 
 const ENTITY = /&(?:#[xX]([0-9a-fA-F]{1,6})|#([0-9]{1,7})|([A-Za-z][A-Za-z0-9]{1,31}));/y;
 
@@ -112,7 +186,7 @@ function decodeEntity(match: RegExpExecArray): string | null {
         if (code === 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return REPLACEMENT;
         return String.fromCodePoint(code);
     }
-    return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, match[3]) ? NAMED_ENTITIES[match[3]] : null;
+    return NAMED_ENTITIES.get(match[3]) ?? null;
 }
 
 /** Backslash escapes and entities, as CommonMark resolves them in link destinations, titles and info strings. */
@@ -179,9 +253,77 @@ const BULLET_MARKER = /^[*+-]/;
 const ORDERED_MARKER = /^(\d{1,9})([.)])/;
 const MAYBE_SPECIAL = /^[#`~*+_=<>0-9\-|:$\\]/;
 const TABLE_DELIMITER_CELL = /^:?-+:?$/;
-const LINK_REFERENCE = /^ {0,3}\[((?:[^\\[\]]|\\.){1,999})\]:[ \t]*(<(?:[^<>\n\\]|\\.)*>|\S+)(?:[ \t]+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?[ \t]*$/;
+const REFERENCE_LABEL = /\[((?:[^\\[\]]|\\[\s\S]){0,999})\]:/y;
+const REFERENCE_DESTINATION = /<(?:[^<>\n\\]|\\.)*>|[^\s<]\S*/y;
+const REFERENCE_TITLE = /"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|\((?:[^()\\]|\\[\s\S])*\)/y;
 
 interface LinkReference { destination: string; title: string }
+
+/** Past spaces and tabs, and past one line ending and the spaces and tabs after it when `newline` allows. */
+function skipBlank(text: string, at: number, newline: boolean): number {
+    while (text[at] === " " || text[at] === "\t") at++;
+    if (newline && text[at] === "\n") {
+        at++;
+        while (text[at] === " " || text[at] === "\t") at++;
+    }
+    return at;
+}
+
+/** Where the next line starts, when only spaces and tabs are left on this one; -1 otherwise. */
+function nextLineAfter(text: string, at: number): number {
+    at = skipBlank(text, at, false);
+    if (at >= text.length) return text.length;
+    return text[at] === "\n" ? at + 1 : -1;
+}
+
+/**
+ * One link reference definition from `at`, [label]: destination "title", as
+ * CommonMark reads it: the destination and the title may each start on the
+ * next line, and the label and the title may run over several. A title that
+ * doesn't end its line is left as text when the destination ended its own.
+ * Returns where the next line starts, or -1 when there is no definition.
+ */
+function readReference(text: string, at: number, refs: Map<string, LinkReference>): number {
+    const label = matchAt(REFERENCE_LABEL, text, at);
+    // [^1]: is a footnote, which stays as typed rather than vanish as a definition.
+    if (!label || !label[1].trim() || label[1].startsWith("^")) return -1;
+    let position = skipBlank(text, at + label[0].length, true);
+    const destination = matchAt(REFERENCE_DESTINATION, text, position);
+    if (!destination) return -1;
+    position += destination[0].length;
+    let end = nextLineAfter(text, position);
+    let title = "";
+    const titleStart = skipBlank(text, position, true);
+    const titled = titleStart > position ? matchAt(REFERENCE_TITLE, text, titleStart) : null;
+    if (titled) {
+        const afterTitle = nextLineAfter(text, titleStart + titled[0].length);
+        if (afterTitle >= 0) {
+            end = afterTitle;
+            title = titled[0].slice(1, -1);
+        }
+    }
+    if (end < 0) return -1;
+    const key = normalizeLabel(label[1]);
+    const href = destination[0].startsWith("<") ? destination[0].slice(1, -1) : destination[0];
+    if (!refs.has(key)) refs.set(key, { destination: unescapeString(href), title: unescapeString(title) });
+    return end;
+}
+
+/** The link reference definitions a paragraph starts with, read into `refs`; returns how many of its lines they take. */
+function readReferences(lines: string[], refs: Map<string, LinkReference>): number {
+    if (!lines.length || !lines[0].startsWith("[")) return 0;
+    const text = lines.join("\n");
+    let at = 0;
+    while (at < text.length && text[at] === "[") {
+        const end = readReference(text, at, refs);
+        if (end < 0) break;
+        at = end;
+    }
+    if (at >= text.length) return lines.length;
+    let taken = 0;
+    for (let i = text.indexOf("\n"); i >= 0 && i < at; i = text.indexOf("\n", i + 1)) taken++;
+    return taken;
+}
 
 class BlockParser {
     private readonly doc: RawBlock;
@@ -191,7 +333,11 @@ class BlockParser {
     private allClosed = true;
     /** A leaf that a start opened on this line and that took the rest of it (a fence's info string, a table's delimiter row). */
     private openedLeaf: RawBlock | null = null;
+    /** The line with its tabs expanded, which every column and offset below measures. */
     private line = "";
+    /** The line as typed, and whether it holds a tab (when it doesn't, it is the same as `line`). */
+    private typedLine = "";
+    private hasTabs = false;
     private lineNumber = 0;
     private offset = 0;
     private nextNonspace = 0;
@@ -215,9 +361,34 @@ class BlockParser {
     parse(source: string): RawBlock {
         const lines = source.split("\n");
         if (lines.length && lines[lines.length - 1] === "") lines.pop();
-        for (const raw of lines) this.incorporateLine(expandTabs(raw));
+        this.lines = lines;
+        for (const line of lines) this.incorporateLine(line);
         while (this.tip) this.finalize(this.tip, this.lineNumber);
         return this.doc;
+    }
+
+    private lines: string[] = [];
+    private closers = new Map<string, Int32Array>();
+
+    /**
+     * Whether a line after this one, before the next blank line, ends with
+     * `closer`. For each closer, every line's answer is worked out once, from
+     * the end, so asking costs nothing however many openers there are.
+     */
+    private closesAhead(closer: string): boolean {
+        let ahead = this.closers.get(closer);
+        if (!ahead) {
+            const lines = this.lines;
+            ahead = new Int32Array(lines.length).fill(-1);
+            for (let i = lines.length - 2; i >= 0; i--) {
+                const next = lines[i + 1];
+                // A line of nothing but quote markers is blank too: it ends display math in a quote.
+                if (/^[\s>]*$/.test(next)) continue;
+                ahead[i] = next.trimEnd().endsWith(closer) ? i + 1 : ahead[i + 1];
+            }
+            this.closers.set(closer, ahead);
+        }
+        return ahead[this.lineNumber - 1] >= 0;
     }
 
     private get current(): RawBlock { return this.tip!; }
@@ -241,6 +412,28 @@ class BlockParser {
 
     private advanceOffset(count: number) { this.offset = Math.min(this.line.length, this.offset + count); }
 
+    /**
+     * The line as typed from a column of the expanded line on. Tabs after it
+     * stay tabs; a tab the column falls inside leaves the columns it still
+     * spans as spaces, as in CommonMark (a list item's code indented by tabs).
+     */
+    private contentFrom(column: number): string {
+        if (!this.hasTabs) return this.line.slice(column);
+        const typed = this.typedLine;
+        let at = 0;
+        for (let i = 0; i < typed.length; i++) {
+            if (at >= column) return typed.slice(i);
+            if (typed[i] === "\t") {
+                const next = at + 4 - (at % 4);
+                if (next > column) return " ".repeat(next - column) + typed.slice(i + 1);
+                at = next;
+            } else {
+                at++;
+            }
+        }
+        return "";
+    }
+
     private incorporateLine(line: string) {
         let allMatched = true;
         let container = this.doc;
@@ -249,7 +442,9 @@ class BlockParser {
         this.lineNumber++;
         this.openedLeaf = null;
         this.spaces = { from: -1, to: -1 };
-        this.line = line.replace(/\0/g, REPLACEMENT);
+        this.typedLine = line.replace(/\0/g, REPLACEMENT);
+        this.hasTabs = this.typedLine.includes("\t");
+        this.line = this.hasTabs ? expandTabs(this.typedLine) : this.typedLine;
 
         // 1. Which open blocks does this line continue?
         let last: RawBlock | undefined;
@@ -306,6 +501,8 @@ class BlockParser {
                     this.advanceNextNonspace();
                     this.advanceOffset(1);
                     if (this.line[this.offset] === " ") this.advanceOffset(1);
+                    // A quote's lines are all its own, even one of only ">": that is no blank line between list items.
+                    block.endLine = this.lineNumber;
                     return 0;
                 }
                 return 1;
@@ -363,7 +560,7 @@ class BlockParser {
                 this.closeUnmatchedBlocks();
                 const heading = this.addChild("heading");
                 heading.level = atx[0].trim().length;
-                heading.content = rest.slice(atx[0].length).replace(/^[ \t]*#+[ \t]*$/, "").replace(/[ \t]+#+[ \t]*$/, "").trim();
+                heading.content = atxHeadingText(this.contentFrom(this.nextNonspace + atx[0].length));
                 heading.lineNumbers = [this.lineNumber];
                 this.offset = this.line.length;
                 this.finalize(heading, this.lineNumber);
@@ -385,18 +582,24 @@ class BlockParser {
             // Display math, $$ … $$ or \[ … \], which may interrupt a paragraph as fenced code does.
             if (rest.startsWith("$$") || rest.startsWith("\\[")) {
                 const closer = rest.startsWith("$$") ? "$$" : "\\]";
-                const after = rest.slice(2);
+                const typed = this.contentFrom(this.nextNonspace);
+                const after = typed.slice(2);
                 const trimmed = after.trimEnd();
-                const oneLine = trimmed.endsWith(closer) && trimmed.slice(0, -closer.length).trim();
-                if (oneLine || !trimmed.includes(closer)) {
+                const inner = trimmed.endsWith(closer) ? trimmed.slice(0, -closer.length) : "";
+                // On one line, only an equation: "$$a$$ and $$b$$" is a sentence with two equations in it.
+                const oneLine = inner.trim() !== "" && !inner.includes(closer);
+                // Over several lines: the opener alone, or followed by LaTeX that a later line closes.
+                // Other text after it is a sentence about $$, which must not take the lines after it.
+                const opens = !trimmed.includes(closer) && (!trimmed.trim() || this.closesAhead(closer));
+                if (oneLine || opens) {
                     this.closeUnmatchedBlocks();
                     const math = this.addChild("math");
                     math.mathCloser = closer;
-                    math.rawLines = [rest];
+                    math.rawLines = [typed];
                     math.lineNumbers = [this.lineNumber];
                     this.offset = this.line.length;
                     if (oneLine) {
-                        math.lines = [trimmed.slice(0, -closer.length)];
+                        math.lines = [inner];
                         math.mathClosed = true;
                         this.finalize(math, this.lineNumber);
                     } else {
@@ -537,9 +740,10 @@ class BlockParser {
 
     private addLine() {
         const tip = this.current;
-        tip.lines.push(this.line.slice(this.offset));
+        const content = this.contentFrom(this.offset);
+        tip.lines.push(content);
         tip.lineNumbers.push(this.lineNumber);
-        if (tip.kind === "math") tip.rawLines!.push(this.line.slice(this.offset));
+        if (tip.kind === "math") tip.rawLines!.push(content);
         tip.endLine = this.lineNumber;
     }
 
@@ -586,18 +790,12 @@ class BlockParser {
         this.tip = parent;
     }
 
-    /** Link reference definitions at the start of a paragraph: [label]: destination "title". */
+    /** Link reference definitions at the start of a paragraph, taken out of it. */
     private extractReferences(paragraph: RawBlock) {
-        while (paragraph.lines.length) {
-            const match = LINK_REFERENCE.exec(paragraph.lines[0]);
-            if (!match || !match[1].trim()) return;
-            const label = normalizeLabel(match[1]);
-            const destination = unescapeString(match[2].startsWith("<") ? match[2].slice(1, -1) : match[2]);
-            const title = match[3] ? unescapeString(match[3].slice(1, -1)) : "";
-            if (!this.refs.has(label)) this.refs.set(label, { destination, title });
-            paragraph.lines.shift();
-            paragraph.lineNumbers.shift();
-        }
+        const taken = readReferences(paragraph.lines, this.refs);
+        if (!taken) return;
+        paragraph.lines.splice(0, taken);
+        paragraph.lineNumbers.splice(0, taken);
     }
 }
 
@@ -886,7 +1084,7 @@ class InlineParser {
     }
 
     parse(text: string, lineOf: (offset: number) => number): Inline[] {
-        this.subject = text.replace(/[ \t]+$/, "");
+        this.subject = text.slice(0, endWithout(text, " \t", text.length));
         this.pos = 0;
         this.delimiters = null;
         this.brackets = null;
@@ -952,7 +1150,7 @@ class InlineParser {
         const last = block.lastChild;
         if (last && last.type === "text" && last.literal.endsWith(" ")) {
             const hard = last.literal.endsWith("  ");
-            last.literal = last.literal.replace(/ +$/, "");
+            last.literal = last.literal.slice(0, endWithout(last.literal, " ", last.literal.length));
             block.appendChild(new INode(hard ? "break" : "softbreak"));
         } else {
             block.appendChild(new INode("softbreak"));
@@ -1565,7 +1763,7 @@ function autolink(parent: INode) {
         const urls = found.length;
         let u = 0;
         for (const match of text.matchAll(BARE_EMAIL)) {
-            const label = match[2].replace(/[._-]+$/, "");
+            const label = match[2].slice(0, endWithout(match[2], "._-", match[2].length));
             const start = match.index! + match[1].length;
             while (u < urls && found[u].end <= start) u++;
             if (!/\.[A-Za-z]{2,}$/.test(label) || (u < urls && found[u].start < start + label.length)) continue;

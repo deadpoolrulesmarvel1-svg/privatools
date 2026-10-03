@@ -80,8 +80,9 @@ export function firstHeading(document: MarkdownDocument): string {
 
 /** A file name from a title or a source file's name: no characters Windows or macOS refuse, at most 80 of them. */
 export function docxFileName(stem: string): string {
+    // Bounded before the patterns, which would slow on a very long title, and cut to 80 after.
     // eslint-disable-next-line no-control-regex -- control characters are among those a file name can't hold
-    const clean =stem.replace(/\.(md|markdown|txt)$/i, "").replace(/[\\/:*?"<>|\u{0}-\u{1f}]+/gu, " ").replace(/\s+/g, " ").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 80).trim();
+    const clean = stem.replace(/\.(md|markdown|txt)$/i, "").slice(0, 200).replace(/[\\/:*?"<>|\u{0}-\u{1f}]+/gu, " ").replace(/\s+/g, " ").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 80).trim();
     return `${clean || "document"}.docx`;
 }
 

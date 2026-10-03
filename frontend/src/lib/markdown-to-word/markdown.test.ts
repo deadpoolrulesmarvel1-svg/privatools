@@ -46,6 +46,18 @@ describe("block structure", () => {
         expect(only("\tcode with a tab")).toMatchObject({ type: "code", value: "code with a tab" });
     });
 
+    it("keeps tabs in code and text as typed, measuring indentation in columns", () => {
+        expect(only("\tfoo\tbaz\t\tbim")).toMatchObject({ type: "code", value: "foo\tbaz\t\tbim" });
+        // A Makefile recipe must keep its tab.
+        expect(only("```make\nall:\n\tpython train.py\n```")).toMatchObject({ type: "code", lang: "make", value: "all:\n\tpython train.py" });
+        // A tab only partly taken as indentation leaves the columns it still spans, as in CommonMark.
+        expect(blocks("- foo\n\n\t\tbar")).toMatchObject([{ type: "list", items: [{ children: [{ type: "paragraph" }, { type: "code", value: "  bar" }] }] }]);
+        expect(only(">\t\tfoo")).toMatchObject({ type: "blockquote", children: [{ type: "code", value: "  foo" }] });
+        expect(only("- a\n\n  ```\n  \tindented by a tab\n  ```")).toMatchObject({ items: [{ children: [{ type: "paragraph" }, { type: "code", value: "\tindented by a tab" }] }] });
+        expect(inlines("a\tb")).toEqual([{ type: "text", value: "a\tb" }]);
+        expect(only("#\tTitle\twith a tab\t#")).toMatchObject({ type: "heading", level: 1, children: [{ type: "text", value: "Title\twith a tab" }] });
+    });
+
     it("nests block quotes, lists and code, with lazy continuation lines", () => {
         expect(blocks("> quote\nlazy line\n> > nested\n\n> - item")).toMatchObject([
             { type: "blockquote", children: [
@@ -80,6 +92,9 @@ describe("block structure", () => {
         expect(only("- a\n\n- b")).toMatchObject({ tight: false });
         expect(only("- a\n\n  second paragraph\n- b")).toMatchObject({ tight: false });
         expect(only("- a\n  - b\n- c")).toMatchObject({ tight: true });
+        // A quote line of only ">" belongs to the quote: no blank line there.
+        expect(only("* a\n  > b\n  >\n* c")).toMatchObject({ tight: true });
+        expect(only("* a\n  > b\n\n* c")).toMatchObject({ tight: false });
     });
 
     it("lets only a list item that starts at 1 interrupt a paragraph", () => {
@@ -105,6 +120,25 @@ describe("block structure", () => {
                 { type: "text", value: "." },
             ] },
         ]);
+    });
+
+    it("reads link reference definitions that run over several lines", () => {
+        const linkTo = (source: string) => {
+            const [paragraph] = blocks(source).filter(block => block.type === "paragraph");
+            if (paragraph?.type !== "paragraph") throw new Error("no paragraph");
+            return paragraph.children;
+        };
+        expect(linkTo("[foo]:\n/url\n\n[foo]")).toEqual([{ type: "link", href: "/url", title: "", children: [{ type: "text", value: "foo" }] }]);
+        expect(linkTo("[foo]: /url\n\"the title\"\n\n[foo]")).toEqual([{ type: "link", href: "/url", title: "the title", children: [{ type: "text", value: "foo" }] }]);
+        expect(linkTo("[Foo\n  bar]: /url\n\n[Baz][Foo bar]")).toEqual([{ type: "link", href: "/url", title: "", children: [{ type: "text", value: "Baz" }] }]);
+        // A title with more after it isn't one: the definition ends with its destination, and the rest is text.
+        expect(blocks("[foo]: /url\n\"title\" ok\n\n[foo]")).toMatchObject([
+            { type: "paragraph", children: [{ type: "text", value: "\"title\" ok" }] },
+            { type: "paragraph", children: [{ type: "link", href: "/url", title: "" }] },
+        ]);
+        expect(blocks("[foo]: /url \"title\" ok")).toMatchObject([{ type: "paragraph", children: [{ type: "text", value: "[foo]: /url \"title\" ok" }] }]);
+        // A footnote and its note stay as typed, rather than the note vanish as a definition.
+        expect(blocks("See [^1].\n\n[^1]: The note.").map(block => block.type === "paragraph" ? inlineText(block.children) : block.type)).toEqual(["See [^1].", "[^1]: The note."]);
     });
 
     it("leaves HTML comments out", () => {
@@ -205,6 +239,27 @@ describe("math", () => {
             { type: "paragraph" },
         ]);
         expect(blocks("$$ 100 left")).toMatchObject([{ type: "paragraph" }]);
+    });
+
+    it("opens display math with text after the opener only when a later line closes it", () => {
+        // A sentence about $$ takes nothing after it.
+        expect(blocks("$$ is how LaTeX marks display math.\n## Next\n- item")).toMatchObject([
+            { type: "paragraph", children: [{ type: "text", value: "$$ is how LaTeX marks display math." }] },
+            { type: "heading", level: 2 },
+            { type: "list" },
+        ]);
+        expect(blocks("\\[ marks it too\n- item")).toMatchObject([{ type: "paragraph" }, { type: "list" }]);
+        // LaTeX after the opener, closed later, is one equation.
+        expect(blocks("$$\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}$$")).toEqual([
+            { type: "math", tex: "\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}", source: "$$\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}$$", line: 1 },
+        ]);
+        expect(blocks("\\[ x = 1\n+ 2 \\]")).toMatchObject([{ type: "math", tex: "x = 1\n+ 2" }]);
+    });
+
+    it("reads two equations on one line as a sentence holding both", () => {
+        expect(only("$$a+b$$ and $$c+d$$")).toMatchObject({ type: "paragraph", children: [
+            { type: "math", tex: "a+b", display: true }, { type: "text", value: " and " }, { type: "math", tex: "c+d", display: true },
+        ] });
     });
 
     it("reads math inside lists, quotes and table cells", () => {
@@ -346,5 +401,7 @@ describe("inline content", () => {
 
     it("decodes entities and backslash escapes", () => {
         expect(inlineText(inlines("&copy; &amp; &#169; &#xA9; &nosuch; \\*not em\\* \\_ \\a"))).toBe("© & © © &nosuch; *not em* _ \\a");
+        // HTML 4's whole set at HTML5's values; HTML5's other names stay as typed.
+        expect(inlineText(inlines("&AElig; &yuml; &OElig; &thetasym; &lowast; &lang;&rang; &spades; &check; &Dcaron;"))).toBe("Æ ÿ Œ ϑ ∗ ⟨⟩ ♠ ✓ &Dcaron;");
     });
 });

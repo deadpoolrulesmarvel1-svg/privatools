@@ -39,7 +39,7 @@ const XML_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"y
 
 /** Characters XML 1.0 can't hold: control characters, U+FFFE/U+FFFF and unpaired surrogates. */
 // eslint-disable-next-line no-control-regex -- matching control characters is this pattern's whole job
-const NOT_XML =/[\u{0}-\u{8}\u{b}\u{c}\u{e}-\u{1f}\u{fffe}\u{ffff}\u{d800}-\u{dfff}]/gu;
+const NOT_XML = /[\u{0}-\u{8}\u{b}\u{c}\u{e}-\u{1f}\u{fffe}\u{ffff}\u{d800}-\u{dfff}]/gu;
 
 export function xmlText(text: string): string {
     return text.replace(NOT_XML, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -122,10 +122,20 @@ export function rPr(props: RunProps): string {
     return out ? `<w:rPr>${out}</w:rPr>` : "";
 }
 
+/** A run's content for some text: each tab as Word's own tab, so code indented with tabs keeps them. */
+export function runText(text: string): string {
+    let out = "";
+    text.split("\t").forEach((part, index) => {
+        if (index > 0) out += "<w:tab/>";
+        if (part) out += `<w:t xml:space="preserve">${xmlText(part)}</w:t>`;
+    });
+    return out;
+}
+
 /** A run of text, with spaces kept as typed. */
 export function textRun(text: string, props: RunProps = {}): string {
     if (!text) return "";
-    return `<w:r>${rPr(props)}<w:t xml:space="preserve">${xmlText(text)}</w:t></w:r>`;
+    return `<w:r>${rPr(props)}${runText(text)}</w:r>`;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────

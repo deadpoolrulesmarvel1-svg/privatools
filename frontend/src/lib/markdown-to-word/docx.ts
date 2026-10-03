@@ -15,8 +15,8 @@ import type { MathResult } from "./math";
 import { imageName, readImageSource, type EmbeddedImage } from "./images";
 import {
     LIST_HANGING, LIST_INDENT, MAX_LIST_LEVEL, REL, contentTypesXml, coreXml, documentXml, FONT_TABLE_XML, numberingXml,
-    PACKAGE_RELS, pPr, relationshipsXml, rPr, sectionProperties, SETTINGS_XML, STYLES_XML, textRun, textWidth, THEME_XML,
-    xmlAttr, xmlText, type OrderedList, type PageSize, type ParagraphProps, type Relationship, type RunProps,
+    PACKAGE_RELS, pPr, relationshipsXml, rPr, runText, sectionProperties, SETTINGS_XML, STYLES_XML, textRun, textWidth, THEME_XML,
+    xmlAttr, type OrderedList, type PageSize, type ParagraphProps, type Relationship, type RunProps,
 } from "./ooxml";
 
 export interface ReportedEquation { source: string; line: number; reason: string }
@@ -61,6 +61,25 @@ interface Context {
     quote: number;
     /** List levels around this content: -1 outside a list. */
     list: number;
+    /** Inside an item of a loose list, whose paragraphs all keep their spacing. */
+    loose?: boolean;
+    /** The first block here comes right after a table, which ends with no space below it. */
+    afterTable?: boolean;
+}
+
+/** Space above a paragraph that follows a table: the same as a paragraph leaves below itself. */
+const SPACE_AFTER_TABLE = 160;
+
+/** Whether what a block writes ends with a table, so whatever follows it needs space above. */
+function endsWithTable(block: Block | undefined): boolean {
+    if (!block) return false;
+    if (block.type === "table") return true;
+    if (block.type === "blockquote") return endsWithTable(block.children[block.children.length - 1]);
+    if (block.type === "list") {
+        const last = block.items[block.items.length - 1];
+        return !!last && endsWithTable(last.children[last.children.length - 1]);
+    }
+    return false;
 }
 
 const ROOT: Context = { indent: 0, quote: 0, list: -1 };
@@ -82,7 +101,8 @@ function slugify(text: string, used: Map<string, number>): string {
 
 /** A hidden Word bookmark name for a heading: letters, digits and underscores, at most 40 characters. */
 function bookmarkName(slug: string, index: number, taken: Set<string>): string {
-    const ascii = slug.normalize("NFD").replace(/[\u{300}-\u{36f}]/gu, "").replace(/[^A-Za-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+    // Only the start is kept, and bounding it first keeps the patterns below quick on a very long heading.
+    const ascii = slug.slice(0, 200).normalize("NFD").replace(/[\u{300}-\u{36f}]/gu, "").replace(/[^A-Za-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
     let name = `_${ascii || `heading_${index + 1}`}`.slice(0, 40);
     for (let n = 2; taken.has(name); n++) name = `${name.slice(0, 40 - String(n).length - 1)}_${n}`;
     taken.add(name);
@@ -162,32 +182,46 @@ export class DocxWriter {
 
     private blocks(blocks: Block[], context: Context): string {
         let out = "";
-        for (const block of blocks) out += this.block(block, context);
+        blocks.forEach((block, index) => {
+            // The first block takes the space from the context; the others, from the block before them.
+            const afterTable = index === 0 ? !!context.afterTable : endsWithTable(blocks[index - 1]);
+            out += this.block(block, afterTable === !!context.afterTable ? context : { ...context, afterTable });
+        });
         return out;
     }
 
     /** A paragraph's style and indent for where it sits: in a quote, in a list item, or in the body. */
     private textParagraph(context: Context): ParagraphProps {
-        if (context.quote > 0) return { style: "Quote", indent: context.indent !== LIST_INDENT ? { left: context.indent } : undefined };
-        if (context.list >= 0) return { style: "ListParagraph", indent: context.indent !== LIST_INDENT ? { left: context.indent } : undefined };
-        return context.indent ? { indent: { left: context.indent } } : {};
+        const indent = context.quote > 0 || context.list >= 0
+            ? context.indent !== LIST_INDENT ? { left: context.indent } : undefined
+            : context.indent ? { left: context.indent } : undefined;
+        const props: ParagraphProps = { style: context.quote > 0 ? "Quote" : context.list >= 0 ? "ListParagraph" : undefined, indent };
+        // A loose list's paragraphs are spaced like any other, not drawn together as List Paragraph's are.
+        if (context.quote === 0 && context.list >= 0 && context.loose) props.contextualSpacing = false;
+        if (context.afterTable) props.spacing = { before: SPACE_AFTER_TABLE };
+        return props;
+    }
+
+    /** A heading's bookmark around its content, so links to it land there. */
+    private bookmarked(block: Block, content: string): string {
+        const name = this.headingBookmarks.get(block);
+        if (!name) return content;
+        const id = this.bookmarkId++;
+        return `<w:bookmarkStart w:id="${id}" w:name="${name}"/>${content}<w:bookmarkEnd w:id="${id}"/>`;
     }
 
     private block(block: Block, context: Context): string {
         switch (block.type) {
             case "heading": {
                 this.report.headings++;
-                const name = this.headingBookmarks.get(block);
-                const id = this.bookmarkId++;
                 const props: ParagraphProps = { style: `Heading${block.level}`, indent: context.indent ? { left: context.indent } : undefined };
-                const content = this.inlines(block.children, {});
-                return `<w:p>${pPr(props)}${name ? `<w:bookmarkStart w:id="${id}" w:name="${name}"/>` : ""}${content}${name ? `<w:bookmarkEnd w:id="${id}"/>` : ""}</w:p>`;
+                return `<w:p>${pPr(props)}${this.bookmarked(block, this.inlines(block.children, {}))}</w:p>`;
             }
             case "paragraph":
                 this.report.paragraphs++;
                 return this.paragraph(block.children, this.textParagraph(context));
             case "thematicBreak":
-                return `<w:p>${pPr({ bottomRule: true, indent: context.indent ? { left: context.indent } : undefined })}</w:p>`;
+                return `<w:p>${pPr({ bottomRule: true, spacing: context.afterTable ? { before: SPACE_AFTER_TABLE } : undefined, indent: context.indent ? { left: context.indent } : undefined })}</w:p>`;
             case "code":
                 this.report.codeBlocks++;
                 return this.codeBlock(block.value, context);
@@ -220,7 +254,7 @@ export class DocxWriter {
         let runContent = "";
         lines.forEach((line, index) => {
             if (index > 0) runContent += "<w:br/>";
-            if (line) runContent += `<w:t xml:space="preserve">${xmlText(line)}</w:t>`;
+            if (line) runContent += runText(line);
         });
         return `<w:p>${pPr({ style: "HTMLPreformatted", indent: context.indent ? { left: context.indent + 96, right: 96 } : undefined })}${runContent ? `<w:r>${runContent}</w:r>` : ""}</w:p>`;
     }
@@ -255,13 +289,15 @@ export class DocxWriter {
             this.ordered.push({ level, start: list.start, delimiter: list.delimiter ?? "." });
             numId = this.ordered.length + 1;
         }
-        const itemContext: Context = { indent: textIndent, quote: context.quote, list: level };
+        const itemContext: Context = { indent: textIndent, quote: context.quote, list: level, loose: !list.tight };
         // Where Word's numbering would put this level, the paragraph needs no indent of its own.
         const ownIndent = textIndent !== LIST_INDENT * (level + 1);
         let out = "";
-        for (const item of list.items) {
+        list.items.forEach((item, index) => {
             const first = item.children[0];
             const props: ParagraphProps = { style: "ListParagraph" };
+            const previous = list.items[index - 1];
+            if (index === 0 ? context.afterTable : endsWithTable(previous.children[previous.children.length - 1])) props.spacing = { before: SPACE_AFTER_TABLE };
             if (allTasks) props.indent = { left: textIndent - LIST_HANGING };
             else {
                 props.numbering = { numId, level };
@@ -274,14 +310,14 @@ export class DocxWriter {
                 if (first.type === "paragraph") this.report.paragraphs++;
                 else this.report.headings++;
                 const inline = this.inlines(first.children, first.type === "heading" ? { bold: true } : {});
-                out += `<w:p>${pPr(props)}${box}${inline}</w:p>`;
+                out += `<w:p>${pPr(props)}${box}${this.bookmarked(first, inline)}</w:p>`;
                 rest = item.children.slice(1);
             } else {
                 // An item that starts with a code block, a table or a list still gets its number, on a line of its own.
                 out += `<w:p>${pPr(props)}${box}</w:p>`;
             }
             out += this.blocks(rest, itemContext);
-        }
+        });
         return out;
     }
 

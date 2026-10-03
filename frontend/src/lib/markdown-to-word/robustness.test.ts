@@ -42,6 +42,11 @@ const PATHOLOGICAL: [string, string][] = [
     ["entity-like endings after an address", `www.example.com${"&a;".repeat(50000)}`],
     ["web addresses with invalid domains", `${"(http://a._".repeat(30000)}x`],
     ["www. after underscores", "_www.a_".repeat(15000)],
+    ["a long run of spaces inside a line", `a${" ".repeat(100000)}b`],
+    ["a long run of tabs inside a line", `a${"\t".repeat(25000)}b`],
+    ["a heading with a long run of spaces", `# a${" ".repeat(100000)}b ##`],
+    ["many link reference definitions", "[a]: /u \"t\"\n".repeat(10000)],
+    ["display math openers followed by text", "$$ a\n".repeat(25000)],
     ["many table rows", `| a | b |\n|---|---|\n${"| 1 | `x|y` |\n".repeat(10000)}`],
     ["entity-like text", "&#".repeat(30000)],
 ];
@@ -51,6 +56,15 @@ describe("Markdown to Word on hostile input", () => {
         const { ms } = timed(() => parseMarkdown(source));
         expect(ms).toBeLessThan(5000);
     });
+
+    it("names and bookmarks headings made of long runs quickly", async () => {
+        for (const heading of [`# a${"_".repeat(100000)}b`, `# a${" .".repeat(50000)} b`]) {
+            const start = performance.now();
+            const result = await convertMarkdownToDocx(heading, { page: "letter", loadTemml: async () => temml });
+            expect(performance.now() - start).toBeLessThan(5000);
+            expect(result.title.length).toBeGreaterThan(0);
+        }
+    }, 60000);
 
     it("writes a readable document for every hostile case", async () => {
         for (const [name, source] of PATHOLOGICAL) {
