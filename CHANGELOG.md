@@ -10,6 +10,16 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.22] — 2026-10-03 — PDF to Markdown, ready for LLMs
+
+### Tools
+
+- PDF to Markdown now gives structured Markdown. Paragraphs are joined from their lines, headings take their levels from the document's own type sizes, and ruled tables become GitHub tables. Lists keep their nesting, code stays in fenced blocks, and links and superscripts are kept. Pictures get a placeholder with their alt text or caption. Pages set in columns are read one column after the other, and Hebrew and Arabic are read right to left. You can add page markers, leave out running headers and footers, and split the result into chunks by heading or by size, as a ZIP or one file. Pages with no text layer are named, with a pointer to OCR PDF. Each file is converted on the server in a capped worker, up to 1,000 pages, and a scanned, locked, damaged or oversized file gets a message saying why. (#328)
+
+### For API users
+
+- `/api/pdf-to-markdown` returns structured Markdown instead of one paragraph per line with `---` between pages. Page markers and header and footer removal are opt-in (`page_markers=true`, `remove_headers_footers=true`), and `chunk` and `chunk_output` split the result. A PDF with no text layer answers 422 instead of an empty 200, and refusals answer 4xx instead of 500. (#328)
+
 ## [2.7.21] — 2026-10-03 — Fixes for Word to PDF, Transcribe Audio, Bates Numbering and more
 
 ### Tools
