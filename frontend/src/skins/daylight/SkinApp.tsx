@@ -666,7 +666,6 @@ const CSS = `
 /* blog */
 /* ── blog: featured card, tag chips, article typography ── */
 /* ── the product pages' furniture ── */
-.dl-supcta span { font-size:13px; color:var(--dl-muted); max-width:32ch; }
 .dl-vimport { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--dl-faint); }
 .dl-vimphint { font-size:11.5px; color:var(--dl-faint); margin-top:10px; line-height:1.6; }
 .dl-vsteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-top:30px; }
