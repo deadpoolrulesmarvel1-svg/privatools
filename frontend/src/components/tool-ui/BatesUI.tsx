@@ -135,7 +135,9 @@ export function BatesUI() {
             return;
         }
 
-        await proc.run({
+        // What this run did comes back from the hook's ref mirror: `proc` here
+        // is the render this callback was made in, from before the run.
+        const ran = await proc.run({
             endpoint: "/bates-numbering",
             outputSuffix: "bates",
             outputExt: "pdf",
@@ -146,10 +148,8 @@ export function BatesUI() {
         // Advance the matter's counter ONLY for files that actually succeeded.
         // Gaps in a Bates sequence are a real problem in discovery, so we never
         // advance optimistically, and never for a failed file.
-        if (matter && proc.doneCount > 0) {
-            const stamped = proc.entries
-                .filter(e => e.status === "done")
-                .map(e => e.file);
+        const stamped = ran.filter(e => e.status === "done").map(e => e.file);
+        if (matter && stamped.length > 0) {
             try {
                 const pages = await countPdfPages(stamped, blobBytes);
                 if (pages > 0) {
