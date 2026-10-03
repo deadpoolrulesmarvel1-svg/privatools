@@ -273,7 +273,7 @@ export function BatesUI() {
     </>} action={<StudioActionBar ready={proc.entries.length > 0} count={proc.entries.length ? fileCount(proc.entries.length, "PDF") : undefined}>
         <button type="button" className="ts-primary-button" onClick={() => void process(false)} disabled={!canProcess}><Hash size={16} aria-hidden="true" /> Stamp {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</button>
     </StudioActionBar>}>
-        <FileIntake accepts=".pdf" multiple title="Select PDFs to Bates-stamp" detail={`Multi-file OK · each starts at ${sample} · max ${MAX_FILE_SIZE_LABEL} in total`}
+        <FileIntake accepts=".pdf" multiple title="Select PDFs to Bates-stamp" detail={`Multi-file OK · numbered as one run from ${sample} · max ${MAX_FILE_SIZE_LABEL} in total`}
             compact={proc.entries.length > 0} disabled={busy} autoFocus={returning} onFiles={files => proc.addFiles(files, isPdfOnly)} />
         <ProcessorFiles proc={proc} busy={busy} label="Selected PDFs" />
         {busy && <StudioProgress label="Stamping the numbers" detail={proc.entries.length > 1 ? `${proc.entries.length} PDFs, numbered as one set` : undefined} />}
