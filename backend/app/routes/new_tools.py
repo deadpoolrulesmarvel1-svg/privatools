@@ -140,8 +140,8 @@ async def highlight_endpoint(
             headers={"X-Highlight-Hits": str(hits)},
         )
     except ToolError:
-        # The service's own answer, such as a 504 when FFmpeg runs out of
-        # time or a 400 for a file it refuses: the global handler words it.
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise
@@ -182,8 +182,8 @@ async def pdf_to_svg_endpoint(file: UploadFile = File(...)):
             background=cleanup,
         )
     except ToolError:
-        # The service's own answer, such as a 504 when FFmpeg runs out of
-        # time or a 400 for a file it refuses: the global handler words it.
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise
@@ -253,8 +253,8 @@ async def smart_redact_endpoint(
             headers={"X-Redact-Hits": str(hits)},
         )
     except ToolError:
-        # The service's own answer, such as a 504 when FFmpeg runs out of
-        # time or a 400 for a file it refuses: the global handler words it.
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise
