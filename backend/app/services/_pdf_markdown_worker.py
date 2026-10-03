@@ -683,11 +683,21 @@ def _rules(page: fitz.Page, frame: Frame) -> Ruling:
                     segments.append((r, "v"))
                 elif r.width >= 8 and r.height >= 5 and abs(r) < backdrop:
                     segments += [(r, "h"), (r, "v")]
-    return Ruling(horizontal, _ruled_regions(segments), items)
+    regions, frames = _ruled_regions(segments, backdrop)
+    if frames:
+        # A page frame drawn as four lines or four thin bars: its top and
+        # bottom are not the rules of a table, as a frame drawn as one
+        # rectangle's are not.
+        horizontal = [(y, a, b) for y, a, b in horizontal
+                      if not any(abs(a - f.x0) <= 3 and abs(b - f.x1) <= 3 and min(abs(y - f.y0), abs(y - f.y1)) <= 3
+                                 for f in frames)]
+    return Ruling(horizontal, regions, items)
 
 
-def _ruled_regions(segments: list[tuple[fitz.Rect, str]]) -> list[fitz.Rect]:
-    """Groups of touching segments with at least two lines each way.
+def _ruled_regions(segments: list[tuple[fitz.Rect, str]], backdrop: float) -> tuple[list[fitz.Rect], list[fitz.Rect]]:
+    """Groups of touching segments with at least two lines each way, and
+    apart from them the frames: groups of just four sides covering
+    ``backdrop`` or more, which hold no table of their own.
 
     Plain numbers, not Rect methods: a ruled line's box has no height (or no
     width), and PyMuPDF treats such a rectangle as empty, so it would never
@@ -704,7 +714,9 @@ def _ruled_regions(segments: list[tuple[fitz.Rect, str]]) -> list[fitz.Rect]:
             else:
                 keep.append(g)
         groups = keep + [merged]
-    return [fitz.Rect(g[:4]) for g in groups if g[4] >= 2 and g[5] >= 2]
+    ruled = [(fitz.Rect(g[:4]), g[4] == 2 and g[5] == 2) for g in groups if g[4] >= 2 and g[5] >= 2]
+    frames = [r for r, four_sides in ruled if four_sides and abs(r) >= backdrop]
+    return [r for r, _ in ruled if r not in frames], frames
 
 
 def _cell(text: str | None) -> str:
@@ -999,6 +1011,12 @@ def _through_words(left: list[Piece], right: list[Piece]) -> bool:
                 starts[key] = p
     shared = ends.keys() & starts.keys()
     if len(shared) < 2:
+        return False
+    # The next column's lines all start at one edge; words after stretched
+    # spaces start wherever their lines put them. A left column whose lines
+    # end with a space (as many writers leave them) is still a column.
+    edges = [starts[key].x0 for key in shared]
+    if len(edges) >= 3 and max(edges) - min(edges) <= 2:
         return False
     spaced = sum(1 for key in shared if ends[key].space_after or starts[key].space_before)
     return spaced > len(shared) / 2

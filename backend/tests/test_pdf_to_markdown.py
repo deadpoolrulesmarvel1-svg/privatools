@@ -466,6 +466,48 @@ def test_two_lists_side_by_side_on_a_slide_are_read_one_after_the_other():
                     "Launch in 6 months", "Less control")
 
 
+@pytest.mark.parametrize("sides", ["lines", "bars"])
+def test_a_page_frame_drawn_as_four_sides_is_no_table(sides):
+    """A frame drawn as four lines or four thin bars, not one rectangle: its
+    top and bottom were taken for a table's rules, around the whole slide."""
+    doc = fitz.open()
+    for n in range(2):
+        page = doc.new_page(width=960, height=540)
+        x0, y0, x1, y1 = 20, 20, 940, 520
+        if sides == "lines":
+            for a, b in (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))):
+                page.draw_line(a, b, width=1)
+        else:
+            for r in ((x0, y0, x1, y0 + 1.5), (x0, y1 - 1.5, x1, y1), (x0, y0, x0 + 1.5, y1), (x1 - 1.5, y0, x1, y1)):
+                page.draw_rect(fitz.Rect(r), color=None, fill=(0, 0, 0))
+        page.insert_text((60, 90), f"Slide title {n}", fontsize=36, fontname="hebo")
+        for i in range(3):
+            page.insert_text((70, 170 + 38 * i), "-", fontsize=24)
+            page.insert_text((100, 170 + 38 * i), f"Point {i} on slide {n}", fontsize=24)
+        page.insert_text((890, 500), str(n + 1), fontsize=11)
+    out = plain(doc.tobytes())
+    assert "|" not in out
+    assert "# Slide title 0\n\n- Point 0 on slide 0\n- Point 1 on slide 0\n- Point 2 on slide 0" in out
+
+
+def test_columns_drawn_across_with_a_space_ending_each_line_read_down_each_column():
+    """Lines drawn left column then right column, across the page, each
+    ending with a space: the gutter was taken for stretched word spaces."""
+    left = [f"[{n}] Left column paragraph {n} wraps over two lines " for n in (1, 2, 3)]
+    right = [f"[{n}] Right column paragraph {n} wraps over two lines " for n in (4, 5, 6)]
+    doc = fitz.open()
+    page = doc.new_page()
+    y = 80
+    for a, b in zip(left, right):
+        for first, second in ((a, b), ("so that it is one paragraph. ", "so that it is one paragraph. ")):
+            page.insert_text((50, y), first, fontsize=9.5)
+            page.insert_text((305, y), second, fontsize=9.5)
+            y += 11.5
+        y += 11.5
+    out = plain(doc.tobytes())
+    assert [int(n) for n in re.findall(r"\[(\d+)\]", out)] == [1, 2, 3, 4, 5, 6]
+
+
 @pytest.mark.parametrize("uri", [
     'https://example.com/a"><img src=x onerror=alert(1)>',
     "https://example.com/a>b<script>alert(1)</script>",
