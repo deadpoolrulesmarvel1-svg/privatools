@@ -131,12 +131,23 @@ function insideLayer(node: Node): boolean {
   return false;
 }
 
+/**
+ * Whether a later declaration in the same block sets the ligatures again, so
+ * that this one never decides them: a `font` shorthand followed by
+ * `font-variant-ligatures: none` leaves them off.
+ */
+function overriddenInItsBlock(decl: Declaration): boolean {
+  const block = decl.parent?.nodes ?? [];
+  return block.slice(block.indexOf(decl) + 1).some(node =>
+    node.type === "decl" && ligatureValue(node) !== undefined && (node.important || !decl.important));
+}
+
 const settings: Setting[] = sheets.flatMap(({ file, root }) => {
   const found: Setting[] = [];
   root.walkDecls(decl => {
     const value = ligatureValue(decl);
     const rule = decl.parent;
-    if (value === undefined || rule?.type !== "rule") return;
+    if (value === undefined || rule?.type !== "rule" || overriddenInItsBlock(decl)) return;
     for (const selector of (rule as postcss.Rule).selectors) {
       found.push({ file, selector, specificity: specificity(selector), layered: insideLayer(rule), order: decl.source?.start?.offset ?? 0, value });
     }
