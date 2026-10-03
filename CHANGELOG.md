@@ -10,6 +10,16 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.19] — 2026-10-03 — AI Token Counter
+
+### New tool
+
+- AI Token Counter counts the tokens a text or file uses with current AI models.
+  - **GPT counts** are exact and made on your device, with the o200k_base and cl100k_base tokenizers. The page names the models each one covers.
+  - **Claude and Gemini counts** come from Anthropic's and Google's own counting services, using your own API key, and only when you ask. The text goes from your browser straight to that provider, and Anthropic describes its count as an estimate. Without a key, the page shows no Claude or Gemini number.
+  - **Input:** paste text, or choose a text, Markdown, CSV, JSON, code, PDF or Word file. Files are read in the browser.
+  - **Cost and splitting:** enter prices to see the cost, and split long text into chunks of a set number of tokens. (#323)
+
 ## [2.7.18] — 2026-10-03 — Saved passwords survive "This session only"
 
 ### Tools
