@@ -87,7 +87,8 @@ describe("Markdown to Word page", () => {
         render(<MarkdownToWordUI />);
         await paste("Fine: $x^2$.\n\nNot mapped: $\\notamacro{x}$\n\n![A chart](https://example.com/charts/sales.png)\n\n<img src=\"https://example.com/b.gif\" alt=\"B\">");
         await convert();
-        expect(await screen.findByRole("heading", { name: "Your Word document is ready, with 1 equation left as LaTeX and 2 images left out." })).toHaveFocus();
+        expect(await screen.findByRole("heading", { name: "Ready, with 3 things to check." })).toHaveFocus();
+        expect(screen.getByText("The download has started. 1 equation stayed as LaTeX and 2 images were left out; each is listed below. Everything else converted.")).toBeInTheDocument();
         expect(screen.getByText("$\\notamacro{x}$")).toBeInTheDocument();
         expect(screen.getByText("Line 3: \\notamacro isn’t supported.")).toBeInTheDocument();
         expect(screen.getByText("sales.png")).toBeInTheDocument();

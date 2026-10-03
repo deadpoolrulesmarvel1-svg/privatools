@@ -86,11 +86,13 @@ function plural(count: number, one: string, many = `${one}s`): string {
     return `${count.toLocaleString()} ${count === 1 ? one : many}`;
 }
 
-/** What didn't convert, as words: "2 equations left as LaTeX and 1 image left out". */
+/** What didn't convert, as words: "2 equations stayed as LaTeX and 1 image was left out". */
 function shortfall(report: ConversionReport): string {
+    const equations = report.equationsAsText.length;
+    const images = report.imagesLeftOut.length;
     const parts: string[] = [];
-    if (report.equationsAsText.length) parts.push(`${plural(report.equationsAsText.length, "equation")} left as LaTeX`);
-    if (report.imagesLeftOut.length) parts.push(`${plural(report.imagesLeftOut.length, "image")} left out`);
+    if (equations) parts.push(`${plural(equations, "equation")} stayed as LaTeX`);
+    if (images) parts.push(`${plural(images, "image")} ${images === 1 ? "was" : "were"} left out`);
     return parts.join(" and ");
 }
 
@@ -290,13 +292,15 @@ export function MarkdownToWordUI() {
 function MarkdownToWordResult({ done, onDownload, onEdit, onStartOver }: { done: Done; onDownload: () => void; onEdit: () => void; onStartOver: () => void }) {
     const { report } = done;
     const missing = shortfall(report);
+    const toCheck = report.equationsAsText.length + report.imagesLeftOut.length;
     const stats = [
         ["Headings", report.headings], ["Lists", report.lists], ["Tables", report.tables], ["Code blocks", report.codeBlocks],
         ["Equations", report.equationsConverted], ["Images", report.imagesEmbedded],
     ].filter(([, count]) => Number(count) > 0) as [string, number][];
+    // A partial run's heading stays short; the detail says what is to check, and the lists below say which.
     return <StudioResult tone={missing ? "partial" : "success"}
-        title={missing ? `Your Word document is ready, with ${missing}.` : "Your Word document is ready."}
-        detail={missing ? `${downloadStarted(1)} Everything else converted; what didn’t is listed below.` : downloadStarted(1)}>
+        title={missing ? `Ready, with ${plural(toCheck, "thing")} to check.` : "Your Word document is ready."}
+        detail={missing ? `${downloadStarted(1)} ${missing}; each is listed below. Everything else converted.` : downloadStarted(1)}>
         <StudioFile name={done.name} status="done" detail={`Word document · ${formatFileSize(done.blob.size)}`} />
         {stats.length > 0 && <dl className="ts-stats">{stats.map(([label, count]) => <div key={label}><dt>{label}</dt><dd>{count.toLocaleString()}</dd></div>)}</dl>}
         {report.equationsAsText.length > 0 && <section className="mdw-report" aria-labelledby="mdw-equations-title">
