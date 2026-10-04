@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.27] — 2026-10-04 — Voice Noise Remover
+
+### New tool
+
+- Voice Noise Remover takes steady background noise out of a speech recording on your device: hum, fans, traffic or room hiss. The file never leaves your browser. RNNoise runs in the page, served from PrivaTools, and the cleaned sound comes back as a WAV that you can compare with the original before you download it. A strength control blends the cleaned sound with the original. It is made for speech, not music, and it reduces noise rather than recreating the voice. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read a minute at a time, up to 60 minutes of mono or 30 of stereo; OGG, Opus, FLAC and AAC files up to 15 minutes. (#341)
+
 ## [2.7.26] — 2026-10-04 — Smart Redact on scanned pages, and damaged PDFs on every tool
 
 ### Privacy
