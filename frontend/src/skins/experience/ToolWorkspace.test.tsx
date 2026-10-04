@@ -11,6 +11,10 @@ import { ToolWorkspace } from "./ToolWorkspace";
 import { FileIntake } from "./ToolStudio";
 import { CompareUI } from "@/components/tool-ui/CompareUI";
 import { AttachmentUI } from "@/components/tool-ui/AttachmentUI";
+import { AlternateMixUI } from "@/components/tool-ui/AlternateMixUI";
+import { OverlayUI } from "@/components/tool-ui/OverlayUI";
+import { UrlToPdfUI } from "@/components/tool-ui/UrlToPdfUI";
+import { HtmlToPdfUI } from "@/components/tool-ui/HtmlToPdfUI";
 
 vi.mock("../daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
 vi.mock("./ToolGuide", () => ({ ToolGuide: ({ slug }: { slug: string }) => <div data-testid="guide">{slug}</div> }));
@@ -81,9 +85,11 @@ describe("where the file goes", () => {
     it.each([
         // "Detect form fields" uploads the PDF before the fill itself.
         { slug: "fill-form", name: "Fill PDF Form", detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response." },
-        // No file is chosen on these: the sentence names what is sent.
-        { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and renders it to a PDF in temporary storage, then removes the job’s files after the response." },
-        { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools, which fetches the page or reads the HTML, renders the PDF in temporary storage and removes the job’s files after the response." },
+        // No file is chosen on these: the sentence names what is sent, and what the server fetches with it.
+        // URL to PDF renders the page with its stylesheets and images; HTML to PDF fetches an address's
+        // HTML alone, and for pasted HTML the stylesheets and images it links to.
+        { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page, with its stylesheets and images, renders it to a PDF in temporary storage and removes the job’s files after the response." },
+        { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools. It fetches the page at that address, or the stylesheets and images your HTML links to, then renders the PDF in temporary storage and removes the job’s files after the response." },
         { slug: "generate-barcode", name: "Generate Barcode", detail: "When you run the tool, the text you enter is sent to PrivaTools, which draws the barcode in temporary storage and removes the job’s files after the response." },
         { slug: "qr-code", name: "QR Code", detail: "When you run the tool, the text you enter, and a logo if you add one, is sent to PrivaTools, which draws the QR code in temporary storage and removes the job’s files after the response." },
     ])("says exactly what $name sends and when", async ({ slug, name, detail }) => {
@@ -97,6 +103,9 @@ describe("where the file goes", () => {
     it.each([
         { slug: "compare-pdf", name: "Compare PDF", ui: <CompareUI /> },
         { slug: "add-attachment", name: "Add Attachment", ui: <AttachmentUI /> },
+        // The two named inputs of the shared kit (PairedIntake).
+        { slug: "alternate-mix", name: "Alternate Mix", ui: <AlternateMixUI /> },
+        { slug: "overlay", name: "Overlay PDF", ui: <OverlayUI /> },
     ])("says it once, in full, under $name's two intakes, before and after both files are chosen", async ({ slug, name, ui }) => {
         await page({ slug, name, description: "Two files", category: "pdf" }, ui);
         const full = "Temporary server processing. Files are uploaded only when you run the tool. PrivaTools processes them in temporary storage and removes the job’s files after the response.";
@@ -105,10 +114,24 @@ describe("where the file goes", () => {
         const pdf = (name: string) => new File(["%PDF-1.7"], name, { type: "application/pdf" });
         const inputs = [...document.querySelectorAll<HTMLInputElement>(".ts-paired-inputs input[type=file]")];
         await act(async () => { fireEvent.change(inputs[0], { target: { files: [pdf("first.pdf")] } }); });
-        await act(async () => { fireEvent.change(document.querySelector<HTMLInputElement>(".ts-paired-inputs input[type=file]")!, { target: { files: [slug === "compare-pdf" ? pdf("second.pdf") : new File(["notes"], "notes.txt", { type: "text/plain" })] } }); });
+        await act(async () => { fireEvent.change(document.querySelector<HTMLInputElement>(".ts-paired-inputs input[type=file]")!, { target: { files: [slug === "add-attachment" ? new File(["notes"], "notes.txt", { type: "text/plain" }) : pdf("second.pdf")] } }); });
         expect(document.querySelectorAll(".ts-paired-inputs input[type=file]")).toHaveLength(0);
         expect(document.querySelectorAll(".ts-paired-where")).toHaveLength(1);
         expect(document.querySelector(".ts-paired-where")).toHaveTextContent(full);
+        expect(document.querySelector("article.tw-workspace")).toHaveAttribute("data-own-where");
+    });
+
+    it.each([
+        { slug: "url-to-pdf", name: "URL to PDF", ui: <UrlToPdfUI /> },
+        { slug: "html-to-pdf", name: "HTML to PDF", ui: <HtmlToPdfUI /> },
+    ])("says it once, in full, in $name's own intake, which takes no file, and in its action bar by its label", async ({ slug, name, ui }) => {
+        await page({ slug, name, description: "No file", category: "developer" }, ui);
+        expect(document.querySelectorAll(".ts-source-where")).toHaveLength(1);
+        expect(document.querySelector(".ts-source-where")).toHaveTextContent(`Temporary server processing. ${toolLocation({ slug }).detail} Read about file handling`);
+        // The page's own line stays out: the tool says it.
+        expect(document.querySelector("article.tw-workspace")).toHaveAttribute("data-own-where");
+        expect(document.querySelector(".ts-action-bar .ts-action-where")).toHaveTextContent("Temporary server processing");
+        expect(document.querySelector("input[type=file]")).toBeNull();
     });
 
     it("says, per AI tool, what reaches the provider, what reaches PrivaTools, and what stays on the device", () => {

@@ -1,14 +1,18 @@
 import { normalizeWebpageUrl } from "./webpage-url";
-import "./SpecialistTools.css";
 /**
- * UrlToPdfUI — fetch a URL & render to PDF via WeasyPrint.
- * Workshop: monospaced URL input with globe prefix, lab note about JS-rendering caveat.
+ * UrlToPdfUI — fetch a URL & render it to PDF via WeasyPrint, on the shared
+ * kit: the address in the intake's card (StudioSource, which says that only
+ * the address is sent), the run button in the action bar, and the kit's
+ * result. One request makes one PDF, which downloads by itself once.
  */
-import { useState, useEffect, useCallback } from "react";
-import { Globe, Download, Loader2, AlertCircle, ExternalLink, RotateCcw } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Download, Globe } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
-import { downloadBlob, postFormData } from "@/lib/api";
+import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+import { StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult, StudioSource } from "@/skins/experience/ToolStudio";
+import { downloadAgainLabel, downloadStarted, runFailure, runFailureDetail, type RunFailure } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 
 /** The download's name: the page's host, as "example_com.pdf". */
 function pdfNameFor(url: string): string {
@@ -21,8 +25,13 @@ function pdfNameFor(url: string): string {
 export function UrlToPdfUI() {
     const [url, setUrl] = useState("");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
+    // An address the page cannot send: said beside the field, before any request.
     const [error, setError] = useState<string | null>(null);
+    const [failure, setFailure] = useState<RunFailure | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    // Back from a result: focus the address again.
+    const [returning, setReturning] = useState(false);
+    const field = useRef<HTMLInputElement>(null);
 
     const convert = useCallback(async () => {
         if (status === "processing") return;
@@ -31,7 +40,7 @@ export function UrlToPdfUI() {
         const finalUrl = normalizeWebpageUrl(trimmed);
         if (!finalUrl) { setError("Please enter a valid URL (e.g. https://example.com)"); return; }
 
-        setStatus("processing"); setError(null);
+        setStatus("processing"); setError(null); setFailure(null);
         try {
             const res = await postFormData("/url-to-pdf", () => {
                 const fd = new FormData();
@@ -46,8 +55,9 @@ export function UrlToPdfUI() {
             emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
-            setError(friendlyError(msg, "Couldn't fetch that URL as a PDF."));
-            setStatus("idle");
+            setResultBlob(null);
+            setFailure(runFailure(e, friendlyError(msg, "Couldn't fetch that URL as a PDF.")));
+            setStatus("done");
             emitToolRun({ outcome: "error" }, e);
         }
     }, [url, status]);
@@ -63,102 +73,51 @@ export function UrlToPdfUI() {
         return () => window.removeEventListener("keydown", h);
     }, [url, status, convert]);
 
+    useEffect(() => { if (returning && status === "idle") focusIfIdle(field.current); }, [returning, status]);
+
     // Use shared downloadBlob (handles URL revoke + toast) instead of bespoke download function.
     const download = () => {
         if (!resultBlob) return;
         downloadBlob(resultBlob, pdfNameFor(url));
     };
 
-    const reset = () => { setUrl(""); setStatus("idle"); setError(null); setResultBlob(null); };
+    const reset = () => { setUrl(""); setError(null); setFailure(null); setResultBlob(null); setReturning(true); setStatus("idle"); };
+    // After a failure the address stays, to change it.
+    const back = () => { setFailure(null); setResultBlob(null); setReturning(true); setStatus("idle"); };
 
-    if (status === "done") {
-        return (
-            <div className="pt-specialist pt-webpage-result rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-                <div className="relative p-7 sm:p-9 animate-corner-extend">
-                    <CornerMarks />
-                    <div className="flex items-start gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                            <Globe size={24} className="text-accent" strokeWidth={1.75} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">Page captured</p>
-                            <h2 className="font-display text-[22px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                <span className="italic text-accent break-all">{url.trim()}</span>
-                            </h2>
-                            <p className="font-medium text-[11.5px] text-muted-foreground mt-1 flex items-center gap-1">
-                                <ExternalLink size={10} /> Rendered to PDF
-                            </p>
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                <button onClick={download} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                                    <Download size={13} aria-hidden="true" /> Download again
-                                </button>
-                                <button onClick={reset} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
-                                    <RotateCcw size={12} /> Convert another
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+    if (status === "done" && failure) {
+        return <StudioResult tone="failure" title="This page couldn’t be converted." detail={runFailureDetail(failure)}>
+            <StudioFile name={url.trim()} status="error" detail={failure.message} />
+            <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void convert()}
+                back={{ label: "Change the address", onBack: back }} />
+        </StudioResult>;
     }
 
-    return (
-        <div className="pt-specialist pt-webpage-workspace space-y-4">
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    Webpage URL
-                </div>
-                <div className="p-4">
-                    <div className="relative">
-                        <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" aria-hidden="true" />
-                        <input
-                            disabled={status === "processing"} type="text" value={url}
-                            onChange={e => { setUrl(e.target.value); setError(null); }}
-                            onKeyDown={e => { if (e.key === "Enter" && url.trim()) convert(); }}
-                            placeholder="https://example.com"
-                            aria-label="Webpage URL"
-                            spellCheck={false}
-                            autoComplete="url"
-                            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2.5 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                        />
-                    </div>
-                    <p className="font-medium text-[11px] text-muted-foreground mt-2">
-                        Full URL with https:// — page rendered & flattened to PDF
-                    </p>
-                </div>
-            </div>
+    if (status === "done" && resultBlob) {
+        return <StudioResult title="Your PDF is ready." detail={`From ${url.trim()}. ${downloadStarted(1)}`}>
+            <StudioFile name={pdfNameFor(url)} status="done" detail={formatFileSize(resultBlob.size)} />
+            <StudioActions tone="success"
+                primary={<button type="button" className="ts-primary-button" onClick={download}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(1)}</button>}
+                more={<button type="button" className="ts-text-button" onClick={reset}>Convert another</button>} />
+        </StudioResult>;
+    }
 
-            {error && (
-                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />{error}
-                </div>
-            )}
-
-            <div className="rounded-xl border border-border bg-card p-4">
-                <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Note — WeasyPrint renders server-side. Best for content-heavy pages; JS-rendered SPAs may not capture fully.
-                </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-                <button onClick={convert} disabled={!url.trim() || status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                    {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Capturing…</> : <><Globe size={13} /> Convert to PDF</>}
-                </button>
-                {url.trim() && status === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
-            </div>
-        </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+    const busy = status === "processing";
+    return <StudioLayout action={<StudioActionBar ready={!!url.trim()}>
+        <button type="button" className="ts-primary-button" onClick={convert} disabled={!url.trim() || busy}><Globe size={16} aria-hidden="true" /> Convert to PDF</button>
+    </StudioActionBar>}>
+        <StudioSource>
+            <h2><label htmlFor="url-to-pdf-address">Webpage URL</label></h2>
+            <input id="url-to-pdf-address" ref={field} disabled={busy} type="text" value={url}
+                onChange={e => { setUrl(e.target.value); setError(null); }}
+                onKeyDown={e => { if (e.key === "Enter" && url.trim()) convert(); }}
+                placeholder="https://example.com" spellCheck={false} autoComplete="url"
+                aria-invalid={!!error} aria-describedby={error ? "url-to-pdf-error" : "url-to-pdf-hint"} />
+            {error
+                ? <p className="ts-error" id="url-to-pdf-error" role="alert">{error}</p>
+                : <p className="ts-caption" id="url-to-pdf-hint">Full URL with https:// — page rendered & flattened to PDF</p>}
+            <p className="ts-caption">Note — WeasyPrint renders server-side. Best for content-heavy pages; JS-rendered SPAs may not capture fully.</p>
+        </StudioSource>
+        {busy && <StudioProgress label="Capturing the page" />}
+    </StudioLayout>;
 }
