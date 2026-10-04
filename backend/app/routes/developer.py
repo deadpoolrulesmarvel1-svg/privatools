@@ -45,6 +45,28 @@ router = APIRouter(tags=["developer"])
 
 MAX_PIPELINE_STEPS = 12
 
+
+# A pipeline step takes a path and returns the output's path. These services
+# return more, or are coroutines, so each gets an adapter; every step is run
+# on a sound PDF by test_every_pipeline_step_runs_on_an_intact_pdf.
+def _repaired_path(input_path: str) -> str:
+    """Repair PDF returns its output path with a status ("repaired" or "partial")."""
+    output_path, _status = repair_service.repair_pdf(input_path)
+    return output_path
+
+
+def _bates_path(input_path: str) -> str:
+    """Bates Numbering returns its output path with the next number."""
+    output_path, _next_number = bates_numbering_service.add_bates_numbering(input_path)
+    return output_path
+
+
+def _pdfa_path(input_path: str) -> str:
+    """PDF to PDF/A's service is a coroutine around this synchronous helper;
+    a step already runs in a worker thread."""
+    return pdf_to_pdfa_service._convert_to_pdfa_sync(input_path)
+
+
 # The pipeline's step catalog, and the single source of truth for what
 # `/api/pipeline` can chain. `run` takes the input path and returns the output
 # path — every service below already has exactly that shape, which is why the
@@ -64,7 +86,7 @@ PIPELINE_STEP_META = {
     "repair-pdf": {
         "label": "Repair PDF",
         "description": "Rebuild a damaged or malformed PDF structure.",
-        "run": repair_service.repair_pdf,
+        "run": _repaired_path,
     },
     "deskew-pdf": {
         "label": "Deskew",
@@ -111,7 +133,7 @@ PIPELINE_STEP_META = {
     "bates-numbering": {
         "label": "Bates numbering",
         "description": "Apply sequential Bates numbers for legal discovery.",
-        "run": bates_numbering_service.add_bates_numbering,
+        "run": _bates_path,
     },
     "header-footer": {
         "label": "Header and footer",
@@ -143,7 +165,7 @@ PIPELINE_STEP_META = {
     "pdf-to-pdfa": {
         "label": "Convert to PDF/A",
         "description": "Convert the document to the PDF/A archival profile.",
-        "run": pdf_to_pdfa_service.convert_to_pdfa,
+        "run": _pdfa_path,
     },
 }
 
