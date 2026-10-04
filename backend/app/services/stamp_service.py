@@ -1,6 +1,7 @@
 import fitz  # PyMuPDF
 
 from ..utils.cleanup import process_pdf
+from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 
@@ -44,14 +45,16 @@ def stamp_pdf(input_path: str, stamp_type: str = "confidential",
 
     def stamp(doc) -> None:
         total = len(doc)
-        # Use the shared parser so "1-3,5,end" and "all" both work, with
-        # a graceful fallback to every-page if parsing fails (the stamp
-        # tool historically swallowed errors here so users could pass
-        # half-typed ranges without losing their upload).
+        # The shared parser, as Rotate PDF uses it: "all", "1,3,5-8",
+        # "8-", "9-end"; blank means every page. A page the PDF does not
+        # have, or a typing mistake, is refused with the parser's words. It
+        # used to stamp every page instead, with a 200. A ValidationError,
+        # not the parser's ValueError: process_pdf would count that as damage
+        # on a file MuPDF had to repair.
         try:
             page_indices = parse_page_range(pages or "all", total, allow_empty=True)
-        except ValueError:
-            page_indices = list(range(total))
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
         if not page_indices:
             page_indices = list(range(total))
 

@@ -812,7 +812,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "stamp-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
         {"name": "Choose a stamp", "text": "Preset: APPROVED, CONFIDENTIAL, COPY, DRAFT, FINAL, NOT APPROVED, SAMPLE, VOID. Or custom: your own text."},
-        {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."},
+        {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers and ranges separated by commas, such as 1,3,5-8. Click Apply."},
     ],
     "strip-metadata": [
         {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
@@ -2236,7 +2236,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "stamp-pdf": [
         {"q": "Are stamps editable annotations or baked-in?", "a": "Baked into the page content. They survive copying, printing, and PDF/A conversion. To remove, use Whiteout to cover them."},
-        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes. Enter the page numbers separated by commas, such as 1,3,5, or leave it as all. Ranges such as 1-3 are rejected, so list each page."},
+        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes. Enter page numbers and ranges separated by commas, such as 1,3,5-8, or leave it as all; an open range like 8- runs to the last page. A page the PDF does not have is refused with a message giving its page range, and nothing is stamped."},
         {"q": "How big is the stamp?", "a": "It is sized automatically from the page width and the length of the text, up to 72 pt: on an A4 page CONFIDENTIAL spans most of the width and VOID about a third of it. The size cannot be set by hand."},
     ],
     "strip-metadata": [

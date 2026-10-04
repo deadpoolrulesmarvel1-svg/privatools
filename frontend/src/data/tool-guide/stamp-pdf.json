@@ -10,7 +10,7 @@
     },
     {
       "name": "Set opacity and position",
-      "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."
+      "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers and ranges separated by commas, such as 1,3,5-8. Click Apply."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I apply a stamp to only specific pages?",
-      "a": "Yes. Enter the page numbers separated by commas, such as 1,3,5, or leave it as all. Ranges such as 1-3 are rejected, so list each page."
+      "a": "Yes. Enter page numbers and ranges separated by commas, such as 1,3,5-8, or leave it as all; an open range like 8- runs to the last page. A page the PDF does not have is refused with a message giving its page range, and nothing is stamped."
     },
     {
       "q": "How big is the stamp?",
