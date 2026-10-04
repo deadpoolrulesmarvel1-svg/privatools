@@ -168,3 +168,45 @@ def test_mupdfs_own_errors_on_an_intact_file_are_not_called_damage():
 def test_an_encrypted_pdf_is_refused_before_any_work(locked_pdf):
     with pytest.raises(PdfEncryptedError):
         process_pdf(locked_pdf, lambda doc: pytest.fail("work ran on a locked PDF"), rebuild=False)
+
+
+def _cut_after_the_page_list() -> bytes:
+    """A download that stopped after the page list (/Type/Pages) and before
+    the pages it names: MuPDF opens it, then cannot count its pages."""
+    whole = _classic()
+    return whole[: whole.index(b"endobj", whole.index(b"/Type/Pages")) + len(b"endobj")]
+
+
+# Every route whose service opens the upload with open_pdf_document or
+# process_pdf. They answered this file with a 500: len(doc) raised
+# RuntimeError("code=7: Invalid number of pages") inside the helper.
+OPENED_BY_THE_HELPER = {
+    "/api/esign-pdf": ROUTES["/api/esign-pdf"],
+    "/api/stamp-pdf": ROUTES["/api/stamp-pdf"],
+    "/api/highlight": {"query": "contract"},
+    "/api/smart-redact": {"needles": '["contract"]'},
+    "/api/pdf-to-svg": {},
+    "/api/split-in-half": {},
+    "/api/pdf-to-long-image": {},
+    "/api/invert-colors": {},
+    "/api/deskew": {},
+    "/api/pdf-to-image": {},
+    "/api/nup": {},
+    "/api/auto-crop": {},
+    "/api/pdf-to-pptx": {},
+}
+
+
+def test_the_sample_is_one_mupdf_cannot_count():
+    doc = fitz.open(stream=_cut_after_the_page_list(), filetype="pdf")
+    with pytest.raises(RuntimeError, match="Invalid number of pages"):
+        len(doc)
+
+
+@pytest.mark.parametrize("route", sorted(OPENED_BY_THE_HELPER))
+def test_a_pdf_cut_after_its_page_list_is_refused_as_damaged(quiet_client, route):
+    response = quiet_client.post(route, files={"file": ("contract.pdf", _cut_after_the_page_list(), "application/pdf")},
+                                 data=OPENED_BY_THE_HELPER[route])
+    assert response.status_code == 400, response.text
+    # N-Up's route words its own refusal ("PDF appears corrupt or unreadable").
+    assert "damaged" in response.json()["detail"] or "corrupt" in response.json()["detail"]

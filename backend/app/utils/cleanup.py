@@ -361,7 +361,15 @@ def open_pdf_document(source: str | bytes):
     if doc.needs_pass:
         doc.close()
         raise PdfEncryptedError()
-    if len(doc) == 0:
+    try:
+        pages = len(doc)
+    except _library_errors() as exc:
+        # A page tree MuPDF cannot count ("Invalid number of pages"), as in a
+        # file cut short after its page list but before the pages it names.
+        repaired = doc.is_repaired
+        doc.close()
+        raise PdfCorruptError(_DAMAGED_PDF if repaired else None) from exc
+    if pages == 0:
         repaired = doc.is_repaired
         doc.close()
         if repaired:
