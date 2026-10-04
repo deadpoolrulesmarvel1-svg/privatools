@@ -19,6 +19,11 @@ learned by getting it wrong first.
   in bounded subprocesses with an OpenCV fallback when host zbar is broken.
   That module must pass locally too; a native crash is no longer an accepted
   baseline. See `backend/tests/test_qr_reader_isolation.py`.
+- **Fake PDFs in tests need an object.** Every PDF route's pre-check
+  (`validate_pdf_content`) refuses a `%PDF-` header with no `obj` in its first
+  256 KB, in the words the parsers use for a corrupt file, so a header-plus-filler
+  fixture stops there without reaching the code under test. Start such
+  fixtures with `%PDF-1.7\n1 0 obj\n`, unless the pre-check is what you test.
 - **CI does not run on a plain branch.** `test.yml` and `security.yml` trigger
   on pull requests and pushes to `main`. To verify a branch without a PR:
   `gh workflow run test.yml --ref <branch>`.
