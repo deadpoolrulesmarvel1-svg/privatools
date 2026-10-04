@@ -8,6 +8,8 @@ import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { IntakeNotice } from "@/skins/experience/ToolStudio";
+import { useFileAcceptance } from "@/skins/experience/useFileAcceptance";
 
 const SPLIT_BY_TEXT_DEFAULTS: { caseSensitive: boolean } = {
     caseSensitive: false,
@@ -29,11 +31,16 @@ export function SplitByTextUI() {
     // What the run downloaded, for "Download again" (the download policy).
     const [downloaded, setDownloaded] = useState<{ blob: Blob; name: string } | null>(null);
 
-    const onPick = (f: FileList | null) => {
-        if (!f || !f[0]) return;
-        setFile(f[0]);
+    // Drag and drop, and "All files" in the system dialog, pass the picker's
+    // filter: a file that isn't a PDF is named beside the drop zone, with the
+    // tool that can help (lib/file-acceptance), and never becomes the file.
+    const { advice, receive, dismiss } = useFileAcceptance(".pdf", files => {
+        setFile(files[0]);
         setState("idle");
         setError(null);
+    });
+    const onPick = (f: FileList | null) => {
+        if (f?.length) receive(Array.from(f));
     };
 
     const process = useCallback(async () => {
@@ -142,6 +149,7 @@ export function SplitByTextUI() {
                     </button>
                 </div>
             )}
+            <IntakeNotice advice={advice} onDismiss={dismiss} />
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
