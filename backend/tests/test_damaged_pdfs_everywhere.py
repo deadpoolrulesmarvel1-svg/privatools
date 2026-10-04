@@ -1,11 +1,11 @@
 """Every PDF route answers a damaged or locked PDF with a 4xx, never a 500.
 
-A PDF cut short by an interrupted download made 47 PDF routes answer 500,
-"Processing failed. Please try again.", and so offer a retry that can never
-work; 29 answered a password-locked PDF that way too. The sweep that found
-them sent a four-page PDF cut at 24 points (5 % to 99 %, in the classic and
-the object-stream layouts) to every route. These are four of those cuts, one
-for each way the libraries fail, and a locked file:
+A PDF cut short by an interrupted download made 49 of the 84 PDF routes answer
+500, "Processing failed. Please try again.", and so offer a retry that can
+never work; 29 answered a password-locked PDF that way too. The sweep that
+found them sent a four-page PDF cut at 24 points (5 % to 99 %, in the classic
+and the object-stream layouts) to every route. These are four of those cuts,
+one for each way the libraries fail, and a locked file:
 
 - classic-5: no library can open it (pikepdf's PdfError, MuPDF's FileDataError,
   pypdf's PdfStreamError);
@@ -575,3 +575,27 @@ def test_pdf_to_text_still_reads_an_intact_pdf(quiet_client):
     response = _post(quiet_client, "/api/pdf-to-text", GOOD)
     assert response.status_code == 200, response.text
     assert "A secret meeting on page 3." in response.json()["text"]
+
+
+# ── A PDF with no page ──────────────────────────────────────────────────────
+# Not damaged, but nothing these tools can work on. open_pdf_document refuses
+# it as "This PDF has no pages.", a ToolError that most of these routes turned
+# into a 500 (page numbers, flatten, thumbnails, batch compress and 9 more on
+# main) or never raised (an empty ZIP, HTML or OCR text came back). The routes
+# that now open the upload with open_pdf_document let it through.
+
+def _no_pages() -> bytes:
+    out = io.BytesIO()
+    pikepdf.new().save(out)
+    return out.getvalue()
+
+
+@pytest.mark.parametrize("route", sorted(
+    # Grayscale converts with pikepdf, which returns a PDF with no page as it
+    # is; only its raster fallback opens the file with MuPDF.
+    set(CHANGES_PAGES + READS_PAGES + [SPLIT_BY_TEXT, THUMBNAILS]) - {"/api/grayscale"}
+))
+def test_a_pdf_with_no_page_is_refused_in_the_standard_words(quiet_client, route):
+    response = _post(quiet_client, route, _no_pages())
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "This PDF has no pages."
