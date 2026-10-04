@@ -205,3 +205,52 @@ html[data-experience=play] .ts-text-output,html[data-experience=play] .ts-stats>
 /* A choice that shows its result in miniature (N-up's sheets). */
 .ts-choice .ts-sheet-preview{display:grid;margin:0 0 8px}
 .ts-choice .ts-sheet-preview>span{display:block}
+
+/* Two named inputs (PairedIntake): a chosen slot keeps its role as its heading,
+   on the same surface as the intake it replaced; the swap and where the files
+   go sit under the pair. */
+.ts-pair{display:grid;gap:14px;min-width:0}
+.ts-pair>.ts-paired-where{margin:6px 0 0}
+.ts-slot{display:grid;gap:12px;align-content:start}
+.ts-slot-filled{display:grid;gap:6px;padding:26px 26px 4px;border-radius:10px;background:hsl(var(--card))}
+.ts-slot-filled h2{font-style:normal;font-weight:550;font-size:24px;line-height:1.15;font-family:var(--pt-display);letter-spacing:-.035em;margin:0;overflow-wrap:anywhere}
+.ts-slot-filled h2:focus{outline:none}
+.ts-slot-filled h2:focus-visible{outline:2px solid hsl(var(--accent));outline-offset:4px;border-radius:4px}
+.ts-slot-filled>p{margin:0;font-size:13px;line-height:1.55;color:hsl(var(--muted-foreground))}
+.ts-slot-filled .ts-file{border-bottom:0;margin-top:4px}
+.ts-pair-swap{justify-self:start;min-height:40px;font-size:13px}
+.ts-pair-swap:disabled{opacity:.5;cursor:default}
+/* A slot's role is often short ("PDF A"): keep the sheets clear of it. */
+.ts-pair .ts-paired-inputs .ts-intake-art{margin-bottom:-6px}
+html[data-experience=play] .ts-slot-filled{border-radius:17px 17px 40px 17px;box-shadow:4px 5px 0 hsl(var(--border)/.6);padding:28px 30px 6px}
+html[data-experience=play] .ts-slot-filled h2{font-weight:650;font-size:26px}
+/* On a phone the two slots stack: each is its role, what it does and its button, without the sheets. */
+@media(max-width:560px){
+ .ts-pair .ts-paired-inputs .ts-intake,html[data-experience=play] .ts-pair .ts-paired-inputs .ts-intake{grid-template-columns:minmax(0,1fr);min-height:0;padding:22px 18px;text-align:left}
+ .ts-pair .ts-paired-inputs .ts-intake-art{display:none}
+ .ts-pair .ts-paired-inputs .ts-intake .ts-intake-title{margin-left:0}
+ .ts-pair .ts-paired-inputs .ts-intake-copy>p{margin-left:0;font-size:13px}
+ .ts-slot-filled,html[data-experience=play] .ts-slot-filled{padding:20px 16px 2px}
+ .ts-slot-filled h2,html[data-experience=play] .ts-slot-filled h2{font-size:21px}
+}
+
+/* The intake of a tool that takes no file (StudioSource): an address or pasted
+   HTML in the intake's card. Its heading is the field's label. */
+.ts-source{display:grid;gap:14px;min-width:0;padding:32px 36px;border-radius:10px;background:hsl(var(--card))}
+.ts-source-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+.ts-source h2{font-style:normal;font-weight:550;font-size:clamp(22px,2.2vw,28px);line-height:1.15;font-family:var(--pt-display);letter-spacing:-.035em;margin:0}
+.ts-source h2 label{cursor:pointer}
+.ts-source :is(input,textarea){display:block;width:100%;min-width:0;padding:13px 15px;border:1px solid hsl(var(--input));border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:16px;line-height:1.4}
+.ts-source :is(input,textarea)::placeholder{color:hsl(var(--muted-foreground))}
+.ts-source :is(input,textarea):disabled{opacity:.6;cursor:wait}
+.ts-source textarea{min-height:16rem;resize:vertical;background:hsl(var(--paper-2));font-style:normal;font-weight:400;font-size:13px;line-height:1.65;white-space:pre;overflow:auto;tab-size:2}
+/* Pasted HTML is code: the code face, without ligatures, over the experience's field font. */
+html[data-experience] .ts-source textarea{font-family:var(--font-mono);font-variant-ligatures:none}
+.ts-source .ts-mode-switch{margin:-8px 0 4px}
+.ts-source .ts-mode-switch button{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.ts-source .ts-caption,.ts-source .ts-error{margin:0}
+.ts-source-where{margin:8px 0 0;padding-top:16px;border-top:1px solid hsl(var(--border));max-width:64ch}
+html[data-experience=play] .ts-source{border-radius:17px 17px 60px 17px;box-shadow:6px 7px 0 hsl(var(--border)/.7);padding:36px 42px 40px}
+html[data-experience=play] .ts-source h2{font-weight:650}
+html[data-experience=play] .ts-source :is(input,textarea){border-radius:14px}
+@media(max-width:560px){.ts-source,html[data-experience=play] .ts-source{padding:24px 18px}.ts-source h2{font-size:22px}}

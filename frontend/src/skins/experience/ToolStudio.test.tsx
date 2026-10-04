@@ -3,9 +3,11 @@ import { useState } from "react";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
-import { FileChooserButton, FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioResult } from "./ToolStudio";
+import { FileChooserButton, FileIntake, IntakeNotice, PairedIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioResult, StudioSource } from "./ToolStudio";
 import { fileCount, fileNoun } from "./file-format-label";
 import { ToolLocationProvider, toolLocation } from "./tool-location";
+import { useFileAcceptance } from "./useFileAcceptance";
+import { runFailure, runFailureDetail } from "./studio-outcome";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() } }));
 
@@ -255,5 +257,140 @@ describe("StudioActions", () => {
         cleanup();
         actions("partial", 1);
         expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Download again", "Try again", "Compress more"]);
+    });
+
+    it("leads a failure with going back to the input when there is no file to choose again", () => {
+        const onBack = vi.fn();
+        const { rerender } = render(<StudioActions tone="failure" retryCount={1} onRetry={vi.fn()} back={{ label: "Change the address", onBack }} primary={<button>Download again</button>} />);
+        expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Change the address", "Try again"]);
+        fireEvent.click(screen.getByRole("button", { name: "Change the address" }));
+        expect(onBack).toHaveBeenCalledTimes(1);
+        // A chooser, when there is one, still leads; and a finished run never shows the way back in the lead.
+        rerender(<StudioActions tone="failure" choose={{ accepts: ".pdf", onFiles: vi.fn() }} back={{ label: "Change the files", onBack }} />);
+        expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Choose a different file"]);
+        rerender(<StudioActions tone="success" back={{ label: "Change the address", onBack }} primary={<button>Download again</button>} />);
+        expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Download again"]);
+    });
+});
+
+describe("PairedIntake", () => {
+    // The tool decides what a swap does; here it exchanges the two files, as Overlay does.
+    function Pair({ swap = true, disabled = false }: { swap?: boolean; disabled?: boolean }) {
+        const [base, setBase] = useState<File | null>(null);
+        const [overlay, setOverlay] = useState<File | null>(null);
+        return <ToolLocationProvider value={toolLocation({ slug: "overlay" })}>
+            <PairedIntake accepts=".pdf" disabled={disabled} slots={[
+                { role: "Base PDF (A)", detail: "The main document.", file: base, onFile: setBase },
+                { role: "Overlay PDF (B)", detail: "Drawn on top of every page of A.", file: overlay, onFile: setOverlay },
+            ]} swap={swap ? { label: "Swap base and overlay", onSwap: () => { setBase(overlay); setOverlay(base); } } : undefined} />
+        </ToolLocationProvider>;
+    }
+    const slot = (index: number) => document.querySelectorAll<HTMLElement>(".ts-slot")[index];
+    const choose = (index: number, files: File[]) => fireEvent.change(slot(index).querySelector("input[type=file]")!, { target: { files } });
+
+    it("heads each slot with its role, before and after a file is chosen", () => {
+        render(<Pair />);
+        expect(screen.getAllByRole("heading", { level: 2 }).map(heading => heading.textContent)).toEqual(["Base PDF (A)", "Overlay PDF (B)"]);
+        expect(screen.getByRole("button", { name: "Choose a file: Base PDF (A)" })).toHaveAccessibleDescription("The main document.");
+        expect(screen.getByRole("button", { name: "Choose a file: Overlay PDF (B)" })).toBeInTheDocument();
+        choose(0, [pdf("letter.pdf")]);
+        expect(screen.getAllByRole("heading", { level: 2 }).map(heading => heading.textContent)).toEqual(["Base PDF (A)", "Overlay PDF (B)"]);
+        expect(within(slot(0)).getByText("letter.pdf")).toBeInTheDocument();
+        expect(within(slot(0)).getByText("The main document.")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Remove letter.pdf from Base PDF (A)" }));
+        expect(screen.getByRole("button", { name: "Choose a file: Base PDF (A)" })).toBeInTheDocument();
+    });
+
+    it("refuses a wrong file beside the slot it was given to, and keeps naming it beside the file a mixed drop left there", () => {
+        window.history.pushState({}, "", "/tool/overlay");
+        render(<Pair />);
+        drop(slot(1).querySelector(".ts-intake")!, [png()]);
+        expect(within(slot(1)).getByRole("alert")).toHaveTextContent("holiday.png wasn’t added. Overlay PDF takes PDF files.");
+        expect(within(slot(0)).queryByRole("alert")).toBeNull();
+        drop(slot(0).querySelector(".ts-intake")!, [png(), pdf("letter.pdf")]);
+        expect(within(slot(0)).getByText("letter.pdf")).toBeInTheDocument();
+        expect(within(slot(0)).getByRole("alert")).toHaveTextContent("holiday.png wasn’t added.");
+        expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it("swaps the two files where order matters, and says what each slot then holds", () => {
+        render(<Pair />);
+        expect(screen.queryByRole("button", { name: "Swap base and overlay" })).toBeNull();
+        choose(0, [pdf("letter.pdf")]);
+        choose(1, [pdf("stamp.pdf")]);
+        fireEvent.click(screen.getByRole("button", { name: "Swap base and overlay" }));
+        expect(within(slot(0)).getByText("stamp.pdf")).toBeInTheDocument();
+        expect(within(slot(1)).getByText("letter.pdf")).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Base PDF (A): stamp.pdf. Overlay PDF (B): letter.pdf.");
+        // A lone file moves to the other slot.
+        fireEvent.click(screen.getByRole("button", { name: "Remove stamp.pdf from Base PDF (A)" }));
+        fireEvent.click(screen.getByRole("button", { name: "Swap base and overlay" }));
+        expect(within(slot(0)).getByText("letter.pdf")).toBeInTheDocument();
+        expect(within(slot(1)).getByRole("button", { name: "Choose a file: Overlay PDF (B)" })).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Base PDF (A): letter.pdf. Overlay PDF (B): no file.");
+    });
+
+    it("offers no swap where order does not matter, and nothing to change while a run works", () => {
+        const { rerender } = render(<Pair swap={false} />);
+        choose(0, [pdf("letter.pdf")]);
+        expect(screen.queryByRole("button", { name: /^Swap/ })).toBeNull();
+        rerender(<Pair disabled />);
+        expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
+    });
+
+    it("says where the files go once, under the pair", () => {
+        render(<Pair />);
+        expect(document.querySelectorAll(".tool-where")).toHaveLength(2 + 1);
+        // The intakes' own lines are hidden in a pair (tool-studio.css); the pair's is the one shown.
+        expect(document.querySelectorAll(".ts-paired-where")).toHaveLength(1);
+        expect(document.querySelector(".ts-paired-where")).toHaveTextContent(`Temporary server processing. ${toolLocation({ slug: "overlay" }).detail}`);
+        choose(0, [pdf("letter.pdf")]);
+        choose(1, [pdf("stamp.pdf")]);
+        expect(document.querySelectorAll(".tool-where")).toHaveLength(1);
+    });
+});
+
+describe("StudioSource", () => {
+    it("heads a tool's own input with its field's label, and says in full where the input goes", () => {
+        render(<ToolLocationProvider value={toolLocation({ slug: "url-to-pdf" })}>
+            <StudioSource><h2><label htmlFor="address">Webpage URL</label></h2><input id="address" /></StudioSource>
+        </ToolLocationProvider>);
+        expect(screen.getByRole("heading", { level: 2, name: "Webpage URL" })).toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "Webpage URL" })).toBeInTheDocument();
+        expect(document.querySelector(".ts-source .ts-source-where")).toHaveTextContent(`Temporary server processing. ${toolLocation({ slug: "url-to-pdf" }).detail} Read about file handling`);
+    });
+});
+
+describe("FileIntake with the screen's own acceptance", () => {
+    it("leaves the refusal to the screen, so it stays after the chosen file's row replaces the intake", () => {
+        window.history.pushState({}, "", "/tool/split-pdf");
+        function Screen() {
+            const [file, setFile] = useState<File | null>(null);
+            const acceptance = useFileAcceptance(".pdf", files => setFile(files[0]));
+            return <>{file ? <StudioFile name={file.name} /> : <FileIntake accepts=".pdf" acceptance={acceptance} title="Select a PDF to split" onFiles={acceptance.receive} />}
+                <IntakeNotice advice={acceptance.advice} onDismiss={acceptance.dismiss} /></>;
+        }
+        const { container } = render(<Screen />);
+        drop(container.querySelector(".ts-intake")!, [png(), pdf("notes.pdf")]);
+        expect(screen.getByText("notes.pdf")).toBeInTheDocument();
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getByRole("alert")).toHaveTextContent("holiday.png wasn’t added. Split PDF takes PDF files.");
+        expect(toast.error).not.toHaveBeenCalled();
+    });
+});
+
+describe("a run that is one request", () => {
+    const status = (code: number) => Object.assign(new Error("x"), { __status: code });
+
+    it("records why it failed and whether another attempt could work", () => {
+        expect(runFailure(status(400), "Not a PDF")).toEqual({ message: "Not a PDF", retryable: false, kind: "bad_input" });
+        expect(runFailure(status(503), "Busy")).toEqual({ message: "Busy", retryable: true, kind: "server" });
+        expect(runFailure(Object.assign(new Error("Aborted"), { name: "AbortError" }), "Stopped")).toEqual({ message: "Stopped", retryable: false, kind: undefined });
+    });
+
+    it("says under the heading what the recorded kind establishes, or where the reason is", () => {
+        expect(runFailureDetail(runFailure(status(400), "Not a PDF"))).toBe("Nothing was created. The reason is below.");
+        expect(runFailureDetail(runFailure(status(503), "Busy"))).toBe("Nothing was created. The server couldn’t finish it.");
+        expect(runFailureDetail(runFailure(status(504), "Slow"))).toBe("Nothing was created. It ran out of time. Trying again may work, or try a smaller file.");
     });
 });

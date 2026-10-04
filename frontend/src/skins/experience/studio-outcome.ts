@@ -1,7 +1,22 @@
-import type { ToolErrorKind } from "@/lib/toolRun";
+import { isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 
 /** How a run ended: everything worked, some files failed, or nothing was made. */
 export type StudioOutcome = "success" | "partial" | "failure";
+
+/** Why a run that is one request failed (a set, a pair, an address), and whether another attempt could work. */
+export interface RunFailure {
+    /** The reason, as the result's row shows it. */
+    message: string;
+    /** A failure another attempt could fix: connection, time limit, rate limit or a server fault. */
+    retryable: boolean;
+    kind?: ToolErrorKind;
+}
+
+/** A caught error as a RunFailure, with the reason the caller words for the visitor. */
+export function runFailure(error: unknown, message: string): RunFailure {
+    const kind = toolErrorKind(error);
+    return { message, retryable: isTransientFailure(error), kind: kind === "cancelled" ? undefined : kind };
+}
 
 /** Pick the outcome from counts of finished and failed files. */
 export function studioOutcome(done: number, failed: number): StudioOutcome {
@@ -35,6 +50,11 @@ export function failureDetail(failed: number, retryable: readonly (ToolErrorKind
     if (count > 0 && count >= failed) return `Nothing was created. ${retryLine(retryable)}`;
     if (count > 0) return `Nothing was created. The reasons are below; trying again may work for ${count === 1 ? "one of the files" : `${count} of the files`}.`;
     return failed > 1 ? "Nothing was created. The reasons are below." : "Nothing was created. The reason is below.";
+}
+
+/** The line under the failure of a run that is one request: its recorded kind, or where its reason is. */
+export function runFailureDetail(failure: RunFailure): string {
+    return failureDetail(1, failure.retryable ? [failure.kind] : []);
 }
 
 /** A partial run's line about what didn't work: how many, and that each reason is on its file's row. */
