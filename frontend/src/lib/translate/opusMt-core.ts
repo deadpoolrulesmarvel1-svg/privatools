@@ -42,7 +42,11 @@ export interface OpusMtCore {
     handle(request: OpusMtRequest): Promise<void>;
 }
 
-/** `prepare` sees each model once it has loaded: the page uses it to give itself a turn between the model's steps. */
+/**
+ * `prepare` sees each model once it has loaded. Both callers pass
+ * lib/modelSteps.ts's yieldBetweenSteps: on the page, so it can draw between
+ * the model's steps; in the worker, so ending it takes effect between two.
+ */
 export function createOpusMtCore(post: (reply: OpusMtReply) => void, { prepare }: { prepare?: (translator: unknown) => void } = {}): OpusMtCore {
     // A loaded model is kept for the worker's life, so switching back to a pair doesn't load it again.
     const pipelines = new Map<string, Promise<TranslationPipeline>>();
