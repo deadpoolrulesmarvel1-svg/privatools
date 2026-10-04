@@ -219,6 +219,32 @@ def test_a_pdf_stored_in_a_stream_is_not_read_as_the_files_own():
         assert doc.is_repaired and len(doc) == readable_page_count(doc) == 1
 
 
+def test_a_pdf_stored_in_a_stream_whose_length_is_an_object_is_not_read_either():
+    # qpdf's QDF mode, Ghostscript, LibreOffice and cairo write a stream's
+    # /Length as an object after it. The stored PDF's own first "endstream"
+    # then came before its catalog and page tree, written last as many
+    # writers do, and those were read as this file's: 6 pages for 1.
+    inner = {}
+    for page in range(3, 15, 2):
+        inner[page] = b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents %d 0 R >>" % (page + 1)
+        inner[page + 1] = b"<< /Length 9 >>\nstream\nBT 0 Tj ET\nendstream"
+    inner[2] = b"<< /Type /Pages /Kids [%s] /Count 6 >>" % b" ".join(b"%d 0 R" % n for n in range(3, 15, 2))
+    inner[1] = b"<< /Type /Catalog /Pages 2 0 R >>"
+    stored = _hand_built(inner)
+    outer = _hand_built({
+        1: b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 5 0 R >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: _page(2),
+        4: b"<< /Type /EmbeddedFile /Length 7 0 R >>\nstream\n%s\nendstream" % stored,
+        7: b"%d" % len(stored),
+        5: b"<< /Names [(inner.pdf) 6 0 R] >>",
+        6: b"<< /Type /Filespec /F (inner.pdf) /EF << /F 4 0 R >> >>",
+    })
+    assert declared_page_count(stored) == 6
+    assert declared_page_count(outer) == 1
+    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) == 1
+
+
 def test_a_catalog_the_count_cannot_read_leaves_the_count_unknown():
     # A catalog without /Type /Catalog, which MuPDF does without, and a page
     # tree a merge left behind, larger than the file's own: no count is

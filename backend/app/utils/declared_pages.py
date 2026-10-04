@@ -77,6 +77,8 @@ _REF = re.compile(rb"([0-9]{1,10})[ \t\r\n\f\x00]+[0-9]{1,5}[ \t\r\n\f\x00]+R(?!
 _INT = re.compile(rb"[+-]?[0-9]+")
 # How far back from a "stream" keyword its object's "N G obj" is looked for.
 _MAX_STREAM_DICT_BYTES = 64 * 1024
+# An object that is an integer, the rest of "N G obj 1234 endobj".
+_INTEGER_OBJECT = re.compile(rb"obj[ \t\r\n\f\x00]*([0-9]{1,15})[ \t\r\n\f\x00]*endobj")
 _NESTED_STOP = re.compile(rb"[\[\]()<>%]")
 _STRING_STOP = re.compile(rb"[()\\]")
 _LINE_END = re.compile(rb"[\r\n]")
@@ -143,6 +145,7 @@ class _Scan:
         self._streams_from = 0
         self._starts: list[int] = []
         self._ends: list[int] = []
+        self._integers: dict[int, list[int]] | None = None  # _integer_objects
 
     # ── collecting ──────────────────────────────────────────────────────────
 
@@ -278,8 +281,9 @@ class _Scan:
 
     def _stream_end(self, keyword: int, begin: int) -> int:
         """Where the data of the stream whose keyword is at `keyword` ends: at
-        its direct /Length when "endstream" follows there, else at the next
-        "endstream", else at the end of the bytes (a stream cut short)."""
+        its /Length, given directly or as an integer object, when "endstream"
+        follows there, else at the next "endstream", else at the end of the
+        bytes (a stream cut short)."""
         data = self.data
         found = data.find(b"endstream", begin)
         end = found if found >= 0 else len(data)
@@ -287,12 +291,42 @@ class _Scan:
             return end  # nothing in it that could be taken for an object
         at = data.rfind(b"obj", max(0, keyword - _MAX_STREAM_DICT_BYTES), keyword)
         entries = _dict_entries(data, at + 3, keyword) if at >= 0 else None
-        length = _number(data, entries.get(b"Length")) if entries else None
-        if length is not None and begin + length <= len(data):
-            after = _skip_space(data, begin + length, min(len(data), begin + length + 64))
-            if data[after:after + 9] == b"endstream":
-                return begin + length
+        span = entries.get(b"Length") if entries else None
+        length = _number(data, span)
+        if length is not None:
+            lengths = [length]
+        else:
+            # An indirect /Length, an object written after the stream: the
+            # first "endstream" may be one of the stored PDF's own.
+            ref = _ref(data, span)
+            lengths = self._integer_objects().get(ref, [])[::-1] if ref is not None else []
+        for length in lengths:  # the last definition first, as a repair keeps it
+            if begin + length <= len(data):
+                after = _skip_space(data, begin + length, min(len(data), begin + length + 64))
+                if data[after:after + 9] == b"endstream":
+                    return begin + length
         return end
+
+    def _integer_objects(self) -> dict[int, list[int]]:
+        """Object number -> the integers it is defined as ("N G obj 1234
+        endobj"), in the order of the bytes: where qpdf's QDF mode,
+        Ghostscript, LibreOffice and cairo keep a stream's /Length. Read in
+        one pass over the bytes, the first time a stream needs it."""
+        if self._integers is None:
+            data = self.data
+            integers: dict[int, list[int]] = {}
+            found = 0
+            for match in _INTEGER_OBJECT.finditer(data):
+                at = match.start()
+                tail = _HEADER_TAIL.search(data, max(0, at - 64), at + 3)
+                if tail is None:
+                    continue
+                integers.setdefault(int(tail.group(1)), []).append(int(match.group(1)))
+                found += 1
+                if found >= _MAX_MATCHES:
+                    break  # the lengths past these are not read: such a stream ends at its "endstream"
+            self._integers = integers
+        return self._integers
 
     def _outside_streams(self, pos: int) -> bool:
         place = bisect.bisect_right(self._starts, pos) - 1
