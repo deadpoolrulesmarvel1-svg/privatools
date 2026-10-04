@@ -4,6 +4,13 @@ export interface AudioPiece {
     start: number;
     /** How long the container says it lasts, in seconds. */
     duration: number;
+    /**
+     * Seconds of the sound before `start` that `read` includes, so a decoder
+     * has settled by the piece's own sound: asked for with a reader's
+     * `leadSeconds`, and 0 or absent otherwise. The stream then starts at
+     * `start` − `lead`.
+     */
+    lead?: number;
     /** The piece as a complete stream for decodeAudioData. */
     read: () => Promise<ArrayBuffer>;
 }
@@ -14,6 +21,12 @@ export interface AudioIndex {
     container: string;
     /** The length of the sound, in seconds. */
     durationSeconds: number;
+    /** The sound's sample rate, where the container says it. AAC's can be half the decoded rate (HE-AAC). */
+    sampleRate?: number;
+    /** The codec, where the reader knows it: "aac", "mp3", "opus", "vorbis", "pcm", or the container's own name for it. */
+    codec?: string;
+    /** The channels the sound decodes to, where the container says them exactly: WAV's plain samples. */
+    channels?: number;
     pieces: AudioPiece[];
 }
 

@@ -24,6 +24,7 @@ const BROWSER_ONLY_RUNNERS = [
     "src/components/tool-ui/TranscribeAudioUI.tsx",
     "src/components/tool-ui/SubtitleGeneratorUI.tsx",
     "src/components/tool-ui/SubtitleTranslatorUI.tsx",
+    "src/components/tool-ui/NoiseRemoverUI.tsx",
     "src/components/tool-ui/SubtitleConverterUI.tsx",
     "src/components/tool-ui/JsonXmlFormatterUI.tsx",
     "src/components/tool-ui/TextDiffUI.tsx",

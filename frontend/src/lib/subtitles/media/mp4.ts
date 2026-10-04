@@ -229,8 +229,12 @@ export async function isFragmentedMp4(blob: Blob): Promise<boolean> {
     return Boolean(b && moov?.type === "moov" && childOf(b, moov, "mvex"));
 }
 
-/** The sound of an MP4, MOV or M4A file as pieces of about a minute, or null when this reader cannot pass it on. */
-export async function indexMp4(blob: Blob, pieceSeconds = PIECE_SECONDS): Promise<AudioIndex | null> {
+/**
+ * The sound of an MP4, MOV or M4A file as pieces of about a minute, or null
+ * when this reader cannot pass it on. With `leadSeconds`, each piece after
+ * the first also holds at least that much of the sound before it (its lead).
+ */
+export async function indexMp4(blob: Blob, pieceSeconds = PIECE_SECONDS, leadSeconds = 0): Promise<AudioIndex | null> {
     const b = await readMoov(blob);
     if (!b) return null;
     const moov = boxes(b, 0, b.length)[0];
@@ -253,14 +257,18 @@ export async function indexMp4(blob: Blob, pieceSeconds = PIECE_SECONDS): Promis
         const from = first;
         const to = last;
         const end = to < count ? samples.times[to] : samples.end;
+        // The lead: whole samples back from the piece's first until they cover leadSeconds, or the track starts.
+        let leadFrom = from;
+        while (leadFrom > 0 && samples.times[from] - samples.times[leadFrom] < leadSeconds * track.timescale) leadFrom--;
         pieces.push({
             start: seconds(samples.times[from]),
             duration: (end - samples.times[from]) / track.timescale,
+            lead: (samples.times[from] - samples.times[leadFrom]) / track.timescale,
             read: async () => {
                 const parts: Uint8Array[] = [];
                 // In a video the audio sits between stretches of picture: read spans of up to 16 MB,
                 // each holding many audio chunks, rather than one read per chunk.
-                for (let i = from; i < to;) {
+                for (let i = leadFrom; i < to;) {
                     const spanStart = samples.offsets[i];
                     let spanEnd = spanStart + samples.sizes[i];
                     let j = i + 1;
@@ -282,5 +290,7 @@ export async function indexMp4(blob: Blob, pieceSeconds = PIECE_SECONDS): Promis
         });
         first = last;
     }
-    return { container: "MP4", durationSeconds: Math.max(0, seconds(samples.end)), pieces };
+    // MP3 in MP4 says no rate of its own here; an audio track's timescale is usually its sample rate.
+    const sampleRate = codec.kind === "aac" ? codec.config.sampleRate : track.timescale >= 8000 && track.timescale <= 96000 ? track.timescale : undefined;
+    return { container: "MP4", durationSeconds: Math.max(0, seconds(samples.end)), sampleRate, codec: codec.kind, pieces };
 }

@@ -65,4 +65,22 @@ describe("reading the sound of WebM and MKV files", () => {
         expect(seen.length).toBeGreaterThan(0);
         expect(Math.max(...seen)).toBeLessThanOrEqual(file.size);
     });
+
+    it.each(["tone.webm", "tone-vorbis.webm", "tone.mkv"])("with a lead, starts each later piece of %s a little earlier and says how much", async name => {
+        const index = (await indexMatroska(mediaFixture(name), { pieceSeconds: 0.5, leadSeconds: 0.2 }))!;
+        expect(index.pieces.length).toBeGreaterThanOrEqual(3);
+        expect(index.pieces[0].lead).toBe(0);
+        for (const piece of index.pieces.slice(1)) {
+            expect(piece.lead).toBeGreaterThanOrEqual(0.2);
+            expect(piece.lead).toBeLessThan(0.5);
+            const again = (await indexMatroska(asBlob(await piece.read())))!;
+            expect(again.pieces[0].start).toBeCloseTo(piece.start - piece.lead!, 6);
+        }
+    });
+
+    it.each([["tone.webm", "opus", 48000], ["tone-vorbis.webm", "vorbis", 44100], ["tone.mkv", "aac", 48000]])("names the codec and rate of %s", async (name, codec, rate) => {
+        const index = (await indexMatroska(mediaFixture(name)))!;
+        expect(index.codec).toBe(codec);
+        expect(index.sampleRate).toBe(rate);
+    });
 });

@@ -75,5 +75,5 @@ export async function indexWav(blob: Blob, { pieceSeconds = PIECE_SECONDS }: { p
             read: async () => concat([header(fmt, count * fmt.blockAlign), new Uint8Array(await blob.slice(from, from + count * fmt.blockAlign).arrayBuffer())]),
         });
     }
-    return { container: "WAV", durationSeconds: frames / fmt.sampleRate, pieces };
+    return { container: "WAV", durationSeconds: frames / fmt.sampleRate, sampleRate: fmt.sampleRate, codec: "pcm", channels: fmt.channels, pieces };
 }

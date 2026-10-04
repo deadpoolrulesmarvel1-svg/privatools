@@ -95,4 +95,21 @@ describe("reading the sound of MP4, MOV and M4A files", () => {
         expect(await indexMp4(mediaFixture("tone.mp3"))).toBeNull();
         expect(await indexMp4(new Blob(["not a video"]))).toBeNull();
     });
+
+    it("with a lead, reads each later piece from a little earlier and says how much", async () => {
+        const plain = (await indexMp4(mediaFixture("tone.mp4"), 0.5))!;
+        const led = (await indexMp4(mediaFixture("tone.mp4"), 0.5, 0.2))!;
+        expect(led.sampleRate).toBe(44100);
+        expect(led.codec).toBe("aac");
+        expect(led.pieces.map(piece => piece.start)).toEqual(plain.pieces.map(piece => piece.start));
+        expect(led.pieces[0].lead).toBe(0);
+        expect(led.pieces.length).toBeGreaterThanOrEqual(3);
+        for (let i = 1; i < led.pieces.length; i++) {
+            const lead = led.pieces[i].lead!;
+            expect(lead).toBeGreaterThanOrEqual(0.2);
+            expect(lead).toBeLessThan(0.2 + 1024 / 44100 + 1e-9);
+            const extra = adtsFrames(new Uint8Array(await led.pieces[i].read())).length - adtsFrames(new Uint8Array(await plain.pieces[i].read())).length;
+            expect(extra).toBe(Math.round((lead * 44100) / 1024));
+        }
+    });
 });

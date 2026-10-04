@@ -1,7 +1,7 @@
 {
   "name": "PrivaTools — Everyday file tools",
   "short_name": "PrivaTools",
-  "description": "226 free PDF, image, media, and developer tools. Browser-only when possible; isolated server processing when needed. Accounts are optional.",
+  "description": "227 free PDF, image, media, and developer tools. Browser-only when possible; isolated server processing when needed. Accounts are optional.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#edf3f9",
@@ -72,28 +72,28 @@
       "sizes": "1440x1000",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "PrivaTools — 226 Free File Tools · Air in Morning Mist · Desktop"
+      "label": "PrivaTools — 227 Free File Tools · Air in Morning Mist · Desktop"
     },
     {
       "src": "/pwa/air-mobile.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "PrivaTools — 226 Free File Tools · Air in Morning Mist · Mobile"
+      "label": "PrivaTools — 227 Free File Tools · Air in Morning Mist · Mobile"
     },
     {
       "src": "/pwa/play-desktop.png",
       "sizes": "1440x1000",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "PrivaTools — 226 Free File Tools · Play in Blush · Desktop"
+      "label": "PrivaTools — 227 Free File Tools · Play in Blush · Desktop"
     },
     {
       "src": "/pwa/play-mobile.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "PrivaTools — 226 Free File Tools · Play in Blush · Mobile"
+      "label": "PrivaTools — 227 Free File Tools · Play in Blush · Mobile"
     }
   ]
 }

@@ -71,6 +71,8 @@ describe("suggestToolFor", () => {
         // A tool that merely opens the file is not advice (review of #312).
         ["txt-to-pdf", "report.pdf"],
         ["remove-background", "clip.mp4"],
+        // Background noise is sound, not a picture's background: the two removers share a word, not a job.
+        ["remove-background-noise", "photo.png"],
         ["extract-audio", "scan.tif"],
         ["sql-formatter", "photo.jpg"],
         // Generic words and look-alike stems: Extract Audio is not Extract Pages,

@@ -110,6 +110,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Stays on your device",
         detail: "The sound is read and turned into subtitles in this browser. Whisper downloads once, about 74 MB for Base or 41 MB for Tiny, and the video or recording never leaves your browser.",
     },
+    // On the device only, and the engine comes from this site, not a model host: the flags' default would say neither.
+    "remove-background-noise": {
+        kind: "device",
+        label: "Stays on your device",
+        detail: "The sound is read and cleaned in this browser, and the recording never leaves your device. Nothing downloads but the page’s own code: RNNoise, about 3 MB, comes from this site the first time you clean a recording.",
+    },
     // Read on the device; translated there by a model it downloads, or by the visitor's provider with their key.
     "subtitle-translator": {
         kind: "ai",

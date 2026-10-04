@@ -34,6 +34,15 @@ describe("document policy boundaries", () => {
     expect(documentNavigationFor("/tools/ai-token-counter", "/tools/word-counter")).toBeNull();
   });
 
+  it("loads the noise remover as its own document, for WebAssembly without any script CDN", () => {
+    expect(documentNavigationFor("/", "/tools/remove-background-noise")).toBe("/tools/remove-background-noise");
+    expect(documentNavigationFor("/tools/audio-converter", "#/tool/remove-background-noise")).toBe("/tools/remove-background-noise");
+    // A model page's policy already allows WebAssembly; the noise remover's doesn't allow the model pages' CDN.
+    expect(documentNavigationFor("/tool/summarize-pdf", "/tools/remove-background-noise")).toBeNull();
+    expect(documentNavigationFor("/tools/remove-background-noise", "/tools/transcribe-audio")).toBe("/tools/transcribe-audio");
+    expect(documentNavigationFor("/tools/remove-background-noise", "/tools/audio-converter")).toBeNull();
+  });
+
   it("does not equate OCR's worker policy with Transformers' runtime policy", () => {
     expect(documentNavigationFor("/tool/ocr-pdf", "/tool/summarize-pdf")).toBe("/tool/summarize-pdf");
     expect(documentNavigationFor("/tool/summarize-pdf", "/tool/ocr-pdf")).toBeNull();

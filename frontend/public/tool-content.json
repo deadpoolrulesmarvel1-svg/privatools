@@ -2072,6 +2072,23 @@
     "priority": 0.6
   },
   {
+    "slug": "remove-background-noise",
+    "name": "Voice Noise Remover",
+    "description": "Remove steady background noise from speech recordings",
+    "longDescription": "Remove steady background noise, such as hum, a fan, traffic or the hiss of a room, from a speech recording in your browser. RNNoise, Xiph's open-source noise suppressor, runs on your device as WebAssembly from this site: the recording is never uploaded, and nothing is downloaded from anywhere else. Compare the original and the cleaned sound, choose how strongly to clean, then download a 16-bit WAV at 48 kHz. It is made for speech: it doesn't clean music, remove other voices or echo, or recreate a voice the way some AI enhancers do. It takes MP3, WAV, M4A and WebM recordings and the sound of MP4 and MOV videos up to 60 minutes in mono or 30 in stereo, and OGG and FLAC recordings up to 15 minutes.",
+    "seoTitle": "Remove Background Noise From Audio – Free, No Upload",
+    "metaDescription": "Remove hum, fan, traffic and room hiss from a speech recording in your browser, compare before and after, and download a WAV. Nothing is uploaded.",
+    "synonyms": "remove background noise from audio free online noise remover audio enhancer noise reduction reduce background noise denoise voice recording clean up audio remove hum remove hiss fan noise traffic noise rnnoise noise suppression clean voice",
+    "popularity": 16,
+    "category": "video-audio",
+    "clientOnly": true,
+    "accepts": ".mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm,.mp4,.m4v,.mov,.mkv",
+    "outputLabel": "cleaned audio (.wav)",
+    "lastReviewed": "2026-10-04",
+    "path": "/tools/remove-background-noise",
+    "priority": 0.6
+  },
+  {
     "slug": "json-xml-formatter",
     "name": "JSON / XML Formatter",
     "description": "Prettify, minify or validate JSON and XML in your browser",
