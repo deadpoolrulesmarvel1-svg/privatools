@@ -248,18 +248,25 @@ export function PairedIntake({ accepts, slots, swap, disabled = false, autoFocus
 function IntakeSlot({ slot, accepts, disabled, headingRef, autoFocus }: {
     slot: PairedSlot; accepts: string; disabled: boolean; headingRef?: RefObject<HTMLHeadingElement>; autoFocus: boolean;
 }) {
-    const take = (files: File[]) => slot.onFile(files[0] ?? null);
+    const ownHeading = useRef<HTMLHeadingElement>(null);
+    const heading = headingRef ?? ownHeading;
+    // Choosing a file removes the chooser that had focus, and removing it removes
+    // the remove button: keep the visitor in this slot, on its heading or its
+    // chooser, unless they have already moved on (focusIfIdle).
+    const [refocus, setRefocus] = useState<"heading" | "chooser" | null>(null);
+    useEffect(() => { if (refocus === "heading" && slot.file) focusIfIdle(heading.current); }, [refocus, slot.file, heading]);
+    const take = (files: File[]) => { setRefocus("heading"); slot.onFile(files[0] ?? null); };
     const acceptance = useFileAcceptance(accepts, take);
     return <section className="ts-slot">
         {slot.file
             ? <div className="ts-slot-filled">
-                <h2 ref={headingRef} tabIndex={-1}>{slot.role}</h2>
+                <h2 ref={heading} tabIndex={-1}>{slot.role}</h2>
                 <p>{slot.detail}</p>
                 <StudioFile name={slot.file.name} detail={formatFileSize(slot.file.size)} removeLabel={`Remove ${slot.file.name} from ${slot.role}`}
-                    onRemove={disabled ? undefined : () => slot.onFile(null)} />
+                    onRemove={disabled ? undefined : () => { setRefocus("chooser"); slot.onFile(null); }} />
             </div>
             : <FileIntake accepts={accepts} acceptance={acceptance} title={slot.role} detail={slot.detail} disabled={disabled}
-                autoFocus={autoFocus} onFiles={take} />}
+                autoFocus={autoFocus || refocus === "chooser"} onFiles={take} />}
         <IntakeNotice advice={acceptance.advice} onDismiss={acceptance.dismiss} />
     </section>;
 }

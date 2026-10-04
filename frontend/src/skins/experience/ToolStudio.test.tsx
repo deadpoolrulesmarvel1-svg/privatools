@@ -330,6 +330,21 @@ describe("PairedIntake", () => {
         expect(screen.getByRole("status")).toHaveTextContent("Base PDF (A): letter.pdf. Overlay PDF (B): no file.");
     });
 
+    it("keeps focus in the slot when its chooser or its remove button goes away", () => {
+        render(<Pair />);
+        choose(1, [pdf("stamp.pdf")]);
+        expect(screen.getByRole("heading", { level: 2, name: "Overlay PDF (B)" })).toHaveFocus();
+        fireEvent.click(screen.getByRole("button", { name: "Remove stamp.pdf from Overlay PDF (B)" }));
+        expect(screen.getByRole("button", { name: "Choose a file: Overlay PDF (B)" })).toHaveFocus();
+        // Never taken from where the visitor went meanwhile.
+        const elsewhere = document.createElement("input");
+        document.body.append(elsewhere);
+        elsewhere.focus();
+        choose(0, [pdf("letter.pdf")]);
+        expect(elsewhere).toHaveFocus();
+        elsewhere.remove();
+    });
+
     it("offers no swap where order does not matter, and nothing to change while a run works", () => {
         const { rerender } = render(<Pair swap={false} />);
         choose(0, [pdf("letter.pdf")]);

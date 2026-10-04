@@ -86,10 +86,10 @@ describe("where the file goes", () => {
         // "Detect form fields" uploads the PDF before the fill itself.
         { slug: "fill-form", name: "Fill PDF Form", detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response." },
         // No file is chosen on these: the sentence names what is sent, and what the server fetches with it.
-        // URL to PDF renders the page with its stylesheets and images; HTML to PDF fetches an address's
-        // HTML alone, and for pasted HTML the stylesheets and images it links to.
-        { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page, with its stylesheets and images, renders it to a PDF in temporary storage and removes the job’s files after the response." },
-        { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools. It fetches the page at that address, or the stylesheets and images your HTML links to, then renders the PDF in temporary storage and removes the job’s files after the response." },
+        // URL to PDF renders the page with the files it loads (stylesheets, web fonts, images, attachments);
+        // HTML to PDF fetches an address's HTML alone, and for pasted HTML the files that HTML loads.
+        { slug: "url-to-pdf", name: "URL to PDF", detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and the files it loads, such as its stylesheets, fonts and images, then renders the PDF in temporary storage and removes the job’s files after the response." },
+        { slug: "html-to-pdf", name: "HTML to PDF", detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools. It fetches the page at that address, or the files your HTML loads, such as stylesheets, fonts and images, then renders the PDF in temporary storage and removes the job’s files after the response." },
         { slug: "generate-barcode", name: "Generate Barcode", detail: "When you run the tool, the text you enter is sent to PrivaTools, which draws the barcode in temporary storage and removes the job’s files after the response." },
         { slug: "qr-code", name: "QR Code", detail: "When you run the tool, the text you enter, and a logo if you add one, is sent to PrivaTools, which draws the QR code in temporary storage and removes the job’s files after the response." },
     ])("says exactly what $name sends and when", async ({ slug, name, detail }) => {
