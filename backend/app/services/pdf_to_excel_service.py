@@ -93,7 +93,7 @@ def _build_workbook(input_path: str) -> tuple[str, bool]:
                 found_anything = True
         if not found_anything:
             # A PDF cut short whose pages came out blank is damaged, not a scan.
-            refuse_if_content_lost(doc)
+            refuse_if_content_lost(doc, input_path)
     finally:
         doc.close()
 

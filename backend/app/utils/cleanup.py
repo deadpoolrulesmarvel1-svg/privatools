@@ -510,9 +510,10 @@ def open_pdf_document(source: str | bytes):
     return doc
 
 
-def refuse_if_content_lost(doc) -> None:
-    """Raise PdfCorruptError if MuPDF had to repair `doc` and none of its pages
-    draws anything: no text, no picture, no vector drawing.
+def refuse_if_content_lost(doc, source) -> None:
+    """Raise PdfCorruptError if MuPDF had to repair `doc`, none of its pages
+    draws anything (no text, no picture, no vector drawing), and the end of
+    the file at `source` (a path or the bytes) is missing.
 
     For a tool that found no text in a PDF and would send it to OCR. A PDF cut
     short can open repaired with every page there but blank, its pages' content
@@ -520,7 +521,10 @@ def refuse_if_content_lost(doc) -> None:
     downloading again or repairing. A scan draws its page pictures, also when
     MuPDF opens it repaired, as it does a valid file with bytes after its end.
     A picture counts when a page draws it: a scan cut short can keep a picture
-    that a page lists while the content that drew it was lost.
+    that a page lists while the content that drew it was lost. A valid blank
+    PDF draws nothing either, and opens repaired with a cross-reference table
+    off by a few bytes; it still ends as a PDF ends (end_is_missing), so it is
+    not called damaged.
     """
     from .exceptions import PdfCorruptError
 
@@ -529,7 +533,8 @@ def refuse_if_content_lost(doc) -> None:
     for page in doc:
         if page.get_text("text").strip() or page.get_image_info() or page.get_drawings():
             return
-    raise PdfCorruptError(_DAMAGED_PDF)
+    if end_is_missing(source):
+        raise PdfCorruptError(_DAMAGED_PDF)
 
 
 def end_is_missing(source) -> bool:

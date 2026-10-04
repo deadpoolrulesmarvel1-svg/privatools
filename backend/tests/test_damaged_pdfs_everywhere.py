@@ -469,7 +469,13 @@ def _blank() -> bytes:
 AFTER_END = b"\n" + bytes(range(256)) * 40  # valid, with bytes after its end: MuPDF opens it repaired
 
 
-@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact"])
+def _no_startxref(data: bytes) -> bytes:
+    """Valid but for its last lines: MuPDF repairs it, and it still ends with %%EOF."""
+    return re.sub(rb"startxref\s+\d+\s+%%EOF\s*$", b"%%EOF\n", data)
+
+
+@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact",
+                                    "blank-repaired", "blank-no-startxref"])
 @pytest.mark.parametrize("route", WORD_AND_EXCEL)
 def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
     data = {
@@ -481,11 +487,28 @@ def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
         "drawing-repaired": _drawing() + AFTER_END,
         # A file MuPDF did not repair is never called damaged, blank or not.
         "blank-intact": _blank(),
+        # Valid blank files MuPDF repairs, which draw nothing either: they
+        # end as a PDF ends, so they are not cut short (the #345 review's 12).
+        "blank-repaired": _blank() + AFTER_END,
+        "blank-no-startxref": _no_startxref(_blank()),
     }[sample]
     assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in ("intact", "blank-intact"))
     response = _post(quiet_client, route, data)
     assert response.status_code == 400, response.text
     assert "OCR" in response.json()["detail"], response.text
+
+
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_call_a_blank_pdf_cut_short_damaged(quiet_client, route):
+    # Its page survived, and drew nothing; its end, with the cross-reference
+    # table, did not.
+    whole = _blank()
+    data = whole[: whole.rindex(b"endobj") + len(b"endobj\n")]
+    doc = fitz.open(stream=data, filetype="pdf")
+    assert doc.is_repaired and readable_page_count(doc) == len(doc) == 1
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == _DAMAGED_PDF
 
 
 # ── Organize Pages draws its thumbnails with Poppler ────────────────────────

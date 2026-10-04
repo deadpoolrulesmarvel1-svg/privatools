@@ -99,7 +99,7 @@ def _convert_with_open(input_path: str) -> str:
     """Open the PDF and delegate to `_convert_to_docx` with try/finally cleanup."""
     doc = open_pdf_document(input_path)  # fitz already mmaps the file
     try:
-        return _convert_to_docx(doc)
+        return _convert_to_docx(doc, input_path)
     finally:
         doc.close()
 
@@ -119,7 +119,7 @@ def _extract_page_payload(page) -> dict:
     }
 
 
-def _convert_to_docx(doc) -> str:
+def _convert_to_docx(doc, input_path: str) -> str:
     """Render `doc` to a .docx file and return its path."""
     # Bail out early on image-only PDFs — the rest of the pipeline produces
     # a blank .docx in that case, which silently confuses users. The error
@@ -132,7 +132,7 @@ def _convert_to_docx(doc) -> str:
             break
     if not has_any_text:
         # A PDF cut short whose pages came out blank is damaged, not a scan.
-        refuse_if_content_lost(doc)
+        refuse_if_content_lost(doc, input_path)
         raise ValueError(
             "This PDF has no text layer — run OCR PDF first to make it searchable"
         )
