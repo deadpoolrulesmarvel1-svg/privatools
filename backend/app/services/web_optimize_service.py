@@ -12,10 +12,12 @@ import asyncio
 
 import pikepdf
 
+from ..utils.cleanup import NO_PAGES_MESSAGE
 from ..utils.exceptions import (
     ExternalToolError,
     ProcessingError,
     ToolTimeoutError,
+    ValidationError,
 )
 from ..utils.filenames import temp_output
 
@@ -23,16 +25,19 @@ QPDF_TIMEOUT = 60  # seconds
 
 
 def _check_readable(input_path: str) -> None:
-    """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read.
+    """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read,
+    and ValidationError for one with no page.
 
     qpdf answers such a file with exit status 2, which it also gives a disk or
     permission fault, so its status cannot say whose the failure was. Its
     library, through pikepdf, says it by type, and the route's catch-all
-    answers that with the standard 400 (utils.pdf_errors). An intact file only
-    has its cross-reference table read twice.
+    answers that with the standard 400 (utils.pdf_errors). A PDF with no page
+    gets the 400 the other PDF tools give it, whatever qpdf would make of it.
+    An intact file only has its cross-reference table read twice.
     """
-    with pikepdf.open(input_path):
-        pass
+    with pikepdf.open(input_path) as pdf:
+        if not len(pdf.pages):
+            raise ValidationError(NO_PAGES_MESSAGE)
 
 
 async def web_optimize(input_path: str) -> str:

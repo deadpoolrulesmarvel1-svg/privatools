@@ -313,6 +313,8 @@ _DAMAGED_PDF = (
     "This PDF is damaged, most likely cut short by an interrupted download. "
     "Download it again, or fix it with Repair PDF, then try again."
 )
+# What the PDF tools say, with a 400 (ValidationError), to a PDF without a page.
+NO_PAGES_MESSAGE = "This PDF has no pages."
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -407,7 +409,7 @@ def open_pdf_document(source: str | bytes):
         doc.close()
         if repaired:
             raise PdfCorruptError(_DAMAGED_PDF)
-        raise ValidationError("This PDF has no pages.")
+        raise ValidationError(NO_PAGES_MESSAGE)
     return doc
 
 

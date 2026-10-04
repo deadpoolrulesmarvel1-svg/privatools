@@ -293,6 +293,17 @@ class TestQrCode:
         )
         assert resp.status_code == 400
 
+    def test_qr_code_refuses_a_page_the_pdf_does_not_have(self, client, sample_pdf):
+        # The service's refusal is a ValidationError, which the route's
+        # catch-all answered as a 500.
+        resp = client.post(
+            "/api/qr-code",
+            files={"embed_in_pdf": ("doc.pdf", sample_pdf, "application/pdf")},
+            data={"data": "hello", "page": "9"},
+        )
+        assert resp.status_code == 400, resp.text
+        assert resp.json()["detail"] == "Page 9 is out of range — the PDF has 1 page(s)."
+
 
 # ---------------------------------------------------------------------------
 # /api/create-zip — bundle uploaded files into a ZIP

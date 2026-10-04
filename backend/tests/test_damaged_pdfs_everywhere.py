@@ -645,10 +645,18 @@ def _no_pages() -> bytes:
     return out.getvalue()
 
 
+# These open the upload with pikepdf, which opens a PDF with no page without
+# complaint, and answered it with a 500: Bookmarks pointed its bookmark at a
+# page that isn't there, Booklet raised a ValueError and QR Code its own "out
+# of range" refusal, each into a catch-all, and qpdf would not linearize it for
+# Web Optimize. They count the pages first now.
+PIKEPDF_NO_PAGE = ["/api/booklet", "/api/bookmarks", "/api/qr-code", WEB_OPTIMIZE]
+
+
 @pytest.mark.parametrize("route", sorted(
     # Grayscale converts with pikepdf, which returns a PDF with no page as it
     # is; only its raster fallback opens the file with MuPDF.
-    set(CHANGES_PAGES + READS_PAGES + [SPLIT_BY_TEXT, THUMBNAILS]) - {"/api/grayscale"}
+    set(CHANGES_PAGES + READS_PAGES + PIKEPDF_NO_PAGE + [SPLIT_BY_TEXT, THUMBNAILS]) - {"/api/grayscale"}
 ))
 def test_a_pdf_with_no_page_is_refused_in_the_standard_words(quiet_client, route):
     response = _post(quiet_client, route, _no_pages())
