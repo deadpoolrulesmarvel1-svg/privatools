@@ -10,9 +10,9 @@ every 1 % or 2 % from 5 % to 99 %, found 2,497 such answers in 38 routes.
 The file's own page count is now read from its bytes (utils.declared_pages),
 and a repaired file that kept fewer pages than it declares is refused: "This
 PDF is damaged: only N of its M pages could be read. Download it again, or
-use Repair PDF to save the pages that survive." A repaired file that kept
-every page, as valid files with a damaged cross-reference table do, goes on
-as before.
+use Repair PDF to save the pages that survive." Repair PDF saves those pages
+and says how many of how many. A repaired file that kept every page, as
+valid files with a damaged cross-reference table do, goes on as before.
 """
 
 from __future__ import annotations
@@ -266,6 +266,80 @@ def test_the_page_counter_does_not_count_the_pages_of_a_pdf_that_lost_some(quiet
     assert response.status_code == 200, response.text
     assert [f["pages"] for f in response.json()["files"]] == [-1, 6, 6]  # -1: shown as "invalid"
     assert response.json()["total_pages"] == 12
+
+
+# ── Repair PDF saves the pages that survive, and says how many ──────────────
+
+def _repair(client, data: bytes):
+    return client.post("/api/repair", files=[("file", ("doc.pdf", data, "application/pdf"))])
+
+
+def test_repair_saves_the_pages_that_survive_and_says_how_many_of_how_many(quiet_client):
+    response = _repair(quiet_client, CUT)
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as doc:
+        saved = len(doc)
+        assert saved == readable_page_count(doc) == QPDF_READ
+        assert "Page 1." in doc[0].get_text()
+    assert response.headers["X-Repair-Pages"] == f"{saved}/6"
+    assert response.headers["X-Repair-Status"] == "partial"
+
+
+@pytest.mark.parametrize("sample", ["intact", "junk-after-the-end"])
+def test_repair_says_every_page_was_saved_of_a_file_that_lost_none(quiet_client, sample):
+    data = WHOLE if sample == "intact" else _junk_after_the_end(WHOLE)
+    response = _repair(quiet_client, data)
+    assert response.status_code == 200, response.text
+    assert response.headers["X-Repair-Pages"] == "6/6"
+    assert response.headers["X-Repair-Status"] != "partial"
+
+
+def _objstm_cut_qpdf_cannot_open() -> bytes:
+    """Six pages written with object streams, cut where qpdf cannot open the
+    file and MuPDF lists every page but can read only some."""
+    out = io.BytesIO()
+    with pikepdf.open(io.BytesIO(WHOLE)) as pdf:
+        pdf.save(out, object_stream_mode=pikepdf.ObjectStreamMode.generate, deterministic_id=True)
+    whole = out.getvalue()
+    for percent in range(5, 60):
+        data = whole[: len(whole) * percent // 100]
+        mupdf = _mupdf_reads(data)
+        if _qpdf_reads(data) is None and mupdf and mupdf < len(fitz.open(stream=data, filetype="pdf")):
+            return data
+    raise AssertionError("no such cut")
+
+
+def test_repair_leaves_out_the_pages_mupdf_lists_but_cannot_read(quiet_client):
+    # qpdf cannot open it, so Repair saves MuPDF's reading of it, which
+    # listed blank stand-ins for the pages whose object was lost: a repaired
+    # file must not hold pages that are not there.
+    data = _objstm_cut_qpdf_cannot_open()
+    read = _mupdf_reads(data)
+    response = _repair(quiet_client, data)
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as doc:
+        assert not doc.is_repaired
+        assert len(doc) == readable_page_count(doc) == read
+    assert response.headers["X-Repair-Pages"] == f"{read}/6"
+
+
+def test_a_repaired_file_is_taken_by_the_other_tools(quiet_client):
+    repaired = _repair(quiet_client, CUT).content
+    response = _post(quiet_client, "/api/split", repaired)
+    assert response.status_code == 200, response.text[:300]
+
+
+def test_repair_says_nothing_of_pages_when_the_file_does_not_say_how_many(quiet_client):
+    # The page tree was written last and lost with the end of the file, but
+    # every page object survived: MuPDF finds the pages without it.
+    objects = b"".join(
+        b"%d 0 obj\n<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] >>\nendobj\n" % n for n in (3, 4))
+    data = b"%PDF-1.7\n" + objects
+    response = _repair(quiet_client, data)
+    if response.status_code == 200:
+        assert "X-Repair-Pages" not in response.headers
+    else:
+        assert response.status_code == 400
 
 
 # ── The end of a PDF cut short ──────────────────────────────────────────────

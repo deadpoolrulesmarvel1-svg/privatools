@@ -39,6 +39,15 @@ async def repair_pdf(file: UploadFile = File(...)):
         temp_path.write_bytes(content)
 
         output_path, repair_status = await asyncio.to_thread(repair_service.repair_pdf, str(temp_path))
+        # A PDF cut short keeps only some of its pages: say how many of how
+        # many were saved ("4/6"), when the file says how many it had.
+        headers = {"X-Repair-Status": repair_status}
+        pages = await asyncio.to_thread(repair_service.pages_saved, str(temp_path), output_path)
+        if pages is not None:
+            saved, declared = pages
+            headers["X-Repair-Pages"] = f"{saved}/{declared}"
+            if saved < declared:
+                headers["X-Repair-Status"] = "partial"
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
@@ -46,7 +55,7 @@ async def repair_pdf(file: UploadFile = File(...)):
             filename=f"{stem}_repaired.pdf",
             media_type="application/pdf",
             background=cleanup,
-            headers={"X-Repair-Status": repair_status},
+            headers=headers,
         )
     except HTTPException:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
