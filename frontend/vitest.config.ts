@@ -1,9 +1,10 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { rnnoiseWasmPlugin } from "./scripts/rnnoise-wasm.mjs";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), rnnoiseWasmPlugin()],
   test: {
     environment: "jsdom",
     // Existing native-account tests explicitly exercise the supported legacy deployment.
