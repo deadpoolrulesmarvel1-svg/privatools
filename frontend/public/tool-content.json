@@ -2188,6 +2188,23 @@
     "priority": 0.6
   },
   {
+    "slug": "markdown-to-word",
+    "name": "Markdown to Word",
+    "description": "Turn Markdown or an AI answer into an editable Word document",
+    "longDescription": "Convert Markdown to an editable Word document (.docx) in your browser. Paste a ChatGPT or Claude answer, or open a .md or .txt file: headings, lists and task lists, tables, code blocks, quotes and links become real Word structure in Word's built-in styles, and LaTeX equations become native Word equations you can edit, not pictures. Nothing is uploaded. Equations outside the supported LaTeX stay as their LaTeX text, and the result lists them. Images are added only when they are inside the Markdown as data (PNG, JPEG or GIF); images at web addresses are never downloaded, and their alt text stays in the document.",
+    "seoTitle": "Markdown to Word – ChatGPT to DOCX With Word Equations",
+    "metaDescription": "Paste a ChatGPT or Claude answer or open a .md file to get an editable Word document, with tables, lists, code and LaTeX as Word equations, in your browser.",
+    "synonyms": "markdown to docx md to word md to docx chatgpt to word chatgpt to docx paste chatgpt into word paste chatgpt equations into word paste chatgpt table into word claude to word ai answer to word latex to word equations omml word math markdown converter markdown to microsoft word",
+    "popularity": 43,
+    "category": "document-office",
+    "clientOnly": true,
+    "accepts": ".md,.markdown,.txt",
+    "outputLabel": "Word document (.docx)",
+    "lastReviewed": "2026-10-03",
+    "path": "/tools/markdown-to-word",
+    "priority": 0.6
+  },
+  {
     "slug": "heic-to-jpg",
     "name": "HEIC to JPG",
     "description": "Convert iPhone HEIC/HEIF photos to JPEG",

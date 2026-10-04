@@ -158,8 +158,9 @@ export function StudioResult({ title, detail, children, onReset, tone = "success
 
 /**
  * A result's actions in the shared order. A failure leads with a fresh file,
- * opened straight from the button; otherwise the caller's primary action
- * (usually the download) leads. "Try again" appears only when some failures
+ * opened straight from the button, or, for a tool that starts from pasted
+ * text and passes no `choose`, with its own primary action; otherwise the
+ * caller's primary action (usually the download) leads. "Try again" appears only when some failures
  * could pass on another attempt (connection, time limit, rate limit, server
  * fault), never for a file the tool refused.
  */
@@ -171,9 +172,10 @@ export function StudioActions({ tone, retryCount = 0, onRetry, choose, primary, 
 }) {
     const retry = retryCount > 0 && onRetry
         ? <button type="button" className="ts-secondary-button" onClick={onRetry}>{retryCount > 1 ? `Try ${retryCount} again` : "Try again"}</button> : null;
+    // A failure leads with a different file; a page whose input isn't a file (pasted text) leads with its own primary instead.
     return <div className="ts-actions">
-        {tone === "failure"
-            ? choose && <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
+        {tone === "failure" && choose
+            ? <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
             : primary}
         {retry}{more}
     </div>;

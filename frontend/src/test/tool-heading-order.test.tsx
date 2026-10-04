@@ -12,6 +12,7 @@ import { CompressUI } from "@/components/tool-ui/CompressUI";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 import { MergeUI } from "@/components/tool-ui/MergeUI";
 import { ImageConverterUI } from "@/components/tool-ui/ImageConverterUI";
+import { MarkdownToWordUI } from "@/components/tool-ui/MarkdownToWordUI";
 import { CompressVideoUI } from "@/components/tool-ui/CompressVideoUI";
 import { GeminiWatermarkUI } from "@/components/tool-ui/GeminiWatermarkUI";
 import { JsonXmlFormatterUI } from "@/components/tool-ui/JsonXmlFormatterUI";
@@ -63,6 +64,7 @@ const CASES: Case[] = [
     { name: "a GenericUI tool", tool: { slug: "web-optimize-pdf", name: "Web Optimize PDF", description: "Make a PDF load fast", category: "optimize" }, ui: () => <GenericUI slug="web-optimize-pdf" toolName="Web Optimize PDF" outputLabel="optimized.pdf" accepts=".pdf" />, choose: c => fileInput(c, [pdf("report.pdf")]) },
     { name: "Merge PDF", tool: { slug: "merge-pdf", name: "Merge PDF", description: "Combine multiple PDFs into one", category: "organize" }, ui: () => <MergeUI />, choose: c => fireEvent.change(c.querySelector("input[aria-label='Choose PDFs to merge']")!, { target: { files: [pdf("a.pdf"), pdf("b.pdf")] } }) },
     { name: "Image Converter", tool: { slug: "image-converter", name: "Image Format Converter", description: "Convert between WebP, PNG, JPG, BMP, and TIFF", category: "image" }, ui: () => <ImageConverterUI />, choose: c => fileInput(c, [png("photo.png")]) },
+    { name: "Markdown to Word", tool: { slug: "markdown-to-word", name: "Markdown to Word", description: "Turn Markdown or an AI answer into an editable Word document", category: "document-office", clientOnly: true }, ui: () => <MarkdownToWordUI />, choose: () => fireEvent.change(document.querySelector("#mdw-input")!, { target: { value: "# Notes\n\nSome **text**." } }) },
     { name: "Compress Video", tool: { slug: "compress-video", name: "Compress Video", description: "Reduce video file size for email or messaging", category: "video-audio" }, ui: () => <CompressVideoUI />, choose: c => fileInput(c, [mp4("clip.mp4")]) },
     { name: "Gemini Watermark Remover", tool: { slug: "gemini-watermark-remover", name: "Gemini Watermark Remover", description: "Take the visible Gemini sparkle off AI-generated images", category: "image", clientOnly: true }, ui: () => <GeminiWatermarkUI />, choose: c => fileInput(c, [png("gemini.png")]) },
     { name: "JSON / XML Formatter", tool: { slug: "json-xml-formatter", name: "JSON / XML Formatter", description: "Prettify, minify or validate JSON and XML in your browser", category: "developer", clientOnly: true }, ui: () => <JsonXmlFormatterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: '{"a":1}' } }) },

@@ -1430,6 +1430,11 @@
       "reason": "Browser-only utility; no v1 HTTP endpoint."
     },
     {
+      "slug": "markdown-to-word",
+      "name": "Markdown to Word",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
       "slug": "password-generator",
       "name": "Password Generator",
       "reason": "Browser-only utility; no v1 HTTP endpoint."
