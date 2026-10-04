@@ -68,10 +68,20 @@ export interface NoiseSource {
     items(): AsyncGenerator<SourceItem>;
 }
 
-/** Decode a complete stream at (about) `rate`; the result says the rate it is at. */
+/**
+ * Decode a complete stream at (about) `rate`; the result says the rate it is
+ * at. The arrays may be the decoder's own, so what is sent to the worker is
+ * copied from them: sending moves an array's memory, and some browsers don't
+ * let an AudioBuffer's arrays be moved.
+ */
 export type Decode = (bytes: ArrayBuffer, rate: number) => Promise<{ channels: Float32Array[]; rate: number }>;
 
-/** The browser's own decoder. An offline context touches no audio device. */
+/**
+ * The browser's own decoder. An offline context touches no audio device. It
+ * hands back the AudioBuffer's own arrays rather than copies: for a file
+ * decoded whole, a copy would hold the sound twice over, 344 MB more at 15
+ * minutes of stereo.
+ */
 export function browserDecoder(): Decode {
     const contexts = new Map<number, OfflineAudioContext>();
     return async (bytes, rate) => {
@@ -86,11 +96,7 @@ export function browserDecoder(): Decode {
             contexts.set(rate, context);
         }
         const audio = await context.decodeAudioData(bytes);
-        const channels = Array.from({ length: audio.numberOfChannels }, (_, c) => {
-            const copy = new Float32Array(audio.length);
-            audio.copyFromChannel(copy, c);
-            return copy;
-        });
+        const channels = Array.from({ length: audio.numberOfChannels }, (_, c) => audio.getChannelData(c));
         return { channels, rate: audio.sampleRate };
     };
 }
@@ -192,7 +198,8 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
                     }
                     signal?.throwIfAborted();
                     if (decoded?.channels.length && decoded.channels[0].length) {
-                        yield { kind: "pcm", channels: decoded.channels, rate: decoded.rate, start: piece.start, lead: piece.lead ?? 0 };
+                        // A minute's copy, the worker's to keep (see Decode).
+                        yield { kind: "pcm", channels: decoded.channels.map(channel => channel.slice()), rate: decoded.rate, start: piece.start, lead: piece.lead ?? 0 };
                     } else if (i === 0) {
                         throw unreadable();
                     } else {
@@ -231,6 +238,7 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
                 throw new NoiseInputError("too-long-whole", `This file’s sound is ${lengthWords(length / decoded.rate)} long. ${await decodedWhole(file, kind)}`, length / decoded.rate);
             }
             whole.durationSeconds = length / decoded.rate;
+            // The decoded sound is held once, as the decoder made it; each block sent is a copy of a minute of it.
             const block = Math.round(pieceSeconds * decoded.rate);
             for (let at = 0; at < length; at += block) {
                 signal?.throwIfAborted();

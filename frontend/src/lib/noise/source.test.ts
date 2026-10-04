@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Blob as NodeBlob, File as NodeFile } from "node:buffer";
 import { mediaFile, wavFile } from "@/test/media/fixtures";
-import { decodeRate, LEAD_SECONDS, lengthWords, MAX_SECONDS, NoiseInputError, openNoiseSource, WHOLE_FILE_SECONDS, type Decode, type SourceItem } from "./source";
+import { browserDecoder, decodeRate, LEAD_SECONDS, lengthWords, MAX_SECONDS, NoiseInputError, openNoiseSource, WHOLE_FILE_SECONDS, type Decode, type SourceItem } from "./source";
 
 const asFile = (blob: Blob, name: string, type = "") => new NodeFile([blob as unknown as NodeBlob], name, { type }) as unknown as File;
 
@@ -105,6 +105,22 @@ describe("reading a recording for the noise remover", () => {
         await expect(openNoiseSource(whole, { measure: async () => WHOLE_FILE_SECONDS + 0.01 })).resolves.toBeTruthy();
     });
 
+    it("hands the worker a copy of each decoded piece, never the decoder's own arrays", async () => {
+        const made: Float32Array[] = [];
+        const decode: Decode = async (_bytes, rate) => {
+            const channel = new Float32Array(rate / 2).fill(0.25);
+            made.push(channel);
+            return { channels: [channel], rate };
+        };
+        const source = await openNoiseSource(mediaFile("tone.mp3", "audio/mpeg"), { decode, pieceSeconds: 0.5 });
+        const items = (await collect(source.items())) as Extract<SourceItem, { kind: "pcm" }>[];
+        expect(items).toHaveLength(made.length);
+        items.forEach((item, i) => {
+            expect(item.channels[0].buffer).not.toBe(made[i].buffer);
+            expect([item.channels[0].length, item.channels[0][0], item.channels[0][made[i].length - 1]]).toEqual([made[i].length, 0.25, 0.25]);
+        });
+    });
+
     it("fails on the first piece when this browser can't decode the sound", async () => {
         const decode = vi.fn(async () => { throw new Error("EncodingError"); });
         const source = await openNoiseSource(mediaFile("tone.mp3", "audio/mpeg"), { decode, pieceSeconds: 0.5 });
@@ -134,6 +150,28 @@ describe("reading a recording for the noise remover", () => {
         const items = await collect(source.items());
         expect(decode.calls).toEqual([48000]);
         expect(items.map(item => item.kind === "pcm" && [item.start, item.lead, item.channels[0].length])).toEqual([[0, 0, 60 * 48000], [60, 0, 60 * 48000], [120, 0, 10 * 48000]]);
+    });
+
+    it("keeps the browser's decoded sound once: its own arrays, not a copy", async () => {
+        const left = new Float32Array([0.1, 0.2]);
+        const right = new Float32Array([0.3, 0.4]);
+        const copyFromChannel = vi.fn();
+        class StandInContext {
+            constructor(readonly channels: number, readonly length: number, readonly sampleRate: number) {}
+            async decodeAudioData() {
+                return { numberOfChannels: 2, length: 2, sampleRate: this.sampleRate, getChannelData: (c: number) => [left, right][c], copyFromChannel };
+            }
+        }
+        vi.stubGlobal("OfflineAudioContext", StandInContext);
+        try {
+            const decoded = await browserDecoder()(new ArrayBuffer(8), 44100);
+            expect(decoded.rate).toBe(44100);
+            expect(decoded.channels[0]).toBe(left);
+            expect(decoded.channels[1]).toBe(right);
+            expect(copyFromChannel).not.toHaveBeenCalled();
+        } finally {
+            vi.unstubAllGlobals();
+        }
     });
 
     it("learns a whole file's length when decoding it, if the browser couldn't tell before", async () => {
