@@ -69,6 +69,20 @@ describe("reading the sound of MP3 files", () => {
         expect(await indexMp3(mediaFixture("tone.wav"))).toBeNull();
         expect(await indexMp3(blobOf(new TextEncoder().encode("ID3 but nothing else"))) ).toBeNull();
     });
+
+    it("with a lead, starts each later piece a few frames early, and never with the Info frame", async () => {
+        const index = (await indexMp3(mediaFixture("tone.mp3"), { pieceSeconds: 0.5, leadSeconds: 0.1 }))!;
+        expect(index.sampleRate).toBe(44100);
+        expect(index.codec).toBe("mp3");
+        expect(index.pieces[0].lead).toBe(0);
+        const frame = 1152 / 44100;
+        for (const piece of index.pieces.slice(1)) {
+            expect(piece.lead).toBeCloseTo(Math.ceil(0.1 / frame) * frame, 9);
+            const bytes = new Uint8Array(await piece.read());
+            expect(mpegFrame(bytes, 0)).not.toBeNull();
+            expect(new TextDecoder("latin1").decode(bytes.subarray(0, 64))).not.toMatch(/Info|Xing/);
+        }
+    });
 });
 
 describe("reading the sound of WAV files", () => {
@@ -98,6 +112,12 @@ describe("reading the sound of WAV files", () => {
         const second = new Uint8Array(await index.pieces[1].read());
         const block = options.channels * (options.bits / 8);
         expect(second.length).toBe(44 + (Math.round(options.rate * 1.5) - options.rate) * block);
+    });
+
+    it("says its rate and that it is PCM", async () => {
+        const index = (await indexWav(wavFile({ rate: 22050 })))!;
+        expect(index.sampleRate).toBe(22050);
+        expect(index.codec).toBe("pcm");
     });
 
     it("reads a recording whose size was never written to the end of the file", async () => {

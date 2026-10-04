@@ -13,12 +13,14 @@
  */
 import { decodeToMono, WHISPER_SAMPLE_RATE as SAMPLE_RATE } from "@/lib/whisper";
 import type { AudioChunk } from "../recognize";
-import { ascii, readRange } from "./bytes";
+import { playingTime, sniff } from "./probe";
 import { indexMatroska } from "./matroska";
 import { indexMp3 } from "./mp3";
 import { indexMp4, isFragmentedMp4 } from "./mp4";
 import { NoSoundTrack, PIECE_SECONDS, type AudioIndex } from "./types";
 import { indexWav } from "./wav";
+
+export { playingTime, sniff, type MediaKind } from "./probe";
 
 /** The longest sound this tool takes: past it, a run would take hours in a browser tab. */
 export const MAX_SECONDS = 3 * 60 * 60;
@@ -46,30 +48,6 @@ export interface AudioSource {
     chunks: () => AsyncGenerator<AudioChunk>;
 }
 
-/** How long the browser says a file plays, from its header alone, or null when it cannot say. */
-export function playingTime(file: Blob, video: boolean, timeoutMs = 10000): Promise<number | null> {
-    return new Promise(resolve => {
-        const url = URL.createObjectURL(file);
-        const element = document.createElement(video ? "video" : "audio");
-        let settled = false;
-        const done = (seconds: number | null) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            element.removeAttribute("src");
-            element.load();
-            URL.revokeObjectURL(url);
-            resolve(seconds);
-        };
-        const timer = setTimeout(() => done(null), timeoutMs);
-        element.preload = "metadata";
-        element.muted = true;
-        element.onloadedmetadata = () => done(Number.isFinite(element.duration) && element.duration > 0 ? element.duration : null);
-        element.onerror = () => done(null);
-        element.src = url;
-    });
-}
-
 const minutes = (seconds: number) => `${Math.round(seconds / 60)} minutes`;
 
 function tooLong(seconds: number): MediaError {
@@ -77,16 +55,6 @@ function tooLong(seconds: number): MediaError {
     const rest = Math.round((seconds % 3600) / 60);
     const length = hours ? `${hours} h ${rest} min` : `${rest} minutes`;
     return new MediaError("too-long", `This file’s sound is ${length} long. Subtitle Generator takes up to ${MAX_SECONDS / 3600} hours at a time.`, seconds);
-}
-
-/** Which reader a file needs, from its first bytes rather than its name. */
-async function sniff(file: Blob): Promise<"mp4" | "matroska" | "mp3" | "wav" | "other"> {
-    const head = await readRange(file, 0, 12);
-    if (head.length >= 8 && ["ftyp", "moov", "mdat", "free", "skip", "wide", "pnot"].includes(ascii(head, 4, 4))) return "mp4";
-    if (head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3) return "matroska";
-    if (ascii(head, 0, 4) === "RIFF" && ascii(head, 8, 4) === "WAVE") return "wav";
-    if (ascii(head, 0, 3) === "ID3" || (head[0] === 0xff && (head[1] & 0xe6) === 0xe2)) return "mp3";
-    return "other";
 }
 
 async function* piecesOf(index: AudioIndex, signal?: AbortSignal): AsyncGenerator<AudioChunk> {
