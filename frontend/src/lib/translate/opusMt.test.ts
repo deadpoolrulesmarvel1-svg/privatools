@@ -277,4 +277,18 @@ describe("the shared translator", () => {
         expect(onPage.steps).toEqual(["step"]);
         await expect(translator.chunk(["One. Two."], 200)).resolves.toEqual([["One. Two."]]);
     });
+
+    it("keeps the model it loaded on the page across a stopped run, as the page always did", async () => {
+        vi.stubGlobal("Worker", undefined);
+        const { pipeline } = await import("@huggingface/transformers");
+        const translator = await loadDeviceTranslator(MODEL, () => {});
+        const loads = vi.mocked(pipeline).mock.calls.length;
+        const stopped = translator.translate("Stopped.");
+        stopDeviceTranslator();
+        await expect(stopped).rejects.toMatchObject({ name: "AbortError" });
+        const again = await loadDeviceTranslator(MODEL, () => {});
+        await expect(again.translate("Again.")).resolves.toBe("es Again.");
+        // The next run found the model it had: not built again.
+        expect(vi.mocked(pipeline).mock.calls.length).toBe(loads);
+    });
 });

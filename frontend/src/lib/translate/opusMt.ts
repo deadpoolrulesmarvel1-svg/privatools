@@ -63,9 +63,11 @@ function modelError(reply: Extract<OpusMtReply, { type: "error" }>): Error {
     return reply.network ? withErrorKind(error, "network") : error;
 }
 
+/** Request numbers, across connections: an answer meant for a stopped connection can never match a newer one's request. */
+let nextId = 1;
+
 /** Numbered requests to the model's side and their answers, wherever the model runs. */
 abstract class Connection {
-    private next = 1;
     private readonly pending = new Map<number, Pending>();
     broken = false;
 
@@ -98,7 +100,7 @@ abstract class Connection {
 
     request(message: Unnumbered<OpusMtRequest>, onNews?: (news: LoadNews) => void): Promise<unknown> {
         if (this.broken) return Promise.reject(new Error("The translation worker has stopped."));
-        const id = this.next++;
+        const id = nextId++;
         return new Promise((resolve, reject) => {
             this.pending.set(id, { resolve, reject, onNews });
             this.send({ ...message, id } as OpusMtRequest);
@@ -141,22 +143,38 @@ export class OpusMtWorker extends Connection {
     }
 }
 
+let worker: OpusMtWorker | null | undefined;
+let onPage: OnPage | undefined;
+let watchingPage = false;
+
+/**
+ * The model on the page's thread: one core and one queue for the page's
+ * life, so a model it loaded is kept across runs and a stopped run's step
+ * never overlaps the next run's. Its answers go to the connection in use.
+ */
+let pageModel: { core: Promise<OpusMtCore>; queue: Promise<void> } | undefined;
+
 /**
  * The model on the page's own thread, where no worker can run it: the same
  * core, with a turn for the page before each of the model's steps. Stopping
  * it stops the waiting, not a step already running.
  */
 class OnPage extends Connection {
-    private core: Promise<OpusMtCore> | null = null;
-    private queue: Promise<void> = Promise.resolve();
+    hear(reply: OpusMtReply) {
+        this.receive(reply);
+    }
 
     protected send(message: OpusMtRequest) {
         // Imported only here, so the page loads transformers.js only when it must run the model itself.
-        const core = this.core ??= import("./opusMt-core").then(({ createOpusMtCore }) => createOpusMtCore(reply => this.receive(reply), { prepare: yieldBetweenSteps }));
-        this.queue = this.queue.then(async () => {
+        pageModel ??= {
+            core: import("./opusMt-core").then(({ createOpusMtCore }) => createOpusMtCore(reply => onPage?.hear(reply), { prepare: yieldBetweenSteps })),
+            queue: Promise.resolve(),
+        };
+        const model = pageModel;
+        model.queue = model.queue.then(async () => {
             if (this.broken) return;
             try {
-                await (await core).handle(message);
+                await (await model.core).handle(message);
             } catch (error) {
                 this.receive(errorReply(message.id, error));
             }
@@ -165,10 +183,6 @@ class OnPage extends Connection {
 
     protected end() {}
 }
-
-let worker: OpusMtWorker | null | undefined;
-let onPage: OnPage | undefined;
-let watchingPage = false;
 
 /**
  * Stop OPUS-MT on this page: end the worker, so a model step for a run that
