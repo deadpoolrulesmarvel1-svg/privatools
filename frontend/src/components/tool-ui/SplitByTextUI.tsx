@@ -94,7 +94,9 @@ export function SplitByTextUI() {
                             <Download size={13} aria-hidden="true" /> Download again
                         </button>}
                         <button
-                            onClick={() => { setFile(null); setState("idle"); }}
+                            // The next split starts at a fresh drop zone, as the kit's
+                            // intake does: no notice about a file from the last one.
+                            onClick={() => { setFile(null); setState("idle"); dismiss(); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                         >
                             <RotateCcw size={12} /> Split another

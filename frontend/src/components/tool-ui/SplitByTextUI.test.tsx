@@ -9,8 +9,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ upload: vi.fn() }));
-vi.mock("@/lib/api", async original => ({ ...(await original<object>()), uploadFile: mocks.upload }));
+const mocks = vi.hoisted(() => ({ upload: vi.fn(), download: vi.fn() }));
+vi.mock("@/lib/api", async original => ({ ...(await original<object>()), uploadFile: mocks.upload, downloadBlob: mocks.download }));
 
 import { SplitByTextUI } from "./SplitByTextUI";
 
@@ -60,6 +60,17 @@ describe("Split by Text's intake", () => {
         const view = render(<SplitByTextUI />);
         choose(view, pdf());
         expect(screen.getByText("statements.pdf")).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("starts the next split without the last refusal, as a fresh intake would", async () => {
+        mocks.upload.mockResolvedValueOnce({ blob: async () => new Blob(["PK"]) });
+        render(<SplitByTextUI />);
+        drop(scan(), pdf());
+        fireEvent.change(screen.getByPlaceholderText(/Invoice/), { target: { value: "Statement" } });
+        fireEvent.click(screen.getByRole("button", { name: /Split PDF/ }));
+        fireEvent.click(await screen.findByRole("button", { name: /Split another/ }));
+        expect(screen.getByRole("button", { name: "Upload PDF" })).toBeInTheDocument();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 });
