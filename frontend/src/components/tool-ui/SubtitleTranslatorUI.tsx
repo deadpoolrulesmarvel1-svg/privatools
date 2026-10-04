@@ -383,7 +383,9 @@ export function SubtitleTranslatorUI() {
             setResult({ file, doc, plan: fullPlan, outcomes, cues, run, seconds: (again?.seconds ?? 0) + seconds, stopped: outcome.stoppedBy ? stoppedReason(outcome.stoppedBy) : undefined });
             setPhase("done");
         } catch (error) {
-            if (!current()) return;
+            // A cancelled load leaves the pair whole (stopped while the model was built) or gone (stopped while it
+            // downloaded, lib/translate/opusMt.ts clears it): say which, here and when the next run starts.
+            if (!current()) { if (run.engine === "device") refreshCache(); return; }
             if (isAbort(error)) { setPhase(again ? "done" : "idle"); return; }
             // A failed run's worker may hold a half-loaded model or a broken one: the next run starts a fresh one.
             if (run.engine === "device") stopDeviceTranslator();

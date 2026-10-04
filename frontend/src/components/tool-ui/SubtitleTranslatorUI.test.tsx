@@ -408,6 +408,31 @@ describe("translating on this device", () => {
         expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
     });
 
+    it("says the pair is in this browser after a cancel that came once its download had finished", async () => {
+        // Stopped while the model was built: every file is in the cache, and the next run reads it from there.
+        mocks.load.mockImplementationOnce((_id: string, _progress: (percent: number) => void, stage: (stage: ModelStage) => void) => new Promise((_resolve, reject) => {
+            stage("download");
+            stage("prepare");
+            mocks.stop.mockImplementationOnce(() => reject(Object.assign(new Error("The translation was stopped."), { name: "AbortError" })));
+        }));
+        choose();
+        await screen.findByText(/SRT · 5 cues/);
+        expect(screen.getByText(/model downloads from Hugging Face on the first run/)).toBeInTheDocument();
+        fireEvent.click(translateButton());
+        await screen.findByText("Downloaded, and kept in this browser for next time.");
+        mocks.cached.mockResolvedValue([{ hfId: "Xenova/opus-mt-en-es", bytes: 119_377_271, fileCount: 6 }]);
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(await screen.findByText(/model is in this browser \(114 MB\)/)).toBeInTheDocument();
+        let finish!: () => void;
+        mocks.load.mockImplementationOnce((_id: string, progress: (percent: number) => void) => new Promise(resolve => { finish = () => { progress(100); resolve(translator); }; }));
+        fireEvent.click(translateButton());
+        // Not "Downloading the translation model … from Hugging Face" while it reads the pair from this browser.
+        expect(await screen.findByText("Loading the translation model")).toBeInTheDocument();
+        expect(screen.getByText("From this browser’s storage.")).toBeInTheDocument();
+        await act(async () => { finish(); });
+        expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
+    });
+
     it("ends the worker after the model fails mid-run, keeping what was done", async () => {
         translator.translate
             .mockImplementationOnce(async (text: string) => SPANISH[text] ?? text)

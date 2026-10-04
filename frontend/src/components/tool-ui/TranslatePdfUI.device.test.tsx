@@ -82,6 +82,8 @@ describe("Translate PDF on this device", () => {
         // Before the worker says it is downloading there is no percent to show, and none while the model is built.
         expect(await screen.findByText("Loading model")).toBeInTheDocument();
         expect(container.querySelector(".progress-indeterminate")).not.toBeNull();
+        // With motion reduced the bar stands still: full and faded, never a third that reads as 33%.
+        expect(container.querySelector(".progress-indeterminate")!.className).toMatch(/motion-reduce:w-full/);
         act(() => { hear.stage("download"); hear.progress(40); });
         expect(screen.getByText("Downloading model — 40%")).toBeInTheDocument();
         expect(container.querySelector(".progress-indeterminate")).toBeNull();

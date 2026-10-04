@@ -27,14 +27,17 @@ configureTransformers(env);
 
 /**
  * transformers.js fetches one of a model's files only when this browser's
- * cache doesn't have it, so a fetch is a download. The load in progress
- * hears of it.
+ * cache doesn't have it, so a fetch that finds the file is a download. The
+ * load in progress hears of each answer. An optional file the repository
+ * lacks, such as generation_config.json, is fetched on every load, from the
+ * cache or not: it answers 404, is no download, and never arrives.
  */
-let onFetch: ((url: string) => void) | null = null;
+let onFetch: ((url: string, found: boolean) => void) | null = null;
 const fetchFile = env.fetch;
-env.fetch = (input, init) => {
-    onFetch?.(String(input));
-    return fetchFile(input, init);
+env.fetch = async (input, init) => {
+    const response = await fetchFile(input, init);
+    onFetch?.(String(input), response.status !== 404);
+    return response;
 };
 
 export interface OpusMtCore {
@@ -57,11 +60,27 @@ export function createOpusMtCore(post: (reply: OpusMtReply) => void, { prepare }
             const report = modelProgress(percent => post({ type: "progress", id, percent }), bytes);
             const asked = new Set<string>();
             const arrived = new Set<string>();
+            // Files the repository doesn't have, by the name transformers.js reports ("generation_config.json").
+            const missing = new Set<string>();
+            let downloading = false;
             let preparing = false;
-            onFetch = url => {
-                if (!url.includes(`/${modelId}/`)) return;
-                onFetch = null;
-                post({ type: "downloading", id });
+            const check = () => {
+                // Every file it asked for that exists, the weights among them, is here: what remains is building the model.
+                if (!preparing && [...asked].every(file => arrived.has(file) || missing.has(file)) && [...arrived].some(file => file.endsWith(".onnx"))) {
+                    preparing = true;
+                    post({ type: "preparing", id });
+                }
+            };
+            onFetch = (url, found) => {
+                const [, path] = url.split(/[?#]/)[0].split(`/${modelId}/resolve/`);
+                if (path === undefined) return;
+                if (!found) {
+                    missing.add(path.slice(path.indexOf("/") + 1));
+                    check();
+                } else if (!downloading) {
+                    downloading = true;
+                    post({ type: "downloading", id });
+                }
             };
             loading = (pipeline("translation", modelId, {
                 progress_callback: (event: LoadEvent) => {
@@ -70,11 +89,7 @@ export function createOpusMtCore(post: (reply: OpusMtReply) => void, { prepare }
                     if (event.status === "initiate") asked.add(event.file);
                     else if (event.status === "done") arrived.add(event.file);
                     else return;
-                    // Every file it asked for, the weights among them, is here: what remains is building the model.
-                    if (!preparing && arrived.size === asked.size && [...arrived].some(file => file.endsWith(".onnx"))) {
-                        preparing = true;
-                        post({ type: "preparing", id });
-                    }
+                    check();
                 },
             } as never) as unknown as Promise<TranslationPipeline>).then(translator => {
                 prepare?.(translator);

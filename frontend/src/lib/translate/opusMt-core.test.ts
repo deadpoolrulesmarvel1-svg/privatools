@@ -11,6 +11,8 @@ const FILES = ["config.json", "tokenizer.json", "onnx/encoder_model_quantized.on
 const hub = vi.hoisted(() => ({
     /** The files this browser's cache holds. */
     cached: new Set<string>(),
+    /** Optional files the repository lacks: asked for on every load, answered 404, never done (transformers.js 4.3). */
+    missing: new Set<string>(),
     /** The download fails after this many files, once. */
     failAfter: -1,
     loads: 0,
@@ -19,10 +21,14 @@ const hub = vi.hoisted(() => ({
 }));
 
 vi.mock("@huggingface/transformers", () => {
-    const env: { fetch: (input: string | URL, init?: unknown) => Promise<unknown> } = { fetch: async () => ({}) };
+    // Hugging Face answers 404 for a file the repository lacks.
+    const env: { fetch: (input: string | URL, init?: unknown) => Promise<{ status: number }> } = {
+        fetch: async input => ({ status: [...hub.missing].some(file => String(input).endsWith(`/${file}`)) ? 404 : 200 }),
+    };
     const pipeline = vi.fn(async (_task: string, modelId: string, { progress_callback: progress }: { progress_callback: (event: object) => void }) => {
         hub.loads++;
-        for (const file of FILES) progress({ status: "initiate", name: modelId, file });
+        for (const file of [...FILES, ...hub.missing]) progress({ status: "initiate", name: modelId, file });
+        for (const file of hub.missing) await env.fetch(`https://huggingface.co/${modelId}/resolve/main/${file}`);
         let fetched = 0;
         for (const file of FILES) {
             // transformers.js asks the network only for what the cache doesn't have.
@@ -65,6 +71,7 @@ function core(options?: Parameters<typeof createOpusMtCore>[1]) {
 
 beforeEach(() => {
     hub.cached = new Set();
+    hub.missing = new Set();
     hub.failAfter = -1;
     hub.loads = 0;
     hub.calls.length = 0;
@@ -96,6 +103,23 @@ describe("loading a pair's model in the worker", () => {
         expect(types).not.toContain("downloading");
         expect(types.filter(type => type === "preparing")).toHaveLength(1);
         expect(last(types)).toBe("ready");
+    });
+
+    it("doesn't take an optional file the repository lacks for a download, nor wait for it before the model is built", async () => {
+        // The page clears a pair whose load was stopped while it downloaded: a cached pair must never look like one.
+        hub.cached = new Set(FILES);
+        hub.missing = new Set(["generation_config.json"]);
+        const { handler, of } = core();
+        await handler.handle({ type: "load", id: 1, modelId: MODEL, bytes: 400 });
+        const types = of(1).map(reply => reply.type);
+        expect(types).not.toContain("downloading");
+        expect(types.filter(type => type === "preparing")).toHaveLength(1);
+        hub.cached = new Set();
+        const first = core();
+        await first.handler.handle({ type: "load", id: 2, modelId: MODEL, bytes: 400 });
+        const firstTypes = first.of(2).map(reply => reply.type);
+        expect(firstTypes.filter(type => type === "downloading")).toHaveLength(1);
+        expect(firstTypes.filter(type => type === "preparing")).toHaveLength(1);
     });
 
     it("hands back a failed download as plain data, the network's, and downloads again next time", async () => {
