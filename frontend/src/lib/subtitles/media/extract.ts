@@ -13,7 +13,7 @@
  */
 import { decodeToMono, WHISPER_SAMPLE_RATE as SAMPLE_RATE } from "@/lib/whisper";
 import type { AudioChunk } from "../recognize";
-import { playingTime, sniff } from "./probe";
+import { pastLimit, playingTime, sniff } from "./probe";
 import { indexMatroska } from "./matroska";
 import { indexMp3 } from "./mp3";
 import { indexMp4, isFragmentedMp4 } from "./mp4";
@@ -22,6 +22,7 @@ import { indexWav } from "./wav";
 
 export { playingTime, sniff, type MediaKind } from "./probe";
 
+// Each length limit takes a file up to 30 seconds past it, for an encoder's padding (pastLimit).
 /** The longest sound this tool takes: past it, a run would take hours in a browser tab. */
 export const MAX_SECONDS = 3 * 60 * 60;
 /** The longest sound decoded whole, for formats not read in pieces: about a gigabyte of the decoder's memory. */
@@ -123,7 +124,7 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
     }
     signal?.throwIfAborted();
     if (index) {
-        if (index.durationSeconds > MAX_SECONDS) throw tooLong(index.durationSeconds);
+        if (pastLimit(index.durationSeconds, MAX_SECONDS)) throw tooLong(index.durationSeconds);
         const found = index;
         return { container: found.container, durationSeconds: found.durationSeconds, chunks: () => piecesOf(found, signal) };
     }
@@ -134,8 +135,8 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
     if (seconds === null && file.size > WHOLE_FILE_BYTES) {
         throw new MediaError("too-long-whole", `${await decodedWhole(file, kind, true)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
     }
-    if (seconds !== null && seconds > MAX_SECONDS) throw tooLong(seconds);
-    if (seconds !== null && seconds > WHOLE_FILE_SECONDS) {
+    if (seconds !== null && pastLimit(seconds, MAX_SECONDS)) throw tooLong(seconds);
+    if (seconds !== null && pastLimit(seconds, WHOLE_FILE_SECONDS)) {
         throw new MediaError("too-long-whole", `This file’s sound is ${minutes(seconds)} long. ${await decodedWhole(file, kind, false)}`, seconds);
     }
     let samples: Float32Array;
@@ -145,7 +146,7 @@ export async function openAudio(file: File, { onRead, measure = playingTime, pie
         throw unreadable(error);
     }
     signal?.throwIfAborted();
-    if (samples.length / SAMPLE_RATE > WHOLE_FILE_SECONDS + 1) {
+    if (pastLimit(samples.length / SAMPLE_RATE, WHOLE_FILE_SECONDS)) {
         throw new MediaError("too-long-whole", `This file’s sound is ${minutes(samples.length / SAMPLE_RATE)} long. ${await decodedWhole(file, kind, false)}`, samples.length / SAMPLE_RATE);
     }
     const decoded = samples;

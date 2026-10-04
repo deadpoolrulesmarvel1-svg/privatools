@@ -74,10 +74,15 @@ curl --fail-with-body https://api.privatools.me/api/v1/jobs \
 ```
 
 On `202`, save the returned job ID and status URL. Poll at the indicated
-interval until the job succeeds, fails, is canceled, or expires. Retrieve the
-result with the same key. A result can be downloaded repeatedly until one hour
-after completion. `DELETE /jobs/{job_id}` removes a completed result or requests
-cancellation; deletion of a running job completes after its child is stopped.
+interval until the job succeeds, fails, is canceled, or expires. A failed job's
+`error.code` is `job_input_damaged` when an input PDF can't be read, and
+`job_input_password_protected` when one needs a password; its `error.message`
+says which. Correct the input: submitting it unchanged fails the same way.
+Other codes, such as `job_processing_failed`, are the job's own failure.
+Retrieve the result with the same key. A result can be downloaded repeatedly
+until one hour after completion. `DELETE /jobs/{job_id}` removes a completed
+result or requests cancellation; deletion of a running job completes after its
+child is stopped.
 
 Reuse an `Idempotency-Key` only for the same logical request, operation/options,
 and ordered file contents. Concurrent/retried identical submissions reuse the

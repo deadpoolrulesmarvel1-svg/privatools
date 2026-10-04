@@ -267,6 +267,49 @@ def test_a_locked_pdf_is_done_or_refused_with_the_password_advice(quiet_client, 
         assert "password" in response.json()["detail"].lower(), response.text
 
 
+# ── Bytes overwritten rather than cut ───────────────────────────────────────
+# Two of the #340 review's byte-overwrites, which qpdf reports as a plain
+# RuntimeError rather than a PdfError, so 63 answers of its sweep were 500s:
+# - page-tree: the /Count key of the page tree and its first page reference
+#   overwritten. pikepdf cannot open it ("/Count is wrong after flattening
+#   pages tree"); MuPDF finds no page in it.
+# - content: ten bytes of the first page's compressed content overwritten.
+#   The tools that lay a stamp or a signature over a page fail when they save
+#   ("error while getting stream data for 20 0 R: ... errors while decoding
+#   content stream").
+def _content_overwritten() -> bytes:
+    start = CLASSIC.index(b"stream\n", CLASSIC.index(b"\n6 0 obj")) + len(b"stream\n")
+    return CLASSIC[:start + 2] + b"A" * 10 + CLASSIC[start + 12:]
+
+
+# - page-object: one byte of the first page object overwritten, so it no
+#   longer parses ("invalid key in dict"). MuPDF opens the file without
+#   repairing it and shows that page blank; the tools that write to the page
+#   failed with "not a dict (null)" (utils.cleanup._has_unreadable_page).
+OVERWRITTEN = {
+    "page-tree": CLASSIC.replace(b"/Count 4/Kids[4 0 R", b"/Cxunt 4/Kids[4 02R"),
+    "content": _content_overwritten(),
+    "page-object": CLASSIC.replace(b"/Contents[6 0 R]>>", b"/Contents[6 0 R]>y"),
+}
+# Sanitize and Hidden Text read the file in worker processes of their own,
+# which count only some library errors as damage (Sanitize pikepdf's PdfError,
+# Hidden Text MuPDF's errors on a file it repaired) and report anything else
+# as their own failure.
+STILL_A_SERVER_ERROR = {("/api/sanitize", "page-tree"), ("/api/hidden-text-checker", "page-object")}
+
+
+@pytest.mark.parametrize("route,sample", [
+    pytest.param(route, sample, marks=pytest.mark.xfail(strict=True, reason="its worker's own classification"))
+    if (route, sample) in STILL_A_SERVER_ERROR else (route, sample)
+    for route in sorted(ROUTES) for sample in sorted(OVERWRITTEN)
+])
+def test_a_pdf_with_bytes_overwritten_is_never_a_server_error(quiet_client, route, sample):
+    if (route, sample) == ("/api/web-optimize", "content") and shutil.which("qpdf") is None:
+        pytest.skip("pikepdf opens it, so the qpdf command runs: CI and the image have it")
+    response = _post(quiet_client, route, OVERWRITTEN[sample])
+    assert response.status_code < 500, response.text
+
+
 # ── Tools that change the pages, through process_pdf ────────────────────────
 # They opened the upload with a bare fitz.open, so a locked file failed on its
 # first page ("document closed or encrypted"), a file repaired to no page at
@@ -321,12 +364,12 @@ READS_PAGES = [
     "/api/remove-watermark/apply", "/api/remove-watermark/detect",
 ]
 # What a tool says, in its own words, about a file in which it found nothing
-# to work on: no table, not the watermark asked for, no text.
+# to work on: no table, not the watermark asked for. PDF to Word and PDF to
+# Excel are not here: a damaged file in which they find no text is damaged,
+# not a scan (see below).
 FOUND_NOTHING = {
     "/api/extract-tables": "No tables found",
     "/api/remove-watermark/apply": "Unknown watermark selection",
-    "/api/pdf-to-excel": "No tables detected",
-    "/api/pdf-to-word": "no text layer",
 }
 
 
@@ -352,6 +395,84 @@ def test_a_tool_that_reads_pages_asks_for_the_password(quiet_client, locked_pdf,
                                    if r not in ("/api/extract-tables", "/api/remove-watermark/apply")])
 def test_a_tool_that_reads_pages_still_does_an_intact_pdf(quiet_client, route):
     assert _post(quiet_client, route, GOOD).status_code == 200
+
+
+# ── PDF to Word and PDF to Excel: a damaged file, or a scan? ────────────────
+# Both answer a PDF in which they find no text with the scan advice: "run OCR
+# PDF first", "try OCR first". objstm-20 was told that too: MuPDF repairs it
+# with all four pages, but every page object was lost, so every page is blank.
+# OCR finds nothing on a blank page. A scan draws a picture on its pages; a
+# file whose pages draw nothing, and which MuPDF had to repair, is damaged.
+
+WORD_AND_EXCEL = ["/api/pdf-to-word", "/api/pdf-to-excel"]
+
+
+def _scan(pages: int = 4) -> bytes:
+    """A scan: each page draws one picture and holds no text."""
+    doc = fitz.open()
+    for i in range(pages):
+        picture = io.BytesIO()
+        Image.new("RGB", (400, 200), (255, 255, 255 - 40 * i)).save(picture, "PNG")
+        doc.new_page().insert_image(fitz.Rect(72, 72, 472, 272), stream=picture.getvalue())
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+SCAN = _scan()
+
+
+@pytest.mark.parametrize("sample", ["objstm-20", "scan-30"])
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_call_a_file_whose_pages_were_lost_damaged(quiet_client, route, sample):
+    data = DAMAGED["objstm-20"] if sample == "objstm-20" else SCAN[: len(SCAN) * 30 // 100]
+    if sample == "scan-30":
+        # A scan cut short: its first page still lists its picture, but the
+        # content that drew it was lost, so no page draws anything.
+        doc = fitz.open(stream=data, filetype="pdf")
+        assert doc.is_repaired and doc[0].get_images() and not any(page.get_image_info() for page in doc)
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == _DAMAGED_PDF
+
+
+def _drawing() -> bytes:
+    """A page that draws only vector paths, as an outlined-text or CAD export does."""
+    doc = fitz.open()
+    doc.new_page().draw_rect(fitz.Rect(72, 72, 300, 300), color=(0, 0, 1), fill=(1, 0, 0))
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+def _blank() -> bytes:
+    doc = fitz.open()
+    doc.new_page()
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+AFTER_END = b"\n" + bytes(range(256)) * 40  # valid, with bytes after its end: MuPDF opens it repaired
+
+
+@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact"])
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
+    data = {
+        "intact": SCAN,
+        "repaired": SCAN + AFTER_END,
+        # Cut short, but three pages still draw their pictures.
+        "cut-90": SCAN[: len(SCAN) * 90 // 100],
+        # Opened repaired, but its page draws: never called damaged.
+        "drawing-repaired": _drawing() + AFTER_END,
+        # A file MuPDF did not repair is never called damaged, blank or not.
+        "blank-intact": _blank(),
+    }[sample]
+    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in ("intact", "blank-intact"))
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert "OCR" in response.json()["detail"], response.text
 
 
 # ── Organize Pages draws its thumbnails with Poppler ────────────────────────
@@ -590,10 +711,18 @@ def _no_pages() -> bytes:
     return out.getvalue()
 
 
+# These open the upload with pikepdf, which opens a PDF with no page without
+# complaint, and answered it with a 500: Bookmarks pointed its bookmark at a
+# page that isn't there, Booklet raised a ValueError and QR Code its own "out
+# of range" refusal, each into a catch-all, and qpdf would not linearize it for
+# Web Optimize. They count the pages first now.
+PIKEPDF_NO_PAGE = ["/api/booklet", "/api/bookmarks", "/api/qr-code", WEB_OPTIMIZE]
+
+
 @pytest.mark.parametrize("route", sorted(
     # Grayscale converts with pikepdf, which returns a PDF with no page as it
     # is; only its raster fallback opens the file with MuPDF.
-    set(CHANGES_PAGES + READS_PAGES + [SPLIT_BY_TEXT, THUMBNAILS]) - {"/api/grayscale"}
+    set(CHANGES_PAGES + READS_PAGES + PIKEPDF_NO_PAGE + [SPLIT_BY_TEXT, THUMBNAILS]) - {"/api/grayscale"}
 ))
 def test_a_pdf_with_no_page_is_refused_in_the_standard_words(quiet_client, route):
     response = _post(quiet_client, route, _no_pages())

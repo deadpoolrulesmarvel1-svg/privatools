@@ -2,7 +2,7 @@ import json
 
 import pikepdf
 
-from ..utils.cleanup import safe_open_pdf
+from ..utils.cleanup import NO_PAGES_MESSAGE, safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 
@@ -17,6 +17,9 @@ def add_bookmarks(input_path: str, bookmarks_json: str) -> str:
 
     with safe_open_pdf(input_path) as pdf:
         total_pages = len(pdf.pages)
+        if not total_pages:
+            # There is no page for a bookmark to point at.
+            raise ValidationError(NO_PAGES_MESSAGE)
 
         with pdf.open_outline() as outline:
             outline.root.clear()

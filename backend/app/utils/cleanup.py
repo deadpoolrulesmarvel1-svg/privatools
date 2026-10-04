@@ -313,6 +313,8 @@ _DAMAGED_PDF = (
     "This PDF is damaged, most likely cut short by an interrupted download. "
     "Download it again, or fix it with Repair PDF, then try again."
 )
+# What the PDF tools say, with a 400 (ValidationError), to a PDF without a page.
+NO_PAGES_MESSAGE = "This PDF has no pages."
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -407,8 +409,30 @@ def open_pdf_document(source: str | bytes):
         doc.close()
         if repaired:
             raise PdfCorruptError(_DAMAGED_PDF)
-        raise ValidationError("This PDF has no pages.")
+        raise ValidationError(NO_PAGES_MESSAGE)
     return doc
+
+
+def refuse_if_content_lost(doc) -> None:
+    """Raise PdfCorruptError if MuPDF had to repair `doc` and none of its pages
+    draws anything: no text, no picture, no vector drawing.
+
+    For a tool that found no text in a PDF and would send it to OCR. A PDF cut
+    short can open repaired with every page there but blank, its pages' content
+    lost, and OCR finds nothing on a blank page: the file is damaged, and needs
+    downloading again or repairing. A scan draws its page pictures, also when
+    MuPDF opens it repaired, as it does a valid file with bytes after its end.
+    A picture counts when a page draws it: a scan cut short can keep a picture
+    that a page lists while the content that drew it was lost.
+    """
+    from .exceptions import PdfCorruptError
+
+    if not doc.is_repaired:
+        return
+    for page in doc:
+        if page.get_text("text").strip() or page.get_image_info() or page.get_drawings():
+            return
+    raise PdfCorruptError(_DAMAGED_PDF)
 
 
 def _library_errors() -> tuple[type[BaseException], ...]:
@@ -434,6 +458,26 @@ def _raised_by_pymupdf(exc: BaseException) -> bool:
     return isinstance(exc, fitz.mupdf.FzErrorBase) or _raised_in(exc, "pymupdf")
 
 
+def _has_unreadable_page(doc) -> bool:
+    """Whether a page of `doc` is an object MuPDF cannot read: its page object
+    fails to parse, or the page tree names no object for it. MuPDF counts such
+    a page without repairing the file, as when bytes inside a page object were
+    overwritten, and shows it blank; a tool that writes to it then fails with
+    "not a dict (null)". Only the input's own objects are read, so a tool's
+    bad argument on a file whose pages all read stays its own error."""
+    from .pdf_errors import pdf_read_error
+
+    for page in doc:
+        if page.xref <= 0:
+            return True
+        try:
+            doc.xref_object(page.xref, compressed=True)
+        except _library_errors() as exc:
+            if pdf_read_error(exc) is not None:  # MuPDF's syntax or format error
+                return True
+    return False
+
+
 def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     """Return work(doc) for the PDF at `source` (a path or the bytes), opened
     with open_pdf_document and closed afterwards. For tools that copy pages.
@@ -449,7 +493,11 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     references and such pages, and work runs once more on the rebuilt copy. A
     file qpdf cannot rebuild, that has no page left, or that fails again is
     refused as damaged (400). A ToolError, such as a render budget refusal, is
-    an answer, not damage: it is never retried.
+    an answer, not damage: it is never retried. A file MuPDF did not repair is
+    refused as damaged, without a rebuild, when work fails with an error of
+    PyMuPDF's that the catch-alls would answer 500 and one of its page objects
+    cannot be read (_has_unreadable_page), as when bytes inside it were
+    overwritten.
 
     `rebuild=False` is for tools that change pages in place and find them by
     number, such as E-Sign and Stamp PDF: the rebuild leaves out the pages
@@ -465,14 +513,22 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     digits (a 40 KB upload held a worker for 23 s).
     """
     from .exceptions import PdfCorruptError, ValidationError
+    from .pdf_errors import pdf_read_error
 
     library_errors = _library_errors()
     doc = open_pdf_document(source)
     try:
         return work(doc)
     except library_errors as exc:
-        if not doc.is_repaired or not _raised_by_pymupdf(exc):
+        if not _raised_by_pymupdf(exc):
             raise
+        if not doc.is_repaired:
+            # MuPDF did not repair the file. Its error is damage only when the
+            # catch-alls would not read it as such already and a page object
+            # cannot be read; that file is refused, never rebuilt.
+            if pdf_read_error(exc) is not None or not _has_unreadable_page(doc):
+                raise
+            raise PdfCorruptError(_DAMAGED_PDF) from exc
         failure = exc  # damage MuPDF's repair left behind: one more run on qpdf's rebuild
     finally:
         doc.close()

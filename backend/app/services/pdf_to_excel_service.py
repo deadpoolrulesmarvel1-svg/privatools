@@ -17,7 +17,7 @@ from typing import Any
 
 from openpyxl import Workbook
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document, refuse_if_content_lost
 from ..utils.exceptions import ToolTimeoutError
 from ..utils.tables import find_tables
 
@@ -91,6 +91,9 @@ def _build_workbook(input_path: str) -> tuple[str, bool]:
                 ws.cell(row=row, column=1, value=line)
                 row += 1
                 found_anything = True
+        if not found_anything:
+            # A PDF cut short whose pages came out blank is damaged, not a scan.
+            refuse_if_content_lost(doc)
     finally:
         doc.close()
 

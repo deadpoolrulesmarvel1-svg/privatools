@@ -20,7 +20,7 @@ from ..services import (
     web_optimize_service,
 )
 from ..utils.images import image_read_error
-from ..utils.exceptions import ToolError
+from ..utils.exceptions import ToolError, ValidationError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -53,7 +53,9 @@ async def web_optimize_endpoint(file: UploadFile = File(...)):
             media_type="application/pdf",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ValidationError):
+        # ValidationError: a PDF with no page; the global handler gives its
+        # 400. qpdf's own failures (ExternalToolError) stay this route's 500.
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except ValueError as ve:

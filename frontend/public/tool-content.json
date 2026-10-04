@@ -2049,7 +2049,7 @@
     "clientOnly": true,
     "accepts": ".mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.oga,.opus,.flac,.aac",
     "outputLabel": "subtitles (.srt or .vtt)",
-    "lastReviewed": "2026-10-03",
+    "lastReviewed": "2026-10-04",
     "path": "/tools/subtitle-generator",
     "priority": 0.6
   },

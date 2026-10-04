@@ -23,7 +23,7 @@ from typing import Any
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document, refuse_if_content_lost
 from ..utils.exceptions import ToolTimeoutError
 
 logger = logging.getLogger(__name__)
@@ -131,6 +131,8 @@ def _convert_to_docx(doc) -> str:
             has_any_text = True
             break
     if not has_any_text:
+        # A PDF cut short whose pages came out blank is damaged, not a scan.
+        refuse_if_content_lost(doc)
         raise ValueError(
             "This PDF has no text layer — run OCR PDF first to make it searchable"
         )

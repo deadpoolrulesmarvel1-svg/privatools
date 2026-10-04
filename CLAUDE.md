@@ -285,6 +285,13 @@ CSP-walker and guide-export tests catch most misses.
   (`utils/cleanup.py`), not a bare `fitz.open`, which opens a locked PDF and
   fails later; let `ToolError` through; and have the catch-all ask
   `pdf_read_error` (`utils/pdf_errors.py`) before it answers 500.
+- **PyMuPDF's switches can be process-wide.** `small_glyph_heights`, which
+  `find_tables` turns on, is a C global that every request thread's text
+  extraction reads: it changes only through `find_tables` and
+  `exact_glyph_boxes()` in `backend/app/utils/tables.py`, which share one
+  lock, and code whose glyph boxes must be exact holds `exact_glyph_boxes()`,
+  as Smart Redact does (#340). That lock covers no other `TOOLS.set_*`
+  switch, so the web process changes none.
 - **Guide:** steps and FAQ in `backend/app/tool_content.py`, then
   `.venv/bin/python scripts/seo/export-tool-guides.py` regenerates
   `frontend/src/data/tool-guide/*.json` (Python is authoritative,
