@@ -3,8 +3,10 @@
  * translation does not touch changes: every cue keeps its number or
  * identifier and its timing line exactly as written, VTT keeps its header,
  * its cue settings and its NOTE, STYLE and REGION blocks, and a file is
- * written back with its own line endings and byte-order mark. Saving in the
- * other format writes what that format can hold and counts what it can't.
+ * written back with its own line endings and byte-order mark, in UTF-8
+ * whatever it was read from (WebVTT allows nothing else, and a UTF-16 file
+ * comes back as UTF-8). Saving in the other format writes what that format
+ * can hold and counts what it can't.
  *
  * Reading is strict about the one thing a translation must not guess, the
  * timing: a timing line that can't be read stops the file with its line
@@ -296,7 +298,8 @@ export function parseSubtitles(text: string, { name = "This file", encoding = "U
     const trailingNewlines = trailing.match(/\r\n|\r|\n/g)?.length ?? 0;
     const lines = body.slice(0, body.length - trailing.length).split(/\r\n|\r|\n/);
 
-    if (/^\s*\[Script Info\]/i.test(body) || /^Dialogue:\s*\d/m.test(body)) {
+    // An ASS file opens with [Script Info], or at least has an [Events] section of Dialogue lines; an SRT cue can say "Dialogue: 1".
+    if (/^\s*\[Script Info\]/i.test(body) || (/^\[Events\][ \t]*$/im.test(body) && /^Dialogue:[ \t]*\d/m.test(body))) {
         throw new SubtitleFileError("ass", `${name} is an ASS or SSA subtitle file.`, "This page translates SRT and VTT files. Subtitle Converter can turn it into SRT first, in your browser.");
     }
     if (VTT_HEADER.test(lines[0])) {

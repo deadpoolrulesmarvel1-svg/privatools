@@ -235,6 +235,12 @@ describe("files that can't be translated say why", () => {
         expect(errorOf(() => parseSubtitles(" \n\n", { name: "blank.srt" })).title).toBe("blank.srt is empty.");
     });
 
+    it("reads an SRT cue that begins “Dialogue: 1” as SRT, and knows an ASS file by its [Events] when [Script Info] isn't first", () => {
+        expect(cuesOf(parseSubtitles("1\n00:00:01,000 --> 00:00:02,000\nDialogue: 1 of 3\n")).map(cue => cue.lines)).toEqual([["Dialogue: 1 of 3"]]);
+        const ass = "; made by hand\r\n[V4+ Styles]\r\nFormat: Name, Fontname\r\n\r\n[Events]\r\nFormat: Layer, Start, End, Style, Text\r\nDialogue: 0,0:00:01.00,0:00:02.00,Default,Hi\r\n";
+        expect(errorOf(() => parseSubtitles(ass, { name: "song.ass" })).problem).toBe("ass");
+    });
+
     it("refuses a file over the size limit before reading it, and one with too many cues", async () => {
         const big = new File(["x"], "huge.srt");
         Object.defineProperty(big, "size", { value: MAX_SUBTITLE_BYTES + 1 });

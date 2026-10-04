@@ -548,6 +548,17 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
     const dropped = cues.reduce((sum, cue) => sum + (cue.edited ? 0 : cue.dropped), 0);
     const long = cues.filter(cue => cue.long && !cue.edited).length;
     const check = cues.filter(cue => cue.check && !cue.edited).length;
+    const repeated = cues.filter(cue => cue.repeated && !cue.edited).length;
+    const corrections = cues.filter(cue => cue.edited).length;
+    // The cues as last downloaded: corrections made since are only on this page, and leaving it loses them.
+    const [savedCues, setSavedCues] = useState<readonly EditableCue[] | null>(null);
+    const unsaved = corrections > 0 && savedCues !== cues;
+    const [leaving, setLeaving] = useState<"languages" | "file" | null>(null);
+    const downloadButton = useRef<HTMLButtonElement>(null);
+    const leave = (to: "languages" | "file") => {
+        if (unsaved) setLeaving(to);
+        else (to === "languages" ? onSettings : onStartOver)();
+    };
     const lineLength = layoutFor(run.to.code.split("-")[0], "two").maxLineChars;
     // What the other format leaves out, for the line under the downloads: the same count writeSubtitles
     // makes, kept per cue text, so a correction recounts one cue rather than the file.
@@ -569,6 +580,8 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
     const save = (format: SubtitleFormat) => {
         const { text } = exportSubtitles(doc, cues, format, run.to.code);
         downloadBlob(new Blob([text], { type: format === "srt" ? "application/x-subrip;charset=utf-8" : "text/vtt;charset=utf-8" }), translatedFileName(file.name, run.to.code, format));
+        setSavedCues(cues);
+        setLeaving(null);
     };
     const burnIn = async () => {
         setHanding(true);
@@ -592,6 +605,7 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
     ].filter(Boolean).join(" ");
     const notes = [
         check ? `${plural(check, "cue")} came out much longer than the original, which is how the model looks when it invents words: read ${check === 1 ? "it" : "them"} first.` : "",
+        repeated ? `${plural(repeated, "cue")} repeat${repeated === 1 ? "s" : ""} the line before ${repeated === 1 ? "it" : "them"}: the translation came back with fewer words than its cues, so read ${repeated === 1 ? "it" : "them"} beside the original.` : "",
         long ? `${plural(long, "cue")} run${long === 1 ? "s" : ""} past two lines of ${lineLength} characters; the timing stays as it was, so you may want to shorten ${long === 1 ? "it" : "them"}.` : "",
         dropped ? `${plural(dropped, "formatting span")} inside the words (such as one word in italics) couldn’t be carried and ${dropped === 1 ? "was" : "were"} left out.` : "",
     ].filter(Boolean);
@@ -609,18 +623,28 @@ function TranslationResult({ result, onEdit, onAgain, onStartOver, onSettings }:
             <div><dt>Took</dt><dd>{result.seconds < 60 ? `${Math.max(1, Math.round(result.seconds))} s` : `${Math.round(result.seconds / 60)} min`}</dd></div>
         </dl>
         {notes.length > 0 && <div className="ts-note">{notes.map(note => <p key={note}>{note}</p>)}</div>}
+        {/* A page of the check is up to 500 boxes to tab through; shown when focused, so it doesn't invite skipping the check. */}
+        <button type="button" className="ts-text-button st-skip" onClick={() => downloadButton.current?.focus()}>Skip to the downloads</button>
         <CueEditor result={result} onEdit={onEdit} />
         <div className="ts-actions">
-            <button type="button" className="ts-primary-button" onClick={() => save(ownFormat)}><Download size={16} aria-hidden="true" /> Download {FORMAT_NAME[ownFormat]}</button>
+            <button ref={downloadButton} type="button" className="ts-primary-button" onClick={() => save(ownFormat)}><Download size={16} aria-hidden="true" /> Download {FORMAT_NAME[ownFormat]}</button>
             <button type="button" className="ts-secondary-button" onClick={() => save(otherFormat)}><Download size={16} aria-hidden="true" /> Download {FORMAT_NAME[otherFormat]}</button>
             {failed > 0 && <button type="button" className="ts-secondary-button" onClick={onAgain}><RotateCcw size={16} aria-hidden="true" /> Translate the {plural(failed, "marked cue")} again</button>}
-            <button type="button" className="ts-text-button" onClick={onSettings}>Change the languages</button>
-            <button type="button" className="ts-text-button" onClick={onStartOver}>Translate another file</button>
+            <button type="button" className="ts-text-button" onClick={() => leave("languages")}>Change the languages</button>
+            <button type="button" className="ts-text-button" onClick={() => leave("file")}>Translate another file</button>
         </div>
+        {leaving && <div className="ts-note st-leaving" role="alert">
+            <p>{leaving === "languages" ? "Changing the languages starts a new translation" : "Another file starts afresh"}, and your {corrections === 1 ? "correction" : `${n(corrections)} corrections`} would be lost: {corrections === 1 ? "it isn’t" : "they aren’t"} in a downloaded file yet.</p>
+            <div className="st-leaving-actions">
+                <button type="button" className="ts-text-button" onClick={() => setLeaving(null)}>Keep {corrections === 1 ? "it" : "them"}</button>
+                <button type="button" className="ts-text-button" onClick={leaving === "languages" ? onSettings : onStartOver}>{leaving === "languages" ? "Change the languages anyway" : "Choose another file anyway"}</button>
+            </div>
+        </div>}
         <p className="ts-caption st-saves">
             Saves {translatedFileName(file.name, run.to.code, ownFormat)} or {translatedFileName(file.name, run.to.code, otherFormat)}, with every cue’s {ownFormat === "srt" ? "number" : "identifier"} and timing as they were.
             {failed > 0 && (failed === 1 ? " In both, the cue that wasn’t translated keeps its original text." : ` In both, the ${n(failed)} cues that weren’t translated keep their original text.`)}
             {conversionNote.length > 0 && ` As ${FORMAT_NAME[otherFormat]}, the file leaves out what ${FORMAT_NAME[otherFormat]} can’t hold: ${conversionNote.join(", ")}.`}
+            {doc.encoding !== "UTF-8" && ` Both are saved as UTF-8 rather than ${doc.encoding}, the only encoding WebVTT allows and the one players expect.`}
         </p>
         {NO_SERVER_FONT.has(run.to.code.split("-")[0])
             ? <p className="ts-caption st-next">Add Subtitles can’t burn {run.to.name} into a video: it draws subtitles with the DejaVu fonts on the PrivaTools server, which have no {run.to.name} letters, so they would come out as boxes. Load the SRT or VTT in your video player or editor instead.</p>

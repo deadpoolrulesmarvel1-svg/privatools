@@ -248,6 +248,74 @@ describe("translating on this device", () => {
         expect(await (mocks.download.mock.calls[1][0] as Blob).text()).toContain("00:00:03,400 --> 00:00:05,900\nHoy veremos\n");
     });
 
+    it("saves a UTF-16 file as UTF-8, and says so", async () => {
+        const units = Array.from("﻿" + TALK, ch => ch.charCodeAt(0));
+        const bytes = new Uint8Array(units.length * 2);
+        units.forEach((unit, i) => { bytes[i * 2] = unit & 0xff; bytes[i * 2 + 1] = unit >> 8; });
+        choose(bytes);
+        await screen.findByText(/SRT · 5 cues · UTF-16LE/);
+        fireEvent.click(translateButton());
+        await screen.findByRole("heading", { name: "5 cues translated." });
+        expect(screen.getByText(/Both are saved as UTF-8 rather than UTF-16LE, the only encoding WebVTT allows and the one players expect\./)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Download SRT" }));
+        const saved = new Uint8Array(await (mocks.download.mock.calls[0][0] as Blob).arrayBuffer());
+        expect(Array.from(saved.subarray(0, 4))).toEqual([0xef, 0xbb, 0xbf, 0x31]);
+    });
+
+    it("counts the cues that repeat the line before among the notes", async () => {
+        // One word back for a sentence across two cues: the second cue can only repeat it.
+        translator.translate.mockImplementation(async (text: string) => (text.startsWith("Today") ? "Hoy." : SPANISH[text] ?? text));
+        await translateOnDevice();
+        expect(screen.getAllByText("Repeats the line before")).toHaveLength(1);
+        expect(screen.getByText("1 cue repeats the line before it: the translation came back with fewer words than its cues, so read it beside the original.")).toBeInTheDocument();
+    });
+
+    it.each([
+        ["Change the languages", "Changing the languages starts a new translation", "Change the languages anyway"],
+        ["Translate another file", "Another file starts afresh", "Choose another file anyway"],
+    ])("warns before “%s” loses corrections that aren't in a downloaded file", async (button, warning, anyway) => {
+        await translateOnDevice();
+        // Nothing corrected: nothing to lose but the run.
+        fireEvent.click(screen.getByRole("button", { name: button }));
+        expect(screen.queryByRole("heading", { name: "5 cues translated." })).toBeNull();
+        cleanup();
+
+        await translateOnDevice();
+        const box = screen.getAllByRole("textbox")[0];
+        fireEvent.change(box, { target: { value: "¡Bienvenidos otra vez!" } });
+        fireEvent.blur(box);
+        fireEvent.click(screen.getByRole("button", { name: button }));
+        expect(screen.getByRole("alert")).toHaveTextContent(`${warning}, and your correction would be lost: it isn’t in a downloaded file yet.`);
+        fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
+        expect(screen.queryByRole("alert")).toBeNull();
+        expect(screen.getAllByRole("textbox")[0]).toHaveValue("¡Bienvenidos otra vez!");
+
+        fireEvent.click(screen.getByRole("button", { name: button }));
+        fireEvent.click(screen.getByRole("button", { name: anyway }));
+        expect(screen.queryByRole("heading", { name: "5 cues translated." })).toBeNull();
+    });
+
+    it("lets the keyboard skip the check's boxes to the downloads", async () => {
+        await translateOnDevice();
+        const skip = screen.getByRole("button", { name: "Skip to the downloads" });
+        // Before the check's first box in the tab order, and the downloads after its last.
+        const [first] = screen.getAllByRole("textbox");
+        expect(skip.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        fireEvent.click(skip);
+        expect(screen.getByRole("button", { name: "Download SRT" })).toHaveFocus();
+    });
+
+    it("doesn't warn once the corrections are in a downloaded file", async () => {
+        await translateOnDevice();
+        const box = screen.getAllByRole("textbox")[0];
+        fireEvent.change(box, { target: { value: "¡Bienvenidos otra vez!" } });
+        fireEvent.blur(box);
+        fireEvent.click(screen.getByRole("button", { name: "Download VTT" }));
+        fireEvent.click(screen.getByRole("button", { name: "Change the languages" }));
+        expect(screen.queryByRole("alert")).toBeNull();
+        expect(screen.getByLabelText("From")).toHaveValue("en");
+    });
+
     it("hands the translated SRT to Add Subtitles in this same page", async () => {
         await translateOnDevice();
         fireEvent.click(screen.getByRole("button", { name: "Burn into a video" }));

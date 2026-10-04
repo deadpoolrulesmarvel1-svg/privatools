@@ -40,7 +40,7 @@
     },
     {
       "q": "How are sentences split across several cues translated?",
-      "a": "Cues that form one sentence are translated together, because a fragment on its own is easily mistranslated or padded with invented words. The translation is then shared back across the same cues in proportion to the original text, breaking between words and preferring the comma or full stop where the original cue ended. With your own key, the model gets every line numbered and has to return the same numbers; a reply that doesn't match is tried once more in smaller batches and otherwise left untranslated, so no words are moved into the wrong cue."
+      "a": "Cues that form one sentence are translated together, because a fragment on its own is easily mistranslated or padded with invented words. The translation is then shared back across the same cues in proportion to the original text, breaking between words and preferring the comma or full stop where the original cue ended. With your own key, the model gets every line numbered and has to return the same numbers, each line once; a reply that doesn't match is tried once more in smaller batches and otherwise left untranslated and marked, so the page never moves words between cues to make a reply fit."
     },
     {
       "q": "Is it a good translation?",
