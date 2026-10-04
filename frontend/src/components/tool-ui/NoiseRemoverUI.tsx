@@ -115,8 +115,8 @@ function failureFor(error: unknown, file: File): Failure {
         if (error.problem === "too-long") return {
             title: "This recording is too long to clean here.", detail: error.message, reason: `Longer than ${MAX_SECONDS / 60} minutes of sound`, retryable: false, kind: "too_large",
             help: takes("trim-media", file)
-                ? <>To clean it in parts of up to {MAX_SECONDS / 60} minutes, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing, or with an audio app on your device.</>
-                : <>To clean it, cut it into parts of up to {MAX_SECONDS / 60} minutes with an audio or video app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
+                ? <>To clean it in parts of up to {MAX_SECONDS / 60} minutes of mono or {MAX_STEREO_SECONDS / 60} of stereo, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing, or with an audio app on your device.</>
+                : <>To clean it, cut it into parts of up to {MAX_SECONDS / 60} minutes of mono or {MAX_STEREO_SECONDS / 60} of stereo with an audio or video app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
         };
         if (error.problem === "too-long-stereo") return {
             title: "This stereo recording is too long to clean here.",
@@ -201,8 +201,10 @@ export function NoiseRemoverUI() {
             : next === "remove" ? removeButton.current : strengthInput.current;
         if (!target) return;
         focusNext.current = null;
-        // "Remove noise" disables itself, which some browsers leave holding focus; anywhere else the visitor went keeps it.
-        if (document.activeElement === removeButton.current) target.focus();
+        // A run disables "Remove noise" and the slider (Ctrl+Enter starts one from there), which some browsers leave
+        // holding focus for a moment; anywhere else the visitor went keeps it.
+        const disabledByRun = document.activeElement === removeButton.current || document.activeElement === strengthInput.current;
+        if (disabledByRun) target.focus();
         else focusIfIdle(target);
     }, [phase]);
 

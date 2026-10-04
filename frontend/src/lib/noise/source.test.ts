@@ -104,7 +104,7 @@ describe("reading a recording for the noise remover", () => {
     it("refuses a recording longer than an hour, saying how long it is", async () => {
         const error = await openNoiseSource(silentWav(MAX_SECONDS + 90)).catch(e => e);
         expect(error).toMatchObject({ problem: "too-long" });
-        expect(error.message).toBe("This file’s sound is 1 h 2 min long. Voice Noise Remover takes up to 60 minutes at a time.");
+        expect(error.message).toBe("This file’s sound is 1 h 2 min long. Voice Noise Remover takes up to 60 minutes of mono or 30 of stereo at a time.");
     });
 
     it("takes an hour's recording that its encoder padded past 60:00, and refuses one that reads as longer", async () => {
@@ -113,7 +113,7 @@ describe("reading a recording for the noise remover", () => {
         expect(padded.durationSeconds).toBeCloseTo(MAX_SECONDS + 0.04, 3);
         const error = await openNoiseSource(silentWav(MAX_SECONDS + 30)).catch(e => e);
         expect(error).toMatchObject({ problem: "too-long" });
-        expect(error.message).toBe("This file’s sound is 1 h 1 min long. Voice Noise Remover takes up to 60 minutes at a time.");
+        expect(error.message).toBe("This file’s sound is 1 h 1 min long. Voice Noise Remover takes up to 60 minutes of mono or 30 of stereo at a time.");
         const whole = asFile(new NodeBlob([new Uint8Array(100)]) as unknown as Blob, "voice.flac");
         await expect(openNoiseSource(whole, { measure: async () => WHOLE_FILE_SECONDS + 0.01 })).resolves.toBeTruthy();
     });

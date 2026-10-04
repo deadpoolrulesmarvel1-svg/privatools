@@ -201,7 +201,7 @@ describe("the Voice Noise Remover page", () => {
     it.each([
         [new NoiseInputError("empty", "This file is empty, so there is no sound in it."), "This file is empty.", null],
         [new NoiseInputError("no-sound", "This file has no sound track, so there is nothing to clean."), "This file has no sound.", null],
-        [new NoiseInputError("too-long", "This file’s sound is 1 h 30 min long. Voice Noise Remover takes up to 60 minutes at a time.", 5400), "This recording is too long to clean here.", /Cut \/ Trim Video & Audio/],
+        [new NoiseInputError("too-long", "This file’s sound is 1 h 30 min long. Voice Noise Remover takes up to 60 minutes of mono or 30 of stereo at a time.", 5400), "This recording is too long to clean here.", /parts of up to 60 minutes of mono or 30 of stereo, cut it with Cut \/ Trim Video & Audio/],
         [new NoiseInputError("too-long-stereo", "This file’s sound is stereo and 47 minutes long. Voice Noise Remover takes stereo up to 30 minutes and mono up to 60.", 2820), "This stereo recording is too long to clean here.", /parts of up to 30 minutes.*save it as mono, which works here up to 60 minutes/],
         [new NoiseInputError("unreadable", "This browser can’t decode the sound in this file."), "This browser can’t read the sound in this file.", /Audio Converter/],
     ])("fails clearly, without a retry: %s", async (error, title, help) => {
@@ -290,6 +290,16 @@ describe("the Voice Noise Remover page", () => {
         expect(cancel).toHaveFocus();
         await act(async () => { fireEvent.click(cancel); });
         await waitFor(() => expect(screen.getByRole("button", { name: /Remove noise/ })).toHaveFocus());
+    });
+
+    it("puts focus on Cancel when Ctrl+Enter starts a run from the strength slider, which the run disables", async () => {
+        mocks.remove.mockImplementation(() => new Promise(() => {}));
+        choose();
+        const strength = screen.getByLabelText(/How much of the cleaned sound/);
+        strength.focus();
+        await act(async () => { fireEvent.keyDown(window, { key: "Enter", ctrlKey: true }); });
+        expect(strength).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     });
 
     it("moves the progress about once a second, and keeps the clock out of the announced status", async () => {

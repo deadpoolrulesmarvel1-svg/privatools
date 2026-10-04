@@ -131,7 +131,7 @@ export function lengthWords(seconds: number): string {
 }
 
 function tooLong(seconds: number): NoiseInputError {
-    return new NoiseInputError("too-long", `This file’s sound is ${lengthWords(seconds)} long. Voice Noise Remover takes up to ${MAX_SECONDS / 60} minutes at a time.`, seconds);
+    return new NoiseInputError("too-long", `This file’s sound is ${lengthWords(seconds)} long. Voice Noise Remover takes up to ${MAX_SECONDS / 60} minutes of mono or ${MAX_STEREO_SECONDS / 60} of stereo at a time.`, seconds);
 }
 
 /**
