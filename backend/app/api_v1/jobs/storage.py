@@ -27,8 +27,8 @@ from .adapters import ADAPTERS
 ACTIVE = ("queued", "running")
 TERMINAL = ("succeeded", "failed", "canceled", "expired")
 # A job whose input the PDF libraries cannot read fails with one of these
-# codes and the words a synchronous call gets in its 400 for that file
-# (utils.pdf_errors). Every other failure says FAILED_MESSAGE.
+# codes and the standard words for such a file (utils.pdf_errors). Every other
+# failure says FAILED_MESSAGE.
 REFUSALS = {
     "job_input_damaged": PdfCorruptError.default_detail,
     "job_input_password_protected": PdfEncryptedError.default_detail,

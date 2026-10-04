@@ -429,17 +429,40 @@ def test_word_and_excel_call_a_file_whose_pages_were_lost_damaged(quiet_client, 
     assert response.json()["detail"] == _DAMAGED_PDF
 
 
-@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90"])
+def _drawing() -> bytes:
+    """A page that draws only vector paths, as an outlined-text or CAD export does."""
+    doc = fitz.open()
+    doc.new_page().draw_rect(fitz.Rect(72, 72, 300, 300), color=(0, 0, 1), fill=(1, 0, 0))
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+def _blank() -> bytes:
+    doc = fitz.open()
+    doc.new_page()
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+AFTER_END = b"\n" + bytes(range(256)) * 40  # valid, with bytes after its end: MuPDF opens it repaired
+
+
+@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact"])
 @pytest.mark.parametrize("route", WORD_AND_EXCEL)
 def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
     data = {
         "intact": SCAN,
-        # Valid, with bytes after its end: MuPDF opens it repaired.
-        "repaired": SCAN + b"\n" + bytes(range(256)) * 40,
+        "repaired": SCAN + AFTER_END,
         # Cut short, but three pages still draw their pictures.
         "cut-90": SCAN[: len(SCAN) * 90 // 100],
+        # Opened repaired, but its page draws: never called damaged.
+        "drawing-repaired": _drawing() + AFTER_END,
+        # A file MuPDF did not repair is never called damaged, blank or not.
+        "blank-intact": _blank(),
     }[sample]
-    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample != "intact")
+    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in ("intact", "blank-intact"))
     response = _post(quiet_client, route, data)
     assert response.status_code == 400, response.text
     assert "OCR" in response.json()["detail"], response.text
