@@ -78,14 +78,15 @@ class TestPhase1:
         assert resp.status_code == 200
         assert _is_pdf(resp.content)
 
-    def test_stamp_pdf_invalid_pages_pattern(self, client, sample_pdf):
-        """pages must match 'all' or 'n,n,n'."""
+    def test_stamp_pdf_refuses_pages_the_pdf_lacks(self, client, sample_pdf):
+        """Ranges are read like Rotate's (test_stamp_pages.py); a page past the end is a 400."""
         resp = client.post(
             "/api/stamp-pdf",
             files={"file": ("test.pdf", sample_pdf, "application/pdf")},
-            data={"stamp_type": "confidential", "pages": "1-3"},  # ranges not allowed by validator
+            data={"stamp_type": "confidential", "pages": "1-3"},  # the sample has one page
         )
         assert resp.status_code == 400
+        assert resp.json()["detail"] == "Page 3 is out of bounds. Valid range is 1-1."
 
     def test_txt_to_pdf_happy_path(self, client):
         resp = client.post(

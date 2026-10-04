@@ -120,7 +120,9 @@ async def extract_tables(
     except ValueError as e:
         _cleanup_on_error(temp, out)
         raise HTTPException(status_code=400, detail=str(e))
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: the service's ValidationError("No tables found in the
+        # PDF"), which is not a ValueError; the global handler gives its 400.
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:

@@ -324,7 +324,7 @@ def test_a_password_protected_pdf_is_refused(client):
 
 
 def test_an_unreadable_pdf_is_refused(client):
-    resp = post(client, b"%PDF-1.7\n" + b"\x00garbage\xff" * 200)
+    resp = post(client, b"%PDF-1.7\n1 0 obj\n" + b"\x00garbage\xff" * 200)
     assert resp.status_code == 400
     detail = resp.json()["detail"]
     assert "corrupt" in detail or "no pages" in detail

@@ -33,4 +33,20 @@ describe("friendlyError and page ranges", () => {
         const message = "Page 12 is out of range (PDF has 5 pages)";
         expect(friendlyError(message, "Processing failed")).toBe(message);
     });
+
+    // utils/page_range.py says this for a range of commas and spaces only. It
+    // read "This PDF has no pages. Pick a different file.", which blames a
+    // file that has pages.
+    it.each([
+        "Page range ',' selected zero pages.",
+        "Page range ' , , ' selected zero pages.",
+    ])("a range that selects no page says so, not that the PDF has none: %s", (message) => {
+        expect(friendlyError(message, "Processing failed")).toBe(
+            'That page range doesn\'t select any pages. Use formats like "1-3, 5, 7-end".',
+        );
+    });
+
+    it("a PDF without pages still says so", () => {
+        expect(friendlyError("This PDF has no pages.", "Processing failed")).toBe("This PDF has no pages. Pick a different file.");
+    });
 });

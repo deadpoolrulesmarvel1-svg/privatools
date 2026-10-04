@@ -10,6 +10,32 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.25] — 2026-10-04 — Damaged PDFs named as damaged, and PDF Table Extractor fixed
+
+### Tools
+
+- Every PDF tool says "This PDF is damaged…" for a file that only starts like a PDF (it stops after its first line, or holds no PDF objects), where most answered "Processing failed". Watermark PDF, E-Sign and Stamp PDF also say when a PDF is damaged, needs a password or has no pages. A PDF cut short after its page list is reported as damaged by E-Sign, Stamp PDF, Highlight, Smart Redact, PDF to SVG, Split in Half, PDF to Long Image, Invert Colors, Deskew, PDF to Image, Auto Crop and PDF to PowerPoint. (#336)
+- PDF Table Extractor says when a PDF has no ruled table. Since v1.5.2 it had failed with "Processing failed" on every such file. (#336)
+- Stamp PDF takes page ranges such as 1,3,5-8, as its Pages box suggests, and refuses a page the PDF doesn't have, naming the valid range, instead of stamping every page. (#336)
+- Photo Collage says what is wrong with a picture it can't read, and Split by Text points a picture to Image to PDF and then OCR PDF as soon as it is chosen. (#336)
+- A page range of commas only says it selects no pages, instead of "This PDF has no pages". (#336)
+- PDF to Markdown converts up to five files a minute from one address, like the other heavy tools; more can be tried a minute later. (#336)
+- Video and audio tools answer a fault on the server's side, such as a full disk, with "Processing failed. Please try again." and a retry, instead of blaming the file. (#336)
+
+### For API users
+
+- More PDF routes answer 400 with the reason for a damaged PDF, and `/api/extract-tables` answers 400 when the PDF has no ruled table. `/api/pdf-to-markdown` takes five requests a minute from one address; requests with a v1 API key count against that key's own quota instead. (#336)
+
+## [2.7.24] — 2026-10-04 — Subtitle Translator
+
+### New tool
+
+- Subtitle Translator translates an SRT or VTT file and gives back the same format, with every cue's number and timing unchanged. It runs on your device with the models Translate PDF uses, which translate English into a set of languages and a set of languages into English (about 107 MB per language pair, downloaded once from Hugging Face). With your own AI key it takes any pair, and the text goes from your browser to your provider. Nothing goes to PrivaTools. A sentence that runs across cues is translated whole and put back across the same cues, and song lines, positioning tags and VTT notes and styles are kept. You check and edit the result beside the original before you download it, and cues that couldn't be translated are marked. (#334)
+
+### Tools
+
+- Translate PDF no longer cuts off long Chinese, Japanese, Korean or Thai passages without saying so, because it now splits text by the model's own token count. The page also no longer freezes for long stretches while it translates. (#334)
+
 ## [2.7.23] — 2026-10-04 — Clear errors instead of "Processing failed"
 
 ### Tools

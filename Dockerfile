@@ -7,7 +7,9 @@ WORKDIR /app/frontend
 RUN apt-get update && apt-get install -y --no-install-recommends brotli \
     && rm -rf /var/lib/apt/lists/*
 COPY frontend/package*.json ./
-RUN npm ci
+# onnxruntime-node would download CUDA binaries from NuGet on an amd64 build;
+# this stage only builds static files, and no image runs on a GPU.
+RUN ONNXRUNTIME_NODE_INSTALL=skip npm ci
 COPY frontend/ .
 
 # Clerk's publishable key, baked at build time because Vite inlines VITE_* into

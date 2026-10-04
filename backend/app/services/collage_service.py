@@ -2,11 +2,12 @@ import logging
 import math
 import os
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 
 from ..utils.colors import hex_to_rgb_int
-from ..utils.exceptions import ValidationError
+from ..utils.exceptions import FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
+from ..utils.images import image_read_error
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +58,16 @@ def make_collage(image_paths: list, columns: int = 3,
             # held 100 open file handles for the duration of the render.
             with Image.open(p) as src:
                 images.append(src.convert("RGB"))
-        except UnidentifiedImageError as exc:
-            raise ValidationError(
-                f"Could not open image {os.path.basename(p)}: not a supported format"
-            ) from exc
-        except (OSError, ValueError) as exc:
-            raise ValidationError(
-                f"Could not open image {os.path.basename(p)}: {exc}"
-            ) from exc
+        except Exception as exc:
+            # A picture Pillow cannot read gets the words every image tool
+            # gives (utils.images). They used to name the server's temp file
+            # ("Could not open image upload_<hex>.png: ...") and quote
+            # Pillow. Anything else is the server's own failure: a 500.
+            known = image_read_error(exc)
+            if known is None:
+                raise
+            status, detail = known
+            raise (FileTooLargeError if status == 413 else ValidationError)(detail) from exc
 
     # Calculate cell size (use the average dimensions)
     avg_w = sum(img.width for img in images) // len(images)

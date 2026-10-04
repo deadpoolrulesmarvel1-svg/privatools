@@ -191,6 +191,7 @@ DECODING_ROUTES = {
     "/api/generate-favicon": ("file", {".jpg", ".jpeg", ".png", ".webp", ".bmp"}, {}, 1),
     "/api/image-watermark": ("file", {".jpg", ".jpeg", ".png", ".webp", ".bmp"}, {"text": "draft"}, 1),
     "/api/merge-images": ("files", {".jpg", ".jpeg", ".png", ".webp", ".bmp"}, {}, 2),
+    "/api/make-collage": ("files", {".jpg", ".jpeg", ".png", ".webp", ".bmp"}, {}, 2),
 }
 DECODING_CASES = [
     (route, name)
@@ -398,3 +399,35 @@ def test_a_decompression_bomb_is_a_413_everywhere(quiet_client, route, data):
     response = quiet_client.post(route, files={"file": ("huge.png", _bomb_png(), "image/png")}, data=data)
     assert response.status_code == 413, response.text
     assert response.json()["detail"] == "Image is too large to process safely. Try a smaller image."
+
+
+# ── Make Collage ─────────────────────────────────────────────────────────────
+# Its route caught ValueError but not the service's ValidationError, so every
+# picture the service refused was a 500, and the refusal named the server's
+# temp file ("Could not open image upload_<hex>.png: ...").
+
+def _png() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (40, 30), (200, 30, 30)).save(buf, "PNG")
+    return buf.getvalue()
+
+
+@pytest.mark.parametrize("name,data,status,detail", [
+    ("notes.png", JUNK, 400, "This file can't be read as an image: it's not an image, "
+                             "or it's in a format this tool doesn't read."),
+    ("cut.png", _truncated_png(), 400, STOPS_EARLY),
+    ("huge.png", _bomb_png(), 413, "Image is too large to process safely. Try a smaller image."),
+], ids=["not-an-image", "cut-off", "bomb"])
+def test_make_collage_says_what_is_wrong_with_a_picture_and_names_no_temp_file(quiet_client, name, data, status, detail):
+    files = [("files", ("good.png", _png(), "image/png")), ("files", (name, data, "image/png"))]
+    response = quiet_client.post("/api/make-collage", files=files)
+    assert response.status_code == status, response.text
+    assert response.json()["detail"] == detail
+    assert "upload_" not in response.text
+
+
+def test_make_collage_still_makes_a_collage(quiet_client):
+    files = [("files", ("a.png", _png(), "image/png")), ("files", ("b.png", _png(), "image/png"))]
+    response = quiet_client.post("/api/make-collage", files=files)
+    assert response.status_code == 200, response.text
+    assert response.content[:3] == b"\xff\xd8\xff"

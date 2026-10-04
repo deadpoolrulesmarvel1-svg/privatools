@@ -122,7 +122,7 @@ def test_ffmpeg_out_of_time_answers_504_and_leaves_no_partial_output(quiet_clien
     ("/api/pdf-to-svg", {}),
 ])
 @pytest.mark.parametrize("sample,detail", [
-    (b"%PDF-1.7\n", "This PDF appears to be corrupt or invalid."),
+    (b"%PDF-1.7\n1 0 obj\n", "This PDF appears to be corrupt or invalid."),
     (_zero_page_pdf(), "This PDF has no pages."),
 ], ids=["header-only", "no-pages"])
 def test_a_pdf_these_tools_cannot_use_is_a_400_that_says_why(quiet_client, route, data, sample, detail):

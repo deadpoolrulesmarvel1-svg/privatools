@@ -110,7 +110,7 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     if (m.includes("empty") && (m.includes("file") || m.includes("pdf"))) {
         return "That file is empty (0 bytes). Pick a different file.";
     }
-    if (m.includes("no pages") || m.includes("zero pages")) {
+    if (m.includes("no pages")) {
         return "This PDF has no pages. Pick a different file.";
     }
 
@@ -120,6 +120,11 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     if ((m.includes("page range") && (m.includes("invalid") || m.includes("malformed") || m.includes("syntax")))
         || m.includes("invalid page number")) {
         return "That page range isn't valid. Use formats like \"1-3, 5, 7-end\".";
+    }
+    // "Page range ',' selected zero pages." (utils/page_range.py): the range,
+    // not the PDF, has no pages in it.
+    if (m.includes("page range") && m.includes("zero pages")) {
+        return "That page range doesn't select any pages. Use formats like \"1-3, 5, 7-end\".";
     }
     if (m.includes("page out of range") || m.includes("invalid page") || m.includes("page number")) {
         return "One of the page numbers is outside this PDF. Check the page count and try again.";

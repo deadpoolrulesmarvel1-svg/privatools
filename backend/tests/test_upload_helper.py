@@ -14,6 +14,11 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.app.utils.upload_helper import process_pdf_upload
 
 
+# A PDF header and the start of its first object: what the shared sniff
+# (validate_pdf_content) takes for a PDF.
+PDF_HEAD = b"%PDF-1.4\n1 0 obj\n"
+
+
 class _FakeUpload:
     def __init__(self, data: bytes, filename: str = "x.pdf"):
         self.filename = filename
@@ -40,7 +45,7 @@ def test_rejects_non_pdf_content_early():
 def test_happy_path_returns_fileresponse(tmp_path):
     out = tmp_path / "out.pdf"
     out.write_bytes(b"%PDF-1.4 result")
-    up = _FakeUpload(b"%PDF-1.4\n" + b"x" * 200)
+    up = _FakeUpload(PDF_HEAD + b"x" * 200)
 
     def run(inp: str) -> str:
         # the streamed input is a real PDF-headed temp file
@@ -54,7 +59,7 @@ def test_happy_path_returns_fileresponse(tmp_path):
 
 
 def test_run_httpexception_passes_through_and_cleans():
-    up = _FakeUpload(b"%PDF-1.4\n" + b"x" * 200)
+    up = _FakeUpload(PDF_HEAD + b"x" * 200)
     seen: dict[str, str] = {}
 
     def run(inp: str):
@@ -69,7 +74,7 @@ def test_run_httpexception_passes_through_and_cleans():
 
 
 def test_unexpected_error_becomes_generic_500_and_cleans():
-    up = _FakeUpload(b"%PDF-1.4\n" + b"x" * 200)
+    up = _FakeUpload(PDF_HEAD + b"x" * 200)
     seen: dict[str, str] = {}
 
     def run(inp: str):
