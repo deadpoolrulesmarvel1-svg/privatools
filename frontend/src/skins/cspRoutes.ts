@@ -7,12 +7,13 @@
 export const CSP_TRANSFORMER_PATHS = [
   "/ai", "/tool/summarize-pdf", "/tool/smart-redact", "/tool/translate-pdf",
   "/tools/remove-background", "/tools/transcribe-audio", "/tools/subtitle-generator",
+  "/tools/subtitle-translator",
 ] as const;
 export const CSP_OCR_PATHS = ["/tool/ocr-pdf", "/tools/image-ocr"] as const;
 export const CSP_BYOK_PATHS = [
   "/tool/summarize-pdf", "/tool/smart-redact", "/tool/chat-with-pdf",
   "/tool/translate-pdf", "/tools/transcribe-audio", "/tool/ocr-pdf", "/tools/image-ocr",
-  "/tools/ai-token-counter",
+  "/tools/ai-token-counter", "/tools/subtitle-translator",
 ] as const;
 
 const transformers = new Set<string>(CSP_TRANSFORMER_PATHS);

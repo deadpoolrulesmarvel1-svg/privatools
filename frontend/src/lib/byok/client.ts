@@ -10,7 +10,7 @@
 import { ByokError, classifyHttpStatus, type RequestContext } from "./errors";
 import {
     buildCountTokensRequest, buildRequest, buildTranscribeRequest, parseCountTokensResponse, parseResponse, parseTranscribeResponse,
-    providerById, stoppedShort, supportsTokenCount, supportsTranscription, transcriptionProviderNames, type Message, type Provider,
+    providerById, reachedLengthLimit, stoppedShort, supportsTokenCount, supportsTranscription, transcriptionProviderNames, type Message, type Provider,
 } from "./providers";
 import { redact, registerSecret } from "./redact";
 
@@ -22,6 +22,12 @@ export interface CompleteArgs {
     baseUrl?: string;
     maxTokens?: number;
     signal?: AbortSignal;
+    /**
+     * Refuse an answer an OpenAI-shaped provider or Gemini stopped at its
+     * output limit, as Claude's always is, rather than return the part
+     * written. For callers that check every line of an answer.
+     */
+    refuseCutOff?: boolean;
 }
 
 export async function complete(args: CompleteArgs): Promise<string> {
@@ -74,6 +80,13 @@ export async function complete(args: CompleteArgs): Promise<string> {
             "TooLong",
             "answer stopped at its length limit",
             "Claude stopped before finishing its answer: it reached the length limit for one request, and the model's thinking counts toward that limit. The unfinished answer is left out. Ask for less at once, such as a shorter document or a narrower question.",
+        );
+    }
+    if (args.refuseCutOff && reachedLengthLimit(provider, json)) {
+        throw new ByokError(
+            "TooLong",
+            "answer stopped at its length limit",
+            `${provider.label} stopped before finishing its answer: it reached the length limit for one request. The unfinished answer is left out. Ask for less at once.`,
         );
     }
     const text = parseResponse(provider, json);

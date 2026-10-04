@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, providerById, stoppedShort, supportsTranscription, transcriptionProviderNames } from "./providers";
+import { PROVIDERS, buildRequest, buildTranscribeRequest, parseResponse, providerById, reachedLengthLimit, stoppedShort, supportsTranscription, transcriptionProviderNames } from "./providers";
 
 /**
  * Where each provider serves its API, from its own documentation. Checked on
@@ -299,6 +299,21 @@ describe("stoppedShort", () => {
 
   it("reads only Anthropic's field", () => {
     expect(stoppedShort(providerById("openai")!, { stop_reason: "refusal" })).toBeUndefined();
+  });
+});
+
+describe("reachedLengthLimit", () => {
+  it("reads an OpenAI-shaped finish_reason and Gemini's finishReason", () => {
+    expect(reachedLengthLimit(providerById("openai")!, { choices: [{ message: { content: "Half" }, finish_reason: "length" }] })).toBe(true);
+    expect(reachedLengthLimit(providerById("groq")!, { choices: [{ message: { content: "All" }, finish_reason: "stop" }] })).toBe(false);
+    expect(reachedLengthLimit(providerById("gemini")!, { candidates: [{ content: { parts: [{ text: "Half" }] }, finishReason: "MAX_TOKENS" }] })).toBe(true);
+    expect(reachedLengthLimit(providerById("gemini")!, { candidates: [{ finishReason: "STOP" }] })).toBe(false);
+  });
+
+  it("leaves Claude's stop to stoppedShort, and a body that says nothing alone", () => {
+    expect(reachedLengthLimit(providerById("anthropic")!, { stop_reason: "max_tokens" })).toBe(false);
+    expect(reachedLengthLimit(providerById("openai")!, null)).toBe(false);
+    expect(reachedLengthLimit(providerById("openai")!, {})).toBe(false);
   });
 });
 

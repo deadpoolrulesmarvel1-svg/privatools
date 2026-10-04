@@ -186,6 +186,34 @@ describe("when Claude stops short", () => {
   });
 });
 
+/**
+ * OpenAI-shaped providers and Gemini send an answer cut off at max_tokens
+ * as an ordinary 200. Pages that read every line of an answer (Subtitle
+ * Translator) ask complete() to refuse it; the other pages are unchanged.
+ */
+describe("an answer cut off at its output limit", () => {
+  const cut = { choices: [{ message: { content: "[1] Uno\n[2] Do" }, finish_reason: "length" }] };
+
+  it("is refused when the caller asks", async () => {
+    mockFetch(200, cut);
+    const e = await complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "m", messages: [], refuseCutOff: true }).catch(error => error as ByokError);
+    expect(e).toMatchObject({ name: "ByokError", kind: "TooLong" });
+    expect((e as ByokError).userMessage).toMatch(/^OpenAI stopped before finishing its answer/);
+    expect(friendlyError((e as ByokError).userMessage)).toBe((e as ByokError).userMessage);
+  });
+
+  it("is refused from Gemini too", async () => {
+    mockFetch(200, { candidates: [{ content: { parts: [{ text: "Half" }] }, finishReason: "MAX_TOKENS" }] });
+    await expect(complete({ providerId: "gemini", apiKey: "dummy-gemini-value", model: "m", messages: [], refuseCutOff: true }))
+      .rejects.toMatchObject({ kind: "TooLong" });
+  });
+
+  it("is still returned to callers that don't ask, as before", async () => {
+    mockFetch(200, cut);
+    await expect(complete({ providerId: "openai", apiKey: "sk-dummy-value", model: "m", messages: [] })).resolves.toBe("[1] Uno\n[2] Do");
+  });
+});
+
 it("does not present an empty successful HTTP response as an AI answer", async () => {
   mockFetch(200, {choices:[]});
   await expect(complete({providerId:'openai-compatible', apiKey:'synthetic-local',model:'missing-model',baseUrl:'http://localhost:11434',messages:[]})).rejects.toMatchObject({userMessage:expect.stringMatching(/returned no answer/)});

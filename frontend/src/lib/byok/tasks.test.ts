@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { summarizeWithByok, MAX_CHARS_PER_CALL } from "./tasks";
+import { summarizeWithByok, MAX_CHARS_PER_CALL, NumberedReplyError, translateLinesWithByok } from "./tasks";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -111,6 +111,51 @@ describe("summarizeWithByok", () => {
   it("refuses empty input instead of paying for a pointless call", async () => {
     const f = mockOk("x");
     await expect(summarizeWithByok({ ...ARGS, text: "   ", length: "medium" })).rejects.toThrow();
+    expect(f).not.toHaveBeenCalled();
+  });
+});
+
+describe("translateLinesWithByok", () => {
+  const LINES = ["When I was young,", "my father took me", "- Are you coming?"];
+  const ARGS_LINES = { ...ARGS, targetLanguage: "Spanish", lines: LINES };
+
+  it("sends the lines numbered inside a fresh fence, and returns one translation per line", async () => {
+    const f = mockOk("[1] Cuando era joven,\n[2] mi padre me llevó\n[3] - ¿Vienes?");
+    const out = await translateLinesWithByok(ARGS_LINES);
+    expect(out).toEqual(["Cuando era joven,", "mi padre me llevó", "- ¿Vienes?"]);
+    const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+    const id = body.system.match(/<<<DOCUMENT ([0-9a-f]{16})>>>/)?.[1];
+    expect(id).toBeTruthy();
+    expect(body.system).toMatch(/Translate into Spanish\.$/);
+    expect(body.system).toMatch(/never merge two lines, split one, skip a number or add one/);
+    const turn = body.messages[0].content as string;
+    expect(turn).toBe(`<<<DOCUMENT ${id} — 3 subtitle lines>>>\n[1] When I was young,\n[2] my father took me\n[3] - Are you coming?\n<<<END DOCUMENT ${id}>>>`);
+  });
+
+  it("draws a fresh fence for every call", async () => {
+    const f = mockOk("[1] a\n[2] b\n[3] c");
+    await translateLinesWithByok(ARGS_LINES);
+    await translateLinesWithByok(ARGS_LINES);
+    const idOf = (i: number) => JSON.parse((f.mock.calls[i][1] as RequestInit).body as string).system.match(/<<<DOCUMENT ([0-9a-f]{16})>>>/)?.[1];
+    expect(idOf(0)).not.toBe(idOf(1));
+  });
+
+  it("refuses a reply whose numbers don't match, rather than shifting lines", async () => {
+    mockOk("[1] Cuando era joven, mi padre me llevó\n[2] - ¿Vienes?");
+    await expect(translateLinesWithByok(ARGS_LINES)).rejects.toBeInstanceOf(NumberedReplyError);
+  });
+
+  it("refuses an answer an OpenAI-shaped provider cut off at its output limit", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => ({ choices: [{ message: { content: "[1] Cuando era joven,\n[2] mi padre me llevó\n[3] - ¿Vie" }, finish_reason: "length" }] }),
+    } as unknown as Response);
+    await expect(translateLinesWithByok({ ...ARGS_LINES, providerId: "groq" })).rejects.toMatchObject({ name: "ByokError", kind: "TooLong" });
+  });
+
+  it("sends nothing for no lines", async () => {
+    const f = mockOk("x");
+    await expect(translateLinesWithByok({ ...ARGS_LINES, lines: [] })).resolves.toEqual([]);
     expect(f).not.toHaveBeenCalled();
   });
 });

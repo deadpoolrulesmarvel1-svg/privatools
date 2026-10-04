@@ -2,7 +2,7 @@
 
 This optional reference describes public product content. It contains no account records, uploads, or API credentials. It does not guarantee inclusion in any AI answer or search result.
 
-PrivaTools offers 225 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
+PrivaTools offers 226 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
 ## Processing and accounts
 
@@ -1044,6 +1044,14 @@ URL: https://privatools.me/tools/subtitle-generator
 Turn the speech in a video or recording into subtitles
 
 Generate subtitles from a video or audio file in your browser. Whisper, an open speech-recognition model, listens on your device and writes timed captions of up to two lines; you read and correct them while the video plays, then download SRT or VTT. Nothing is uploaded: the first run downloads the model, about 74 MB for Base or 41 MB for Tiny, and your browser keeps it. It works best on clear speech; music, people talking over each other and strong accents cause mistakes. Files can hold up to 3 hours of sound.
+
+### Subtitle Translator
+
+URL: https://privatools.me/tools/subtitle-translator
+
+Translate SRT or VTT subtitles into another language
+
+Translate an SRT or VTT subtitle file into another language in your browser. Every cue keeps its number and timing: consecutive cues are translated together as the sentences they form, then shared back across the same cues and wrapped to two lines. Translate on this device with an OPUS-MT model, English into 19 languages or 24 languages into English, about 107 MB for each language pair, downloaded once; or with your own AI key for any pair, when the text goes to your provider, not to PrivaTools. Check each line beside the original, correct any of them, then download SRT or VTT. The result is a machine translation.
 
 ### JSON / XML Formatter
 

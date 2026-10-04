@@ -113,6 +113,7 @@ const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/Multi
 const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
 const LazyTranscribeAudioUI = lazyNamed(() => import("@/components/tool-ui/TranscribeAudioUI"), "TranscribeAudioUI");
 const LazySubtitleGeneratorUI = lazyNamed(() => import("@/components/tool-ui/SubtitleGeneratorUI"), "SubtitleGeneratorUI");
+const LazySubtitleTranslatorUI = lazyNamed(() => import("@/components/tool-ui/SubtitleTranslatorUI"), "SubtitleTranslatorUI");
 const LazyImageUpscalerUI   = lazyNamed(() => import("@/components/tool-ui/ImageUpscalerUI"), "ImageUpscalerUI");
 const LazyAiTokenCounterUI  = lazyNamed(() => import("@/components/tool-ui/AiTokenCounterUI"), "AiTokenCounterUI");
 
@@ -218,6 +219,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "audio-converter":    return <LazyAudioConverterUI />;
     case "transcribe-audio":   return <LazyTranscribeAudioUI />;
     case "subtitle-generator": return <LazySubtitleGeneratorUI />;
+    case "subtitle-translator": return <LazySubtitleTranslatorUI />;
     case "image-upscaler":     return <LazyImageUpscalerUI />;
     case "ai-token-counter":   return <LazyAiTokenCounterUI />;
     case "audio-merge":
