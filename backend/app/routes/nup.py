@@ -16,6 +16,7 @@ from ..utils.cleanup import (
 )
 from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -169,6 +170,8 @@ async def nup(
             [output_path] if output_path else []
         )
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:
             raise HTTPException(

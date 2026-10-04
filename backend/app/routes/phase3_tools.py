@@ -27,6 +27,7 @@ from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
+from ..utils.pdf_errors import pdf_read_error
 from ..utils.route_helpers import (
     MAX_SIZE, cleanup_on_error, read_upload, safe_header_filename, safe_stem, stream_upload_to_disk,
 )
@@ -158,6 +159,8 @@ async def pdf_to_markdown(
         # gives each its status and message.
         raise
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("pdf-to-markdown error")
         raise HTTPException(status_code=500, detail="Conversion failed") from exc
     finally:

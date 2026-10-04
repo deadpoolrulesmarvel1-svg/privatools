@@ -37,6 +37,7 @@ from ..utils.cleanup import (
 )
 from ..utils.route_helpers import stream_upload_to_disk
 from ..utils.concurrency import run_bounded
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -90,10 +91,12 @@ async def split_in_half_endpoint(
         if output_path:
             remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         remove_files(str(temp_path))
         if output_path:
             remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("split-in-half failed")
         raise HTTPException(status_code=500, detail="Processing failed")
 
@@ -150,10 +153,12 @@ async def highlight_endpoint(
         if output_path:
             remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         remove_files(str(temp_path))
         if output_path:
             remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("highlight failed")
         raise HTTPException(status_code=500, detail="Highlighting failed")
 
@@ -192,10 +197,12 @@ async def pdf_to_svg_endpoint(file: UploadFile = File(...)):
         if output_path:
             remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         remove_files(str(temp_path))
         if output_path:
             remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("pdf-to-svg failed")
         raise HTTPException(status_code=500, detail="Conversion failed")
 
@@ -263,10 +270,12 @@ async def smart_redact_endpoint(
         if output_path:
             remove_files(output_path)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         remove_files(str(temp_path))
         if output_path:
             remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("smart-redact failed")
         raise HTTPException(status_code=500, detail="Redaction failed")
 
@@ -674,8 +683,10 @@ async def pdf_to_long_image_endpoint(
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
         raise
-    except Exception:
+    except Exception as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("pdf-to-long-image failed")
         raise HTTPException(status_code=500, detail="Could not build the long image")

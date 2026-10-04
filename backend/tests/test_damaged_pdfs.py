@@ -163,16 +163,26 @@ def test_process_pdf_rebuilds_a_repaired_file_only_after_a_library_failure():
 
     def library_failure(doc):
         seen.append(len(doc))
-        raise RuntimeError("something else")
+        doc.xref_object(10**7)  # PyMuPDF's own RuntimeError, "bad xref"
 
     with pytest.raises(PdfCorruptError, match="damaged"):
         process_pdf(damaged, library_failure)
     assert seen == [3, 2]  # once more on qpdf's rebuild, then refused as damaged
 
     seen.clear()
-    with pytest.raises(RuntimeError, match="something else"):
+    with pytest.raises(RuntimeError, match="bad xref"):
         process_pdf(_whole(2), library_failure)
     assert seen == [2]  # an intact file is never retried
+
+    seen.clear()
+
+    def own_failure(doc):
+        seen.append(len(doc))
+        raise RuntimeError("the tool's own fault")
+
+    with pytest.raises(RuntimeError, match="the tool's own fault"):
+        process_pdf(damaged, own_failure)
+    assert seen == [3]  # not PyMuPDF's: never retried nor called damage
 
     seen.clear()
 

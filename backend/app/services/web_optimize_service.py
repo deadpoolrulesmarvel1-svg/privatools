@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import asyncio
 
+import pikepdf
+
 from ..utils.exceptions import (
     ExternalToolError,
     ProcessingError,
@@ -20,9 +22,23 @@ from ..utils.filenames import temp_output
 QPDF_TIMEOUT = 60  # seconds
 
 
+def _check_readable(input_path: str) -> None:
+    """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read.
+
+    qpdf answers such a file with exit status 2, which it also gives a disk or
+    permission fault, so its status cannot say whose the failure was. Its
+    library, through pikepdf, says it by type, and the route's catch-all
+    answers that with the standard 400 (utils.pdf_errors). An intact file only
+    has its cross-reference table read twice.
+    """
+    with pikepdf.open(input_path):
+        pass
+
+
 async def web_optimize(input_path: str) -> str:
     output_path = temp_output("weboptim", "pdf")
 
+    await asyncio.to_thread(_check_readable, input_path)
     proc = await asyncio.create_subprocess_exec(
         "qpdf",
         "--linearize",

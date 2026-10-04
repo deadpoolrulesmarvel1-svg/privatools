@@ -86,3 +86,37 @@ def test_unexpected_error_becomes_generic_500_and_cleans():
     assert ei.value.status_code == 500
     assert "secret" not in ei.value.detail.lower()
     assert not Path(seen["inp"]).exists()
+
+
+def test_a_pdf_the_service_cannot_read_is_a_400_in_the_standard_words_and_cleans():
+    import pikepdf
+
+    up = _FakeUpload(PDF_HEAD + b"x" * 200)
+    seen: dict[str, str] = {}
+
+    def run(inp: str):
+        seen["inp"] = inp
+        return pikepdf.open(inp)  # header and filler: qpdf cannot read it
+
+    with pytest.raises(HTTPException) as ei:
+        asyncio.run(process_pdf_upload(up, run, output_filename="o.pdf"))
+    assert ei.value.status_code == 400
+    assert ei.value.detail == "This PDF appears to be corrupt or invalid."
+    assert not Path(seen["inp"]).exists()
+
+
+def test_a_tool_error_passes_through_with_its_own_status_and_cleans():
+    from backend.app.utils.exceptions import ToolError, ValidationError
+
+    up = _FakeUpload(PDF_HEAD + b"x" * 200)
+    seen: dict[str, str] = {}
+
+    def run(inp: str):
+        seen["inp"] = inp
+        raise ValidationError("This PDF has no pages.")
+
+    with pytest.raises(ToolError) as ei:
+        asyncio.run(process_pdf_upload(up, run, output_filename="o.pdf"))
+    assert ei.value.status_code == 400
+    assert ei.value.detail == "This PDF has no pages."
+    assert not Path(seen["inp"]).exists()

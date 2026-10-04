@@ -27,6 +27,7 @@ from ..utils.cleanup import (
     remove_files,
     validate_pdf_content,
 )
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -60,6 +61,8 @@ async def web_optimize_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("web-optimize failed")
         raise HTTPException(status_code=500, detail=f"Web-optimize failed: {e}")
 
@@ -101,6 +104,8 @@ async def split_by_text_endpoint(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("split-by-text failed")
         raise HTTPException(status_code=500, detail=f"Split-by-text failed: {e}")
 
@@ -125,11 +130,13 @@ async def pdf_to_html_endpoint(file: UploadFile = File(...)):
             media_type="text/html",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except Exception as e:
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("pdf-to-html failed")
         raise HTTPException(status_code=500, detail=f"pdf-to-html failed: {e}")
 
@@ -154,11 +161,13 @@ async def pdf_to_rtf_endpoint(file: UploadFile = File(...)):
             media_type="application/rtf",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except Exception as e:
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("pdf-to-rtf failed")
         raise HTTPException(status_code=500, detail=f"pdf-to-rtf failed: {e}")
 

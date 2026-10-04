@@ -28,6 +28,7 @@ from ..services import (
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.exceptions import ToolError
 from ..utils.route_helpers import read_upload, cleanup_on_error, pdf_page_count, require_item_pages, MAX_SIZE
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -170,11 +171,13 @@ async def whiteout_pdf(
         out = await asyncio.to_thread(whiteout_service.whiteout_pdf, str(temp), region_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="whiteout.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("whiteout error")
         raise HTTPException(status_code=500, detail="White-out failed")
 
@@ -210,11 +213,13 @@ async def add_attachment(
         out = await asyncio.to_thread(attachment_service.add_attachment, str(temp_pdf), str(temp_att), safe_attachment_name)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), str(temp_att), out)
         return FileResponse(out, filename="with_attachment.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp_pdf, temp_att, out)
         raise
     except Exception as e:
         _cleanup_on_error(temp_pdf, temp_att, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("attachment error")
         raise HTTPException(status_code=500, detail="Attachment failed")
 
@@ -260,6 +265,8 @@ async def set_permissions(
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("permissions error")
         raise HTTPException(status_code=500, detail="Permission setting failed")
 
@@ -345,11 +352,13 @@ async def annotate_pdf(
         out = await asyncio.to_thread(annotate_service.annotate_pdf, str(temp), ann_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="annotated.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("annotate error")
         raise HTTPException(status_code=500, detail="Annotation failed")
 
@@ -377,11 +386,13 @@ async def add_shapes(
         out = await asyncio.to_thread(shapes_service.add_shapes, str(temp), shape_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="shapes.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("shapes error")
         raise HTTPException(status_code=500, detail="Shape addition failed")
 

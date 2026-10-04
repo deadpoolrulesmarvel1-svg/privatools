@@ -3,6 +3,7 @@ import math
 import fitz  # PyMuPDF
 
 from ..utils.colors import hex_to_rgb_float
+from ..utils.cleanup import process_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_space import drawing_unturned
 
@@ -25,8 +26,7 @@ def add_shapes(input_path: str, shapes: list) -> str:
     """
     output_path = temp_output("shapes", "pdf")
 
-    doc = fitz.open(input_path)
-    try:
+    def draw(doc: fitz.Document) -> None:
         for s in shapes:
             pg_num = int(s.get("page", 1))
             pg_idx = pg_num - 1
@@ -37,8 +37,11 @@ def add_shapes(input_path: str, shapes: list) -> str:
                 _draw_shape(page, s)
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    process_pdf(input_path, draw, rebuild=False)
     return str(output_path)
 
 

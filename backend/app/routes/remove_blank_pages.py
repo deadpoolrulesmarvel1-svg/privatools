@@ -18,6 +18,7 @@ from ..utils.cleanup import (
 from ..utils.page_removal import WorkBudget, remove_pages
 from ..utils.route_helpers import safe_stem
 from ..utils.render import safe_get_pixmap
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -146,6 +147,8 @@ async def remove_blank_pages(
     except Exception as exc:
         if out_path:
             remove_files(out_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /remove-blank-pages")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

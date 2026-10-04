@@ -4,6 +4,7 @@ import difflib
 import fitz  # PyMuPDF
 from PIL import Image, ImageChops
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.colors import hex_to_rgb_int
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
@@ -19,7 +20,7 @@ _MAX_DIFF_LINES = 10_000
 def compare_text(path1: str, path2: str) -> dict:
     def extract_text(path):
         pages = []
-        doc = fitz.open(path)
+        doc = open_pdf_document(path)
         try:
             for page in doc:
                 pages.append(page.get_text("text") or "")
@@ -70,13 +71,13 @@ def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> 
     # produces *some* highlight rather than a no-op overlay.
     color = hex_to_rgb_int(highlight_color, default=(255, 0, 0))
 
-    # Open both INSIDE the try with None sentinels: if fitz.open(path2) raises
+    # Open both INSIDE the try with None sentinels: if opening path2 raises
     # (path2 is a user upload that only passed a 5-byte %PDF prefix check),
     # doc1 was already open and would otherwise leak its file handle/mmap.
     doc1 = doc2 = None
     try:
-        doc1 = fitz.open(path1)
-        doc2 = fitz.open(path2)
+        doc1 = open_pdf_document(path1)
+        doc2 = open_pdf_document(path2)
         max_pages = max(len(doc1), len(doc2))
         # Hard cap to prevent OOM on very long PDFs — visual compare past ~50
         # pages is rarely useful and would tie up the worker for minutes.

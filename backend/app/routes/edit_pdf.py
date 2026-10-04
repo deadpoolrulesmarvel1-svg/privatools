@@ -8,8 +8,10 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import pdf_page_count, require_item_pages
 from ..services import edit_pdf_service
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -129,12 +131,14 @@ async def edit_pdf(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
     except Exception as e:
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

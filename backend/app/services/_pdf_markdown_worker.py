@@ -778,6 +778,11 @@ def ruled_tables(page: fitz.Page, pieces: list[Piece], frame: Frame, regions: li
             tables += page.find_tables(clip=clip, strategy="lines").tables
         except Exception:  # noqa: BLE001 - a region the finder cannot read keeps its text
             continue
+        finally:
+            # find_tables can fail after turning PyMuPDF's process-wide
+            # small_glyph_heights switch on (backend/app/utils/tables.py); the
+            # rest of this file is read with it off.
+            fitz.TOOLS.set_small_glyph_heights(False)
     out = []
     for table in tables:
         if table.row_count < 2 or table.col_count < 2:
@@ -2428,8 +2433,22 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001 - the caller logs a failure
         if _is_memory(exc):
             _emit({"ok": False, "error": "too_large"})
+        # The library failing on a file MuPDF had to repair, as when it cannot
+        # count the pages of a file cut short after its page list: damage, as
+        # utils.cleanup.process_pdf calls it in the web process.
+        if _damage(doc, exc):
+            _emit({"ok": False, "error": "corrupt"})
         _emit({"ok": False, "error": "failed"}, 1)
     _emit({"ok": True, **report})
+
+
+def _damage(doc: fitz.Document, exc: Exception) -> bool:
+    if not isinstance(exc, (RuntimeError, ValueError, fitz.mupdf.FzErrorBase)):
+        return False
+    try:
+        return bool(doc.is_repaired)
+    except Exception:  # noqa: BLE001 - a document that cannot even say is not called damaged
+        return False
 
 
 if __name__ == "__main__":

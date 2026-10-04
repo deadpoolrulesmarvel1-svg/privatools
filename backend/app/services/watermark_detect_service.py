@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-import fitz
+from ..utils.cleanup import open_pdf_document
 
 # A span must appear on at least this share of pages to count as repeated.
 _REPEAT_RATIO = 0.8
@@ -114,7 +114,7 @@ def _label(group: dict, page_count: int) -> str:
 
 def detect_watermarks(input_path: str) -> dict[str, Any]:
     """Return watermark candidates. Never deletes anything."""
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         page_count = len(doc)
         if page_count == 0:

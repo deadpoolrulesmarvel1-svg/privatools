@@ -4,6 +4,7 @@ import os
 import fitz  # PyMuPDF
 
 from ..utils.exceptions import ValidationError
+from ..utils.cleanup import process_pdf
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
@@ -40,10 +41,13 @@ def add_attachment(
         "attachment.add ext=%s size=%d",
         ext.lower() or "<none>", len(data),
     )
-    doc = fitz.open(input_path)
-    try:
+
+    def attach(doc: fitz.Document) -> None:
         doc.embfile_add(safe_name, data, filename=safe_name)
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    process_pdf(input_path, attach, rebuild=False)
     return str(output_path)

@@ -10,6 +10,7 @@ from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..utils.exceptions import ValidationError
 from ..services import fill_form_service
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -45,6 +46,8 @@ async def get_fields(file: UploadFile = File(...)):
     except Exception as exc:
         if temp_path is not None:
             remove_files(str(temp_path))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         # Older service errors used plain strings; keep the back-compat path
         # so a "no form field" string also degrades to an empty list.
         if "no form field" in str(exc).lower():
@@ -108,6 +111,8 @@ async def fill_form(file: UploadFile = File(...), field_values: str = Form(...))
             remove_files(str(temp_path))
         if output_path:
             remove_files(output_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         # Some services still raise bare ValueError("no form field")
         if "no form field" in str(exc).lower():
             raise HTTPException(status_code=400, detail=str(exc))

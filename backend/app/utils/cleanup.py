@@ -377,12 +377,19 @@ def open_pdf_document(source: str | bytes):
 
     from .exceptions import PdfCorruptError, PdfEncryptedError, ValidationError
 
+    from .pdf_errors import pdf_read_error
+
     try:
         if isinstance(source, (bytes, bytearray)):
             doc = fitz.open(stream=source, filetype="pdf")
         else:
             doc = fitz.open(source)
     except fitz.FileDataError as exc:
+        # PyMuPDF raises FileDataError for a file it could not read from the
+        # disk too (permission, a directory): only MuPDF's error under it, or
+        # an empty file, says the file is at fault.
+        if pdf_read_error(exc) is None and not isinstance(exc, fitz.EmptyFileError):
+            raise
         raise PdfCorruptError() from exc
     if doc.needs_pass:
         doc.close()
@@ -412,6 +419,19 @@ def _library_errors() -> tuple[type[BaseException], ...]:
     import fitz  # PyMuPDF
 
     return (RuntimeError, ValueError, fitz.mupdf.FzErrorBase)
+
+
+def _raised_by_pymupdf(exc: BaseException) -> bool:
+    """Whether PyMuPDF raised `exc`: one of MuPDF's errors, or a RuntimeError
+    or ValueError raised inside pymupdf. The same types raised by the tool's
+    own code, such as float() of a value from the request, are the tool's
+    error even on a file MuPDF had to repair: a valid file with an offset
+    wrong (pdfunite's output, junk before the header) opens repaired too."""
+    import fitz  # PyMuPDF
+
+    from .images import _raised_in
+
+    return isinstance(exc, fitz.mupdf.FzErrorBase) or _raised_in(exc, "pymupdf")
 
 
 def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
@@ -451,7 +471,7 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     try:
         return work(doc)
     except library_errors as exc:
-        if not doc.is_repaired:
+        if not doc.is_repaired or not _raised_by_pymupdf(exc):
             raise
         failure = exc  # damage MuPDF's repair left behind: one more run on qpdf's rebuild
     finally:
@@ -468,6 +488,8 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     try:
         return work(doc)
     except library_errors as exc:  # the rebuild did not help
+        if not _raised_by_pymupdf(exc):
+            raise
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     finally:
         doc.close()

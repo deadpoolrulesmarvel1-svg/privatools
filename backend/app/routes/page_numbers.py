@@ -13,7 +13,9 @@ from ..utils.cleanup import (
     remove_files,
     validate_pdf_content,
 )
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -72,7 +74,7 @@ async def add_page_numbers(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
             [output_path] if output_path else []
         )
@@ -83,6 +85,8 @@ async def add_page_numbers(
             [output_path] if output_path else []
         )
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /page-numbers")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

@@ -15,11 +15,11 @@ import time
 import uuid
 from typing import Any
 
-import fitz
 from openpyxl import Workbook
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
 from ..utils.exceptions import ToolTimeoutError
+from ..utils.tables import find_tables
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def _extract_page(page) -> dict[str, Any]:
     """
     out: dict[str, Any] = {"tables": [], "lines": []}
     try:
-        tables = page.find_tables()
+        tables = find_tables(page)  # the shared glyph-height switch left off (utils.tables)
         if tables and len(tables.tables) > 0:
             out["tables"] = [t.extract() for t in tables.tables]
             return out
@@ -49,7 +49,7 @@ def _extract_page(page) -> dict[str, Any]:
 
 def _build_workbook(input_path: str) -> tuple[str, bool]:
     """Synchronous workbook build. Returns (output_path, found_anything)."""
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         page_count = len(doc)
 

@@ -10,6 +10,20 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.26] — 2026-10-04 — Smart Redact on scanned pages, and damaged PDFs on every tool
+
+### Privacy
+
+- Smart Redact could leave part of a secret visible on a scanned page whose hidden text layer runs upside down. This happened if PDF Table Extractor or PDF to Excel was running on the server at the same moment, or had earlier failed on a damaged file: those tools change a setting inside the PDF library that Smart Redact shares. They now never run at the same time as Smart Redact, and the setting can't be left behind. If you used Smart Redact on scanned pages before this release, check that each redacted area is fully covered. (#340)
+
+### Tools
+
+- Every PDF tool says "This PDF is damaged…" for a PDF cut short, by an interrupted download for example, and asks for the password for a locked one, instead of "Processing failed. Please try again." 49 tools answered a cut-short PDF that way, and 29 a locked one. (#340)
+
+### For API users
+
+- PDF routes answer 400 for a cut-short PDF, and 400 with the password message for a locked one, where they answered 500. On the v1 API these move from 500 `processing_failed` to 400 `invalid_request`, and the units charged are unchanged. (#340)
+
 ## [2.7.25] — 2026-10-04 — Damaged PDFs named as damaged, and PDF Table Extractor fixed
 
 ### Tools

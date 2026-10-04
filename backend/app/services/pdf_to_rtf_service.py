@@ -7,8 +7,7 @@ encoded as \\uN escapes per the RTF spec.
 
 from __future__ import annotations
 
-import fitz  # PyMuPDF
-
+from ..utils.cleanup import open_pdf_document
 from ..utils.filenames import temp_output
 
 
@@ -46,7 +45,7 @@ def _escape_rtf(text: str) -> str:
 def pdf_to_rtf(input_path: str) -> str:
     output_path = temp_output("pdf_rtf", "rtf")
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         page_blocks: list[str] = []
         for i, page in enumerate(doc):

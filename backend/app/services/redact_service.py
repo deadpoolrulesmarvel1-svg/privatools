@@ -15,6 +15,7 @@ import math
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import process_pdf
 from ..utils.colors import hex_to_rgb_float
 from ..utils.filenames import temp_output
 from ..utils.page_space import drawing_unturned, settle_rotation
@@ -112,8 +113,8 @@ def redact_pdf(
     total = 0
     uncoded = 0
 
-    doc = fitz.open(input_path)
-    try:
+    def redact(doc: fitz.Document) -> None:
+        nonlocal total, uncoded
         page_count = len(doc)
 
         for pg_idx in sorted(by_page):
@@ -168,8 +169,11 @@ def redact_pdf(
             })
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    process_pdf(input_path, redact, rebuild=False)
 
     report = {
         "totalRedactions": total,

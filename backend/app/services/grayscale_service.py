@@ -16,6 +16,7 @@ from pikepdf.exceptions import (
     UnsupportedImageTypeError,
 )
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.filenames import temp_output
 from ..utils.render import safe_get_pixmap
 
@@ -212,7 +213,7 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
 
 def _raster_grayscale(input_path: str, output_path: str) -> str:
     """Fallback: rasterize at 200 DPI for guaranteed grayscale."""
-    src = fitz.open(input_path)
+    src = open_pdf_document(input_path)  # a locked, unreadable or pageless PDF: its 400
     dst = fitz.open()
     try:
         for page in src:
