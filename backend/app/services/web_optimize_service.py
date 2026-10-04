@@ -12,10 +12,13 @@ import asyncio
 
 import pikepdf
 
+from ..utils.cleanup import NO_PAGES_MESSAGE
 from ..utils.exceptions import (
     ExternalToolError,
+    PdfCorruptError,
     ProcessingError,
     ToolTimeoutError,
+    ValidationError,
 )
 from ..utils.filenames import temp_output
 
@@ -23,16 +26,35 @@ QPDF_TIMEOUT = 60  # seconds
 
 
 def _check_readable(input_path: str) -> None:
-    """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read.
+    """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read,
+    and ValidationError for one with no page.
 
     qpdf answers such a file with exit status 2, which it also gives a disk or
     permission fault, so its status cannot say whose the failure was. Its
     library, through pikepdf, says it by type, and the route's catch-all
-    answers that with the standard 400 (utils.pdf_errors). An intact file only
-    has its cross-reference table read twice.
+    answers that with the standard 400 (utils.pdf_errors). A PDF with no page
+    gets the 400 the other PDF tools give it, whatever qpdf would make of it.
+    An intact file only has its cross-reference table read twice.
     """
-    with pikepdf.open(input_path):
-        pass
+    with pikepdf.open(input_path) as pdf:
+        if not len(pdf.pages):
+            raise ValidationError(NO_PAGES_MESSAGE)
+
+
+def _refuse_if_damaged(input_path: str) -> None:
+    """After qpdf failed: refuse the input if it is damaged, judged as
+    process_pdf judges it, by a page object MuPDF cannot read
+    (utils.cleanup._has_unreadable_page). pikepdf reads such a file, qpdf's
+    command does not, and its exit status can't say whose the failure was.
+    Anything else stays the server's fault."""
+    from ..utils.cleanup import _has_unreadable_page, open_pdf_document
+
+    doc = open_pdf_document(input_path)  # raises the standard 400s itself
+    try:
+        if _has_unreadable_page(doc):
+            raise PdfCorruptError()
+    finally:
+        doc.close()
 
 
 async def web_optimize(input_path: str) -> str:
@@ -71,6 +93,7 @@ async def web_optimize(input_path: str) -> str:
         err = (stderr or b"").decode("utf-8", errors="replace").strip()
         # Keep the first 200 chars of stderr — qpdf's messages are usually
         # already a single line ("operation succeeded with warnings: ...").
+        await asyncio.to_thread(_refuse_if_damaged, input_path)
         raise ExternalToolError(f"qpdf linearize failed: {err[:200]}")
 
     if not output_path.exists():

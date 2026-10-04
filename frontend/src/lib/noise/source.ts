@@ -16,13 +16,14 @@
  * Nothing here leaves the device: the readers read the file with Blob.slice
  * and the browser's decoder works in memory.
  */
-import { playingTime, sniff } from "@/lib/subtitles/media/probe";
+import { pastLimit, playingTime, sniff } from "@/lib/subtitles/media/probe";
 import { indexMatroska } from "@/lib/subtitles/media/matroska";
 import { indexMp3 } from "@/lib/subtitles/media/mp3";
 import { indexMp4, isFragmentedMp4 } from "@/lib/subtitles/media/mp4";
 import { NoSoundTrack, PIECE_SECONDS, type AudioIndex } from "@/lib/subtitles/media/types";
 import { indexWav } from "@/lib/subtitles/media/wav";
 
+// Each length limit takes a file up to 30 seconds past it, for an encoder's padding (pastLimit).
 /** The longest recording cleaned at once: an hour of mono. See the guide for the time and memory it takes. */
 export const MAX_SECONDS = 60 * 60;
 /**
@@ -34,14 +35,6 @@ export const MAX_SECONDS = 60 * 60;
 export const MAX_STEREO_SECONDS = 30 * 60;
 /** The longest sound decoded whole, for formats not read in pieces: at 48 kHz stereo, about 350 MB of samples. */
 export const WHOLE_FILE_SECONDS = 15 * 60;
-/**
- * How far past a limit a file may run and still be taken. Encoders pad a
- * recording's end (an hour of MP3 comes out at 60:00.04), and a length is
- * told in whole minutes, so anything refused must read as longer than the
- * limit: 30 seconds over is the first length that rounds to a minute more.
- */
-const SLACK_SECONDS = 30;
-const over = (seconds: number, limit: number) => seconds >= limit + SLACK_SECONDS;
 /** For a whole-file format whose length the browser can't tell before decoding. */
 export const WHOLE_FILE_BYTES = 150 * 1024 * 1024;
 /** How much of the sound before each piece is decoded with it. */
@@ -139,7 +132,7 @@ function tooLong(seconds: number): NoiseInputError {
  * than two (mixed to one), make a mono WAV, which may run to the full hour.
  */
 function checkStereo(channels: number, seconds: number): void {
-    if (channels !== 2 || !over(seconds, MAX_STEREO_SECONDS)) return;
+    if (channels !== 2 || !pastLimit(seconds, MAX_STEREO_SECONDS)) return;
     throw new NoiseInputError("too-long-stereo", `This file’s sound is stereo and ${lengthWords(seconds)} long. Voice Noise Remover takes stereo up to ${MAX_STEREO_SECONDS / 60} minutes and mono up to ${MAX_SECONDS / 60}.`, seconds);
 }
 
@@ -189,7 +182,7 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
     signal?.throwIfAborted();
 
     if (index) {
-        if (over(index.durationSeconds, MAX_SECONDS)) throw tooLong(index.durationSeconds);
+        if (pastLimit(index.durationSeconds, MAX_SECONDS)) throw tooLong(index.durationSeconds);
         // A WAV's header says its channels; other sound says them once its first piece is decoded.
         if (index.channels) checkStereo(index.channels, index.durationSeconds);
         const found = index;
@@ -236,8 +229,8 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
     if (seconds === null && file.size > WHOLE_FILE_BYTES) {
         throw new NoiseInputError("too-long-whole", `${await decodedWhole(file, kind)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
     }
-    if (seconds !== null && over(seconds, MAX_SECONDS)) throw tooLong(seconds);
-    if (seconds !== null && over(seconds, WHOLE_FILE_SECONDS)) {
+    if (seconds !== null && pastLimit(seconds, MAX_SECONDS)) throw tooLong(seconds);
+    if (seconds !== null && pastLimit(seconds, WHOLE_FILE_SECONDS)) {
         throw new NoiseInputError("too-long-whole", `This file’s sound is ${lengthWords(seconds)} long. ${await decodedWhole(file, kind)}`, seconds);
     }
     const whole: NoiseSource = {
@@ -254,7 +247,7 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
             signal?.throwIfAborted();
             const length = decoded.channels[0]?.length ?? 0;
             if (!length) throw new NoiseInputError("no-sound", "This file holds no sound, so there is nothing to clean.");
-            if (over(length / decoded.rate, WHOLE_FILE_SECONDS)) {
+            if (pastLimit(length / decoded.rate, WHOLE_FILE_SECONDS)) {
                 throw new NoiseInputError("too-long-whole", `This file’s sound is ${lengthWords(length / decoded.rate)} long. ${await decodedWhole(file, kind)}`, length / decoded.rate);
             }
             whole.durationSeconds = length / decoded.rate;

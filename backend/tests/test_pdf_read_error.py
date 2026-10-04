@@ -81,6 +81,72 @@ def test_pikepdf_needs_the_password(locked_pdf):
     assert pdf_read_error(exc) == LOCKED
 
 
+def _page_tree_overwritten() -> bytes:
+    # Bytes overwritten in the page tree, as in the #340 review's byte-flip
+    # sweep: its /Count key and its first page reference.
+    whole = _classic()
+    assert whole.count(b"/Count 4/Kids[4 0 R") == 1
+    return whole.replace(b"/Count 4/Kids[4 0 R", b"/Cxunt 4/Kids[4 02R")
+
+
+def _content_overwritten() -> bytes:
+    # Ten bytes overwritten inside the first page's compressed content.
+    whole = bytearray(_classic())
+    start = whole.index(b"stream\n", whole.index(b"\n6 0 obj")) + len(b"stream\n")
+    whole[start + 2:start + 12] = b"A" * 10
+    return bytes(whole)
+
+
+def _overlaid_and_saved(data: bytes) -> None:
+    """What Watermark, Bates Numbering and the other stamping tools do: lay a
+    page over the first page, which makes that page's content a form, and
+    save."""
+    stamp = pikepdf.new()
+    stamp.add_blank_page()
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        pdf.pages[0].add_overlay(stamp.pages[0])
+        pdf.save(io.BytesIO())
+
+
+def test_qpdf_cannot_reconcile_a_page_tree_with_its_count():
+    # qpdf raises this one as a plain RuntimeError, not a PdfError.
+    exc = _raised(lambda: pikepdf.open(io.BytesIO(_page_tree_overwritten())))
+    assert type(exc) is RuntimeError and str(exc) == "/Count is wrong after flattening pages tree"
+    assert pdf_read_error(exc) == DAMAGED
+
+
+def test_qpdf_cannot_decode_a_page_it_writes_into_a_form():
+    exc = _raised(lambda: _overlaid_and_saved(_content_overwritten()))
+    assert type(exc) is RuntimeError and str(exc).startswith("error while getting stream data for "), exc
+    assert pdf_read_error(exc) == DAMAGED
+
+
+def _raised_in_pikepdf(message: str) -> RuntimeError:
+    """A RuntimeError raised, by its traceback, in pikepdf's own code, where
+    qpdf's errors surface."""
+    code = compile(f"raise RuntimeError({message!r})", "pikepdf/_methods.py", "exec")
+    return _raised(lambda: exec(code, {"__name__": "pikepdf._methods"}))
+
+
+@pytest.mark.parametrize("message", [
+    # qpdf's writer wraps any error met while it reads a stream: a disk fault
+    # reading the upload is the server's, not the file's.
+    "error while getting stream data for 20 0 R: /app/temp/upload.pdf: read: Input/output error",
+    "QPDFWriter: unable to generated a deterministic ID because the file to be written is encrypted",
+    "boom",
+])
+def test_qpdfs_other_words_are_not_read_as_damage(message):
+    assert pdf_read_error(_raised_in_pikepdf(message)) is None
+
+
+def test_qpdfs_words_count_only_when_pikepdf_raised_them():
+    assert pdf_read_error(_raised_in_pikepdf("/Count is wrong after flattening pages tree")) == DAMAGED
+    assert pdf_read_error(RuntimeError("/Count is wrong after flattening pages tree")) is None
+    assert pdf_read_error(RuntimeError(
+        "error while getting stream data for 20 0 R: content stream (content stream object 6 0): "
+        "errors while decoding content stream")) is None
+
+
 def test_safe_open_pdfs_value_errors_are_read_with_their_cause(tmp_path, locked_pdf):
     cut = tmp_path / "cut.pdf"
     cut.write_bytes(_cut(_object_streams(), 40))

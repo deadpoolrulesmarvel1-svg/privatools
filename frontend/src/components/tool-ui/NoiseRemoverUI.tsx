@@ -10,7 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AudioLines, Download } from "lucide-react";
-import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL, SERVER_MEDIA_MAX, SERVER_MEDIA_MAX_LABEL } from "@/lib/api";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -25,14 +25,8 @@ import "./noise-remover.css";
 const SLUG = "remove-background-noise";
 /** The lengths this page cleans, in words. */
 const LIMITS = `up to ${MAX_SECONDS / 60} minutes of mono or ${MAX_STEREO_SECONDS / 60} of stereo`;
-/**
- * What the PrivaTools server takes from Audio Converter, Extract Audio and
- * Cut / Trim Video & Audio: 200 MB (max_bytes in phase6_tools.py's
- * audio_converter, MAX_VIDEO_SIZE in non_pdf_tools.py), less than the 500 MB
- * a page takes. Transcribe Audio works in the browser, up to MAX_FILE_SIZE.
- */
-const SERVER_MEDIA_MAX = 200 * 1024 * 1024;
-const SERVER_MEDIA_MAX_LABEL = "200 MB";
+// Audio Converter, Extract Audio and Cut / Trim Video & Audio take SERVER_MEDIA_MAX on the
+// server; Transcribe Audio works in the browser, up to MAX_FILE_SIZE.
 /** What the readers take: MP4, MOV, M4A, WebM, MKV, MP3 and WAV in pieces; Ogg, Opus, FLAC and AAC whole. */
 const ACCEPTS = ".mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm,.mp4,.m4v,.mov,.mkv";
 /** Containers that hold video, and so go to Extract Audio rather than Audio Converter. */

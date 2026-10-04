@@ -9,6 +9,7 @@ from starlette.background import BackgroundTask
 
 from ..services import qr_code_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
@@ -106,7 +107,9 @@ async def generate_qr_code(
             media_type="image/png",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: the service's refusals, a page the PDF doesn't have or a
+        # PDF with no page; the global handler gives their 400.
         if temp_pdf is not None:
             remove_files(str(temp_pdf))
         raise

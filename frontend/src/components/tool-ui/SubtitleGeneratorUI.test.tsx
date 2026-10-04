@@ -16,6 +16,7 @@ vi.mock("@/lib/toolRun", async original => ({ ...(await original<object>()), emi
 vi.mock("@/lib/localModels", async original => ({ ...(await original<object>()), listCachedModels: mocks.cached }));
 
 import { MediaError } from "@/lib/subtitles/media/extract";
+import guide from "@/data/tool-guide/subtitle-generator.json";
 import { SubtitleGeneratorUI } from "./SubtitleGeneratorUI";
 
 const RATE = 16000;
@@ -59,9 +60,11 @@ beforeEach(() => {
     mocks.load.mockImplementation(async (_size: string, progress: (percent: number) => void) => { progress(100); return whisper; });
 });
 
-function choose(name = "talk.mp4", type = "video/mp4") {
+function choose(name = "talk.mp4", type = "video/mp4", size?: number) {
     const view = render(<MemoryRouter><SubtitleGeneratorUI /></MemoryRouter>);
-    fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files: [new File(["x"], name, { type })] } });
+    const file = new File(["x"], name, { type });
+    if (size !== undefined) Object.defineProperty(file, "size", { value: size });
+    fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files: [file] } });
     return view;
 }
 
@@ -160,6 +163,44 @@ describe("the Subtitle Generator page", () => {
         expect(screen.queryByRole("link", { name: "Extract Audio" })).toBeNull();
         expect(screen.getByText(/A video or audio app on your device can save it as MP4 or MP3, which work here up to 3 hours/)).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Choose a different file" }));
+    });
+
+    it("sends nothing over 200 MB to Extract Audio, Audio Converter or Cut / Trim, which take 200 MB on the server", async () => {
+        const MB = 1024 * 1024;
+        mocks.open.mockRejectedValue(new MediaError("unreadable", "This browser can’t decode the sound in this file."));
+        // Within their limit, the link is offered.
+        const small = choose("clip.mkv", "video/x-matroska", 150 * MB);
+        generate();
+        await screen.findByRole("heading", { level: 2, name: "This browser can’t read the sound in this file." });
+        expect(screen.getByRole("link", { name: "Extract Audio" })).toHaveAttribute("href", "/tools/extract-audio");
+        small.unmount();
+
+        const video = choose("clip.mkv", "video/x-matroska", 300 * MB);
+        generate();
+        await screen.findByRole("heading", { level: 2, name: "This browser can’t read the sound in this file." });
+        expect(screen.queryByRole("link", { name: "Extract Audio" })).toBeNull();
+        expect(screen.getByText(/It is larger than the 200 MB that Extract Audio takes, so save it as MP4 or MP3 with a video or audio app on your device/)).toBeInTheDocument();
+        video.unmount();
+
+        const recording = choose("talk.wav", "audio/wav", 300 * MB);
+        generate();
+        await screen.findByRole("heading", { level: 2, name: "This browser can’t read the sound in this file." });
+        expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
+        expect(screen.getByText(/It is larger than the 200 MB that Audio Converter takes/)).toBeInTheDocument();
+        recording.unmount();
+
+        mocks.open.mockRejectedValue(new MediaError("too-long", "This file’s sound is 4 h 10 min long. Subtitle Generator takes up to 3 hours at a time.", 15000));
+        choose("film.mp4", "video/mp4", 300 * MB);
+        generate();
+        await screen.findByRole("heading", { level: 2, name: "This file is too long to subtitle here." });
+        expect(screen.queryByRole("link", { name: /Cut \/ Trim/ })).toBeNull();
+        expect(screen.getByText(/cut it into parts of up to 3 hours with a video or audio app on your device: it is larger than the 200 MB Cut \/ Trim Video & Audio takes/)).toBeInTheDocument();
+    });
+
+    it("says the server tools take 200 MB in its guide too", () => {
+        const answer = guide.faq.find(entry => entry.q === "What if my file doesn't work?")!.a;
+        expect(answer).toContain("up to 200 MB");
+        expect(answer).not.toContain("500 MB");
     });
 
     it("says why a long fragmented MP4 is refused, and points it to Extract Audio, not Audio Converter", async () => {

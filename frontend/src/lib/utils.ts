@@ -158,6 +158,11 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     }
 
     // ── Tool-specific ───────────────────────────────────────────────────────
+    // PDF to Word's "This PDF has no text layer — run OCR PDF first…" advises
+    // running OCR; no OCR ran, so it is not the OCR failure below.
+    if (m.includes("no text layer")) {
+        return "This PDF has no text layer, as a scan has none. Run OCR PDF on it first, then convert it.";
+    }
     if (m.includes("font") && (m.includes("not found") || m.includes("missing"))) {
         return "Font required by this PDF isn't installed on the server. Try flattening the PDF first.";
     }

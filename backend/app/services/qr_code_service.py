@@ -15,7 +15,7 @@ from reportlab.graphics.barcode import qrencoder
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from ..utils.cleanup import safe_open_pdf
+from ..utils.cleanup import NO_PAGES_MESSAGE, safe_open_pdf
 from ..utils.colors import hex_to_rgb_int, parse_hex_color
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
@@ -174,6 +174,8 @@ def embed_qr_in_pdf(
     try:
         with safe_open_pdf(input_path) as pdf:
             page_count = len(pdf.pages)
+            if not page_count:
+                raise ValidationError(NO_PAGES_MESSAGE)
             # Reject an out-of-range page instead of silently clamping (which
             # stamped the QR onto the wrong page and returned 200).
             if not 1 <= page <= page_count:

@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mediaFile } from "@/test/media/fixtures";
+import { Blob as NodeBlob, File as NodeFile } from "node:buffer";
+import { mediaFile, wavFile } from "@/test/media/fixtures";
 import type { AudioChunk } from "../recognize";
 import { mixToMono } from "@/lib/whisper";
 import { MAX_SECONDS, MediaError, openAudio, WHOLE_FILE_SECONDS } from "./extract";
+
+/** A WAV `seconds` long at 100 samples a second: hours of sound in about a megabyte. */
+const longWav = (seconds: number) => new NodeFile([wavFile({ rate: 100, bits: 8, seconds }) as unknown as NodeBlob], "long.wav", { type: "audio/wav" }) as unknown as File;
 
 /** What the stand-in decoder was given, and whether it should refuse it. */
 let decoded: Uint8Array[] = [];
@@ -115,6 +119,21 @@ describe("opening a file's sound", () => {
         expect(source.durationSeconds).toBe(1);
         await expect(openAudio(ogg, { measure: async () => WHOLE_FILE_SECONDS + 60 })).rejects.toMatchObject({ problem: "too-long-whole" });
         await expect(openAudio(ogg, { measure: async () => MAX_SECONDS + 60 })).rejects.toMatchObject({ problem: "too-long" });
+    });
+
+    it("takes a file its encoder padded a little past a limit, and refuses one that reads as longer", async () => {
+        // Encoders pad a recording's end: three hours of MP3 come out at 3:00:00.04,
+        // which the limit's own words called "3 h 0 min long … up to 3 hours".
+        const padded = await openAudio(longWav(MAX_SECONDS + 0.04));
+        expect(padded.durationSeconds).toBeCloseTo(MAX_SECONDS + 0.04, 3);
+        const error = await openAudio(longWav(MAX_SECONDS + 30)).catch(caught => caught);
+        expect(error).toMatchObject({ problem: "too-long" });
+        expect(error.message).toBe("This file’s sound is 3 h 1 min long. Subtitle Generator takes up to 3 hours at a time.");
+        // The same at the limit for a file decoded whole: 15 minutes.
+        const ogg = mediaFile("voice.ogg", "audio/ogg", Uint8Array.of(0x4f, 0x67, 0x67, 0x53, 0, 2, 0, 0, 0, 0, 0, 0));
+        await expect(openAudio(ogg, { measure: async () => WHOLE_FILE_SECONDS + 0.01 })).resolves.toMatchObject({ container: "whole file" });
+        const whole = await openAudio(ogg, { measure: async () => WHOLE_FILE_SECONDS + 30 }).catch(caught => caught);
+        expect(whole.message).toBe("This file’s sound is 16 minutes long. Files in this format are decoded whole in this browser, up to 15 minutes of sound.");
     });
 
     it("says why a file is decoded whole when it is too long for that", async () => {

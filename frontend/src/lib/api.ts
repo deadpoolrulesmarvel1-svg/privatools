@@ -173,6 +173,14 @@ export function formatErrorForClipboard(err: unknown, context?: string): string 
 /** Maximum file size: 500 MB per file (24 GB RAM server) */
 export const MAX_FILE_SIZE = 500 * 1024 * 1024;
 export const MAX_FILE_SIZE_LABEL = "500 MB";
+/**
+ * What the PrivaTools server takes from Audio Converter, Extract Audio and
+ * Cut / Trim Video & Audio: 200 MB (max_bytes in phase6_tools.py's
+ * audio_converter, MAX_VIDEO_SIZE in non_pdf_tools.py), less than the
+ * MAX_FILE_SIZE a page takes. For pages that send a file on to one of them.
+ */
+export const SERVER_MEDIA_MAX = 200 * 1024 * 1024;
+export const SERVER_MEDIA_MAX_LABEL = "200 MB";
 /** Soft cap on number of files per multi-file request. Mostly a sanity check —
  *  the backend has its own per-tool limit. */
 export const MAX_FILES_PER_REQUEST = 100;

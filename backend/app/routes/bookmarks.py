@@ -14,6 +14,7 @@ from ..utils.cleanup import (
     remove_files,
     validate_pdf_content,
 )
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
 from ..utils.pdf_errors import pdf_read_error
 
@@ -69,7 +70,9 @@ async def add_bookmarks(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: a PDF with no page, which the service refuses in the
+        # standard words; the global handler gives its 400.
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
             [output_path] if output_path else []
         )
