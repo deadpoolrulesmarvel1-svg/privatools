@@ -15,9 +15,20 @@
  * the package that changes either fails the build here, with this file named,
  * rather than shipping a module the loader can't drive.
  */
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const PACKAGE_FILE = new URL("../node_modules/@shiguredo/rnnoise-wasm/dist/rnnoise.js", import.meta.url);
+
+/**
+ * The module everything here was checked against: @shiguredo/rnnoise-wasm
+ * 2025.1.5 (xiph/rnnoise 70f1d256, Emscripten 4.0.8). Its licences, version
+ * and commit are named in public/third-party/rnnoise.txt, and the loader's
+ * 960-sample delay and the quality thresholds were measured on it. Any other
+ * bytes, a new release's included, fail the build until those are checked
+ * again and this is updated.
+ */
+export const RNNOISE_SHA256 = "b3b67c9eae8f0791aad468c708659e0850bb37b0fb9c8a8666f2d7b0b6869bc4";
 
 /** What src/lib/noise/rnnoise.ts supplies, and what it calls. */
 export const RNNOISE_IMPORTS = ["env.__assert_fail", "env.emscripten_resize_heap", "wasi_snapshot_preview1.fd_write"];
@@ -48,6 +59,10 @@ export function rnnoiseWasm(source = readFileSync(PACKAGE_FILE, "utf8")) {
   const exports = new Set(WebAssembly.Module.exports(module).map(entry => entry.name));
   const missing = RNNOISE_EXPORTS.filter(name => !exports.has(name));
   if (missing.length) throw problem(`it no longer exports ${missing.join(", ")}`);
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  if (digest !== RNNOISE_SHA256) {
+    throw problem(`its WebAssembly is not the module this was checked against (sha256 ${digest}). Update public/third-party/rnnoise.txt (version, RNNoise commit, licences), run src/lib/noise's tests (RNNoise's delay, the quality thresholds), then set RNNOISE_SHA256`);
+  }
   return bytes;
 }
 

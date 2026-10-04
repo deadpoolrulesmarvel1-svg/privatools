@@ -1,5 +1,6 @@
 import type { Plugin } from "vite";
 
+export const RNNOISE_SHA256: string;
 export const RNNOISE_IMPORTS: string[];
 export const RNNOISE_EXPORTS: string[];
 /** RNNoise's WebAssembly module, decoded from @shiguredo/rnnoise-wasm's script and checked. */

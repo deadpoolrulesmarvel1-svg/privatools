@@ -17,7 +17,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:content": "node --test scripts/content-data.test.mjs scripts/prepare-browser-model.test.mjs scripts/check-review-dates.test.mjs scripts/audit-check.test.mjs",
+    "test:content": "node --test scripts/content-data.test.mjs scripts/prepare-browser-model.test.mjs scripts/check-review-dates.test.mjs scripts/audit-check.test.mjs scripts/rnnoise-wasm.test.mjs",
     "test:watch": "vitest",
     "predev": "node scripts/prepare-browser-model.mjs"
   },
