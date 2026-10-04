@@ -4,7 +4,9 @@
  * became the chosen file, and the visitor learned only after "Split PDF"
  * that the server wanted a PDF, with no word of the tool that can help. Its
  * registry entry is `needsText: "pdf"` (#332), so the shared advice now says
- * where a picture can go: Image to PDF, then OCR PDF.
+ * where a picture can go: Image to PDF, then OCR PDF. On the shared kit
+ * (step 2c) the intake is FileIntake, and the refusal of the rest of a mixed
+ * drop stays beside the PDF it took.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,14 +21,15 @@ function choose(view: ReturnType<typeof render>, ...files: File[]) {
 }
 
 function drop(...files: File[]) {
-    fireEvent.drop(screen.getByRole("button", { name: "Upload PDF" }), { dataTransfer: { files } });
+    fireEvent.drop(document.querySelector(".ts-intake")!, { dataTransfer: { files } });
 }
 
+const chooser = () => screen.queryByRole("button", { name: /^Choose a file: Select a PDF to split by text$/ });
 const scan = () => new File(["\x89PNG"], "scan.png", { type: "image/png" });
 const pdf = () => new File(["%PDF-1.7"], "statements.pdf", { type: "application/pdf" });
 
 describe("Split by Text's intake", () => {
-    beforeEach(() => { window.history.pushState({}, "", "/tool/split-by-text"); mocks.upload.mockReset(); });
+    beforeEach(() => { window.history.pushState({}, "", "/tool/split-by-text"); mocks.upload.mockReset(); mocks.download.mockReset(); });
     afterEach(() => window.history.pushState({}, "", "/"));
 
     it("refuses a dropped picture by name and points to Image to PDF, then OCR PDF", () => {
@@ -36,9 +39,9 @@ describe("Split by Text's intake", () => {
             "scan.png wasn’t added. Split by Text takes PDF files. Image to PDF can turn it into a PDF first; OCR PDF then gives it text to find.");
         expect(screen.getByRole("link", { name: "Image to PDF" })).toHaveAttribute("href", "/tool/image-to-pdf");
         expect(screen.getByRole("link", { name: "OCR PDF" })).toHaveAttribute("href", "/tool/ocr-pdf");
-        // The picture was not taken: the drop zone is still there and nothing can run.
-        expect(screen.getByRole("button", { name: "Upload PDF" })).toBeInTheDocument();
-        expect(screen.queryByText("scan.png", { selector: "p" })).not.toBeInTheDocument();
+        // The picture was not taken: the intake is still there and nothing can run.
+        expect(chooser()).toBeInTheDocument();
+        expect(document.querySelector(".ts-file")).toBeNull();
         expect(screen.getByRole("button", { name: /Split PDF/ })).toBeDisabled();
         expect(mocks.upload).not.toHaveBeenCalled();
     });
@@ -53,6 +56,8 @@ describe("Split by Text's intake", () => {
         render(<SplitByTextUI />);
         drop(scan(), pdf());
         expect(screen.getByText("statements.pdf")).toBeInTheDocument();
+        // The PDF's row replaced the intake; the refusal stays beside it.
+        expect(chooser()).toBeNull();
         expect(screen.getByRole("alert")).toHaveTextContent("scan.png wasn’t added.");
     });
 
@@ -67,10 +72,11 @@ describe("Split by Text's intake", () => {
         mocks.upload.mockResolvedValueOnce({ blob: async () => new Blob(["PK"]) });
         render(<SplitByTextUI />);
         drop(scan(), pdf());
-        fireEvent.change(screen.getByPlaceholderText(/Invoice/), { target: { value: "Statement" } });
+        fireEvent.change(screen.getByLabelText("Search term"), { target: { value: "Statement" } });
         fireEvent.click(screen.getByRole("button", { name: /Split PDF/ }));
         fireEvent.click(await screen.findByRole("button", { name: /Split another/ }));
-        expect(screen.getByRole("button", { name: "Upload PDF" })).toBeInTheDocument();
+        expect(chooser()).toBeInTheDocument();
+        expect(chooser()).toHaveFocus();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 });
