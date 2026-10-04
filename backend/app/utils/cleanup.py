@@ -183,11 +183,22 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     valid documents. Search the window a conforming reader searches.
     It is NOT a full well-formed-PDF parser — that happens in the
     service layer.
+
+    A PDF is made of numbered objects ("1 0 obj"), the first of them right
+    after the header, so a file whose header is followed by no "obj" at all
+    is not one any library can open: a download that stopped within its first
+    object, or bytes that only start like a PDF. Such files reached the
+    parsers, which fail in ways most routes did not expect (pikepdf answers a
+    file of just "%PDF-1.7\\n" with OSError 22; MuPDF says "no objects found"),
+    and 62 routes answered them with a 500. A route that streams the
+    upload passes only its first chunk (256 KB), which holds that first
+    object in any PDF.
     """
     label = f"“{filename}”" if filename else "File"
     if not content:
         raise HTTPException(status_code=400, detail=f"{label} is empty.")
-    if b"%PDF-" not in content[:1024]:
+    header = content.find(b"%PDF-", 0, 1024)
+    if header < 0:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -195,6 +206,14 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
                 "incompletely, re-download it; if it has a different "
                 "extension, convert it to PDF first."
             ),
+        )
+    if content.find(b"obj", header + 5) < 0:
+        from .exceptions import PdfCorruptError
+
+        raise HTTPException(
+            status_code=400,
+            detail=(f"{label} appears to be corrupt or invalid." if filename
+                    else PdfCorruptError.default_detail),
         )
 
 

@@ -19,6 +19,7 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
+from ..utils.cleanup import validate_pdf_content
 from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
 from ..utils.concurrency import run_bounded
@@ -97,8 +98,9 @@ async def batch_compress_pdf(
     pdf_data = []
     for f in files:
         data = await read_upload(f, label=f.filename or "PDF")
-        if not data[:5].startswith(b"%PDF"):
-            raise HTTPException(400, f"{f.filename} is not a valid PDF")
+        # The sniff every PDF route uses: a header within the first 1024
+        # bytes, and an object after it (utils.cleanup).
+        validate_pdf_content(data, filename=f.filename or "PDF")
         pdf_data.append((safe_filename(f.filename, "document.pdf"), data))
 
     # Compress all files (shared pool) + write the ZIP off the event loop, so a
