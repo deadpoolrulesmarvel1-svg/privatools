@@ -12,6 +12,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.images import image_read_error
 from ..utils.page_space import shown_area
 from ..services import sign_service
 
@@ -187,5 +188,9 @@ async def sign_pdf(
             remove_files(str(temp_pdf))
         if signature_path is not None:
             remove_files(signature_path)
+        # verify() above reads a picture's structure, not its pixels: one
+        # whose data is broken fails only when the signature is drawn.
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

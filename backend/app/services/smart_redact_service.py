@@ -12,6 +12,7 @@ from typing import Iterable, Tuple
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import open_pdf_document
 from ..utils.colors import hex_to_rgb_float
 from ..utils.filenames import temp_output
 from ..utils.page_space import drawing_unturned
@@ -34,7 +35,9 @@ def smart_redact(
         raise ValueError("No usable strings to redact (each must be ≥ 2 characters).")
 
     total_hits = 0
-    doc = fitz.open(input_path)
+    # A PDF that needs a password, cannot be read or has no pages is refused
+    # with a 400 in the site's own words.
+    doc = open_pdf_document(input_path)
     try:
         for page in doc:
             # Matches come back in the page's stored coordinates. On a turned

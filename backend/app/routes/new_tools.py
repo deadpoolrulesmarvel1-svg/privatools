@@ -139,6 +139,12 @@ async def highlight_endpoint(
             background=cleanup,
             headers={"X-Highlight-Hits": str(hits)},
         )
+    except ToolError:
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path:
@@ -175,6 +181,12 @@ async def pdf_to_svg_endpoint(file: UploadFile = File(...)):
             media_type="application/zip" if is_zip else "image/svg+xml",
             background=cleanup,
         )
+    except ToolError:
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path:
@@ -240,6 +252,12 @@ async def smart_redact_endpoint(
             background=cleanup,
             headers={"X-Redact-Hits": str(hits)},
         )
+    except ToolError:
+        # A PDF that needs a password, cannot be read or has no pages
+        # (open_pdf_document): the global handler answers with its own 400.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path:
@@ -288,6 +306,12 @@ async def video_to_pdf_endpoint(request: Request,
             media_type="application/pdf",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it refuses: the global handler words it.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
@@ -328,6 +352,12 @@ async def video_converter_endpoint(request: Request,
             media_type=video_mime,
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it refuses: the global handler words it.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
@@ -362,6 +392,12 @@ async def video_resizer_endpoint(request: Request,
             media_type="video/mp4",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it refuses: the global handler words it.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
@@ -396,6 +432,12 @@ async def video_thumbnail_endpoint(request: Request,
             media_type="image/jpeg",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it refuses: the global handler words it.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
@@ -427,6 +469,12 @@ async def gif_to_mp4_endpoint(request: Request, file: UploadFile = File(...)):
             media_type="video/mp4",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it refuses: the global handler words it.
+        remove_files(str(temp_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(temp_path))
         if output_path: remove_files(output_path)
@@ -565,6 +613,12 @@ async def audio_merge_endpoint(request: Request, files: list[UploadFile] = File(
             media_type="audio/mpeg",
             background=cleanup,
         )
+    except ToolError:
+        # The service's own answer, such as a 504 when FFmpeg runs out of
+        # time or a 400 for a file it cannot read: the global handler words it.
+        remove_files(*temp_paths)
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(*temp_paths)
         if output_path: remove_files(output_path)

@@ -217,7 +217,6 @@
 .consumer-app .dl-panel {border-radius:12px;box-shadow:none;}
 .consumer-app .dl-pghero {padding-top:48px;}
 .consumer-app .dl-pghero h1 {font-size:clamp(34px,4vw,56px);}
-.consumer-app .dl-sec {padding-top:64px;}
 .consumer-app .dl-foot {margin-top:54px;border-top:1px solid hsl(var(--border));background:hsl(var(--muted) / .5);}
 .consumer-app .dl-foot .cols {max-width:1536px;padding:48px 60px;margin:0 auto;}
 .consumer-app .dl-foot .base {padding:20px 60px;color:hsl(var(--muted-foreground));}

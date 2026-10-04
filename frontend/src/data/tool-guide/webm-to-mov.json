@@ -40,7 +40,7 @@
     },
     {
       "q": "Why did my conversion fail?",
-      "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Common causes are a damaged or incomplete file, a frame with an odd width or height, which x264 cannot encode here (a recording of a single window can have one), and encoding that runs past the 180-second limit. Video Resizer always outputs an even width and height, and QuickTime opens its MP4 files."
+      "a": "When FFmpeg stops with an error, the page shows \"A processing tool failed on this file. Try a different file or simpler settings.\" Common causes are a damaged or incomplete file and a frame with an odd width or height, which x264 cannot encode here (a recording of a single window can have one). A file FFmpeg cannot open as video at all shows \"This file isn't a video or audio file this tool can read.\" instead, and encoding that runs past the 180-second limit shows \"The server took too long. Try a smaller file or try again.\" Video Resizer always outputs an even width and height, and QuickTime opens its MP4 files."
     },
     {
       "q": "How large and how long can the WebM be?",

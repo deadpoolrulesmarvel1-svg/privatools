@@ -4,9 +4,13 @@ import io
 import fitz  # PyMuPDF
 from PIL import Image, UnidentifiedImageError
 
-from ..utils.exceptions import ValidationError
+from ..utils.exceptions import FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
+from ..utils.images import image_read_error
 from ..utils.page_space import drawing_unturned
+
+# The modes Pillow writes as PNG; a signature in any other is converted first.
+_PNG_MODES = frozenset({"1", "L", "LA", "I", "I;16", "I;16B", "P", "RGB", "RGBA"})
 
 
 def esign_pdf(input_path: str, signature_data: str,
@@ -42,13 +46,24 @@ def esign_pdf(input_path: str, signature_data: str,
     # release the underlying file descriptor even on conversion failures.
     try:
         with Image.open(io.BytesIO(sig_bytes)) as img:
+            # PNG cannot hold every mode a valid picture decodes to, such as a
+            # CMYK JPEG from a print workflow: those are drawn as RGBA. Pillow
+            # would otherwise refuse to write them, and that refusal is not
+            # the visitor's fault.
+            picture = img if img.mode in _PNG_MODES else img.convert("RGBA")
             buf = io.BytesIO()
-            img.save(buf, format="PNG")
+            picture.save(buf, format="PNG")
             sig_bytes = buf.getvalue()
     except UnidentifiedImageError as exc:
         raise ValidationError("Signature isn't a recognised image format.") from exc
-    except (OSError, ValueError) as exc:
-        raise ValidationError(f"Signature image is invalid: {exc}") from exc
+    except Exception as exc:
+        # A picture its decoder cannot read gets the wording every image tool
+        # gives (utils.images); Pillow's own words never reach the page.
+        known = image_read_error(exc)
+        if known is None and not isinstance(exc, (OSError, ValueError)):
+            raise
+        status, detail = known or (400, "The signature must be a PNG, JPG or WebP picture.")
+        raise (FileTooLargeError if status == 413 else ValidationError)(detail) from exc
 
     doc = fitz.open(input_path)
     try:

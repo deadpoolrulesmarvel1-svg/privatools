@@ -295,6 +295,9 @@
   }
   h2 { font-weight: 600; }
   h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.018em; }
+
+  /* Code reads as typed: no face may join "--", "->" or "fi" in it. */
+  code, kbd, samp, pre { font-variant-ligatures: none; }
 }
 
 /* ── Legacy compat — older code still references these class names ── */

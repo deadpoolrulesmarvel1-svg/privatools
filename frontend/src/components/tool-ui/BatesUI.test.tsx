@@ -125,3 +125,13 @@ describe("Bates Numbering's matter", () => {
         expect((await counters.getCounter(matter.id))?.next).toBe(101);
     });
 });
+
+describe("Bates Numbering's intake", () => {
+    it("says what one file and several get: one run from the start number", async () => {
+        // It said "each starts at", but two or more files are numbered as one run.
+        await openWithMatter("Intake v. Example");
+        const detail = screen.getByText(/^Multi-file OK ·/);
+        expect(detail.textContent).toMatch(/^Multi-file OK · numbered as one run from SYN-000101 · max .+ in total$/);
+        expect(detail.textContent).not.toMatch(/each starts/);
+    });
+});

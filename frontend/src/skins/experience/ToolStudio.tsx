@@ -21,7 +21,7 @@ export function IntakeNotice({ advice, onDismiss }: { advice: RejectionAdvice | 
     const suggestion = advice.suggestion;
     return <div className="ts-intake-notice" role="alert" ref={notice}>
         <AlertTriangle size={18} aria-hidden="true" />
-        <p><strong>{advice.headline}</strong> {advice.reason}{suggestion && <> {advice.suggestionLead}<a href={suggestion.href}>{suggestion.name}</a>{advice.suggestionTail}</>}</p>
+        <p><strong>{advice.headline}</strong> {advice.reason}{suggestion && <> {advice.suggestionLead}<a href={suggestion.href}>{suggestion.name}</a>{advice.suggestionTail}{suggestion.then && <><a href={suggestion.then.href}>{suggestion.then.name}</a>{advice.thenTail}</>}</>}</p>
         {onDismiss && <button type="button" className="ts-icon-button" aria-label="Dismiss this message" onClick={onDismiss}><X size={16} /></button>}
     </div>;
 }

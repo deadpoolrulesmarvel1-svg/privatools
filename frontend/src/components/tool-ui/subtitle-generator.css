@@ -8,7 +8,7 @@
 .sg-chosen { display: grid; gap: 4px; min-width: 0; }
 
 .sg-editor { display: grid; gap: 14px; min-width: 0; margin-top: 4px; }
-.sg-editor-head h3 { margin: 0 0 4px; font: 600 17px/1.25 var(--pt-display); letter-spacing: -.02em; }
+.sg-editor-head h3 { margin: 0 0 4px; font-style: normal; font-weight: 600; font-size: 17px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.02em; }
 .sg-editor-head p { margin: 0; font-size: 12.5px; line-height: 1.55; color: hsl(var(--muted-foreground)); }
 
 .sg-player { display: block; width: 100%; max-height: 360px; border-radius: 10px; background: #000; }
@@ -22,7 +22,7 @@ audio.sg-player { background: transparent; max-height: none; }
 button.sg-cue-time { cursor: pointer; text-decoration: underline; text-decoration-color: hsl(var(--border)); text-underline-offset: 3px; }
 button.sg-cue-time:hover { color: hsl(var(--foreground)); text-decoration-color: currentColor; }
 .sg-cue-time:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 1px; }
-.sg-cue textarea { width: 100%; min-height: 3.4rem; padding: 7px 9px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font: 14px/1.45 var(--pt-font, inherit); resize: vertical; }
+.sg-cue textarea { width: 100%; min-height: 3.4rem; padding: 7px 9px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font-style: normal; font-weight: 400; font-size: 14px; line-height: 1.45; font-family: var(--pt-font, inherit); resize: vertical; }
 .sg-cue textarea:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 0; }
 
 .sg-help { margin-top: 14px; max-width: 72ch; }

@@ -108,7 +108,7 @@ describe("tools that work from a file's words", () => {
     // Image to PDF makes a PDF of the picture's pixels, with no text in it, so
     // PDF to Text, the AI pages and the token counter would find nothing to
     // read there. OCR reads the words in the picture.
-    const readers = [...tools, ...nonPdfTools].filter(tool => "needsText" in tool && tool.needsText).map(tool => tool.slug);
+    const readers = [...tools, ...nonPdfTools].filter(tool => "needsText" in tool && tool.needsText === true).map(tool => tool.slug);
 
     it("are marked in the registry", () => {
         expect(readers).toEqual(expect.arrayContaining(["pdf-to-text", "ai-token-counter", "chat-with-pdf", "summarize-pdf", "translate-pdf", "pdf-to-word", "pdf-to-markdown"]));
@@ -147,6 +147,54 @@ describe("tools that work from a file's words", () => {
     it("leave a tool that works on the page itself with Image to PDF", () => {
         expect(suggestToolFor(file("photo.png"), { fromSlug: "merge-pdf", prefer: "convert" })).toMatchObject({ slug: "image-to-pdf", relation: "convert" });
         expect(suggestToolFor(file("photo.png"), { fromSlug: "rotate-pdf", prefer: "convert" })).toMatchObject({ slug: "image-to-pdf", relation: "convert" });
+        expect(suggestToolFor(file("photo.png"), { fromSlug: "merge-pdf", prefer: "convert" })?.then).toBeUndefined();
+    });
+});
+
+describe("tools that find words in a PDF's text layer", () => {
+    // These work on the PDF itself, through the text it holds: they redact,
+    // highlight or link it, split it at a phrase, or read its tables. Image to
+    // PDF alone gives them a PDF with no text, and Image OCR gives text but
+    // no PDF. OCR PDF gives the PDF a text layer.
+    const LAYER_READERS = ["smart-redact", "split-by-text", "add-hyperlinks", "pdf-to-excel", "extract-tables", "highlight-pdf"];
+    const marked = [...tools, ...nonPdfTools].filter(tool => "needsText" in tool && tool.needsText === "pdf").map(tool => tool.slug);
+    const ocrPdf = { slug: "ocr-pdf", name: "OCR PDF", href: "/tool/ocr-pdf" };
+
+    it("are marked in the registry", () => {
+        expect([...marked].sort()).toEqual([...LAYER_READERS].sort());
+    });
+
+    it("send a picture to Image to PDF, then to OCR PDF", () => {
+        for (const fromSlug of LAYER_READERS) {
+            for (const name of ["scan.png", "receipt.jpg", "page.webp", "fax.tiff", "photo.heic"]) {
+                for (const prefer of ["same-job", "convert"] as const) {
+                    expect(suggestToolFor(file(name), { fromSlug, prefer }), `${fromSlug} ${name} ${prefer}`)
+                        .toMatchObject({ relation: "convert", into: "PDF", then: ocrPdf });
+                }
+            }
+            expect(suggestToolFor(file("scan.png"), { fromSlug })).toMatchObject({ slug: "image-to-pdf", name: "Image to PDF", href: "/tool/image-to-pdf" });
+        }
+    });
+
+    it("say both steps", () => {
+        expect(adviseRejection([file("scan.png")], { fromSlug: "smart-redact" })!.text)
+            .toBe("scan.png wasn’t added. Smart Redact (AI) takes PDF files. Image to PDF can turn it into a PDF first; OCR PDF then gives it text to find.");
+        const several = adviseRejection([file("a.png"), file("b.jpg")], { fromSlug: "highlight-pdf" })!;
+        expect(several.text)
+            .toBe("a.png and 1 other file weren’t added. Highlight PDF takes PDF files. Image to PDF can turn them into PDFs first; OCR PDF then gives them text to find.");
+        // The parts a page links: the first tool's name, then the second's.
+        expect(`${several.suggestionLead}${several.suggestion!.name}${several.suggestionTail}${several.suggestion!.then!.name}${several.thenTail}`)
+            .toBe("Image to PDF can turn them into PDFs first; OCR PDF then gives them text to find.");
+    });
+
+    it("suggest nothing for a video, rather than a PDF of its frames", () => {
+        expect(suggestToolFor(file("talk.mp4", "video/mp4"), { fromSlug: "split-by-text" })).toBeNull();
+    });
+
+    it("still send a document with text through the converter that keeps it, with no OCR step", () => {
+        const suggestion = suggestToolFor(file("report.docx"), { fromSlug: "pdf-to-excel" });
+        expect(suggestion).toMatchObject({ relation: "convert", into: "PDF" });
+        expect(suggestion?.then).toBeUndefined();
     });
 });
 

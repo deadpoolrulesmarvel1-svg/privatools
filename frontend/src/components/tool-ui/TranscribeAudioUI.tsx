@@ -254,7 +254,7 @@ export function TranscribeAudioUI() {
 
                     {engine === "byok" && (
                         <>
-                            <ByokPanel byok={byok} purpose="This recording is sent to the provider you choose, using your key." />
+                            <ByokPanel byok={byok} offers={supportsTranscription} purpose="This recording is sent to the provider you choose, using your key." />
                             {byok.ready && !byokProviderOk && (
                                 <p className="text-[12px] text-copper flex items-center gap-1.5">
                                     <AlertCircle size={12} /> {transcriber?.label} has no transcription API — pick {transcriptionProviderNames()}.

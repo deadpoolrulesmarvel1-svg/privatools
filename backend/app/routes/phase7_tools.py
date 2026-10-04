@@ -20,6 +20,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
+from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
 from ..services.media_trim_service import trim_command
 from ..services.video_tools_service import has_audio
@@ -52,7 +53,10 @@ def _run_ffmpeg(args: list[str], label: str, chapters: bool = False) -> None:
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(status_code=504, detail=f"{label} timed out") from exc
     if proc.returncode != 0:
-        err = (proc.stderr.decode("utf-8", "ignore") or proc.stdout.decode("utf-8", "ignore"))[-400:]
+        stderr = proc.stderr.decode("utf-8", "ignore")
+        if unreadable_input(args, stderr):
+            raise HTTPException(status_code=400, detail=NOT_MEDIA)
+        err = (stderr or proc.stdout.decode("utf-8", "ignore"))[-400:]
         raise HTTPException(status_code=500, detail=f"{label} failed: {err.strip() or 'ffmpeg error'}")
 
 

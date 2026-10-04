@@ -77,7 +77,9 @@ const PDF_CHAINS: Record<string, Suggestion[]> = {
     ],
     "image-to-pdf": [
         { slug: "compress-pdf", reason: "Image PDFs are large — shrink it" },
-        { slug: "ocr-pdf", reason: "Make the text in those images searchable" },
+        // Not OCR PDF: its page needs a policy this document lacks, so going
+        // there loads a new document, which drops the handed-over file
+        // (test/handoff-documents.test.ts).
     ],
     "sign-pdf": [
         { slug: "protect-pdf", reason: "Lock it so the signature can't be moved" },

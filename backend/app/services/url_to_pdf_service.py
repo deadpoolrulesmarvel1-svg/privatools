@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from ..utils.exceptions import DependencyError, ProcessingError
 from ..utils.filenames import temp_output
+from ..utils.weasyprint_loader import load_weasyprint
 from .html_to_pdf_service import _make_weasyprint_url_fetcher, _validate_url
 
 
@@ -29,7 +30,7 @@ def url_to_pdf(url: str) -> str:
     output_path = temp_output("webpage", "pdf")
 
     try:
-        from weasyprint import HTML
+        HTML = load_weasyprint().HTML
     except ImportError as exc:
         raise DependencyError(
             "WeasyPrint is not available on this server. "

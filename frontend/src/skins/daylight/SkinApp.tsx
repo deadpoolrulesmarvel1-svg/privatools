@@ -21,7 +21,6 @@ import {
 } from "../accountLogic";
 import { describeEntry, vaultApi } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice, watchThemeChoice } from "@/lib/skinTheme";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -283,17 +282,13 @@ const CSS = `
 .dl-root :focus-visible { outline:2px solid var(--dl-green); outline-offset:3px; border-radius:4px; }
 .dl-root ::selection { background:var(--dl-ghost); }
 .dl-wrap { max-width:1480px; margin:0 auto; padding:0 32px; }
-.dl-h, .dl-root h1, .dl-root h2, .dl-root h3, .dl-brand, .dl-stat b, .dl-herocard .big,
+.dl-h, .dl-root h1, .dl-root h2, .dl-root h3, .dl-brand, .dl-stat b,
 .dl-receipt .rh, .dl-dz .mid b, .dl-cnode .num {
   font-family:'Bricolage Grotesque', 'Manrope', system-ui, sans-serif;
 }
 .dl-h { font-weight:700; letter-spacing:-.022em; text-wrap:balance; line-height:1.05; }
 
 .dl-eyebrow { font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--dl-green); font-weight:600; }
-.dl-sec { padding-top:104px; }
-.dl-sec-head { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
-.dl-sec-title { font-weight:700; font-size:29px; letter-spacing:-.02em; }
-.dl-sec-sub { font-size:15px; color:var(--dl-muted); margin-top:5px; }
 @media (prefers-reduced-motion: reduce) { .dl-root * { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
 /* nav */
@@ -536,16 +531,6 @@ const CSS = `
 .dl-pghero h1 { font-weight:700; font-size:clamp(36px, 4.6vw, 54px); letter-spacing:-.022em; line-height:1.05; }
 .dl-pghero h1 em { font-style:normal; color:var(--dl-green); }
 .dl-pghero p { font-size:16.5px; color:var(--dl-muted); margin-top:14px; max-width:40em; }
-.dl-heror { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:56px; align-items:center; }
-@media (max-width: 1000px) { .dl-heror { grid-template-columns:1fr; gap:10px; } }
-.dl-heror .dl-pghero { max-width:none; }
-.dl-herocard { background:var(--dl-card); border:1px solid var(--dl-rule-soft); border-radius:18px; box-shadow:var(--dl-sh1); padding:22px 24px; margin-top:40px; }
-.dl-herocard h3 { font-weight:700; font-size:15px; margin-bottom:12px; }
-.dl-herocard .big { font-weight:700; font-size:42px; letter-spacing:-.03em; line-height:1; }
-.dl-herocard .sub2 { font-size:13px; color:var(--dl-muted); margin-top:6px; line-height:1.55; }
-.dl-ministeps > div { display:flex; gap:11px; align-items:baseline; padding:9px 0; border-top:1px solid var(--dl-rule-soft); font-size:13.5px; }
-.dl-ministeps > div:first-child { border-top:0; padding-top:0; }
-.dl-ministeps i { font-style:normal; font-weight:700; font-size:12px; color:var(--dl-green); flex:none; }
 .dl-prosegrid { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:64px; align-items:start; padding-bottom:20px; }
 @media (max-width: 980px) { .dl-prosegrid { grid-template-columns:1fr; gap:10px; } }
 .dl-proserail { position:sticky; top:92px; display:flex; flex-direction:column; gap:16px; }
@@ -673,13 +658,7 @@ const CSS = `
 .dl-cmp td .no { color:var(--dl-faint); }
 .dl-cmp td small { display:block; font-weight:400; color:var(--dl-muted); font-size:11px; margin-top:2px; }
 
-/* trust */
-.dl-promise { display:grid; grid-template-columns:260px minmax(0,1fr); gap:28px; padding:26px 0; border-top:1px solid var(--dl-rule); }
-@media (max-width: 800px) { .dl-promise { grid-template-columns:1fr; gap:10px; } }
-.dl-promise h3 { font-weight:700; font-size:19px; letter-spacing:-.012em; }
-.dl-promise .how { font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--dl-green); font-weight:600; margin-top:6px; }
-.dl-promise p { font-size:14.5px; color:var(--dl-muted); max-width:52em; }
-.dl-promise p + p { margin-top:8px; }
+/* caveat */
 .dl-caveat { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:10px; padding:16px 20px; margin-top:10px; }
 .dl-caveat b { font-size:13.5px; font-weight:600; }
 .dl-caveat p { font-size:13.5px; color:var(--dl-muted); margin-top:3px; max-width:60em; }
@@ -687,15 +666,6 @@ const CSS = `
 /* blog */
 /* ── blog: featured card, tag chips, article typography ── */
 /* ── the product pages' furniture ── */
-.dl-acc { max-width:820px; }
-.dl-acc button { font-size:15px; color:var(--dl-ink); font-family:inherit; }
-.dl-acc div[class*="pb-4"] { font-size:14px; color:var(--dl-muted); line-height:1.65; max-width:68ch; }
-.dl-reprow { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:28px; background:var(--dl-card); border:1px solid var(--dl-rule-soft); box-shadow:var(--dl-sh1); border-radius:14px; padding:18px 22px; }
-.dl-reprow b { font-size:14.5px; }
-.dl-reprow p { font-size:13px; color:var(--dl-muted); margin-top:3px; }
-.dl-root .dl-reprow p a { color:var(--dl-green); font-weight:600; }
-.dl-reprow .dl-supcta { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:24px; }
-.dl-supcta span { font-size:13px; color:var(--dl-muted); max-width:32ch; }
 .dl-vimport { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--dl-faint); }
 .dl-vimphint { font-size:11.5px; color:var(--dl-faint); margin-top:10px; line-height:1.6; }
 .dl-vsteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-top:30px; }
@@ -1554,78 +1524,6 @@ export default class DaylightSkinApp extends React.Component {
                 </section>
             </div>
         </section>;
-    }
-
-    /* ── trust / security ── */
-
-    Security() {
-        return (
-            <div className="dl-wrap">
-                <div className="dl-heror rv rv-p">
-                    <div className="dl-pghero">
-                        <h1>Don’t trust us.<br /><em>Check us.</em></h1>
-                        <p>Most tool sites ask you to believe a privacy policy. Ours are behaviors — each one written so you can verify it yourself, from your own browser, in under a minute.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3>Check us in 60 seconds</h3>
-                        <div className="dl-ministeps">
-                            <div><i>01</i><span>Open your browser’s network tab</span></div>
-                            <div><i>02</i><span>Run any local tool on a file</span></div>
-                            <div><i>03</i><span>Watch nothing leave your machine</span></div>
-                        </div>
-                    </div>
-                </div>
-                <div style={{ paddingTop: 26 }}>
-                    {[["Local tools upload nothing", "How to check: network tab",
-                        ["Most of the catalogue runs entirely in your browser. Open developer tools, watch the network panel, run the tool — you’ll see zero upload requests. The file never leaves your machine, so there is nothing for us to store, leak or train on."]],
-                    ["Server tools say so first", "How to check: the amber chip",
-                        ["Some jobs — OCR, office conversion, heavy video — need more than a browser can do. Those tools carry an amber “uses our server” chip before you add a file. Processing happens in isolated temporary storage on our server in Mumbai, India, and your file is deleted after use.",
-                            "We’d rather tell you where the server is than pretend there isn’t one."]],
-                    ["No third-party code touches your files", "How to check: network tab, again",
-                        ["Many free tool sites load their actual processing code from public CDNs at runtime — unpinned scripts, fetched while you’re holding a sensitive document. We don’t. Every tool is bundled and served from privatools.me, integrity-checked at build time, behind a strict content-security policy.",
-                            "Two disclosed exceptions, scoped by that same policy to the tools that need them: on-device AI models and the in-browser OCR engine download from pinned CDNs on first use. Those requests carry code and model weights toward you — never your file the other way."]],
-                    ["Your AI key goes only to your provider", "How to check: network tab + the AI hub",
-                        ["Bring-your-own-key AI sends each request from your browser straight to the provider you configured — Anthropic, OpenAI, Gemini, Groq, or your own self-hosted server. Run one and watch the network panel: the only call is to that provider. The page’s security policy refuses every other AI host, and it only opens provider access at all on the handful of AI tool pages.",
-                            "The key itself is stored encrypted on your device, and the AI hub in the top bar shows and deletes it any time. It is never sent to PrivaTools."]],
-                    ["No accounts, no trackers, no ads", "How to check: use the site",
-                        ["There is nothing to sign up for to use a tool, no third-party script watching you, and nothing to sell. The site is owner-funded. Your history — kept on your device — records tool and time only, never files or filenames."]]]
-                        .map(([h, how, ps]) => (
-                            <div className="dl-promise" key={h}>
-                                <div><h3>{h}</h3><div className="how">{how}</div></div>
-                                <div>{ps.map((p, i) => <p key={i}>{p}</p>)}</div>
-                            </div>
-                        ))}
-                </div>
-                <section className="dl-sec rv" style={{ paddingTop: 64 }}>
-                    <div className="dl-sec-head"><div><h2 className="dl-sec-title">Where we’re not perfect</h2><p className="dl-sec-sub">Said plainly, because that’s the point</p></div></div>
-                    <Accordion type="single" collapsible className="dl-acc">
-                        <AccordionItem value="models">
-                            <AccordionTrigger>On-device AI models download from a CDN once</AccordionTrigger>
-                            <AccordionContent>Summarize, Smart Redact, Translate, Remove Background, Transcribe Audio, Subtitle Generator and in-browser OCR fetch model weights or engine files — not your files — on first use, then cache them in your browser. The AI hub in the top bar lists every installed model with its real size and removes any of them. Your document still never leaves the browser.</AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="byok">
-                            <AccordionTrigger>Your own AI key means trusting the provider you picked</AccordionTrigger>
-                            <AccordionContent>With bring-your-own-key, the text of the document you run (or the page images, for vision OCR) goes to that provider under your agreement with them — that is the entire point, and it is your call per run. We keep ourselves out of the path; we cannot keep your provider out of it. The free on-device engines exist precisely for the documents where even that is too much.</AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="server">
-                            <AccordionTrigger>Server tools mean trusting our server</AccordionTrigger>
-                            <AccordionContent>For those tools, “deleted after use” is our promise, not something your network tab can prove. If a document is too sensitive for that, use a local-only tool — the chip tells you which is which.</AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="besteffort">
-                            <AccordionTrigger>One server, best effort — no failover</AccordionTrigger>
-                            <AccordionContent>Server-backed tools run on a single disclosed machine in Mumbai. If it’s down, they’re down until it’s fixed — the status page will say so honestly, and every local tool keeps working.</AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                    <div className="dl-reprow">
-                        <div>
-                            <b>Found a security issue?</b>
-                            <p>Straight to the owner, no triage queue. Our disclosure policy lives at <a href="/.well-known/security.txt">security.txt</a>.</p>
-                        </div>
-                        <a className={buttonVariants({ variant: "outline" })} href="mailto:hello@privatools.me?subject=Security%20report">Report a vulnerability</a>
-                    </div>
-                </section>
-            </div>
-        );
     }
 
     Compare() {

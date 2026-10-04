@@ -111,11 +111,14 @@ class TestWeasyprintSubresourceFetcher:
 
 @pytest.fixture
 def native_weasyprint():
+    # Through the loader, which keeps Pillow refusing cut-off pictures for the
+    # tests that run after this one (test_cut_off_image_policy.py).
+    from backend.app.utils.weasyprint_loader import load_weasyprint
+
     try:
-        import weasyprint
+        return load_weasyprint()
     except (ImportError, OSError) as exc:
         pytest.skip(f"Native WeasyPrint libraries unavailable: {exc}")
-    return weasyprint
 
 
 class TestNativeWeasyprintFetcher:

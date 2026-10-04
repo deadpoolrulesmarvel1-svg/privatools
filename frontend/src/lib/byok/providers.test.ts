@@ -43,7 +43,10 @@ describe("provider endpoints", () => {
    * developer plans, which BYOK visitors hold; the models page lists them for
    * Enterprise only). Anthropic's deprecations page, read 2026-10-01: Opus 4.1
    * retired 2026-08-05; Sonnet 4.5 deprecated 2026-09-30, retiring 2026-11-30,
-   * with claude-sonnet-5-5 named as its replacement.
+   * with claude-sonnet-5-5 named as its replacement. OpenAI's deprecations
+   * page (developers.openai.com/api/docs/deprecations), read 2026-10-03: the
+   * models of its 2026-04-22 notice shut down on 2026-10-23, o3-mini among
+   * them, with gpt-5.6-sol named as its substitute.
    */
   const NOT_SERVED: Record<string, string[]> = {
     gemini: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-pro"],
@@ -52,6 +55,7 @@ describe("provider endpoints", () => {
     together: ["meta-llama/Llama-3-70b-chat-hf"],
     anthropic: ["claude-opus-4-1", "claude-sonnet-4-5"],
     groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+    openai: ["o3-mini", "o4-mini", "o1", "o1-pro", "gpt-4-turbo", "gpt-4", "gpt-4.1-nano", "gpt-3.5-turbo", "gpt-4o-2024-05-13"],
   };
 
   it.each(Object.entries(NOT_SERVED))("%s offers no model it has shut down or deprecated", (id, gone) => {
@@ -257,6 +261,24 @@ describe("Anthropic request body", () => {
   it("leaves other providers' default cap alone", () => {
     const req = buildRequest(providerById("openai")!, { apiKey: "k", model: "gpt-4o", messages });
     expect(JSON.parse(req.body).max_tokens).toBe(4096);
+  });
+});
+
+describe("OpenAI suggestions", () => {
+  /**
+   * OpenAI's reasoning models, the o-series and gpt-5 onwards, refuse
+   * max_tokens with a 400 ("Unsupported parameter: 'max_tokens' is not
+   * supported with this model. Use 'max_completion_tokens' instead."; its
+   * chat-completions reference: max_tokens "is not compatible with o-series
+   * models"). While OpenAI requests send max_tokens, suggesting one gives the
+   * visitor that 400.
+   */
+  it("suggests no OpenAI reasoning model while OpenAI requests send max_tokens", () => {
+    const openai = providerById("openai")!;
+    const body = JSON.parse(buildRequest(openai, { apiKey: "k", model: openai.models[0], messages: [{ role: "user", content: "hi" }] }).body);
+    const reasoning = openai.models.filter(model => /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(model));
+    if ("max_tokens" in body) expect(reasoning).toEqual([]);
+    expect(openai.models.length).toBeGreaterThan(0);
   });
 });
 

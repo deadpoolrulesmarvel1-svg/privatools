@@ -36,7 +36,7 @@
     },
     {
       "q": "Why did my AVI fail to convert?",
-      "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Typical causes are a truncated or damaged file, a codec FFmpeg cannot decode, a frame with an odd width or height (x264 needs even dimensions here), and encoding that runs past the 180-second limit."
+      "a": "When FFmpeg stops with an error, the page shows \"A processing tool failed on this file. Try a different file or simpler settings.\" Typical causes are a truncated or damaged file, a codec FFmpeg cannot decode, and a frame with an odd width or height (x264 needs even dimensions here). A file FFmpeg cannot open as video at all shows \"This file isn't a video or audio file this tool can read.\" instead, and encoding that runs past the 180-second limit shows \"The server took too long. Try a smaller file or try again.\""
     },
     {
       "q": "What limits apply?",
