@@ -208,14 +208,17 @@ export class NumberedReplyError extends Error {
  * from 1 to `count` once, in order, each on its own line with some text.
  * Anything else (a missing, doubled, merged or extra number, a line without
  * one) is refused whole, so text is never moved from one cue to another. A
- * preamble before the first numbered line is ignored.
+ * preamble before the first numbered line is ignored. Another line's number
+ * inside a line is two lines merged, even when the numbers after it were
+ * made to add up; a bracketed number the line was sent with (`sent`) is its own.
  */
-export function readNumberedReply(reply: string, count: number): string[] {
+export function readNumberedReply(reply: string, count: number, sent: readonly string[] = []): string[] {
     const out: string[] = [];
     for (const raw of reply.replace(/\r\n?/g, "\n").split("\n")) {
         const line = raw.trim();
         if (!line || /^```/.test(line) || /^<<<(?:END )?DOCUMENT\b/.test(line)) continue;
-        const m = /^\[(\d+)\]\s*(.*)$/.exec(line);
+        // "[3]: text" reads as "[3] text"; a colon the line starts with, as in ":)", stays.
+        const m = /^\[(\d+)\](?::(?=\s))?\s*(.*)$/.exec(line);
         if (!m) {
             if (!out.length) continue;
             throw new NumberedReplyError(`a line without a number follows [${out.length}]`);
@@ -225,7 +228,8 @@ export function readNumberedReply(reply: string, count: number): string[] {
         if (number !== expected) throw new NumberedReplyError(number < expected ? `[${number}] comes twice or out of order` : `[${expected}] is missing`);
         if (number > count) throw new NumberedReplyError(`[${number}] is more than the ${count} lines sent`);
         const text = m[2].trim();
-        if (/^\[\d+\]/.test(text)) throw new NumberedReplyError(`[${number}] holds two numbers`);
+        const own = sent[number - 1] ?? "";
+        if ((text.match(/\[\d+\]/g) ?? []).some(tag => !own.includes(tag))) throw new NumberedReplyError(`[${number}] holds two numbers`);
         if (!text) throw new NumberedReplyError(`[${number}] is empty`);
         out.push(text);
     }
@@ -256,7 +260,7 @@ export async function translateLinesWithByok(args: TranslateLinesArgs): Promise<
         ],
         refuseCutOff: true,
     });
-    return readNumberedReply(reply, args.lines.length);
+    return readNumberedReply(reply, args.lines.length, args.lines);
 }
 
 /* ────────────── Ask your PDF (chat) ────────────── */

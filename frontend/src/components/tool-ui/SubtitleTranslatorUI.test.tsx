@@ -329,6 +329,14 @@ describe("translating with your own AI key", () => {
         expect(mocks.download.mock.calls[0][1]).toBe("talk.ja.vtt");
     });
 
+    it("says the model declined when it declined every batch, not that the numbering failed", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async () => ({ ok: true, status: 200, json: async () => ({ content: [], stop_reason: "refusal" }), text: async () => "" } as unknown as Response));
+        await translateWithKey();
+        expect(await screen.findByRole("heading", { name: "Anthropic (Claude) didn’t translate the subtitles." })).toBeInTheDocument();
+        expect(screen.getByText(/Claude declined to answer this request/)).toBeInTheDocument();
+        expect(screen.queryByText(/didn’t keep each line’s number/)).toBeNull();
+    });
+
     it("says the key was rejected, and translates nothing", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 401, json: async () => ({}), text: async () => "{}" } as unknown as Response);
         await translateWithKey();

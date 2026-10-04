@@ -85,6 +85,8 @@ export interface RunResult {
     outcomes: (ItemOutcome | undefined)[];
     /** What stopped the run early, when something did. */
     stoppedBy?: unknown;
+    /** Why the lines marked as failed after a retry failed: what a run that translated nothing reports. */
+    failedBy?: unknown;
 }
 
 export interface RunOptions {
@@ -106,9 +108,15 @@ export interface DeviceEngine {
     translate(text: string, maxNewTokens?: number): Promise<string>;
 }
 
+/** Kana and Chinese characters, each about a word or most of one, and Hangul syllables, each about half a word. */
+const DENSE = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const HANGUL = /[\uac00-\ud7af]/;
+/** Length in Latin-letter terms, so a faithful Chinese-to-English translation isn't taken for an invented one. */
+const weighed = (text: string) => Array.from(text).reduce((sum, ch) => sum + (DENSE.test(ch) ? 3 : HANGUL.test(ch) ? 2 : 1), 0);
+
 /** Far longer than any faithful translation of the source: how a model looks when it invents text for a fragment. */
 export function looksInvented(source: string, translation: string): boolean {
-    return Array.from(translation).length > Array.from(source).length * 3 + 24;
+    return weighed(translation) > weighed(source) * 3 + 24;
 }
 
 /** A passage's items in runs that fit the model's input; an item over the limit alone goes on its own. */
@@ -261,6 +269,7 @@ function failureReason(error: unknown): string {
 export async function translateWithModel(plan: TranslationPlan, translateLines: LinesEngine, { signal, onProgress, limits = BATCH_LIMITS }: RunOptions & { limits?: { maxChars: number; maxLines: number } } = {}): Promise<RunResult> {
     const outcomes: (ItemOutcome | undefined)[] = new Array(plan.items.length).fill(undefined);
     let done = 0;
+    let failedBy: unknown;
     const attempt = async (batch: number[]) => {
         const replies = await translateLines(batch.map(index => lineFor(plan.items[index])), signal);
         if (replies.length !== batch.length) throw Object.assign(new Error("count"), { name: "NumberedReplyError" });
@@ -276,22 +285,23 @@ export async function translateWithModel(plan: TranslationPlan, translateLines: 
             await attempt(batch);
         } catch (error) {
             if (isAbort(error)) throw error;
-            if (!worthRetrying(error)) return { outcomes, stoppedBy: error };
+            if (!worthRetrying(error)) return { outcomes, stoppedBy: error, failedBy };
             for (const half of halves(plan, batch)) {
                 stopIfAborted(signal);
                 try {
                     await attempt(half);
                 } catch (again) {
                     if (isAbort(again)) throw again;
-                    if (!worthRetrying(again)) return { outcomes, stoppedBy: again };
+                    if (!worthRetrying(again)) return { outcomes, stoppedBy: again, failedBy };
                     for (const index of half) outcomes[index] = { status: "failed", reason: failureReason(again) };
+                    failedBy = again;
                 }
             }
         }
         done += batch.length;
         onProgress?.(done, plan.items.length);
     }
-    return { outcomes };
+    return { outcomes, failedBy };
 }
 
 /* ── Back into cues ──────────────────────────────────────────────────── */

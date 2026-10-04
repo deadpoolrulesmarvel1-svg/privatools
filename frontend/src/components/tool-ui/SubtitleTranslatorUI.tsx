@@ -332,10 +332,10 @@ export function SubtitleTranslatorUI() {
             const translated = outcomes.filter(value => value?.status === "done").length;
             const seconds = (performance.now() - started) / 1000;
             if (translated === 0) {
-                // Nothing came back: what stopped the run, or every batch's replies, or a model that wrote nothing.
-                const cause = outcome.stoppedBy
+                // Nothing came back: what stopped the run, or what every batch failed for twice, or a model that wrote nothing.
+                const cause = outcome.stoppedBy ?? outcome.failedBy
                     ?? Object.assign(new Error("No line was translated."), { name: run.engine === "byok" ? "NumberedReplyError" : "EmptyTranslation" });
-                emitToolRun({ outcome: "error", files: 1, errorKind: run.engine === "byok" ? "provider" : "browser" }, outcome.stoppedBy);
+                emitToolRun({ outcome: "error", files: 1, errorKind: run.engine === "byok" ? "provider" : "browser" }, outcome.stoppedBy ?? outcome.failedBy);
                 setFailure(failureFor(cause, run));
                 setPhase("failed");
                 return;

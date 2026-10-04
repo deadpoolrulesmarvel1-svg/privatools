@@ -299,7 +299,12 @@ export function cueParts(lines: readonly string[]): CuePart[] {
         const joined = group.reduce((all, line) => joinLines(all, line));
         const { before, core, after, turn } = frame(mergeSpans(tokenize(joined)));
         const found = words(core);
-        const style = before.filter(token => token.type === "tag" && !token.closing && token.name !== "v").map(token => (token as { name: string }).name).sort().join("+");
+        // Lyrics and placed text (a sign at the top of the picture) stand apart from the dialogue around them, as italics do.
+        const style = [
+            ...before.filter(token => token.type === "tag" && !token.closing && token.name !== "v").map(token => (token as { name: string }).name).sort(),
+            ...before.filter(token => token.type === "override").map(token => (token as { raw: string }).raw),
+            ...(/[♪♫♬]/.test(rawOf(before) + rawOf(after)) ? ["♪"] : []),
+        ].join("+");
         return {
             before: rawOf(before), after: rawOf(after), ...found, turn, style,
             translatable: /\p{L}/u.test(found.text),
@@ -360,14 +365,18 @@ export interface RenderedCue {
  * translation, plain or with <i>, <b> and <u>; null keeps the part as written.
  */
 export function renderCue(parts: readonly CuePart[], translated: readonly (string | null)[], format: SubtitleFormat, layout: CaptionLayout): RenderedCue {
+    // Only <i>, <b> and <u> are markup in a translation; anything else shaped like a tag ("a<b and c>d") is its text.
     const write = (markup: string) => format === "vtt"
-        ? tokenize(markup).map(token => token.type === "text" ? escapeVtt(token.value) : token.raw).join("")
+        ? tokenize(markup).map(token => (token.type === "tag" && SIMPLE.has(token.name) && token.raw === `<${token.closing ? "/" : ""}${token.name}>`
+            ? token.raw
+            : escapeVtt(token.type === "text" ? token.value : token.raw))).join("")
         : markup;
     let long = false;
     const lines = parts.map((part, i) => {
         const words = translated[i];
         if (words === null || words === undefined) return part.raw;
-        const markup = tidy(words);
+        // Spaces moved outside the spans, so the shown text has single spaces and line breaks land between words.
+        const markup = tidy(spacesOutsideSpans(words));
         if (parts.length > 1) {
             if (visible(part.before) + visible(markup) + visible(part.after) > layout.maxLineChars) long = true;
             return `${part.before}${write(markup)}${part.after}`;

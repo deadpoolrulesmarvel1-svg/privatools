@@ -21,12 +21,12 @@ describe("taking a cue apart", () => {
     });
 
     it("keeps wrapping tags, overrides, voice spans, labels and music notes around the words", () => {
-        expect(pick(["{\\an8}<i>I'm on the phone.</i>"])[0]).toMatchObject({ before: "{\\an8}<i>", text: "I'm on the phone.", after: "</i>", style: "i" });
+        expect(pick(["{\\an8}<i>I'm on the phone.</i>"])[0]).toMatchObject({ before: "{\\an8}<i>", text: "I'm on the phone.", after: "</i>", style: "i+{\\an8}" });
         expect(pick(["<i>I went to the store</i>", "<i>and bought milk.</i>"])[0]).toMatchObject({ before: "<i>", text: "I went to the store and bought milk.", after: "</i>" });
         expect(pick(["<v Bob>Welcome back</v>"])[0]).toMatchObject({ before: "<v Bob>", text: "Welcome back", after: "</v>", turn: true, style: "" });
         expect(pick(["<c.yellow>Thanks.</c>"])[0]).toMatchObject({ before: "<c.yellow>", text: "Thanks.", after: "</c>", style: "c" });
         expect(pick(["JOHN: Hi there."])[0]).toMatchObject({ before: "JOHN: ", text: "Hi there.", turn: true });
-        expect(pick(["♪ Happy birthday to you ♪"])[0]).toMatchObject({ before: "♪ ", text: "Happy birthday to you", after: " ♪" });
+        expect(pick(["♪ Happy birthday to you ♪"])[0]).toMatchObject({ before: "♪ ", text: "Happy birthday to you", after: " ♪", style: "♪" });
     });
 
     it("keeps a minus sign and a doubled dash in the words", () => {
@@ -103,6 +103,16 @@ describe("putting a translated cue back", () => {
     it("escapes a translation for VTT, and leaves SRT text as it is", () => {
         expect(renderCue(cueParts(["R&amp;D"]), ["I+D & <más>"], "vtt", TWO).text).toBe("I+D &amp; &lt;más&gt;");
         expect(renderCue(cueParts(["R&D"]), ["I+D & más"], "srt", TWO).text).toBe("I+D & más");
+        // Text shaped like a tag is text: written as it was, it would open a bold span and lose "y c".
+        expect(renderCue(cueParts(["If a &lt; b and c &gt; d, stop."]), ["Si a<b y c>d, para."], "vtt", TWO).text).toBe("Si a&lt;b y c&gt;d, para.");
+        expect(renderCue(cueParts(["I said <i>no</i>."]), ["Dije <i>no</i>."], "vtt", TWO).text).toBe("Dije <i>no</i>.");
+    });
+
+    it("breaks between words when a reply has a space just inside a span", () => {
+        const reply = "Le dije <i> no</i> a toda la idea de ir allí esta noche otra vez, de verdad.";
+        const { text } = renderCue(cueParts(["I said <i>no</i> to the whole idea of going there tonight again."]), [reply], "srt", TWO);
+        expect(text.replace(/<\/?i>/g, "").split("\n").join(" ")).toBe("Le dije no a toda la idea de ir allí esta noche otra vez, de verdad.");
+        expect(text).toContain("<i>no</i>");
     });
 
     it("wraps Chinese at 16 characters a line between words, without spaces", () => {

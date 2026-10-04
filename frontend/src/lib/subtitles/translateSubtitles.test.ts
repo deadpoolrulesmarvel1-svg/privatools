@@ -254,7 +254,8 @@ describe("reading a model's numbered reply", () => {
     it.each([
         ["a wrong count", "[1] Uno\n[2] Dos", 3, "[3] to [3] are missing"],
         ["merged numbers", "[1] Uno\n[2][3] Dos tres", 3, "[2] holds two numbers"],
-        ["two lines merged into one", "[1] Uno [2] Dos\n[3] Tres", 3, "[2] is missing"],
+        ["two lines merged into one", "[1] Uno [2] Dos\n[3] Tres", 3, "[1] holds two numbers"],
+        ["two lines merged, the count made up after", "[1] Uno [2] Dos\n[2] Tres\n[3] Cuatro", 3, "[1] holds two numbers"],
         ["a missing line", "[1] Uno\n[3] Tres", 3, "[2] is missing"],
         ["a doubled number", "[1] Uno\n[1] Uno\n[2] Dos", 2, "[1] comes twice or out of order"],
         ["a line split in two", "[1] Uno\ny más\n[2] Dos", 2, "a line without a number follows [1]"],
@@ -264,6 +265,50 @@ describe("reading a model's numbered reply", () => {
     ])("refuses %s", (_label, reply, count, problem) => {
         expect(() => readNumberedReply(reply, count)).toThrow(NumberedReplyError);
         try { readNumberedReply(reply, count); } catch (error) { expect((error as NumberedReplyError).problem).toBe(problem); }
+    });
+
+    it("keeps a bracketed number the line was sent with, and reads \"[1]: text\" as the text", () => {
+        expect(readNumberedReply("[1] Pulse [2] para seguir.", 1, ["Press [2] to go on."])).toEqual(["Pulse [2] para seguir."]);
+        expect(readNumberedReply("[1]: Hola\n[2] :)", 2)).toEqual(["Hola", ":)"]);
+    });
+});
+
+describe("reporting a run with your own AI key that translated nothing", () => {
+    it("keeps the provider's reason when every batch failed twice for it, not a numbering problem", async () => {
+        const plan = planTranslation(parseSubtitles(FILM));
+        const declined = new ByokError("Declined", "model declined (stop_reason refusal)", "Claude declined to answer this request.");
+        const { engine, sent } = model(() => declined);
+        const result = await translateWithModel(plan, engine);
+        expect(sent.map(lines => lines.length)).toEqual([6, 3, 3]);
+        expect(result.stoppedBy).toBeUndefined();
+        expect(result.failedBy).toBe(declined);
+        expect(result.outcomes.every(outcome => outcome?.status === "failed")).toBe(true);
+    });
+});
+
+describe("passages around lyrics and placed text", () => {
+    it("keeps a lyric and the line after it apart, and a verse across two cues together", () => {
+        const doc = parseSubtitles([
+            "1\n00:00:01,000 --> 00:00:02,000\n♪ The waves keep rolling in ♪\n",
+            "2\n00:00:02,100 --> 00:00:03,000\nThe museum opens at nine.\n",
+            "3\n00:00:04,000 --> 00:00:05,000\n♪ And the tide comes\n",
+            "4\n00:00:05,100 --> 00:00:06,000\n♪ back to me ♪\n",
+            "5\n00:00:06,500 --> 00:00:07,000\n{\\an8}EXIT\n",
+            "6\n00:00:07,100 --> 00:00:08,000\nwe should leave now.\n",
+        ].join("\n"));
+        expect(planTranslation(doc).passages).toEqual([[0], [1], [2, 3], [4], [5]]);
+    });
+});
+
+describe("telling an invented translation from a faithful one", () => {
+    it("weighs Chinese and Japanese characters as the words they are", () => {
+        const zh = "我们今天要讨论灯塔为什么重要以及人们如何在风暴之后重建它";
+        expect(looksInvented(zh, "Today we are going to discuss why lighthouses matter and how people rebuilt one after the storm.")).toBe(false);
+        // Faithful translations about five times as long in letters: counted a letter a character, both were taken for inventions.
+        expect(looksInvented("灯塔下午五点关门，周一不开放。", "The lighthouse closes at five in the afternoon and is not open on Mondays.")).toBe(false);
+        expect(looksInvented("明日の朝、港の灯台が百五十年ぶりに一般公開されます。", "Tomorrow morning, the harbour lighthouse will be open to the public for the first time in one hundred and fifty years.")).toBe(false);
+        expect(looksInvented("好", "Well, I think that we should probably go home now, before it gets dark.")).toBe(true);
+        expect(looksInvented("OK", "我觉得我们现在应该回家了，天快黑了。")).toBe(true);
     });
 });
 
