@@ -328,7 +328,9 @@ function NoiseResultView({ file, result, onAgain, onStartOver }: {
             <button type="button" className="ts-secondary-button" onClick={onAgain}>Change the strength</button>
             <button type="button" className="ts-text-button" onClick={onStartOver}>Clean another file</button>
         </div>
-        <p className="ts-caption nr-next">The WAV is {stats.channels === 2 ? "stereo" : "mono"}, 16-bit, at 48 kHz, the rate RNNoise works at, and was made on this device; nothing was uploaded. WAV files are large: <a href="/tools/audio-converter">Audio Converter</a> can make an MP3 of it, which means uploading the WAV to PrivaTools for temporary processing. To turn the speech into text, download the WAV, open <a href="/tools/transcribe-audio">Transcribe Audio</a> and choose the downloaded file.</p>
+        <p className="ts-caption nr-next">The WAV is {stats.channels === 2 ? "stereo" : "mono"}, 16-bit, at 48 kHz, the rate RNNoise works at, and was made on this device; nothing was uploaded. {result.wav.size <= MAX_FILE_SIZE
+            ? <>WAV files are large: <a href="/tools/audio-converter">Audio Converter</a> can make an MP3 of it, which means uploading the WAV to PrivaTools for temporary processing. To turn the speech into text, download the WAV, open <a href="/tools/transcribe-audio">Transcribe Audio</a> and choose the downloaded file.</>
+            : <>At {formatFileSize(result.wav.size)} it is larger than the {MAX_FILE_SIZE_LABEL} that Audio Converter and Transcribe Audio take, so an audio app on your device can make an MP3 of it.</>}</p>
     </StudioResult>;
 }
 

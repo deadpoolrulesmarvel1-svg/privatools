@@ -98,6 +98,19 @@ describe("the Voice Noise Remover page", () => {
         expect(screen.getByRole("link", { name: "Transcribe Audio" })).toHaveAttribute("href", "/tools/transcribe-audio");
     });
 
+    it("doesn't send a WAV larger than PrivaTools takes for upload to the tools that upload it", async () => {
+        const big = result();
+        // 47 minutes of stereo: past the 500 MB the other tools take.
+        Object.defineProperty(big.wav, "size", { value: 541_440_044 });
+        mocks.remove.mockResolvedValue(big);
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
+        expect(screen.queryByRole("link", { name: "Transcribe Audio" })).toBeNull();
+        expect(screen.getByText(/larger than the 500 MB that Audio Converter and Transcribe Audio take/)).toBeInTheDocument();
+    });
+
     it("pauses one player when the other plays", async () => {
         mocks.remove.mockResolvedValue(result());
         choose();
