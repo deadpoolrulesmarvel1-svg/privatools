@@ -282,13 +282,20 @@ def _content_overwritten() -> bytes:
     return CLASSIC[:start + 2] + b"A" * 10 + CLASSIC[start + 12:]
 
 
+# - page-object: one byte of the first page object overwritten, so it no
+#   longer parses ("invalid key in dict"). MuPDF opens the file without
+#   repairing it and shows that page blank; the tools that write to the page
+#   failed with "not a dict (null)" (utils.cleanup._has_unreadable_page).
 OVERWRITTEN = {
     "page-tree": CLASSIC.replace(b"/Count 4/Kids[4 0 R", b"/Cxunt 4/Kids[4 02R"),
     "content": _content_overwritten(),
+    "page-object": CLASSIC.replace(b"/Contents[6 0 R]>>", b"/Contents[6 0 R]>y"),
 }
-# Sanitize reads the file in a worker process of its own, which calls only
-# pikepdf's PdfError damage and reports anything else as its own failure.
-STILL_A_SERVER_ERROR = {("/api/sanitize", "page-tree")}
+# Sanitize and Hidden Text read the file in worker processes of their own,
+# which count only some library errors as damage (Sanitize pikepdf's PdfError,
+# Hidden Text MuPDF's errors on a file it repaired) and report anything else
+# as their own failure.
+STILL_A_SERVER_ERROR = {("/api/sanitize", "page-tree"), ("/api/hidden-text-checker", "page-object")}
 
 
 @pytest.mark.parametrize("route,sample", [

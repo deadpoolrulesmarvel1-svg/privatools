@@ -195,6 +195,46 @@ def test_process_pdf_rebuilds_a_repaired_file_only_after_a_library_failure():
     assert seen == [3]  # a ToolError is never retried
 
 
+def _first_page_object_unreadable(data: bytes) -> bytes:
+    """One byte of the first page object overwritten, so that it no longer
+    parses: MuPDF opens the file without repairing it and shows the page
+    blank."""
+    doc = fitz.open(stream=data, filetype="pdf")
+    xref = doc[0].xref
+    doc.close()
+    start = data.index(b"\n%d 0 obj" % xref)
+    end = data.index(b">>\nendobj", start)
+    return data[:end + 1] + b"y" + data[end + 2:]
+
+
+def test_process_pdf_counts_a_page_object_mupdf_cannot_read_as_damage():
+    from backend.app.utils.cleanup import process_pdf
+    from backend.app.utils.exceptions import PdfCorruptError
+
+    whole = _whole(2)
+    broken = _first_page_object_unreadable(whole)
+    doc = fitz.open(stream=broken, filetype="pdf")
+    assert not doc.is_repaired and len(doc) == 2
+    doc.close()
+
+    def write(doc):
+        doc[0].insert_text((72, 72), "x")  # "not a dict (null)" on the unreadable page
+        return "written"
+
+    assert process_pdf(whole, write, rebuild=False) == "written"
+    with pytest.raises(PdfCorruptError, match="damaged"):
+        process_pdf(broken, write, rebuild=False)
+
+    def own_bad_argument(doc):
+        doc.xref_set_key(doc[0].xref, "Resources/Font", "5")  # the tool's own mistake
+        doc[0].insert_text((72, 72), "x")  # "not a dict (string)", from MuPDF
+
+    # Every page object of an intact file reads, so the same MuPDF error from
+    # the tool's own mistake stays its own: a logged 500, not "damaged".
+    with pytest.raises(fitz.mupdf.FzErrorArgument):
+        process_pdf(whole, own_bad_argument, rebuild=False)
+
+
 def test_a_file_qpdf_cannot_rebuild_is_refused_as_damaged(monkeypatch):
     from backend.app.utils import cleanup
     from backend.app.utils.exceptions import PdfCorruptError
