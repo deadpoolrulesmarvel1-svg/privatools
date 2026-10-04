@@ -1,29 +1,38 @@
 /**
- * UnlockUI — remove password protection from one or more PDFs.
- * Workshop dropzone + vault-style password panel.
+ * UnlockUI — remove password protection from one or more PDFs, on the shared
+ * kit: the intake and the chosen files, the password in the options, the run
+ * button in the action bar, and the kit's result. Every file goes in one
+ * request with one password, so a run unlocks the whole set or nothing, and
+ * its one result (a PDF, or a ZIP for several) downloads by itself once.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen, RotateCcw, Download } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
+import { Download, Eye, EyeOff, LockOpen } from "lucide-react";
+import { friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, downloadBlob, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
-import { takeAccepted } from "@/lib/report-rejected-files";
 import { usePdfPasswordTrial } from "@/hooks/usePdfPasswordTrial";
 import { VaultTrialBanner } from "@/components/VaultTrialBanner";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
-import { downloadAgainLabel } from "@/skins/experience/studio-outcome";
+import { FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
+import { downloadAgainLabel, downloadStarted, runFailure, runFailureDetail, type RunFailure } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
+import { fileCount } from "@/skins/experience/file-format-label";
 
-type UnlockFile = { id: string; name: string; size: string; raw: File };
+type UnlockFile = { id: string; raw: File };
 let fileId = 0;
 
 export function UnlockUI() {
     const [files, setFiles] = useState<UnlockFile[]>([]);
     const [password, setPassword] = useState("");
     const [showPw, setShowPw] = useState(false);
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    const [failure, setFailure] = useState<RunFailure | null>(null);
+    // What the run downloaded, for "Download again" (the download policy).
+    const [downloaded, setDownloaded] = useState<{ blob: Blob; filename: string } | null>(null);
+    // Back from a result: to the intake, to the password, or, with different files, to the run button.
+    const [returning, setReturning] = useState<"intake" | "password" | "run" | null>(null);
+    const pwRef = useRef<HTMLInputElement>(null);
+    const runButton = useRef<HTMLButtonElement>(null);
 
     // Try saved passwords locally (pdf.js) before asking the user. Only a
     // password that actually works is ever sent to /unlock — wrong candidates
@@ -33,44 +42,52 @@ export function UnlockUI() {
     // that wasn't already in the vault.
     const [typedPassword, setTypedPassword] = useState("");
 
-    const addFiles = (fl: FileList) => {
-        // A file that isn't a PDF is named, with the tool that takes it, never dropped silently.
-        const next: UnlockFile[] = takeAccepted(Array.from(fl), ".pdf")
-            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
+    // Trial against the first file only: this tool applies one password to
+    // the whole batch, so that's the one that matters.
+    const trySaved = (first: File) => {
+        void runTrial(first).then(result => {
+            if (result.status === "unlocked") {
+                setPassword(result.password);
+                setTypedPassword("");
+            }
+        });
+    };
+    const addFiles = (accepted: File[]) => {
+        // The intake has named any file that isn't a PDF, with the tool that takes it.
+        const next: UnlockFile[] = accepted.map(f => ({ id: String(++fileId), raw: f }));
         if (!next.length) return;
         setFiles(prev => [...prev, ...next]);
-        setState("idle");
-        setError(null);
-        // Trial against the first file only: this tool applies one password to
-        // the whole batch, so that's the one that matters.
-        if (files.length === 0) {
-            void runTrial(next[0].raw).then(result => {
-                if (result.status === "unlocked") {
-                    setPassword(result.password);
-                    setTypedPassword("");
-                }
-            });
-        }
+        setPhase("idle");
+        setFailure(null);
+        if (files.length === 0) trySaved(next[0].raw);
     };
     const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-    const canProcess = files.length > 0 && !!password && state !== "processing";
-    // What the run downloaded, for "Download again" (the download policy).
-    const [downloaded, setDownloaded] = useState<{ blob: Blob; filename: string } | null>(null);
+    const canProcess = files.length > 0 && !!password && phase !== "processing";
+
+    // Once the first file is chosen, the password is what the tool needs next.
+    const hasFiles = files.length > 0;
+    useEffect(() => {
+        if (hasFiles && !password && phase === "idle") pwRef.current?.focus();
+        // Only when the first files arrive, not on every keystroke.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasFiles]);
 
     const process = useCallback(async () => {
         if (!files.length || !password) return;
-        setState("processing"); setError(null);
+        setPhase("processing"); setFailure(null);
         try {
             const outExt = files.length === 1 ? "pdf" : "zip";
             const outName = buildOutputFilename(files[0]?.raw.name, "unlocked", outExt);
+            // The download policy: the result downloads by itself, once per run.
             const out = await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
             setDownloaded(out ?? null);
-            setState("done");
+            setPhase("done");
             emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Unlock failed";
-            setError(friendlyError(msg, "Couldn't unlock that PDF. The password may be wrong."));
-            setState("idle");
+            setDownloaded(null);
+            setFailure(runFailure(e, friendlyError(msg, "Couldn't unlock that PDF. The password may be wrong.")));
+            setPhase("done");
             emitToolRun({ outcome: "error", files: files.length }, e);
         }
     }, [files, password]);
@@ -83,149 +100,83 @@ export function UnlockUI() {
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    if (state === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Unlocked</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{files.length}</span> file{files.length !== 1 && "s"} freed
-                        </h2>
-                        {/* Offer to save only a password the user typed AND that
-                            we just proved works. A password that came from the
-                            vault is already saved. */}
-                        {typedPassword && (
-                            <div className="mt-5">
-                                <SavePasswordPrompt
-                                    password={typedPassword}
-                                    suggestedLabel={files[0]?.name.replace(/\.pdf$/i, "") ?? ""}
-                                />
-                            </div>
-                        )}
-                        {downloaded && <button onClick={() => downloadBlob(downloaded.blob, downloaded.filename)} className="mt-5 mr-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                            <Download size={13} aria-hidden="true" /> {downloadAgainLabel(files.length)}
-                        </button>}
-                        <button
-                            onClick={() => { setFiles([]); setState("idle"); setPassword(""); setTypedPassword(""); resetTrial(); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Unlock more
-                        </button>
-                    </div>
+    // Back with the files: focus the password that may need changing, or the run button.
+    useEffect(() => {
+        if (phase !== "idle") return;
+        if (returning === "password") {
+            focusIfIdle(pwRef.current);
+            if (document.activeElement === pwRef.current) pwRef.current?.select();
+        }
+        if (returning === "run") focusIfIdle(runButton.current);
+    }, [phase, returning]);
+
+    const startOver = (chosen?: File[]) => {
+        setDownloaded(null); setFailure(null);
+        resetTrial();
+        if (chosen?.length) {
+            // A different file after a failure keeps the password typed for it,
+            // unless a saved password opens it.
+            setFiles(chosen.map(f => ({ id: String(++fileId), raw: f })));
+            trySaved(chosen[0]);
+            setReturning("run");
+        } else {
+            setFiles([]); setPassword(""); setTypedPassword("");
+            setReturning("intake");
+        }
+        setPhase("idle");
+    };
+    const backToPassword = () => { setDownloaded(null); setFailure(null); setReturning("password"); setPhase("idle"); };
+
+    const several = files.length > 1;
+    if (phase === "done" && failure) {
+        // One request unlocks the whole set or nothing, so its failure is the set's.
+        return <StudioResult tone="failure" title={several ? "None of these PDFs could be unlocked." : "This PDF couldn’t be unlocked."} detail={runFailureDetail(failure)}>
+            <StudioFile name={several ? `${files.length} PDFs, uploaded together` : files[0]?.raw.name ?? "Your PDF"} status="error" detail={failure.message} />
+            <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void process()}
+                choose={{ accepts: ".pdf", multiple: true, label: several ? "Choose different files" : "Choose a different file", onFiles: chosen => startOver(chosen) }}
+                more={<button type="button" className="ts-text-button" onClick={backToPassword}>Try another password</button>} />
+        </StudioResult>;
+    }
+
+    if (phase === "done" && downloaded) {
+        return <StudioResult title={several ? `${files.length} PDFs unlocked.` : "Your PDF is unlocked."} detail={downloadStarted(files.length)}>
+            {/* Offer to save only a password the user typed AND that we just
+                proved works. A password that came from the vault is already saved. */}
+            {typedPassword && <SavePasswordPrompt password={typedPassword} suggestedLabel={files[0]?.raw.name.replace(/\.pdf$/i, "") ?? ""} />}
+            <StudioFile name={downloaded.filename} status="done" detail={formatFileSize(downloaded.blob.size)} />
+            <StudioActions tone="success"
+                primary={<button type="button" className="ts-primary-button" onClick={() => downloadBlob(downloaded.blob, downloaded.filename)}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(files.length)}</button>}
+                more={<button type="button" className="ts-text-button" onClick={() => startOver()}>Unlock more</button>} />
+        </StudioResult>;
+    }
+
+    const busy = phase === "processing";
+    return <StudioLayout options={<>
+        {/* What the saved passwords did for the chosen PDFs; nothing once none is chosen. */}
+        {files.length > 0 && <VaultTrialBanner state={trial} />}
+        <div className="ts-setting">
+            <label htmlFor="unlock-password">Document password</label>
+            <div className="ts-password">
+                <input id="unlock-password" ref={pwRef} type={showPw ? "text" : "password"} value={password} disabled={busy}
+                    onChange={e => { setPassword(e.target.value); setTypedPassword(e.target.value); }}
+                    placeholder="Enter the existing password" autoComplete="current-password" />
+                <div className="ts-password-actions">
+                    <button type="button" className="ts-icon-button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? "Hide password" : "Show password"} aria-pressed={showPw}>
+                        {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                 </div>
             </div>
+            <p className="ts-caption">{several ? `Same password applied to all ${files.length} files.` : "Sent with the PDF when you unlock it, and used only to unlock it."}</p>
         </div>
-    );
-
-    return (
-        <div className="space-y-4">
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
-                onClick={() => ref.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload PDFs"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    <LockOpen size={20} className="text-accent" strokeWidth={1.75} />
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select protected PDFs"}</p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL} in total</p>
-            </div>
-
-            {files.length > 0 && (
-                <>
-                    <div className="space-y-2">
-                        {files.map((f, i) => (
-                            <div key={f.id} className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                                <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                                    <FileText size={15} className="text-accent" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
-                                </div>
-                                <button onClick={() => removeFile(f.id)} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60" aria-label="Remove">
-                                    <X size={13} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-
-                    <VaultTrialBanner state={trial} />
-
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                            Document password
-                        </div>
-                        <div className="p-4 space-y-2">
-                            <div className="relative">
-                                <input
-                                    type={showPw ? "text" : "password"}
-                                    value={password}
-                                    onChange={e => { setPassword(e.target.value); setTypedPassword(e.target.value); }}
-                                    placeholder="Enter the existing password"
-                                    autoFocus
-                                    autoComplete="current-password"
-                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw(!showPw)}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                    aria-label={showPw ? "Hide password" : "Show password"}
-                                    aria-pressed={showPw}
-                                >
-                                    {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
-                                </button>
-                            </div>
-                            <p className="font-medium text-[11px] text-muted-foreground">
-                                {files.length > 1 ? `Same password applied to all ${files.length} files` : "We unlock locally — never sent to a third party"}
-                            </p>
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Unlocking…</> : <><LockOpen size={13} /> Unlock {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
-                        </button>
-                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
-                    </div>
-                </>
-            )}
-        </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+    </>} action={<StudioActionBar ready={files.length > 0} count={files.length ? fileCount(files.length, "PDF") : undefined}>
+        <button type="button" ref={runButton} className="ts-primary-button" onClick={process} disabled={!canProcess}><LockOpen size={16} aria-hidden="true" /> Unlock {several ? `${files.length} PDFs` : "PDF"}</button>
+    </StudioActionBar>}>
+        <FileIntake accepts=".pdf" multiple title="Select protected PDFs" detail={`Multiple files · single password · max ${MAX_FILE_SIZE_LABEL} in total`}
+            compact={files.length > 0} disabled={busy} autoFocus={returning === "intake"} onFiles={addFiles} />
+        {files.length > 0 && <section aria-label="Selected PDFs">
+            {files.map(f => <StudioFile key={f.id} name={f.raw.name} detail={formatFileSize(f.raw.size)} onRemove={busy ? undefined : () => removeFile(f.id)} />)}
+            {several && !busy && <button type="button" className="ts-text-button" onClick={() => setFiles([])}>Clear selection</button>}
+        </section>}
+        {busy && <StudioProgress label={several ? `Unlocking ${files.length} PDFs` : "Unlocking your PDF"} />}
+    </StudioLayout>;
 }

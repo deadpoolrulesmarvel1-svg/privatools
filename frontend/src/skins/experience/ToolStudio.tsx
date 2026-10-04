@@ -1,10 +1,11 @@
 import { fileFormatLabel } from "./file-format-label";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowDownToLine, ArrowRight, Check, FileText, FolderOpen, Plus, RotateCcw, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
+import { AlertTriangle, ArrowDownToLine, ArrowLeftRight, ArrowRight, Check, FileText, FolderOpen, Plus, RotateCcw, X } from "lucide-react";
+import { formatFileSize } from "@/lib/api";
 import type { RejectionAdvice } from "@/lib/file-acceptance";
 import type { StudioOutcome } from "./studio-outcome";
 import { focusIfIdle } from "./focus-result";
-import { useFileAcceptance } from "./useFileAcceptance";
+import { useFileAcceptance, type FileAcceptance } from "./useFileAcceptance";
 import { LOCATION_ICONS, useToolLocation } from "./tool-location";
 import { ToolWhere } from "./ToolWhere";
 import { useActionBarClearance } from "./useActionBarClearance";
@@ -37,16 +38,24 @@ export function IntakeNotice({ advice, onDismiss }: { advice: RejectionAdvice | 
  * Once files are chosen it shrinks to a quiet "Add files" row, so the run
  * action in the action bar is the obvious next step.
  */
-export function FileIntake({ accepts, multiple, onFiles, label = "Choose files", title, detail, disabled = false, compact = false, autoFocus = false }: {
+export function FileIntake({ accepts, multiple, onFiles, label = "Choose files", title, detail, disabled = false, compact = false, autoFocus = false, acceptance }: {
     accepts?: string; multiple?: boolean; onFiles: (files: File[]) => void; label?: string;
     title?: string; detail?: string; disabled?: boolean; compact?: boolean;
     /** Focus the choose button when the intake appears, e.g. after "Choose a different file". */
     autoFocus?: boolean;
+    /**
+     * The screen's own useFileAcceptance, for a single-file screen whose chosen
+     * file's row replaces the intake: the refusal of the rest of a mixed drop
+     * then stays on the page, beside that row, where the screen shows its
+     * IntakeNotice, instead of leaving with the intake. `onFiles` is unused.
+     */
+    acceptance?: FileAcceptance;
 }) {
     const input = useRef<HTMLInputElement>(null);
     const button = useRef<HTMLButtonElement>(null);
     const [dragging, setDragging] = useState(false);
-    const { advice, receive, dismiss } = useFileAcceptance(accepts, onFiles);
+    const own = useFileAcceptance(accepts, onFiles);
+    const { advice, receive, dismiss } = acceptance ?? own;
     const id = useId();
     const open = () => { if (!disabled) input.current?.click(); };
     const take = (files: FileList | null) => { if (!disabled && files?.length) receive(Array.from(files)); };
@@ -72,7 +81,7 @@ export function FileIntake({ accepts, multiple, onFiles, label = "Choose files",
                 {!compact && <span className="ts-intake-drag">or drag {multiple ? "them" : "it"} here</span>}
                 {!compact && <ToolWhere className="ts-intake-where" />}</div>
         </div>
-        <IntakeNotice advice={advice} onDismiss={dismiss} />
+        {!acceptance && <IntakeNotice advice={advice} onDismiss={dismiss} />}
     </>;
 }
 
@@ -162,21 +171,117 @@ export function StudioResult({ title, detail, children, onReset, tone = "success
  * (usually the download) leads. "Try again" appears only when some failures
  * could pass on another attempt (connection, time limit, rate limit, server
  * fault), never for a file the tool refused.
+ *
+ * When what failed is not a file to choose again (an address, pasted HTML,
+ * a pair of named files whose reason does not say which one), `back` leads
+ * instead: it returns to that input, kept as it was, to change it.
  */
-export function StudioActions({ tone, retryCount = 0, onRetry, choose, primary, more }: {
+export function StudioActions({ tone, retryCount = 0, onRetry, choose, back, primary, more }: {
     tone: StudioOutcome;
     retryCount?: number; onRetry?: () => void;
     choose?: { accepts?: string; multiple?: boolean; label?: string; onFiles: (files: File[]) => void };
+    /** A failure's lead when there is no file to choose again: "Change the address". */
+    back?: { label: string; onBack: () => void };
     primary?: ReactNode; more?: ReactNode;
 }) {
     const retry = retryCount > 0 && onRetry
         ? <button type="button" className="ts-secondary-button" onClick={onRetry}>{retryCount > 1 ? `Try ${retryCount} again` : "Try again"}</button> : null;
     return <div className="ts-actions">
         {tone === "failure"
-            ? choose && <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
+            ? choose ? <FileChooserButton accepts={choose.accepts} multiple={choose.multiple} onFiles={choose.onFiles}>{choose.label ?? "Choose a different file"}</FileChooserButton>
+                : back && <button type="button" className="ts-primary-button" onClick={back.onBack}>{back.label}</button>
             : primary}
         {retry}{more}
     </div>;
+}
+
+/** One of two named inputs (PairedIntake): its role, what the role does, and the file chosen for it. */
+export interface PairedSlot {
+    /** The role, as the slot's heading whether or not a file is chosen: "Base PDF (A)". */
+    role: string;
+    /** What the role does, under the heading: "The main document. The result keeps its pages." */
+    detail: string;
+    file: File | null;
+    onFile: (file: File | null) => void;
+}
+
+/**
+ * Two named inputs side by side, for a tool that takes exactly two files in
+ * different roles (Alternate & Mix, Overlay). Each slot keeps its role as its
+ * heading, empty or chosen, and refuses a wrong file beside itself, by name
+ * (FileIntake). Where the order matters, `swap` exchanges the two files, and
+ * a screen reader hears what each slot then holds. Where the files go is
+ * said once, under the pair.
+ */
+export function PairedIntake({ accepts, slots, swap, disabled = false, autoFocus = false }: {
+    accepts: string;
+    slots: readonly [PairedSlot, PairedSlot];
+    /** Where the order matters, the button that exchanges the two files: "Swap A and B". */
+    swap?: { label: string; onSwap: () => void };
+    disabled?: boolean;
+    /** Focus the first slot when the pair comes back, e.g. after "Change the files". */
+    autoFocus?: boolean;
+}) {
+    const firstHeading = useRef<HTMLHeadingElement>(null);
+    const [swapped, setSwapped] = useState("");
+    // Back from a result: the first slot's heading when it holds a file, else its intake (FileIntake's autoFocus).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { if (autoFocus && slots[0].file) focusIfIdle(firstHeading.current); }, [autoFocus]);
+    const [first, second] = slots;
+    const exchange = () => {
+        if (!swap) return;
+        setSwapped(`${first.role}: ${second.file?.name ?? "no file"}. ${second.role}: ${first.file?.name ?? "no file"}.`);
+        swap.onSwap();
+    };
+    return <div className="ts-pair">
+        <div className="ts-paired-inputs">{slots.map((slot, index) => <IntakeSlot key={index} slot={slot} accepts={accepts} disabled={disabled}
+            headingRef={index === 0 ? firstHeading : undefined} autoFocus={autoFocus && index === 0} />)}</div>
+        {swap && (first.file || second.file) && <button type="button" className="ts-text-button ts-pair-swap" onClick={exchange} disabled={disabled}>
+            <ArrowLeftRight size={16} aria-hidden="true" />{swap.label}
+        </button>}
+        <p className="sr-only" role="status">{swapped}</p>
+        <ToolWhere className="ts-paired-where" />
+    </div>;
+}
+
+/** One slot of a PairedIntake. Its refusal notice outlives the intake, so the rest of a mixed drop is still named beside the file it took. */
+function IntakeSlot({ slot, accepts, disabled, headingRef, autoFocus }: {
+    slot: PairedSlot; accepts: string; disabled: boolean; headingRef?: RefObject<HTMLHeadingElement>; autoFocus: boolean;
+}) {
+    const ownHeading = useRef<HTMLHeadingElement>(null);
+    const heading = headingRef ?? ownHeading;
+    // Choosing a file removes the chooser that had focus, and removing it removes
+    // the remove button: keep the visitor in this slot, on its heading or its
+    // chooser, unless they have already moved on (focusIfIdle).
+    const [refocus, setRefocus] = useState<"heading" | "chooser" | null>(null);
+    useEffect(() => { if (refocus === "heading" && slot.file) focusIfIdle(heading.current); }, [refocus, slot.file, heading]);
+    const take = (files: File[]) => { setRefocus("heading"); slot.onFile(files[0] ?? null); };
+    const acceptance = useFileAcceptance(accepts, take);
+    return <section className="ts-slot">
+        {slot.file
+            ? <div className="ts-slot-filled">
+                <h2 ref={heading} tabIndex={-1}>{slot.role}</h2>
+                <p>{slot.detail}</p>
+                <StudioFile name={slot.file.name} detail={formatFileSize(slot.file.size)} removeLabel={`Remove ${slot.file.name} from ${slot.role}`}
+                    onRemove={disabled ? undefined : () => { setRefocus("chooser"); slot.onFile(null); }} />
+            </div>
+            : <FileIntake accepts={accepts} acceptance={acceptance} title={slot.role} detail={slot.detail} disabled={disabled}
+                autoFocus={autoFocus || refocus === "chooser"} onFiles={take} />}
+        <IntakeNotice advice={acceptance.advice} onDismiss={acceptance.dismiss} />
+    </section>;
+}
+
+/**
+ * The intake of a tool that takes no file (an address, pasted HTML): its own
+ * fields in the intake's card, with where the input goes said in full. Its
+ * heading is the field's label (`<h2><label>`), so the part and the field
+ * carry one name.
+ */
+export function StudioSource({ children, className = "" }: { children: ReactNode; className?: string }) {
+    return <section className={`ts-source ${className}`}>
+        {children}
+        <ToolWhere className="ts-source-where" />
+    </section>;
 }
 
 export function StudioFile({ name, detail, status, onRemove, onDownload, children, removeLabel }: { name: string; detail?: string; status?: string; onRemove?: () => void; onDownload?: () => void; children?: ReactNode; removeLabel?: string }) {

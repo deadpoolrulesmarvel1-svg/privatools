@@ -230,8 +230,8 @@ describe("the page each tool's page sends", { timeout: 20_000 }, () => {
     it.each(PAGES)("split-pdf: the %s page typed as the pages to split out", async (which, page) => {
         const { container } = render(<SplitUI />);
         choose(pdfInput(container), [pdf()]);
-        fireEvent.change(await screen.findByPlaceholderText("1-3, 5, 7-end, -4, 9-"), { target: { value: String(page) } });
-        fireEvent.click(container.querySelector<HTMLButtonElement>("button.btn-accent")!);
+        fireEvent.change(await screen.findByLabelText("Page ranges"), { target: { value: String(page) } });
+        fireEvent.click(screen.getByRole("button", { name: /^Split PDF/ }));
         expect((await sent("/split")).get("pages")).toBe(expected("split-pdf", which));
     });
 

@@ -1,15 +1,21 @@
 /**
- * SplitByTextUI — split a PDF every time a page contains a search string.
- * Workshop: dropzone, mono input, case-sensitive toggle, Cmd+Enter.
+ * SplitByTextUI — split a PDF every time a page contains a search string, on
+ * the shared kit. The intake refuses a file that isn't a PDF by name, with the
+ * tool that can help (FileIntake, through lib/file-acceptance): drag and drop
+ * and "All files" in the system dialog pass the picker's filter. One request
+ * makes one ZIP, which downloads by itself once.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Upload, Loader2, AlertCircle, FileText, X, Scissors, CheckCircle2, RotateCcw, Download } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
+import { Download, Scissors } from "lucide-react";
+import { friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-import { IntakeNotice } from "@/skins/experience/ToolStudio";
+import { FileIntake, IntakeNotice, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { useFileAcceptance } from "@/skins/experience/useFileAcceptance";
+import { downloadAgainLabel, downloadStarted, runFailure, runFailureDetail, type RunFailure } from "@/skins/experience/studio-outcome";
+import { focusIfIdle } from "@/skins/experience/focus-result";
+import { fileCount } from "@/skins/experience/file-format-label";
 
 const SPLIT_BY_TEXT_DEFAULTS: { caseSensitive: boolean } = {
     caseSensitive: false,
@@ -22,46 +28,48 @@ export function SplitByTextUI() {
     const [file, setFile] = useState<File | null>(null);
     const [search, setSearch] = useState("");
 
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [drag, setDrag] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
+    // What the run downloaded, for "Download again" (the download policy), or why it failed.
+    const [result, setResult] = useState<{ blob: Blob; name: string } | null>(null);
+    const [failure, setFailure] = useState<RunFailure | null>(null);
+    // Back from a result: to the intake, to the search text, or, with a different file, to the run button.
+    const [returning, setReturning] = useState<"intake" | "search" | "run" | null>(null);
+    const searchField = useRef<HTMLInputElement>(null);
+    const runButton = useRef<HTMLButtonElement>(null);
 
-    const canProcess = !!file && search.trim().length > 0 && state !== "processing";
-    // What the run downloaded, for "Download again" (the download policy).
-    const [downloaded, setDownloaded] = useState<{ blob: Blob; name: string } | null>(null);
+    const canProcess = !!file && search.trim().length > 0 && phase !== "processing";
 
     // Drag and drop, and "All files" in the system dialog, pass the picker's
-    // filter: a file that isn't a PDF is named beside the drop zone, with the
+    // filter: a file that isn't a PDF is named beside the intake, with the
     // tool that can help (lib/file-acceptance), and never becomes the file.
-    const { advice, receive, dismiss } = useFileAcceptance(".pdf", files => {
+    // The notice stays beside the chosen file's row after a mixed drop.
+    const acceptance = useFileAcceptance(".pdf", files => {
         setFile(files[0]);
-        setState("idle");
-        setError(null);
+        setPhase("idle");
+        setFailure(null);
     });
-    const onPick = (f: FileList | null) => {
-        if (f?.length) receive(Array.from(f));
-    };
 
     const process = useCallback(async () => {
         if (!file || !search.trim()) return;
-        setState("processing");
-        setError(null);
+        setPhase("processing");
+        setFailure(null);
         try {
             const res = await uploadFile("/split-by-text", file, {
                 search: search.trim(),
                 case_sensitive: caseSensitive,
             });
             const blob = await res.blob();
-            const baseName = file.name.replace(/\.pdf$/i, "");
-            downloadBlob(blob, `${baseName}_split.zip`);
-            setDownloaded({ blob, name: `${baseName}_split.zip` });
-            setState("done");
+            const name = `${file.name.replace(/\.pdf$/i, "")}_split.zip`;
+            // The download policy: the ZIP downloads by itself, once per run.
+            downloadBlob(blob, name);
+            setResult({ blob, name });
+            setPhase("done");
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Split failed";
-            setError(friendlyError(msg, "Couldn't split this PDF."));
-            setState("idle");
+            setResult(null);
+            setFailure(runFailure(e, friendlyError(msg, "Couldn't split this PDF.")));
+            setPhase("done");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, search, caseSensitive]);
@@ -77,137 +85,56 @@ export function SplitByTextUI() {
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    if (state === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Split complete</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            Split on <span className="italic text-accent">"{search.trim()}"</span>
-                        </h2>
-                        {downloaded && <button onClick={() => downloadBlob(downloaded.blob, downloaded.name)} className="mt-5 mr-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
-                            <Download size={13} aria-hidden="true" /> Download again
-                        </button>}
-                        <button
-                            // The next split starts at a fresh drop zone, as the kit's
-                            // intake does: no notice about a file from the last one.
-                            onClick={() => { setFile(null); setState("idle"); dismiss(); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Split another
-                        </button>
-                    </div>
-                </div>
-            </div>
+    // Back with a file: focus the search text that may need changing, or the run button.
+    useEffect(() => {
+        if (phase !== "idle") return;
+        if (returning === "search") focusIfIdle(searchField.current);
+        if (returning === "run") focusIfIdle(runButton.current);
+    }, [phase, returning]);
+
+    // The next split starts at a fresh intake: no notice about a file from the last one.
+    const startOver = (files?: File[]) => {
+        setResult(null); setFailure(null); acceptance.dismiss();
+        setFile(files?.[0] ?? null);
+        setReturning(files?.length ? "run" : "intake"); setPhase("idle");
+    };
+    const backToSearch = () => { setResult(null); setFailure(null); setReturning("search"); setPhase("idle"); };
+
+    if (phase === "done" && failure && file) {
+        return <StudioResult tone="failure" title="This PDF couldn’t be split." detail={runFailureDetail(failure)}>
+            <StudioFile name={file.name} status="error" detail={failure.message} />
+            <StudioActions tone="failure" retryCount={failure.retryable ? 1 : 0} onRetry={() => void process()}
+                choose={{ accepts: ".pdf", onFiles: files => startOver(files) }}
+                more={<button type="button" className="ts-text-button" onClick={backToSearch}>Change the search text</button>} />
+        </StudioResult>;
+    }
+
+    if (phase === "done" && result) {
+        return <StudioResult title={`Split at every “${search.trim()}”.`} detail={downloadStarted(2)}>
+            <StudioFile name={result.name} status="done" detail={formatFileSize(result.blob.size)} />
+            <StudioActions tone="success"
+                primary={<button type="button" className="ts-primary-button" onClick={() => downloadBlob(result.blob, result.name)}><Download size={16} aria-hidden="true" /> {downloadAgainLabel(2)}</button>}
+                more={<button type="button" className="ts-text-button" onClick={() => startOver()}>Split another</button>} />
+        </StudioResult>;
+    }
+
+    const busy = phase === "processing";
+    return <StudioLayout options={<>
+        <div className="ts-setting">
+            <label htmlFor="split-by-text-search">Search term</label>
+            <input id="split-by-text-search" ref={searchField} type="text" value={search} disabled={busy} onChange={e => setSearch(e.target.value)}
+                placeholder='e.g. "Invoice #", "Chapter", "Statement of"' />
+            {file && !search.trim() && !busy && <p className="ts-caption">Enter the text that starts each part.</p>}
         </div>
-    );
-
-    return (
-        <div className="space-y-4">
-            {!file ? (
-                <div
-                    onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                    onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); onPick(e.dataTransfer.files); }}
-                    onClick={() => inputRef.current?.click()}
-                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Upload PDF"
-                    className={cn(
-                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                        drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                    )}
-                >
-                    <CornerMarks />
-                    <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={e => { onPick(e.target.files); e.target.value = ""; }} />
-                    <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                        <Scissors size={20} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Drop a PDF to split by text</p>
-                    <p className="font-medium text-[11.5px] text-muted-foreground">Cuts before every page containing the search term</p>
-                </div>
-            ) : (
-                <div className="rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                        <FileText size={16} className="text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                        <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => { setFile(null); setState("idle"); }}
-                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                        aria-label="Remove"
-                    >
-                        <X size={13} />
-                    </button>
-                </div>
-            )}
-            <IntakeNotice advice={advice} onDismiss={dismiss} />
-
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                    Search term
-                </div>
-                <div className="p-4 space-y-3">
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder='e.g. "Invoice #", "Chapter", "Statement of"'
-                        className="block w-full rounded-md border border-border bg-card px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                    />
-                    <label className="flex items-center gap-2 text-[13px] text-foreground cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={caseSensitive}
-                            onChange={e => setCaseSensitive(e.target.checked)}
-                            className="h-3.5 w-3.5 accent-accent"
-                        />
-                        Case-sensitive
-                    </label>
-                </div>
-            </div>
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />{error}
-                </div>
-            )}
-
-            <div className="flex items-center gap-3">
-                <button
-                    type="button"
-                    onClick={process}
-                    disabled={!canProcess}
-                    className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                    {state === "processing"
-                        ? <><Loader2 size={13} className="animate-spin" /> Splitting…</>
-                        : <><Download size={13} /> Split PDF</>}
-                </button>
-                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
-            </div>
-        </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+        <label className="ts-check"><input type="checkbox" checked={caseSensitive} disabled={busy} onChange={e => setCaseSensitive(e.target.checked)} />Case-sensitive</label>
+    </>} action={<StudioActionBar ready={!!file} count={file ? fileCount(1, "PDF") : undefined}>
+        <button type="button" ref={runButton} className="ts-primary-button" onClick={process} disabled={!canProcess}><Scissors size={16} aria-hidden="true" /> Split PDF</button>
+    </StudioActionBar>}>
+        {file
+            ? <StudioFile name={file.name} detail={formatFileSize(file.size)} onRemove={busy ? undefined : () => setFile(null)} />
+            : <FileIntake accepts=".pdf" acceptance={acceptance} title="Select a PDF to split by text" detail="Cuts before every page containing the search term."
+                autoFocus={returning === "intake"} onFiles={acceptance.receive} />}
+        <IntakeNotice advice={acceptance.advice} onDismiss={acceptance.dismiss} />
+        {busy && <StudioProgress label="Splitting your PDF" detail={`A new part at every page with “${search.trim()}”`} />}
+    </StudioLayout>;
 }

@@ -68,16 +68,21 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Temporary server processing",
         detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
     },
-    // Tools whose input is not a file: the sentence names what is sent.
+    // Tools whose input is not a file: the sentence names what is sent, and
+    // what the server fetches with it. URL to PDF renders the page with the
+    // files it loads: stylesheets (and their @import), web fonts, images and
+    // rel=attachment files, all through the SSRF-checked WeasyPrint fetcher.
+    // HTML to PDF fetches an address's HTML alone (PyMuPDF), and for pasted
+    // HTML only the files that HTML loads (html_to_pdf_service).
     "url-to-pdf": {
         kind: "server",
         label: "Temporary server processing",
-        detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and renders it to a PDF in temporary storage, then removes the job’s files after the response.",
+        detail: "Only the address you enter leaves your device. When you run the tool, PrivaTools fetches that public page and the files it loads, such as its stylesheets, fonts and images, then renders the PDF in temporary storage and removes the job’s files after the response.",
     },
     "html-to-pdf": {
         kind: "server",
         label: "Temporary server processing",
-        detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools, which fetches the page or reads the HTML, renders the PDF in temporary storage and removes the job’s files after the response.",
+        detail: "When you run the tool, the address or the HTML you enter is sent to PrivaTools. It fetches the page at that address, or the files your HTML loads, such as stylesheets, fonts and images, then renders the PDF in temporary storage and removes the job’s files after the response.",
     },
     "generate-barcode": {
         kind: "server",
