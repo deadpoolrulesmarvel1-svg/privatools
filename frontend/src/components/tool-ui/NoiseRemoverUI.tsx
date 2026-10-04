@@ -24,7 +24,12 @@ import "./noise-remover.css";
 const SLUG = "remove-background-noise";
 /** What the readers take: MP4, MOV, M4A, WebM, MKV, MP3 and WAV in pieces; Ogg, Opus, FLAC and AAC whole. */
 const ACCEPTS = ".mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm,.mp4,.m4v,.mov,.mkv";
+/** Containers that hold video, and so go to Extract Audio rather than Audio Converter. */
 const VIDEO = /\.(mp4|m4v|mov|webm|mkv)$/i;
+/** A WebM can be a video or a recording, so it gets words that are true either way. */
+function fileKind(name: string): "video" | "webm" | "recording" {
+    return /\.webm$/i.test(name) ? "webm" : VIDEO.test(name) ? "video" : "recording";
+}
 /** Below this, about −80 dBFS, the recording holds no sound to clean. */
 const SILENT_PEAK = 1e-4;
 /** RNNoise rated less than this share of the recording as speech. */
@@ -33,9 +38,9 @@ const LITTLE_SPEECH = 0.05;
 type Settings = { strength: number };
 const DEFAULTS: Settings = { strength: 100 };
 
-/** "4:05" or "1:02:03". */
+/** "4:05" or "1:02:03", in whole seconds as players count them. */
 function clock(seconds: number): string {
-    const whole = Math.max(0, Math.round(seconds));
+    const whole = Math.max(0, Math.floor(seconds + 1e-6));
     const h = Math.floor(whole / 3600);
     const m = Math.floor(whole / 60) % 60;
     const s = String(whole % 60).padStart(2, "0");
@@ -265,7 +270,7 @@ export function NoiseRemoverUI() {
             <p className="nr-hint">It takes steady noise from under a voice: hum, a fan, traffic, the hiss of a room. It isn’t for music, and it doesn’t remove other voices or echo. It turns the noise down rather than recreating the voice, so very loud noise can leave traces and very quiet speech can come out thinner.</p>
             <a className="ts-caption nr-credits" href="/third-party/rnnoise.txt" target="_blank" rel="noreferrer">RNNoise credits &amp; licences</a>
         </div>
-    </>} action={<StudioActionBar ready={!!file} count={file ? (VIDEO.test(file.name) ? "1 video" : "1 recording") : undefined}>
+    </>} action={<StudioActionBar ready={!!file} count={file ? { video: "1 video", webm: "1 file", recording: "1 recording" }[fileKind(file.name)] : undefined}>
         <button type="button" className="ts-primary-button" onClick={() => void clean()} disabled={!file || busy}>
             <AudioLines size={16} aria-hidden="true" /> Remove noise
         </button>
@@ -274,7 +279,7 @@ export function NoiseRemoverUI() {
             ? <FileIntake accepts={ACCEPTS} title="Choose a recording or video" autoFocus={returning} onFiles={choose}
                 detail={`MP3, WAV, M4A, OGG, FLAC, WebM, MP4 and more · up to ${MAX_SECONDS / 60} minutes of sound · made for speech`} />
             : <section aria-label="Chosen file" className="nr-chosen">
-                <StudioFile name={file.name} detail={`${formatFileSize(file.size)} · ${VIDEO.test(file.name) ? "video: its sound is cleaned" : "recording"}`}
+                <StudioFile name={file.name} detail={`${formatFileSize(file.size)} · ${{ video: "video: its sound is cleaned", webm: "WebM: its sound is cleaned", recording: "recording" }[fileKind(file.name)]}`}
                     onRemove={busy ? undefined : startOver} removeLabel={`Remove ${file.name}`} />
                 {!busy && <LocalFilePreview file={file} name={file.name} label="Original" />}
             </section>}
@@ -294,7 +299,7 @@ function NoiseResultView({ file, result, onAgain, onStartOver }: {
 }) {
     const stem = file.name.replace(/\.[^.]+$/, "") || "recording";
     const name = `${stem}-clean.wav`;
-    const video = VIDEO.test(file.name);
+    const kind = fileKind(file.name);
     const { stats, gaps } = result;
     const speech = stats.heardFrames ? stats.speechFrames / stats.heardFrames : 0;
     const ranges = gaps.map(gap => `${clock(gap.start)}–${clock(gap.end)}`).join(", ");
@@ -306,7 +311,8 @@ function NoiseResultView({ file, result, onAgain, onStartOver }: {
     const notes = [
         speech < LITTLE_SPEECH ? "RNNoise heard little speech in this recording. It is made for voices: music and other sounds can come out much quieter, or damaged." : "",
         stats.sourceChannels > 2 ? `The file has ${stats.sourceChannels} channels; they were mixed to one before cleaning, as speech sits in the centre.` : "",
-        video ? "From a video, only the cleaned sound comes back: put it back with the picture in a video editor." : "",
+        kind === "video" ? "From a video, only the cleaned sound comes back: put it back with the picture in a video editor." : "",
+        kind === "webm" ? "Only the cleaned sound comes back. If the WebM is a video, put the WAV back with the picture in a video editor." : "",
     ].filter(Boolean);
     return <StudioResult tone={tone} title={title} detail={detail}>
         <dl className="ts-stats">

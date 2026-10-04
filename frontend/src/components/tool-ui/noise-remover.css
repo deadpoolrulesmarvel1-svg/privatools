@@ -8,6 +8,8 @@
 .nr-help { margin-top: 14px; max-width: 72ch; }
 .nr-next { margin: 4px 0 0; max-width: 72ch; }
 .nr-next a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.nr-credits { display: inline-block; margin-top: 10px; color: hsl(var(--muted-foreground)); text-decoration: underline; text-underline-offset: 3px; }
+.nr-credits:hover { color: hsl(var(--foreground)); }
 
 /* The kit draws text fields; a slider needs none of the field's box. */
 .nr-studio .ts-setting input[type=range] { padding: 0; border: 0; background: none; min-height: 28px; accent-color: hsl(var(--accent)); }

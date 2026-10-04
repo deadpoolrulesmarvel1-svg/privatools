@@ -121,6 +121,17 @@ describe("the Voice Noise Remover page", () => {
         expect(screen.getByText(/From a video, only the cleaned sound comes back/)).toBeInTheDocument();
     });
 
+    it("calls a WebM neither a video nor a recording, since it can be either", async () => {
+        mocks.remove.mockResolvedValue(result({ container: "Matroska" }));
+        choose("call.webm", "video/webm");
+        expect(screen.getByText(/1 file/)).toBeInTheDocument();
+        expect(screen.getByText(/WebM: its sound is cleaned/)).toBeInTheDocument();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect(screen.getByText("Only the cleaned sound comes back. If the WebM is a video, put the WAV back with the picture in a video editor.")).toBeInTheDocument();
+        expect(screen.queryByText(/From a video/)).toBeNull();
+    });
+
     it("warns when RNNoise heard little speech", async () => {
         mocks.remove.mockResolvedValue(result({}, { speechFrames: 100 }));
         choose("song.mp3");
