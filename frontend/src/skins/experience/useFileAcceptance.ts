@@ -34,3 +34,6 @@ export function useFileAcceptance(accepts: string | undefined, onFiles: (files: 
     const dismiss = () => { fresh.current = null; setAdvice(null); };
     return { advice, receive, dismiss };
 }
+
+/** An intake's acceptance: what it refused, how it takes files, and how to clear the notice. */
+export type FileAcceptance = ReturnType<typeof useFileAcceptance>;
