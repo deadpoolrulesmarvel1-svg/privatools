@@ -200,11 +200,8 @@ NOT_PDF = {
 
 # Routes still fixed in a later commit of this branch.
 NOT_YET = {
-    "/api/compare", "/api/extract-images", "/api/extract-tables", "/api/grayscale",
-    "/api/hidden-text-checker", "/api/ocr", "/api/organize-pages/thumbnails", "/api/pdf-to-excel",
-    "/api/pdf-to-html", "/api/pdf-to-markdown", "/api/pdf-to-rtf", "/api/pdf-to-word",
-    "/api/remove-watermark/apply", "/api/remove-watermark/detect", "/api/split-by-text",
-    "/api/web-optimize",
+    "/api/hidden-text-checker", "/api/organize-pages/thumbnails", "/api/pdf-to-markdown",
+    "/api/split-by-text", "/api/web-optimize",
 }
 
 
@@ -320,6 +317,51 @@ def test_a_tool_that_changes_pages_asks_for_the_password(quiet_client, locked_pd
 
 @pytest.mark.parametrize("route", CHANGES_PAGES)
 def test_a_tool_that_changes_pages_still_does_an_intact_pdf(quiet_client, route):
+    assert _post(quiet_client, route, GOOD).status_code == 200
+
+
+# ── Tools that read the pages, through open_pdf_document ────────────────────
+# A locked file failed on the first page they read ("document closed or
+# encrypted"): a 500 behind most of their catch-alls, MuPDF's own words on
+# the rest. Grayscale's raster fallback said "No pages found in PDF" for a file
+# repaired to no page (a 500), and OCR PDF failed to copy a page out of a
+# repaired file ("source object number out of range", a 500).
+READS_PAGES = [
+    "/api/compare", "/api/extract-images", "/api/extract-tables", "/api/grayscale", "/api/ocr",
+    "/api/pdf-to-excel", "/api/pdf-to-html", "/api/pdf-to-rtf", "/api/pdf-to-word",
+    "/api/remove-watermark/apply", "/api/remove-watermark/detect",
+]
+# What a tool says, in its own words, about a file in which it found nothing
+# to work on: no table, not the watermark asked for, no text.
+FOUND_NOTHING = {
+    "/api/extract-tables": "No tables found",
+    "/api/remove-watermark/apply": "Unknown watermark selection",
+    "/api/pdf-to-excel": "No tables detected",
+    "/api/pdf-to-word": "no text layer",
+}
+
+
+@pytest.mark.parametrize("sample", sorted(DAMAGED) + ["objstm-40"])
+@pytest.mark.parametrize("route", READS_PAGES)
+def test_a_tool_that_reads_pages_does_its_work_or_says_the_pdf_is_damaged(quiet_client, route, sample):
+    data = DAMAGED.get(sample) or OBJECT_STREAMS[: len(OBJECT_STREAMS) * 40 // 100]
+    response = _post(quiet_client, route, data)
+    assert response.status_code in (200, 400), response.text
+    if response.status_code == 400:
+        detail = response.json()["detail"]
+        assert detail in STANDARD or FOUND_NOTHING.get(route, "\0") in detail, response.text
+
+
+@pytest.mark.parametrize("route", READS_PAGES)
+def test_a_tool_that_reads_pages_asks_for_the_password(quiet_client, locked_pdf, route):
+    response = _post(quiet_client, route, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
+
+
+@pytest.mark.parametrize("route", [r for r in READS_PAGES
+                                   if r not in ("/api/extract-tables", "/api/remove-watermark/apply")])
+def test_a_tool_that_reads_pages_still_does_an_intact_pdf(quiet_client, route):
     assert _post(quiet_client, route, GOOD).status_code == 200
 
 

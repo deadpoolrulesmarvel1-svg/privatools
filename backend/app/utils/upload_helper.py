@@ -37,6 +37,7 @@ from starlette.background import BackgroundTask
 
 from .cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from .concurrency import run_bounded
+from .exceptions import ToolError
 from .pdf_errors import pdf_read_error
 from .route_helpers import stream_upload_to_disk
 
@@ -62,8 +63,8 @@ async def process_pdf_upload(
     lambda. On any error the temp + partial output are removed and a generic 500
     is raised (the global handler sanitizes the message), except for a PDF that
     cannot be read or needs a password (utils.pdf_errors), which is a 400 that
-    says so; HTTPExceptions raised inside ``run`` (or validation) pass through
-    with their status/detail.
+    says so; HTTPExceptions and ToolErrors raised inside ``run`` (or
+    validation) pass through with their status/detail.
     """
     if not (file.filename or "").lower().endswith(input_suffix):
         kind = input_suffix.lstrip(".").upper()
@@ -85,7 +86,7 @@ async def process_pdf_upload(
             background=cleanup,
             headers=response_headers,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(str(temp_path), *([output_path] if output_path else []))
         raise
     except Exception as exc:  # noqa: BLE001 — map to a generic 500 (sanitized globally)

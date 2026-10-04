@@ -130,7 +130,7 @@ async def pdf_to_html_endpoint(file: UploadFile = File(...)):
             media_type="text/html",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except Exception as e:
@@ -161,7 +161,7 @@ async def pdf_to_rtf_endpoint(file: UploadFile = File(...)):
             media_type="application/rtf",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except Exception as e:

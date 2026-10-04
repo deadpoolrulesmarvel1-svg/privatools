@@ -6,6 +6,7 @@ from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..services import compare_service
 from ..utils.pdf_errors import pdf_read_error
 
@@ -65,7 +66,7 @@ async def compare(
         result = await asyncio.to_thread(compare_service.compare_text, str(path1), str(path2))
         remove_files(str(path1), str(path2))
         return JSONResponse(result)
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = (
             ([str(path1)] if path1 is not None else [])
             + ([str(path2)] if path2 is not None else [])

@@ -1,7 +1,6 @@
 import csv
 
-import fitz  # PyMuPDF
-
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
@@ -35,7 +34,7 @@ def extract_tables(input_path: str, pages: str = "all") -> str:
     """
     output_path = temp_output("tables", "csv")
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         total = len(doc)
         try:

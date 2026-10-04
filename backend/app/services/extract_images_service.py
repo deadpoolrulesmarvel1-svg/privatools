@@ -2,8 +2,7 @@
 import logging
 import zipfile
 
-import fitz  # PyMuPDF
-
+from ..utils.cleanup import open_pdf_document
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ def extract_images(input_path: str) -> str:
     """
     zip_path = temp_output("extracted_images", "zip")
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     image_count = 0
 
     try:

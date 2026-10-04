@@ -9,15 +9,14 @@ from __future__ import annotations
 
 import html as _html
 
-import fitz  # PyMuPDF
-
+from ..utils.cleanup import open_pdf_document
 from ..utils.filenames import temp_output
 
 
 def pdf_to_html(input_path: str) -> str:
     output_path = temp_output("pdf_html", "html")
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         title = (doc.metadata or {}).get("title") or "PDF"
         title_safe = _html.escape(str(title))

@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..services import ocr_service
 from ..utils.concurrency import run_bounded
 from ..utils.pdf_errors import pdf_read_error
@@ -78,7 +79,7 @@ async def ocr_pdf(
             text = await run_bounded(ocr_service.extract_text, str(temp_path), lang=lang, dpi=dpi)
             remove_files(str(temp_path))
             return JSONResponse({"text": text})
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([out_path] if out_path else [])
         remove_files(*to_remove)
         raise
