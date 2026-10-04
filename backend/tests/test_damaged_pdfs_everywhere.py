@@ -199,11 +199,6 @@ NOT_PDF = {
     "/api/create-zip", "/api/extract-archive",
 }
 
-# Routes still fixed in a later commit of this branch.
-NOT_YET = {
-    "/api/split-by-text",
-}
-
 
 def _upload_routes() -> set[str]:
     def takes_a_file(annotation) -> bool:
@@ -257,20 +252,14 @@ def _post(client, route: str, data: bytes):
     return client.post(route, files=[(field, ("doc.pdf", data, "application/pdf")), *extra], data=form)
 
 
-def _not_yet(route: str):
-    if route in NOT_YET:
-        return pytest.param(route, marks=pytest.mark.xfail(reason="fixed later on this branch", strict=False))
-    return route
-
-
 @pytest.mark.parametrize("sample", sorted(DAMAGED))
-@pytest.mark.parametrize("route", [_not_yet(r) for r in sorted(ROUTES)])
+@pytest.mark.parametrize("route", sorted(ROUTES))
 def test_a_damaged_pdf_is_never_a_server_error(quiet_client, route, sample):
     response = _post(quiet_client, route, DAMAGED[sample])
     assert response.status_code < 500, response.text
 
 
-@pytest.mark.parametrize("route", [_not_yet(r) for r in sorted(ROUTES)])
+@pytest.mark.parametrize("route", sorted(ROUTES))
 def test_a_locked_pdf_is_done_or_refused_with_the_password_advice(quiet_client, locked_pdf, route):
     response = _post(quiet_client, route, locked_pdf)
     if response.status_code != 200:
@@ -504,6 +493,65 @@ def test_a_worker_failing_on_a_file_mupdf_repaired_says_it_is_damaged(quiet_clie
     response = _post(quiet_client, route, CLASSIC[: len(CLASSIC) * 95 // 100])
     assert response.status_code == 400, response.text
     assert response.json()["detail"] == CORRUPT
+
+
+# ── Split by Text searches with MuPDF and copies with qpdf ──────────────────
+# Of a PDF cut short the two can recover different pages: MuPDF 4 and qpdf 2
+# of the classic file cut at 40 % and 60 %, and the copy then failed with an
+# IndexError (a 500). A locked file got MuPDF's "document closed or encrypted".
+
+SPLIT_BY_TEXT = "/api/split-by-text"
+
+
+@pytest.mark.parametrize("percent", [40, 60])
+def test_split_by_text_says_a_pdf_its_readers_disagree_about_is_damaged(quiet_client, percent):
+    cut = CLASSIC[: len(CLASSIC) * percent // 100]
+    assert len(fitz.open(stream=cut, filetype="pdf")) != len(pikepdf.open(io.BytesIO(cut)).pages)
+    response = _post(quiet_client, SPLIT_BY_TEXT, cut)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == _DAMAGED_PDF
+
+
+def test_split_by_text_asks_for_the_password(quiet_client, locked_pdf):
+    response = _post(quiet_client, SPLIT_BY_TEXT, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
+
+
+def test_split_by_text_still_splits_an_intact_pdf(quiet_client):
+    response = _post(quiet_client, SPLIT_BY_TEXT, GOOD)
+    assert response.status_code == 200, response.text
+    assert response.content.startswith(b"PK")
+
+
+# ── Remove Watermark, apply: detection reads with MuPDF, removal with qpdf ──
+# A file MuPDF can read but qpdf cannot, or a locked one, failed at the
+# removal with ProcessingError("This PDF could not be opened."), a 500.
+
+def _detected(monkeypatch):
+    from backend.app.services import watermark_remove_service
+
+    candidate = {"id": "wm_1", "text": "DRAFT"}
+    monkeypatch.setattr(watermark_remove_service, "detect_watermarks", lambda path: {"candidates": [candidate]})
+
+
+def _apply(client, data: bytes):
+    return client.post("/api/remove-watermark/apply", files=[("file", ("doc.pdf", data, "application/pdf"))],
+                       data={"candidate_ids": json.dumps(["wm_1"])})
+
+
+def test_removing_a_watermark_from_a_pdf_qpdf_cannot_read_says_it_is_damaged(quiet_client, monkeypatch):
+    _detected(monkeypatch)
+    response = _apply(quiet_client, DAMAGED["objstm-20"])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == CORRUPT
+
+
+def test_removing_a_watermark_from_a_locked_pdf_asks_for_the_password(quiet_client, monkeypatch, locked_pdf):
+    _detected(monkeypatch)
+    response = _apply(quiet_client, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────

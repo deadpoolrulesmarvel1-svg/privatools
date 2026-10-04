@@ -79,6 +79,11 @@ def remove_watermarks(input_path: str, candidate_ids: list[str] | None = None) -
 
     try:
         pdf = Pdf.open(input_path)
+    except (pikepdf.PasswordError, pikepdf.PdfError):
+        # Detection read the file with MuPDF, which repairs more than qpdf
+        # can: a file qpdf cannot read is damaged, and the global handler says
+        # so (utils.pdf_errors), as it asks for a password.
+        raise
     except Exception as exc:  # noqa: BLE001 — pikepdf raises several types
         raise ProcessingError("This PDF could not be opened.") from exc
 
