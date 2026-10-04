@@ -7,7 +7,9 @@
  * taken. Waiting for the next task before each step gives the page a turn
  * between steps, at the cost of well under a millisecond each, though not
  * during one step. Whisper (lib/whisper.ts) and OPUS-MT (lib/translate/opusMt.ts)
- * both use it on the page's thread.
+ * both use it on the page's thread where no worker can run them. The OPUS-MT
+ * worker uses it too, so that ending the worker takes effect between two
+ * steps rather than after a whole translation.
  */
 
 /** The next task, not a microtask, queued behind the page's own work so it can draw and take input first. */

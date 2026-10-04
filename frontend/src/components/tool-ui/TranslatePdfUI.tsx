@@ -24,7 +24,6 @@ import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
-import { chunkByTokens } from "@/lib/translate/chunk";
 import {
     APPROX_MODEL_MB,
     BYOK_LANGS,
@@ -33,7 +32,7 @@ import {
     modelIdFor,
     targetsFor,
 } from "@/lib/translate/languages";
-import { loadDeviceTranslator, MAX_INPUT_TOKENS } from "@/lib/translate/opusMt";
+import { loadDeviceTranslator, MAX_INPUT_TOKENS, stopDeviceTranslator, type ModelStage } from "@/lib/translate/opusMt";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
 import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
@@ -87,12 +86,15 @@ export function TranslatePdfUI() {
     const [pages, setPages] = useState<TranslatedPage[]>([]);
     const [pageProgress, setPageProgress] = useState({ done: 0, total: 0 });
     const [modelPct, setModelPct] = useState(0);
+    // What the model's load is doing: "load" until the worker says it is downloading, or building the model.
+    const [modelStage, setModelStage] = useState<ModelStage | "load">("load");
     const [chunkProgress, setChunkProgress] = useState({ done: 0, total: 0 });
     const [copied, setCopied] = useState(false);
     const [savingPdf, setSavingPdf] = useState(false);
     const cancelRef = useRef(false);
     const runId = useRef(0);
-    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); }, []);
+    // Leaving the page ends a run, and the model's worker with it: its result would have nowhere to go.
+    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); stopDeviceTranslator(); }, []);
 
     const targets = targetsFor(source);
     const validPair = modelIdFor(source, target) !== null;
@@ -165,16 +167,26 @@ export function TranslatePdfUI() {
                 return;
             }
 
+            setModelPct(0);
+            setModelStage("load");
             setPhase("loading-model");
-            const translator = await loadDeviceTranslator(modelId, setModelPct);
-            if (cancelRef.current || current !== runId.current) return;
+            // In a worker: the page keeps drawing, and Cancel ends the worker.
+            const live = () => !cancelRef.current && current === runId.current;
+            const translator = await loadDeviceTranslator(
+                modelId,
+                percent => { if (live()) setModelPct(percent); },
+                stage => { if (live()) setModelStage(stage); },
+            );
+            if (!live()) return;
 
-            setPhase("translating");
-            // Counted in the model's own tokens: 900 characters of Chinese, Japanese,
-            // Korean or Thai were more than it reads, and it dropped the rest silently.
-            const jobs = withText.map(p => ({ ...p, chunks: chunkByTokens(p.text, text => translator.countTokens(text), MAX_INPUT_TOKENS) }));
+            // Counted in the model's own tokens, by its tokenizer in the worker: 900 characters of
+            // Chinese, Japanese, Korean or Thai were more than it reads, and it dropped the rest silently.
+            const pieces = await translator.chunk(withText.map(p => p.text), MAX_INPUT_TOKENS);
+            if (!live()) return;
+            const jobs = withText.map((p, i) => ({ ...p, chunks: pieces[i] }));
             const totalChunks = jobs.reduce((n, j) => n + j.chunks.length, 0);
             setChunkProgress({ done: 0, total: totalChunks });
+            setPhase("translating");
 
             const out: TranslatedPage[] = [];
             let done = 0;
@@ -196,6 +208,8 @@ export function TranslatePdfUI() {
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current || current !== runId.current) return;
+            // A failed run's worker may hold a half-loaded model or a broken one: the next run starts a fresh one.
+            if (engine === "local") stopDeviceTranslator();
             // A provider's refusal is already worded for the visitor, and
             // friendlyError would turn some wording into a server fault.
             setError(e instanceof ByokError ? e.userMessage
@@ -452,25 +466,28 @@ export function TranslatePdfUI() {
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.05] p-4 space-y-2 animate-fade-in">
                     <p className="font-medium text-[12px] text-accent">
                         {phase === "extracting" && `Reading page ${pageProgress.done} of ${pageProgress.total || "?"}`}
-                        {phase === "loading-model" && `Downloading model — ${modelPct}%`}
+                        {/* The download has a measure; reading the model from this browser and building it have none. */}
+                        {phase === "loading-model" && (modelStage === "download" ? `Downloading model — ${modelPct}%` : "Loading model")}
                         {phase === "translating" && (engine === "byok"
                             ? `Translating page ${Math.min(chunkProgress.done + 1, chunkProgress.total)} of ${chunkProgress.total} with your key`
                             : `Translating ${chunkProgress.done} of ${chunkProgress.total}`)}
                     </p>
                     <div className="h-1.5 rounded-full bg-border/60 overflow-hidden">
-                        <div
-                            className="h-full rounded-full bg-accent transition-[width] duration-300"
-                            style={{
-                                width: `${phase === "loading-model"
-                                    ? modelPct
-                                    : phase === "translating"
-                                        ? (chunkProgress.total ? (chunkProgress.done / chunkProgress.total) * 100 : 0)
-                                        : (pageProgress.total ? (pageProgress.done / pageProgress.total) * 100 : 0)}%`,
-                            }}
-                        />
+                        {phase === "loading-model" && modelStage !== "download"
+                            ? <div className="h-full w-1/3 rounded-full bg-accent progress-indeterminate" />
+                            : <div
+                                className="h-full rounded-full bg-accent transition-[width] duration-300"
+                                style={{
+                                    width: `${phase === "loading-model"
+                                        ? modelPct
+                                        : phase === "translating"
+                                            ? (chunkProgress.total ? (chunkProgress.done / chunkProgress.total) * 100 : 0)
+                                            : (pageProgress.total ? (pageProgress.done / pageProgress.total) * 100 : 0)}%`,
+                                }}
+                            />}
                     </div>
                     <button
-                        onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
+                        onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); stopDeviceTranslator(); setPhase("idle"); }}
                         className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <Ban size={11} /> Cancel

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { NumberedReplyError, readNumberedReply } from "@/lib/byok/tasks";
+import { tokenRuns } from "@/lib/translate/chunk";
 import { ByokError } from "@/lib/byok/errors";
 import { cuesOf, parseSubtitles } from "./subtitleFile";
 import {
@@ -42,14 +43,16 @@ const SPANISH: Record<string, string> = {
     "It was cold.": "Hacía frío.",
 };
 
+/** OPUS-MT as its worker answers, stubbed: runs cut with `countTokens` for the model's tokenizer, and `translate`. */
+function counted(countTokens: (text: string) => number, translate: (text: string) => Promise<string>): DeviceEngine {
+    return { runs: async (texts, maxTokens) => tokenRuns(texts, countTokens, maxTokens), translate };
+}
+
 /** OPUS-MT, stubbed: a word a token, and Spanish for the passages above. */
-function device(overrides: Partial<DeviceEngine> = {}) {
+function device(translate?: (text: string) => Promise<string>) {
     const calls: string[] = [];
-    const engine: DeviceEngine = {
-        countTokens: text => text.split(/\s+/).filter(Boolean).length + 1,
-        translate: vi.fn(async (text: string) => { calls.push(text); return SPANISH[text] ?? text.toUpperCase(); }),
-        ...overrides,
-    };
+    const engine = counted(text => text.split(/\s+/).filter(Boolean).length + 1,
+        translate ?? vi.fn(async (text: string) => { calls.push(text); return SPANISH[text] ?? text.toUpperCase(); }));
     return { engine, calls };
 }
 
@@ -87,7 +90,7 @@ describe("translating on this device", () => {
         const doc = parseSubtitles(`1\n00:00:01,000 --> 00:00:09,000\n${long}\n\n2\n00:00:10,000 --> 00:00:11,000\n好的。\n`);
         const sent: string[] = [];
         // One token a character, as near enough for Chinese.
-        const engine: DeviceEngine = { countTokens: text => Array.from(text).length + 1, translate: async text => { sent.push(text); return `[${Array.from(text).length}]`; } };
+        const engine = counted(text => Array.from(text).length + 1, async text => { sent.push(text); return `[${Array.from(text).length}]`; });
         const plan = planTranslation(doc);
         const { outcomes } = await translateOnDevice(plan, engine, { maxTokens: 200 });
         expect(sent.length).toBeGreaterThan(3);
@@ -102,7 +105,7 @@ describe("translating on this device", () => {
         const long = Array.from({ length: 40 }, () => phrase).join(" ");
         const doc = parseSubtitles(`1\n00:00:01,000 --> 00:00:09,000\n${long}\n`);
         const sent: string[] = [];
-        const engine: DeviceEngine = { countTokens: text => Math.ceil(Array.from(text).length / 2) + 1, translate: async text => { sent.push(text); return "Hello"; } };
+        const engine = counted(text => Math.ceil(Array.from(text).length / 2) + 1, async text => { sent.push(text); return "Hello"; });
         await translateOnDevice(planTranslation(doc), engine, { maxTokens: 120 });
         expect(sent.length).toBeGreaterThan(1);
         for (const piece of sent) expect(Math.ceil(Array.from(piece).length / 2) + 1).toBeLessThanOrEqual(120);
@@ -122,7 +125,7 @@ describe("translating on this device", () => {
 
     it("marks a translation far longer than its source for checking", async () => {
         const doc = parseSubtitles("1\n00:00:01,000 --> 00:00:02,000\niv\n");
-        const engine: DeviceEngine = { countTokens: () => 3, translate: async () => "Il était une fois une très longue phrase qui n'existait pas." };
+        const engine = counted(() => 3, async () => "Il était une fois une très longue phrase qui n'existait pas.");
         const plan = planTranslation(doc);
         const cues = assembleCues(doc, plan, (await translateOnDevice(plan, engine, { maxTokens: 200 })).outcomes, TWO);
         expect(cues[0].check).toBe(true);
@@ -133,7 +136,7 @@ describe("translating on this device", () => {
         const doc = parseSubtitles(FILM);
         const plan = planTranslation(doc);
         let count = 0;
-        const { engine } = device({ translate: async (text: string) => { if (++count === 3) throw new Error("out of memory"); return SPANISH[text] ?? text; } });
+        const { engine } = device(async (text: string) => { if (++count === 3) throw new Error("out of memory"); return SPANISH[text] ?? text; });
         const result = await translateOnDevice(plan, engine, { maxTokens: 200 });
         expect((result.stoppedBy as Error).message).toBe("out of memory");
         const cues = assembleCues(doc, plan, result.outcomes, TWO);
@@ -143,8 +146,32 @@ describe("translating on this device", () => {
 
     it("stops when cancelled, without a result", async () => {
         const controller = new AbortController();
-        const { engine } = device({ translate: async () => { controller.abort(); return "x"; } });
+        const { engine } = device(async () => { controller.abort(); return "x"; });
         await expect(translateOnDevice(planTranslation(parseSubtitles(FILM)), engine, { maxTokens: 200, signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+    });
+
+    it("asks the model's side for each passage's runs, with the passage's own texts", async () => {
+        const asked: string[][] = [];
+        const { engine } = device();
+        const runs = engine.runs;
+        engine.runs = async (texts, maxTokens) => { asked.push([...texts]); return runs(texts, maxTokens); };
+        await translateOnDevice(planTranslation(parseSubtitles(FILM)), engine, { maxTokens: 200 });
+        expect(asked).toEqual([["When I was young,", "my father took me", "to see the sea."], ["Are you coming?"], ["Yes."], ["It was cold."]]);
+    });
+
+    it("stops when a passage can't be cut, as when the worker stops, and keeps what was done", async () => {
+        const doc = parseSubtitles(FILM);
+        const plan = planTranslation(doc);
+        const { engine } = device();
+        const runs = engine.runs;
+        let passages = 0;
+        engine.runs = async (texts, maxTokens) => {
+            if (++passages === 2) throw new Error("The translation worker stopped.");
+            return runs(texts, maxTokens);
+        };
+        const result = await translateOnDevice(plan, engine, { maxTokens: 200 });
+        expect((result.stoppedBy as Error).message).toBe("The translation worker stopped.");
+        expect(assembleCues(doc, plan, result.outcomes, TWO).map(cue => cue.status)).toEqual(["translated", "translated", "translated", "failed", "kept", "failed"]);
     });
 });
 
