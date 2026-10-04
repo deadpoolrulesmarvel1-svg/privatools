@@ -3,12 +3,11 @@ import logging
 import uuid
 from typing import Optional
 
-import pikepdf
 from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, open_pikepdf, remove_files, validate_pdf_content
 from ..services import metadata_service
 from ..utils.pdf_errors import pdf_read_error
 
@@ -75,7 +74,7 @@ def _apply_metadata_update(
     ensure_temp_dir()
     output_path = get_temp_path(f"metadata_{uuid.uuid4().hex}.pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with open_pikepdf(input_path) as pdf:
         # `update_docinfo=False` is important here: by default pikepdf
         # **rewrites docinfo from XMP** when the context manager exits, which
         # would wipe out any docinfo fields that aren't mirrored in XMP yet.

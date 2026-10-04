@@ -19,7 +19,8 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
-from ..utils.cleanup import process_pdf, validate_pdf_content
+from ..utils.cleanup import process_pdf, refuse_if_pages_lost, validate_pdf_content
+from ..utils.declared_pages import readable_page_count
 from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.pdf_errors import pdf_read_error
@@ -260,11 +261,20 @@ async def audio_converter(
 
 def _count_pdf_pages(data: bytes) -> int:
     """Parse a PDF and return its page count (-1 if unreadable). PyMuPDF parsing
-    is CPU-bound, so callers run this off the event loop."""
+    is CPU-bound, so callers run this off the event loop.
+
+    A PDF cut short is unreadable too: MuPDF repairs it with the pages that
+    survived, or none, and that count is not the file's (refuse_if_pages_lost).
+    """
     try:
         doc = fitz.open(stream=data, filetype="pdf")
         try:
-            return doc.page_count
+            count = doc.page_count
+            if doc.is_repaired:
+                if count == 0:
+                    return -1
+                refuse_if_pages_lost(data, lambda: readable_page_count(doc))
+            return count
         finally:
             doc.close()
     except Exception:

@@ -1,5 +1,6 @@
 import pikepdf
 
+from ..utils.cleanup import open_pikepdf
 from ..utils.exceptions import PdfEncryptedError
 from ..utils.filenames import temp_output
 
@@ -13,12 +14,12 @@ def unlock_pdf(input_path: str, password: str) -> str:
     """
     output_path = temp_output("unlocked", "pdf")
     try:
-        with pikepdf.open(input_path) as pdf:
+        with open_pikepdf(input_path) as pdf:
             pdf.save(str(output_path))
             return str(output_path)
     except pikepdf.PasswordError:
         try:
-            with pikepdf.open(input_path, password=password) as pdf:
+            with open_pikepdf(input_path, password=password) as pdf:
                 pdf.save(str(output_path))
                 return str(output_path)
         except pikepdf.PasswordError as exc:

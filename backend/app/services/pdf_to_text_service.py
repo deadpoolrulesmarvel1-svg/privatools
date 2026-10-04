@@ -1,8 +1,14 @@
 from pypdf import PdfReader
 
+from ..utils.cleanup import end_is_missing, refuse_if_pages_lost
+
 
 def extract_text(input_path: str) -> dict:
     reader = PdfReader(input_path)
+    if end_is_missing(input_path):
+        # Cut short: pypdf rebuilds what it can, and may find fewer pages
+        # than the file had (utils.cleanup.refuse_if_pages_lost).
+        refuse_if_pages_lost(input_path, lambda: len(reader.pages))
     pages = []
     full_text_parts = []
 

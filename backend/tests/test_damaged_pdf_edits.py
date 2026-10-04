@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import base64
 import io
+import re
 
 import fitz  # PyMuPDF
 import pikepdf
@@ -38,6 +39,9 @@ STANDARD = {
     _DAMAGED_PDF,
     "This PDF has no pages.",
 }
+# And about one that lost pages to damage, with how many survived.
+PAGES_LOST = re.compile(r"This PDF is damaged: only [\d,]+ of its [\d,]+ pages could be read\. "
+                        r"Download it again, or use Repair PDF to save the pages that survive\.")
 
 
 def _signature() -> str:
@@ -92,7 +96,8 @@ def test_a_pdf_cut_short_is_done_or_refused_as_damaged_never_a_500(quiet_client,
                                      data=ROUTES[route])
         answers[percent] = (response.status_code, response.json().get("detail")
                             if response.status_code != 200 else None)
-    failures = {p: a for p, a in answers.items() if a[0] not in (200, 400) or (a[0] == 400 and a[1] not in STANDARD)}
+    failures = {p: a for p, a in answers.items() if a[0] not in (200, 400)
+                or (a[0] == 400 and a[1] not in STANDARD and not PAGES_LOST.fullmatch(a[1]))}
     assert not failures, failures
 
 

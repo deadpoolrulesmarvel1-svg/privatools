@@ -12,7 +12,7 @@ import zipfile
 
 import pikepdf
 
-from ..utils.cleanup import _DAMAGED_PDF, open_pdf_document
+from ..utils.cleanup import _DAMAGED_PDF, open_pdf_document, open_pikepdf
 from ..utils.exceptions import PdfCorruptError, ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
@@ -56,7 +56,7 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
         cursor = m
     boundaries.append((cursor, n))
 
-    pdf = pikepdf.open(input_path)
+    pdf = open_pikepdf(input_path)
     chunk_paths: list = []
     try:
         if len(pdf.pages) != n:

@@ -26,6 +26,9 @@ from typing import Any
 import fitz
 import pikepdf
 
+from ..utils.cleanup import open_pikepdf
+from ..utils.exceptions import PdfCorruptError
+
 logger = logging.getLogger(__name__)
 
 # Guard rails for the structure-tree walk. A hostile or merely broken PDF can
@@ -815,11 +818,13 @@ def check_accessibility(input_path: str) -> dict[str, Any]:
     Read-only: the input is never modified.
     """
     try:
-        pdf = pikepdf.open(input_path)
+        pdf = open_pikepdf(input_path)
     except pikepdf.PasswordError as exc:
         raise AccessibilityError(
             "This PDF is password-protected — unlock it first."
         ) from exc
+    except PdfCorruptError:
+        raise  # it lost pages: the report would describe only those left
     except Exception as exc:
         raise AccessibilityError("This file isn't a readable PDF.") from exc
 

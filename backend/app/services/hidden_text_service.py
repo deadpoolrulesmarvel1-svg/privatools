@@ -23,6 +23,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ..utils.cleanup import pages_lost_error
 from ..utils.exceptions import FileTooLargeError, ProcessingError, ToolTimeoutError
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,8 @@ def check_hidden_text(path: str) -> dict:
         raise ValueError(PASSWORD_MESSAGE)
     if error == "corrupt":
         raise ValueError(CORRUPT_MESSAGE)
+    if error == "pages_lost":
+        raise pages_lost_error(outcome.get("pages"), outcome.get("declared"))
     if error == "unreadable":
         raise ValueError(UNREADABLE_MESSAGE)
     if error == "no_pages":

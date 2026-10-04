@@ -23,9 +23,10 @@ Two safety rules:
 from __future__ import annotations
 
 import pikepdf
-from pikepdf import Name, Pdf
+from pikepdf import Name
 
-from ..utils.exceptions import ProcessingError, ValidationError
+from ..utils.cleanup import open_pikepdf
+from ..utils.exceptions import PdfCorruptError, ProcessingError, ValidationError
 from ..utils.filenames import temp_output
 from .watermark_detect_service import detect_watermarks
 
@@ -78,11 +79,12 @@ def remove_watermarks(input_path: str, candidate_ids: list[str] | None = None) -
     removed = 0
 
     try:
-        pdf = Pdf.open(input_path)
-    except (pikepdf.PasswordError, pikepdf.PdfError):
+        pdf = open_pikepdf(input_path)
+    except (pikepdf.PasswordError, pikepdf.PdfError, PdfCorruptError):
         # Detection read the file with MuPDF, which repairs more than qpdf
-        # can: a file qpdf cannot read is damaged, and the global handler says
-        # so (utils.pdf_errors), as it asks for a password.
+        # can: a file qpdf cannot read, or read without some of its pages, is
+        # damaged, and the global handler says so (utils.pdf_errors), as it
+        # asks for a password.
         raise
     except Exception as exc:  # noqa: BLE001 — pikepdf raises several types
         raise ProcessingError("This PDF could not be opened.") from exc

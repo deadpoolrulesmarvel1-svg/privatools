@@ -7,8 +7,10 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
-from ..utils.exceptions import ToolError
+from ..utils.exceptions import PdfCorruptError, ToolError
 from ..utils.cleanup import (
+    _DAMAGED_PDF,
+    end_is_missing,
     ensure_temp_dir,
     get_temp_path,
     remove_files,
@@ -81,6 +83,7 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         else:
             blank_objects.add(page.xref)
 
+    repaired = doc.is_repaired
     doc.close()
 
     # Removed with pikepdf rather than by copying the kept pages into a new
@@ -100,6 +103,13 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         ]
         if len(blank) == len(pages):
             blank = []  # every page looks blank: keep them all
+        if blank and repaired and end_is_missing(data):
+            # A PDF cut short: a page can come out blank because its content
+            # was lost with the rest of the file, and removing it would answer
+            # with fewer pages than the visitor sent, and say nothing. Blank
+            # pages of a file that only needed its cross-reference table
+            # rebuilt go as before.
+            raise PdfCorruptError(_DAMAGED_PDF)
         if blank:
             budget = WorkBudget("remove-blank-pages", len(data))
             remove_pages(pdf, blank, budget=budget).save(out_path)

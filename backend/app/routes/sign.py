@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from PIL import Image
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, open_pikepdf, remove_files, validate_pdf_content
 from ..utils.images import image_read_error
 from ..utils.page_space import shown_area
 from ..services import sign_service
@@ -140,7 +140,7 @@ async def sign_pdf(
         # Validate page index + that the signature box fits inside the target
         # page. Doing this here gives us a precise error before we hand off to
         # the service, which otherwise silently clamps to the last page.
-        with pikepdf.open(str(temp_pdf)) as pdf:
+        with open_pikepdf(str(temp_pdf)) as pdf:
             page_count = len(pdf.pages)
             if page_count == 0:
                 raise HTTPException(status_code=400, detail="PDF has no pages")
