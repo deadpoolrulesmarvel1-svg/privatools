@@ -25,6 +25,7 @@ import workerUrl from "./whisper.worker?worker&url";
 import { withErrorKind } from "./api";
 import { LOCAL_MODELS } from "./localModels";
 import { modelProgress } from "./modelProgress";
+import { yieldBetweenSteps } from "./modelSteps";
 import { configureTransformers } from "./transformersEnv";
 import type { WhisperReply, WhisperRequest } from "./whisper-protocol";
 
@@ -194,30 +195,12 @@ function whisperWorker(): WhisperWorker | null {
 
 const pipelines = new Map<string, Promise<WhisperPipeline>>();
 
-/** The next task, not a microtask, queued behind the page's own work so it can draw and take input first. */
-function nextTask(): Promise<void> {
-    return new Promise(resolve => {
-        const channel = new MessageChannel();
-        channel.port1.onmessage = () => { channel.port1.close(); resolve(); };
-        channel.port2.postMessage(null);
-    });
-}
-
-type Session = { run: (...args: unknown[]) => Promise<unknown> };
-
 /**
  * On the page's thread a window of speech is a long run of model steps that
- * only await microtasks. Waiting for the next task before each step gives the
- * page a turn between steps, at the cost of well under a millisecond each,
+ * only await microtasks; lib/modelSteps gives the page a turn between them,
  * though not during one step, which can itself take seconds.
  */
-export function yieldBetweenSteps(pipeline: unknown): void {
-    const sessions = (pipeline as { model?: { sessions?: Record<string, Session> } } | null)?.model?.sessions ?? {};
-    for (const session of Object.values(sessions)) {
-        const run = session.run.bind(session);
-        session.run = async (...args: unknown[]) => { await nextTask(); return run(...args); };
-    }
-}
+export { yieldBetweenSteps };
 
 async function loadOnPage(size: WhisperSize, onProgress: (percent: number) => void): Promise<WhisperPipeline> {
     const { hfId, bytes } = WHISPER[size];

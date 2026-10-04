@@ -100,3 +100,36 @@ export function availableSources(): string[] {
 export function languageName(code: string): string {
     return LANGUAGES[code] ?? code;
 }
+
+export interface TargetLanguage {
+    /** What the model is told to translate into, and what the page shows. */
+    name: string;
+    /** The tag a file name and a VTT header carry: ISO 639-1, with the region players use for Chinese. */
+    code: string;
+}
+
+/**
+ * Targets offered with the visitor's own AI key: a language model translates
+ * into any of these from whatever language the text is in, which it works
+ * out itself, far beyond the one-directional OPUS-MT pairs above.
+ */
+export const BYOK_TARGETS: readonly TargetLanguage[] = [
+    { name: "English", code: "en" }, { name: "Spanish", code: "es" }, { name: "French", code: "fr" },
+    { name: "German", code: "de" }, { name: "Italian", code: "it" }, { name: "Portuguese", code: "pt" },
+    { name: "Dutch", code: "nl" }, { name: "Polish", code: "pl" }, { name: "Ukrainian", code: "uk" },
+    { name: "Russian", code: "ru" }, { name: "Turkish", code: "tr" }, { name: "Arabic", code: "ar" },
+    { name: "Hebrew", code: "he" }, { name: "Hindi", code: "hi" }, { name: "Bengali", code: "bn" },
+    { name: "Indonesian", code: "id" }, { name: "Vietnamese", code: "vi" }, { name: "Thai", code: "th" },
+    { name: "Chinese (Simplified)", code: "zh-CN" }, { name: "Chinese (Traditional)", code: "zh-TW" },
+    { name: "Japanese", code: "ja" }, { name: "Korean", code: "ko" }, { name: "Swedish", code: "sv" },
+    { name: "Norwegian", code: "no" }, { name: "Danish", code: "da" }, { name: "Finnish", code: "fi" },
+    { name: "Czech", code: "cs" }, { name: "Romanian", code: "ro" }, { name: "Greek", code: "el" },
+    { name: "Hungarian", code: "hu" },
+];
+
+/** The BYOK targets by name, as Translate PDF lists them. */
+export const BYOK_LANGS: readonly string[] = BYOK_TARGETS.map(language => language.name);
+
+export function byokTarget(name: string): TargetLanguage | undefined {
+    return BYOK_TARGETS.find(language => language.name === name);
+}

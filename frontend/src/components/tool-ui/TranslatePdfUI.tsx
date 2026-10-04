@@ -1,4 +1,3 @@
-import { modelProgress } from "@/lib/modelProgress";
 import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * TranslatePdfUI — translate a PDF's text without it leaving the device.
@@ -25,31 +24,22 @@ import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
-import { chunkForTranslation } from "@/lib/translate/chunk";
+import { chunkByTokens } from "@/lib/translate/chunk";
 import {
     APPROX_MODEL_MB,
+    BYOK_LANGS,
     availableSources,
     languageName,
     modelIdFor,
     targetsFor,
 } from "@/lib/translate/languages";
+import { loadDeviceTranslator, MAX_INPUT_TOKENS } from "@/lib/translate/opusMt";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
 import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { translateWithByok } from "@/lib/byok/tasks";
 import { ByokError } from "@/lib/byok/errors";
-import { configureTransformers } from "@/lib/transformersEnv";
-
-/** Targets offered on the BYOK engine — an LLM translates any of these, far
- *  beyond the one-directional OPUS pairs, and detects the source itself. */
-const BYOK_LANGS = [
-    "English", "Spanish", "French", "German", "Italian", "Portuguese", "Dutch",
-    "Polish", "Ukrainian", "Russian", "Turkish", "Arabic", "Hebrew", "Hindi",
-    "Bengali", "Indonesian", "Vietnamese", "Thai", "Chinese (Simplified)",
-    "Chinese (Traditional)", "Japanese", "Korean", "Swedish", "Norwegian",
-    "Danish", "Finnish", "Czech", "Romanian", "Greek", "Hungarian",
-];
 
 type Phase = "idle" | "extracting" | "loading-model" | "translating" | "done";
 
@@ -57,33 +47,6 @@ interface TranslatedPage {
     page: number;
     source: string;
     translated: string;
-}
-
-// One pipeline per model id, kept across runs so switching back to a language
-// you've already used doesn't re-download 107 MB.
-const pipelineCache = new Map<string, Promise<unknown>>();
-
-async function getTranslator(modelId: string, onProgress: (pct: number) => void) {
-    const cached = pipelineCache.get(modelId);
-    if (cached) { onProgress(100); return cached; }
-
-    const promise = (async () => {
-        // Dynamic import keeps the transformers bundle out of the main chunk.
-        const { pipeline, env } = await import("@huggingface/transformers");
-        configureTransformers(env);
-        return pipeline("translation", modelId, {
-            progress_callback: modelProgress(onProgress, 107 * 1024 * 1024),
-        });
-    })();
-    pipelineCache.set(modelId, promise);
-    try {
-        return await promise;
-    } catch (e) {
-        // A failed download must not poison the cache — the next attempt should
-        // be allowed to retry rather than replaying the same rejection.
-        pipelineCache.delete(modelId);
-        throw e;
-    }
 }
 
 async function extractPages(
@@ -203,12 +166,13 @@ export function TranslatePdfUI() {
             }
 
             setPhase("loading-model");
-            const translator = await getTranslator(modelId, setModelPct) as
-                (input: string) => Promise<Array<{ translation_text?: string }>>;
+            const translator = await loadDeviceTranslator(modelId, setModelPct);
             if (cancelRef.current || current !== runId.current) return;
 
             setPhase("translating");
-            const jobs = withText.map(p => ({ ...p, chunks: chunkForTranslation(p.text) }));
+            // Counted in the model's own tokens: 900 characters of Chinese, Japanese,
+            // Korean or Thai were more than it reads, and it dropped the rest silently.
+            const jobs = withText.map(p => ({ ...p, chunks: chunkByTokens(p.text, text => translator.countTokens(text), MAX_INPUT_TOKENS) }));
             const totalChunks = jobs.reduce((n, j) => n + j.chunks.length, 0);
             setChunkProgress({ done: 0, total: totalChunks });
 
@@ -218,9 +182,8 @@ export function TranslatePdfUI() {
                 const parts: string[] = [];
                 for (const chunk of job.chunks) {
                     if (cancelRef.current || current !== runId.current) return;
-                    const result = await translator(chunk);
+                    const translated = await translator.translate(chunk);
                     if (current !== runId.current || cancelRef.current) return;
-                    const translated = result?.[0]?.translation_text?.trim();
                     if (!translated) throw new Error("The model returned no translation. Try a shorter page or another language pair.");
                     parts.push(translated);
                     done += 1;

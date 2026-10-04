@@ -325,6 +325,20 @@ export function stoppedShort(p: Provider, json: unknown): "declined" | "cut-off"
     return undefined;
 }
 
+/**
+ * Whether an OpenAI-shaped or Gemini answer stopped at its output limit:
+ * finish_reason "length", or Gemini's finishReason "MAX_TOKENS". Both send
+ * the text written so far as an ordinary answer, so a caller that can't use
+ * part of one (a translation checked line by line) asks complete() to refuse
+ * it. Anthropic's stop is read by stoppedShort, for every caller.
+ */
+export function reachedLengthLimit(p: Provider, json: unknown): boolean {
+    if (!json || typeof json !== "object") return false;
+    if (p.shape === "openai") return (json as { choices?: Array<{ finish_reason?: unknown }> }).choices?.[0]?.finish_reason === "length";
+    if (p.shape === "gemini") return (json as { candidates?: Array<{ finishReason?: unknown }> }).candidates?.[0]?.finishReason === "MAX_TOKENS";
+    return false;
+}
+
 /** Providers with an OpenAI-style speech-to-text endpoint (audio/transcriptions). */
 export function supportsTranscription(p: Provider): boolean {
     return p.shape === "openai" && !!p.transcribeModel;

@@ -46,4 +46,10 @@ describe("hand-offs stay in the document that holds the file", () => {
         expect(offered).toBeGreaterThan(0);
         expect(crossing).toEqual([]);
     });
+
+    it("from a result screen that hands its own file on, outside the next steps", () => {
+        // Subtitle Translator's "Burn into a video": the translated SRT, which nextStepsFor (PDF results only) doesn't offer.
+        const own = [["/tools/subtitle-translator", "/tools/add-subtitles"]];
+        expect(own.filter(([from, to]) => documentNavigationFor(from, to) !== null)).toEqual([]);
+    });
 });

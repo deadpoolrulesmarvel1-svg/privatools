@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
   QrCode, Merge, Maximize2, Type,
-  Eraser, Sparkles, Captions, Coins,
+  Eraser, Sparkles, Captions, Coins, Languages,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -261,6 +261,17 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "auto subtitle generator generate subtitles video to srt audio to srt srt generator vtt captions caption generator closed captions speech to subtitles transcribe video whisper offline no watermark",
     popularity: 18,
     category: "video-audio", clientOnly: true, accepts: ".mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.oga,.opus,.flac,.aac", outputLabel: "subtitles (.srt or .vtt)",
+    lastReviewed: "2026-10-03",
+  },
+  {
+    slug: "subtitle-translator", icon: Languages, name: "Subtitle Translator",
+    description: "Translate SRT or VTT subtitles into another language",
+    longDescription: "Translate an SRT or VTT subtitle file into another language in your browser. Every cue keeps its number and timing: consecutive cues are translated together as the sentences they form, then shared back across the same cues and wrapped to two lines. Translate on this device with an OPUS-MT model, English into 19 languages or 24 languages into English, about 107 MB for each language pair, downloaded once; or with your own AI key for any pair, when the text goes to your provider, not to PrivaTools. Check each line beside the original, correct any of them, then download SRT or VTT. The result is a machine translation.",
+    seoTitle: "Subtitle Translator – Translate SRT and VTT Files Free",
+    metaDescription: "Translate an SRT or VTT subtitle file into another language with every timing kept, on your device or with your own AI key. Check each line, then download.",
+    synonyms: "srt translator translate srt translate subtitles subtitle translation vtt translator translate vtt translate srt file to english spanish arabic srt translator ai free caption translator machine translation",
+    popularity: 35,
+    category: "video-audio", clientOnly: true, byok: true, accepts: ".srt,.vtt", outputLabel: "translated subtitles (.srt or .vtt)",
     lastReviewed: "2026-10-03",
   },
 

@@ -21,6 +21,7 @@ import { WatermarkUI } from "@/components/tool-ui/WatermarkUI";
 import { MetadataUI } from "@/components/tool-ui/MetadataUI";
 import { ProtectUI } from "@/components/tool-ui/ProtectUI";
 import { SubtitleGeneratorUI } from "@/components/tool-ui/SubtitleGeneratorUI";
+import { SubtitleTranslatorUI } from "@/components/tool-ui/SubtitleTranslatorUI";
 import { AiTokenCounterUI } from "@/components/tool-ui/AiTokenCounterUI";
 
 vi.mock("@/skins/daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
@@ -67,6 +68,7 @@ const CASES: Case[] = [
     { name: "Gemini Watermark Remover", tool: { slug: "gemini-watermark-remover", name: "Gemini Watermark Remover", description: "Take the visible Gemini sparkle off AI-generated images", category: "image", clientOnly: true }, ui: () => <GeminiWatermarkUI />, choose: c => fileInput(c, [png("gemini.png")]) },
     { name: "JSON / XML Formatter", tool: { slug: "json-xml-formatter", name: "JSON / XML Formatter", description: "Prettify, minify or validate JSON and XML in your browser", category: "developer", clientOnly: true }, ui: () => <JsonXmlFormatterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: '{"a":1}' } }) },
     { name: "Subtitle Generator", tool: { slug: "subtitle-generator", name: "Subtitle Generator", description: "Turn the speech in a video or recording into subtitles", category: "video-audio", clientOnly: true }, ui: () => <SubtitleGeneratorUI />, choose: c => fileInput(c, [mp4("talk.mp4")]) },
+    { name: "Subtitle Translator", tool: { slug: "subtitle-translator", name: "Subtitle Translator", description: "Translate SRT or VTT subtitles into another language", category: "video-audio", clientOnly: true }, ui: () => <SubtitleTranslatorUI />, choose: c => fileInput(c, [new File(["1\n00:00:01,000 --> 00:00:02,000\nHello.\n"], "talk.srt", { type: "application/x-subrip" })]) },
     { name: "Hidden Text Checker", tool: { slug: "hidden-text-checker", name: "Hidden Text Checker", description: "Find text in a PDF that readers can't see", category: "security" }, ui: () => <HiddenTextCheckerUI />, choose: c => fileInput(c, [pdf("notes.pdf")]) },
     { name: "AI Token Counter, pasted text", tool: { slug: "ai-token-counter", name: "AI Token Counter", description: "Count tokens in text or files for GPT, Claude and Gemini", category: "developer", clientOnly: true }, ui: () => <AiTokenCounterUI />, choose: () => fireEvent.change(document.querySelector("textarea")!, { target: { value: "Count these tokens." } }) },
     { name: "AI Token Counter, a file", tool: { slug: "ai-token-counter", name: "AI Token Counter", description: "Count tokens in text or files for GPT, Claude and Gemini", category: "developer", clientOnly: true }, ui: () => <AiTokenCounterUI />, choose: c => fileInput(c, [new File(["notes"], "notes.txt", { type: "text/plain" })]) },

@@ -412,7 +412,7 @@ function SubtitleResult({ file, result, onEdit, onStartOver }: { file: File; res
             <button type="button" className="ts-secondary-button" onClick={() => save("vtt")} disabled={!kept.length}><Download size={16} aria-hidden="true" /> Download VTT</button>
             <button type="button" className="ts-text-button" onClick={onStartOver}>Subtitle another file</button>
         </div>
-        <p className="ts-caption sg-next">Whisper {WHISPER[result.model].label} wrote these on this device; nothing was uploaded. To show them in the picture itself, <a href="/tools/add-subtitles">Add Subtitles</a> burns the SRT into the video, which means uploading the video and the subtitles to PrivaTools for temporary processing. <a href="/tools/subtitle-converter">Subtitle Converter</a> changes between SRT and VTT in this browser.</p>
+        <p className="ts-caption sg-next">Whisper {WHISPER[result.model].label} wrote these on this device; nothing was uploaded. To show them in the picture itself, <a href="/tools/add-subtitles">Add Subtitles</a> burns the SRT into the video, which means uploading the video and the subtitles to PrivaTools for temporary processing. <a href="/tools/subtitle-converter">Subtitle Converter</a> changes between SRT and VTT in this browser. To translate them, download the SRT, open <a href="/tools/subtitle-translator">Subtitle Translator</a> and choose the downloaded file.</p>
     </StudioResult>;
 }
 

@@ -10,6 +10,16 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.24] — 2026-10-04 — Subtitle Translator
+
+### New tool
+
+- Subtitle Translator translates an SRT or VTT file and gives back the same format, with every cue's number and timing unchanged. It runs on your device with the models Translate PDF uses, which translate English into a set of languages and a set of languages into English (about 107 MB per language pair, downloaded once from Hugging Face). With your own AI key it takes any pair, and the text goes from your browser to your provider. Nothing goes to PrivaTools. A sentence that runs across cues is translated whole and put back across the same cues, and song lines, positioning tags and VTT notes and styles are kept. You check and edit the result beside the original before you download it, and cues that couldn't be translated are marked. (#334)
+
+### Tools
+
+- Translate PDF no longer cuts off long Chinese, Japanese, Korean or Thai passages without saying so, because it now splits text by the model's own token count. The page also no longer freezes for long stretches while it translates. (#334)
+
 ## [2.7.23] — 2026-10-04 — Clear errors instead of "Processing failed"
 
 ### Tools
