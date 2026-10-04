@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
+from ..utils.pdf_errors import pdf_read_error
 
 logger = logging.getLogger("privatools.errors")
 
@@ -206,20 +207,14 @@ async def builtin_exception_handler(request: Request, exc: Exception) -> JSONRes
     if image_error is not None:
         return _json(image_error[0], image_error[1], request=request)
 
-    # pikepdf — password
-    if name == "PasswordError":
-        return _json(
-            400,
-            "This PDF is password-protected. Unlock it first, then try again.",
-            request=request,
-        )
+    # A PDF that pikepdf, MuPDF or pypdf cannot read, or that needs a
+    # password: the file's fault, so a 400 that says so (utils.pdf_errors).
+    pdf_error = pdf_read_error(exc)
+    if pdf_error is not None:
+        return _json(pdf_error[0], pdf_error[1], request=request)
 
-    # pikepdf — PdfError (corrupt / malformed)
-    if name == "PdfError":
-        return _json(400, "This PDF appears to be corrupt or invalid.", request=request)
-
-    # pypdf — encryption / read errors
-    if name in {"DependencyError", "PdfReadError", "EmptyFileError"}:
+    # pypdf / pikepdf — a library the reader needs for this file
+    if name == "DependencyError":
         # Heuristic: messages mentioning encryption should land on the
         # password branch, anything else is treated as corrupt.
         if "encrypt" in msg.lower() or "password" in msg.lower():

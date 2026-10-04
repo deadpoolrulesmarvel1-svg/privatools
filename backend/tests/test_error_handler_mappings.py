@@ -11,6 +11,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
+from pikepdf import PasswordError, PdfError
+
 from backend.app.middleware.error_handlers import builtin_exception_handler
 
 
@@ -28,15 +30,9 @@ def _status(exc) -> int:
 
 # Name-matched branches — the handler keys on type(exc).__name__, so locally
 # defined classes with the right names exercise them without the real libs.
+# A PDF library's errors are matched by their own classes (utils.pdf_errors),
+# so pikepdf's PasswordError and PdfError are the real ones.
 class DecompressionBombError(Exception):
-    pass
-
-
-class PasswordError(Exception):
-    pass
-
-
-class PdfError(Exception):
     pass
 
 

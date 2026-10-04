@@ -26,6 +26,7 @@ import re
 import time
 from pathlib import Path
 
+import pikepdf
 import pytest
 from fastapi.testclient import TestClient
 
@@ -137,14 +138,15 @@ def test_504_from_the_request_timeout(quiet_client, monkeypatch, tmp_path, expec
 
 
 def _named(name: str) -> type[Exception]:
-    # The catch-all matches some libraries' exceptions by class name.
+    # The catch-all matches some libraries' exceptions by class name (a PDF
+    # library's by its own class: utils.pdf_errors).
     return type(name, (Exception,), {})
 
 
 @pytest.mark.parametrize("error,status", [
     (lambda: RuntimeError("an unhandled failure"), 500),
     (lambda: _named("DecompressionBombError")("too many pixels"), 413),
-    (lambda: _named("PasswordError")("encrypted"), 400),
+    (lambda: pikepdf.PasswordError("encrypted"), 400),
     (lambda: NotImplementedError(), 501),
 ])
 @pytest.mark.parametrize("expected", ORIGINS, indirect=True)
