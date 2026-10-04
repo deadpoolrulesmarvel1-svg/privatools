@@ -1,11 +1,22 @@
 /**
- * What a media file is and how long it plays, found without decoding it.
- * Shared by Subtitle Generator (extract.ts) and Voice Noise Remover
- * (lib/noise/source.ts).
+ * What a media file is and how long it plays, found without decoding it, and
+ * whether that is past a tool's limit. Shared by Subtitle Generator
+ * (extract.ts) and Voice Noise Remover (lib/noise/source.ts).
  */
 import { ascii, readRange } from "./bytes";
 
 export type MediaKind = "mp4" | "matroska" | "mp3" | "wav" | "other";
+
+/**
+ * How far past a length limit a file may run and still be taken. Encoders pad
+ * a recording's end (an hour of MP3 comes out at 60:00.04), and a length is
+ * told in whole minutes, so anything refused must read as longer than the
+ * limit: 30 seconds over is the first length that rounds to a minute more.
+ */
+const LIMIT_SLACK_SECONDS = 30;
+
+/** Whether `seconds` of sound is past a tool's `limit`, once an encoder's padding is allowed for. */
+export const pastLimit = (seconds: number, limit: number) => seconds >= limit + LIMIT_SLACK_SECONDS;
 
 /** Which reader a file needs, from its first bytes rather than its name. */
 export async function sniff(file: Blob): Promise<MediaKind> {
