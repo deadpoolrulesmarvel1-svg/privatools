@@ -72,6 +72,10 @@ def pdf_read_error(exc: BaseException) -> tuple[int, str] | None:
     that rewords what it caught does. Any other error raised in an `except`
     around a failed read, such as a KeyError in a fallback, is a fault of its
     own and stays a logged 500.
+
+    By the time an error reaches the global catch-all, Starlette has re-raised
+    it `from` its context (_unwrapped_from_a_group), so there a cause is read
+    like a context, except PyMuPDF's FileDataError's, which it always sets.
     """
     seen: set[int] = set()
     while exc is not None and id(exc) not in seen:
@@ -81,13 +85,40 @@ def pdf_read_error(exc: BaseException) -> tuple[int, str] | None:
             return answer
         if isinstance(exc, ToolError):
             return None
-        if exc.__cause__ is not None:
-            exc = exc.__cause__
+        cause = exc.__cause__
+        if cause is not None and (
+            not _unwrapped_from_a_group(exc)
+            or _rewords(exc, cause)
+            or isinstance(exc, _file_data_error())
+        ):
+            exc = cause
         elif exc.__suppress_context__ or not _rewords(exc, exc.__context__):
             exc = None
         else:
             exc = exc.__context__
     return None
+
+
+def _unwrapped_from_a_group(exc: BaseException) -> bool:
+    """Whether `exc` was re-raised by Starlette out of a task group, whose
+    ExceptionGroup it was the only member of. Starlette raises it `from` its
+    cause or else its context (starlette._utils.create_collapsing_task_group,
+    under every BaseHTTPMiddleware), so a KeyError raised while a PdfError was
+    being handled reached the global catch-all with that PdfError as its
+    cause, and was answered as a damaged PDF."""
+    group = exc.__context__
+    return (
+        exc.__suppress_context__
+        and isinstance(group, BaseExceptionGroup)
+        and any(inner is exc for inner in group.exceptions)
+    )
+
+
+@cache
+def _file_data_error() -> type[BaseException]:
+    import fitz  # PyMuPDF
+
+    return fitz.FileDataError
 
 
 def _pdf_read_error(exc: BaseException) -> tuple[int, str] | None:

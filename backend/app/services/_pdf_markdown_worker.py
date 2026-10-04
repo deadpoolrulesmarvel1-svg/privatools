@@ -778,6 +778,11 @@ def ruled_tables(page: fitz.Page, pieces: list[Piece], frame: Frame, regions: li
             tables += page.find_tables(clip=clip, strategy="lines").tables
         except Exception:  # noqa: BLE001 - a region the finder cannot read keeps its text
             continue
+        finally:
+            # find_tables can fail after turning PyMuPDF's process-wide
+            # small_glyph_heights switch on (backend/app/utils/tables.py); the
+            # rest of this file is read with it off.
+            fitz.TOOLS.set_small_glyph_heights(False)
     out = []
     for table in tables:
         if table.row_count < 2 or table.col_count < 2:

@@ -183,6 +183,55 @@ def test_mupdf_failing_to_open_a_file_it_may_not_read_is_the_servers_fault(tmp_p
     assert pdf_read_error(exc) is None
 
 
+def test_open_pdf_document_leaves_a_file_it_may_not_read_the_servers_fault(tmp_path):
+    from backend.app.utils.cleanup import open_pdf_document
+
+    path = tmp_path / "unreadable.pdf"
+    path.write_bytes(_classic())
+    os.chmod(path, 0)
+    try:
+        if os.access(path, os.R_OK):
+            pytest.skip("this user can read a file without permission (root)")
+        exc = _raised(lambda: open_pdf_document(str(path)))
+    finally:
+        os.chmod(path, 0o600)
+    assert pdf_read_error(exc) is None
+    assert pdf_read_error(_raised(lambda: open_pdf_document(str(tmp_path)))) is None
+    # The file's own faults are still refused as damaged.
+    assert pdf_read_error(_raised(lambda: open_pdf_document(_cut(_classic(), 5)))) == DAMAGED
+    assert pdf_read_error(_raised(lambda: open_pdf_document(b""))) == DAMAGED
+
+
+def _repaired_but_valid() -> bytes:
+    # Bytes after %%EOF: valid, and MuPDF opens it "repaired", as it does
+    # pdfunite's output and files with junk before the header.
+    data = _classic() + b"\n" + bytes(range(256)) * 40
+    assert fitz.open(stream=data, filetype="pdf").is_repaired
+    return data
+
+
+@pytest.mark.parametrize("rebuild", [False, True])
+def test_process_pdf_leaves_a_tools_own_error_on_a_repaired_file_its_own(rebuild):
+    from backend.app.utils.cleanup import process_pdf
+
+    def work(doc):
+        return float("a value from the request")
+
+    exc = _raised(lambda: process_pdf(_repaired_but_valid(), work, rebuild=rebuild))
+    assert type(exc) is ValueError
+    assert pdf_read_error(exc) is None
+
+
+def test_process_pdf_still_calls_pymupdfs_error_on_a_repaired_file_damage():
+    from backend.app.utils.cleanup import process_pdf
+
+    def work(doc):
+        doc[0].insert_text((72, 72), "a stamp")  # "not a dict (null)" on this file
+
+    exc = _raised(lambda: process_pdf(_cut(_object_streams(), 20), work, rebuild=False))
+    assert isinstance(exc, PdfCorruptError)
+
+
 def test_mupdf_given_a_directory_is_the_servers_fault(tmp_path):
     exc = _raised(lambda: fitz.open(str(tmp_path)))
     assert isinstance(exc, fitz.FileDataError)
@@ -268,6 +317,44 @@ def test_the_global_catch_all_answers_every_librarys_damage_with_a_400():
         _raised(lambda: [p.extract_text() for p in pypdf.PdfReader(io.BytesIO(_cut(_classic(), 50))).pages]),
     ]
     assert [_status(exc) for exc in samples] == [DAMAGED] * len(samples)
+
+
+def _through_the_app(monkeypatch, fails) -> int:
+    """What the app answers when `fails` raises inside a route that catches
+    nothing (Image Compressor), so the global catch-all answers, behind every
+    middleware, as in production."""
+    from fastapi.testclient import TestClient
+    from PIL import Image
+
+    from backend.app import main
+
+    monkeypatch.setattr(Image, "open", fails)
+    client = TestClient(main.app, raise_server_exceptions=False)
+    return client.post("/api/image-compressor", files={"file": ("photo.png", b"\x89PNG\r\n\x1a\n", "image/png")}).status_code
+
+
+def test_a_bug_raised_while_handling_a_pdf_error_stays_a_500_behind_the_middleware(monkeypatch):
+    # Starlette re-raises a route's error out of each BaseHTTPMiddleware's task
+    # group `from` its context, so the global catch-all saw the PdfError this
+    # KeyError was raised while handling as its cause, and answered 400.
+    def fails(*_args, **_kwargs):
+        try:
+            pikepdf.open(io.BytesIO(_cut(_classic(), 5)))
+        except pikepdf.PdfError:
+            {}["fallback"]
+
+    assert _through_the_app(monkeypatch, fails) == 500
+
+
+def test_a_damaged_pdf_is_still_a_400_behind_the_middleware(monkeypatch):
+    def fitz_fails(*_args, **_kwargs):
+        fitz.open(stream=_cut(_classic(), 5), filetype="pdf")
+
+    def pikepdf_fails(*_args, **_kwargs):
+        pikepdf.open(io.BytesIO(_cut(_classic(), 5)))
+
+    assert _through_the_app(monkeypatch, fitz_fails) == 400
+    assert _through_the_app(monkeypatch, pikepdf_fails) == 400
 
 
 def test_the_global_catch_all_keeps_the_password_case(locked_pdf):
