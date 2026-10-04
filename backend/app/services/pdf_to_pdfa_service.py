@@ -4,6 +4,7 @@ import shutil
 
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import process_pdf
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
@@ -12,8 +13,7 @@ logger = logging.getLogger(__name__)
 def _convert_to_pdfa_sync(input_path: str) -> str:
     output_path = temp_output("pdfa", "pdf")
 
-    doc = fitz.open(input_path)
-    try:
+    def clean(doc: fitz.Document) -> dict:
         # Set PDF/A metadata in the document info
         meta = doc.metadata or {}
         meta["producer"] = "PrivaTools PDF/A Converter"
@@ -27,8 +27,12 @@ def _convert_to_pdfa_sync(input_path: str) -> str:
             deflate=True,
             clean=True,
         )
-    finally:
-        doc.close()
+        return meta
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    meta = process_pdf(input_path, clean, rebuild=False)
 
     # Pass 2: tag with PDF/A-2b XMP metadata via pikepdf. If pikepdf is
     # unavailable or the tagging step fails we still return the cleaned

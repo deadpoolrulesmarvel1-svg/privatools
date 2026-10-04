@@ -171,7 +171,7 @@ async def whiteout_pdf(
         out = await asyncio.to_thread(whiteout_service.whiteout_pdf, str(temp), region_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="whiteout.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
@@ -213,7 +213,7 @@ async def add_attachment(
         out = await asyncio.to_thread(attachment_service.add_attachment, str(temp_pdf), str(temp_att), safe_attachment_name)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), str(temp_att), out)
         return FileResponse(out, filename="with_attachment.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp_pdf, temp_att, out)
         raise
     except Exception as e:
@@ -352,7 +352,7 @@ async def annotate_pdf(
         out = await asyncio.to_thread(annotate_service.annotate_pdf, str(temp), ann_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="annotated.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
@@ -386,7 +386,7 @@ async def add_shapes(
         out = await asyncio.to_thread(shapes_service.add_shapes, str(temp), shape_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="shapes.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:

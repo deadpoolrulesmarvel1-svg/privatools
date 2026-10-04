@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
+from ..utils.exceptions import ToolError
 from ..services import pdf_to_pdfa_service
 from ..utils.pdf_errors import pdf_read_error
 
@@ -36,7 +37,7 @@ async def pdf_to_pdfa(request: Request, file: UploadFile = File(...)):
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

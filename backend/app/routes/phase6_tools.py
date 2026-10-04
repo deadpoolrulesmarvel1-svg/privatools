@@ -19,8 +19,10 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
-from ..utils.cleanup import validate_pdf_content
+from ..utils.cleanup import process_pdf, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
+from ..utils.pdf_errors import pdf_read_error
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
 from ..utils.concurrency import run_bounded
 
@@ -35,13 +37,16 @@ def _temp_path(suffix: str) -> Path:
 
 def _compress_single_pdf(pdf_bytes: bytes, level: str) -> bytes:
     """Compress a single PDF. Returns compressed bytes."""
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    out = io.BytesIO()
-    # Rebuild with garbage collection and deflation
-    gc_level = 4 if level == "extreme" else 3 if level == "balanced" else 2
-    doc.save(out, garbage=gc_level, deflate=True, clean=True)
-    doc.close()
-    return out.getvalue()
+    def compress(doc: fitz.Document) -> bytes:
+        out = io.BytesIO()
+        # Rebuild with garbage collection and deflation
+        gc_level = 4 if level == "extreme" else 3 if level == "balanced" else 2
+        doc.save(out, garbage=gc_level, deflate=True, clean=True)
+        return out.getvalue()
+
+    # A locked, damaged or pageless PDF is refused in the standard words, and
+    # a save that fails on a repaired one is refused as damaged.
+    return process_pdf(pdf_bytes, compress, rebuild=False)
 
 
 def _compress_batch_to_zip(pdf_data, level: str) -> str:
@@ -61,7 +66,11 @@ def _compress_batch_to_zip(pdf_data, level: str) -> str:
         i, name = futures[future]
         try:
             results.append((i, name, future.result()))
+        except ToolError:
+            raise  # a PDF that has no pages, say: its own status and words
         except Exception as exc:
+            if (pdf_error := pdf_read_error(exc)) is not None:
+                raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
             raise HTTPException(500, f"Failed to compress {name}: {str(exc)}")
     results.sort(key=lambda t: t[0])  # preserve upload order
     seen: dict[str, int] = {}

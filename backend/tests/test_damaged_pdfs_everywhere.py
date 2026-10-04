@@ -37,6 +37,7 @@ from PIL import Image
 from starlette.datastructures import UploadFile
 
 from backend.app import main
+from backend.app.utils.cleanup import _DAMAGED_PDF
 
 
 def _classic() -> bytes:
@@ -199,14 +200,11 @@ NOT_PDF = {
 
 # Routes still fixed in a later commit of this branch.
 NOT_YET = {
-    "/api/add-attachment", "/api/add-hyperlinks", "/api/add-shapes", "/api/annotate-pdf",
-    "/api/batch-compress-pdf", "/api/bates-remove", "/api/compare", "/api/extract-images",
-    "/api/extract-tables", "/api/flatten", "/api/grayscale", "/api/header-footer",
-    "/api/hidden-text-checker", "/api/ocr", "/api/organize-pages/thumbnails", "/api/page-numbers",
-    "/api/pdf-to-excel", "/api/pdf-to-html", "/api/pdf-to-markdown", "/api/pdf-to-pdfa",
-    "/api/pdf-to-rtf", "/api/pdf-to-word", "/api/redact",
+    "/api/compare", "/api/extract-images", "/api/extract-tables", "/api/grayscale",
+    "/api/hidden-text-checker", "/api/ocr", "/api/organize-pages/thumbnails", "/api/pdf-to-excel",
+    "/api/pdf-to-html", "/api/pdf-to-markdown", "/api/pdf-to-rtf", "/api/pdf-to-word",
     "/api/remove-watermark/apply", "/api/remove-watermark/detect", "/api/split-by-text",
-    "/api/web-optimize", "/api/whiteout-pdf",
+    "/api/web-optimize",
 }
 
 
@@ -281,6 +279,48 @@ def test_a_locked_pdf_is_done_or_refused_with_the_password_advice(quiet_client, 
     if response.status_code != 200:
         assert response.status_code == 400, response.text
         assert "password" in response.json()["detail"].lower(), response.text
+
+
+# ── Tools that change the pages, through process_pdf ────────────────────────
+# They opened the upload with a bare fitz.open, so a locked file failed on its
+# first page ("document closed or encrypted"), a file repaired to no page at
+# the save ("cannot save with zero pages"), and one MuPDF repaired failed on
+# the objects it had lost ("not a dict (null)"); all were 500s. They open it
+# with open_pdf_document now, through process_pdf (rebuild=False) or the shared
+# page count, and say what is wrong in the standard words.
+CHANGES_PAGES = [
+    "/api/add-attachment", "/api/add-hyperlinks", "/api/add-shapes", "/api/annotate-pdf",
+    "/api/batch-compress-pdf", "/api/bates-remove", "/api/edit-pdf", "/api/flatten",
+    "/api/form-creator", "/api/header-footer", "/api/page-numbers", "/api/pdf-to-epub",
+    "/api/pdf-to-pdfa", "/api/redact", "/api/transparent-background", "/api/whiteout-pdf",
+]
+STANDARD = {
+    "This PDF appears to be corrupt or invalid.",
+    _DAMAGED_PDF,
+    "This PDF has no pages.",
+}
+PASSWORD = "This PDF is password-protected. Unlock it first, then try again."
+
+
+@pytest.mark.parametrize("sample", sorted(DAMAGED))
+@pytest.mark.parametrize("route", CHANGES_PAGES)
+def test_a_tool_that_changes_pages_does_its_work_or_says_the_pdf_is_damaged(quiet_client, route, sample):
+    response = _post(quiet_client, route, DAMAGED[sample])
+    assert response.status_code in (200, 400), response.text
+    if response.status_code == 400:
+        assert response.json()["detail"] in STANDARD, response.text
+
+
+@pytest.mark.parametrize("route", CHANGES_PAGES)
+def test_a_tool_that_changes_pages_asks_for_the_password(quiet_client, locked_pdf, route):
+    response = _post(quiet_client, route, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
+
+
+@pytest.mark.parametrize("route", CHANGES_PAGES)
+def test_a_tool_that_changes_pages_still_does_an_intact_pdf(quiet_client, route):
+    assert _post(quiet_client, route, GOOD).status_code == 200
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────

@@ -18,8 +18,8 @@ from fastapi.responses import FileResponse
 from PIL import Image, ImageChops
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import remove_files, validate_pdf_content
-from ..utils.exceptions import PdfEncryptedError, ToolError
+from ..utils.cleanup import open_pdf_document, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.page_space import drawing_unturned
 from ..utils.render import plan_renders, safe_get_pixmap
 from ..utils.pdf_errors import pdf_read_error
@@ -41,16 +41,14 @@ async def _read_upload(file: UploadFile, max_bytes: int, label: str) -> bytes:
 
 
 def _open_pdf(data: bytes) -> fitz.Document:
+    """open_pdf_document, with its refusals as the HTTPExceptions these routes
+    pass on: a PDF that needs a password (PyMuPDF opens it, then fails on the
+    first page it reads), one MuPDF cannot read or count, and one with no page,
+    which failed at the save ("cannot save with zero pages") as a 500."""
     try:
-        doc = fitz.open(stream=data, filetype="pdf")
-    except fitz.FileDataError as exc:
-        raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
-    if doc.needs_pass:
-        # PyMuPDF opens it, then fails on the first page it reads, which the
-        # routes here answered as a 500 ("Processing failed").
-        doc.close()
-        raise HTTPException(status_code=400, detail=PdfEncryptedError.default_detail)
-    return doc
+        return open_pdf_document(data)
+    except ToolError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 
 
 class _TempPath:

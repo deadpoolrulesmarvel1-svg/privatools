@@ -10,6 +10,7 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..services import redact_service
 from ..utils.concurrency import run_bounded
 from ..utils.route_helpers import pdf_page_count
@@ -186,7 +187,7 @@ async def redact_pdf(
                 "X-Redaction-Report": json.dumps(report),
             },
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise

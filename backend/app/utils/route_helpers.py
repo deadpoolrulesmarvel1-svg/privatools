@@ -22,10 +22,9 @@ import re
 from pathlib import Path
 from typing import Callable
 
-import fitz  # PyMuPDF
 from fastapi import HTTPException, UploadFile
 
-from .cleanup import remove_files
+from .cleanup import open_pdf_document, remove_files
 
 # 500 MB default — matches the upload middleware cap in main.py.
 MAX_SIZE = int(os.getenv("MAX_UPLOAD_MB", "500")) * 1024 * 1024
@@ -225,10 +224,15 @@ def _whole_number(value) -> int | None:
 async def pdf_page_count(path: str | Path) -> int:
     """How many pages the PDF at `path` has. Opened off the event loop: MuPDF
     repairs a damaged file while opening it, which takes longer the bigger
-    the file."""
+    the file. A PDF that needs a password, that MuPDF cannot read or count,
+    or that has no page is refused with open_pdf_document's 400, before any
+    of the route's work."""
     def count() -> int:
-        with fitz.open(str(path)) as doc:
+        doc = open_pdf_document(str(path))
+        try:
             return len(doc)
+        finally:
+            doc.close()
 
     return await asyncio.to_thread(count)
 
