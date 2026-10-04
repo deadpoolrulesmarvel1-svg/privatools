@@ -77,9 +77,9 @@ export interface NoiseSource {
 
 /**
  * Decode a complete stream at (about) `rate`; the result says the rate it is
- * at. The arrays may be the decoder's own, so what is sent to the worker is
- * copied from them: sending moves an array's memory, and some browsers don't
- * let an AudioBuffer's arrays be moved.
+ * at. The arrays may be the decoder's own (an AudioBuffer's), so what is sent
+ * to the worker is copied from them: sending moves an array's memory, and
+ * only arrays the page made itself are moved.
  */
 export type Decode = (bytes: ArrayBuffer, rate: number) => Promise<{ channels: Float32Array[]; rate: number }>;
 
