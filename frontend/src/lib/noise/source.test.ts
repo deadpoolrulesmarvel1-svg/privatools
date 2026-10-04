@@ -94,6 +94,17 @@ describe("reading a recording for the noise remover", () => {
         expect(error.message).toBe("This file’s sound is 1 h 2 min long. Voice Noise Remover takes up to 60 minutes at a time.");
     });
 
+    it("takes an hour's recording that its encoder padded past 60:00, and refuses one that reads as longer", async () => {
+        // An hour of MP3 comes out at 60:00.04; the limit's own message would call it "1 hour long".
+        const padded = await openNoiseSource(silentWav(MAX_SECONDS + 0.04));
+        expect(padded.durationSeconds).toBeCloseTo(MAX_SECONDS + 0.04, 3);
+        const error = await openNoiseSource(silentWav(MAX_SECONDS + 30)).catch(e => e);
+        expect(error).toMatchObject({ problem: "too-long" });
+        expect(error.message).toBe("This file’s sound is 1 h 1 min long. Voice Noise Remover takes up to 60 minutes at a time.");
+        const whole = asFile(new NodeBlob([new Uint8Array(100)]) as unknown as Blob, "voice.flac");
+        await expect(openNoiseSource(whole, { measure: async () => WHOLE_FILE_SECONDS + 0.01 })).resolves.toBeTruthy();
+    });
+
     it("fails on the first piece when this browser can't decode the sound", async () => {
         const decode = vi.fn(async () => { throw new Error("EncodingError"); });
         const source = await openNoiseSource(mediaFile("tone.mp3", "audio/mpeg"), { decode, pieceSeconds: 0.5 });

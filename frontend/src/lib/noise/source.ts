@@ -27,6 +27,14 @@ import { indexWav } from "@/lib/subtitles/media/wav";
 export const MAX_SECONDS = 60 * 60;
 /** The longest sound decoded whole, for formats not read in pieces: at 48 kHz stereo, about 350 MB of samples. */
 export const WHOLE_FILE_SECONDS = 15 * 60;
+/**
+ * How far past a limit a file may run and still be taken. Encoders pad a
+ * recording's end (an hour of MP3 comes out at 60:00.04), and a length is
+ * told in whole minutes, so anything refused must read as longer than the
+ * limit: 30 seconds over is the first length that rounds to a minute more.
+ */
+const SLACK_SECONDS = 30;
+const over = (seconds: number, limit: number) => seconds >= limit + SLACK_SECONDS;
 /** For a whole-file format whose length the browser can't tell before decoding. */
 export const WHOLE_FILE_BYTES = 150 * 1024 * 1024;
 /** How much of the sound before each piece is decoded with it. */
@@ -159,7 +167,7 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
     signal?.throwIfAborted();
 
     if (index) {
-        if (index.durationSeconds > MAX_SECONDS) throw tooLong(index.durationSeconds);
+        if (over(index.durationSeconds, MAX_SECONDS)) throw tooLong(index.durationSeconds);
         const found = index;
         const wav = found.container === "WAV";
         const rate = decodeRate(found);
@@ -201,8 +209,8 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
     if (seconds === null && file.size > WHOLE_FILE_BYTES) {
         throw new NoiseInputError("too-long-whole", `${await decodedWhole(file, kind)} This browser can’t tell how long this file plays without decoding all of it, so it takes files like it up to ${WHOLE_FILE_BYTES / 1024 / 1024} MB.`);
     }
-    if (seconds !== null && seconds > MAX_SECONDS) throw tooLong(seconds);
-    if (seconds !== null && seconds > WHOLE_FILE_SECONDS) {
+    if (seconds !== null && over(seconds, MAX_SECONDS)) throw tooLong(seconds);
+    if (seconds !== null && over(seconds, WHOLE_FILE_SECONDS)) {
         throw new NoiseInputError("too-long-whole", `This file’s sound is ${lengthWords(seconds)} long. ${await decodedWhole(file, kind)}`, seconds);
     }
     const whole: NoiseSource = {
@@ -219,7 +227,7 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
             signal?.throwIfAborted();
             const length = decoded.channels[0]?.length ?? 0;
             if (!length) throw new NoiseInputError("no-sound", "This file holds no sound, so there is nothing to clean.");
-            if (length / decoded.rate > WHOLE_FILE_SECONDS + 1) {
+            if (over(length / decoded.rate, WHOLE_FILE_SECONDS)) {
                 throw new NoiseInputError("too-long-whole", `This file’s sound is ${lengthWords(length / decoded.rate)} long. ${await decodedWhole(file, kind)}`, length / decoded.rate);
             }
             whole.durationSeconds = length / decoded.rate;
