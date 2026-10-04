@@ -22,6 +22,14 @@ import { retryLine } from "@/skins/experience/studio-outcome";
 import "./noise-remover.css";
 
 const SLUG = "remove-background-noise";
+/**
+ * What the PrivaTools server takes from Audio Converter, Extract Audio and
+ * Cut / Trim Video & Audio: 200 MB (max_bytes in phase6_tools.py's
+ * audio_converter, MAX_VIDEO_SIZE in non_pdf_tools.py), less than the 500 MB
+ * a page takes. Transcribe Audio works in the browser, up to MAX_FILE_SIZE.
+ */
+const SERVER_MEDIA_MAX = 200 * 1024 * 1024;
+const SERVER_MEDIA_MAX_LABEL = "200 MB";
 /** What the readers take: MP4, MOV, M4A, WebM, MKV, MP3 and WAV in pieces; Ogg, Opus, FLAC and AAC whole. */
 const ACCEPTS = ".mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm,.mp4,.m4v,.mov,.mkv";
 /** Containers that hold video, and so go to Extract Audio rather than Audio Converter. */
@@ -70,11 +78,11 @@ interface Failure {
     help?: ReactNode;
 }
 
-/** Whether another PrivaTools tool takes this file: its type, by the tool's own list, and its size. */
+/** Whether a server-backed PrivaTools tool takes this file: its type, by the tool's own list, and its size. */
 function takes(slug: string, file: File): boolean {
     const extension = /\.[^.]+$/.exec(file.name)?.[0].toLowerCase();
     const tool = nonPdfTools.find(entry => entry.slug === slug);
-    return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= MAX_FILE_SIZE;
+    return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= SERVER_MEDIA_MAX;
 }
 
 /** A tool that can save the sound as an MP3, which this page reads up to an hour, and what using it means. */
@@ -86,8 +94,8 @@ function mp3Maker(file: File): ReactNode {
     if (!video && takes("audio-converter", file)) {
         return <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 60} minutes.</>;
     }
-    if (file.size > MAX_FILE_SIZE) {
-        return <>It is larger than the {MAX_FILE_SIZE_LABEL} PrivaTools takes for upload, so save it as MP3 or MP4 with an audio or video app on your device; those work here up to {MAX_SECONDS / 60} minutes.</>;
+    if (file.size > SERVER_MEDIA_MAX) {
+        return <>It is larger than the {SERVER_MEDIA_MAX_LABEL} that {video ? "Extract Audio" : "Audio Converter"} takes, so save it as MP3 or MP4 with an audio or video app on your device; those work here up to {MAX_SECONDS / 60} minutes.</>;
     }
     return <>An audio or video app on your device can save it as MP3 or MP4, which work here up to {MAX_SECONDS / 60} minutes.</>;
 }
@@ -100,7 +108,7 @@ function failureFor(error: unknown, file: File): Failure {
             title: "This recording is too long to clean here.", detail: error.message, reason: `Longer than ${MAX_SECONDS / 60} minutes of sound`, retryable: false, kind: "too_large",
             help: takes("trim-media", file)
                 ? <>To clean it in parts of up to {MAX_SECONDS / 60} minutes, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing, or with an audio app on your device.</>
-                : <>To clean it, cut it into parts of up to {MAX_SECONDS / 60} minutes with an audio or video app on your device{file.size > MAX_FILE_SIZE ? `: it is larger than the ${MAX_FILE_SIZE_LABEL} PrivaTools takes for upload` : ""}.</>,
+                : <>To clean it, cut it into parts of up to {MAX_SECONDS / 60} minutes with an audio or video app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
         };
         if (error.problem === "too-long-whole") return { title: "This file is too long to read whole.", detail: error.message, reason: `Longer than ${WHOLE_FILE_SECONDS / 60} minutes in this format`, retryable: false, kind: "too_large", help: mp3Maker(file) };
         return {
@@ -328,9 +336,12 @@ function NoiseResultView({ file, result, onAgain, onStartOver }: {
             <button type="button" className="ts-secondary-button" onClick={onAgain}>Change the strength</button>
             <button type="button" className="ts-text-button" onClick={onStartOver}>Clean another file</button>
         </div>
-        <p className="ts-caption nr-next">The WAV is {stats.channels === 2 ? "stereo" : "mono"}, 16-bit, at 48 kHz, the rate RNNoise works at, and was made on this device; nothing was uploaded. {result.wav.size <= MAX_FILE_SIZE
-            ? <>WAV files are large: <a href="/tools/audio-converter">Audio Converter</a> can make an MP3 of it, which means uploading the WAV to PrivaTools for temporary processing. To turn the speech into text, download the WAV, open <a href="/tools/transcribe-audio">Transcribe Audio</a> and choose the downloaded file.</>
-            : <>At {formatFileSize(result.wav.size)} it is larger than the {MAX_FILE_SIZE_LABEL} that Audio Converter and Transcribe Audio take, so an audio app on your device can make an MP3 of it.</>}</p>
+        <p className="ts-caption nr-next">The WAV is {stats.channels === 2 ? "stereo" : "mono"}, 16-bit, at 48 kHz, the rate RNNoise works at, and was made on this device; nothing was uploaded. {result.wav.size <= SERVER_MEDIA_MAX
+            ? <>WAV files are large: <a href="/tools/audio-converter">Audio Converter</a> can make an MP3 of it, which means uploading the WAV to PrivaTools for temporary processing.</>
+            : <>At {formatFileSize(result.wav.size)} it is larger than the {SERVER_MEDIA_MAX_LABEL} that Audio Converter takes, so an audio app on your device can make an MP3 of it.</>}
+            {result.wav.size <= MAX_FILE_SIZE
+                ? <> To turn the speech into text, download the WAV, open <a href="/tools/transcribe-audio">Transcribe Audio</a> and choose the downloaded file.</>
+                : <> It is also larger than the {MAX_FILE_SIZE_LABEL} that Transcribe Audio takes.</>}</p>
     </StudioResult>;
 }
 

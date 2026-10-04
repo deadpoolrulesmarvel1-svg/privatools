@@ -40,7 +40,7 @@
     },
     {
       "q": "Which files does it take?",
-      "a": "Audio: MP3, WAV, M4A and AAC, OGG and Opus, FLAC and WebM. Video: the sound of MP4, MOV, M4V, WebM and MKV files; only the cleaned sound comes back, as a WAV, to put back with the picture in a video editor. The browser has to decode the sound itself. When it can't, because of an unusual codec or a damaged file, the tool says so and nothing is sent anywhere: Extract Audio, for a video, and Audio Converter, for a recording, can make an MP3 of it on the PrivaTools server, which means uploading the file, up to 500 MB, for temporary processing; the MP3 then works here."
+      "a": "Audio: MP3, WAV, M4A and AAC, OGG and Opus, FLAC and WebM. Video: the sound of MP4, MOV, M4V, WebM and MKV files; only the cleaned sound comes back, as a WAV, to put back with the picture in a video editor. The browser has to decode the sound itself. When it can't, because of an unusual codec or a damaged file, the tool says so and nothing is sent anywhere: Extract Audio, for a video, and Audio Converter, for a recording, can make an MP3 of it on the PrivaTools server, which means uploading the file, up to 200 MB, for temporary processing; the MP3 then works here."
     },
     {
       "q": "How long can the recording be?",
@@ -48,7 +48,7 @@
     },
     {
       "q": "Why is the result a WAV at 48 kHz?",
-      "a": "WAV holds the sound uncompressed, so cleaning doesn't add a second round of compression, and every editor and player opens it. RNNoise works at 48 kHz, so the result comes at that rate, 16-bit, mono or stereo as your recording was. WAV files are large, about 5.8 MB a minute in mono and 11.5 MB in stereo: Audio Converter can turn one into an MP3, which means uploading it to PrivaTools for temporary processing."
+      "a": "WAV holds the sound uncompressed, so cleaning doesn't add a second round of compression, and every editor and player opens it. RNNoise works at 48 kHz, so the result comes at that rate, 16-bit, mono or stereo as your recording was. WAV files are large, about 5.8 MB a minute in mono and 11.5 MB in stereo. Audio Converter can make an MP3 of one up to 200 MB, about 36 minutes of mono or 18 of stereo, which means uploading it to PrivaTools for temporary processing; an audio app on your device can convert a longer one."
     },
     {
       "q": "What does the strength setting do?",

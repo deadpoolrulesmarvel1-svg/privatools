@@ -98,17 +98,29 @@ describe("the Voice Noise Remover page", () => {
         expect(screen.getByRole("link", { name: "Transcribe Audio" })).toHaveAttribute("href", "/tools/transcribe-audio");
     });
 
-    it("doesn't send a WAV larger than PrivaTools takes for upload to the tools that upload it", async () => {
+    it("doesn't send a WAV to a tool that won't take it: Audio Converter takes 200 MB, Transcribe Audio 500 MB", async () => {
         const big = result();
-        // 47 minutes of stereo: past the 500 MB the other tools take.
-        Object.defineProperty(big.wav, "size", { value: 541_440_044 });
+        // 30 minutes of stereo: past Audio Converter's 200 MB, within Transcribe Audio's 500 MB.
+        Object.defineProperty(big.wav, "size", { value: 345_600_044 });
         mocks.remove.mockResolvedValue(big);
         choose();
         await act(async () => { run(); });
         await screen.findByRole("heading", { name: "Background noise reduced." });
         expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
+        expect(screen.getByText(/larger than the 200 MB that Audio Converter takes, so an audio app on your device can make an MP3 of it/)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Transcribe Audio" })).toHaveAttribute("href", "/tools/transcribe-audio");
+    });
+
+    it("sends a WAV past 500 MB to neither tool", async () => {
+        const huge = result();
+        Object.defineProperty(huge.wav, "size", { value: 541_440_044 });
+        mocks.remove.mockResolvedValue(huge);
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
         expect(screen.queryByRole("link", { name: "Transcribe Audio" })).toBeNull();
-        expect(screen.getByText(/larger than the 500 MB that Audio Converter and Transcribe Audio take/)).toBeInTheDocument();
+        expect(screen.getByText(/also larger than the 500 MB that Transcribe Audio takes/)).toBeInTheDocument();
     });
 
     it("pauses one player when the other plays", async () => {
