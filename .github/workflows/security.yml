@@ -10,6 +10,12 @@ permissions:
   actions: read
   contents: read
 
+# onnxruntime-node, which @huggingface/transformers depends on, downloads its
+# CUDA binaries from NuGet on every Linux x64 `npm ci` unless told not to. No
+# job here has a GPU, and that download timing out failed a release gate.
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 jobs:
   frontend:
     name: Frontend audit and build

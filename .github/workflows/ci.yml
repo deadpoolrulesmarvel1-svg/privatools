@@ -14,6 +14,12 @@ permissions:
 # release gate. This job checks the actual application TypeScript project.
 # The former unlocked Python 3.11 and uninstalled Playwright jobs swallowed
 # failures with continue-on-error and provided no dependable release evidence.
+# onnxruntime-node, which @huggingface/transformers depends on, downloads its
+# CUDA binaries from NuGet on every Linux x64 `npm ci` unless told not to. No
+# job here has a GPU, and that download timing out failed a release gate.
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 jobs:
   frontend-quality:
     name: Frontend quality
