@@ -10,6 +10,32 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.23] — 2026-10-04 — Clear errors instead of "Processing failed"
+
+### Tools
+
+- A file that isn't audio or video, given to any video or audio tool, now says "This file isn't a video or audio file this tool can read." instead of "Processing failed. Please try again." A fault on the server's side is still reported as the server's. (#332)
+- Video Converter, Video Resizer, Video to PDF, Video Thumbnail, GIF to MP4 and Audio Merge say when the server ran out of time, instead of "Processing failed", and their guides say what the page shows. (#332)
+- Highlight PDF, Smart Redact and PDF to SVG say when a PDF is damaged, has no pages or needs a password. (#332)
+- Image tools say "This image can't be read: its data stops early or is broken" for broken WebP, TIFF, HEIC, AVIF, BMP and PNG files that used to fail with "Processing failed"; so do Merge Images, Sign PDF, Remove Background, Watermark PDF's picture and E-Sign's uploaded signature. An image too large to process gets the same answer on every tool, and E-Sign now accepts a CMYK JPEG signature. (#332)
+- A cut-off picture is refused the same way on every request, instead of sometimes converting with blank pixels (a broken HEIC came back black). HTML to PDF, given HTML, and URL to PDF now leave out a cut-off PNG, GIF, BMP or TIFF picture, or a PNG whose data is broken, instead of drawing what they could of it; a cut-off JPEG is still embedded. (#332)
+- A typing mistake in a page range now says so, instead of "One of the page numbers is outside this PDF". (#332)
+- A picture dropped on Smart Redact, Add Hyperlinks, PDF to Excel, PDF Table Extractor or Highlight PDF is pointed to Image to PDF and then OCR PDF, since those tools need a PDF with text in it. (#332)
+- Bates Numbering says that several files are numbered as one run, and Transcribe Audio's key panel lists only the providers that can transcribe. (#332)
+- With your own OpenAI key, the suggested models are gpt-4o and gpt-4o-mini; o3-mini, which OpenAI shuts down on 23 October, is gone. (#332)
+
+### Privacy
+
+- URL to PDF no longer writes the address it converts, query string included, into the server's logs, and HTML to PDF no longer copies a picture embedded in your HTML into them when it leaves the picture out. (#332)
+
+### For API users
+
+- Routes that answered 500 now answer with the reason: 400 for input a media tool can't read, for an unreadable picture and for a damaged PDF on the PDF routes named above; 413 for a picture too large to process; 503 when FFmpeg is missing on the server; and 504 for a conversion that ran out of time. (#332)
+
+### Other
+
+- In the Air experience, "--", "->" and "<-" show as typed in all text and form fields, instead of as one dash or arrow; code and preformatted text show no ligatures in either experience. (#332)
+
 ## [2.7.22] — 2026-10-03 — PDF to Markdown, ready for LLMs
 
 ### Tools
