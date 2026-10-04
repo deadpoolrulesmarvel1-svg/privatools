@@ -1,0 +1,231 @@
+/**
+ * What the Voice Noise Remover page shows and does: a run from a chosen file
+ * to the original and the cleaned sound side by side and a WAV to download,
+ * and each way it can end. The engine is stubbed; its own tests are in
+ * lib/noise, with the real RNNoise.
+ */
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NoiseResult, NoiseRunOptions } from "@/lib/noise/engine";
+
+const mocks = vi.hoisted(() => ({ remove: vi.fn(), download: vi.fn(), toolRun: vi.fn() }));
+vi.mock("@/lib/noise/engine", () => ({ removeNoise: mocks.remove }));
+vi.mock("@/lib/api", async original => ({ ...(await original<object>()), downloadBlob: mocks.download }));
+vi.mock("@/lib/toolRun", async original => ({ ...(await original<object>()), emitToolRun: mocks.toolRun }));
+
+import { NoiseEngineError } from "@/lib/noise/errors";
+import { NoiseInputError } from "@/lib/noise/source";
+import { NoiseRemoverUI } from "./NoiseRemoverUI";
+
+function result(overrides: Partial<NoiseResult> = {}, stats: Partial<NoiseResult["stats"]> = {}): NoiseResult {
+    return {
+        wav: new Blob([new Uint8Array(44 + 96000)], { type: "audio/wav" }),
+        seconds: 125,
+        gaps: [],
+        container: "MP3",
+        ...overrides,
+        stats: {
+            frames: 125 * 48000, channels: 1, sourceChannels: 1, inputPeak: 0.6, inputPower: 0.01, outputPower: 0.004,
+            heardFrames: 12500, speechFrames: 9000, clipped: 0, rate: 44100,
+            stitch: { joins: 2, matched: 2, silent: 0, unmatched: 0, largestOffset: 0 },
+            ...stats,
+        },
+    };
+}
+
+beforeEach(() => {
+    for (const mock of Object.values(mocks)) mock.mockReset();
+    localStorage.clear();
+});
+
+function choose(name = "interview.mp3", type = "audio/mpeg") {
+    const view = render(<MemoryRouter><NoiseRemoverUI /></MemoryRouter>);
+    fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files: [new File(["x"], name, { type })] } });
+    return view;
+}
+
+const run = () => fireEvent.click(screen.getByRole("button", { name: /Remove noise/ }));
+
+describe("the Voice Noise Remover page", () => {
+    it("takes audio and video files, and does nothing until asked", () => {
+        const view = render(<MemoryRouter><NoiseRemoverUI /></MemoryRouter>);
+        const input = view.container.querySelector<HTMLInputElement>("input[type=file]")!;
+        expect(input.accept.split(",")).toEqual(expect.arrayContaining([".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus", ".flac", ".webm", ".mp4", ".mov", ".mkv"]));
+        expect(screen.getByRole("button", { name: /Remove noise/ })).toBeDisabled();
+        fireEvent.change(input, { target: { files: [new File(["x"], "interview.mp3", { type: "audio/mpeg" })] } });
+        expect(within(screen.getByRole("region", { name: "Chosen file" })).getByText("interview.mp3", { selector: ".ts-file-name" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Remove noise/ })).toBeEnabled();
+        expect(mocks.remove).not.toHaveBeenCalled();
+    });
+
+    it("says what it is for and links the engine's licences", () => {
+        render(<MemoryRouter><NoiseRemoverUI /></MemoryRouter>);
+        expect(screen.getByText(/isn’t for music, and it doesn’t remove other voices or echo/)).toBeInTheDocument();
+        expect(screen.getByText(/rather than recreating the voice/)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /RNNoise credits/ })).toHaveAttribute("href", "/third-party/rnnoise.txt");
+    });
+
+    it("cleans at full strength unless asked, and passes the strength it's set to", async () => {
+        mocks.remove.mockResolvedValue(result());
+        choose();
+        const strength = screen.getByLabelText(/How much of the cleaned sound/) as HTMLInputElement;
+        expect(strength.value).toBe("100");
+        expect(strength).toHaveAttribute("aria-valuetext", "100%: only the cleaned sound");
+        fireEvent.change(strength, { target: { value: "70" } });
+        expect(strength).toHaveAttribute("aria-valuetext", "70%: 70% cleaned sound, 30% original");
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect((mocks.remove.mock.calls[0][1] as NoiseRunOptions).strength).toBeCloseTo(0.7, 9);
+    });
+
+    it("shows the original and the cleaned sound, then downloads the WAV only when asked", async () => {
+        const cleaned = result();
+        mocks.remove.mockResolvedValue(cleaned);
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        const players = screen.getByRole("region", { name: "Compare before and after" });
+        expect(within(players).getByLabelText("Original: interview.mp3").getAttribute("src")).toMatch(/^blob:/);
+        expect(within(players).getByLabelText("Cleaned sound").getAttribute("src")).toMatch(/^blob:/);
+        expect(screen.getByText("2:05")).toBeInTheDocument();
+        expect(mocks.download).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: /Download WAV/ }));
+        expect(mocks.download).toHaveBeenCalledWith(cleaned.wav, "interview-clean.wav");
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "success", files: 1 });
+        expect(screen.getByText(/nothing was uploaded/)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Audio Converter" })).toHaveAttribute("href", "/tools/audio-converter");
+        expect(screen.getByRole("link", { name: "Transcribe Audio" })).toHaveAttribute("href", "/tools/transcribe-audio");
+    });
+
+    it("pauses one player when the other plays", async () => {
+        mocks.remove.mockResolvedValue(result());
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        const before = screen.getByLabelText("Original: interview.mp3") as HTMLAudioElement;
+        const after = screen.getByLabelText("Cleaned sound") as HTMLAudioElement;
+        const pause = vi.fn();
+        Object.defineProperty(before, "paused", { value: false, configurable: true });
+        before.pause = pause;
+        fireEvent.play(after);
+        expect(pause).toHaveBeenCalled();
+    });
+
+    it("says from a video only the sound comes back", async () => {
+        mocks.remove.mockResolvedValue(result({ container: "MP4" }));
+        choose("clip.mp4", "video/mp4");
+        expect(screen.getByText(/1 video/)).toBeInTheDocument();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect(screen.getByText(/From a video, only the cleaned sound comes back/)).toBeInTheDocument();
+    });
+
+    it("warns when RNNoise heard little speech", async () => {
+        mocks.remove.mockResolvedValue(result({}, { speechFrames: 100 }));
+        choose("song.mp3");
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        expect(screen.getByText(/RNNoise heard little speech in this recording/)).toBeInTheDocument();
+    });
+
+    it("says where it couldn't decode the sound, as a partial result", async () => {
+        mocks.remove.mockResolvedValue(result({ gaps: [{ start: 60, end: 120 }] }));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Noise reduced, with a gap." });
+        expect(screen.getByText(/couldn’t decode 1:00–2:00 of the sound, so that part is silent/)).toBeInTheDocument();
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "partial", files: 1, errorKind: "browser" });
+    });
+
+    it("calls a silent recording what it is, with nothing to download", async () => {
+        mocks.remove.mockResolvedValue(result({}, { inputPeak: 0 }));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "This recording is silent." });
+        expect(screen.queryByRole("button", { name: /Download WAV/ })).toBeNull();
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "error", files: 1, errorKind: "bad_input" });
+    });
+
+    it.each([
+        [new NoiseInputError("empty", "This file is empty, so there is no sound in it."), "This file is empty.", null],
+        [new NoiseInputError("no-sound", "This file has no sound track, so there is nothing to clean."), "This file has no sound.", null],
+        [new NoiseInputError("too-long", "This file’s sound is 1 h 30 min long. Voice Noise Remover takes up to 60 minutes at a time.", 5400), "This recording is too long to clean here.", /Cut \/ Trim Video & Audio/],
+        [new NoiseInputError("unreadable", "This browser can’t decode the sound in this file."), "This browser can’t read the sound in this file.", /Audio Converter/],
+    ])("fails clearly, without a retry: %s", async (error, title, help) => {
+        mocks.remove.mockRejectedValue(error);
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: title });
+        if (help) {
+            const note = document.querySelector(".nr-help")!;
+            expect(note.textContent).toMatch(help);
+            expect(note.textContent).toMatch(/upload/);
+        }
+        expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+        expect(screen.getByRole("button", { name: "Choose a different file" })).toBeInTheDocument();
+        expect(mocks.toolRun).toHaveBeenCalledWith(expect.objectContaining({ outcome: "error", files: 1 }), error);
+    });
+
+    it("says the browser refused WebAssembly when the engine can't start", async () => {
+        mocks.remove.mockRejectedValue(new NoiseEngineError("This browser didn’t let the noise remover’s WebAssembly run (CompileError).", "wasm"));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "The noise remover couldn’t start." });
+        expect(screen.getByText(/didn’t let it run WebAssembly/)).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+        expect(mocks.toolRun).toHaveBeenCalledWith(expect.objectContaining({ outcome: "error", errorKind: "browser" }), expect.any(NoiseEngineError));
+    });
+
+    it("says when the browser ran out of memory", async () => {
+        mocks.remove.mockRejectedValue(new RangeError("Array buffer allocation failed"));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "This browser ran out of memory." });
+    });
+
+    it("doesn't call every RangeError a lack of memory", async () => {
+        mocks.remove.mockRejectedValue(new RangeError("Sample rates must be whole numbers above 0"));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "The noise couldn’t be removed." });
+    });
+
+    it("offers another try when the noise remover's download dropped", async () => {
+        mocks.remove.mockRejectedValueOnce(Object.assign(new Error("The noise remover couldn’t be downloaded."), { __kind: "network" }));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "The noise remover couldn’t be downloaded." });
+        mocks.remove.mockResolvedValueOnce(result());
+        await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Try again" })); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+    });
+
+    it("stops on Cancel, back to the file and its settings, and counts no run", async () => {
+        let options: NoiseRunOptions | undefined;
+        mocks.remove.mockImplementation((_file: File, given: NoiseRunOptions) => new Promise((_, reject) => {
+            options = given;
+            given.onStage?.("cleaning");
+            given.onProgress?.(30, 120);
+            given.signal?.addEventListener("abort", () => reject(Object.assign(new Error("stopped"), { name: "AbortError" })));
+        }));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByText("Removing background noise");
+        expect(screen.getByText(/0:30 of 2:00/)).toBeInTheDocument();
+        await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Cancel" })); });
+        expect(options?.signal?.aborted).toBe(true);
+        await waitFor(() => expect(screen.getByRole("button", { name: /Remove noise/ })).toBeEnabled());
+        expect(mocks.toolRun).not.toHaveBeenCalled();
+    });
+
+    it("goes back to the settings with the same file to clean at another strength", async () => {
+        mocks.remove.mockResolvedValue(result());
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        fireEvent.click(screen.getByRole("button", { name: "Change the strength" }));
+        expect(screen.getByLabelText(/How much of the cleaned sound/)).toBeEnabled();
+        expect(within(screen.getByRole("region", { name: "Chosen file" })).getByText("interview.mp3", { selector: ".ts-file-name" })).toBeInTheDocument();
+    });
+});

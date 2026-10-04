@@ -98,6 +98,10 @@ async function cachedAsset(request, event) {
     }
 }
 
+// Browser tools whose server route grants WebAssembly and nothing more they
+// need offline: Background Remover's model and Voice Noise Remover's RNNoise.
+const OFFLINE_WASM_ROUTES = new Set(["/tools/remove-background", "/tools/remove-background-noise"]);
+
 async function publicNavigation(request) {
     try { return await fetch(request); }
     catch {
@@ -106,7 +110,7 @@ async function publicNavigation(request) {
         // route. Preserve its HTML/nonce and every other directive, adding
         // only the WASM capability already granted to this exact server route.
         // No script eval, remote script host, provider egress or URL caching.
-        if (shell && new URL(request.url).pathname.replace(/\/+$/, "") === "/tools/remove-background") {
+        if (shell && OFFLINE_WASM_ROUTES.has(new URL(request.url).pathname.replace(/\/+$/, ""))) {
             const headers = new Headers(shell.headers);
             const current = headers.get("Content-Security-Policy");
             if (current) {

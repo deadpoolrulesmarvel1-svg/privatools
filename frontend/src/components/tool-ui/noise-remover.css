@@ -1,0 +1,26 @@
+/* Voice Noise Remover: the options' notes, the chosen file, and the original
+   and cleaned sound side by side. Colours come from the experience tokens,
+   so Air and Play, light and dark, each keep their own. Fonts are set with
+   longhands: the shorthand would turn Air's ligatures back on. */
+
+.nr-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.nr-chosen { display: grid; gap: 4px; min-width: 0; }
+.nr-help { margin-top: 14px; max-width: 72ch; }
+.nr-next { margin: 4px 0 0; max-width: 72ch; }
+.nr-next a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* The kit draws text fields; a slider needs none of the field's box. */
+.nr-studio .ts-setting input[type=range] { padding: 0; border: 0; background: none; min-height: 28px; accent-color: hsl(var(--accent)); }
+.nr-studio .ts-setting input[type=range]:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
+
+.nr-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; margin-top: 4px; }
+.nr-compare h3 { grid-column: 1 / -1; margin: 0; font-style: normal; font-weight: 600; font-size: 17px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.02em; }
+.nr-compare figure { margin: 0; display: grid; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--card)); }
+.nr-compare figcaption { font-size: 12px; font-weight: 550; color: hsl(var(--muted-foreground)); }
+.nr-compare audio { display: block; width: 100%; min-width: 0; }
+
+html[data-experience=play] .nr-compare figure { border-radius: 16px; background: hsl(var(--paper-2)); }
+
+@media (max-width: 640px) {
+    .nr-compare { grid-template-columns: minmax(0, 1fr); }
+}
