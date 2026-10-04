@@ -10,6 +10,22 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.25] — 2026-10-04 — Damaged PDFs named as damaged, and PDF Table Extractor fixed
+
+### Tools
+
+- Every PDF tool says "This PDF is damaged…" for a file that only starts like a PDF (it stops after its first line, or holds no PDF objects), where most answered "Processing failed". Watermark PDF, E-Sign and Stamp PDF also say when a PDF is damaged, needs a password or has no pages. A PDF cut short after its page list is reported as damaged by E-Sign, Stamp PDF, Highlight, Smart Redact, PDF to SVG, Split in Half, PDF to Long Image, Invert Colors, Deskew, PDF to Image, Auto Crop and PDF to PowerPoint. (#336)
+- PDF Table Extractor says when a PDF has no ruled table. Since v1.5.2 it had failed with "Processing failed" on every such file. (#336)
+- Stamp PDF takes page ranges such as 1,3,5-8, as its Pages box suggests, and refuses a page the PDF doesn't have, naming the valid range, instead of stamping every page. (#336)
+- Photo Collage says what is wrong with a picture it can't read, and Split by Text points a picture to Image to PDF and then OCR PDF as soon as it is chosen. (#336)
+- A page range of commas only says it selects no pages, instead of "This PDF has no pages". (#336)
+- PDF to Markdown converts up to five files a minute from one address, like the other heavy tools; more can be tried a minute later. (#336)
+- Video and audio tools answer a fault on the server's side, such as a full disk, with "Processing failed. Please try again." and a retry, instead of blaming the file. (#336)
+
+### For API users
+
+- More PDF routes answer 400 with the reason for a damaged PDF, and `/api/extract-tables` answers 400 when the PDF has no ruled table. `/api/pdf-to-markdown` takes five requests a minute from one address; requests with a v1 API key count against that key's own quota instead. (#336)
+
 ## [2.7.24] — 2026-10-04 — Subtitle Translator
 
 ### New tool
