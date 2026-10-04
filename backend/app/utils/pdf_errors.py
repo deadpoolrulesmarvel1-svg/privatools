@@ -24,6 +24,17 @@ PASSWORD_MESSAGE = PdfEncryptedError.default_detail
 # count: "code=7: Invalid number of pages".
 _MUPDF_DAMAGE_CODES = ("code=7: ", "code=8: ")
 
+# qpdf's words for two kinds of damage that pikepdf raises as a plain
+# RuntimeError rather than a PdfError, because qpdf throws them as a C++
+# runtime_error: a page tree it repaired that no longer matches its /Count,
+# and a page's content stream it cannot decode when it writes that page into
+# a form, as the tools that lay a stamp, a watermark or a signature over a
+# page do; its writer names the form it was writing and repeats qpdf's own
+# error. That writer wraps any error the same way, a disk fault reading the
+# upload too, so the stream's words are matched at both ends.
+_QPDF_PAGE_TREE_DAMAGE = "/Count is wrong after flattening pages tree"
+_QPDF_STREAM_DAMAGE = ("error while getting stream data for ", ": errors while decoding content stream")
+
 
 @cache
 def _library_errors() -> tuple[tuple[type[BaseException], ...], tuple[type[BaseException], ...]]:
@@ -54,11 +65,13 @@ def pdf_read_error(exc: BaseException) -> tuple[int, str] | None:
     file), pypdf's PdfReadError and FileNotDecryptedError, and this app's own
     PdfCorruptError and PdfEncryptedError, which keep their words. By words: a
     RuntimeError or ValueError raised inside PyMuPDF whose message carries one
-    of MuPDF's codes for damage. The answer is a 400 with the words the global
-    handler always gave a PDF it could not read, "This PDF appears to be
-    corrupt or invalid.", or "This PDF is password-protected. Unlock it first,
-    then try again."; the frontend's friendlyError() turns them into its
-    damaged-PDF advice (Repair PDF) and its password advice.
+    of MuPDF's codes for damage, and a RuntimeError raised inside pikepdf with
+    qpdf's words for a page tree or a content stream it cannot read. The
+    answer is a 400 with the words the global handler always gave a PDF it
+    could not read, "This PDF appears to be corrupt or invalid.", or "This PDF
+    is password-protected. Unlock it first, then try again."; the frontend's
+    friendlyError() turns them into its damaged-PDF advice (Repair PDF) and
+    its password advice.
 
     Nothing is matched by type alone that a server fault can raise too: never a
     bare ValueError, RuntimeError or OSError, and never a FileDataError for
@@ -135,7 +148,14 @@ def _pdf_read_error(exc: BaseException) -> tuple[int, str] | None:
         and _raised_in(exc, "pymupdf")
     ):
         return 400, DAMAGED_MESSAGE
+    if isinstance(exc, RuntimeError) and _qpdf_damage(str(exc)) and _raised_in(exc, "pikepdf"):
+        return 400, DAMAGED_MESSAGE
     return None
+
+
+def _qpdf_damage(message: str) -> bool:
+    start, end = _QPDF_STREAM_DAMAGE
+    return message == _QPDF_PAGE_TREE_DAMAGE or (message.startswith(start) and message.endswith(end))
 
 
 __all__ = ["DAMAGED_MESSAGE", "PASSWORD_MESSAGE", "pdf_read_error"]

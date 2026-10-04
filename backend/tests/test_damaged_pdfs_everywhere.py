@@ -267,6 +267,42 @@ def test_a_locked_pdf_is_done_or_refused_with_the_password_advice(quiet_client, 
         assert "password" in response.json()["detail"].lower(), response.text
 
 
+# ── Bytes overwritten rather than cut ───────────────────────────────────────
+# Two of the #340 review's byte-overwrites, which qpdf reports as a plain
+# RuntimeError rather than a PdfError, so 63 answers of its sweep were 500s:
+# - page-tree: the /Count key of the page tree and its first page reference
+#   overwritten. pikepdf cannot open it ("/Count is wrong after flattening
+#   pages tree"); MuPDF finds no page in it.
+# - content: ten bytes of the first page's compressed content overwritten.
+#   The tools that lay a stamp or a signature over a page fail when they save
+#   ("error while getting stream data for 20 0 R: ... errors while decoding
+#   content stream").
+def _content_overwritten() -> bytes:
+    start = CLASSIC.index(b"stream\n", CLASSIC.index(b"\n6 0 obj")) + len(b"stream\n")
+    return CLASSIC[:start + 2] + b"A" * 10 + CLASSIC[start + 12:]
+
+
+OVERWRITTEN = {
+    "page-tree": CLASSIC.replace(b"/Count 4/Kids[4 0 R", b"/Cxunt 4/Kids[4 02R"),
+    "content": _content_overwritten(),
+}
+# Sanitize reads the file in a worker process of its own, which calls only
+# pikepdf's PdfError damage and reports anything else as its own failure.
+STILL_A_SERVER_ERROR = {("/api/sanitize", "page-tree")}
+
+
+@pytest.mark.parametrize("route,sample", [
+    pytest.param(route, sample, marks=pytest.mark.xfail(strict=True, reason="its worker's own classification"))
+    if (route, sample) in STILL_A_SERVER_ERROR else (route, sample)
+    for route in sorted(ROUTES) for sample in sorted(OVERWRITTEN)
+])
+def test_a_pdf_with_bytes_overwritten_is_never_a_server_error(quiet_client, route, sample):
+    if (route, sample) == ("/api/web-optimize", "content") and shutil.which("qpdf") is None:
+        pytest.skip("pikepdf opens it, so the qpdf command runs: CI and the image have it")
+    response = _post(quiet_client, route, OVERWRITTEN[sample])
+    assert response.status_code < 500, response.text
+
+
 # ── Tools that change the pages, through process_pdf ────────────────────────
 # They opened the upload with a bare fitz.open, so a locked file failed on its
 # first page ("document closed or encrypted"), a file repaired to no page at
