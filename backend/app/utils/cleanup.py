@@ -370,7 +370,17 @@ def open_pdf_document(source: str | bytes):
     return doc
 
 
-def process_pdf(source: str | bytes, work):
+def _library_errors() -> tuple[type[BaseException], ...]:
+    """What PyMuPDF raises for damage it meets while working on a file: its own
+    RuntimeError and ValueError, and MuPDF's errors, which reach Python as they
+    are, outside both ("invalid key in dict", "truncated object", "corrupt
+    object stream" and the rest of mupdf.FzErrorBase)."""
+    import fitz  # PyMuPDF
+
+    return (RuntimeError, ValueError, fitz.mupdf.FzErrorBase)
+
+
+def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     """Return work(doc) for the PDF at `source` (a path or the bytes), opened
     with open_pdf_document and closed afterwards. For tools that copy pages.
 
@@ -381,11 +391,18 @@ def process_pdf(source: str | bytes, work):
     whose own object was lost, but which the page tree still lists, is shown
     blank and fails with "bad xref" when anything of it, such as its /Rotate,
     is read. So when work fails on a repaired file with an error from the
-    library (RuntimeError or ValueError), qpdf rebuilds the file, dropping
-    those references and such pages, and work runs once more on the rebuilt
-    copy. A file qpdf cannot rebuild, that has no page left, or that fails
-    again is refused as damaged (400). A ToolError, such as a render budget
-    refusal, is an answer, not damage: it is never retried.
+    library (_library_errors), qpdf rebuilds the file, dropping those
+    references and such pages, and work runs once more on the rebuilt copy. A
+    file qpdf cannot rebuild, that has no page left, or that fails again is
+    refused as damaged (400). A ToolError, such as a render budget refusal, is
+    an answer, not damage: it is never retried.
+
+    `rebuild=False` is for tools that change pages in place and find them by
+    number, such as E-Sign and Stamp PDF: the rebuild leaves out the pages
+    whose object was lost, so every later page would move up and the change
+    could land on a page the visitor did not choose. For them, work that fails
+    on a repaired file is refused as damaged at once, and the visitor can
+    repair the file and see its pages before choosing one.
 
     Nothing is checked in advance, so an intact file costs nothing extra. An
     earlier version scanned every object for such references first: that cost
@@ -395,15 +412,18 @@ def process_pdf(source: str | bytes, work):
     """
     from .exceptions import PdfCorruptError, ValidationError
 
+    library_errors = _library_errors()
     doc = open_pdf_document(source)
     try:
         return work(doc)
-    except (RuntimeError, ValueError) as exc:
+    except library_errors as exc:
         if not doc.is_repaired:
             raise
         failure = exc  # damage MuPDF's repair left behind: one more run on qpdf's rebuild
     finally:
         doc.close()
+    if not rebuild:
+        raise PdfCorruptError(_DAMAGED_PDF) from failure
     rebuilt = _rebuilt_by_qpdf(source)
     if rebuilt is None:
         raise PdfCorruptError(_DAMAGED_PDF) from failure
@@ -413,7 +433,7 @@ def process_pdf(source: str | bytes, work):
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     try:
         return work(doc)
-    except (RuntimeError, ValueError) as exc:  # the rebuild did not help
+    except library_errors as exc:  # the rebuild did not help
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     finally:
         doc.close()

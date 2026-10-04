@@ -1,5 +1,6 @@
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import process_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 
@@ -41,8 +42,7 @@ def stamp_pdf(input_path: str, stamp_type: str = "confidential",
     b = color[2] + (1 - color[2]) * (1 - opacity)
     faded_color = (r, g, b)
 
-    doc = fitz.open(input_path)
-    try:
+    def stamp(doc) -> None:
         total = len(doc)
         # Use the shared parser so "1-3,5,end" and "all" both work, with
         # a graceful fallback to every-page if parsing fails (the stamp
@@ -90,7 +90,9 @@ def stamp_pdf(input_path: str, stamp_type: str = "confidential",
             )
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
 
+    # A PDF that is damaged, needs a password or has no pages is a 400 that
+    # says so, and so is one whose damage stops the stamping part-way: never
+    # stamped again on a rebuild, which could move the pages it names.
+    process_pdf(input_path, stamp, rebuild=False)
     return str(output_path)

@@ -18,6 +18,7 @@ from ..services import (
     txt_to_pdf_service,
     word_to_pdf_service,
 )
+from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
@@ -161,7 +162,9 @@ async def stamp_pdf(
         )
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="stamped.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: a PDF that is damaged, needs a password or has no pages
+        # (utils.cleanup.process_pdf); the global handler gives its 400.
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
