@@ -125,7 +125,7 @@
 html[data-experience] .consumer-formatter{font-family:var(--pt-font);}
 html[data-experience] .formatter-pane{border-radius:22px;background:var(--pt-surface);}
 html[data-experience] .formatter-pane-heading{padding:21px 22px;background:transparent;}
-html[data-experience] .consumer-formatter .formatter-pane-heading :is(h2,h3,label){font:600 20px var(--pt-display);letter-spacing:-.5px;}
+html[data-experience] .consumer-formatter .formatter-pane-heading :is(h2,h3,label){font-style:normal;font-weight:600;font-size:20px;line-height:normal;font-family:var(--pt-display);letter-spacing:-.5px;}
 html[data-experience] .formatter-editors{gap:25px;}
 html[data-experience] .formatter-output-pane{background:var(--pt-panel);}
 html[data-experience] .consumer-formatter .formatter-button,html[data-experience] .consumer-formatter .formatter-run{border-radius:12px;}

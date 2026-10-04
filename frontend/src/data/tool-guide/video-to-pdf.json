@@ -36,11 +36,11 @@
     },
     {
       "q": "Why did a long video fail?",
-      "a": "FFmpeg decodes the whole video to pick the frames and gets 180 seconds per file, and the request has five minutes once the upload has arrived. A long or high-resolution file can run out of time and show \"Processing failed. Please try again.\" Cut the part you need with Trim Media, or shrink it with Video Resizer, and try again."
+      "a": "FFmpeg decodes the whole video to pick the frames and gets 180 seconds per file, and the request has five minutes once the upload has arrived. A long or high-resolution file can run out of time and show \"The server took too long. Try a smaller file or try again.\" Cut the part you need with Trim Media, or shrink it with Video Resizer, and try again."
     },
     {
       "q": "What other limits apply?",
-      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"A processing tool failed on this file. Try a different file or simpler settings.\""
     },
     {
       "q": "What is a frames PDF useful for?",

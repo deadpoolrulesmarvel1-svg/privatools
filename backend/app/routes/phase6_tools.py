@@ -17,7 +17,9 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
+from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
+from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload, safe_filename, cleanup_on_error
 from ..utils.concurrency import run_bounded
 
@@ -125,8 +127,10 @@ async def image_upscaler(
     data = await read_upload(file, label="Image")
     try:
         img = Image.open(io.BytesIO(data))
-    except Exception:
-        raise HTTPException(400, "Invalid image file")
+    except Exception as exc:
+        # A picture past the pixel cap is a 413 here too, as everywhere.
+        status, detail = image_read_error(exc) or (400, "Invalid image file")
+        raise HTTPException(status, detail) from exc
 
     orig_format = img.format or "PNG"
     new_w = img.width * scale
@@ -212,7 +216,10 @@ async def audio_converter(
         await run_bounded(_convert_audio, cmd)
     except subprocess.CalledProcessError as exc:
         cleanup_on_error(in_path, out_path)
-        raise HTTPException(500, f"Audio conversion failed: {exc.stderr.decode()[:200]}")
+        stderr = exc.stderr.decode("utf-8", "ignore")
+        if unreadable_input(cmd, stderr):
+            raise HTTPException(400, NOT_MEDIA) from exc
+        raise HTTPException(500, f"Audio conversion failed: {stderr[:200]}")
     except subprocess.TimeoutExpired:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(504, "Audio conversion timed out")

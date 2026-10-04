@@ -32,12 +32,18 @@ export interface Tool {
   /** Tool can optionally use the visitor's own AI API key (BYOK). */
   byok?: boolean;
   /**
-   * The tool works from the words in a file (extracting, reading, counting or
-   * translating them), so a scan or a picture gives it nothing. A picture it
-   * refuses is pointed to OCR, never to Image to PDF, whose PDF has no text
-   * (lib/file-acceptance.ts).
+   * The tool works from the words in a file, so a scan or a picture gives it
+   * nothing. Image to PDF alone never helps: its PDF has no text. Where a
+   * picture the tool refuses is pointed depends on the kind
+   * (lib/file-acceptance.ts):
+   * - `true`: the words are the job (extracting, reading, counting or
+   *   translating them). The picture goes to Image OCR, which reads them.
+   * - `"pdf"`: the tool finds the words in a PDF's text layer and works on
+   *   that PDF (redacting, highlighting or linking it, splitting it at a
+   *   phrase, reading its tables). The picture goes to Image to PDF, and then
+   *   to OCR PDF, which gives the PDF a text layer.
    */
-  needsText?: boolean;
+  needsText?: true | "pdf";
   /** Marked true when the backend handler isn't built yet — UI grays out. */
   comingSoon?: boolean;
   /**
@@ -535,7 +541,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "PDF to Excel pulls ruled tables and page text into an editable spreadsheet, with one sheet for each page of the PDF. Free tool, best-effort extraction.",
     synonyms: "xlsx spreadsheet table",
     popularity: 133,
-    category: "from-pdf", accepts: ".pdf", outputLabel: "spreadsheet.xlsx",
+    category: "from-pdf", accepts: ".pdf", needsText: "pdf", outputLabel: "spreadsheet.xlsx",
     lastReviewed: "2026-09-18",
   },
   {
@@ -893,7 +899,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Automatically detect ruled tables in invoices, reports, and statements and export them to one CSV spreadsheet. Free tool, no sign-up needed.",
     synonyms: "table csv rows columns data scrape",
     popularity: 139,
-    category: "from-pdf", accepts: ".pdf", outputLabel: "tables.csv",
+    category: "from-pdf", accepts: ".pdf", needsText: "pdf", outputLabel: "tables.csv",
     lastReviewed: "2026-09-18",
   },
   {
@@ -937,7 +943,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Search a document for any word or phrase and apply a real highlight annotation to every occurrence at once. Free tool with several highlight colors.",
     synonyms: "mark yellow underline find",
     popularity: 35,
-    category: "edit", accepts: ".pdf", outputLabel: "highlighted.pdf",
+    category: "edit", accepts: ".pdf", needsText: "pdf", outputLabel: "highlighted.pdf",
     lastReviewed: "2026-09-18",
   },
   {
@@ -959,7 +965,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Scan a PDF for possible personal information, review every suggestion, then apply permanent redactions before sharing. Name detection can use your own AI key.",
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
-    category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
+    category: "security", clientOnly: false, byok: true, accepts: ".pdf", needsText: "pdf", outputLabel: "redacted.pdf",
     lastReviewed: "2026-09-18",
   },
   {
@@ -1060,7 +1066,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Add Hyperlinks finds the web addresses written in a PDF and turns each one into a clickable link, making a static document interactive. Free tool.",
     synonyms: "links clickable url anchor reference",
     popularity: 38,
-    category: "edit", accepts: ".pdf", outputLabel: "linked.pdf",
+    category: "edit", accepts: ".pdf", needsText: "pdf", outputLabel: "linked.pdf",
     lastReviewed: "2026-09-18",
   },
   {
@@ -1246,7 +1252,7 @@ const _toolsRaw: Tool[] = [
     metaDescription: "Search a document for a phrase and start a new file at every page where it appears. Free tool for splitting statements, contracts, or invoices.",
     synonyms: "by phrase by string search divider",
     popularity: 19,
-    category: "organize", accepts: ".pdf", outputLabel: "split-by-text.zip",
+    category: "organize", accepts: ".pdf", needsText: "pdf", outputLabel: "split-by-text.zip",
     lastReviewed: "2026-09-18",
   },
   {

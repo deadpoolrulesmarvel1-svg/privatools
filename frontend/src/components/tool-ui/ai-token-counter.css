@@ -2,7 +2,7 @@
    result's counts, cost and chunks. Colours come from the experience tokens,
    so Air and Play, light and dark, all follow. */
 
-.atc-paste textarea{display:block;width:100%;min-height:13rem;padding:12px 14px;border:1px solid hsl(var(--input));border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font:13px/1.6 var(--font-mono);resize:vertical}
+.atc-paste textarea{display:block;width:100%;min-height:13rem;padding:12px 14px;border:1px solid hsl(var(--input));border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font-style:normal;font-weight:400;font-size:13px;line-height:1.6;font-family:var(--font-mono);resize:vertical}
 .atc-paste textarea::placeholder{color:hsl(var(--muted-foreground))}
 .atc-paste textarea:focus-visible{outline:2px solid hsl(var(--accent));outline-offset:2px}
 .atc-paste textarea:disabled{opacity:.65}
@@ -30,7 +30,7 @@
 .atc-counts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .atc-count{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:4px 16px;padding:14px 16px;border:1px solid hsl(var(--border));border-radius:10px;background:hsl(var(--card))}
 .atc-count-name{font-size:13px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
-.atc-count-name code{margin-left:6px;font:12px var(--font-mono);font-weight:400;color:hsl(var(--muted-foreground));white-space:nowrap}
+.atc-count-name code{margin-left:6px;font-style:normal;font-weight:400;font-size:12px;line-height:normal;font-family:var(--font-mono);color:hsl(var(--muted-foreground));white-space:nowrap}
 .atc-count-value{font:600 20px/1.2 var(--pt-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .atc-count-how{grid-column:1/-1;font-size:12px;line-height:1.55;color:hsl(var(--muted-foreground))}
 .atc-count[data-state=none] .atc-count-value{font-size:15px;color:hsl(var(--muted-foreground))}
@@ -39,7 +39,7 @@
 .atc-count[data-state=failed] .atc-count-how{color:hsl(var(--foreground))}
 
 .atc-cost,.atc-chunks{display:grid;gap:12px;min-width:0;padding-top:20px;margin-top:6px;border-top:1px solid hsl(var(--border))}
-.ts-result .atc-cost h3,.ts-result .atc-chunks h3{font:600 18px/1.25 var(--pt-display);letter-spacing:-.02em;margin:0}
+.ts-result .atc-cost h3,.ts-result .atc-chunks h3{font-style:normal;font-weight:600;font-size:18px;line-height:1.25;font-family:var(--pt-display);letter-spacing:-.02em;margin:0}
 .atc-cost .ts-caption,.atc-chunks .ts-caption{margin:0}
 .atc-cost-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:12px}
 .atc-cost-which{grid-column:1/-1}

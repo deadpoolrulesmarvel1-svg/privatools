@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
@@ -105,6 +105,16 @@ describe("static SEO files", () => {
         expect(statusBar).toContain("isolated backend");
         expect(landingPage).toContain("Browser-only where possible");
         expect(landingPage).toContain("isolated temporary processing");
+    });
+
+    it("never says the site has no trackers: Google Analytics is on by default", () => {
+        // SkinApp's old Security view, never rendered but shipped in the main
+        // bundle, said "No accounts, no trackers, no ads".
+        const sources = readdirSync(join(root, "src"), { recursive: true, encoding: "utf8" })
+            .filter(name => /\.(tsx?|css|json|md)$/.test(name) && !/\.test\.tsx?$/.test(name))
+            .map(name => [name, readFileSync(join(root, "src", name), "utf8").toLowerCase()] as const);
+        const claims = ["no trackers", "no third-party script watching"];
+        expect(sources.filter(([, text]) => claims.some(claim => text.includes(claim))).map(([name]) => name)).toEqual([]);
     });
 
     it("keeps static privacy storage claims aligned with temp-file processing", () => {

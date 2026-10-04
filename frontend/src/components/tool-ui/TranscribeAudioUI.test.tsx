@@ -17,9 +17,12 @@ vi.mock("@/hooks/useByok", () => ({
     useByok: () => ({ loading: false, configured: [byok.provider], provider: byok.provider, ready: true, sessionOnly: false,
         selectProvider: vi.fn(), save: vi.fn(), forget: vi.fn(), setSession: vi.fn() }),
 }));
-vi.mock("@/components/byok/ByokPanel", () => ({ ByokPanel: () => null }));
+// The key panel itself is tested on its own; here, what the page asks of it.
+const panel = vi.hoisted(() => ({ props: undefined as undefined | { offers?: (p: { id: string }) => boolean } }));
+vi.mock("@/components/byok/ByokPanel", () => ({ ByokPanel: (props: typeof panel.props) => { panel.props = props; return null; } }));
 vi.mock("@/lib/byok/keyStore", () => ({ getKey: vi.fn(async () => "dummy-key-value"), getBaseUrl: vi.fn(() => undefined) }));
 
+import { PROVIDERS } from "@/lib/byok/providers";
 import { TranscribeAudioUI } from "./TranscribeAudioUI";
 
 beforeEach(() => {
@@ -84,6 +87,16 @@ describe("Transcribe Audio with your own key", () => {
         await screen.findByText("Hello from a synthetic recording.");
         expect(f.mock.calls[0][0]).toBe("https://api.together.xyz/v1/audio/transcriptions");
         expect((f.mock.calls[0][1]!.body as FormData).get("model")).toBe("openai/whisper-large-v3");
+    });
+
+    it("lists only the providers that can transcribe in its key panel", () => {
+        // The panel listed Anthropic and Gemini first and DeepSeek under
+        // "Explore all", and the page refused each only after it was picked.
+        startWithKey("openai");
+        const offers = panel.props?.offers;
+        expect(offers).toBeTypeOf("function");
+        expect(PROVIDERS.filter(p => offers!(p)).map(p => p.id))
+            .toEqual(["openai", "openrouter", "groq", "together", "mistral", "openai-compatible"]);
     });
 
     it("does not offer DeepSeek, which has no transcription endpoint, and sends nothing", () => {

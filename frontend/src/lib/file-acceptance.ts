@@ -18,7 +18,7 @@ interface CatalogueEntry {
     synonyms?: string;
     popularity?: number;
     comingSoon?: boolean;
-    needsText?: boolean;
+    needsText?: true | "pdf";
     href: string;
 }
 
@@ -212,6 +212,10 @@ export interface ToolSuggestion {
     relation: "same-job" | "convert" | "read-text";
     /** For "convert": the format it produces ("PDF", "JPG", "image"). */
     into?: string;
+    /** For "convert": the tool the converted file goes through next, before
+     *  this tool can use it. OCR PDF, which gives a PDF made from a picture
+     *  the text layer a tool marked `needsText: "pdf"` looks in. */
+    then?: { slug: string; name: string; href: string };
 }
 
 const TARGET_NAMES: Record<string, string> = { word: "Word document", excel: "Excel sheet", powerpoint: "PowerPoint deck", image: "image", images: "image", text: "text file", markdown: "Markdown file" };
@@ -233,14 +237,26 @@ const SAME_JOB = 3;
  * file is not advice, so then nothing is suggested; neither is a tool that
  * accepts any file. A tool that works from a file's words (`needsText` in the
  * registry) gets nothing from a picture or a video made into a PDF, which
- * holds no text: for those it suggests only OCR, which reads the picture's
- * words, or nothing.
+ * holds no text. For one whose job is the words (`true`) it suggests only
+ * OCR, which reads the picture's words, or nothing. For one that looks for
+ * the words in a PDF's text layer (`"pdf"`) it suggests the converter that
+ * makes a picture a PDF, then OCR PDF, which gives that PDF its text layer;
+ * a video, nothing.
  */
 export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, prefer = "same-job", accepts }: { fromSlug?: string; prefer?: "same-job" | "convert"; accepts?: string } = {}): ToolSuggestion | null {
     // A converter handed what it makes needs no other tool: PDF to Text would only undo Text to PDF.
     if (alreadyMade(file, fromSlug)) return null;
     const from = fromSlug ? BY_SLUG.get(fromSlug) : undefined;
-    const wordsFromPixels = !!from?.needsText && PIXEL_FORMATS.has(extensionOf(file.name));
+    const ext = extensionOf(file.name);
+    const wordsFromPixels = from?.needsText === true && PIXEL_FORMATS.has(ext);
+    const textLayerFromPixels = from?.needsText === "pdf" && PIXEL_FORMATS.has(ext);
+    let then: ToolSuggestion["then"];
+    if (textLayerFromPixels) {
+        // A PDF of a video's frames, made searchable, is no way to work on a document.
+        const textLayer = IMAGE_FORMATS.includes(ext) ? textLayerTool() : undefined;
+        if (!textLayer) return null;
+        then = { slug: textLayer.slug, name: textLayer.name, href: textLayer.href };
+    }
     const job = from ? jobWords(from.slug) : [];
     const removes = from ? takesAway(from.slug) : false;
     // A surface that is not a registered tool (Pipeline, Batch) still says what it takes.
@@ -273,7 +289,9 @@ export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, pr
         const into = targets.find(target => convertsInto(target, formats));
         const sameJob = jobScore >= SAME_JOB;
         if (!sameJob && !into) continue;
-        const relation: ToolSuggestion["relation"] = into && (prefer === "convert" || !sameJob) ? "convert" : "same-job";
+        // Only a PDF, made searchable next, gives such a tool what it looks for.
+        if (textLayerFromPixels && !into) continue;
+        const relation: ToolSuggestion["relation"] = into && (prefer === "convert" || !sameJob || textLayerFromPixels) ? "convert" : "same-job";
         // Between two same-job tools, the one with no job of its own beyond this one's is the general
         // tool: Remove Image Watermark before Gemini Watermark Remover for any PNG.
         const narrower = sameJob ? jobWords(entry.slug).filter(word => !job.some(other => sameStem(word, other))).length / 2 : 0;
@@ -282,7 +300,17 @@ export function suggestToolFor(file: Pick<File, "name" | "type">, { fromSlug, pr
             best = { entry, score, relation, into: relation === "convert" && into ? targetName(into) : undefined };
         }
     }
-    return best ? { slug: best.entry.slug, name: best.entry.name, href: best.entry.href, relation: best.relation, ...(best.into ? { into: best.into } : {}) } : null;
+    return best ? {
+        slug: best.entry.slug, name: best.entry.name, href: best.entry.href, relation: best.relation,
+        ...(best.into ? { into: best.into } : {}), ...(then && best.relation === "convert" ? { then } : {}),
+    } : null;
+}
+
+/** The registry tool that gives a PDF a text layer: it reads pictures
+ *  (OCR), takes a PDF and makes one. */
+function textLayerTool(): CatalogueEntry | undefined {
+    return CATALOGUE.find(entry => !entry.comingSoon && words(entry.slug).some(word => READS_PICTURES.has(word))
+        && takesFileExplicitly(entry, { name: "page.pdf", type: "application/pdf" }) && entry.outputLabel.toLowerCase().endsWith(".pdf"));
 }
 
 // Formats said as words although their first letter reads with a vowel: "a FLAC", "a HEIC", never "an FLAC".
@@ -304,6 +332,9 @@ export interface RejectionAdvice {
     /** Text before and after the suggested tool's name, so a caller can link the name. */
     suggestionLead: string;
     suggestionTail: string;
+    /** Text after the name of the tool the suggestion's file goes through
+     *  next (`suggestion.then`), which a caller can link too; "" without one. */
+    thenTail: string;
     /** Everything above as one plain sentence, for toasts and live regions. */
     text: string;
 }
@@ -339,15 +370,26 @@ export function adviseRejection(rejected: readonly Pick<File, "name" | "type">[]
     const suggestion = suggestToolFor(first, { fromSlug: slug, prefer, accepts: takesFrom });
     let suggestionLead = "";
     let suggestionTail = "";
+    let thenTail = "";
+    const them = others === 0 ? "it" : "them";
     if (suggestion?.relation === "read-text") {
-        suggestionTail = others === 0 ? " can read the text in it." : " can read the text in them.";
+        suggestionTail = ` can read the text in ${them}.`;
     } else if (suggestion?.relation === "convert" && suggestion.into) {
         const target = suggestion.into;
-        suggestionTail = others === 0 ? ` can turn it into ${article(target)} ${target} first.` : ` can turn them into ${target}s first.`;
+        suggestionTail = others === 0 ? ` can turn it into ${article(target)} ${target} first` : ` can turn them into ${target}s first`;
+        // "Image to PDF can turn it into a PDF first; OCR PDF then gives it text to find."
+        if (suggestion.then) {
+            suggestionTail += "; ";
+            thenTail = ` then gives ${them} text to find.`;
+        } else {
+            suggestionTail += ".";
+        }
     } else if (suggestion) {
         suggestionLead = "Try ";
         suggestionTail = format ? ` for ${format} files.` : " instead.";
     }
-    const text = [headline, reason, suggestion ? `${suggestionLead}${suggestion.name}${suggestionTail}` : ""].filter(Boolean).join(" ");
-    return { headline, reason, suggestion, suggestionLead, suggestionTail, text };
+    const suggested = suggestion
+        ? `${suggestionLead}${suggestion.name}${suggestionTail}${suggestion.then ? `${suggestion.then.name}${thenTail}` : ""}` : "";
+    const text = [headline, reason, suggested].filter(Boolean).join(" ");
+    return { headline, reason, suggestion, suggestionLead, suggestionTail, thenTail, text };
 }

@@ -12,6 +12,7 @@ from starlette.background import BackgroundTask
 from ..services import merge_images_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.exceptions import ToolError
+from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 
 router = APIRouter()
@@ -77,12 +78,17 @@ async def merge_images(
         )
     except ValueError as exc:
         _cleanup_on_error(*temp_paths, out)
-        raise HTTPException(status_code=400, detail=str(exc))
+        # Pillow's own words for a picture it cannot decode ("not enough image
+        # data") are not for the page; say what is wrong with the file.
+        status, detail = image_read_error(exc) or (400, str(exc))
+        raise HTTPException(status_code=status, detail=detail)
     except HTTPException:
         _cleanup_on_error(*temp_paths, out)
         raise
     except Exception as e:
         _cleanup_on_error(*temp_paths, out)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("merge-images error")
         raise HTTPException(status_code=500, detail="Image merge failed")
 
