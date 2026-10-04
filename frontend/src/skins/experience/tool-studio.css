@@ -220,8 +220,9 @@ html[data-experience=play] .ts-text-output,html[data-experience=play] .ts-stats>
 .ts-slot-filled .ts-file{border-bottom:0;margin-top:4px}
 .ts-pair-swap{justify-self:start;min-height:40px;font-size:13px}
 .ts-pair-swap:disabled{opacity:.5;cursor:default}
-/* A slot's role is often short ("PDF A"): keep the sheets clear of it. */
+/* A slot's role is often short ("PDF A"): keep the sheets clear of it, and its line without a lone last word. */
 .ts-pair .ts-paired-inputs .ts-intake-art{margin-bottom:-6px}
+.ts-pair .ts-intake-copy>p,.ts-slot-filled>p{text-wrap:pretty}
 html[data-experience=play] .ts-slot-filled{border-radius:17px 17px 40px 17px;box-shadow:4px 5px 0 hsl(var(--border)/.6);padding:28px 30px 6px}
 html[data-experience=play] .ts-slot-filled h2{font-weight:650;font-size:26px}
 /* On a phone the two slots stack: each is its role, what it does and its button, without the sheets. */
@@ -243,7 +244,8 @@ html[data-experience=play] .ts-slot-filled h2{font-weight:650;font-size:26px}
 .ts-source :is(input,textarea){display:block;width:100%;min-width:0;padding:13px 15px;border:1px solid hsl(var(--input));border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:16px;line-height:1.4}
 .ts-source :is(input,textarea)::placeholder{color:hsl(var(--muted-foreground))}
 .ts-source :is(input,textarea):disabled{opacity:.6;cursor:wait}
-.ts-source textarea{min-height:16rem;resize:vertical;background:hsl(var(--paper-2));font-style:normal;font-weight:400;font-size:13px;line-height:1.65;white-space:pre;overflow:auto;tab-size:2}
+/* Short enough at 200% zoom to sit whole between the header and a docked bar. */
+.ts-source textarea{height:min(16rem,40vh);min-height:7rem;resize:vertical;background:hsl(var(--paper-2));font-style:normal;font-weight:400;font-size:13px;line-height:1.65;white-space:pre;overflow:auto;tab-size:2}
 /* Pasted HTML is code: the code face, without ligatures, over the experience's field font. */
 html[data-experience] .ts-source textarea{font-family:var(--font-mono);font-variant-ligatures:none}
 .ts-source .ts-mode-switch{margin:-8px 0 4px}

@@ -128,7 +128,9 @@ export function HtmlToPdfUI() {
                     <h2><label htmlFor="html-to-pdf-html">HTML content</label></h2>
                     {htmlSize && <span className="ts-caption">{htmlSize}</span>}
                 </div>
+                {/* A tall field: the browser reveals only its caret, which can leave its top under the sticky header. */}
                 <textarea id="html-to-pdf-html" ref={field} value={html} onChange={e => setHtml(e.target.value)} rows={10} disabled={busy}
+                    onFocus={e => e.currentTarget.scrollIntoView?.({ block: "nearest" })}
                     placeholder={"<html>\n  <body>\n    <h1>Hello</h1>\n  </body>\n</html>"} spellCheck={false} wrap="off" />
             </>}
         </StudioSource>
