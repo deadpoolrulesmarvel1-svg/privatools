@@ -15,16 +15,19 @@ export const CSP_BYOK_PATHS = [
   "/tool/translate-pdf", "/tools/transcribe-audio", "/tool/ocr-pdf", "/tools/image-ocr",
   "/tools/ai-token-counter", "/tools/subtitle-translator",
 ] as const;
+/** Pages whose WebAssembly is this site's own asset: WebAssembly only, no script CDN (backend _SELF_WASM_PATHS). */
+export const CSP_WASM_PATHS = ["/tools/remove-background-noise"] as const;
 
 const transformers = new Set<string>(CSP_TRANSFORMER_PATHS);
 const ocr = new Set<string>(CSP_OCR_PATHS);
 const byok = new Set<string>(CSP_BYOK_PATHS);
-const scopedPaths = [...new Set([...CSP_TRANSFORMER_PATHS, ...CSP_OCR_PATHS, ...CSP_BYOK_PATHS])];
+const ownWasm = new Set<string>(CSP_WASM_PATHS);
+const scopedPaths = [...new Set([...CSP_TRANSFORMER_PATHS, ...CSP_OCR_PATHS, ...CSP_BYOK_PATHS, ...CSP_WASM_PATHS])];
 const toolPaths = new Map(scopedPaths.filter(path => path !== "/ai").map(path => [path.split("/").pop()!, path]));
 
 function capabilities(path: string) {
-  const wasm = transformers.has(path) || ocr.has(path);
-  const cdnScript = wasm;
+  const wasm = transformers.has(path) || ocr.has(path) || ownWasm.has(path);
+  const cdnScript = transformers.has(path) || ocr.has(path);
   // Transformer workers may import their downloaded runtime as a blob module.
   const blobScript = transformers.has(path);
   return (wasm ? 1 : 0) | (cdnScript ? 2 : 0) | (blobScript ? 4 : 0) | (byok.has(path) ? 8 : 0);

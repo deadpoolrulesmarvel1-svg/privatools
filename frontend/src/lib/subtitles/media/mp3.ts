@@ -68,7 +68,7 @@ async function sync(reader: WindowedReader, from: number): Promise<number> {
 }
 
 /** The sound of an MP3 file as pieces of about a minute, or null when it is not one. `signal` stops the walk. */
-export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead, signal }: { pieceSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
+export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, leadSeconds = 0, onRead, signal }: { pieceSeconds?: number; leadSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
     const reader = new WindowedReader(blob);
     const start = await sync(reader, afterId3(await reader.bytes(0, 10)));
     if (start < 0) return null;
@@ -100,17 +100,22 @@ export async function indexMp3(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRea
     const secondsPerFrame = first.samples / first.sampleRate;
     const perPiece = Math.max(1, Math.round(pieceSeconds / secondsPerFrame));
     const pieces: AudioPiece[] = [];
+    const firstAudio = info ? 1 : 0;
+    // A piece after the first may start this many frames early: its lead, for the decoder's bit reservoir and overlap.
+    const leadFrames = Math.max(0, Math.ceil(leadSeconds / secondsPerFrame - 1e-9));
     // Frame k (counting the info frame, if any, as -1) starts at k × secondsPerFrame.
-    for (let frame = info ? 1 : 0; frame < offsets.length; frame += perPiece) {
-        const from = frame === 1 && info ? 0 : frame;
+    for (let frame = firstAudio; frame < offsets.length; frame += perPiece) {
+        const leadFrom = frame === firstAudio ? frame : Math.max(firstAudio, frame - leadFrames);
+        const from = frame === firstAudio && info ? 0 : leadFrom;
         const to = Math.min(offsets.length, frame + perPiece);
         const sliceEnd = to < offsets.length ? offsets[to] : end;
-        const audioIndex = frame - (info ? 1 : 0);
+        const audioIndex = frame - firstAudio;
         pieces.push({
             start: audioIndex * secondsPerFrame,
             duration: (to - frame) * secondsPerFrame,
+            lead: (frame - leadFrom) * secondsPerFrame,
             read: async () => blob.slice(offsets[from], sliceEnd).arrayBuffer(),
         });
     }
-    return { container: "MP3", durationSeconds: audioFrames * secondsPerFrame, pieces };
+    return { container: "MP3", durationSeconds: audioFrames * secondsPerFrame, sampleRate: first.sampleRate, codec: "mp3", pieces };
 }

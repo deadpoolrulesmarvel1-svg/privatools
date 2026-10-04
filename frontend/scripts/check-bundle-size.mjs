@@ -48,6 +48,32 @@ const DATA_CHUNKS = [
 ];
 const dataChunk = (name) => DATA_CHUNKS.find((data) => data.pattern.test(name));
 
+// WebAssembly served as an asset of its own, each held to a ceiling: RNNoise's
+// module, which Voice Noise Remover fetches only when a visitor cleans a
+// recording (src/lib/noise/engine.ts, through virtual:rnnoise-wasm and
+// scripts/rnnoise-wasm.mjs). It is the model's weights more than code, 3.4 MiB
+// raw and 2.7 MiB gzipped. Its ceiling passes the 2048 KiB above, which is
+// about Brotli: the backend never compresses application/wasm with Brotli, at
+// any size. The module goes out gzipped on the fly, which took 0.14 s of
+// server time per download when measured in review. Like the data tables it
+// must stay lazy (checked below), and the build must hold exactly one.
+// (onnxruntime-web's own .wasm files, which Vite copies in, are not budgeted
+// here.)
+const WASM_ASSETS = [
+  { pattern: /^rnnoise-[\w-]+\.wasm$/, rawKiB: 3600, gzipKiB: 2850, what: "RNNoise's WebAssembly, for Voice Noise Remover" },
+];
+const wasmAssets = readdirSync(assetsDir).flatMap((name) => {
+  const budget = WASM_ASSETS.find((asset) => asset.pattern.test(name));
+  if (!budget) return [];
+  const file = join(assetsDir.pathname, name);
+  return [{ name, rawKiB: toKiB(statSync(file).size), gzipKiB: toKiB(gzipSync(readFileSync(file)).length), budget }];
+});
+const wasmOffenders = [
+  ...wasmAssets.filter((asset) => asset.rawKiB > asset.budget.rawKiB || asset.gzipKiB > asset.budget.gzipKiB),
+  ...WASM_ASSETS.filter((budget) => wasmAssets.filter((asset) => asset.budget === budget).length !== 1)
+    .map((budget) => ({ name: `${budget.what}: expected one file matching ${budget.pattern}`, rawKiB: 0, gzipKiB: 0, budget })),
+];
+
 const offenders = chunks.filter((chunk) => {
   const data = dataChunk(chunk.name);
   return data
@@ -61,6 +87,12 @@ for (const data of DATA_CHUNKS) {
 }
 for (const chunk of chunks.slice(0, 20)) {
   console.log(`${chunk.gzipKiB.toFixed(1).padStart(7)} KiB gzip  ${chunk.rawKiB.toFixed(1).padStart(7)} KiB raw  ${chunk.name}`);
+}
+for (const asset of WASM_ASSETS) {
+  console.log(`Lazy WebAssembly: ${asset.what}, raw <= ${asset.rawKiB} KiB, gzip <= ${asset.gzipKiB} KiB`);
+}
+for (const asset of wasmAssets) {
+  console.log(`${asset.gzipKiB.toFixed(1).padStart(7)} KiB gzip  ${asset.rawKiB.toFixed(1).padStart(7)} KiB raw  ${asset.name}`);
 }
 
 // The Vite entry chunk (assets/index-<hash>.js — the module the shell
@@ -84,6 +116,13 @@ if (offenders.length > 0) {
   console.error("\nOversized JS chunks:");
   for (const chunk of offenders) {
     console.error(`- ${chunk.name}: ${chunk.gzipKiB.toFixed(1)} KiB gzip, ${chunk.rawKiB.toFixed(1)} KiB raw`);
+  }
+}
+
+if (wasmOffenders.length > 0) {
+  console.error("\nWebAssembly over its ceiling, or missing:");
+  for (const asset of wasmOffenders) {
+    console.error(`- ${asset.name}: ${asset.gzipKiB.toFixed(1)} KiB gzip, ${asset.rawKiB.toFixed(1)} KiB raw`);
   }
 }
 
@@ -177,6 +216,19 @@ if (eagerWorkerStarts.length > 0) {
   console.error("Start the token workers only from src/lib/tokens/engine.ts, which only the AI Token Counter imports, and only through a dynamic import().");
 }
 
-if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0) {
+// RNNoise's module and the noise remover's worker are fetched by name, so the
+// same test: neither file's name may appear in a chunk every page loads.
+const lazyFiles = [...wasmAssets.map((asset) => asset.name), ...chunks.map((chunk) => chunk.name).filter((name) => /^noise\.worker-[\w-]+\.js$/.test(name))];
+const eagerLazyFiles = [...eagerChunks].flatMap((name) => {
+  const source = readFileSync(join(assetsDir.pathname, name), "utf8");
+  return lazyFiles.filter((file) => source.includes(file)).map((file) => `${name} names ${file}`);
+});
+if (eagerLazyFiles.length > 0) {
+  console.error("\nVoice Noise Remover's WebAssembly or worker is named by the chunks every page loads:");
+  for (const line of eagerLazyFiles) console.error(`- ${line}`);
+  console.error("Import src/lib/noise/engine.ts only through the dynamic import() in NoiseRemoverUI, which runs when a recording is cleaned.");
+}
+
+if (offenders.length > 0 || wasmOffenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0 || eagerLazyFiles.length > 0) {
   process.exit(1);
 }

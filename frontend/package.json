@@ -17,7 +17,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:content": "node --test scripts/content-data.test.mjs scripts/prepare-browser-model.test.mjs scripts/check-review-dates.test.mjs scripts/audit-check.test.mjs",
+    "test:content": "node --test scripts/content-data.test.mjs scripts/prepare-browser-model.test.mjs scripts/check-review-dates.test.mjs scripts/audit-check.test.mjs scripts/rnnoise-wasm.test.mjs",
     "test:watch": "vitest",
     "predev": "node scripts/prepare-browser-model.mjs"
   },
@@ -32,6 +32,7 @@
     "@radix-ui/react-slot": "^1.3.3",
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "@shiguredo/rnnoise-wasm": "2025.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.3",

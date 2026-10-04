@@ -182,7 +182,7 @@ export function TranscribeAudioUI() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[13.5px] leading-relaxed text-foreground whitespace-pre-wrap">{text || "Try a clearer recording or another model. The audio may be silent or contain no recognizable speech."}</p>
+                            <p className="text-[13.5px] leading-relaxed text-foreground whitespace-pre-wrap">{text || <>Try a clearer recording or another model. The audio may be silent or contain no recognizable speech. If steady noise such as a fan or traffic covers the voice, <a href="/tools/remove-background-noise" className="underline underline-offset-2">Voice Noise Remover</a> can turn it down first, also in this browser.</>}</p>
                         )}
                     </div>
                 </div>

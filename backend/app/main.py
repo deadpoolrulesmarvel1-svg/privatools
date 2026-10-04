@@ -230,7 +230,16 @@ _WASM_EVAL_PATHS = {
     # In-browser tesseract OCR runs its wasm core inside a blob worker.
     "/tool/ocr-pdf",
     "/tools/image-ocr",
+    # Voice Noise Remover compiles RNNoise, WebAssembly that is this site's own
+    # asset, and runs it in a worker (_SELF_WASM_PATHS below).
+    "/tools/remove-background-noise",
 }
+
+# Pages whose WebAssembly is one of this site's own assets: they get
+# wasm-unsafe-eval and nothing else, none of the model pages' script CDN or
+# blob: scripts. The page compiles the module and hands it to its worker,
+# whose own script's policy never has to allow WebAssembly.
+_SELF_WASM_PATHS = {"/tools/remove-background-noise"}
 
 # tesseract.js's blob worker importScripts() its worker/core JS from the
 # jsdelivr CDN, and a blob worker inherits the document's CSP — so these two
@@ -242,7 +251,7 @@ _TESSERACT_PATHS = {"/tool/ocr-pdf", "/tools/image-ocr"}
 # jsDelivr. With multiple threads, ONNX first fetches that module and imports
 # a same-origin blob URL. These script sources belong only to these model
 # pages, never to ordinary file tools or the homepage.
-_TRANSFORMERS_PATHS = _WASM_EVAL_PATHS - _TESSERACT_PATHS
+_TRANSFORMERS_PATHS = _WASM_EVAL_PATHS - _TESSERACT_PATHS - _SELF_WASM_PATHS
 
 # Pages allowed to talk directly to a BYOK AI provider.
 #

@@ -120,7 +120,7 @@ describe("service worker privacy and offline lifecycle", () => {
         const shell = await h.caches.open("privatools-shell-v2.0.0");
         await shell.put("/index.html", new Response(html, { headers: { "Content-Security-Policy": policy, "Content-Type": "text/html" } }));
         h.fetch.mockRejectedValue(new Error("offline"));
-        for (const path of ["/tools/remove-background", "/tools/remove-background/?text=private"]) {
+        for (const path of ["/tools/remove-background", "/tools/remove-background/?text=private", "/tools/remove-background-noise"]) {
             const response = await h.dispatch("fetch", { request: h.request(path, {}, true) });
             expect(await response?.text()).toBe(html);
             const actual = response!.headers.get("Content-Security-Policy")!;
@@ -137,6 +137,7 @@ describe("service worker privacy and offline lifecycle", () => {
         const backend = readFileSync(`${process.cwd()}/../backend/app/main.py`, "utf8");
         const serverPaths = backend.match(/_WASM_EVAL_PATHS = \{([\s\S]*?)\n\}/)?.[1];
         expect(serverPaths).toContain('"/tools/remove-background"');
+        expect(serverPaths).toContain('"/tools/remove-background-noise"');
     });
     it("caches static code while respecting private, no-store and download response headers", async () => {
         const h = harness();

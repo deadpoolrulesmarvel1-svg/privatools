@@ -17,7 +17,8 @@ const ID = {
     Segment: 0x18538067, SeekHead: 0x114d9b74, Info: 0x1549a966, Tracks: 0x1654ae6b, Cluster: 0x1f43b675,
     Cues: 0x1c53bb6b, Chapters: 0x1043a770, Tags: 0x1254c367, Attachments: 0x1941a469,
     TimecodeScale: 0x2ad7b1, Duration: 0x4489,
-    TrackEntry: 0xae, TrackNumber: 0xd7, TrackType: 0x83, FlagEnabled: 0xb9,
+    TrackEntry: 0xae, TrackNumber: 0xd7, TrackType: 0x83, FlagEnabled: 0xb9, CodecID: 0x86,
+    Audio: 0xe1, SamplingFrequency: 0xb5, OutputSamplingFrequency: 0x78b5,
     Timecode: 0xe7, SimpleBlock: 0xa3, BlockGroup: 0xa0, Block: 0xa1,
 } as const;
 
@@ -93,6 +94,24 @@ function uintBytes(value: number): Uint8Array {
 
 const stringBytes = (value: string) => Uint8Array.from(value, character => character.charCodeAt(0) & 0xff);
 
+/** An EBML float element's value: four or eight bytes, big-endian. */
+function float(b: Uint8Array | undefined): number | undefined {
+    if (!b) return undefined;
+    const view = new DataView(b.buffer, b.byteOffset, b.length);
+    return b.length === 4 ? view.getFloat32(0) : b.length === 8 ? view.getFloat64(0) : undefined;
+}
+
+/** A Matroska CodecID as this reader's short name: "opus", "vorbis", "aac", "mp3", "flac", "pcm", or the ID itself. */
+function codecName(id: string): string {
+    if (id === "A_OPUS") return "opus";
+    if (id === "A_VORBIS") return "vorbis";
+    if (id.startsWith("A_AAC")) return "aac";
+    if (id === "A_MPEG/L3") return "mp3";
+    if (id === "A_FLAC") return "flac";
+    if (id.startsWith("A_PCM")) return "pcm";
+    return id;
+}
+
 interface AudioBlock { start: number; end: number; clusterTimecode: number; time: number }
 
 /** A block's track number and its timecode relative to the cluster, from the start of its data. */
@@ -108,9 +127,11 @@ function blockTrack(b: Uint8Array): { track: number; timecode: number } | null {
 /**
  * The sound of a WebM or MKV file as pieces of about a minute, or null when
  * it is not one or has no audio track. `onRead` hears how far through the
- * file the walk is, in bytes; `signal` stops it.
+ * file the walk is, in bytes; `signal` stops it. With `leadSeconds`, each
+ * piece after the first also holds at least that much of the sound before
+ * it (its lead).
  */
-export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, onRead, signal }: { pieceSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
+export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, leadSeconds = 0, onRead, signal }: { pieceSeconds?: number; leadSeconds?: number; onRead?: (bytes: number) => void; signal?: AbortSignal } = {}): Promise<AudioIndex | null> {
     const reader = new WindowedReader(blob);
     const ebml = await headerAt(reader, 0);
     if (!ebml || ebml.id !== ID.EBML || ebml.end === null) return null;
@@ -121,7 +142,7 @@ export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, 
 
     let timecodeScale = 1_000_000;
     let durationTicks: number | null = null;
-    let track: { number: number; entry: Uint8Array } | null = null;
+    let track: { number: number; entry: Uint8Array; codec?: string; sampleRate?: number } | null = null;
     const blocks: AudioBlock[] = [];
 
     for (let at = segment.data; at < segmentEnd;) {
@@ -170,16 +191,21 @@ export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, 
             const audio = entries.map(entry => {
                 const fields = children(entry.bytes);
                 const value = (id: number) => fields.find(field => field.id === id);
+                const settings = value(ID.Audio) ? children(value(ID.Audio)!.bytes) : [];
+                const setting = (id: number) => float(settings.find(field => field.id === id)?.bytes);
+                const codec = value(ID.CodecID);
                 return {
                     number: uint(value(ID.TrackNumber)?.bytes ?? new Uint8Array()),
                     audio: uint(value(ID.TrackType)?.bytes ?? new Uint8Array()) === 2,
                     enabled: !value(ID.FlagEnabled) || uint(value(ID.FlagEnabled)!.bytes) === 1,
                     entry: entry.whole.slice(),
+                    codec: codec ? codecName(String.fromCharCode(...codec.bytes).replace(/\0+$/, "")) : undefined,
+                    sampleRate: setting(ID.OutputSamplingFrequency) ?? setting(ID.SamplingFrequency),
                 };
             }).filter(entry => entry.audio && entry.number > 0);
             const chosen = audio.find(entry => entry.enabled) ?? audio[0];
             if (!chosen) throw new NoSoundTrack();
-            track = { number: chosen.number, entry: chosen.entry };
+            track = { number: chosen.number, entry: chosen.entry, codec: chosen.codec, sampleRate: chosen.sampleRate };
         }
         at = header.end;
     }
@@ -204,11 +230,15 @@ export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, 
     for (let first = 0; first < blocks.length;) {
         let last = first + 1;
         while (last < blocks.length && seconds(blocks[last].time - blocks[first].time) < pieceSeconds) last++;
-        const group = blocks.slice(first, last);
+        // The lead: whole blocks back from the piece's first until they cover leadSeconds, or the track starts.
+        let leadFirst = first;
+        while (leadFirst > 0 && seconds(blocks[first].time - blocks[leadFirst].time) < leadSeconds) leadFirst--;
+        const group = blocks.slice(leadFirst, last);
         const end = last < blocks.length ? blocks[last].time : endTicks;
         pieces.push({
-            start: seconds(group[0].time),
-            duration: seconds(end - group[0].time),
+            start: seconds(blocks[first].time),
+            duration: seconds(end - blocks[first].time),
+            lead: seconds(blocks[first].time - blocks[leadFirst].time),
             read: async () => {
                 // Read spans of at most 16 MB, so a piece's video around it is never held whole.
                 const copies: Uint8Array[] = [];
@@ -231,5 +261,6 @@ export async function indexMatroska(blob: Blob, { pieceSeconds = PIECE_SECONDS, 
         });
         first = last;
     }
-    return { container: "Matroska", durationSeconds: seconds(endTicks), pieces };
+    const sampleRate = track.sampleRate && Number.isFinite(track.sampleRate) && track.sampleRate > 0 ? Math.round(track.sampleRate) : undefined;
+    return { container: "Matroska", durationSeconds: seconds(endTicks), sampleRate, codec: track.codec, pieces };
 }

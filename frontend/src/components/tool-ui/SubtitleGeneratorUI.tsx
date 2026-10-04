@@ -373,7 +373,7 @@ export function SubtitleGeneratorUI() {
             progress={progress.total ? (progress.done / progress.total) * 100 : undefined}
             onCancel={phase === "listening" ? cancel : undefined} cancelLabel="Stop and keep what’s done"
             detail={`${clock(progress.done)} of ${clock(progress.total)}${eta !== null ? ` · ${minutesLeft(eta)} at this speed` : ""} · Whisper ${WHISPER[settings.model].label} on this device. Keep this tab open.`} />}
-        {!busy && file && <p className="sg-hint sg-expect">Captions come out as {layout.maxLines === 2 ? "up to two lines" : "one line"} of {layout.maxLineChars} characters, in {languageName(settings.language)}. Music, people talking over each other and strong accents make mistakes likelier, so you’ll check them before you download.</p>}
+        {!busy && file && <p className="sg-hint sg-expect">Captions come out as {layout.maxLines === 2 ? "up to two lines" : "one line"} of {layout.maxLineChars} characters, in {languageName(settings.language)}. Music, people talking over each other and strong accents make mistakes likelier, so you’ll check them before you download. Steady background noise, such as a fan or traffic, can be turned down first with <a href="/tools/remove-background-noise">Voice Noise Remover</a>, also in this browser.</p>}
     </StudioLayout>;
 }
 

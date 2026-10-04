@@ -118,8 +118,23 @@ const ABOUT_THE_ORIGINAL = new Set(["exif", "metadata"]);
 // The job of reading the words in a picture of a page.
 const READS_PICTURES = new Set(["ocr"]);
 
+// Words that name one thing only together, kept as one: background noise is
+// sound, not a picture's background, so Voice Noise Remover and Background
+// Remover share a word, not a job.
+const COMPOUNDS: readonly [string, string][] = [["background", "noise"]];
+
 function words(text: string): string[] {
-    return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    const split = text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    const out: string[] = [];
+    for (let i = 0; i < split.length; i++) {
+        if (COMPOUNDS.some(([first, second]) => split[i] === first && split[i + 1] === second)) {
+            out.push(`${split[i]} ${split[i + 1]}`);
+            i++;
+        } else {
+            out.push(split[i]);
+        }
+    }
+    return out;
 }
 
 function jobWords(slug: string): string[] {

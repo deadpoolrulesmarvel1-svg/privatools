@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
 import { createHash } from "node:crypto";
+import { rnnoiseWasmPlugin } from "./scripts/rnnoise-wasm.mjs";
 
 function manualChunks(id: string): string | undefined {
   const normalized = id.split(path.sep).join("/");
@@ -90,7 +91,8 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react(), serviceWorkerVersionPlugin()],
+  // rnnoiseWasmPlugin: Voice Noise Remover's RNNoise WebAssembly, emitted as an asset of its own (scripts/rnnoise-wasm.mjs).
+  plugins: [react(), serviceWorkerVersionPlugin(), rnnoiseWasmPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
