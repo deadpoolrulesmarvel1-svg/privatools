@@ -146,6 +146,19 @@ describe("joining pieces decoded one at a time", () => {
         expect(largestError(out[1], right)).toBeLessThan(1e-6);
     });
 
+    it("fades from one decode to the next where they differ a little, rather than stepping", () => {
+        // Two decodes of the same sound need not agree exactly (AAC's noise substitution): here the second piece sits 0.005 higher.
+        const pieces = decodePieces(reference, { offset: k => (k ? 312 : 0) });
+        pieces[1] = { ...pieces[1], channels: [pieces[1].channels[0].map(value => value + 0.005)] };
+        const { out, stitcher } = stitch(pieces);
+        expect(stitcher.stats.matched).toBeGreaterThanOrEqual(1);
+        expect(out[0].length).toBe(reference.length);
+        // Against the true sound the error rises to 0.005 and falls back, over the crossfade, never in one step.
+        let steepest = 0;
+        for (let i = 1; i < out[0].length; i++) steepest = Math.max(steepest, Math.abs((out[0][i] - reference[i]) - (out[0][i - 1] - reference[i - 1])));
+        expect(steepest).toBeLessThan(0.001);
+    });
+
     it("keeps a steady tone in time rather than slipping by whole periods", () => {
         // 440 Hz: a period of 109.09 samples, so only the true offset fits exactly.
         const tone = Float32Array.from({ length: 16 * RATE }, (_, i) => 0.4 * Math.sin((2 * Math.PI * 440 * i) / RATE));
