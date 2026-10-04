@@ -1108,7 +1108,7 @@ def no_pages() -> bytes:
 
 
 def damaged() -> bytes:
-    return b"%PDF-1.7\n" + b"\x00garbage\xff" * 300
+    return b"%PDF-1.7\n1 0 obj\n" + b"\x00garbage\xff" * 300
 
 
 def many_pages(count: int, text: str = "A short line of text on every page.") -> bytes:

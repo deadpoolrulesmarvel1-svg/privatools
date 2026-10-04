@@ -98,13 +98,16 @@ def test_a_pdf_cut_short_is_done_or_refused_as_damaged_never_a_500(quiet_client,
 
 @pytest.mark.parametrize("route", sorted(ROUTES))
 def test_garbage_after_a_pdf_header_is_refused_as_corrupt(quiet_client, route):
-    # Bytes no PDF library can read, behind a PDF header: neither pikepdf nor
-    # MuPDF finds a trailer or an object in them.
-    garbage = b"%PDF-1.4\n" + bytes((i * 73 + 41) % 251 for i in range(4000)).replace(b"obj", b"ob_")
+    # Bytes no PDF library can read, behind a PDF header and the start of an
+    # object, so the shared sniff (validate_pdf_content) lets them through to
+    # the route: neither pikepdf nor MuPDF finds a trailer or a page in them.
+    # MuPDF "repairs" them into a file with no page, which E-Sign and Stamp
+    # PDF call damaged; Watermark's pikepdf calls them corrupt.
+    garbage = b"%PDF-1.4\n1 0 obj\n" + bytes((i * 73 + 41) % 251 for i in range(4000)).replace(b"obj", b"ob_")
     response = quiet_client.post(route, files={"file": ("contract.pdf", garbage, "application/pdf")},
                                  data=ROUTES[route])
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == "This PDF appears to be corrupt or invalid."
+    assert response.json()["detail"] in STANDARD
 
 
 @pytest.mark.parametrize("route", sorted(ROUTES))
