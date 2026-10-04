@@ -10,6 +10,16 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.28] — 2026-10-04 — The last seven tools join the shared design
+
+### Tools
+
+- Split PDF, Split by Text, Unlock PDF, Alternate & Mix, Overlay, HTML to PDF and URL to PDF now work like every other tool. A file the tool can't take is refused with advice, and the result says plainly whether it worked. "Try again" appears only when another attempt can help. The result downloads once by itself, with a "Download again" button, and the page says where your file goes. (#343)
+
+### Accessibility
+
+- Alternate & Mix and Overlay can now be used with the keyboard; before, neither file could be chosen without a mouse. Each file slot is labelled with its role, swapping the two files is announced, and focus stays in place after a file is chosen or removed. Automated accessibility checks of all seven screens find no problems. (#343)
+
 ## [2.7.27] — 2026-10-04 — Voice Noise Remover
 
 ### New tool
