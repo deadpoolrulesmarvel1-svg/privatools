@@ -107,7 +107,10 @@ async def url_to_pdf(request: Request, url: str = Form(...)):
 
 # ─── PDF → Markdown ───────────────────────────────────────
 @router.post("/pdf-to-markdown")
+# A capped worker of up to 60 s of CPU: the Hidden Text Checker's limit.
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def pdf_to_markdown(
+    request: Request,
     file: UploadFile = File(...),
     page_markers: bool = Form(False),
     remove_headers_footers: bool = Form(False),
