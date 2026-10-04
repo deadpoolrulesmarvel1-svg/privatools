@@ -29,7 +29,7 @@ import {
     APPROX_MODEL_MB, BYOK_TARGETS, FROM_ENGLISH, TO_ENGLISH, availableSources, byokTarget, languageName, modelIdFor, targetsFor,
     type TargetLanguage,
 } from "@/lib/translate/languages";
-import { loadDeviceTranslator, MAX_INPUT_TOKENS } from "@/lib/translate/opusMt";
+import { loadDeviceTranslator, MAX_INPUT_TOKENS, stopDeviceTranslator, type ModelStage } from "@/lib/translate/opusMt";
 import { layoutFor } from "@/lib/subtitles/captions";
 import { convertCueMarkup } from "@/lib/subtitles/cueText";
 import { cuesOf, formatTime, readSubtitleFile, SubtitleFileError, type SubtitleDocument, type SubtitleFormat } from "@/lib/subtitles/subtitleFile";
@@ -228,6 +228,8 @@ export function SubtitleTranslatorUI() {
     rememberedSource.current = settings.source;
     const [phase, setPhase] = useState<Phase>("idle");
     const [modelPercent, setModelPercent] = useState(0);
+    // What the model's load is doing, as its worker says: "load" until it says it is downloading or building the model.
+    const [modelStage, setModelStage] = useState<{ stage: ModelStage | "load"; downloaded: boolean }>({ stage: "load", downloaded: false });
     const [progress, setProgress] = useState({ done: 0, total: 0, started: 0 });
     const [result, setResult] = useState<Result | null>(null);
     const [failure, setFailure] = useState<Failure | null>(null);
@@ -245,8 +247,8 @@ export function SubtitleTranslatorUI() {
         void listCachedModels().then(models => setCached(Object.fromEntries(models.map(model => [model.hfId, model.bytes]))));
     }, []);
     useEffect(() => { refreshCache(); }, [refreshCache]);
-    // Leaving the page ends a run: its result would have nowhere to go.
-    useEffect(() => () => { runId.current++; abort.current?.abort(); }, []);
+    // Leaving the page ends a run, and the model's worker with it: its result would have nowhere to go.
+    useEffect(() => () => { runId.current++; abort.current?.abort(); stopDeviceTranslator(); }, []);
 
     // The visitor's pick: remembered, and the chosen file's language from now on, with no note left to contradict it.
     const pickSource = useCallback((next: string) => {
@@ -327,8 +329,15 @@ export function SubtitleTranslatorUI() {
                 const modelId = modelIdFor(run.source ?? "en", run.to.code);
                 if (!modelId) throw Object.assign(new Error("That pair of languages has no model on this device."), { __kind: "bad_input" });
                 setModelPercent(0);
+                // Until the worker says otherwise, what this browser's cache holds (lib/localModels).
+                setModelStage({ stage: cached[modelId] ? "load" : "download", downloaded: false });
                 setPhase("model");
-                const translator = await loadDeviceTranslator(modelId, percent => { if (current()) setModelPercent(percent); });
+                // In a worker: the page keeps drawing, and Cancel ends the worker.
+                const translator = await loadDeviceTranslator(
+                    modelId,
+                    percent => { if (current()) setModelPercent(percent); },
+                    stage => { if (current()) setModelStage(now => ({ stage, downloaded: now.downloaded || stage === "download" })); },
+                );
                 if (!current()) return;
                 refreshCache();
                 setProgress({ done: 0, total: plan.items.length, started: performance.now() });
@@ -347,6 +356,8 @@ export function SubtitleTranslatorUI() {
                 }), { signal: controller.signal, onProgress });
             }
             if (!current()) return;
+            // A model that failed mid-run may be broken: the next run starts a fresh worker.
+            if (run.engine === "device" && outcome.stoppedBy) stopDeviceTranslator();
             const outcomes = again ? [...again.outcomes] : new Array<ItemOutcome | undefined>(fullPlan.items.length).fill(undefined);
             outcome.outcomes.forEach((value, k) => { if (value) outcomes[map[k]] = value; });
             const layout = layoutFor(run.to.code.split("-")[0], "two");
@@ -372,18 +383,24 @@ export function SubtitleTranslatorUI() {
             setResult({ file, doc, plan: fullPlan, outcomes, cues, run, seconds: (again?.seconds ?? 0) + seconds, stopped: outcome.stoppedBy ? stoppedReason(outcome.stoppedBy) : undefined });
             setPhase("done");
         } catch (error) {
-            if (!current()) return;
+            // A cancelled load leaves the pair whole (stopped while the model was built) or gone (stopped while it
+            // downloaded, lib/translate/opusMt.ts clears it): say which, here and when the next run starts.
+            if (!current()) { if (run.engine === "device") refreshCache(); return; }
             if (isAbort(error)) { setPhase(again ? "done" : "idle"); return; }
+            // A failed run's worker may hold a half-loaded model or a broken one: the next run starts a fresh one.
+            if (run.engine === "device") stopDeviceTranslator();
             emitToolRun({ outcome: "error", files: 1 }, error);
             setFailure(failureFor(error, run));
             if (again) setResult(again);
             setPhase("failed");
         }
-    }, [chosen, settings, source, target, byok.provider, byok.configured, refreshCache]);
+    }, [chosen, settings, source, target, byok.provider, byok.configured, refreshCache, cached]);
 
     const cancel = () => {
         runId.current++;
         abort.current?.abort();
+        // At once, even mid-step: ending the worker ends the model's work, and the next run starts a new one.
+        stopDeviceTranslator();
         setPhase(result ? "done" : "idle");
     };
 
@@ -508,11 +525,13 @@ export function SubtitleTranslatorUI() {
             <ByokPanel byok={byok} purpose="The subtitles’ text is sent from this browser to the provider you choose, with your key, in numbered batches. It never passes through PrivaTools." />
         </details>}
         {/* One progress element through both steps, so its Cancel is the same button when the model has loaded. */}
+        {/* The download has a measure; reading the model from this browser and building it have none, so the bar travels. */}
         {busy && <StudioProgress onCancel={cancel}
-            label={phase === "model" ? (modelBytes ? "Loading the translation model" : "Downloading the translation model") : "Translating your subtitles"}
-            progress={phase === "model" ? modelPercent : progress.total ? (progress.done / progress.total) * 100 : undefined}
+            label={phase === "model" ? (modelStage.stage === "download" ? "Downloading the translation model" : "Loading the translation model") : "Translating your subtitles"}
+            progress={phase === "model" ? (modelStage.stage === "download" ? modelPercent : undefined) : progress.total ? (progress.done / progress.total) * 100 : undefined}
             detail={phase === "model"
-                ? (modelBytes ? "From this browser’s storage." : `About ${APPROX_MODEL_MB} MB from Hugging Face, once. Your subtitles stay here.`)
+                ? (modelStage.stage === "download" ? `About ${APPROX_MODEL_MB} MB from Hugging Face, once. Your subtitles stay here.`
+                    : modelStage.downloaded ? "Downloaded, and kept in this browser for next time." : "From this browser’s storage.")
                 : `${n(progress.done)} of ${plural(progress.total, "line")}${eta !== null ? ` · about ${Math.max(1, Math.round(eta / 60))} min left at this speed` : ""} · ${where}`} />}
         {!busy && doc && settings.engine === "device" && !modelId && <p className="ts-note">This pair has no model on this device.</p>}
     </StudioLayout>;

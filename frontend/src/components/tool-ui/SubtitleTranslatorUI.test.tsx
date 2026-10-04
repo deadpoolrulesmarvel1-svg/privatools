@@ -12,14 +12,16 @@ import { _resetForTests } from "@/lib/localStore/crypto";
 import { saveKey } from "@/lib/byok/keyStore";
 import { documentNavigationFor } from "@/skins/cspRoutes";
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), download: vi.fn(), toolRun: vi.fn(), cached: vi.fn(), handoff: vi.fn(), navigate: vi.fn() }));
-vi.mock("@/lib/translate/opusMt", async original => ({ ...(await original<object>()), loadDeviceTranslator: mocks.load }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), stop: vi.fn(), download: vi.fn(), toolRun: vi.fn(), cached: vi.fn(), handoff: vi.fn(), navigate: vi.fn() }));
+vi.mock("@/lib/translate/opusMt", async original => ({ ...(await original<object>()), loadDeviceTranslator: mocks.load, stopDeviceTranslator: mocks.stop }));
 vi.mock("@/lib/api", async original => ({ ...(await original<object>()), downloadBlob: mocks.download }));
 vi.mock("@/lib/toolRun", async original => ({ ...(await original<object>()), emitToolRun: mocks.toolRun }));
 vi.mock("@/lib/localModels", async original => ({ ...(await original<object>()), listCachedModels: mocks.cached }));
 vi.mock("@/lib/file-handoff", () => ({ storeFileHandoff: mocks.handoff, consumeFileHandoffs: vi.fn(async () => []), consumeFileHandoff: vi.fn(async () => null) }));
 vi.mock("@/lib/navigation", async original => ({ ...(await original<object>()), navigateTo: mocks.navigate }));
 
+import { chunkByTokens, tokenRuns } from "@/lib/translate/chunk";
+import type { ModelStage } from "@/lib/translate/opusMt";
 import { SubtitleTranslatorUI } from "./SubtitleTranslatorUI";
 
 const TALK = `1
@@ -52,8 +54,14 @@ const SPANISH: Record<string, string> = {
     "Every timing stays where it was.": "Cada tiempo se queda donde estaba.",
 };
 
-/** OPUS-MT, stubbed: a word a token, Spanish for the talk above. */
-const translator = { modelId: "Xenova/opus-mt-en-es", countTokens: (text: string) => text.split(/\s+/).length + 1, translate: vi.fn(async (text: string) => SPANISH[text] ?? text) };
+/** OPUS-MT as its worker answers, stubbed: a word a token for its tokenizer, Spanish for the talk above. */
+const words = (text: string) => text.split(/\s+/).length + 1;
+const translator = {
+    modelId: "Xenova/opus-mt-en-es",
+    chunk: async (texts: readonly string[], maxTokens: number) => texts.map(text => chunkByTokens(text, words, maxTokens)),
+    runs: async (texts: readonly string[], maxTokens: number) => tokenRuns(texts, words, maxTokens),
+    translate: vi.fn(async (text: string) => SPANISH[text] ?? text),
+};
 
 beforeEach(async () => {
     for (const mock of Object.values(mocks)) mock.mockReset();
@@ -158,7 +166,7 @@ describe("the language each file is in", () => {
         expect(screen.queryByText(/Its letters/)).toBeNull();
         fireEvent.click(translateButton());
         await screen.findByRole("heading", { name: "5 cues translated." });
-        expect(mocks.load).toHaveBeenCalledWith("Xenova/opus-mt-en-fr", expect.any(Function));
+        expect(mocks.load).toHaveBeenCalledWith("Xenova/opus-mt-en-fr", expect.any(Function), expect.any(Function));
     });
 
     it("doesn't keep a file's guessed language for the next visit", async () => {
@@ -210,7 +218,7 @@ describe("the language each file is in", () => {
 describe("translating on this device", () => {
     it("translates a sentence across cues together, keeps every timing, and saves SRT and VTT named with the language", async () => {
         await translateOnDevice();
-        expect(mocks.load).toHaveBeenCalledWith("Xenova/opus-mt-en-es", expect.any(Function));
+        expect(mocks.load).toHaveBeenCalledWith("Xenova/opus-mt-en-es", expect.any(Function), expect.any(Function));
         expect(translator.translate.mock.calls.map(call => call[0])).toEqual(Object.keys(SPANISH));
         expect(screen.getByText(/^Machine translation from English into Spanish, on this device\./)).toBeInTheDocument();
         const boxes = screen.getAllByRole("textbox") as HTMLTextAreaElement[];
@@ -333,11 +341,13 @@ describe("translating on this device", () => {
         await screen.findByText(/SRT · 5 cues/);
         fireEvent.click(translateButton());
         expect(await screen.findByRole("heading", { name: "The translation model couldn’t be downloaded." })).toBeInTheDocument();
+        // The failed run's worker goes; the next run starts a new one.
+        expect(mocks.stop).toHaveBeenCalledTimes(1);
         fireEvent.click(screen.getByRole("button", { name: "Try again" }));
         expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
     });
 
-    it("goes back to the options when cancelled, with no result", async () => {
+    it("goes back to the options when cancelled, at once, by ending the model's worker, with no result and no failure counted", async () => {
         let release!: () => void;
         translator.translate.mockImplementationOnce(() => new Promise(resolve => { release = () => resolve("x"); }));
         choose();
@@ -346,10 +356,99 @@ describe("translating on this device", () => {
         const cancel = await screen.findByRole("button", { name: "Cancel" });
         await screen.findByText("Translating your subtitles");
         fireEvent.click(cancel);
+        expect(mocks.stop).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText("Translating your subtitles")).toBeNull();
         await act(async () => { release(); });
         expect(screen.queryByRole("heading", { name: /translated\./ })).toBeNull();
         expect(translateButton()).toBeEnabled();
         expect(mocks.toolRun).not.toHaveBeenCalled();
+        // A new run starts cleanly.
+        fireEvent.click(translateButton());
+        expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "success", files: 1 });
+    });
+
+    it("shows the model's download with its percent, then the model loading with none, then the lines", async () => {
+        let hear!: { progress: (percent: number) => void; stage: (stage: ModelStage) => void; ready: () => void };
+        mocks.load.mockImplementation((_id: string, progress: (percent: number) => void, stage: (stage: ModelStage) => void) => new Promise(resolve => {
+            hear = { progress, stage, ready: () => { progress(100); resolve(translator); } };
+        }));
+        choose();
+        await screen.findByText(/SRT · 5 cues/);
+        fireEvent.click(translateButton());
+        // This browser's cache doesn't have the pair: a download, from the start.
+        expect(await screen.findByText("Downloading the translation model")).toBeInTheDocument();
+        act(() => { hear.stage("download"); hear.progress(40); });
+        expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "40");
+        expect(screen.getByText(/About 107 MB from Hugging Face, once/)).toBeInTheDocument();
+        act(() => { hear.progress(99); hear.stage("prepare"); });
+        expect(screen.getByText("Loading the translation model")).toBeInTheDocument();
+        expect(screen.getByText("Downloaded, and kept in this browser for next time.")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
+        await act(async () => { hear.ready(); });
+        expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
+    });
+
+    it("loads a pair this browser has with no download and no percent, and says a download if the worker needs one after all", async () => {
+        mocks.cached.mockResolvedValue([{ hfId: "Xenova/opus-mt-en-es", bytes: 112_000_000, fileCount: 6 }]);
+        let hear!: { stage: (stage: ModelStage) => void; ready: () => void };
+        mocks.load.mockImplementation((_id: string, progress: (percent: number) => void, stage: (stage: ModelStage) => void) => new Promise(resolve => {
+            hear = { stage, ready: () => { progress(100); resolve(translator); } };
+        }));
+        choose();
+        await screen.findByText(/model is in this browser/);
+        fireEvent.click(translateButton());
+        expect(await screen.findByText("Loading the translation model")).toBeInTheDocument();
+        expect(screen.getByText("From this browser’s storage.")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
+        // Some of its files were missing after all.
+        act(() => { hear.stage("download"); });
+        expect(screen.getByText("Downloading the translation model")).toBeInTheDocument();
+        await act(async () => { hear.ready(); });
+        expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
+    });
+
+    it("says the pair is in this browser after a cancel that came once its download had finished", async () => {
+        // Stopped while the model was built: every file is in the cache, and the next run reads it from there.
+        mocks.load.mockImplementationOnce((_id: string, _progress: (percent: number) => void, stage: (stage: ModelStage) => void) => new Promise((_resolve, reject) => {
+            stage("download");
+            stage("prepare");
+            mocks.stop.mockImplementationOnce(() => reject(Object.assign(new Error("The translation was stopped."), { name: "AbortError" })));
+        }));
+        choose();
+        await screen.findByText(/SRT · 5 cues/);
+        expect(screen.getByText(/model downloads from Hugging Face on the first run/)).toBeInTheDocument();
+        fireEvent.click(translateButton());
+        await screen.findByText("Downloaded, and kept in this browser for next time.");
+        mocks.cached.mockResolvedValue([{ hfId: "Xenova/opus-mt-en-es", bytes: 119_377_271, fileCount: 6 }]);
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(await screen.findByText(/model is in this browser \(114 MB\)/)).toBeInTheDocument();
+        let finish!: () => void;
+        mocks.load.mockImplementationOnce((_id: string, progress: (percent: number) => void) => new Promise(resolve => { finish = () => { progress(100); resolve(translator); }; }));
+        fireEvent.click(translateButton());
+        // Not "Downloading the translation model … from Hugging Face" while it reads the pair from this browser.
+        expect(await screen.findByText("Loading the translation model")).toBeInTheDocument();
+        expect(screen.getByText("From this browser’s storage.")).toBeInTheDocument();
+        await act(async () => { finish(); });
+        expect(await screen.findByRole("heading", { name: "5 cues translated." })).toBeInTheDocument();
+    });
+
+    it("ends the worker after the model fails mid-run, keeping what was done", async () => {
+        translator.translate
+            .mockImplementationOnce(async (text: string) => SPANISH[text] ?? text)
+            .mockImplementationOnce(async () => { throw new Error("Aborted(). Build with -sASSERTIONS for more info."); });
+        choose();
+        await screen.findByText(/SRT · 5 cues/);
+        fireEvent.click(translateButton());
+        expect(await screen.findByRole("heading", { name: /^1 of 5 cues translated\./ })).toBeInTheDocument();
+        expect(mocks.stop).toHaveBeenCalledTimes(1);
+        expect(mocks.toolRun).toHaveBeenCalledWith({ outcome: "partial", files: 1, errorKind: "browser" }, expect.objectContaining({ message: "Aborted(). Build with -sASSERTIONS for more info." }));
+    });
+
+    it("ends the worker when the page closes", () => {
+        const view = render(<SubtitleTranslatorUI />);
+        view.unmount();
+        expect(mocks.stop).toHaveBeenCalledTimes(1);
     });
 });
 
