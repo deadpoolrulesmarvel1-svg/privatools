@@ -44,7 +44,7 @@
     },
     {
       "q": "How long can the recording be?",
-      "a": "Up to 60 minutes of sound. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read and cleaned a minute at a time, so a long file needs little more memory than a short one; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. RNNoise runs on your own processor: in Chromium on a two-core test computer it took about 13 seconds for each minute of mono sound and 25 for stereo, so an hour of mono took 13 minutes. Most laptops are faster and phones slower. To clean a longer recording, cut it into parts first."
+      "a": "Up to 60 minutes of sound. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read and cleaned a minute at a time; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The cleaned WAV is kept in your browser's memory while you compare and download it: about 5.8 MB for each minute of mono and 11.5 MB for stereo, so an hour of stereo needs about 700 MB free besides what the browser already uses. RNNoise runs on your own processor: in Chromium on a two-core test computer it took about 13 seconds for each minute of mono sound and 25 for stereo, so an hour of mono took 13 minutes; a faster processor takes less time. To clean a longer recording, cut it into parts first."
     },
     {
       "q": "Why is the result a WAV at 48 kHz?",
