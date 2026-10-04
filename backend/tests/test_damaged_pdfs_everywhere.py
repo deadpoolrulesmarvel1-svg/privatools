@@ -201,7 +201,7 @@ NOT_PDF = {
 
 # Routes still fixed in a later commit of this branch.
 NOT_YET = {
-    "/api/hidden-text-checker", "/api/pdf-to-markdown", "/api/split-by-text",
+    "/api/split-by-text",
 }
 
 
@@ -449,6 +449,61 @@ def test_qpdf_failing_on_a_pdf_its_library_reads_stays_the_servers_fault(quiet_c
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", run_qpdf)
     assert _post(quiet_client, WEB_OPTIMIZE, GOOD).status_code == 500
+
+
+# ── The capped workers: Hidden Text Checker and PDF to Markdown ─────────────
+# Each runs in a process of its own, which answered "failed" (a 500) when its
+# work raised on a file MuPDF had repaired: the page count of a file cut after
+# its page list ("code=7: Invalid number of pages"), or a page's object lost.
+
+WORKER_ROUTES = ["/api/hidden-text-checker", "/api/pdf-to-markdown"]
+CORRUPT = "This PDF appears to be corrupt or invalid."
+
+
+@pytest.mark.parametrize("route", WORKER_ROUTES)
+def test_a_worker_says_a_file_cut_after_its_page_list_is_damaged(quiet_client, route):
+    response = _post(quiet_client, route, DAMAGED["classic-10"])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == CORRUPT
+
+
+def _worker_that_fails(tmp_path, monkeypatch, route: str) -> None:
+    """The real worker, with its work replaced by a fault of the checker's own."""
+    from pathlib import Path
+
+    from backend.app.services import hidden_text_service, pdf_to_markdown_service
+
+    service, module, work = {
+        "/api/hidden-text-checker": (hidden_text_service, "_hidden_text_worker", "analyse"),
+        "/api/pdf-to-markdown": (pdf_to_markdown_service, "_pdf_markdown_worker", "convert"),
+    }[route]
+    stub = tmp_path / f"stub_{module}.py"
+    stub.write_text(
+        "import sys\n"
+        f"sys.path.insert(0, {str(Path(__file__).resolve().parents[2])!r})\n"
+        f"from backend.app.services import {module} as worker\n"
+        "def fails(*args, **kwargs):\n"
+        "    raise RuntimeError('a fault in the worker itself')\n"
+        f"worker.{work} = fails\n"
+        "worker.main()\n"
+    )
+    monkeypatch.setattr(service, "_WORKER", stub)
+
+
+@pytest.mark.parametrize("route", WORKER_ROUTES)
+def test_a_workers_own_fault_on_an_intact_file_stays_a_500(quiet_client, monkeypatch, tmp_path, route):
+    _worker_that_fails(tmp_path, monkeypatch, route)
+    assert _post(quiet_client, route, GOOD).status_code == 500
+
+
+@pytest.mark.parametrize("route", WORKER_ROUTES)
+def test_a_worker_failing_on_a_file_mupdf_repaired_says_it_is_damaged(quiet_client, monkeypatch, tmp_path, route):
+    # Every page is there; only the end of the file, its cross-reference
+    # table, is missing, so MuPDF had to repair it.
+    _worker_that_fails(tmp_path, monkeypatch, route)
+    response = _post(quiet_client, route, CLASSIC[: len(CLASSIC) * 95 // 100])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == CORRUPT
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────

@@ -2073,9 +2073,23 @@ def main() -> None:
         _emit({"ok": False, "error": refusal.kind, **refusal.facts})
     except MemoryError:
         _emit({"ok": False, "error": "too_large"})
-    except Exception:  # noqa: BLE001 - the caller logs a failure
+    except Exception as exc:  # noqa: BLE001 - the caller logs a failure
+        # The library failing on a file MuPDF had to repair, as when it cannot
+        # count the pages of a file cut short after its page list: damage, as
+        # utils.cleanup.process_pdf calls it in the web process.
+        if _damage(doc, exc):
+            _emit({"ok": False, "error": "corrupt"})
         _emit({"ok": False, "error": "failed"}, 1)
     _emit(report)
+
+
+def _damage(doc: fitz.Document, exc: Exception) -> bool:
+    if not isinstance(exc, (RuntimeError, ValueError, fitz.mupdf.FzErrorBase)):
+        return False
+    try:
+        return bool(doc.is_repaired)
+    except Exception:  # noqa: BLE001 - a document that cannot even say is not called damaged
+        return False
 
 
 if __name__ == "__main__":
