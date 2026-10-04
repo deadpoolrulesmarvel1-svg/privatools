@@ -200,8 +200,7 @@ NOT_PDF = {
 
 # Routes still fixed in a later commit of this branch.
 NOT_YET = {
-    "/api/hidden-text-checker", "/api/organize-pages/thumbnails", "/api/pdf-to-markdown",
-    "/api/split-by-text", "/api/web-optimize",
+    "/api/hidden-text-checker", "/api/pdf-to-markdown", "/api/split-by-text", "/api/web-optimize",
 }
 
 
@@ -363,6 +362,44 @@ def test_a_tool_that_reads_pages_asks_for_the_password(quiet_client, locked_pdf,
                                    if r not in ("/api/extract-tables", "/api/remove-watermark/apply")])
 def test_a_tool_that_reads_pages_still_does_an_intact_pdf(quiet_client, route):
     assert _post(quiet_client, route, GOOD).status_code == 200
+
+
+# ── Organize Pages draws its thumbnails with Poppler ────────────────────────
+# Poppler cannot count the pages of most PDFs cut short ("Couldn't find trailer
+# dictionary"): pdf2image raised PDFPageCountError, a 500, on 23 of the 24 cuts.
+
+THUMBNAILS = "/api/organize-pages/thumbnails"
+
+
+@pytest.mark.parametrize("sample", sorted(DAMAGED))
+def test_organize_pages_says_a_pdf_it_cannot_draw_is_damaged(quiet_client, sample):
+    response = _post(quiet_client, THUMBNAILS, DAMAGED[sample])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] in STANDARD
+
+
+def test_organize_pages_asks_for_the_password(quiet_client, locked_pdf):
+    response = _post(quiet_client, THUMBNAILS, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
+
+
+def test_organize_pages_still_draws_an_intact_pdf(quiet_client):
+    response = _post(quiet_client, THUMBNAILS, GOOD)
+    assert response.status_code == 200, response.text
+    assert len(response.json()["thumbnails"]) == 3
+
+
+def test_poppler_failing_on_a_pdf_mupdf_reads_intact_stays_the_servers_fault(quiet_client, monkeypatch):
+    from pdf2image.exceptions import PDFPageCountError
+
+    from backend.app.services import organize_pages_service
+
+    def poppler_fails(*_args, **_kwargs):
+        raise PDFPageCountError("Unable to get page count.\nI/O Error: Couldn't open file")
+
+    monkeypatch.setattr(organize_pages_service, "convert_from_path", poppler_fails)
+    assert _post(quiet_client, THUMBNAILS, GOOD).status_code == 500
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────

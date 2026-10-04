@@ -3,16 +3,33 @@ import io
 
 import pikepdf
 from pdf2image import convert_from_path
+from pdf2image.exceptions import PDFPageCountError
 
-from ..utils.cleanup import safe_open_pdf
-from ..utils.exceptions import PageRangeError
+from ..utils.cleanup import _DAMAGED_PDF, open_pdf_document, safe_open_pdf
+from ..utils.exceptions import PageRangeError, PdfCorruptError
 from ..utils.filenames import temp_output
 from ..utils.page_removal import WorkBudget, copy_pages, prune_to_page_tree
 
 
 def generate_thumbnails(input_path: str) -> list[str]:
-    """Return one base64-encoded PNG thumbnail per page."""
-    images = convert_from_path(input_path, dpi=72, size=(150, None))
+    """Return one base64-encoded PNG thumbnail per page.
+
+    Poppler draws them, and it cannot count the pages of most PDFs cut short
+    (pdf2image's PDFPageCountError, "Couldn't find trailer dictionary"), which
+    MuPDF repairs. So MuPDF looks at the file first: a locked, unreadable or
+    pageless PDF gets open_pdf_document's 400 before Poppler runs, and Poppler
+    failing to count the pages of a file MuPDF had to repair is that file's
+    damage. Poppler failing on a file MuPDF reads intact stays the server's.
+    """
+    doc = open_pdf_document(input_path)
+    repaired = doc.is_repaired
+    doc.close()
+    try:
+        images = convert_from_path(input_path, dpi=72, size=(150, None))
+    except PDFPageCountError as exc:
+        if repaired:
+            raise PdfCorruptError(_DAMAGED_PDF) from exc
+        raise
     thumbnails: list[str] = []
     for img in images:
         buf = io.BytesIO()
