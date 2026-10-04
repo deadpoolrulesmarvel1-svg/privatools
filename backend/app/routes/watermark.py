@@ -14,6 +14,7 @@ from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload
 from ..services import watermark_service
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -135,9 +136,9 @@ async def watermark_pdf(
         # whose data stops early or is broken fails only when it is drawn.
         if (image_error := image_read_error(e)) is not None:
             raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
-        if isinstance(e, ValueError):
-            # safe_open_pdf's words for a PDF that is damaged or needs a
-            # password, as the other PDF tools give them.
-            raise HTTPException(status_code=400, detail=str(e)) from e
+        # A PDF that is damaged or needs a password, safe_open_pdf's refusal
+        # included, in the words the other PDF tools give.
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

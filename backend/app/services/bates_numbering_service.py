@@ -23,7 +23,7 @@ import pikepdf
 from reportlab.lib.colors import black
 from reportlab.pdfgen import canvas
 
-from ..utils.cleanup import safe_open_pdf
+from ..utils.cleanup import process_pdf, safe_open_pdf
 from ..utils.exceptions import PdfCorruptError, ToolError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
@@ -708,8 +708,8 @@ def remove_bates_numbering(
     read_s = charged_s = 0.0
     found = removed = remaining = elsewhere = 0
 
-    doc = fitz.open(input_path)
-    try:
+    def remove(doc: fitz.Document) -> None:
+        nonlocal read_s, charged_s, found, removed, remaining, elsewhere
         if not doc.is_pdf:
             # MuPDF opens HTML, images and more by their content; reading a
             # PDF key of such a page crashes it (the route lets only content
@@ -738,7 +738,10 @@ def remove_bates_numbering(
                 elsewhere += outcome.elsewhere
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    process_pdf(input_path, remove, rebuild=False)
 
     return BatesRemoval(str(output_path), removed, remaining, elsewhere)

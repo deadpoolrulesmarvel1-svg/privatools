@@ -14,6 +14,7 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, valida
 from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_filename, read_upload, unique_arcname
 from ..services import unlock_service
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -123,5 +124,7 @@ async def unlock_pdf(
         raise HTTPException(status_code=400, detail=str(e) or "Could not unlock PDF")
     except Exception as e:
         remove_files(*input_paths, *output_paths)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

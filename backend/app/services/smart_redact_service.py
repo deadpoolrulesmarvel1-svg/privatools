@@ -16,6 +16,7 @@ from ..utils.cleanup import open_pdf_document
 from ..utils.colors import hex_to_rgb_float
 from ..utils.filenames import temp_output
 from ..utils.page_space import drawing_unturned
+from ..utils.tables import exact_glyph_boxes
 
 
 def smart_redact(
@@ -39,24 +40,29 @@ def smart_redact(
     # with a 400 in the site's own words.
     doc = open_pdf_document(input_path)
     try:
-        for page in doc:
-            # Matches come back in the page's stored coordinates. On a turned
-            # page whose visible area does not start at 0,0, PyMuPDF painted the
-            # black fill away from the text it removed unless the page is
-            # unturned while it works (utils/page_space.py).
-            with drawing_unturned(page):
-                for needle in needle_set:
-                    try:
-                        quads = page.search_for(needle, quads=True, flags=flags)
-                    except TypeError:
-                        quads = page.search_for(needle, flags=flags)
-                    if not quads:
-                        continue
-                    for q in quads:
-                        rect = q.rect if hasattr(q, "rect") else q
-                        page.add_redact_annot(rect, fill=fill)
-                        total_hits += 1
-                page.apply_redactions()
+        # The boxes search_for finds are what is removed. Table detection in
+        # another request turns PyMuPDF's process-wide glyph-height switch on
+        # while it runs, which moves the box of text turned 180 degrees off
+        # its glyphs; it waits until the search is done (utils/tables.py).
+        with exact_glyph_boxes():
+            for page in doc:
+                # Matches come back in the page's stored coordinates. On a
+                # turned page whose visible area does not start at 0,0, PyMuPDF
+                # painted the black fill away from the text it removed unless
+                # the page is unturned while it works (utils/page_space.py).
+                with drawing_unturned(page):
+                    for needle in needle_set:
+                        try:
+                            quads = page.search_for(needle, quads=True, flags=flags)
+                        except TypeError:
+                            quads = page.search_for(needle, flags=flags)
+                        if not quads:
+                            continue
+                        for q in quads:
+                            rect = q.rect if hasattr(q, "rect") else q
+                            page.add_redact_annot(rect, fill=fill)
+                            total_hits += 1
+                    page.apply_redactions()
         doc.save(str(output_path), garbage=4, deflate=True)
     finally:
         doc.close()

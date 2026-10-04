@@ -10,10 +10,10 @@ from __future__ import annotations
 import re
 import zipfile
 
-import fitz  # PyMuPDF
 import pikepdf
 
-from ..utils.exceptions import ValidationError
+from ..utils.cleanup import _DAMAGED_PDF, open_pdf_document
+from ..utils.exceptions import PdfCorruptError, ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
@@ -25,11 +25,10 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     flags = 0 if case_sensitive else re.IGNORECASE
     pattern = re.compile(re.escape(search.strip()), flags)
 
-    src = fitz.open(input_path)
+    # A locked, unreadable or pageless PDF gets open_pdf_document's 400.
+    src = open_pdf_document(input_path)
     try:
         n = len(src)
-        if n == 0:
-            raise ValidationError("PDF has no pages")
 
         # Find all page indices where the term appears.
         match_indices: list[int] = []
@@ -60,6 +59,11 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     pdf = pikepdf.open(input_path)
     chunk_paths: list = []
     try:
+        if len(pdf.pages) != n:
+            # MuPDF searched the pages and qpdf copies them: of a damaged file
+            # they can recover different pages (4 and 2 of a PDF cut short),
+            # and the parts would be cut at pages qpdf does not have.
+            raise PdfCorruptError(_DAMAGED_PDF)
         copier = PageCopier(pdf, budget=WorkBudget.for_files("split-by-text", input_path))
         for idx, (start, end) in enumerate(boundaries, start=1):
             with pikepdf.Pdf.new() as chunk:

@@ -20,11 +20,10 @@ import time
 import uuid
 from typing import Any
 
-import fitz
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document
 from ..utils.exceptions import ToolTimeoutError
 
 logger = logging.getLogger(__name__)
@@ -98,7 +97,7 @@ def pdf_to_word(input_path: str) -> str:
 
 def _convert_with_open(input_path: str) -> str:
     """Open the PDF and delegate to `_convert_to_docx` with try/finally cleanup."""
-    doc = fitz.open(input_path)  # fitz already mmaps the file
+    doc = open_pdf_document(input_path)  # fitz already mmaps the file
     try:
         return _convert_to_docx(doc)
     finally:

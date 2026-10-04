@@ -1,10 +1,10 @@
 import csv
 
-import fitz  # PyMuPDF
-
+from ..utils.cleanup import open_pdf_document
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
+from ..utils.tables import find_tables
 
 # Cells beginning with these characters are executed as formulas by Excel/
 # Sheets/LibreOffice when the CSV is opened — a CSV-injection vector when the
@@ -35,7 +35,7 @@ def extract_tables(input_path: str, pages: str = "all") -> str:
     """
     output_path = temp_output("tables", "csv")
 
-    doc = fitz.open(input_path)
+    doc = open_pdf_document(input_path)
     try:
         total = len(doc)
         try:
@@ -51,7 +51,7 @@ def extract_tables(input_path: str, pages: str = "all") -> str:
             page = doc[pg_idx]
 
             try:
-                tabs = page.find_tables()
+                tabs = find_tables(page)  # the shared glyph-height switch left off (utils.tables)
                 for table in tabs:
                     for row in table.extract():
                         cleaned = [str(cell).strip() if cell else "" for cell in row]

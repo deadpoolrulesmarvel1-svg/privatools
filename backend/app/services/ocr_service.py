@@ -9,7 +9,7 @@ import pikepdf
 import pytesseract
 from PIL import Image
 
-from ..utils.cleanup import ensure_temp_dir
+from ..utils.cleanup import ensure_temp_dir, open_pdf_document, process_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.render import check_render_page_count, safe_get_pixmap
@@ -91,17 +91,35 @@ def _render_and_ocr_pdf(args: tuple) -> tuple[int, bytes]:
 
 
 def _extract_single_page_pdf(src_path: str, page_idx: int) -> bytes:
-    """Extract a single page from a PDF as bytes."""
-    doc = fitz.open(src_path)
-    try:
+    """Extract a single page from a PDF as bytes. A page MuPDF cannot copy out
+    of a file it had to repair ("source object number out of range") is
+    refused as damaged, never taken from a rebuild, whose pages may have
+    moved (utils.cleanup.process_pdf)."""
+    def copy(doc: fitz.Document) -> bytes:
         single = fitz.open()
         try:
             single.insert_pdf(doc, from_page=page_idx, to_page=page_idx)
             return single.tobytes()
         finally:
             single.close()
+
+    return process_pdf(src_path, copy, rebuild=False)
+
+
+def _page_count(input_path: str) -> int:
+    """The PDF's pages, counted by open_pdf_document, which refuses a locked,
+    unreadable or pageless PDF in the standard words before any OCR runs."""
+    doc = open_pdf_document(input_path)
+    try:
+        return len(doc)
     finally:
         doc.close()
+
+
+def _render_first_page(input_path: str, dpi: int) -> Image.Image:
+    """The page of a one-page PDF as a picture; refused as damaged if MuPDF
+    had to repair the file and cannot draw it (utils.cleanup.process_pdf)."""
+    return process_pdf(input_path, lambda doc: _render_page_to_image(doc[0], dpi=dpi), rebuild=False)
 
 
 def _clamp_dpi(dpi: int) -> int:
@@ -122,20 +140,12 @@ def extract_text(input_path: str, lang: str = "eng", dpi: int = 200) -> str:
     dpi = _clamp_dpi(dpi)
     logger.info("ocr.extract_text start lang=%s dpi=%d", lang, dpi)
 
-    doc = fitz.open(input_path)
-    try:
-        page_count = len(doc)
-    finally:
-        doc.close()
+    page_count = _page_count(input_path)
     check_render_page_count(page_count)
 
     if page_count == 1:
         # Single page — no overhead from parallelism
-        doc = fitz.open(input_path)
-        try:
-            img = _render_page_to_image(doc[0], dpi=dpi)
-        finally:
-            doc.close()
+        img = _render_first_page(input_path, dpi)
         text = pytesseract.image_to_string(img, lang=lang, timeout=_TESS_TIMEOUT_SECS)
         logger.info("ocr.extract_text done pages=1 chars=%d", len(text))
         return f"--- Page 1 ---\n{text}"
@@ -170,22 +180,12 @@ def extract_searchable_pdf_to_file(
     out_path = temp_output("ocr_searchable", "pdf")
     logger.info("ocr.searchable_pdf start lang=%s dpi=%d", lang, dpi)
 
-    doc = fitz.open(input_path)
-    try:
-        page_count = len(doc)
-    finally:
-        doc.close()
-    if page_count == 0:
-        raise ValidationError("Cannot run OCR on an empty PDF.")
+    page_count = _page_count(input_path)
     check_render_page_count(page_count)
 
     if page_count == 1:
         # Single page — direct processing
-        doc = fitz.open(input_path)
-        try:
-            img = _render_page_to_image(doc[0], dpi=dpi)
-        finally:
-            doc.close()
+        img = _render_first_page(input_path, dpi)
         ocr_pdf_bytes = pytesseract.image_to_pdf_or_hocr(
             img, extension="pdf", lang=lang, timeout=_TESS_TIMEOUT_SECS
         )

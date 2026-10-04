@@ -17,6 +17,7 @@ from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, valida
 from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
 from ..utils.route_helpers import stream_upload_to_disk
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -56,6 +57,8 @@ async def hidden_text_checker(request: Request, file: UploadFile = File(...)):
         # (500): the global handler gives each its status and message.
         raise
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Hidden text checker error")
         raise HTTPException(status_code=500, detail="Failed to check the PDF for hidden text") from exc
     finally:

@@ -31,8 +31,10 @@ from ..utils.cleanup import (
     validate_image_content,
     validate_pdf_content,
 )
+from ..utils.exceptions import ToolError
 from ..utils.concurrency import run_bounded
 from ..utils.route_helpers import no_store_headers, safe_stem, stream_upload_to_disk
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -51,11 +53,13 @@ async def detect_watermark(request: Request, file: UploadFile = File(...)):
         await stream_upload_to_disk(file, temp_path, validate=validate_pdf_content)
         result = await run_bounded(detect_watermarks, str(temp_path))
         return JSONResponse(result, headers=no_store_headers())
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(str(temp_path))
         raise
     except Exception as exc:  # noqa: BLE001 — global handler sanitizes 5xx
         remove_files(str(temp_path))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("watermark detection failed")
         raise HTTPException(
             status_code=500, detail="Could not analyse this PDF. Please try again."

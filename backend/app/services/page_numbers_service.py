@@ -1,6 +1,7 @@
 """Add page numbers using PyMuPDF direct text insertion (no reportlab overhead)."""
 import fitz  # PyMuPDF
 
+from ..utils.cleanup import process_pdf
 from ..utils.filenames import temp_output
 
 
@@ -12,8 +13,7 @@ def add_page_numbers(
 ) -> str:
     output_path = temp_output("numbered", "pdf")
 
-    doc = fitz.open(input_path)
-    try:
+    def number(doc: fitz.Document) -> None:
         margin = 20
 
         for i, page in enumerate(doc):
@@ -48,6 +48,9 @@ def add_page_numbers(
             )
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
+
+    # A locked, damaged or pageless PDF is refused in the standard words; work
+    # that fails on a repaired one is refused as damaged, never redone on a
+    # rebuild that may have left pages out (utils.cleanup.process_pdf).
+    process_pdf(input_path, number, rebuild=False)
     return str(output_path)

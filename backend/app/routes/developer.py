@@ -39,6 +39,7 @@ from ..utils.cleanup import (
 )
 from ..utils.route_helpers import no_store_headers, read_upload, safe_stem
 from ..utils.concurrency import run_bounded
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter(tags=["developer"])
 
@@ -325,4 +326,6 @@ async def run_pipeline(
         raise
     except Exception as exc:
         remove_files(*paths)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc

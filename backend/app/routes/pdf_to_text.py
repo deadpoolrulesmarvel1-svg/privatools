@@ -4,6 +4,7 @@ import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
+from ..utils.pdf_errors import pdf_read_error
 from ..services import pdf_to_text_service
 
 router = APIRouter()
@@ -34,5 +35,9 @@ async def pdf_to_text(file: UploadFile = File(...)):
     except Exception as e:
         if temp_path is not None:
             remove_files(str(temp_path))
+        # pypdf reads the file: a stream cut short is its PdfStreamError, a
+        # locked file its FileNotDecryptedError (utils.pdf_errors).
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

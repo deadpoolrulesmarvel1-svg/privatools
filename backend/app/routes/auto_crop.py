@@ -14,6 +14,7 @@ from ..utils.cleanup import (
 from ..utils.exceptions import ToolError
 from ..utils.route_helpers import safe_stem
 from ..utils.concurrency import run_bounded
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -53,5 +54,7 @@ async def auto_crop(request: Request, file: UploadFile = File(...)):
     except Exception as exc:
         if out_path:
             remove_files(out_path)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /auto-crop")
         raise HTTPException(status_code=500, detail=f"Processing failed: {exc}") from exc

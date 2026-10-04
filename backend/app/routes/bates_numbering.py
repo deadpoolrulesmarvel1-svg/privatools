@@ -18,6 +18,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import safe_filename, safe_stem, unique_arcname
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -156,6 +157,8 @@ async def bates_numbering(
             [output_path] if output_path else []
         )
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /bates-numbering")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:
@@ -256,6 +259,8 @@ async def bates_numbering_batch(
         raise
     except Exception as exc:
         remove_files(*input_paths, *output_paths, *( [zip_path] if zip_path else [] ))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /bates-numbering-batch")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:
@@ -344,6 +349,8 @@ async def bates_remove(
     except Exception as exc:
         remove_files(*([str(temp_path)] if temp_path else []),
                      *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /bates-remove")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

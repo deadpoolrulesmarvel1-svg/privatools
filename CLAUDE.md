@@ -278,6 +278,13 @@ CSP-walker and guide-export tests catch most misses.
   `test_route_coverage.py` fails when a server-backed tool has no route, when
   a declared route is not included in the app, and on a POST that is neither a
   registered tool nor a named helper or account endpoint.
+- **Damaged and locked PDFs:** a route that takes an upload goes in `ROUTES`
+  (a PDF) or `NOT_PDF` of `backend/tests/test_damaged_pdfs_everywhere.py`,
+  which posts cut-short and locked PDFs to every route in `ROUTES` and fails on
+  any 5xx. Open the upload with `open_pdf_document` or `process_pdf`
+  (`utils/cleanup.py`), not a bare `fitz.open`, which opens a locked PDF and
+  fails later; let `ToolError` through; and have the catch-all ask
+  `pdf_read_error` (`utils/pdf_errors.py`) before it answers 500.
 - **Guide:** steps and FAQ in `backend/app/tool_content.py`, then
   `.venv/bin/python scripts/seo/export-tool-guides.py` regenerates
   `frontend/src/data/tool-guide/*.json` (Python is authoritative,
