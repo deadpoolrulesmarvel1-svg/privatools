@@ -10,6 +10,20 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.29] — 2026-10-04 — Damaged PDFs told apart from scans, and more damage named
+
+### Tools
+
+- PDF to Word and PDF to Excel: a PDF cut short whose pages came out blank now says the PDF is damaged and points to Repair PDF, instead of sending it to OCR. Scans still get the OCR advice, and PDF to Word no longer says "OCR couldn't read this PDF" when no OCR ran. (#345)
+- Bookmarks, QR Code (placing a code on a PDF), Booklet and Web Optimize say "This PDF has no pages." for a PDF without pages, instead of failing with "Processing failed". QR Code also refuses a page the PDF doesn't have with the reason. (#345)
+- A PDF with bytes overwritten in its page tree or in a page's content: 33 more tools say the PDF is damaged and point to Repair PDF, instead of "Processing failed. Please try again." (#345)
+- Subtitle Generator no longer offers files over 200 MB to Extract Audio, Audio Converter or Cut / Trim, which take 200 MB, and its guide says so. A recording that runs a moment past 3 hours, or past 15 minutes for Ogg, Opus and FLAC, as encoders pad them, is now taken instead of refused. (#345)
+
+### For API users
+
+- PDF routes answer 400 `invalid_request` "This PDF appears to be corrupt or invalid." instead of 500 `processing_failed` for two more kinds of damage: a page tree or a page's content stream that can't be read. `/api/v1/bookmarks`, `qr-code`, `booklet` and `web-optimize` answer a PDF with no pages with 400. (#345)
+- Background jobs (`/api/v1/jobs`, where enabled) whose input PDF can't be read, or needs a password, now fail with `error.code` `job_input_damaged` or `job_input_password_protected`, with a message that says which, instead of `job_processing_failed`. Don't retry them unchanged: the same file fails the same way. `job_processing_failed` still means a failure of the job itself. (#345)
+
 ## [2.7.28] — 2026-10-04 — The last seven tools join the shared design
 
 ### Tools
