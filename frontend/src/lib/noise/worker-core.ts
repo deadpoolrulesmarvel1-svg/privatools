@@ -3,10 +3,12 @@
  * only connects it to the worker's port, so tests can run it in place): it
  * joins the decoded pieces (stitch.ts), reads WAV pieces itself (wav.ts),
  * converts to 48 kHz, cleans each channel with RNNoise and mixes by strength
- * (pipeline.ts), and writes a 16-bit WAV a part at a time, as Blobs the
- * browser may keep out of memory. The page compiles RNNoise, where the page's
- * policy allows WebAssembly, and sends the compiled module; here it is only
- * instantiated.
+ * (pipeline.ts), and writes a 16-bit WAV a part at a time, as Blobs, so no
+ * one array holds the whole result. The browser still keeps them in memory
+ * (Chromium held all of an hour's WAV in RAM in review), which is what the
+ * length limits in source.ts bound. The page compiles RNNoise, where the
+ * page's policy allows WebAssembly, and sends the compiled module; here it is
+ * only instantiated.
  */
 import { NoisePipeline } from "./pipeline";
 import type { NoiseReply, NoiseRequest } from "./protocol";

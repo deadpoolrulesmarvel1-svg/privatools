@@ -23,8 +23,15 @@ import { indexMp4, isFragmentedMp4 } from "@/lib/subtitles/media/mp4";
 import { NoSoundTrack, PIECE_SECONDS, type AudioIndex } from "@/lib/subtitles/media/types";
 import { indexWav } from "@/lib/subtitles/media/wav";
 
-/** The longest recording cleaned at once: an hour. See the guide for the time and memory it takes. */
+/** The longest recording cleaned at once: an hour of mono. See the guide for the time and memory it takes. */
 export const MAX_SECONDS = 60 * 60;
+/**
+ * The longest stereo recording: half an hour. The cleaned WAV stays in the
+ * browser's memory while the visitor compares and downloads it (Chromium kept
+ * all of it in RAM in review), and stereo takes twice the room of mono, so
+ * both limits come to the same WAV, about 345 MB.
+ */
+export const MAX_STEREO_SECONDS = 30 * 60;
 /** The longest sound decoded whole, for formats not read in pieces: at 48 kHz stereo, about 350 MB of samples. */
 export const WHOLE_FILE_SECONDS = 15 * 60;
 /**
@@ -42,7 +49,7 @@ export const LEAD_SECONDS = 1;
 /** The rate sound is decoded at when its own rate isn't known: RNNoise's. */
 const DEFAULT_RATE = 48000;
 
-export type InputProblem = "empty" | "no-sound" | "unreadable" | "too-long" | "too-long-whole";
+export type InputProblem = "empty" | "no-sound" | "unreadable" | "too-long" | "too-long-stereo" | "too-long-whole";
 
 /** Why a file's sound can't be cleaned here, in words for the visitor. */
 export class NoiseInputError extends Error {
@@ -127,6 +134,15 @@ function tooLong(seconds: number): NoiseInputError {
     return new NoiseInputError("too-long", `This file’s sound is ${lengthWords(seconds)} long. Voice Noise Remover takes up to ${MAX_SECONDS / 60} minutes at a time.`, seconds);
 }
 
+/**
+ * Refuse stereo past its limit. Two channels make a stereo WAV; one, or more
+ * than two (mixed to one), make a mono WAV, which may run to the full hour.
+ */
+function checkStereo(channels: number, seconds: number): void {
+    if (channels !== 2 || !over(seconds, MAX_STEREO_SECONDS)) return;
+    throw new NoiseInputError("too-long-stereo", `This file’s sound is stereo and ${lengthWords(seconds)} long. Voice Noise Remover takes stereo up to ${MAX_STEREO_SECONDS / 60} minutes and mono up to ${MAX_SECONDS / 60}.`, seconds);
+}
+
 function unreadable(error?: unknown): NoiseInputError {
     if (error instanceof NoiseInputError) return error;
     return new NoiseInputError("unreadable", "This browser can’t decode the sound in this file.");
@@ -174,6 +190,8 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
 
     if (index) {
         if (over(index.durationSeconds, MAX_SECONDS)) throw tooLong(index.durationSeconds);
+        // A WAV's header says its channels; other sound says them once its first piece is decoded.
+        if (index.channels) checkStereo(index.channels, index.durationSeconds);
         const found = index;
         const wav = found.container === "WAV";
         const rate = decodeRate(found);
@@ -198,6 +216,8 @@ export async function openNoiseSource(file: File, { onRead, signal, measure = pl
                     }
                     signal?.throwIfAborted();
                     if (decoded?.channels.length && decoded.channels[0].length) {
+                        // The first piece's channels are the WAV's: the worker keeps them for the whole file.
+                        if (i === 0) checkStereo(decoded.channels.length, found.durationSeconds);
                         // A minute's copy, the worker's to keep (see Decode).
                         yield { kind: "pcm", channels: decoded.channels.map(channel => channel.slice()), rate: decoded.rate, start: piece.start, lead: piece.lead ?? 0 };
                     } else if (i === 0) {

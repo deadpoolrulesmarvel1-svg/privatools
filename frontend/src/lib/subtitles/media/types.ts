@@ -25,6 +25,8 @@ export interface AudioIndex {
     sampleRate?: number;
     /** The codec, where the reader knows it: "aac", "mp3", "opus", "vorbis", "pcm", or the container's own name for it. */
     codec?: string;
+    /** The channels the sound decodes to, where the container says them exactly: WAV's plain samples. */
+    channels?: number;
     pieces: AudioPiece[];
 }
 

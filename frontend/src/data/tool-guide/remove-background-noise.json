@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Choose a recording or video",
-      "text": "Drop or choose a speech recording, or a video whose sound you want cleaned. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read a minute at a time, up to 60 minutes of sound; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The file is read in this browser and is not uploaded."
+      "text": "Drop or choose a speech recording, or a video whose sound you want cleaned. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read a minute at a time, up to 60 minutes of mono sound or 30 of stereo; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The file is read in this browser and is not uploaded."
     },
     {
       "name": "Set the strength",
@@ -44,7 +44,7 @@
     },
     {
       "q": "How long can the recording be?",
-      "a": "Up to 60 minutes of sound. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read and cleaned a minute at a time; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The cleaned WAV is kept in your browser's memory while you compare and download it: about 5.8 MB for each minute of mono and 11.5 MB for stereo, so an hour of stereo needs about 700 MB free besides what the browser already uses. RNNoise runs on your own processor: in Chromium on a two-core test computer it took about 13 seconds for each minute of mono sound and 25 for stereo, so an hour of mono took 13 minutes; a faster processor takes less time. To clean a longer recording, cut it into parts first."
+      "a": "Up to 60 minutes of mono sound, or 30 minutes of stereo. MP3, WAV, M4A, MP4, MOV, WebM and MKV files are read and cleaned a minute at a time; OGG, Opus, FLAC and AAC files, and MP4s written in fragments, are decoded whole, up to 15 minutes. The cleaned WAV is kept in your browser's memory while you compare and download it, about 5.8 MB for each minute of mono and 11.5 MB for stereo, so stereo stops at half the length: either limit makes a WAV of about 350 MB, and in Chromium a run at the limit took about 0.5 GB more memory than the browser was already using. RNNoise runs on your own processor: in Chromium on a two-core test computer it took about 13 seconds for each minute of mono sound and 25 for stereo, so an hour of mono or half an hour of stereo took about 13 minutes; a faster processor takes less time. To clean a longer recording, cut it into parts first; an audio app can also save stereo as mono."
     },
     {
       "q": "Why is the result a WAV at 48 kHz?",

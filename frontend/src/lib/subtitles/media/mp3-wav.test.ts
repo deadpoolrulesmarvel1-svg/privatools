@@ -106,6 +106,7 @@ describe("reading the sound of WAV files", () => {
     ])("takes $bits-bit, $channels-channel samples at $rate Hz", async options => {
         const index = (await indexWav(wavFile({ ...options, seconds: 1.5 }), { pieceSeconds: 1 }))!;
         expect(index.durationSeconds).toBeCloseTo(1.5, 3);
+        expect(index.channels).toBe(options.channels);
         expect(index.pieces).toHaveLength(2);
         expect(index.pieces[0].duration).toBe(1);
         expect(index.pieces[1].duration).toBeCloseTo(0.5, 3);

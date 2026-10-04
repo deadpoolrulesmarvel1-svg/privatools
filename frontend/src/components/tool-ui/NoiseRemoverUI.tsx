@@ -16,12 +16,14 @@ import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } fr
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import type { NoiseResult, NoiseStage } from "@/lib/noise/engine";
 import { NoiseEngineError, outOfMemory } from "@/lib/noise/errors";
-import { lengthWords, MAX_SECONDS, NoiseInputError, WHOLE_FILE_SECONDS } from "@/lib/noise/source";
+import { lengthWords, MAX_SECONDS, MAX_STEREO_SECONDS, NoiseInputError, WHOLE_FILE_SECONDS } from "@/lib/noise/source";
 import { FileIntake, LocalFilePreview, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { retryLine } from "@/skins/experience/studio-outcome";
 import "./noise-remover.css";
 
 const SLUG = "remove-background-noise";
+/** The lengths this page cleans, in words. */
+const LIMITS = `up to ${MAX_SECONDS / 60} minutes of mono or ${MAX_STEREO_SECONDS / 60} of stereo`;
 /**
  * What the PrivaTools server takes from Audio Converter, Extract Audio and
  * Cut / Trim Video & Audio: 200 MB (max_bytes in phase6_tools.py's
@@ -85,19 +87,19 @@ function takes(slug: string, file: File): boolean {
     return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= SERVER_MEDIA_MAX;
 }
 
-/** A tool that can save the sound as an MP3, which this page reads up to an hour, and what using it means. */
+/** A tool that can save the sound as an MP3, which this page reads a minute at a time, and what using it means. */
 function mp3Maker(file: File): ReactNode {
     const video = VIDEO.test(file.name);
     if (video && takes("extract-audio", file)) {
-        return <><a href="/tools/extract-audio">Extract Audio</a> can save its sound as an MP3 on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 60} minutes.</>;
+        return <><a href="/tools/extract-audio">Extract Audio</a> can save its sound as an MP3 on the PrivaTools server, which means uploading the video for temporary processing; the MP3 then works here, {LIMITS}.</>;
     }
     if (!video && takes("audio-converter", file)) {
-        return <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 60} minutes.</>;
+        return <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here, {LIMITS}.</>;
     }
     if (file.size > SERVER_MEDIA_MAX) {
-        return <>It is larger than the {SERVER_MEDIA_MAX_LABEL} that {video ? "Extract Audio" : "Audio Converter"} takes, so save it as MP3 or MP4 with an audio or video app on your device; those work here up to {MAX_SECONDS / 60} minutes.</>;
+        return <>It is larger than the {SERVER_MEDIA_MAX_LABEL} that {video ? "Extract Audio" : "Audio Converter"} takes, so save it as MP3 or MP4 with an audio or video app on your device; those work here {LIMITS}.</>;
     }
-    return <>An audio or video app on your device can save it as MP3 or MP4, which work here up to {MAX_SECONDS / 60} minutes.</>;
+    return <>An audio or video app on your device can save it as MP3 or MP4, which work here {LIMITS}.</>;
 }
 
 function failureFor(error: unknown, file: File): Failure {
@@ -109,6 +111,14 @@ function failureFor(error: unknown, file: File): Failure {
             help: takes("trim-media", file)
                 ? <>To clean it in parts of up to {MAX_SECONDS / 60} minutes, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing, or with an audio app on your device.</>
                 : <>To clean it, cut it into parts of up to {MAX_SECONDS / 60} minutes with an audio or video app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
+        };
+        if (error.problem === "too-long-stereo") return {
+            title: "This stereo recording is too long to clean here.",
+            detail: `${error.message} The cleaned sound is kept in this browser’s memory, and stereo needs twice as much as mono.`,
+            reason: `Stereo longer than ${MAX_STEREO_SECONDS / 60} minutes`, retryable: false, kind: "too_large",
+            help: takes("trim-media", file)
+                ? <>To clean it in parts of up to {MAX_STEREO_SECONDS / 60} minutes, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing, or with an audio app on your device. An audio app can also save it as mono, which works here up to {MAX_SECONDS / 60} minutes.</>
+                : <>To clean it, cut it into parts of up to {MAX_STEREO_SECONDS / 60} minutes, or save it as mono, which works here up to {MAX_SECONDS / 60} minutes, with an audio or video app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
         };
         if (error.problem === "too-long-whole") return { title: "This file is too long to read whole.", detail: error.message, reason: `Longer than ${WHOLE_FILE_SECONDS / 60} minutes in this format`, retryable: false, kind: "too_large", help: mp3Maker(file) };
         return {
@@ -285,7 +295,7 @@ export function NoiseRemoverUI() {
     </StudioActionBar>}>
         {!file
             ? <FileIntake accepts={ACCEPTS} title="Choose a recording or video" autoFocus={returning} onFiles={choose}
-                detail={`MP3, WAV, M4A, OGG, FLAC, WebM, MP4 and more · up to ${MAX_SECONDS / 60} minutes of sound · made for speech`} />
+                detail={`MP3, WAV, M4A, OGG, FLAC, WebM, MP4 and more · ${LIMITS}, ${WHOLE_FILE_SECONDS / 60} for OGG and FLAC · made for speech`} />
             : <section aria-label="Chosen file" className="nr-chosen">
                 <StudioFile name={file.name} detail={`${formatFileSize(file.size)} · ${{ video: "video: its sound is cleaned", webm: "WebM: its sound is cleaned", recording: "recording" }[fileKind(file.name)]}`}
                     onRemove={busy ? undefined : startOver} removeLabel={`Remove ${file.name}`} />

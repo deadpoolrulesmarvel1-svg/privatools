@@ -53,6 +53,7 @@ describe("the Voice Noise Remover page", () => {
         const input = view.container.querySelector<HTMLInputElement>("input[type=file]")!;
         expect(input.accept.split(",")).toEqual(expect.arrayContaining([".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus", ".flac", ".webm", ".mp4", ".mov", ".mkv"]));
         expect(screen.getByRole("button", { name: /Remove noise/ })).toBeDisabled();
+        expect(screen.getByText(/up to 60 minutes of mono or 30 of stereo, 15 for OGG and FLAC/)).toBeInTheDocument();
         fireEvent.change(input, { target: { files: [new File(["x"], "interview.mp3", { type: "audio/mpeg" })] } });
         expect(within(screen.getByRole("region", { name: "Chosen file" })).getByText("interview.mp3", { selector: ".ts-file-name" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /Remove noise/ })).toBeEnabled();
@@ -187,6 +188,7 @@ describe("the Voice Noise Remover page", () => {
         [new NoiseInputError("empty", "This file is empty, so there is no sound in it."), "This file is empty.", null],
         [new NoiseInputError("no-sound", "This file has no sound track, so there is nothing to clean."), "This file has no sound.", null],
         [new NoiseInputError("too-long", "This file’s sound is 1 h 30 min long. Voice Noise Remover takes up to 60 minutes at a time.", 5400), "This recording is too long to clean here.", /Cut \/ Trim Video & Audio/],
+        [new NoiseInputError("too-long-stereo", "This file’s sound is stereo and 47 minutes long. Voice Noise Remover takes stereo up to 30 minutes and mono up to 60.", 2820), "This stereo recording is too long to clean here.", /parts of up to 30 minutes.*save it as mono, which works here up to 60 minutes/],
         [new NoiseInputError("unreadable", "This browser can’t decode the sound in this file."), "This browser can’t read the sound in this file.", /Audio Converter/],
     ])("fails clearly, without a retry: %s", async (error, title, help) => {
         mocks.remove.mockRejectedValue(error);
