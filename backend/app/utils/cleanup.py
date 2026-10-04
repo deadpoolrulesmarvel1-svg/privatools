@@ -173,6 +173,11 @@ def remove_files(*paths: str | Path) -> None:
             logger.debug("remove_files: failed to delete %s: %s", p, exc)
 
 
+# Where a PDF's first object must start: the first chunk a streaming route
+# hands validate_pdf_content (route_helpers.stream_upload_to_disk).
+_FIRST_OBJECT_WINDOW = 256 * 1024
+
+
 def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     """Raise HTTPException(400) if content doesn't look like a valid PDF.
 
@@ -192,7 +197,9 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     file of just "%PDF-1.7\\n" with OSError 22; MuPDF says "no objects found"),
     and 62 routes answered them with a 500. A route that streams the
     upload passes only its first chunk (256 KB), which holds that first
-    object in any PDF.
+    object in any PDF. The object is looked for in that window on every
+    route, so a route that holds the whole upload decides the same way and
+    never scans hundreds of megabytes that hold no object.
     """
     label = f"“{filename}”" if filename else "File"
     if not content:
@@ -207,7 +214,7 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
                 "extension, convert it to PDF first."
             ),
         )
-    if content.find(b"obj", header + 5) < 0:
+    if content.find(b"obj", header + 5, _FIRST_OBJECT_WINDOW) < 0:
         from .exceptions import PdfCorruptError
 
         raise HTTPException(

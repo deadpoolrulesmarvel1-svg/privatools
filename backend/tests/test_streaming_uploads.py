@@ -103,3 +103,13 @@ def test_a_file_named_in_a_batch_is_named_when_refused():
 
 def test_a_preamble_before_the_header_is_still_allowed():
     validate_pdf_content(b"x" * 1000 + b"%PDF-1.7\n1 0 obj\n<<>>\nendobj\n")
+
+
+def test_the_object_is_looked_for_only_in_the_first_chunk():
+    # A route that holds the whole upload decides as a streaming route does,
+    # from the first 256 KB: a 500 MB upload with no object after its header
+    # used to be scanned to the end, on the event loop (about 0.5 s).
+    validate_pdf_content(b"%PDF-1.7\n%" + b"c" * 200_000 + b"\n1 0 obj\n")
+    with pytest.raises(HTTPException) as ei:
+        validate_pdf_content(b"%PDF-1.7\n%" + b"c" * (256 * 1024) + b"\n1 0 obj\n")
+    assert ei.value.detail == "This PDF appears to be corrupt or invalid."
