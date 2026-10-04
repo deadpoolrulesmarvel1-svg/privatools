@@ -115,8 +115,12 @@ def run_job(row: dict, stop: threading.Event, *, accepting: Callable[[], bool] =
     else:
         try:
             manifest = json.loads((scratch/"manifest.json").read_text(encoding="utf-8"))
-            storage.finish(identifier,token,output=Path(manifest["output"]))
-        except (OSError,ValueError,KeyError,storage.JobError):
+            if manifest.get("refused") in storage.REFUSALS:
+                # The child could not read an input (input_refusal).
+                storage.finish(identifier,token,error=manifest["refused"])
+            else:
+                storage.finish(identifier,token,output=Path(manifest["output"]))
+        except (OSError,ValueError,KeyError,AttributeError,storage.JobError):
             storage.finish(identifier,token,error="job_processing_failed")
     # Cancellation keeps files until this function has killed/reaped the child.
     current = storage.lookup(identifier,row["key_id"])
@@ -146,9 +150,32 @@ def execute_child(request_file: Path) -> int:
     if sys.platform.startswith("linux"):
         resource.setrlimit(resource.RLIMIT_AS,(1024*1024*1024,1024*1024*1024))
     scratch = request_file.parent.resolve()
-    output = execute(spec["operation"],spec["options"],spec["inputs"],scratch)
-    (scratch/"manifest.json").write_text(json.dumps({"output":str(output.resolve())}),encoding="utf-8")
+    try:
+        output = execute(spec["operation"],spec["options"],spec["inputs"],scratch)
+    except Exception as exc:
+        refusal = input_refusal(exc)
+        if refusal is None:
+            raise  # the job's own failure: exit status 1
+        manifest = {"refused":refusal}
+    else:
+        manifest = {"output":str(output.resolve())}
+    (scratch/"manifest.json").write_text(json.dumps(manifest),encoding="utf-8")
     return 0
+
+
+def input_refusal(exc: BaseException) -> str | None:
+    """The job's error code for an input the PDF libraries cannot read, or None.
+
+    A synchronous call answers such a file with a 400, damaged or needing a
+    password, in the standard words (utils.pdf_errors); a job fails with the
+    matching code in storage.REFUSALS, whose message is those words. Anything
+    else is the job's own failure. Runs in the child, which holds the error.
+    """
+    from ...utils.pdf_errors import pdf_read_error
+    answer = pdf_read_error(exc)
+    if answer is None or answer[0] != 400:
+        return None
+    return "job_input_password_protected" if "password" in answer[1].lower() else "job_input_damaged"
 
 
 def status() -> dict:

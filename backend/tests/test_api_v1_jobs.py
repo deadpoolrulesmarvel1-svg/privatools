@@ -170,6 +170,77 @@ def test_process_adapters_publish_retrievable_results_and_remove_inputs(jobs,sam
         assert result.content.startswith(b"%PDF")
 
 
+def _cut_short() -> bytes:
+    """A four-page PDF cut at a tenth, as by an interrupted download."""
+    import fitz  # PyMuPDF
+    doc = fitz.open()
+    for i in range(4):
+        doc.new_page().insert_text((72,100),f"Page {i+1}. "+"A synthetic contract. "*8,fontsize=11)
+    data = doc.tobytes(garbage=0,deflate=True)
+    doc.close()
+    return data[:len(data)//10]
+
+
+# A synchronous call answers a PDF its libraries cannot read with a 400 in the
+# standard words (utils.pdf_errors); a job failed on it as "job_processing_failed",
+# "The job could not be completed.", like a fault of the server's own.
+REFUSED = {
+    "damaged":("job_input_damaged","This PDF appears to be corrupt or invalid."),
+    "locked":("job_input_password_protected","This PDF is password-protected. Unlock it first, then try again."),
+}
+
+
+@pytest.mark.parametrize("sample",sorted(REFUSED))
+@pytest.mark.parametrize("operation",["grayscale","compress","merge","pdf-to-text"])
+def test_a_job_fails_an_input_it_cannot_read_with_the_words_a_synchronous_call_gets(jobs,locked_pdf,operation,sample):
+    response = submit(jobs,_cut_short() if sample=="damaged" else locked_pdf,operation=operation)
+    assert response.status_code==202,response.text
+    row = storage.claim()
+    run_job(row,threading.Event())
+    body = jobs[0].get(f'/api/v1/jobs/{row["id"]}',headers=headers(jobs)).json()
+    code,message = REFUSED[sample]
+    assert body["state"]=="failed",body
+    assert body["error"]=={"code":code,"message":message}
+    assert not storage.job_dir(row["id"]).exists()
+
+
+def _child(monkeypatch,script: str) -> None:
+    """Run `script` in place of the transformation child."""
+    real_popen = subprocess.Popen
+    def child(command,**kwargs):
+        return real_popen([sys.executable,"-c",script,command[-1]],**kwargs)
+    monkeypatch.setattr(worker.subprocess,"Popen",child)
+
+
+def test_a_child_that_fails_otherwise_is_still_a_processing_failure(jobs,sample_pdf,monkeypatch):
+    identifier = submit(jobs,sample_pdf).json()["id"]
+    _child(monkeypatch,"raise SystemExit(1)")
+    run_job(storage.claim(),threading.Event())
+    body = jobs[0].get(f"/api/v1/jobs/{identifier}",headers=headers(jobs)).json()
+    assert body["error"]=={"code":"job_processing_failed","message":"The job could not be completed."}
+
+
+def test_only_a_known_refusal_is_taken_from_the_child(jobs,sample_pdf,monkeypatch):
+    identifier = submit(jobs,sample_pdf).json()["id"]
+    _child(monkeypatch,"import json,pathlib,sys; "
+           "(pathlib.Path(sys.argv[1]).parent/'manifest.json').write_text(json.dumps({'refused':'anything_else'}))")
+    run_job(storage.claim(),threading.Event())
+    assert storage.lookup(identifier,jobs[2].key_id)["error_code"]=="job_processing_failed"
+
+
+def test_input_refusal_reads_only_the_pdf_libraries_errors(locked_pdf):
+    import io
+    import pikepdf
+    with pytest.raises(pikepdf.PdfError) as damaged:
+        pikepdf.open(io.BytesIO(_cut_short()))
+    with pytest.raises(pikepdf.PasswordError) as locked:
+        pikepdf.open(io.BytesIO(locked_pdf))
+    assert worker.input_refusal(damaged.value)=="job_input_damaged"
+    assert worker.input_refusal(locked.value)=="job_input_password_protected"
+    for own in (RuntimeError("boom"),ValueError("max_size_mb must be > 0"),OSError(28,"No space left on device")):
+        assert worker.input_refusal(own) is None
+
+
 def test_expiry_checked_before_sweep_and_delete_is_idempotent(jobs,sample_pdf):
     identifier = submit(jobs,sample_pdf).json()["id"]
     run_job(storage.claim(),threading.Event())

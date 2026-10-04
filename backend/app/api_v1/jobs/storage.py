@@ -19,12 +19,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ... import job_handover, store
+from ...utils.exceptions import PdfCorruptError, PdfEncryptedError
 from .. import quota
 from . import config
 from .adapters import ADAPTERS
 
 ACTIVE = ("queued", "running")
 TERMINAL = ("succeeded", "failed", "canceled", "expired")
+# A job whose input the PDF libraries cannot read fails with one of these
+# codes and the words a synchronous call gets in its 400 for that file
+# (utils.pdf_errors). Every other failure says FAILED_MESSAGE.
+REFUSALS = {
+    "job_input_damaged": PdfCorruptError.default_detail,
+    "job_input_password_protected": PdfEncryptedError.default_detail,
+}
+FAILED_MESSAGE = "The job could not be completed."
 
 
 class JobError(Exception):
@@ -269,7 +278,8 @@ def public(row: dict) -> dict:
     return {"id": row["id"], "operation": row["operation"], "state": row["state"],
             "created_at": iso(row["created"]), "started_at": iso(row["started"]),
             "completed_at": iso(row["completed"]), "expires_at": iso(row["expires"]),
-            "attempts": row["attempts"], "error": {"code": row["error_code"], "message": "The job could not be completed."} if row["error_code"] else None,
+            "attempts": row["attempts"],
+            "error": {"code": row["error_code"], "message": REFUSALS.get(row["error_code"], FAILED_MESSAGE)} if row["error_code"] else None,
             "status_url": "/api/v1/jobs/"+row["id"],
             "result": {"url": "/api/v1/jobs/"+row["id"]+"/result", "bytes": row["result_bytes"],
                        "media_type": adapter.media_type, "filename": adapter.filename} if row["state"] == "succeeded" else None}
