@@ -357,13 +357,18 @@ async def make_collage(
         all_temps = [str(p) for p in temp_paths] + [out]
         cleanup = BackgroundTask(remove_files, *all_temps)
         return FileResponse(out, filename="collage.jpg", media_type="image/jpeg", background=cleanup)
-    except ValueError as exc:
-        _cleanup_on_error(*temp_paths, out)
-        raise HTTPException(status_code=400, detail=str(exc))
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: the service's refusal of a picture it cannot read, or of
+        # too many or too large ones; the global handler gives its status.
         _cleanup_on_error(*temp_paths, out)
         raise
+    except ValueError as exc:
+        _cleanup_on_error(*temp_paths, out)
+        status, detail = image_read_error(exc) or (400, str(exc))
+        raise HTTPException(status_code=status, detail=detail) from exc
     except Exception as e:
         _cleanup_on_error(*temp_paths, out)
+        if (image_error := image_read_error(e)) is not None:
+            raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
         logger.exception("collage error")
         raise HTTPException(status_code=500, detail="Collage creation failed")
