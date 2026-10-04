@@ -21,7 +21,9 @@ clips cut to a half, a tenth or their first 64 bytes, or with a garbled
 header. FFmpeg could not open 208 of them, and said one of four things:
 "Invalid data found when processing input" (most), "End of file" (GIF, AAC,
 Ogg and Opus readers), "Invalid argument" (the MP3 reader) or "Input/output
-error" (a Matroska or WebM file cut short, a FLAC cut to 64 bytes).
+error" (a Matroska or WebM file cut short, a FLAC cut to 64 bytes). Media in
+a form FFmpeg does not implement adds a fifth, "Not yet implemented in
+FFmpeg, patches welcome" (a .au file in a DSP encoding).
 
 Any other reason is the server's. With each failure the system can give
 injected into FFmpeg's open() of a real clip (strace), it said "Too many
@@ -50,6 +52,11 @@ _NOT_MEDIA_REASONS = frozenset({
     "End of file",  # a reader chosen by the extension finding no header (GIF, AAC, Ogg, Opus)
     "Invalid argument",  # the MP3 reader giving up on bytes that are not MP3
     "Input/output error",  # the Matroska and FLAC readers on a file cut short
+    # AVERROR_PATCHWELCOME: media in a form FFmpeg does not implement, such as
+    # a Sun/NeXT .au file in one of its DSP or emphasis encodings (FFmpeg
+    # 6.1.1: "your file has a feature which has not been implemented"). No
+    # system call reports it, so it is never the server's.
+    "Not yet implemented in FFmpeg, patches welcome",
 })
 _SUMMARY = "Error opening input files: "  # FFmpeg 6.1 and later, after "Error opening input file <path>."
 

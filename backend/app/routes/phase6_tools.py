@@ -225,6 +225,11 @@ async def audio_converter(
     except subprocess.TimeoutExpired:
         cleanup_on_error(in_path, out_path)
         raise HTTPException(504, "Audio conversion timed out")
+    except FileNotFoundError as exc:
+        # No ffmpeg on the server (503). Left to the global handler, it read
+        # "File not provided or no longer available.", as if the upload were.
+        cleanup_on_error(in_path, out_path)
+        raise HTTPException(503, "ffmpeg is not installed") from exc
     finally:
         try:
             os.unlink(str(in_path))

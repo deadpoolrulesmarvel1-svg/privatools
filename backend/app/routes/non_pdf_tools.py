@@ -161,25 +161,33 @@ async def _run_ffmpeg_async(cmd: list[str], timeout: int, *, chapters: bool = Fa
     await run_bounded(_run_ffmpeg, cmd, timeout, chapters)
 
 
+# What FFmpeg says when the machine, not the file, ran out (as in
+# services/video_tools_service.py).
+_SERVER_FAULTS = ("No space left on device", "Cannot allocate memory")
+
+
 def _run_ffmpeg(cmd: list[str], timeout: int, chapters: bool = False) -> None:
     """The output leaves out its input's tags, such as where it was recorded
     (see media_metadata); `chapters` keeps its chapter markers."""
     try:
         subprocess.run(with_metadata_options(cmd, chapters=chapters), capture_output=True, check=True, timeout=timeout)
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=500, detail="ffmpeg is not installed") from exc
+        # The server's fault (503), as services/video_tools_service.py says it.
+        raise HTTPException(status_code=503, detail="ffmpeg is not installed") from exc
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(status_code=408, detail="Media processing timed out") from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.decode("utf-8", errors="ignore").strip()
         if unreadable_input(cmd, stderr):
             raise HTTPException(status_code=400, detail=NOT_MEDIA) from exc
-        if server_fault_opening_input(cmd, stderr):
+        if (server_fault_opening_input(cmd, stderr) or exc.returncode < 0
+                or any(reason in stderr for reason in _SERVER_FAULTS)):
             # The server could not read the upload it wrote ("Too many open
-            # files", "Stale file handle"): its fault, not the file's.
-            raise HTTPException(
-                status_code=500, detail=f"ffmpeg could not open the upload: {stderr.splitlines()[-1][:200]}",
-            ) from exc
+            # files", "Stale file handle"), FFmpeg was killed (the kernel's
+            # OOM killer), or the disk or memory ran out: the server's fault,
+            # not the file's.
+            last = stderr.splitlines()[-1][:200] if stderr else f"exit status {exc.returncode}"
+            raise HTTPException(status_code=500, detail=f"ffmpeg could not finish: {last}") from exc
         detail = "ffmpeg failed to process the file"
         if stderr:
             detail = f"{detail}: {stderr.splitlines()[-1][:200]}"

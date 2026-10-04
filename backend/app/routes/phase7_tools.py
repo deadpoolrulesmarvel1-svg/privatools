@@ -50,6 +50,10 @@ def _run_ffmpeg(args: list[str], label: str, chapters: bool = False) -> None:
     (see media_metadata); `chapters` keeps its chapter markers."""
     try:
         proc = subprocess.run(with_metadata_options(args, chapters=chapters), capture_output=True, timeout=180)
+    except FileNotFoundError as exc:
+        # No ffmpeg on the server (503). Left to the global handler, it read
+        # "File not provided or no longer available.", as if the upload were.
+        raise HTTPException(status_code=503, detail="ffmpeg is not installed") from exc
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(status_code=504, detail=f"{label} timed out") from exc
     if proc.returncode != 0:

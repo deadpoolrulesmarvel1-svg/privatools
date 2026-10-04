@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 import shutil
+import struct
 import subprocess
 import zipfile
 
@@ -154,6 +155,7 @@ def test_a_server_fault_opening_the_upload_is_not_called_not_media(reason):
 
 @pytest.mark.parametrize("reason", [
     "Invalid data found when processing input", "End of file", "Invalid argument", "Input/output error",
+    "Not yet implemented in FFmpeg, patches welcome",
 ])
 def test_the_reasons_non_media_gives_are_the_files_fault(reason):
     for stderr in (_opened(UPLOAD, reason), f"{UPLOAD}: {reason}\n"):
@@ -177,7 +179,7 @@ def test_a_server_made_input_is_neither():
 
 def _not_media_samples(folder) -> dict[str, bytes]:
     """Uploads that are not media FFmpeg can read, made here: at least one for
-    each of the four reasons it gives (media_errors._NOT_MEDIA_REASONS)."""
+    each of the reasons it gives (media_errors._NOT_MEDIA_REASONS)."""
     made = {}
     for name, source in {
         "c.mp4": ["-f", "lavfi", "-i", "testsrc=duration=1:size=64x48:rate=10", "-c:v", "libx264", "-pix_fmt", "yuv420p"],
@@ -208,6 +210,10 @@ def _not_media_samples(folder) -> dict[str, bytes]:
         "notes.gif": TEXT, "notes.ogg": TEXT, "notes.aac": TEXT,
         # "Input/output error", from the Matroska and FLAC readers
         "cut-off.webm": webm[: len(webm) // 10], "first-64-bytes.flac": flac[:64],
+        # "Not yet implemented in FFmpeg, patches welcome", from the AU reader: a
+        # Sun/NeXT sound file in an encoding FFmpeg has no decoder for (10: 8-bit
+        # fixed point). It is media, but not media this tool can read.
+        "dsp-encoding.au": b".snd" + struct.pack(">IIIII", 24, 0xFFFFFFFF, 10, 8000, 1) + bytes(4000),
     }
 
 
@@ -229,7 +235,7 @@ def test_real_ffmpeg_on_files_that_are_not_media_still_reads_as_not_media(tmp_pa
                        if line.startswith("Error opening input files: "))
     # The samples cover every reason on the allow list, as this FFmpeg words them.
     assert reasons == {"Invalid data found when processing input", "End of file", "Invalid argument",
-                       "Input/output error"}
+                       "Input/output error", "Not yet implemented in FFmpeg, patches welcome"}
 
 
 def _first_upload(command: list[str]) -> str:
@@ -282,3 +288,49 @@ def test_a_server_fault_opening_the_upload_is_a_500_on_every_media_route(
     assert calls, "FFmpeg never ran"
     assert response.status_code == 500, response.text
     assert response.json()["detail"] != NOT_MEDIA
+
+
+# ── A killed FFmpeg, a full disk, a missing FFmpeg ───────────────────────────
+# Measured with real FFmpeg 6.1.1 in the PR #336 review: FFmpeg SIGKILLed (as
+# the kernel's OOM killer does) and a disk that fills while FFmpeg writes were
+# a 400 "ffmpeg failed to process the file" on the four routes of
+# non_pdf_tools.py, which the page words as the file's fault; a missing ffmpeg
+# was a 500 there, and a 400 "File not provided or no longer available." on
+# Audio Converter and the four routes of phase7_tools.py.
+FAILURES = {
+    "killed": (-9, ""),
+    "disk-full": (228, "[out#0/mp4 @ 0x1] Error closing file: No space left on device\nConversion failed!\n"),
+}
+
+
+@pytest.mark.parametrize("failure", [*FAILURES, "missing"])
+@pytest.mark.parametrize("route", list(ROUTES))
+def test_a_killed_starved_or_missing_ffmpeg_is_the_servers_fault_on_every_media_route(
+    quiet_client, monkeypatch, media_for_routes, route, failure,
+):
+    real_run = subprocess.run
+    calls = []
+
+    def ffmpeg_fails(command, *args, **kwargs):
+        if command and command[0] == "ffmpeg" and "-encoders" not in command and "-i" in command:
+            calls.append(command)
+            if failure == "missing":
+                raise FileNotFoundError(2, "No such file or directory", "ffmpeg")
+            returncode, stderr = FAILURES[failure]
+            if not (kwargs.get("text") or kwargs.get("universal_newlines")):
+                stderr = stderr.encode()
+            if kwargs.get("check"):
+                raise subprocess.CalledProcessError(returncode, command, output=b"", stderr=stderr)
+            return subprocess.CompletedProcess(command, returncode, b"" if isinstance(stderr, bytes) else "", stderr)
+        return real_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", ffmpeg_fails)
+    fields, data = ROUTES[route]
+    files = []
+    for field, name, content in fields:
+        if content is None:  # the upload FFmpeg reads: real media this time
+            content = {".gif": "gif", ".mp3": "tone"}.get(name[name.rindex("."):], "clip")
+        files.append((field, (name, media_for_routes.get(content, content), "application/octet-stream")))
+    response = quiet_client.post(route, files=files, data=data)
+    assert calls, "FFmpeg never ran"
+    assert response.status_code == (503 if failure == "missing" else 500), response.text
