@@ -34,8 +34,9 @@ def test_a_data_uri_in_a_weasyprint_record_is_shortened_to_its_type_and_size(cap
 
 
 def test_the_progress_logger_is_shortened_too(caplog):
+    # Quiet below WARNING (see the next test); turned back on, it is still shortened.
     uri = "data:text/css;base64," + PAYLOAD
-    with caplog.at_level(logging.INFO, logger="weasyprint"):
+    with caplog.at_level(logging.INFO, logger="weasyprint.progress"):
         logging.getLogger("weasyprint.progress").info("Step 2 - Fetching and parsing CSS - %s", uri)
     assert _messages(caplog) == [f"Step 2 - Fetching and parsing CSS - data:text/css ({len(uri)} bytes)"]
 
@@ -58,8 +59,17 @@ def test_a_data_uri_inside_an_argument_or_the_message_is_shortened(caplog):
     ]
 
 
+def test_the_progress_logger_names_no_url_at_info(caplog):
+    # It logged every fetched URL, query string included, at INFO.
+    with caplog.at_level(logging.INFO):
+        logging.getLogger("weasyprint.progress").info(
+            "Step 1 - Fetching and parsing HTML - %s", "https://example.com/report?token=secret-value")
+    assert "secret-value" not in caplog.text
+    assert logging.getLogger("weasyprint.progress").getEffectiveLevel() >= logging.WARNING
+
+
 def test_other_records_are_left_alone(caplog):
-    with caplog.at_level(logging.INFO, logger="weasyprint"):
+    with caplog.at_level(logging.INFO, logger="weasyprint"), caplog.at_level(logging.INFO, logger="weasyprint.progress"):
         logging.getLogger("weasyprint.progress").info("Step 5 - Creating layout - Page %d", 3)
         logging.getLogger("weasyprint").warning("Ignored `%s` at %d:%d, %s.", "metadata: x", 4, 2, "unknown property")
         logging.getLogger("weasyprint").error("Failed to load image at %r: %s", "https://example.com/a.png", "404")
@@ -78,7 +88,7 @@ def test_a_picture_left_out_of_a_conversion_is_not_logged_whole(tmp_path, monkey
     html = (f'<link rel="stylesheet" href="data:text/css;base64,{css}">'
             f'<h1>Before</h1><img src="data:image/png;base64,{cut_off}"><p>After</p>')
     monkeypatch.setattr(html_service, "_weasyprint_ok", None)
-    with caplog.at_level(logging.INFO, logger="weasyprint"):
+    with caplog.at_level(logging.INFO, logger="weasyprint"), caplog.at_level(logging.INFO, logger="weasyprint.progress"):
         try:
             html_service._weasyprint_html_to_pdf(html, str(tmp_path / "page.pdf"))
         except ImportError as exc:

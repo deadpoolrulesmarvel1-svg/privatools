@@ -89,6 +89,12 @@ class _ShortDataURIs(logging.Filter):
 for _name in _WEASYPRINT_LOGGERS:
     logging.getLogger(_name).addFilter(_ShortDataURIs())
 
+# The progress logger names, at INFO, every page and stylesheet it fetches,
+# whole URL and query string included ("Step 1 - Fetching and parsing HTML -
+# https://…/report?token=…" for URL to PDF). utils/logging.py logs no query
+# strings, and the services log only a URL's host, so it speaks from WARNING up.
+logging.getLogger("weasyprint.progress").setLevel(logging.WARNING)
+
 
 def load_weasyprint():
     """Import and return the weasyprint package, keeping Pillow's refusal of
