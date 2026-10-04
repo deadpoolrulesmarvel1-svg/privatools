@@ -22,7 +22,7 @@
 
 .st-provider { border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 14px 18px; background: hsl(var(--card)); min-width: 0; }
 .st-provider > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; min-height: 36px; cursor: pointer; }
-.st-provider > summary span { font: 600 17px/1.25 var(--pt-display); letter-spacing: -.02em; }
+.st-provider > summary span { font-weight: 600; font-size: 17px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.02em; }
 .st-provider > summary strong { font-size: 12.5px; font-weight: 500; color: hsl(var(--muted-foreground)); }
 .st-provider[open] > .pt-byok { margin-top: 18px; }
 
@@ -34,7 +34,7 @@
 
 .st-editor { display: grid; gap: 12px; min-width: 0; margin-top: 4px; }
 .st-editor-head { display: grid; gap: 6px; }
-.st-editor-head h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; font: 600 17px/1.25 var(--pt-display); letter-spacing: -.02em; }
+.st-editor-head h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; font-weight: 600; font-size: 17px; line-height: 1.25; font-family: var(--pt-display); letter-spacing: -.02em; }
 .st-editor-head p { margin: 0; font-size: 12.5px; line-height: 1.55; color: hsl(var(--muted-foreground)); max-width: 72ch; }
 .st-badge { padding: 3px 9px; border-radius: 999px; background: hsl(var(--warning-soft)); color: hsl(var(--foreground)); font: 600 11px/1.4 var(--pt-font, inherit); letter-spacing: .02em; }
 
@@ -58,7 +58,7 @@
 .st-mark { padding: 2px 8px; border-radius: 999px; font-size: 11px; line-height: 1.4; background: hsl(var(--paper-2)); color: hsl(var(--muted-foreground)); }
 .st-mark[data-kind=failed], .st-mark[data-kind=check] { background: hsl(var(--warning-soft)); color: hsl(var(--foreground)); }
 .st-cue-source { grid-area: source; margin: 0; padding: 7px 9px; border-left: 2px solid hsl(var(--border)); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.45; color: hsl(var(--muted-foreground)); }
-.st-cue textarea { grid-area: text; width: 100%; min-height: 3.4rem; padding: 7px 9px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font: 14px/1.45 var(--pt-font, inherit); resize: vertical; }
+.st-cue textarea { grid-area: text; width: 100%; min-height: 3.4rem; padding: 7px 9px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font-size: 14px; line-height: 1.45; font-family: var(--pt-font, inherit); resize: vertical; }
 .st-cue textarea:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 0; }
 .st-cue-reason { grid-area: reason; margin: 0; font-size: 12px; line-height: 1.5; color: hsl(var(--foreground)); }
 
