@@ -10,6 +10,7 @@ from starlette.background import BackgroundTask
 from PIL import Image
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.route_helpers import read_upload
 from ..services import watermark_service
@@ -113,7 +114,9 @@ async def watermark_pdf(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: the image helper's refusal of a watermark picture
+        # (utils.images.open_image_safe); the global handler gives its status.
         to_remove = (
             ([str(temp_path)] if temp_path is not None else [])
             + ([output_path] if output_path else [])
@@ -132,5 +135,9 @@ async def watermark_pdf(
         # whose data stops early or is broken fails only when it is drawn.
         if (image_error := image_read_error(e)) is not None:
             raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
+        if isinstance(e, ValueError):
+            # safe_open_pdf's words for a PDF that is damaged or needs a
+            # password, as the other PDF tools give them.
+            raise HTTPException(status_code=400, detail=str(e)) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

@@ -161,7 +161,7 @@ class TestRotate:
         # into "One of the page numbers is outside this PDF", for a file it
         # could not open at all. Extract Pages says the file is corrupt, and
         # the page then says it is damaged and to try Repair PDF.
-        broken = sample_pdf[: len(sample_pdf) // 3] if damage == "cut short" else b"%PDF-1.7\n" + b"garbage " * 64
+        broken = sample_pdf[: len(sample_pdf) // 3] if damage == "cut short" else b"%PDF-1.7\n1 0 obj\n" + b"garbage " * 64
         rotated = client.post("/api/rotate", files={"file": ("broken.pdf", broken, "application/pdf")},
                               data={"angle": "90", "pages": "all"})
         extracted = client.post("/api/extract-pages", files={"file": ("broken.pdf", broken, "application/pdf")},

@@ -52,7 +52,7 @@
     },
     {
       "q": "What are the limits?",
-      "a": "Up to 1,000 pages and 500 MB per PDF. The processing a file may use grows with its pages, 10 seconds plus 0.12 seconds a page and 60 seconds at most, which covers about 1,000 pages of plain text or several hundred pages with a table on each. A file that needs more is refused, and a conversion stops after 90 seconds in all; split a larger PDF with Split PDF and convert the parts. Password-protected PDFs must be unlocked first."
+      "a": "Up to 1,000 pages and 500 MB per PDF. The processing a file may use grows with its pages, 10 seconds plus 0.12 seconds a page and 60 seconds at most, which covers about 1,000 pages of plain text or several hundred pages with a table on each. A file that needs more is refused, and a conversion stops after 90 seconds in all; split a larger PDF with Split PDF and convert the parts. Password-protected PDFs must be unlocked first. As on the other heavy tools, one address can convert five PDFs a minute; in a bigger batch the rest say so and can be tried again a minute later."
     }
   ]
 }

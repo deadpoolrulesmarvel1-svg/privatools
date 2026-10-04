@@ -819,7 +819,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "stamp-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
         {"name": "Choose a stamp", "text": "Preset: APPROVED, CONFIDENTIAL, COPY, DRAFT, FINAL, NOT APPROVED, SAMPLE, VOID. Or custom: your own text."},
-        {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."},
+        {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers and ranges separated by commas, such as 1,3,5-8. Click Apply."},
     ],
     "strip-metadata": [
         {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
@@ -2165,7 +2165,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are links, code and lists kept?", "a": "Yes. Links to web and email addresses keep their targets as Markdown links; links that run scripts are dropped and their text kept. Text in a monospaced font becomes a fenced code block, indented as on the page, or inline code within a sentence, unless the whole document is set in one, as a printed text file is. Bulleted, numbered and lettered lists keep their nesting. The usual bullet shapes (•, ◦, ▪, –, ➢, ✓, ★, Word's Symbol and Wingdings bullets, and its \"o\" when set apart from the text) become Markdown's -, and numbers and letters stay; a mark it doesn't know, such as an emoji, stays in the text. Bold and italic text stays marked, and footnote marks and exponents become superscripts (<sup>)."},
         {"q": "Does the Markdown include text I can't see in the PDF?", "a": "It can. Like any text extraction, it takes the text in the file: white text, text too small to read and text covered by a box come through, while rotated text such as a diagonal watermark, and text outside the page, are left out. Before you give an AI the Markdown of a PDF someone else made, check it with the Hidden Text Checker for hidden instructions."},
         {"q": "Is my PDF uploaded?", "a": "Yes. The conversion runs on the PrivaTools server, because it needs the position, font and size of every character and the lines drawn on each page. The file is uploaded over HTTPS, converted in isolated temporary per-request storage by a separate process with memory and CPU limits, and deleted with the Markdown once the result is sent; a background sweep clears anything an interrupted request leaves behind. Nothing is sent to an AI service, and the Markdown is not stored."},
-        {"q": "What are the limits?", "a": "Up to 1,000 pages and 500 MB per PDF. The processing a file may use grows with its pages, 10 seconds plus 0.12 seconds a page and 60 seconds at most, which covers about 1,000 pages of plain text or several hundred pages with a table on each. A file that needs more is refused, and a conversion stops after 90 seconds in all; split a larger PDF with Split PDF and convert the parts. Password-protected PDFs must be unlocked first."},
+        {"q": "What are the limits?", "a": "Up to 1,000 pages and 500 MB per PDF. The processing a file may use grows with its pages, 10 seconds plus 0.12 seconds a page and 60 seconds at most, which covers about 1,000 pages of plain text or several hundred pages with a table on each. A file that needs more is refused, and a conversion stops after 90 seconds in all; split a larger PDF with Split PDF and convert the parts. Password-protected PDFs must be unlocked first. As on the other heavy tools, one address can convert five PDFs a minute; in a bigger batch the rest say so and can be tried again a minute later."},
     ],
     "pdf-to-png": [
         {"q": "Why PNG instead of JPG?", "a": "PNG is lossless — text and graphics stay crisp. JPG compresses better for photos but introduces compression artifacts on text."},
@@ -2255,7 +2255,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "stamp-pdf": [
         {"q": "Are stamps editable annotations or baked-in?", "a": "Baked into the page content. They survive copying, printing, and PDF/A conversion. To remove, use Whiteout to cover them."},
-        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes. Enter the page numbers separated by commas, such as 1,3,5, or leave it as all. Ranges such as 1-3 are rejected, so list each page."},
+        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes. Enter page numbers and ranges separated by commas, such as 1,3,5-8, or leave it as all; an open range like 8- runs to the last page. A page the PDF does not have is refused with a message giving its page range, and nothing is stamped."},
         {"q": "How big is the stamp?", "a": "It is sized automatically from the page width and the length of the text, up to 72 pt: on an A4 page CONFIDENTIAL spans most of the width and VOID about a third of it. The size cannot be set by hand."},
     ],
     "strip-metadata": [

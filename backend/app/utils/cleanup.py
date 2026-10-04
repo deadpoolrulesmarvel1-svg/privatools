@@ -173,6 +173,11 @@ def remove_files(*paths: str | Path) -> None:
             logger.debug("remove_files: failed to delete %s: %s", p, exc)
 
 
+# Where a PDF's first object must start: the first chunk a streaming route
+# hands validate_pdf_content (route_helpers.stream_upload_to_disk).
+_FIRST_OBJECT_WINDOW = 256 * 1024
+
+
 def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     """Raise HTTPException(400) if content doesn't look like a valid PDF.
 
@@ -183,11 +188,24 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
     valid documents. Search the window a conforming reader searches.
     It is NOT a full well-formed-PDF parser — that happens in the
     service layer.
+
+    A PDF is made of numbered objects ("1 0 obj"), the first of them right
+    after the header, so a file whose header is followed by no "obj" at all
+    is not one any library can open: a download that stopped within its first
+    object, or bytes that only start like a PDF. Such files reached the
+    parsers, which fail in ways most routes did not expect (pikepdf answers a
+    file of just "%PDF-1.7\\n" with OSError 22; MuPDF says "no objects found"),
+    and 62 routes answered them with a 500. A route that streams the
+    upload passes only its first chunk (256 KB), which holds that first
+    object in any PDF. The object is looked for in that window on every
+    route, so a route that holds the whole upload decides the same way and
+    never scans hundreds of megabytes that hold no object.
     """
     label = f"“{filename}”" if filename else "File"
     if not content:
         raise HTTPException(status_code=400, detail=f"{label} is empty.")
-    if b"%PDF-" not in content[:1024]:
+    header = content.find(b"%PDF-", 0, 1024)
+    if header < 0:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -195,6 +213,14 @@ def validate_pdf_content(content: bytes, filename: str | None = None) -> None:
                 "incompletely, re-download it; if it has a different "
                 "extension, convert it to PDF first."
             ),
+        )
+    if content.find(b"obj", header + 5, _FIRST_OBJECT_WINDOW) < 0:
+        from .exceptions import PdfCorruptError
+
+        raise HTTPException(
+            status_code=400,
+            detail=(f"{label} appears to be corrupt or invalid." if filename
+                    else PdfCorruptError.default_detail),
         )
 
 
@@ -361,7 +387,15 @@ def open_pdf_document(source: str | bytes):
     if doc.needs_pass:
         doc.close()
         raise PdfEncryptedError()
-    if len(doc) == 0:
+    try:
+        pages = len(doc)
+    except _library_errors() as exc:
+        # A page tree MuPDF cannot count ("Invalid number of pages"), as in a
+        # file cut short after its page list but before the pages it names.
+        repaired = doc.is_repaired
+        doc.close()
+        raise PdfCorruptError(_DAMAGED_PDF if repaired else None) from exc
+    if pages == 0:
         repaired = doc.is_repaired
         doc.close()
         if repaired:
@@ -370,7 +404,17 @@ def open_pdf_document(source: str | bytes):
     return doc
 
 
-def process_pdf(source: str | bytes, work):
+def _library_errors() -> tuple[type[BaseException], ...]:
+    """What PyMuPDF raises for damage it meets while working on a file: its own
+    RuntimeError and ValueError, and MuPDF's errors, which reach Python as they
+    are, outside both ("invalid key in dict", "truncated object", "corrupt
+    object stream" and the rest of mupdf.FzErrorBase)."""
+    import fitz  # PyMuPDF
+
+    return (RuntimeError, ValueError, fitz.mupdf.FzErrorBase)
+
+
+def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     """Return work(doc) for the PDF at `source` (a path or the bytes), opened
     with open_pdf_document and closed afterwards. For tools that copy pages.
 
@@ -381,11 +425,18 @@ def process_pdf(source: str | bytes, work):
     whose own object was lost, but which the page tree still lists, is shown
     blank and fails with "bad xref" when anything of it, such as its /Rotate,
     is read. So when work fails on a repaired file with an error from the
-    library (RuntimeError or ValueError), qpdf rebuilds the file, dropping
-    those references and such pages, and work runs once more on the rebuilt
-    copy. A file qpdf cannot rebuild, that has no page left, or that fails
-    again is refused as damaged (400). A ToolError, such as a render budget
-    refusal, is an answer, not damage: it is never retried.
+    library (_library_errors), qpdf rebuilds the file, dropping those
+    references and such pages, and work runs once more on the rebuilt copy. A
+    file qpdf cannot rebuild, that has no page left, or that fails again is
+    refused as damaged (400). A ToolError, such as a render budget refusal, is
+    an answer, not damage: it is never retried.
+
+    `rebuild=False` is for tools that change pages in place and find them by
+    number, such as E-Sign and Stamp PDF: the rebuild leaves out the pages
+    whose object was lost, so every later page would move up and the change
+    could land on a page the visitor did not choose. For them, work that fails
+    on a repaired file is refused as damaged at once, and the visitor can
+    repair the file and see its pages before choosing one.
 
     Nothing is checked in advance, so an intact file costs nothing extra. An
     earlier version scanned every object for such references first: that cost
@@ -395,15 +446,18 @@ def process_pdf(source: str | bytes, work):
     """
     from .exceptions import PdfCorruptError, ValidationError
 
+    library_errors = _library_errors()
     doc = open_pdf_document(source)
     try:
         return work(doc)
-    except (RuntimeError, ValueError) as exc:
+    except library_errors as exc:
         if not doc.is_repaired:
             raise
         failure = exc  # damage MuPDF's repair left behind: one more run on qpdf's rebuild
     finally:
         doc.close()
+    if not rebuild:
+        raise PdfCorruptError(_DAMAGED_PDF) from failure
     rebuilt = _rebuilt_by_qpdf(source)
     if rebuilt is None:
         raise PdfCorruptError(_DAMAGED_PDF) from failure
@@ -413,7 +467,7 @@ def process_pdf(source: str | bytes, work):
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     try:
         return work(doc)
-    except (RuntimeError, ValueError) as exc:  # the rebuild did not help
+    except library_errors as exc:  # the rebuild did not help
         raise PdfCorruptError(_DAMAGED_PDF) from exc
     finally:
         doc.close()

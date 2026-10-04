@@ -23,7 +23,7 @@ from pathlib import Path
 
 from ..utils.exceptions import DependencyError, ProcessingError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
-from .media_errors import NOT_MEDIA, unreadable_input
+from .media_errors import NOT_MEDIA, server_fault_opening_input, unreadable_input
 from .media_metadata import with_metadata_options
 
 logger = logging.getLogger(__name__)
@@ -79,9 +79,12 @@ def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | No
         # Trim ffmpeg stderr so the user gets the most relevant line.
         last = stderr.strip().splitlines()
         msg = last[-1] if last else f"ffmpeg exited with code {proc.returncode}"
-        # Killed by a signal (the kernel's OOM killer), or out of disk or
-        # memory: a 500 the page can offer to retry, not the visitor's file.
-        if proc.returncode < 0 or any(reason in stderr for reason in _SERVER_FAULTS):
+        # Killed by a signal (the kernel's OOM killer), out of disk or
+        # memory, or unable to open the upload for a reason of the server's
+        # (media_errors): a 500 the page can offer to retry, not the
+        # visitor's file.
+        if (proc.returncode < 0 or any(reason in stderr for reason in _SERVER_FAULTS)
+                or server_fault_opening_input(args, stderr)):
             raise ProcessingError(f"ffmpeg could not finish: {msg}")
         raise ValidationError(f"ffmpeg failed: {msg}")
 

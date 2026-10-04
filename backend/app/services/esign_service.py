@@ -4,6 +4,7 @@ import io
 import fitz  # PyMuPDF
 from PIL import Image, UnidentifiedImageError
 
+from ..utils.cleanup import process_pdf
 from ..utils.exceptions import FileTooLargeError, ValidationError
 from ..utils.filenames import temp_output
 from ..utils.images import image_read_error
@@ -65,8 +66,7 @@ def esign_pdf(input_path: str, signature_data: str,
         status, detail = known or (400, "The signature must be a PNG, JPG or WebP picture.")
         raise (FileTooLargeError if status == 413 else ValidationError)(detail) from exc
 
-    doc = fitz.open(input_path)
-    try:
+    def sign(doc) -> None:
         pg_idx = page_number - 1
         if pg_idx < 0 or pg_idx >= len(doc):
             pg_idx = 0
@@ -83,7 +83,9 @@ def esign_pdf(input_path: str, signature_data: str,
             page.insert_image(rect, stream=sig_bytes, rotate=rotation)
 
         doc.save(str(output_path), garbage=4, deflate=True)
-    finally:
-        doc.close()
 
+    # A PDF that is damaged, needs a password or has no pages is a 400 that
+    # says so, and so is one whose damage stops the signing part-way: never
+    # signed again on a rebuild, which could move the chosen page.
+    process_pdf(input_path, sign, rebuild=False)
     return str(output_path)

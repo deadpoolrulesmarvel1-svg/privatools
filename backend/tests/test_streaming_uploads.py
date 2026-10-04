@@ -49,7 +49,7 @@ def test_early_validation_rejects_non_pdf_and_cleans_partial(tmp_path):
 
 
 def test_validation_passes_for_pdf(tmp_path):
-    good = b"%PDF-1.7\n" + b"x" * 5000
+    good = b"%PDF-1.7\n1 0 obj\n" + b"x" * 5000
     dest = tmp_path / "out.bin"
     written = asyncio.run(
         stream_upload_to_disk(
@@ -78,3 +78,38 @@ def test_empty_upload_raises_400(tmp_path):
         asyncio.run(stream_upload_to_disk(_FakeUpload(b""), dest))
     assert ei.value.status_code == 400
     assert not dest.exists()
+
+
+@pytest.mark.parametrize("data", [
+    b"%PDF-1.7\n",                               # a download that stopped after its first line
+    b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n1 0 ",          # one that stopped before its first object
+    b"%PDF-1.4\n" + bytes(range(256)) * 20,     # bytes that only start like a PDF
+], ids=["header-only", "cut-before-the-first-object", "garbage-after-a-header"])
+def test_a_pdf_header_with_no_object_after_it_is_refused_as_corrupt(tmp_path, data):
+    dest = tmp_path / "out.bin"
+    with pytest.raises(HTTPException) as ei:
+        asyncio.run(stream_upload_to_disk(_FakeUpload(data), dest, chunk_size=256 * 1024,
+                                          validate=validate_pdf_content))
+    assert ei.value.status_code == 400
+    assert ei.value.detail == "This PDF appears to be corrupt or invalid."
+    assert not dest.exists()
+
+
+def test_a_file_named_in_a_batch_is_named_when_refused():
+    with pytest.raises(HTTPException) as ei:
+        validate_pdf_content(b"%PDF-1.7\n", filename="minutes.pdf")
+    assert ei.value.detail == "“minutes.pdf” appears to be corrupt or invalid."
+
+
+def test_a_preamble_before_the_header_is_still_allowed():
+    validate_pdf_content(b"x" * 1000 + b"%PDF-1.7\n1 0 obj\n<<>>\nendobj\n")
+
+
+def test_the_object_is_looked_for_only_in_the_first_chunk():
+    # A route that holds the whole upload decides as a streaming route does,
+    # from the first 256 KB: a 500 MB upload with no object after its header
+    # used to be scanned to the end, on the event loop (about 0.5 s).
+    validate_pdf_content(b"%PDF-1.7\n%" + b"c" * 200_000 + b"\n1 0 obj\n")
+    with pytest.raises(HTTPException) as ei:
+        validate_pdf_content(b"%PDF-1.7\n%" + b"c" * (256 * 1024) + b"\n1 0 obj\n")
+    assert ei.value.detail == "This PDF appears to be corrupt or invalid."

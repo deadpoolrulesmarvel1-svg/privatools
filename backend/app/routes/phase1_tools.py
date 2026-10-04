@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import re
 import uuid
 from pathlib import Path
 
@@ -18,6 +17,7 @@ from ..services import (
     txt_to_pdf_service,
     word_to_pdf_service,
 )
+from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
@@ -25,7 +25,6 @@ from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-PAGE_SELECTION_RE = re.compile(r"^(all|\d+(?:\s*,\s*\d+)*)$", re.IGNORECASE)
 STAMP_TYPES = set(stamp_service.STAMP_PRESETS.keys()) | {"custom"}
 STAMP_POSITIONS = {"center", "top", "bottom", "diagonal"}
 
@@ -126,7 +125,11 @@ async def stamp_pdf(
     custom_text: str | None = Form(None),
     opacity: float = Form(0.3, ge=0.0, le=1.0),
     position: str = Form("center"),
-    pages: str = Form("all"),
+    pages: str = Form("all", description=(
+        "The pages to stamp: 'all', or page numbers and ranges separated by commas, such as "
+        "'1,3,5-8'. 'end' is the last page, '8-' runs to the end and '-3' is the first three. "
+        "A page the PDF does not have is refused with a 400 that gives the valid range."
+    )),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
@@ -138,8 +141,8 @@ async def stamp_pdf(
         raise HTTPException(status_code=400, detail="custom_text must be 120 characters or fewer")
     if position not in STAMP_POSITIONS:
         raise HTTPException(status_code=400, detail=f"position must be one of: {', '.join(sorted(STAMP_POSITIONS))}")
-    if not PAGE_SELECTION_RE.match((pages or "").strip()):
-        raise HTTPException(status_code=400, detail="pages must be 'all' or comma-separated page numbers like '1,2,5'")
+    # The pages are read with the shared parser (utils.page_range) once the
+    # page count is known, as Rotate PDF reads them: ranges included.
 
     ensure_temp_dir()
     temp = None
@@ -161,7 +164,9 @@ async def stamp_pdf(
         )
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="stamped.pdf", media_type="application/pdf", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
+        # ToolError: a PDF that is damaged, needs a password or has no pages
+        # (utils.cleanup.process_pdf); the global handler gives its 400.
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:
