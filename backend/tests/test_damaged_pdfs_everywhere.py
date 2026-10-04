@@ -321,12 +321,12 @@ READS_PAGES = [
     "/api/remove-watermark/apply", "/api/remove-watermark/detect",
 ]
 # What a tool says, in its own words, about a file in which it found nothing
-# to work on: no table, not the watermark asked for, no text.
+# to work on: no table, not the watermark asked for. PDF to Word and PDF to
+# Excel are not here: a damaged file in which they find no text is damaged,
+# not a scan (see below).
 FOUND_NOTHING = {
     "/api/extract-tables": "No tables found",
     "/api/remove-watermark/apply": "Unknown watermark selection",
-    "/api/pdf-to-excel": "No tables detected",
-    "/api/pdf-to-word": "no text layer",
 }
 
 
@@ -352,6 +352,61 @@ def test_a_tool_that_reads_pages_asks_for_the_password(quiet_client, locked_pdf,
                                    if r not in ("/api/extract-tables", "/api/remove-watermark/apply")])
 def test_a_tool_that_reads_pages_still_does_an_intact_pdf(quiet_client, route):
     assert _post(quiet_client, route, GOOD).status_code == 200
+
+
+# ── PDF to Word and PDF to Excel: a damaged file, or a scan? ────────────────
+# Both answer a PDF in which they find no text with the scan advice: "run OCR
+# PDF first", "try OCR first". objstm-20 was told that too: MuPDF repairs it
+# with all four pages, but every page object was lost, so every page is blank.
+# OCR finds nothing on a blank page. A scan draws a picture on its pages; a
+# file whose pages draw nothing, and which MuPDF had to repair, is damaged.
+
+WORD_AND_EXCEL = ["/api/pdf-to-word", "/api/pdf-to-excel"]
+
+
+def _scan(pages: int = 4) -> bytes:
+    """A scan: each page draws one picture and holds no text."""
+    doc = fitz.open()
+    for i in range(pages):
+        picture = io.BytesIO()
+        Image.new("RGB", (400, 200), (255, 255, 255 - 40 * i)).save(picture, "PNG")
+        doc.new_page().insert_image(fitz.Rect(72, 72, 472, 272), stream=picture.getvalue())
+    data = doc.tobytes(garbage=0, deflate=True)
+    doc.close()
+    return data
+
+
+SCAN = _scan()
+
+
+@pytest.mark.parametrize("sample", ["objstm-20", "scan-30"])
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_call_a_file_whose_pages_were_lost_damaged(quiet_client, route, sample):
+    data = DAMAGED["objstm-20"] if sample == "objstm-20" else SCAN[: len(SCAN) * 30 // 100]
+    if sample == "scan-30":
+        # A scan cut short: its first page still lists its picture, but the
+        # content that drew it was lost, so no page draws anything.
+        doc = fitz.open(stream=data, filetype="pdf")
+        assert doc.is_repaired and doc[0].get_images() and not any(page.get_image_info() for page in doc)
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == _DAMAGED_PDF
+
+
+@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90"])
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
+    data = {
+        "intact": SCAN,
+        # Valid, with bytes after its end: MuPDF opens it repaired.
+        "repaired": SCAN + b"\n" + bytes(range(256)) * 40,
+        # Cut short, but three pages still draw their pictures.
+        "cut-90": SCAN[: len(SCAN) * 90 // 100],
+    }[sample]
+    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample != "intact")
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert "OCR" in response.json()["detail"], response.text
 
 
 # ── Organize Pages draws its thumbnails with Poppler ────────────────────────
