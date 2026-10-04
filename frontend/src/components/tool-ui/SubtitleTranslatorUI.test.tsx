@@ -133,6 +133,80 @@ describe("choosing a file", () => {
     });
 });
 
+describe("the language each file is in", () => {
+    const CHINESE = "1\n00:00:01,000 --> 00:00:02,000\n今天我们来谈谈隐私和你的文件。\n";
+    const file = (text: string, name: string) => ({ target: { files: [new File([text], name, { type: "application/x-subrip" })] } });
+    const from = () => screen.getByLabelText<HTMLSelectElement>("From");
+    const into = () => screen.getByLabelText<HTMLSelectElement>("Into");
+    /** Settings are saved 400 ms after a change, and a page closed sooner saves nothing: what a reload finds after that. */
+    const saved = () => act(() => new Promise<void>(resolve => setTimeout(resolve, 450)));
+
+    it("guesses each file's language from its own letters: an English file after a Chinese one is English again, into the language chosen before", async () => {
+        const view = render(<SubtitleTranslatorUI />);
+        const input = () => view.container.querySelector("input[type=file]")!;
+        fireEvent.change(into(), { target: { value: "fr" } });
+        fireEvent.change(input(), file(CHINESE, "chinese.srt"));
+        expect(await screen.findByText("Its letters are Chinese, so it will be translated from Chinese. Change “From” if that’s wrong.")).toBeInTheDocument();
+        expect(from()).toHaveValue("zh");
+        expect(into()).toHaveValue("en");
+
+        fireEvent.click(screen.getByRole("button", { name: "Remove chinese.srt" }));
+        fireEvent.change(input(), file(TALK, "talk.srt"));
+        await screen.findByText(/SRT · 5 cues/);
+        expect(from()).toHaveValue("en");
+        expect(into()).toHaveValue("fr");
+        expect(screen.queryByText(/Its letters/)).toBeNull();
+        fireEvent.click(translateButton());
+        await screen.findByRole("heading", { name: "5 cues translated." });
+        expect(mocks.load).toHaveBeenCalledWith("Xenova/opus-mt-en-fr", expect.any(Function));
+    });
+
+    it("doesn't keep a file's guessed language for the next visit", async () => {
+        choose(CHINESE, "chinese.srt");
+        expect(await screen.findByText(/Its letters are Chinese/)).toBeInTheDocument();
+        await saved();
+        cleanup();
+        render(<SubtitleTranslatorUI />);
+        expect(from()).toHaveValue("en");
+        expect(into()).toHaveValue("es");
+    });
+
+    it("puts a remembered language the letters contradict back to English, and says so", async () => {
+        const view = render(<SubtitleTranslatorUI />);
+        fireEvent.change(from(), { target: { value: "ja" } });
+        await saved();
+        cleanup();
+        // The next visit: Japanese is remembered, and the file is in English.
+        const next = render(<SubtitleTranslatorUI />);
+        expect(from()).toHaveValue("ja");
+        fireEvent.change(next.container.querySelector("input[type=file]")!, file(TALK, "talk.srt"));
+        expect(await screen.findByText("Its letters aren’t Japanese, so it will be translated from English. Change “From” if that’s wrong.")).toBeInTheDocument();
+        expect(from()).toHaveValue("en");
+        expect(into()).toHaveValue("es");
+        expect(view.container).toBeEmptyDOMElement();
+    });
+
+    it("lets a confident guess override a remembered language only with a note, and a choice made for the file ends the note", async () => {
+        const view = render(<SubtitleTranslatorUI />);
+        fireEvent.change(from(), { target: { value: "ja" } });
+        fireEvent.change(view.container.querySelector("input[type=file]")!, file(CHINESE, "chinese.srt"));
+        expect(await screen.findByText("Its letters are Chinese, so it will be translated from Chinese. Change “From” if that’s wrong.")).toBeInTheDocument();
+        expect(from()).toHaveValue("zh");
+        fireEvent.change(from(), { target: { value: "ja" } });
+        expect(from()).toHaveValue("ja");
+        expect(screen.queryByText(/Its letters/)).toBeNull();
+    });
+
+    it("says which language it will use when the letters can't tell it from English", async () => {
+        const view = render(<SubtitleTranslatorUI />);
+        fireEvent.change(from(), { target: { value: "es" } });
+        fireEvent.change(view.container.querySelector("input[type=file]")!, file(TALK, "talk.srt"));
+        expect(await screen.findByText("Its letters don’t say which language it’s in, so it will be translated from Spanish, as “From” says. Change it if that’s wrong.")).toBeInTheDocument();
+        expect(from()).toHaveValue("es");
+        expect(into()).toHaveValue("en");
+    });
+});
+
 describe("translating on this device", () => {
     it("translates a sentence across cues together, keeps every timing, and saves SRT and VTT named with the language", async () => {
         await translateOnDevice();

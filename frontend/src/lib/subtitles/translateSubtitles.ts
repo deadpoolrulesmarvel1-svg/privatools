@@ -355,13 +355,16 @@ export function assembleCues(doc: SubtitleDocument, plan: TranslationPlan, outco
 
 /* ── The language a file is in ───────────────────────────────────────── */
 
+/** The languages `guessLanguageFromScript` names: each has letters of its own, unlike Latin script's many. */
+export const SCRIPT_LANGUAGES = ["ja", "ko", "zh", "th", "hi", "ar", "ru", "uk"] as const;
+
 /**
  * The language a file's letters name, for the scripts that name one of the
  * on-device sources: kana Japanese, hangul Korean, Chinese characters alone
  * Chinese, and Thai, Devanagari, Arabic and Cyrillic (Ukrainian by its own
  * letters). Null for Latin script, which too many languages share to guess.
  */
-export function guessLanguageFromScript(texts: readonly string[]): string | null {
+export function guessLanguageFromScript(texts: readonly string[]): (typeof SCRIPT_LANGUAGES)[number] | null {
     const sample = texts.slice(0, 300).join(" ");
     const count = (pattern: RegExp) => sample.match(pattern)?.length ?? 0;
     const letters = count(/\p{L}/gu);

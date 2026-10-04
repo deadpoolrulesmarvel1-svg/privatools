@@ -34,7 +34,7 @@ import { layoutFor } from "@/lib/subtitles/captions";
 import { convertCueMarkup } from "@/lib/subtitles/cueText";
 import { cuesOf, formatTime, readSubtitleFile, SubtitleFileError, type SubtitleDocument, type SubtitleFormat } from "@/lib/subtitles/subtitleFile";
 import {
-    assembleCues, exportSubtitles, guessLanguageFromScript, planTranslation, subPlan, translateOnDevice, translateWithModel, translatedFileName,
+    assembleCues, exportSubtitles, guessLanguageFromScript, planTranslation, SCRIPT_LANGUAGES, subPlan, translateOnDevice, translateWithModel, translatedFileName,
     type ItemOutcome, type RunResult, type TranslatedCue, type TranslationPlan,
 } from "@/lib/subtitles/translateSubtitles";
 import { FileIntake, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
@@ -87,8 +87,34 @@ interface Chosen {
     file: File;
     doc?: SubtitleDocument;
     problem?: { title: string; detail: string; ass: boolean };
-    /** The source language the file's letters named, when the page switched to it. */
-    switchedTo?: string;
+    /**
+     * The language this file is translated from on this device: its letters'
+     * guess, else the remembered "From", else English when its letters aren't
+     * the remembered language's. The file's own, never remembered for the next.
+     */
+    source?: string;
+    /** Why the page took that language, when it isn't plain: until the visitor picks one. */
+    sourceNote?: string;
+}
+
+/** The language a file is translated from, and what the page says about it when that needs saying. */
+function sourceForFile(guessed: string | null, remembered: string): { source: string; note?: string } {
+    if (guessed) {
+        return guessed === remembered ? { source: guessed }
+            : { source: guessed, note: `Its letters are ${languageName(guessed)}, so it will be translated from ${languageName(guessed)}. Change “From” if that’s wrong.` };
+    }
+    // A language named by its letters that these letters aren't: a leftover from an earlier file, not this one's.
+    if ((SCRIPT_LANGUAGES as readonly string[]).includes(remembered)) {
+        return { source: "en", note: `Its letters aren’t ${languageName(remembered)}, so it will be translated from English. Change “From” if that’s wrong.` };
+    }
+    return remembered === "en" ? { source: remembered }
+        : { source: remembered, note: `Its letters don’t say which language it’s in, so it will be translated from ${languageName(remembered)}, as “From” says. Change it if that’s wrong.` };
+}
+
+/** "Into" for a source on this device: the remembered language when the pair exists, else Spanish, else the one there is. */
+function targetFor(source: string, remembered: string): string {
+    const targets = targetsFor(source);
+    return targets.includes(remembered) ? remembered : targets.includes(DEFAULTS.target) ? DEFAULTS.target : targets[0] ?? "";
 }
 
 interface RunInfo {
@@ -186,19 +212,20 @@ function stoppedReason(error: unknown): string {
 export function SubtitleTranslatorUI() {
     const byok = useByok();
     const [stored, , { setField }] = useToolDefaults(SLUG, DEFAULTS);
-    // A remembered value from an older version is checked before it is used.
-    const settings = useMemo<Settings>(() => {
-        const source = availableSources().includes(stored.source) ? stored.source : "en";
-        const targets = targetsFor(source);
-        return {
-            engine: stored.engine === "byok" ? "byok" : "device",
-            source,
-            target: targets.includes(stored.target) ? stored.target : targets[0],
-            byokTarget: byokTarget(stored.byokTarget) ? stored.byokTarget : DEFAULTS.byokTarget,
-            byokModel: typeof stored.byokModel === "string" ? stored.byokModel : "",
-        };
-    }, [stored.engine, stored.source, stored.target, stored.byokTarget, stored.byokModel]);
+    // The visitor's own choices, remembered; a value from an older version is checked before it is used.
+    const settings = useMemo<Settings>(() => ({
+        engine: stored.engine === "byok" ? "byok" : "device",
+        source: availableSources().includes(stored.source) ? stored.source : "en",
+        target: typeof stored.target === "string" ? stored.target : DEFAULTS.target,
+        byokTarget: byokTarget(stored.byokTarget) ? stored.byokTarget : DEFAULTS.byokTarget,
+        byokModel: typeof stored.byokModel === "string" ? stored.byokModel : "",
+    }), [stored.engine, stored.source, stored.target, stored.byokTarget, stored.byokModel]);
     const [chosen, setChosen] = useState<Chosen | null>(null);
+    // The pair on this device: the file's own source once it is read, and the remembered "Into" wherever that pair exists.
+    const source = chosen?.source ?? settings.source;
+    const target = targetFor(source, settings.target);
+    const rememberedSource = useRef(settings.source);
+    rememberedSource.current = settings.source;
     const [phase, setPhase] = useState<Phase>("idle");
     const [modelPercent, setModelPercent] = useState(0);
     const [progress, setProgress] = useState({ done: 0, total: 0, started: 0 });
@@ -221,11 +248,11 @@ export function SubtitleTranslatorUI() {
     // Leaving the page ends a run: its result would have nowhere to go.
     useEffect(() => () => { runId.current++; abort.current?.abort(); }, []);
 
-    const setSource = useCallback((next: string) => {
+    // The visitor's pick: remembered, and the chosen file's language from now on, with no note left to contradict it.
+    const pickSource = useCallback((next: string) => {
         setField("source", next);
-        const targets = targetsFor(next);
-        if (!targets.includes(settings.target)) setField("target", targets[0]);
-    }, [setField, settings.target]);
+        setChosen(current => current?.doc ? { ...current, source: next, sourceNote: undefined } : current);
+    }, [setField]);
 
     const choose = useCallback((files: File[]) => {
         const [file] = files;
@@ -238,10 +265,9 @@ export function SubtitleTranslatorUI() {
         setChosen({ file });
         readSubtitleFile(file).then(doc => {
             if (id !== readId.current) return;
-            const guessed = guessLanguageFromScript(cuesOf(doc).map(cue => cue.lines.join(" ")));
-            const switchedTo = guessed && guessed !== settings.source && (TO_ENGLISH as readonly string[]).includes(guessed) ? guessed : undefined;
-            if (switchedTo) setSource(switchedTo);
-            setChosen({ file, doc, switchedTo });
+            // Each file's letters are read afresh, and what they say is kept with the file, never as the remembered "From".
+            const { source: fileSource, note } = sourceForFile(guessLanguageFromScript(cuesOf(doc).map(cue => cue.lines.join(" "))), rememberedSource.current);
+            setChosen({ file, doc, source: fileSource, sourceNote: note });
         }, (error: unknown) => {
             if (id !== readId.current) return;
             const problem = error instanceof SubtitleFileError
@@ -250,7 +276,7 @@ export function SubtitleTranslatorUI() {
             setChosen({ file, problem });
             emitToolRun({ outcome: "error", files: 1 }, error);
         });
-    }, [settings.source, setSource]);
+    }, []);
 
     const loadSample = () => choose([new File([SAMPLE], "sample.srt", { type: "application/x-subrip" })]);
 
@@ -270,7 +296,7 @@ export function SubtitleTranslatorUI() {
         const file = again?.file ?? chosen?.file;
         if (!doc || !file) return;
         const run: RunInfo = again?.run ?? (settings.engine === "device"
-            ? { engine: "device", source: settings.source, to: { name: languageName(settings.target), code: settings.target } }
+            ? { engine: "device", source, to: { name: languageName(target), code: target } }
             : {
                 engine: "byok", to: byokTarget(settings.byokTarget) ?? BYOK_TARGETS[1], provider: byok.provider,
                 providerLabel: providerById(byok.provider)?.label, model: settings.byokModel.trim() || providerById(byok.provider)?.models[0] || "",
@@ -353,7 +379,7 @@ export function SubtitleTranslatorUI() {
             if (again) setResult(again);
             setPhase("failed");
         }
-    }, [chosen, settings, byok.provider, byok.configured, refreshCache]);
+    }, [chosen, settings, source, target, byok.provider, byok.configured, refreshCache]);
 
     const cancel = () => {
         runId.current++;
@@ -392,12 +418,12 @@ export function SubtitleTranslatorUI() {
 
     const doc = chosen?.doc;
     const cueCount = doc ? cuesOf(doc).length : 0;
-    const modelId = modelIdFor(settings.source, settings.target);
+    const modelId = modelIdFor(source, target);
     const modelBytes = modelId ? cached[modelId] : undefined;
     const ready = !!doc && (settings.engine === "device" ? !!modelId : byok.ready);
-    const pairNote = settings.source === "en"
+    const pairNote = source === "en"
         ? `On this device English translates into ${FROM_ENGLISH.length} languages, and ${TO_ENGLISH.length} languages into English: each model works one way.`
-        : `On this device ${languageName(settings.source)} translates into English only: each model works one way. For ${languageName(settings.source)} into another language, use your own AI key, which takes any pair.`;
+        : `On this device ${languageName(source)} translates into English only: each model works one way. For ${languageName(source)} into another language, use your own AI key, which takes any pair.`;
     const eta = progress.done > 0 && progress.total > progress.done
         ? ((performance.now() - progress.started) / 1000) * ((progress.total - progress.done) / progress.done) : null;
     const where = active?.engine === "byok" ? `with your ${active.providerLabel ?? "AI"} key.` : "on this device. Keep this tab open.";
@@ -422,21 +448,21 @@ export function SubtitleTranslatorUI() {
                 <div className="st-fields">
                     <div className="ts-setting">
                         <label htmlFor={`${ids}-from`}>From</label>
-                        <select id={`${ids}-from`} value={settings.source} disabled={busy} onChange={event => setSource(event.target.value)}>
+                        <select id={`${ids}-from`} value={source} disabled={busy} onChange={event => pickSource(event.target.value)}>
                             {availableSources().map(code => <option key={code} value={code}>{languageName(code)}</option>)}
                         </select>
                     </div>
                     <div className="ts-setting">
                         <label htmlFor={`${ids}-to`}>Into</label>
-                        <select id={`${ids}-to`} value={settings.target} disabled={busy} onChange={event => setField("target", event.target.value)}>
-                            {targetsFor(settings.source).map(code => <option key={code} value={code}>{languageName(code)}</option>)}
+                        <select id={`${ids}-to`} value={target} disabled={busy} onChange={event => setField("target", event.target.value)}>
+                            {targetsFor(source).map(code => <option key={code} value={code}>{languageName(code)}</option>)}
                         </select>
                     </div>
                 </div>
-                <p className="st-hint">{pairNote}{settings.source !== "en" && <> <button type="button" className="st-link" disabled={busy} onClick={() => setField("engine", "byok")}>Use my own AI key</button></>}</p>
+                <p className="st-hint">{pairNote}{source !== "en" && <> <button type="button" className="st-link" disabled={busy} onClick={() => setField("engine", "byok")}>Use my own AI key</button></>}</p>
                 <p className="st-hint">{modelBytes
-                    ? `The ${languageName(settings.source)} → ${languageName(settings.target)} model is in this browser (${formatBytes(modelBytes)}).`
-                    : `The ${languageName(settings.source)} → ${languageName(settings.target)} model downloads from Hugging Face on the first run, about ${APPROX_MODEL_MB} MB, and your browser keeps it.`}</p>
+                    ? `The ${languageName(source)} → ${languageName(target)} model is in this browser (${formatBytes(modelBytes)}).`
+                    : `The ${languageName(source)} → ${languageName(target)} model downloads from Hugging Face on the first run, about ${APPROX_MODEL_MB} MB, and your browser keeps it.`}</p>
             </> : <>
                 <div className="st-fields">
                     <div className="ts-setting">
@@ -474,7 +500,7 @@ export function SubtitleTranslatorUI() {
                 {chosen.problem && <div className="ts-error" role="alert">
                     <p><strong>{chosen.problem.title}</strong> {chosen.problem.detail}{chosen.problem.ass && <> <a href="/tools/subtitle-converter">Open Subtitle Converter</a>.</>}</p>
                 </div>}
-                {chosen.switchedTo && settings.engine === "device" && <p className="st-hint">Its letters are {languageName(chosen.switchedTo)}, so it will be translated from {languageName(chosen.switchedTo)}. Change “From” if that’s wrong.</p>}
+                {chosen.sourceNote && settings.engine === "device" && <p className="st-hint">{chosen.sourceNote}</p>}
                 {doc && !busy && <FirstCues doc={doc} />}
             </section>}
         {settings.engine === "byok" && <details className="st-provider" open={!byok.ready}>
