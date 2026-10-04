@@ -16,6 +16,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import safe_stem
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -44,6 +45,8 @@ async def get_thumbnails(file: UploadFile = File(...)):
     except Exception as exc:
         if temp_path is not None:
             remove_files(str(temp_path))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /organize-pages/thumbnails")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:
@@ -126,6 +129,8 @@ async def organize_pages(
             [output_path] if output_path else []
         )
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /organize-pages")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

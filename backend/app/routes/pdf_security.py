@@ -20,6 +20,7 @@ from ..services import sanitize_service, signature_service
 from ..utils.cleanup import remove_files, validate_pdf_content
 from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -93,6 +94,8 @@ async def pdfa_validator(file: UploadFile = File(...)):
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("PDF/A validator error")
         raise HTTPException(status_code=500, detail="Failed to validate PDF/A") from exc
 
@@ -112,6 +115,8 @@ async def verify_signature(file: UploadFile = File(...)):
         # own process, and the service reports its failures per signature.
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Verify signature error")
         raise HTTPException(status_code=500, detail="Failed to verify signatures") from exc
     return JSONResponse(result)
@@ -135,6 +140,8 @@ async def sanitize_pdf(file: UploadFile = File(...)):
         # the global handler gives each its status.
         raise
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Sanitize PDF error")
         raise HTTPException(status_code=500, detail="Failed to sanitize PDF") from exc
 

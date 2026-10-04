@@ -21,6 +21,7 @@ from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -171,6 +172,8 @@ async def stamp_pdf(
         raise
     except Exception as e:
         _cleanup_on_error(temp, out)
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("stamp error")
         raise HTTPException(status_code=500, detail="Stamping failed")
 

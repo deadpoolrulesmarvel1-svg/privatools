@@ -37,6 +37,7 @@ from starlette.background import BackgroundTask
 
 from .cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from .concurrency import run_bounded
+from .pdf_errors import pdf_read_error
 from .route_helpers import stream_upload_to_disk
 
 logger = logging.getLogger(__name__)
@@ -59,8 +60,10 @@ async def process_pdf_upload(
     ``run`` is a callable taking the temp input path and returning the output
     path (sync — it's offloaded via run_bounded). Bind any extra params with a
     lambda. On any error the temp + partial output are removed and a generic 500
-    is raised (the global handler sanitizes the message); HTTPExceptions raised
-    inside ``run`` (or validation) pass through with their status/detail.
+    is raised (the global handler sanitizes the message), except for a PDF that
+    cannot be read or needs a password (utils.pdf_errors), which is a 400 that
+    says so; HTTPExceptions raised inside ``run`` (or validation) pass through
+    with their status/detail.
     """
     if not (file.filename or "").lower().endswith(input_suffix):
         kind = input_suffix.lstrip(".").upper()
@@ -87,6 +90,8 @@ async def process_pdf_upload(
         raise
     except Exception as exc:  # noqa: BLE001 — map to a generic 500 (sanitized globally)
         remove_files(str(temp_path), *([output_path] if output_path else []))
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("upload tool failed: %s", getattr(run, "__name__", "run"))
         raise HTTPException(
             status_code=500, detail="Processing failed. Please try again."

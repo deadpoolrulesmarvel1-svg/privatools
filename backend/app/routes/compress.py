@@ -19,6 +19,7 @@ from ..utils.cleanup import (
 )
 from ..utils.route_helpers import read_upload, safe_filename, safe_stem, unique_arcname
 from ..utils.concurrency import run_bounded
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -173,6 +174,8 @@ async def compress_pdf(
         raise
     except Exception as exc:
         remove_files(*input_paths, *output_paths)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /compress")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

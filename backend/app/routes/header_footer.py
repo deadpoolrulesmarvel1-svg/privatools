@@ -14,6 +14,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import safe_stem
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -82,6 +83,8 @@ async def add_header_footer(
             [output_path] if output_path else []
         )
         remove_files(*to_remove)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /header-footer")
         msg = str(exc).lower()
         if "password" in msg or "encrypted" in msg:

@@ -22,6 +22,7 @@ from ..utils.cleanup import remove_files, validate_pdf_content
 from ..utils.exceptions import PdfEncryptedError, ToolError
 from ..utils.page_space import drawing_unturned
 from ..utils.render import plan_renders, safe_get_pixmap
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -320,6 +321,8 @@ async def pdf_to_epub(file: UploadFile = File(...)):
     except Exception as exc:
         if tmp is not None:
             remove_files(tmp.name)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("pdf-to-epub error")
         raise HTTPException(status_code=500, detail="PDF to EPUB conversion failed") from exc
 
@@ -565,6 +568,8 @@ async def add_hyperlinks(file: UploadFile = File(...)):
     except Exception as exc:
         if tmp is not None:
             remove_files(tmp.name)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("add-hyperlinks error")
         raise HTTPException(status_code=500, detail="Failed to add hyperlinks") from exc
 
@@ -775,6 +780,8 @@ async def form_creator(
     except Exception as exc:
         if tmp is not None:
             remove_files(tmp.name)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("form-creator error")
         raise HTTPException(status_code=500, detail="Form creation failed") from exc
 
@@ -904,5 +911,7 @@ async def transparent_background(
     except Exception as exc:
         if tmp is not None:
             remove_files(tmp.name)
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("transparent-background error")
         raise HTTPException(status_code=500, detail="Transparent background conversion failed") from exc

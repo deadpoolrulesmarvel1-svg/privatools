@@ -20,6 +20,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.concurrency import run_bounded
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -54,6 +55,8 @@ async def accessibility_check(file: UploadFile = File(...)):
         # Service-raised errors are already user-facing prose.
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("Unexpected error in /accessibility-check")
         raise HTTPException(
             status_code=500, detail=f"Processing failed: {exc}"

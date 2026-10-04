@@ -15,6 +15,7 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, valida
 from ..utils.images import image_read_error
 from ..utils.page_space import shown_area
 from ..services import sign_service
+from ..utils.pdf_errors import pdf_read_error
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -192,5 +193,7 @@ async def sign_pdf(
         # whose data is broken fails only when the signature is drawn.
         if (image_error := image_read_error(e)) is not None:
             raise HTTPException(status_code=image_error[0], detail=image_error[1]) from e
+        if (pdf_error := pdf_read_error(e)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from e
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
