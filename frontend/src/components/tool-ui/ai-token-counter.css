@@ -30,7 +30,7 @@
 .atc-counts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .atc-count{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:4px 16px;padding:14px 16px;border:1px solid hsl(var(--border));border-radius:10px;background:hsl(var(--card))}
 .atc-count-name{font-size:13px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
-.atc-count-name code{margin-left:6px;font-style:normal;font-weight:400;font-size:12px;line-height:normal;font-family:var(--font-mono);font-weight:400;color:hsl(var(--muted-foreground));white-space:nowrap}
+.atc-count-name code{margin-left:6px;font-style:normal;font-weight:400;font-size:12px;line-height:normal;font-family:var(--font-mono);color:hsl(var(--muted-foreground));white-space:nowrap}
 .atc-count-value{font:600 20px/1.2 var(--pt-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .atc-count-how{grid-column:1/-1;font-size:12px;line-height:1.55;color:hsl(var(--muted-foreground))}
 .atc-count[data-state=none] .atc-count-value{font-size:15px;color:hsl(var(--muted-foreground))}
