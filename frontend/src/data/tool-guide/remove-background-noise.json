@@ -6,7 +6,7 @@
     },
     {
       "name": "Set the strength",
-      "text": "At 100%, the default, you get only the cleaned sound. If the voice comes out thin or watery, lower it: at 70%, for example, three tenths of your original, noise included, is mixed back in."
+      "text": "At 100%, the default, you get only the cleaned sound. If the voice comes out thin or watery, lower it, in steps of 5%: at 70%, for example, three tenths of your original, noise included, is mixed back in."
     },
     {
       "name": "Remove the noise",
@@ -52,7 +52,7 @@
     },
     {
       "q": "What does the strength setting do?",
-      "a": "It mixes the cleaned sound with your original. At 100% you hear only the cleaned sound; at 70%, seven tenths of it with three tenths of the original, noise included. Mixing some of the original back in hides the traces heavy cleaning can leave, at the cost of some noise: at 90%, the noise can be at most about 20 dB quieter than it was."
+      "a": "It mixes the cleaned sound with your original. At 100% you hear only the cleaned sound; at 70%, seven tenths of it with three tenths of the original, noise included. It moves in steps of 5%. Mixing some of the original back in hides the traces heavy cleaning can leave, at the cost of some noise: at 95%, the noise can be at most about 26 dB quieter than it was, and at 90% about 20 dB."
     }
   ]
 }

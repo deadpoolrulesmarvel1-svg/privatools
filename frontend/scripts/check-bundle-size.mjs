@@ -52,9 +52,13 @@ const dataChunk = (name) => DATA_CHUNKS.find((data) => data.pattern.test(name));
 // module, which Voice Noise Remover fetches only when a visitor cleans a
 // recording (src/lib/noise/engine.ts, through virtual:rnnoise-wasm and
 // scripts/rnnoise-wasm.mjs). It is the model's weights more than code, 3.4 MiB
-// raw and 2.7 MiB gzipped. Like the data tables it must stay lazy (checked
-// below), and the build must hold exactly one. (onnxruntime-web's own .wasm
-// files, which Vite copies in, are not budgeted here.)
+// raw and 2.7 MiB gzipped. Its ceiling passes the 2048 KiB above, which is
+// about Brotli: the backend never compresses application/wasm with Brotli, at
+// any size. The module goes out gzipped on the fly, which took 0.14 s of
+// server time per download when measured in review. Like the data tables it
+// must stay lazy (checked below), and the build must hold exactly one.
+// (onnxruntime-web's own .wasm files, which Vite copies in, are not budgeted
+// here.)
 const WASM_ASSETS = [
   { pattern: /^rnnoise-[\w-]+\.wasm$/, rawKiB: 3600, gzipKiB: 2850, what: "RNNoise's WebAssembly, for Voice Noise Remover" },
 ];

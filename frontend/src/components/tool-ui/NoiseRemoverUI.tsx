@@ -17,6 +17,7 @@ import { useToolDefaults } from "@/hooks/useToolDefaults";
 import type { NoiseResult, NoiseStage } from "@/lib/noise/engine";
 import { NoiseEngineError, outOfMemory } from "@/lib/noise/errors";
 import { lengthWords, MAX_SECONDS, MAX_STEREO_SECONDS, NoiseInputError, WHOLE_FILE_SECONDS } from "@/lib/noise/source";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 import { FileIntake, LocalFilePreview, StudioActionBar, StudioActions, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { retryLine } from "@/skins/experience/studio-outcome";
 import "./noise-remover.css";
@@ -55,6 +56,11 @@ function clock(seconds: number): string {
     const m = Math.floor(whole / 60) % 60;
     const s = String(whole % 60).padStart(2, "0");
     return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
+/** A length for the result: its clock, or "under a second" where the clock would read 0:00. */
+function length(seconds: number): string {
+    return seconds < 1 ? "under a second" : clock(seconds);
 }
 
 function minutesLeft(seconds: number): string {
@@ -148,12 +154,23 @@ function failureFor(error: unknown, file: File): Failure {
 
 type Phase = "idle" | NoiseStage | "done" | "failed";
 
+/** What the progress box says at each stage of a run. */
+const STAGES: Record<NoiseStage, { label: string; detail: string }> = {
+    reading: { label: "Reading the sound", detail: "Finding the sound in this browser and checking it can be decoded." },
+    starting: { label: "Starting the noise remover", detail: "RNNoise, about 3 MB, comes from this site the first time. Your file stays here." },
+    cleaning: { label: "Removing background noise", detail: "RNNoise on this device. Keep this tab open." },
+};
+/** How often the progress moves, in milliseconds: a screen reader hears the box's changes, so not at every step. */
+const PROGRESS_EVERY = 1000;
+/** The strength's steps, in percent: 95% still keeps some of the original, about 26 dB under it. */
+const STRENGTH_STEP = 5;
+
 export function NoiseRemoverUI() {
     const [stored, , { setField }] = useToolDefaults(SLUG, DEFAULTS);
     // A remembered value from an older version is checked before it is used.
     const strength = useMemo(() => {
         const value = Number(stored.strength);
-        return Number.isFinite(value) ? Math.min(100, Math.max(10, Math.round(value / 10) * 10)) : DEFAULTS.strength;
+        return Number.isFinite(value) ? Math.min(100, Math.max(10, Math.round(value / STRENGTH_STEP) * STRENGTH_STEP)) : DEFAULTS.strength;
     }, [stored.strength]);
     const [file, setFile] = useState<File | null>(null);
     const [phase, setPhase] = useState<Phase>("idle");
@@ -165,10 +182,29 @@ export function NoiseRemoverUI() {
     const [returning, setReturning] = useState(false);
     const run = useRef(0);
     const stop = useRef<AbortController | null>(null);
-    const busy = phase === "reading" || phase === "starting" || phase === "cleaning";
+    const shown = useRef(0);
+    const stage = phase === "reading" || phase === "starting" || phase === "cleaning" ? phase : null;
+    const busy = stage !== null;
+    const removeButton = useRef<HTMLButtonElement>(null);
+    const strengthInput = useRef<HTMLInputElement>(null);
+    const progressBox = useRef<HTMLDivElement>(null);
+    // Where focus goes when the control that held it goes away or is disabled: set by the handler that does it.
+    const focusNext = useRef<"cancel" | "remove" | "strength" | null>(null);
 
     // Leaving the page ends a run, and its worker with it.
     useEffect(() => () => { run.current++; stop.current?.abort(); }, []);
+
+    useEffect(() => {
+        const next = focusNext.current;
+        if (!next) return;
+        const target = next === "cancel" ? progressBox.current?.querySelector<HTMLButtonElement>(".ts-progress button")
+            : next === "remove" ? removeButton.current : strengthInput.current;
+        if (!target) return;
+        focusNext.current = null;
+        // "Remove noise" disables itself, which some browsers leave holding focus; anywhere else the visitor went keeps it.
+        if (document.activeElement === removeButton.current) target.focus();
+        else focusIfIdle(target);
+    }, [phase]);
 
     const clean = useCallback(async () => {
         if (!file || busy) return;
@@ -179,6 +215,8 @@ export function NoiseRemoverUI() {
         setFailure(null);
         setResult(null);
         setReadPercent(undefined);
+        shown.current = 0;
+        focusNext.current = "cancel";
         setPhase("reading");
         const began = performance.now();
         try {
@@ -194,7 +232,13 @@ export function NoiseRemoverUI() {
                     if (stage === "cleaning") setProgress({ done: 0, total: 0, started: performance.now() });
                 },
                 onRead: fraction => { if (current()) setReadPercent(fraction * 100); },
-                onProgress: (done, total) => { if (current()) setProgress(previous => ({ ...previous, done, total })); },
+                onProgress: (done, total) => {
+                    if (!current()) return;
+                    const now = performance.now();
+                    if (shown.current && now - shown.current < PROGRESS_EVERY) return;
+                    shown.current = now;
+                    setProgress(previous => ({ ...previous, done, total }));
+                },
             });
             if (!current()) return;
             if (cleaned.stats.inputPeak < SILENT_PEAK) {
@@ -222,6 +266,7 @@ export function NoiseRemoverUI() {
     const cancel = () => {
         run.current++;
         stop.current?.abort();
+        focusNext.current = "remove";
         setPhase("idle");
     };
 
@@ -243,7 +288,12 @@ export function NoiseRemoverUI() {
         setReturning(true);
         setPhase("idle");
     };
-    const backToSettings = () => { setResult(null); setFailure(null); setPhase("idle"); };
+    const backToSettings = () => {
+        focusNext.current = "strength";
+        setResult(null);
+        setFailure(null);
+        setPhase("idle");
+    };
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -277,11 +327,11 @@ export function NoiseRemoverUI() {
             <h2>Strength</h2>
             <div className="ts-setting">
                 <label htmlFor="nr-strength">How much of the cleaned sound · {strength}%</label>
-                <input id="nr-strength" type="range" min={10} max={100} step={10} value={strength} disabled={busy}
+                <input ref={strengthInput} id="nr-strength" type="range" min={10} max={100} step={STRENGTH_STEP} value={strength} disabled={busy}
                     aria-valuetext={`${strength}%: ${strengthWords(strength)}`}
                     onChange={event => setField("strength", Number(event.target.value))} />
             </div>
-            <p className="nr-hint">At 100% you hear only the cleaned sound. If the voice sounds thin or watery, lower it: the rest is your original, noise and all, mixed back in.</p>
+            <p className="nr-hint">At 100% you hear only the cleaned sound. If the voice sounds thin or watery, lower it a step or two: the rest is your original, noise and all, mixed back in.</p>
         </div>
         <div>
             <h2>Made for speech</h2>
@@ -289,7 +339,7 @@ export function NoiseRemoverUI() {
             <a className="ts-caption nr-credits" href="/third-party/rnnoise.txt" target="_blank" rel="noreferrer">RNNoise credits &amp; licences</a>
         </div>
     </>} action={<StudioActionBar ready={!!file} count={file ? { video: "1 video", webm: "1 file", recording: "1 recording" }[fileKind(file.name)] : undefined}>
-        <button type="button" className="ts-primary-button" onClick={() => void clean()} disabled={!file || busy}>
+        <button ref={removeButton} type="button" className="ts-primary-button" onClick={() => void clean()} disabled={!file || busy}>
             <AudioLines size={16} aria-hidden="true" /> Remove noise
         </button>
     </StudioActionBar>}>
@@ -301,13 +351,15 @@ export function NoiseRemoverUI() {
                     onRemove={busy ? undefined : startOver} removeLabel={`Remove ${file.name}`} />
                 {!busy && <LocalFilePreview file={file} name={file.name} label="Original" />}
             </section>}
-        {phase === "reading" && <StudioProgress label="Reading the sound" progress={readPercent} onCancel={cancel}
-            detail="Finding the sound in this browser and checking it can be decoded." />}
-        {phase === "starting" && <StudioProgress label="Starting the noise remover" onCancel={cancel}
-            detail="RNNoise, about 3 MB, comes from this site the first time. Your file stays here." />}
-        {phase === "cleaning" && <StudioProgress label="Removing background noise"
-            progress={progress.total ? (progress.done / progress.total) * 100 : undefined} onCancel={cancel}
-            detail={`${progress.total ? `${clock(progress.done)} of ${clock(progress.total)}` : clock(progress.done)}${eta !== null ? ` · ${minutesLeft(eta)} at this speed` : ""} · RNNoise on this device. Keep this tab open.`} />}
+        {stage && <div ref={progressBox} className="nr-progress">
+            {/* One box for every stage, so its Cancel keeps focus from one to the next. */}
+            <StudioProgress label={STAGES[stage].label} detail={STAGES[stage].detail} onCancel={cancel}
+                progress={stage === "reading" ? readPercent : stage === "cleaning" && progress.total ? (progress.done / progress.total) * 100 : undefined} />
+            {/* The clock changes every second, so it stays out of the box a screen reader announces. */}
+            {stage === "cleaning" && <p className="ts-caption nr-clock">
+                {progress.total ? `${clock(progress.done)} of ${clock(progress.total)}` : clock(progress.done)}{eta !== null ? ` · ${minutesLeft(eta)} at this speed` : ""}
+            </p>}
+        </div>}
     </StudioLayout>;
 }
 
@@ -334,10 +386,10 @@ function NoiseResultView({ file, result, onAgain, onStartOver }: {
     ].filter(Boolean);
     return <StudioResult tone={tone} title={title} detail={detail}>
         <dl className="ts-stats">
-            <div><dt>Length</dt><dd>{clock(result.seconds)}</dd></div>
+            <div><dt>Length</dt><dd>{length(result.seconds)}</dd></div>
             <div><dt>Strength</dt><dd>{result.strength}%</dd></div>
             <div><dt>WAV</dt><dd>{formatFileSize(result.wav.size)}</dd></div>
-            <div><dt>Took</dt><dd>{clock(result.took)}</dd></div>
+            <div><dt>Took</dt><dd>{length(result.took)}</dd></div>
         </dl>
         <Compare original={file} cleaned={result.wav} name={file.name} />
         {notes.map(note => <p className="ts-note" key={note}>{note}</p>)}

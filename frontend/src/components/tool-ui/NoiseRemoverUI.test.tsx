@@ -73,6 +73,10 @@ describe("the Voice Noise Remover page", () => {
         const strength = screen.getByLabelText(/How much of the cleaned sound/) as HTMLInputElement;
         expect(strength.value).toBe("100");
         expect(strength).toHaveAttribute("aria-valuetext", "100%: only the cleaned sound");
+        // Steps of five, so there is a gentler step down from 100% than 90%.
+        expect(strength).toHaveAttribute("step", "5");
+        fireEvent.change(strength, { target: { value: "95" } });
+        expect(strength).toHaveAttribute("aria-valuetext", "95%: 95% cleaned sound, 5% original");
         fireEvent.change(strength, { target: { value: "70" } });
         expect(strength).toHaveAttribute("aria-valuetext", "70%: 70% cleaned sound, 30% original");
         await act(async () => { run(); });
@@ -122,6 +126,16 @@ describe("the Voice Noise Remover page", () => {
         expect(screen.queryByRole("link", { name: "Audio Converter" })).toBeNull();
         expect(screen.queryByRole("link", { name: "Transcribe Audio" })).toBeNull();
         expect(screen.getByText(/also larger than the 500 MB that Transcribe Audio takes/)).toBeInTheDocument();
+    });
+
+    it("calls a result shorter than a second what it is, rather than 0:00", async () => {
+        mocks.remove.mockResolvedValue(result({ seconds: 0.4 }));
+        choose();
+        await act(async () => { run(); });
+        await screen.findByRole("heading", { name: "Background noise reduced." });
+        const stats = document.querySelector(".ts-stats")!;
+        expect(within(stats as HTMLElement).getAllByText("under a second").length).toBeGreaterThanOrEqual(1);
+        expect(within(stats as HTMLElement).queryByText("0:00")).toBeNull();
     });
 
     it("pauses one player when the other plays", async () => {
@@ -257,13 +271,59 @@ describe("the Voice Noise Remover page", () => {
         expect(mocks.toolRun).not.toHaveBeenCalled();
     });
 
+    it("keeps focus on a control: Cancel while it works, through every stage, then Remove noise", async () => {
+        let options: NoiseRunOptions | undefined;
+        mocks.remove.mockImplementation((_file: File, given: NoiseRunOptions) => new Promise((_, reject) => {
+            options = given;
+            given.signal?.addEventListener("abort", () => reject(Object.assign(new Error("stopped"), { name: "AbortError" })));
+        }));
+        choose();
+        const button = screen.getByRole("button", { name: /Remove noise/ });
+        button.focus();
+        await act(async () => { fireEvent.click(button); });
+        expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+        const cancel = screen.getByRole("button", { name: "Cancel" });
+        act(() => { options!.onStage?.("starting"); });
+        act(() => { options!.onStage?.("cleaning"); });
+        await screen.findByText("Removing background noise");
+        expect(screen.getByRole("button", { name: "Cancel" })).toBe(cancel);
+        expect(cancel).toHaveFocus();
+        await act(async () => { fireEvent.click(cancel); });
+        await waitFor(() => expect(screen.getByRole("button", { name: /Remove noise/ })).toHaveFocus());
+    });
+
+    it("moves the progress about once a second, and keeps the clock out of the announced status", async () => {
+        let options: NoiseRunOptions | undefined;
+        mocks.remove.mockImplementation((_file: File, given: NoiseRunOptions) => new Promise(() => { options = given; }));
+        const now = vi.spyOn(performance, "now").mockReturnValue(10_000);
+        try {
+            choose();
+            await act(async () => { run(); });
+            act(() => { options!.onStage?.("cleaning"); options!.onProgress?.(0, 120); });
+            act(() => { options!.onProgress?.(5, 120); options!.onProgress?.(10, 120); });
+            expect(screen.getByText(/^0:00 of 2:00/)).toBeInTheDocument();
+            now.mockReturnValue(11_000);
+            act(() => { options!.onProgress?.(15, 120); });
+            expect(screen.getByText(/^0:15 of 2:00/)).toBeInTheDocument();
+            const status = document.querySelector<HTMLElement>(".ts-progress")!;
+            expect(status).toHaveAttribute("aria-live", "polite");
+            expect(within(status).queryByText(/of 2:00/)).toBeNull();
+            expect(within(status).getByText("13%")).toBeInTheDocument();
+        } finally {
+            now.mockRestore();
+        }
+    });
+
     it("goes back to the settings with the same file to clean at another strength", async () => {
         mocks.remove.mockResolvedValue(result());
         choose();
         await act(async () => { run(); });
         await screen.findByRole("heading", { name: "Background noise reduced." });
-        fireEvent.click(screen.getByRole("button", { name: "Change the strength" }));
+        const change = screen.getByRole("button", { name: "Change the strength" });
+        change.focus();
+        act(() => { fireEvent.click(change); });
         expect(screen.getByLabelText(/How much of the cleaned sound/)).toBeEnabled();
+        expect(screen.getByLabelText(/How much of the cleaned sound/)).toHaveFocus();
         expect(within(screen.getByRole("region", { name: "Chosen file" })).getByText("interview.mp3", { selector: ".ts-file-name" })).toBeInTheDocument();
     });
 });

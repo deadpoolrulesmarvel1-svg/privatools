@@ -10,6 +10,9 @@
 .nr-next a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .nr-credits { display: inline-block; margin-top: 10px; color: hsl(var(--muted-foreground)); text-decoration: underline; text-underline-offset: 3px; }
 .nr-credits:hover { color: hsl(var(--foreground)); }
+/* The clock under the progress box, outside its announced status. */
+.nr-progress { display: grid; min-width: 0; }
+.nr-clock { margin: 8px 2px 0; font-variant-numeric: tabular-nums; }
 
 /* The kit draws text fields; a slider needs none of the field's box. */
 .nr-studio .ts-setting input[type=range] { padding: 0; border: 0; background: none; min-height: 28px; accent-color: hsl(var(--accent)); }
