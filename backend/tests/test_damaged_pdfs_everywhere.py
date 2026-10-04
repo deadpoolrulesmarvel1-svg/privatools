@@ -204,7 +204,7 @@ NOT_YET = {
     "/api/extract-tables", "/api/flatten", "/api/grayscale", "/api/header-footer",
     "/api/hidden-text-checker", "/api/ocr", "/api/organize-pages/thumbnails", "/api/page-numbers",
     "/api/pdf-to-excel", "/api/pdf-to-html", "/api/pdf-to-markdown", "/api/pdf-to-pdfa",
-    "/api/pdf-to-rtf", "/api/pdf-to-text", "/api/pdf-to-word", "/api/redact",
+    "/api/pdf-to-rtf", "/api/pdf-to-word", "/api/redact",
     "/api/remove-watermark/apply", "/api/remove-watermark/detect", "/api/split-by-text",
     "/api/web-optimize", "/api/whiteout-pdf",
 }
@@ -281,3 +281,26 @@ def test_a_locked_pdf_is_done_or_refused_with_the_password_advice(quiet_client, 
     if response.status_code != 200:
         assert response.status_code == 400, response.text
         assert "password" in response.json()["detail"].lower(), response.text
+
+
+# ── PDF to Text reads with pypdf ────────────────────────────────────────────
+# Its stream errors ("Stream has ended unexpectedly" on every cut the sweep
+# made) and its FileNotDecryptedError were 500s.
+
+@pytest.mark.parametrize("sample", sorted(DAMAGED))
+def test_pdf_to_text_calls_a_pdf_pypdf_cannot_read_damaged(quiet_client, sample):
+    response = _post(quiet_client, "/api/pdf-to-text", DAMAGED[sample])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "This PDF appears to be corrupt or invalid."
+
+
+def test_pdf_to_text_asks_for_the_password(quiet_client, locked_pdf):
+    response = _post(quiet_client, "/api/pdf-to-text", locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "This PDF is password-protected. Unlock it first, then try again."
+
+
+def test_pdf_to_text_still_reads_an_intact_pdf(quiet_client):
+    response = _post(quiet_client, "/api/pdf-to-text", GOOD)
+    assert response.status_code == 200, response.text
+    assert "A secret meeting on page 3." in response.json()["text"]
