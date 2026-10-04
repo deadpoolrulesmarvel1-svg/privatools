@@ -27,6 +27,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import shutil
 
 import fitz  # PyMuPDF
 import pikepdf
@@ -200,7 +201,7 @@ NOT_PDF = {
 
 # Routes still fixed in a later commit of this branch.
 NOT_YET = {
-    "/api/hidden-text-checker", "/api/pdf-to-markdown", "/api/split-by-text", "/api/web-optimize",
+    "/api/hidden-text-checker", "/api/pdf-to-markdown", "/api/split-by-text",
 }
 
 
@@ -400,6 +401,54 @@ def test_poppler_failing_on_a_pdf_mupdf_reads_intact_stays_the_servers_fault(qui
 
     monkeypatch.setattr(organize_pages_service, "convert_from_path", poppler_fails)
     assert _post(quiet_client, THUMBNAILS, GOOD).status_code == 500
+
+
+# ── Web Optimize runs the qpdf command ──────────────────────────────────────
+# qpdf exits with status 2 for a file it cannot read, which the service raised
+# as ExternalToolError and the route answered 500; it gives the same status
+# for a disk or permission fault, so the status alone cannot be read.
+
+WEB_OPTIMIZE = "/api/web-optimize"
+
+
+@pytest.mark.parametrize("sample", sorted(DAMAGED))
+def test_web_optimize_says_a_pdf_qpdf_cannot_read_is_damaged(quiet_client, sample):
+    response = _post(quiet_client, WEB_OPTIMIZE, DAMAGED[sample])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] in STANDARD
+
+
+def test_web_optimize_asks_for_the_password(quiet_client, locked_pdf):
+    response = _post(quiet_client, WEB_OPTIMIZE, locked_pdf)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == PASSWORD
+
+
+@pytest.mark.skipif(shutil.which("qpdf") is None, reason="needs the qpdf command (CI and the image have it)")
+def test_web_optimize_still_linearizes_an_intact_pdf(quiet_client):
+    response = _post(quiet_client, WEB_OPTIMIZE, GOOD)
+    assert response.status_code == 200, response.text
+    with pikepdf.open(io.BytesIO(response.content)) as pdf:
+        assert pdf.is_linearized
+
+
+def test_qpdf_failing_on_a_pdf_its_library_reads_stays_the_servers_fault(quiet_client, monkeypatch):
+    import asyncio
+
+    class FailingQpdf:
+        returncode = 2
+
+        async def communicate(self):
+            return b"", b"qpdf: open output: Permission denied"
+
+        def kill(self):
+            pass
+
+    async def run_qpdf(*_args, **_kwargs):
+        return FailingQpdf()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", run_qpdf)
+    assert _post(quiet_client, WEB_OPTIMIZE, GOOD).status_code == 500
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────
