@@ -27,6 +27,11 @@ nothing is refused on it. Opening the file with pikepdf does not help
 there: qpdf rebuilds the page tree of a damaged file as it opens it, and its
 /Count is then the pages it kept (4 of a six-page file cut at 60 %).
 
+A stream's data is skipped, by its /Length or up to its "endstream", as the
+libraries' repairs skip it: a PDF attached to this one without compression
+carries objects with this file's numbers, and its page tree is not this
+file's.
+
 The scan is bounded. It looks for "/Type" in one pass over the bytes, reads
 only the objects that are page tree nodes, pages, catalogs, trailers and
 object streams, inflates at most _MAX_INFLATED bytes in all, and gives up
@@ -70,6 +75,8 @@ _TYPE = re.compile(rb"/Type[ \t\r\n\f\x00]*/(Pages|Page|Catalog|ObjStm|XRef)(?![
 _HEADER_TAIL = re.compile(rb"(?<![0-9])([0-9]{1,10})[ \t\r\n\f\x00]+([0-9]{1,5})[ \t\r\n\f\x00]+obj$")
 _REF = re.compile(rb"([0-9]{1,10})[ \t\r\n\f\x00]+[0-9]{1,5}[ \t\r\n\f\x00]+R(?![^ \t\r\n\f\x00()<>\[\]{}/%])")
 _INT = re.compile(rb"[+-]?[0-9]+")
+# How far back from a "stream" keyword its object's "N G obj" is looked for.
+_MAX_STREAM_DICT_BYTES = 64 * 1024
 _NESTED_STOP = re.compile(rb"[\[\]()<>%]")
 _STRING_STOP = re.compile(rb"[()\\]")
 _LINE_END = re.compile(rb"[\r\n]")
@@ -130,6 +137,12 @@ class _Scan:
         self.overflow = False
         self._cursor: tuple[int, tuple[int, int, int] | None] = (0, None)
         self._last_start = -1
+        # The data of the last stream found, where the search for the next
+        # "stream" keyword resumes, and every stream's data (_in_stream_data).
+        self._body = (0, 0)
+        self._streams_from = 0
+        self._starts: list[int] = []
+        self._ends: list[int] = []
 
     # ── collecting ──────────────────────────────────────────────────────────
 
@@ -138,7 +151,10 @@ class _Scan:
             self.matches += 1
             if self.matches > _MAX_MATCHES or self.overflow:
                 return None
+            if self._in_stream_data(match.start()):
+                continue  # a PDF stored in a stream, as an attachment, is not this file
             self._plain(match)
+        self._in_stream_data(len(self.data))  # every stream, for _trailer
         self._trailer()
         if self.overflow:
             return None
@@ -232,10 +248,63 @@ class _Scan:
     def _dict_end(self, body: int) -> int:
         return min(len(self.data), body + _MAX_DICT_BYTES)
 
+    def _in_stream_data(self, pos: int) -> bool:
+        """Whether `pos` lies in a stream's data. The "stream" keywords before
+        `pos` are visited once, in order, and each stream's data is jumped
+        over (_stream_end), so that the objects of a PDF stored in a stream,
+        as an attachment written uncompressed, are never taken for this
+        file's own: MuPDF's and qpdf's repairs skip a stream's data too. The
+        positions asked about only grow."""
+        data = self.data
+        while True:
+            start, end = self._body
+            if pos < end:
+                return pos >= start
+            keyword = _stream_keyword(data, max(end, self._streams_from), pos)
+            if keyword is None:
+                self._streams_from = max(self._streams_from, pos)
+                return False
+            at, begin = keyword
+            self._streams_from = begin
+            before = data.rfind(b">>", max(0, at - 64), at)
+            if before < 0 or data[before + 2:at].strip(_WHITESPACE):
+                continue  # not after a dictionary: the word in a string, not a keyword
+            self._body = (begin, self._stream_end(at, begin))
+            self._starts.append(begin)
+            self._ends.append(self._body[1])
+            if len(self._starts) > _MAX_MATCHES:
+                self.overflow = True  # more streams than the scan reads: no answer
+                return True
+
+    def _stream_end(self, keyword: int, begin: int) -> int:
+        """Where the data of the stream whose keyword is at `keyword` ends: at
+        its direct /Length when "endstream" follows there, else at the next
+        "endstream", else at the end of the bytes (a stream cut short)."""
+        data = self.data
+        found = data.find(b"endstream", begin)
+        end = found if found >= 0 else len(data)
+        if data.find(b"obj", begin, end) < 0:
+            return end  # nothing in it that could be taken for an object
+        at = data.rfind(b"obj", max(0, keyword - _MAX_STREAM_DICT_BYTES), keyword)
+        entries = _dict_entries(data, at + 3, keyword) if at >= 0 else None
+        length = _number(data, entries.get(b"Length")) if entries else None
+        if length is not None and begin + length <= len(data):
+            after = _skip_space(data, begin + length, min(len(data), begin + length + 64))
+            if data[after:after + 9] == b"endstream":
+                return begin + length
+        return end
+
+    def _outside_streams(self, pos: int) -> bool:
+        place = bisect.bisect_right(self._starts, pos) - 1
+        return place < 0 or pos >= self._ends[place]
+
     def _trailer(self) -> None:
         data = self.data
         at = data.rfind(b"trailer")
         while at >= 0:
+            if not self._outside_streams(at):
+                at = data.rfind(b"trailer", 0, at)
+                continue
             entries = _dict_entries(data, at + len(b"trailer"), min(len(data), at + 1024 * 1024))
             root = _ref(data, entries.get(b"Root")) if entries else None
             if root is not None:
@@ -324,6 +393,12 @@ class _Scan:
         if root is not None:
             declared = self._declared_under(root, nodes)
             return None if self.overflow else declared
+        if self.roots:
+            # A trailer survived and names a catalog whose page tree the scan
+            # cannot find (no /Type /Catalog, say): the count is unknown. The
+            # nodes left are not this file's tree, but an earlier revision's
+            # or one a merge left behind, and may count more pages.
+            return None
         # The catalog or the trailer was lost: the largest count of a node
         # that survived, as a node lower in the tree counts fewer pages. Only
         # the nodes no surviving node lists are walked: the others are under
@@ -385,6 +460,23 @@ class _Scan:
 
 
 # ── a little of PDF's syntax ────────────────────────────────────────────────
+
+def _stream_keyword(buf, start: int, end: int) -> tuple[int, int] | None:
+    """(where the next "stream" keyword in buf[start:end] is, where its data
+    starts, past the end of line that follows it), or None."""
+    while True:
+        at = buf.find(b"stream", start, end)
+        if at < 0:
+            return None
+        start = at + 6
+        if at > 0 and buf[at - 1:at].isalpha():
+            continue  # "endstream", or a longer word
+        eol = buf[at + 6:at + 8]
+        if eol == b"\r\n":
+            return at, at + 8
+        if eol[:1] in (b"\n", b"\r"):
+            return at, at + 7
+
 
 def _skip_space(buf, i: int, end: int) -> int:
     """The index of the next token at or after `i`, past whitespace and comments."""

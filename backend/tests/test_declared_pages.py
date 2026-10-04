@@ -194,6 +194,41 @@ def test_a_dictionary_inside_a_string_or_a_stream_is_not_read():
     assert declared_page_count(_hand_built(objects)) == 1
 
 
+def _carrying(inner: bytes) -> bytes:
+    """A one-page PDF carrying `inner`, a whole PDF, as an attachment written
+    without compression (as `mutool clean -d` or `qpdf --qdf` leave one)."""
+    return _hand_built({
+        1: b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 5 0 R >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: _page(2),
+        4: b"<< /Type /EmbeddedFile /Length %d >>\nstream\n%s\nendstream" % (len(inner), inner),
+        5: b"<< /Names [(inner.pdf) 6 0 R] >>",
+        6: b"<< /Type /Filespec /F (inner.pdf) /EF << /F 4 0 R >> >>",
+    })
+
+
+def test_a_pdf_stored_in_a_stream_is_not_read_as_the_files_own():
+    # The attachment's objects reuse this file's numbers, and come later in
+    # the bytes: read as objects, its page tree of six was taken for this
+    # file's, and a valid file MuPDF repaired was refused as having lost 5 of
+    # 6 pages. MuPDF and qpdf skip a stream's data; so does the count.
+    outer = _carrying(SIX)
+    assert declared_page_count(outer) == 1
+    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) == 1  # MuPDF repairs this one
+    with fitz.open(stream=outer + b"\n" + bytes(range(256)) * 16, filetype="pdf") as doc:
+        assert doc.is_repaired and len(doc) == readable_page_count(doc) == 1
+
+
+def test_a_catalog_the_count_cannot_read_leaves_the_count_unknown():
+    # A catalog without /Type /Catalog, which MuPDF does without, and a page
+    # tree a merge left behind, larger than the file's own: no count is
+    # guessed from the nodes that are left while a trailer names the root.
+    objects = {1: b"<< /Pages 2 0 R >>",
+               2: b"<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>", 3: _page(2), 4: _page(2),
+               7: b"<< /Type /Pages /Kids [8 0 R 9 0 R 10 0 R] /Count 3 >>", 8: _page(7), 9: _page(7), 10: _page(7)}
+    assert declared_page_count(_hand_built(objects)) is None
+
+
 def test_no_page_tree_in_the_bytes_is_unknown():
     # Catalog and page tree written last, as many writers do, and lost with
     # the end of the file.

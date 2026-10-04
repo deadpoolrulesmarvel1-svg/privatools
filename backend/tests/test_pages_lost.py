@@ -198,6 +198,35 @@ def _qpdf_warns(data: bytes) -> bool:
         return bool(pdf.get_warnings())
 
 
+def _carrying(inner: bytes) -> bytes:
+    """One page, carrying `inner`, a whole PDF, as an attachment written
+    without compression; its objects reuse the outer file's numbers."""
+    doc = fitz.open()
+    doc.new_page().insert_text((72, 100), "The covering page.", fontsize=12)
+    outer = doc.tobytes(garbage=0)
+    doc.close()
+    with pikepdf.open(io.BytesIO(outer)) as pdf:
+        spec = pikepdf.AttachedFileSpec(pdf, inner, filename="inner.pdf")
+        pdf.attachments["inner.pdf"] = spec
+        out = io.BytesIO()
+        pdf.save(out, compress_streams=False, stream_decode_level=pikepdf.StreamDecodeLevel.none,
+                 object_stream_mode=pikepdf.ObjectStreamMode.disable)
+    data = out.getvalue()
+    assert WHOLE in data  # stored as it is
+    return data
+
+
+@pytest.mark.parametrize("route", sorted(ROUTES))
+def test_a_valid_pdf_carrying_a_pdf_goes_on_as_before(quiet_client, route):
+    whole = _carrying(WHOLE)
+    data = _junk_after_the_end(whole)
+    assert fitz.open(stream=data, filetype="pdf").is_repaired
+    intact = _post(quiet_client, route, whole)
+    response = _post(quiet_client, route, data)
+    assert response.status_code == intact.status_code == 200, response.text[:300]
+    assert _pages_out(response) == _pages_out(intact)
+
+
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────
 
 def test_pdf_to_text_refuses_a_pdf_pypdf_read_only_some_pages_of(quiet_client):
