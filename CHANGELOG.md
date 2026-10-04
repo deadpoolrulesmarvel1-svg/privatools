@@ -10,6 +10,13 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.30] — 2026-10-04 — No more freezes while translating, and Pipeline steps fixed
+
+### Tools
+
+- Translate PDF and Subtitle Translator no longer freeze the page while the translation model loads or works, because the model now runs in a background worker. The page used to stop responding for 4 to 7 seconds, Cancel included; now it answers at once, and the translations are the same as before. (#348)
+- The Pipeline's Repair PDF, Bates Numbering and PDF to PDF/A steps work again. Each had failed every time with "Processing failed", even on intact files. (#350)
+
 ## [2.7.29] — 2026-10-04 — Damaged PDFs told apart from scans, and more damage named
 
 ### Tools
