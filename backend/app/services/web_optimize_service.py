@@ -15,6 +15,7 @@ import pikepdf
 from ..utils.cleanup import NO_PAGES_MESSAGE
 from ..utils.exceptions import (
     ExternalToolError,
+    PdfCorruptError,
     ProcessingError,
     ToolTimeoutError,
     ValidationError,
@@ -38,6 +39,22 @@ def _check_readable(input_path: str) -> None:
     with pikepdf.open(input_path) as pdf:
         if not len(pdf.pages):
             raise ValidationError(NO_PAGES_MESSAGE)
+
+
+def _refuse_if_damaged(input_path: str) -> None:
+    """After qpdf failed: refuse the input if it is damaged, judged as
+    process_pdf judges it, by a page object MuPDF cannot read
+    (utils.cleanup._has_unreadable_page). pikepdf reads such a file, qpdf's
+    command does not, and its exit status can't say whose the failure was.
+    Anything else stays the server's fault."""
+    from ..utils.cleanup import _has_unreadable_page, open_pdf_document
+
+    doc = open_pdf_document(input_path)  # raises the standard 400s itself
+    try:
+        if _has_unreadable_page(doc):
+            raise PdfCorruptError()
+    finally:
+        doc.close()
 
 
 async def web_optimize(input_path: str) -> str:
@@ -76,6 +93,7 @@ async def web_optimize(input_path: str) -> str:
         err = (stderr or b"").decode("utf-8", errors="replace").strip()
         # Keep the first 200 chars of stderr — qpdf's messages are usually
         # already a single line ("operation succeeded with warnings: ...").
+        await asyncio.to_thread(_refuse_if_damaged, input_path)
         raise ExternalToolError(f"qpdf linearize failed: {err[:200]}")
 
     if not output_path.exists():
