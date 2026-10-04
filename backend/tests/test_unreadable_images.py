@@ -272,6 +272,16 @@ def test_an_uploaded_signature_that_is_not_a_picture_is_a_400(quiet_client, samp
     assert response.json()["detail"] == "Signature isn't a recognised image format."
 
 
+def test_a_cmyk_jpeg_signature_is_signed_not_refused(quiet_client, sample_pdf):
+    # PNG cannot hold CMYK: Pillow's "cannot write mode CMYK as PNG" was
+    # answered 400 "The signature must be a PNG, JPG or WebP picture." for a JPG.
+    buf = io.BytesIO()
+    Image.new("CMYK", (120, 60), (0, 120, 200, 10)).save(buf, "JPEG")
+    response = _esign(quiet_client, sample_pdf, buf.getvalue())
+    assert response.status_code == 200, response.text
+    assert response.content.startswith(b"%PDF")
+
+
 def test_remove_background_answers_a_decoder_failure_with_a_400(quiet_client, monkeypatch):
     # The model behind it is not downloaded here: decode the picture the way
     # rembg does, without the model.

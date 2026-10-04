@@ -9,6 +9,9 @@ from ..utils.filenames import temp_output
 from ..utils.images import image_read_error
 from ..utils.page_space import drawing_unturned
 
+# The modes Pillow writes as PNG; a signature in any other is converted first.
+_PNG_MODES = frozenset({"1", "L", "LA", "I", "I;16", "I;16B", "P", "RGB", "RGBA"})
+
 
 def esign_pdf(input_path: str, signature_data: str,
               page_number: int = 1, x: float = 100, y: float = 100,
@@ -43,8 +46,13 @@ def esign_pdf(input_path: str, signature_data: str,
     # release the underlying file descriptor even on conversion failures.
     try:
         with Image.open(io.BytesIO(sig_bytes)) as img:
+            # PNG cannot hold every mode a valid picture decodes to, such as a
+            # CMYK JPEG from a print workflow: those are drawn as RGBA. Pillow
+            # would otherwise refuse to write them, and that refusal is not
+            # the visitor's fault.
+            picture = img if img.mode in _PNG_MODES else img.convert("RGBA")
             buf = io.BytesIO()
-            img.save(buf, format="PNG")
+            picture.save(buf, format="PNG")
             sig_bytes = buf.getvalue()
     except UnidentifiedImageError as exc:
         raise ValidationError("Signature isn't a recognised image format.") from exc
