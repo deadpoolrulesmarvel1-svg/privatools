@@ -261,7 +261,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "auto subtitle generator generate subtitles video to srt audio to srt srt generator vtt captions caption generator closed captions speech to subtitles transcribe video whisper offline no watermark",
     popularity: 18,
     category: "video-audio", clientOnly: true, accepts: ".mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.oga,.opus,.flac,.aac", outputLabel: "subtitles (.srt or .vtt)",
-    lastReviewed: "2026-10-03",
+    lastReviewed: "2026-10-04",
   },
   {
     slug: "subtitle-translator", icon: Languages, name: "Subtitle Translator",

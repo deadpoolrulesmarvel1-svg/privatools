@@ -60,7 +60,7 @@
     },
     {
       "q": "What if my file doesn't work?",
-      "a": "The browser has to decode the sound itself. When it can't, because of an unusual codec, an AVI file or a damaged file, the tool says so and nothing is sent anywhere. Extract Audio can make an MP3 of an MP4, MOV, WebM, AVI or MKV video's sound, and Audio Converter of a WAV, OGG, FLAC, AAC, M4A or WMA recording, both on the PrivaTools server, which means uploading the file, up to 500 MB, for temporary processing; the MP3 then works here."
+      "a": "The browser has to decode the sound itself. When it can't, because of an unusual codec, an AVI file or a damaged file, the tool says so and nothing is sent anywhere. Extract Audio can make an MP3 of an MP4, MOV, WebM, AVI or MKV video's sound, and Audio Converter of a WAV, OGG, FLAC, AAC, M4A or WMA recording, both on the PrivaTools server, which means uploading the file, up to 200 MB, for temporary processing; the MP3 then works here."
     },
     {
       "q": "Can it translate the subtitles into another language?",

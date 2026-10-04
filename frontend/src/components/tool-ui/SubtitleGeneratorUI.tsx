@@ -11,7 +11,7 @@
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Captions, Download } from "lucide-react";
-import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { downloadBlob, formatFileSize, SERVER_MEDIA_MAX, SERVER_MEDIA_MAX_LABEL } from "@/lib/api";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { emitToolRun, isTransientFailure, toolErrorKind, type ToolErrorKind } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -98,11 +98,15 @@ interface Failure {
     help?: ReactNode;
 }
 
-/** Whether another PrivaTools tool takes this file: its type, by the tool's own list, and its size. */
+/**
+ * Whether a server-backed PrivaTools tool takes this file: its type, by the
+ * tool's own list, and its size. Extract Audio, Audio Converter and Cut / Trim
+ * Video & Audio take SERVER_MEDIA_MAX on the server.
+ */
 function takes(slug: string, file: File): boolean {
     const extension = /\.[^.]+$/.exec(file.name)?.[0].toLowerCase();
     const tool = nonPdfTools.find(entry => entry.slug === slug);
-    return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= MAX_FILE_SIZE;
+    return Boolean(extension && tool?.accepts.split(",").includes(extension)) && file.size <= SERVER_MEDIA_MAX;
 }
 
 /** A tool that can save the sound as an MP3, which this page reads up to 3 hours, and what using it means. */
@@ -114,8 +118,8 @@ function mp3Maker(file: File): ReactNode {
     if (!video && takes("audio-converter", file)) {
         return <><a href="/tools/audio-converter">Audio Converter</a> can turn it into an MP3 on the PrivaTools server, which means uploading the recording for temporary processing; the MP3 then works here, up to {MAX_SECONDS / 3600} hours.</>;
     }
-    if (file.size > MAX_FILE_SIZE) {
-        return <>It is larger than the {MAX_FILE_SIZE_LABEL} PrivaTools takes for upload, so save it as MP4 or MP3 with a video or audio app on your device; those work here up to {MAX_SECONDS / 3600} hours.</>;
+    if (file.size > SERVER_MEDIA_MAX) {
+        return <>It is larger than the {SERVER_MEDIA_MAX_LABEL} that {video ? "Extract Audio" : "Audio Converter"} takes, so save it as MP4 or MP3 with a video or audio app on your device; those work here up to {MAX_SECONDS / 3600} hours.</>;
     }
     return <>A video or audio app on your device can save it as MP4 or MP3, which work here up to {MAX_SECONDS / 3600} hours.</>;
 }
@@ -128,7 +132,7 @@ function failureFor(error: unknown, file: File): Failure {
             title: "This file is too long to subtitle here.", detail: error.message, reason: `Longer than ${MAX_SECONDS / 3600} hours of sound`, retryable: false, kind: "too_large",
             help: takes("trim-media", file)
                 ? <>To subtitle it in parts of up to {MAX_SECONDS / 3600} hours, cut it with <a href="/tools/trim-media">Cut / Trim Video &amp; Audio</a>, which uploads the file to PrivaTools for temporary processing.</>
-                : <>To subtitle it, cut it into parts of up to {MAX_SECONDS / 3600} hours with a video or audio app on your device{file.size > MAX_FILE_SIZE ? `: it is larger than the ${MAX_FILE_SIZE_LABEL} PrivaTools takes for upload` : ""}.</>,
+                : <>To subtitle it, cut it into parts of up to {MAX_SECONDS / 3600} hours with a video or audio app on your device{file.size > SERVER_MEDIA_MAX ? `: it is larger than the ${SERVER_MEDIA_MAX_LABEL} Cut / Trim Video & Audio takes` : ""}.</>,
         };
         if (error.problem === "too-long-whole") return {
             title: "This file is too long to read whole.", detail: error.message, reason: "Too long for this format", retryable: false, kind: "too_large", help: mp3Maker(file),
