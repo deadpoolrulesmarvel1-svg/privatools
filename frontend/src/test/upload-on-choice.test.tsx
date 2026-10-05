@@ -180,6 +180,8 @@ describe("what a step before the run sends", () => {
         expect(button, `${slug} shows no "${step}" button once a PDF is chosen`).toBeDefined();
         await act(async () => { fireEvent.click(button!); });
         await vi.waitFor(() => { if (!requests.length) throw new Error("nothing sent yet"); }, { timeout: 5000, interval: 20 });
+        // Nothing answers here, so a second upload would come on its own: give it time to be sent before counting.
+        await act(async () => { await new Promise(resolve => setTimeout(resolve, 300)); });
         expect(requests.map(r => r.url.replace(/^https?:\/\/[^/]+/, ""))).toEqual([`/api${endpoint}`]);
         expect((requests[0].body as FormData).get("file")).toBe(file);
         expect(toolLocation(row).detail).toMatch(new RegExp(`uploaded when you select “${step}”`));

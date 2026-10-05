@@ -147,6 +147,102 @@ def test_a_bold_heading_over_a_rule_is_not_a_question():
     assert [round(c["y"] + c["height"]) for c in found] == [224, 324]
 
 
+def _captioned_lines(captions: list[list[str]], size: float = 10) -> bytes:
+    """Rows of two lines, each with a caption under it, 52 points apart."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((50, 70), "Consent and details", fontname="hebo", fontsize=13)
+    shape = page.new_shape()
+    y = 120
+    for row in captions:
+        for j, caption in enumerate(row):
+            x0 = 50 + j * 270
+            shape.draw_line((x0, y), (x0 + 230, y))
+            page.insert_text((x0, y + size + 2), caption, fontname="helv", fontsize=size - 1.5)
+        y += 52
+    shape.finish(color=(0, 0, 0), width=0.6, closePath=False)
+    shape.commit()
+    return doc.tobytes()
+
+
+def test_a_line_takes_its_own_caption_not_the_one_of_the_line_above():
+    """A caption with no field word in it ("Postcode") is not taken alone, so
+    the line under "Signature of parent" took that caption as its question and
+    became a second signature field. A phrase that is the caption under the
+    line above belongs to that line; in a form that captions its lines, a
+    line's own caption names it."""
+    data = _captioned_lines([["Signature of parent", "Name of applicant"],
+                             ["Membership no.", "Postcode"],
+                             ["Amount (GBP)", "Course code"]])
+    found = [(c["type"], c["name"], round(c["y"] + c["height"])) for c in detect(data)["candidates"]]
+    assert found == [
+        ("signature", "signature_of_parent", 120), ("text", "name_of_applicant", 120),
+        ("text", "membership_no", 172), ("text", "postcode", 172),
+        ("text", "amount", 224), ("text", "course_code", 224),
+    ]
+
+
+def test_a_question_under_a_line_still_asks_for_the_line_below_it():
+    """A phrase right under a line that ends like a label ("Describe your
+    experience:") asks for the line below it; it is no caption."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 100), "Name:", fontname="helv", fontsize=10.5)
+    page.insert_text((72, 126), "Describe your experience:", fontname="helv", fontsize=10.5)
+    shape = page.new_shape()
+    shape.draw_line((110, 102), (400, 102))
+    for y in (150, 172):
+        shape.draw_line((72, y), (400, y))
+    shape.finish(color=(0, 0, 0), width=0.6, closePath=False)
+    shape.commit()
+    found = [(c["name"], c["multiline"]) for c in detect(doc.tobytes())["candidates"]]
+    assert found == [("name", False), ("describe_your_experience", True)]
+
+
+def _box_groups(label: str, groups: tuple[int, ...], separator: str, y: float, page, cell: float = 15) -> None:
+    """A label, then groups of touching boxes, one character each, with a
+    separator printed between the groups: "Date of birth: □□/□□/□□□□"."""
+    page.insert_text((50, y + cell * 0.7), label, fontname="helv", fontsize=10)
+    shape = page.new_shape()
+    x = 170
+    for i, n in enumerate(groups):
+        for k in range(n):
+            shape.draw_rect(fitz.Rect(x + k * cell, y, x + (k + 1) * cell, y + cell))
+        x += n * cell + 12
+        if i < len(groups) - 1:
+            page.insert_text((x - 9, y + cell * 0.75), separator, fontname="helv", fontsize=10)
+    shape.finish(color=(0, 0, 0), width=0.6)
+    shape.commit()
+
+
+def test_a_date_in_boxes_is_one_field_a_group_and_no_checkboxes():
+    """"□□/□□/□□□□": a pair of boxes is too short for a row of character
+    boxes, so the day and the month were proposed as four checkboxes named
+    after the "/" beside them. Groups joined by date separators are one
+    character-box field each, named and typed after the group's label."""
+    doc = fitz.open()
+    page = doc.new_page()
+    _box_groups("Date of birth:", (2, 2, 4), "/", 100, page)
+    _box_groups("Sort code:", (2, 2, 2), "-", 160, page)
+    found = [(c["type"], c["name"], round(c["x"]), round(c["width"])) for c in detect(doc.tobytes())["candidates"]]
+    assert found == [  # each group's boxes, inside their rules
+        ("date", "date_of_birth", 171, 28), ("date", "date_of_birth_2", 213, 28), ("date", "date_of_birth_3", 255, 58),
+        ("text", "sort_code", 171, 28), ("text", "sort_code_2", 213, 28), ("text", "sort_code_3", 255, 28),
+    ]
+
+
+def test_two_touching_boxes_without_a_separator_are_still_two_checkboxes():
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((50, 110), "Tick both:", fontname="helv", fontsize=10)
+    shape = page.new_shape()
+    for k in range(2):
+        shape.draw_rect(fitz.Rect(170 + k * 12, 100, 182 + k * 12, 112))
+    shape.finish(color=(0, 0, 0), width=0.6)
+    shape.commit()
+    assert [c["type"] for c in detect(doc.tobytes())["candidates"]] == ["checkbox", "checkbox"]
+
+
 def test_precision_and_recall_on_random_forms():
     forms = [varied.varied_form(seed) for seed in varied.VARIED_SEEDS]
     documents = [varied.varied_document(seed) for seed in varied.VARIED_DOCUMENT_SEEDS]
@@ -178,6 +274,16 @@ def test_types_follow_what_the_label_says():
     ("e.g. a.b.c", "e_g_a_b_c"),
     ("", "text"),
     ("Name of the parent or guardian who will collect the child after school", "name_of_the_parent_or_guardian_who_will"),
+    # Marks stay on letters of other scripts: dropping the dakuten made "データ"
+    # read テータ, and a Devanagari vowel sign became an underscore (न_म).
+    ("データ", "データ"),
+    ("ガス料金:", "ガス料金"),
+    ("नाम:", "नाम"),
+    ("क्षेत्र", "क्षेत्र"),
+    ("Όνομα:", "όνομα"),
+    ("Ｎａｍｅ：", "name"),  # full-width letters are letters
+    ("Ünterschrift / Straße", "unterschrift_straße"),
+    ("नाम" * 20, "नाम" * 13),  # cut before a letter, not between it and its vowel sign
 ])
 def test_a_name_is_made_from_its_label(label, name):
     assert worker.field_name(label, "text") == name
@@ -352,6 +458,41 @@ def test_the_route_answers_with_candidates_and_is_not_cached(client):
     body = resp.json()
     assert "ok" not in body
     assert [c["name"] for c in body["candidates"]][:3] == ["full_name", "street_address", "city"]
+
+
+def test_the_route_itself_says_not_to_store_its_answer():
+    """The app's middleware adds no-store to an /api/ answer that sets no
+    Cache-Control, so through the app the route's own header cannot be told
+    apart. The answer names what a PDF says, so the route sets it itself,
+    whatever serves it: here the router alone, with no middleware."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from backend.app.routes import pdf_extra
+
+    app = FastAPI()
+    app.include_router(pdf_extra.router, prefix="/api")
+    with TestClient(app) as bare:
+        resp = post(bare, corpus.contact_details().data)
+    assert resp.status_code == 200, resp.text
+    assert resp.headers.get("cache-control") == "no-store, max-age=0"
+    assert resp.headers.get("pragma") == "no-cache"
+
+
+def test_a_proposal_under_the_threshold_is_not_returned(monkeypatch):
+    """An empty box with no label near it is read at 0.45, under the 0.5 a
+    candidate needs: the page holds one, and nothing is proposed."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.draw_rect(fitz.Rect(300, 400, 500, 440), color=(0, 0, 0), width=0.8)
+    read: list = []
+    keep = worker._keep
+    monkeypatch.setattr(worker, "_keep", lambda found, widgets: read.extend(found) or keep(found, widgets))
+    assert detect(doc.tobytes())["candidates"] == []
+    assert [c.confidence for c in read] == [0.45]
+    kept = worker._keep([worker.Candidate(worker.Box(0, 0, 100, 20), "text", "", 0.45),
+                         worker.Candidate(worker.Box(0, 40, 100, 60), "text", "Name", 0.5)], [])
+    assert [c.confidence for c in kept] == [0.5]
 
 
 def test_the_route_keeps_no_copy_of_the_upload(client):

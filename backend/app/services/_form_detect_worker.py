@@ -117,6 +117,8 @@ SYMBOL_FONT_BOXES = (
     ("dingbats", frozenset("opqrJKËÌ")),
 )
 DATE_SEPARATORS = frozenset("/-.")
+# What stands between groups of character boxes: "□□/□□/□□□□", "□□-□□-□□".
+SEPARATORS = DATE_SEPARATORS | {"–"}
 
 # Words that make a caption under a line, or a line under a label, a field's
 # label rather than a person's name or a footnote.
@@ -827,6 +829,19 @@ def _words(text: str) -> int:
     return len(re.findall(r"\w+", text))
 
 
+def _run_box(run: list) -> Box:
+    """The box around a run of touching cells."""
+    return Box(run[0].box.x0, min(c.box.y0 for c in run), run[-1].box.x1, max(c.box.y1 for c in run))
+
+
+def _columns(cells: list) -> dict:
+    """A table's cells by the column they span."""
+    columns: dict = {}
+    for c in cells:
+        columns.setdefault((round(c.box.x0), round(c.box.x1)), []).append(c)
+    return columns
+
+
 class Rows:
     """Things filed by the bands of height they cover, so that a search near
     one height reads only what lies near it. Without it a page of thousands
@@ -881,6 +896,13 @@ class PageReader:
         self.found: list[Candidate] = []
         self.ticks: list[Box] = []
         self.tick_rows = Rows([], lambda t: (t.y0, t.y1), height)
+        self.line_list: list = []
+        self.line_ys: list[float] = []
+        # Runs of character boxes: the table each is in, the groups joined
+        # by separators, and each group's label once read.
+        self.run_cells: dict[int, list] = {}
+        self.box_groups: dict[int, list] = {}
+        self.group_labels: dict[int, str] = {}
 
     def near(self, y0: float, y1: float, kind: str | None = None) -> list[Token]:
         tokens = self.tokens.near(y0, y1)
@@ -1018,6 +1040,7 @@ class PageReader:
             elif t.kind == "dots" and t.box.width >= 20:
                 lines.append((t.box.x0, t.box.x1, t.box.y1, t))
         lines.sort(key=lambda line: (line[2], line[0]))
+        self.line_list, self.line_ys = lines, [line[2] for line in lines]
         claimed: set[int] = set()
         for index in range(len(lines)):
             if index in claimed:
@@ -1065,10 +1088,18 @@ class PageReader:
             stacked = self._stacked_below(index, lines, claimed)
         if label is None:
             above = self.label_over_line(x0, x1, y)
+            if above is not None and not _ends_like_label(above.text) and self._captions_line_above(above):
+                # "Name of applicant" under the line above is that line's
+                # caption, not a question for this one; in a form that puts
+                # captions under its lines, this line's own caption names it.
+                label = self._caption_under(x0, x1, y, named=False)
+                if label is None:
+                    return None
+                where, size, confidence, stacked = "under", 10.5, 0.75, []
             # A question over an answer line ends with ":" or "?", or names a
             # field in plain text; a heading over a rule names one in bold or
             # large type ("Patient Information").
-            if above is not None and _words(above.text) <= 10 and (
+            elif above is not None and _words(above.text) <= 10 and (
                     _ends_like_label(above.text)
                     or (FIELD_WORDS.search(above.text) and not above.bold and above.size <= 12.5)):
                 label, where, size = above, "above", above.size
@@ -1120,21 +1151,32 @@ class PageReader:
                 best = t
         return best
 
-    def _caption_under(self, x0: float, x1: float, y: float) -> Token | None:
+    def _caption_under(self, x0: float, x1: float, y: float, *, named: bool = True) -> Token | None:
         """One short caption just under the line that names a field
         ("Signature of applicant", "Date"); several pieces of text under it
-        are a table's row, and a person's name is not a field's label."""
+        are a table's row, and a person's name is not a field's label. Where
+        the form is known to caption its lines (`named` False), a caption
+        need not name a field ("Postcode", "Membership no.")."""
         under = [t for t in self.near(y, y + 16) if y + 1 <= t.box.y0 <= y + 16 and t.box.x1 > x0 and t.box.x0 < x1]
         if len(under) != 1 or under[0].kind != "phrase":
             return None
         caption = under[0]
         if caption.box.x0 < x0 - 10 or caption.box.x1 > x1 + 10:
             return None
-        if _words(caption.text) > 6 or caption.text.endswith(".") or not FIELD_WORDS.search(caption.text):
+        if _words(caption.text) > 6 or x1 - x0 > 0.7 * self.frame.width:
             return None
-        if x1 - x0 > 0.7 * self.frame.width:
-            return None
+        if named:
+            if caption.text.endswith(".") or not FIELD_WORDS.search(caption.text):
+                return None
+        elif caption.bold or caption.size > 11.5 or (caption.text.endswith(".") and _words(caption.text) > 3):
+            return None  # a heading, or a sentence rather than an abbreviation ("no.")
         return caption
+
+    def _captions_line_above(self, phrase: Token) -> bool:
+        """Whether the phrase is the caption under a line just above it."""
+        lo = bisect.bisect_left(self.line_ys, phrase.box.y0 - 16)
+        hi = bisect.bisect_right(self.line_ys, phrase.box.y0 - 1)
+        return any(self._caption_under(a, b, ly, named=False) is phrase for a, b, ly, _ in self.line_list[lo:hi])
 
     def _stacked_below(self, index: int, lines: list, claimed: set[int]) -> list[int]:
         """Lines under this one, at the same width and an even spacing, with
@@ -1170,14 +1212,23 @@ class PageReader:
         tables: dict[int, list[Cell]] = {}
         for cell in self.cells:
             tables.setdefault(cell.table, []).append(cell)
-        plans = []
+        staged = []
         for cells in tables.values():
             blanks = [c for c in cells if c.kind is not None]
             if len(cells) > 1 and len(blanks) < 0.25 * len(cells):
                 continue  # a table of data with a few empty cells
             small = [c for c in cells if c.kind == "empty" and 5.5 <= c.box.width <= 24
                      and 5.5 <= c.box.height <= 24 and 0.7 <= c.box.width / c.box.height <= 1.43]
-            combs = self._combs(small)
+            runs = self._runs(small)
+            for run in runs:
+                self.run_cells[id(run)] = cells
+            staged.append((cells, small, runs))
+        self.box_groups = self._box_groups([run for _, _, runs in staged for run in runs])
+        plans = []
+        for cells, small, runs in staged:
+            # A pair of boxes is a row of character boxes only as part of a
+            # group ("□□/□□/□□□□"); alone, two boxes are two checkboxes.
+            combs = [run for run in runs if len(run) >= 3 or id(run) in self.box_groups]
             in_comb = {id(c) for comb in combs for c in comb}
             for c in small:
                 if id(c) in in_comb:
@@ -1214,12 +1265,18 @@ class PageReader:
 
     def label_table(self, cells: list[Cell], combs: list[list[Cell]]) -> None:
         page_area = self.frame.width * self.frame.height
-        columns: dict[tuple[int, int], list[Cell]] = {}
-        for c in cells:
-            columns.setdefault((round(c.box.x0), round(c.box.x1)), []).append(c)
+        columns = _columns(cells)
         for comb in combs:
-            box = Box(comb[0].box.x0, min(c.box.y0 for c in comb), comb[-1].box.x1, max(c.box.y1 for c in comb))
-            label = self._box_label(box, cells, columns)
+            box = _run_box(comb)
+            group = self.box_groups.get(id(comb))
+            if group is None:
+                label = self._box_label(box, cells, columns)
+            else:  # every group is named after the label of its first, as "Date of birth: □□/□□/□□□□"
+                first = group[0]
+                if id(group) not in self.group_labels:
+                    self.group_labels[id(group)] = self._box_label(_run_box(first), self.run_cells[id(first)],
+                                                                   _columns(self.run_cells[id(first)]))
+                label = self.group_labels[id(group)]
             confidence = 0.8 if label else 0.45
             inner = box.inset(comb[0].stroke / 2 + 0.5)
             self.found.append(Candidate(inner, _kind(label or ""), label or "", confidence))
@@ -1243,12 +1300,13 @@ class PageReader:
                 box = Box(label.box.x1 + 4, inner.y0, inner.x1, inner.y1)
                 self.found.append(Candidate(box, _kind(label.text), label.text, 0.8, multiline=box.height >= 34))
 
-    def _combs(self, small: list[Cell]) -> list[list[Cell]]:
-        """Rows of three or more touching boxes of one size: one character each."""
+    def _runs(self, small: list[Cell]) -> list[list[Cell]]:
+        """Rows of two or more touching boxes of one size: one character each
+        when there are three or more, or a pair as part of a group."""
         rows: dict[tuple[int, int], list[Cell]] = {}
         for c in small:
             rows.setdefault((round(c.box.y0), round(c.box.y1)), []).append(c)
-        combs: list[list[Cell]] = []
+        runs: list[list[Cell]] = []
         for row in rows.values():
             row.sort(key=lambda c: c.box.x0)
             run = [row[0]]
@@ -1256,12 +1314,44 @@ class PageReader:
                 if c.box.x0 - run[-1].box.x1 <= 1.5 and abs(c.box.width - run[-1].box.width) <= 0.25 * c.box.width:
                     run.append(c)
                     continue
-                if len(run) >= 3:
-                    combs.append(run)
+                if len(run) >= 2:
+                    runs.append(run)
                 run = [c]
-            if len(run) >= 3:
-                combs.append(run)
-        return combs
+            if len(run) >= 2:
+                runs.append(run)
+        return runs
+
+    def _box_groups(self, runs: list[list[Cell]]) -> dict[int, list[list[Cell]]]:
+        """Runs of boxes on one row with only a separator between them, as a
+        date or a sort code is written ("□□/□□/□□□□", "□□-□□-□□"): for each
+        run in a group, the group."""
+        rows: dict[tuple[int, int], list[list[Cell]]] = {}
+        for run in runs:
+            rows.setdefault((round(run[0].box.y0), round(run[0].box.y1)), []).append(run)
+        groups: dict[int, list[list[Cell]]] = {}
+        for row in rows.values():
+            row.sort(key=lambda run: run[0].box.x0)
+            group = [row[0]]
+            for run in row[1:] + [None]:
+                if run is not None and self._separated(group[-1], run):
+                    group.append(run)
+                    continue
+                if len(group) >= 2:
+                    groups.update((id(member), group) for member in group)
+                if run is not None:
+                    group = [run]
+        return groups
+
+    def _separated(self, left: list[Cell], right: list[Cell]) -> bool:
+        """Whether only a separator ("/", "-", ".") stands between two runs."""
+        x0, x1 = left[-1].box.x1, right[0].box.x0
+        y0, y1 = right[0].box.y0, right[0].box.y1
+        if not 2 <= x1 - x0 <= 24:
+            return False
+        between = [t for t in self.near(y0, y1) if t.box.x1 > x0 + 0.5 and t.box.x0 < x1 - 0.5
+                   and t.box.y1 > y0 and t.box.y0 < y1]
+        return (len(between) == 1 and between[0].kind == "phrase" and between[0].text.strip() != ""
+                and set(between[0].text.strip()) <= SEPARATORS)
 
     def _box_label(self, box: Box, cells: list[Cell], columns: dict | None = None) -> str:
         """The label of an empty box: in a table, the heading of its row (the
@@ -1420,15 +1510,37 @@ def field_name(label: str, fallback: str, *, limit: int = MAX_NAME) -> str:
     stripped = _PARENTHESES.sub(" ", text)
     if re.search(r"\w", stripped):
         text = stripped
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join(c for c in text if not unicodedata.combining(c)).lower()
-    text = re.sub(r"[\W_]+", "_", text).strip("_")
+    text = _plain_latin(unicodedata.normalize("NFKC", text)).lower()
+    # Letters and digits of every script are kept with the marks written on
+    # them (a vowel sign, a dakuten); anything else is an underscore.
+    text = "".join(c if c.isalnum() or unicodedata.category(c).startswith("M") else "_" for c in text)
+    text = re.sub(r"_+", "_", text).strip("_")
     if limit <= 0:
         return fallback
     if len(text) > limit:
-        cut = text[:limit]
-        text = (cut.rsplit("_", 1)[0] if "_" in cut[limit // 2:] else cut).strip("_")
+        if "_" in text[limit // 2:limit]:
+            text = text[:limit].rsplit("_", 1)[0]
+        else:
+            end = limit
+            while 0 < end and unicodedata.category(text[end]).startswith("M"):
+                end -= 1  # never part a letter from the marks written on it
+            text = text[:end]
+        text = text.strip("_")
     return text or fallback
+
+
+def _plain_latin(text: str) -> str:
+    """Accents off Latin letters ("é" is "e"); marks on other scripts stay."""
+    kept: list[str] = []
+    for c in unicodedata.normalize("NFD", text):
+        if unicodedata.combining(c) and kept and _is_latin(kept[-1]):
+            continue
+        kept.append(c)
+    return unicodedata.normalize("NFC", "".join(kept))
+
+
+def _is_latin(c: str) -> bool:
+    return unicodedata.name(c, "").startswith("LATIN ")
 
 
 def _unique(name: str, taken: set[str]) -> str:
