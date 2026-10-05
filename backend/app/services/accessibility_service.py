@@ -26,7 +26,8 @@ from typing import Any
 import fitz
 import pikepdf
 
-from ..utils.cleanup import open_pikepdf
+from ..utils.cleanup import open_pikepdf, refuse_if_misread
+from ..utils.declared_pages import mupdf_reading
 from ..utils.exceptions import PdfCorruptError
 
 logger = logging.getLogger(__name__)
@@ -858,7 +859,13 @@ def check_accessibility(input_path: str) -> dict[str, Any]:
         doc = None
         try:
             doc = fitz.open(input_path)
+            if doc.is_repaired:
+                # MuPDF reads the pages these checks look at, and its repair
+                # can take a PDF attached inside the file for the file's own.
+                refuse_if_misread(input_path, lambda declared: mupdf_reading(doc, declared), lost=False)
             checks += _content_checks(doc)
+        except PdfCorruptError:
+            raise  # the report would describe another document's pages
         except Exception:
             logger.debug("accessibility: content checks skipped", exc_info=True)
             checks.append(_check(

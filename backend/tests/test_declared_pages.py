@@ -297,18 +297,53 @@ STORED = _catalog_last()
     b"<< /Type /EmbeddedFile /Length %d >>\nstream\n%s\nendstream" % (len(STORED) + 10, STORED),
     b"<< /Type /EmbeddedFile >>\nstream\n%s\nendstream" % STORED,
 ], ids=["length-short", "length-long", "no-length"])
-def test_a_stored_pdf_whose_stream_does_not_end_at_its_length_leaves_the_count_unknown(attachment):
+def test_a_stored_pdf_whose_stream_does_not_end_at_its_length_ends_where_that_pdf_ends(attachment):
     # A wrong /Length is common in valid files, and readers cope; here the
     # stream holds a PDF whose catalog comes last. Its first "endstream" is
     # not this stream's end, and what follows it was read as this file's: a
     # one-page file declared 6 pages, and qpdf's routes refused it with junk
-    # after its end. Where such a stream ends is not known: nor is the count.
+    # after its end. Left unknown, the count let MuPDF's repair, which ends
+    # the stream at that first "endstream" too, answer with the stored PDF's
+    # pages unchecked. A whole PDF ends where its own end says: at the
+    # "endstream" after its last "%%EOF".
     assert declared_page_count(STORED) == 6
     outer = _carrying_stream(attachment)
     with fitz.open(stream=outer, filetype="pdf") as doc:
         assert not doc.is_repaired and len(doc) == 1
+    assert declared_page_count(outer) == 1
+    junk = outer + b"\n" + bytes(range(256)) * 16
+    assert declared_page_count(junk) == 1
+    with fitz.open(stream=junk, filetype="pdf") as doc:
+        assert doc.is_repaired and readable_page_count(doc) == 6  # what MuPDF's repair reads
+
+
+@pytest.mark.parametrize("stored", [
+    STORED[:-6],  # its "%%EOF" lost: cut short
+    STORED.replace(b"%PDF-", b"%XYZ-", 1),  # not a PDF's start
+    STORED + b"% words after its end\n",  # its end not the stream's
+], ids=["no-eof", "no-header", "words-after-eof"])
+def test_a_stream_holding_objects_but_no_whole_pdf_still_leaves_the_count_unknown(stored):
+    # Where such a stream ends cannot be told from its data: no "endstream"
+    # in it is known to be the stream's own.
+    outer = _carrying_stream(b"<< /Type /EmbeddedFile >>\nstream\n%s\nendstream" % stored)
     assert declared_page_count(outer) is None
-    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) is None
+
+
+def test_a_pdf_that_the_stored_pdf_carries_in_turn_is_passed_over():
+    # Neither stream has a /Length, and the inner PDF's end comes first: it
+    # ends the inner stream, not the one around it.
+    middle = _carrying_stream(b"<< /Type /EmbeddedFile >>\nstream\n%s\nendstream" % STORED)
+    assert declared_page_count(middle) == 1
+    outer = _hand_built({
+        1: b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 5 0 R >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R 7 0 R] /Count 2 >>",
+        3: _page(2),
+        4: b"<< /Type /EmbeddedFile >>\nstream\n%s\nendstream" % middle,
+        5: b"<< /Names [(inner.pdf) 6 0 R] >>",
+        6: b"<< /Type /Filespec /F (inner.pdf) /EF << /F 4 0 R >> >>",
+        7: _page(2),
+    })
+    assert declared_page_count(outer) == 2
 
 
 def _with_an_object_stream(objects: dict[int, bytes], number: int, body: bytes) -> bytes:
@@ -341,9 +376,10 @@ def _with_an_object_stream(objects: dict[int, bytes], number: int, body: bytes) 
     return out + table + b"\nendstream\nendobj\nstartxref\n%d\n%%%%EOF\n" % offsets[xref]
 
 
-def test_a_stored_pdf_whose_length_is_in_an_object_stream_leaves_the_count_unknown():
+def test_a_stored_pdf_whose_length_is_in_an_object_stream_ends_where_that_pdf_ends():
     # A valid PDF 1.5: the attachment's /Length is object 7, which sits in an
-    # object stream, where the raw bytes do not show it.
+    # object stream, where the raw bytes do not show it. The stored PDF's own
+    # end says where the stream ends.
     attachment = b"<< /Type /EmbeddedFile /Length 7 0 R >>\nstream\n%s\nendstream" % STORED
     packed = _with_an_object_stream(_carrying_objects(attachment), 7, b"%d" % len(STORED))
     with fitz.open(stream=packed, filetype="pdf") as doc:
@@ -351,8 +387,8 @@ def test_a_stored_pdf_whose_length_is_in_an_object_stream_leaves_the_count_unkno
     with pikepdf.open(io.BytesIO(packed)) as pdf:
         assert len(pdf.pages) == 1
         assert len(pdf.attachments["inner.pdf"].get_file().read_bytes()) == len(STORED)
-    assert declared_page_count(packed) is None
-    assert declared_page_count(packed + b"\n" + bytes(range(256)) * 16) is None
+    assert declared_page_count(packed) == 1
+    assert declared_page_count(packed + b"\n" + bytes(range(256)) * 16) == 1
 
 
 def test_spaces_after_the_stream_keyword_are_not_the_streams_data():
@@ -693,3 +729,207 @@ def test_mupdf_lists_a_page_whose_object_was_lost_but_cannot_read_it():
     assert "Page 1." in doc[0].get_text()
     with fitz.open(stream=SIX, filetype="pdf") as intact:
         assert readable_page_count(intact) == 6
+
+
+# ── a library's reading, against the page tree the file declares ───────────
+#
+# A valid PDF that carries a PDF attached without compression, with a common
+# cross-reference defect (offsets shifted, no startxref, bytes after its end),
+# opens repaired, and the libraries' repairs took the attachment's objects for
+# the file's own: the tools answered with the attachment's pages, as a
+# success. misread() compares a reading with the page tree the file declares.
+
+def _shifted(data: bytes) -> bytes:
+    """Seven bytes after the header: every offset in the table is off by 7."""
+    first_line = data.index(b"\n") + 1
+    return data[:first_line] + b"%xxxxx\n" + data[first_line:]
+
+
+def _junk(data: bytes) -> bytes:
+    return data + b"\n" + bytes(range(256)) * 16
+
+
+def _small_page(parent: int, contents: int | None = None) -> bytes:
+    """A 300 x 300 page: the stored PDF's, told from the file's own 612 x 792."""
+    tail = b" /Contents %d 0 R" % contents if contents else b""
+    return b"<< /Type /Page /Parent %d 0 R /MediaBox [0 0 300 300]%s >>" % (parent, tail)
+
+
+# One page, under this file's very numbers: catalog 1, page tree 2, page 3.
+SAME_SHAPE = _hand_built({
+    1: b"<< /Type /Catalog /Pages 2 0 R >>",
+    2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    3: _small_page(2),
+})
+
+
+def _reads(name: str, data: bytes, use):
+    """use(reading function) with `name`'s library open on `data`."""
+    if name == "mupdf":
+        with fitz.open(stream=data, filetype="pdf") as doc:
+            return use(lambda declared: declared_pages.mupdf_reading(doc, declared))
+    if name == "qpdf":
+        with pikepdf.open(io.BytesIO(data)) as pdf:
+            return use(lambda declared: declared_pages.qpdf_reading(pdf, declared))
+    import pypdf
+
+    reader = pypdf.PdfReader(io.BytesIO(data))
+    return use(lambda declared: declared_pages.pypdf_reading(reader, declared))
+
+
+def test_qpdf_reading_an_attachment_of_the_same_shape_as_the_file_is_another_document():
+    # qpdf's rebuild reads every "N G obj" in the bytes, stream data and all,
+    # and the stored PDF's come later: it read the stored page as the file's,
+    # one page for one, under the same page tree root. Only where it read
+    # them from tells: inside the attachment's data.
+    data = _shifted(_carrying(SAME_SHAPE))
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        assert pdf.get_warnings() and len(pdf.pages) == 1
+        assert pdf.pages[0].mediabox[2] == 300  # the stored page
+        reading = declared_pages.qpdf_reading(pdf, 1)
+        assert reading.pages == 1 and reading.root == 2
+        assert declared_pages.misread(data, lambda declared: declared_pages.qpdf_reading(pdf, declared)) == (
+            declared_pages.MIXED, 1, 1)
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert doc.is_repaired and doc[0].rect.width == 612  # MuPDF skips the stream's data
+        assert declared_pages.misread(data, lambda declared: declared_pages.mupdf_reading(doc, declared)) is None
+
+
+def test_pypdf_reading_an_attachment_of_the_same_shape_as_the_file_is_another_document():
+    import pypdf
+
+    data = _shifted(_carrying(SAME_SHAPE))
+    reader = pypdf.PdfReader(io.BytesIO(data))
+    assert len(reader.pages) == 1 and reader.pages[0].mediabox.width == 300  # the stored page
+    assert declared_pages.misread(data, lambda declared: declared_pages.pypdf_reading(reader, declared)) == (
+        declared_pages.MIXED, 1, 1)
+    intact = pypdf.PdfReader(io.BytesIO(_carrying(SAME_SHAPE)))
+    assert declared_pages.misread(
+        _carrying(SAME_SHAPE), lambda declared: declared_pages.pypdf_reading(intact, declared)) is None
+
+
+def _stored_page_after_a_stream() -> bytes:
+    """A one-page PDF carrying a PDF whose page is object 3, as this file's
+    page is, written after a stream of the stored PDF's own; the attachment's
+    /Length is an object after it, which MuPDF's repair cannot use."""
+    stored = _hand_built({
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        5: b"<< /Length 10 >>\nstream\nBT 0 Tj ET\nendstream",
+        3: _small_page(2, 5),
+    })
+    return _hand_built({
+        1: b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 5 0 R >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: _page(2),
+        4: b"<< /Type /EmbeddedFile /Length 7 0 R >>\nstream\n%s\nendstream" % stored,
+        7: b"%d" % len(stored),
+        5: b"<< /Names [(inner.pdf) 6 0 R] >>",
+        6: b"<< /Type /Filespec /F (inner.pdf) /EF << /F 4 0 R >> >>",
+    })
+
+
+def test_mupdf_taking_a_stored_object_for_the_files_page_is_another_document():
+    # MuPDF's repair ends a stream whose /Length it cannot use at its first
+    # "endstream", the stored PDF's own, and reads what follows as the
+    # file's: the stored page, under the number of this file's page. One
+    # page for one, the same root, and a page that is not the file's.
+    data = _junk(_stored_page_after_a_stream())
+    assert declared_page_count(data) == 1
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert doc.is_repaired and len(doc) == 1 and doc[0].rect.width == 300
+        reading = declared_pages.mupdf_reading(doc, 1)
+        assert reading.pages == 1 and reading.root == 2
+        assert declared_pages.misread(data, lambda declared: declared_pages.mupdf_reading(doc, declared)) == (
+            declared_pages.MIXED, 1, 1)
+    with pikepdf.open(io.BytesIO(data)) as pdf:  # qpdf finds the table, and reads the file's own
+        assert pdf.pages[0].mediabox[2] == 612
+        assert declared_pages.misread(data, lambda declared: declared_pages.qpdf_reading(pdf, declared)) is None
+
+
+def test_more_pages_than_declared_are_another_document_and_fewer_are_lost():
+    root = 2  # MuPDF's own numbering: catalog 1, page tree 2
+    with fitz.open(stream=SIX, filetype="pdf") as doc:
+        assert doc.xref_get_key(doc.pdf_catalog(), "Pages") == ("xref", "2 0 R")
+    reading = declared_pages.Reading
+    assert declared_pages.misread(SIX, lambda declared: reading(6, root)) is None
+    assert declared_pages.misread(SIX, lambda declared: reading(4, root)) == (declared_pages.LOST, 4, 6)
+    assert declared_pages.misread(SIX, lambda declared: reading(7, root)) == (declared_pages.MIXED, 7, 6)
+    assert declared_pages.misread(SIX, lambda declared: reading(6, root + 40)) == (declared_pages.MIXED, 6, 6)
+    assert declared_pages.misread(SIX, lambda declared: reading(4, root + 40)) == (declared_pages.MIXED, 4, 6)
+    assert declared_pages.misread(SIX, lambda declared: reading(None, None)) is None
+
+
+def test_an_object_read_from_inside_a_streams_data_is_another_document():
+    data = _carrying(SAME_SHAPE)
+    own = data.index(b"1 0 obj")
+    stored = data.index(b"1 0 obj", data.index(b"stream"))
+    reading = declared_pages.Reading
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((1, own),))) is None
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((1, stored),))) == (
+        declared_pages.MIXED, 1, 1)
+    # MuPDF's offsets can point at the whitespace or comments before a header.
+    assert data[stored - 1:stored] == b"\n"
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((1, stored - 1),))) == (
+        declared_pages.MIXED, 1, 1)
+    # An offset that leads to another object's header, or to none, says nothing.
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((9, stored),))) is None
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((1, stored + 3),))) is None
+    assert declared_pages.misread(data, lambda declared: reading(1, 2, lambda: ((1, len(data) + 10),))) is None
+
+
+def test_where_a_library_read_the_pages_is_asked_only_when_a_stream_holds_objects():
+    # Placing every page takes a lookup or two a page; a library can take an
+    # object from the wrong place only where a stream's data holds one.
+    def never():
+        raise AssertionError("asked where the pages were read")
+
+    assert declared_pages.misread(SIX, lambda declared: declared_pages.Reading(6, 2, never)) is None
+    asked = []
+    data = _carrying(SAME_SHAPE)
+    assert declared_pages.misread(
+        data, lambda declared: declared_pages.Reading(1, 2, lambda: asked.append(True) or ())) is None
+    assert asked == [True]
+
+
+def test_nothing_is_refused_on_an_unknown_count_or_reading():
+    asked = []
+    no_tree = _hand_built({1: b"<< /Type /Catalog >>", 3: _page(2)})
+    assert declared_page_count(no_tree) is None
+    assert declared_pages.misread(no_tree, lambda declared: asked.append(declared)) is None
+    assert asked == []  # not even asked
+    assert declared_pages.misread(SIX, lambda declared: None) is None
+
+
+@pytest.mark.parametrize("library", ["mupdf", "qpdf", "pypdf"])
+@pytest.mark.parametrize("layout", ["classic", "object-streams"])
+def test_each_library_says_where_it_read_the_objects_it_shows_the_pages_with(library, layout):
+    # The check depends on these: a library that stopped saying where it read
+    # an object would let through every misreading that shows as many pages
+    # under the same root. Each place leads to the header of its object, or
+    # of the object stream that holds it, outside every stream's data.
+    data = SIX if layout == "classic" else _object_streams(SIX)
+
+    def use(read):
+        reading = read(6)
+        assert reading.pages == 6 and reading.root is not None
+        assert len(list(reading.places())) >= 1 + 6 * 2  # the catalog's, and each page's and its content's
+        scan = declared_pages._Scan(data)
+        assert scan.declared() == 6
+        for number, offset in reading.places():
+            at = declared_pages._skip_space(data, offset, len(data))
+            assert re.match(rb"%d 0 obj" % number, data[at:at + 20]), (number, offset)
+            assert not scan.in_stream_data(number, offset)
+        assert declared_pages.misread(data, read) is None
+
+    _reads(library, data, use)
+
+
+def test_a_reading_places_no_more_pages_than_one_past_the_declared_count():
+    many = _pages(40)
+    with fitz.open(stream=many, filetype="pdf") as doc:
+        assert declared_pages.mupdf_reading(doc, 3).pages == 4
+    with pikepdf.open(io.BytesIO(many)) as pdf:
+        reading = declared_pages.qpdf_reading(pdf, 3)
+        assert reading.pages == 40  # qpdf lists them anyway
+        assert len({number for number, _ in reading.places()}) < 20  # but places only four

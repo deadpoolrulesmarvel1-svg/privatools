@@ -19,8 +19,8 @@ from starlette.background import BackgroundTask
 from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..services.media_errors import NOT_MEDIA, unreadable_input
 from ..services.media_metadata import with_metadata_options
-from ..utils.cleanup import process_pdf, refuse_if_pages_lost, validate_pdf_content
-from ..utils.declared_pages import readable_page_count
+from ..utils.cleanup import process_pdf, refuse_if_misread, validate_pdf_content
+from ..utils.declared_pages import mupdf_reading
 from ..utils.exceptions import ToolError
 from ..utils.images import image_read_error
 from ..utils.pdf_errors import pdf_read_error
@@ -264,7 +264,8 @@ def _count_pdf_pages(data: bytes) -> int:
     is CPU-bound, so callers run this off the event loop.
 
     A PDF cut short is unreadable too: MuPDF repairs it with the pages that
-    survived, or none, and that count is not the file's (refuse_if_pages_lost).
+    survived, or none, and that count is not the file's; so is one whose
+    repair took the pages of a PDF attached inside it (refuse_if_misread).
     """
     try:
         doc = fitz.open(stream=data, filetype="pdf")
@@ -273,7 +274,7 @@ def _count_pdf_pages(data: bytes) -> int:
             if doc.is_repaired:
                 if count == 0:
                     return -1
-                refuse_if_pages_lost(data, lambda declared: readable_page_count(doc, declared))
+                refuse_if_misread(data, lambda declared: mupdf_reading(doc, declared))
             return count
         finally:
             doc.close()

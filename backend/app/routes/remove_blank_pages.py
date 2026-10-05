@@ -12,10 +12,12 @@ from ..utils.cleanup import (
     end_is_missing,
     ensure_temp_dir,
     get_temp_path,
+    refuse_if_misread,
     remove_files,
     safe_open_pdf,
     validate_pdf_content,
 )
+from ..utils.declared_pages import mupdf_reading
 from ..utils.page_removal import WorkBudget, remove_pages
 from ..utils.route_helpers import safe_stem
 from ..utils.render import safe_get_pixmap
@@ -42,6 +44,15 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
     import fitz
 
     doc = fitz.open(stream=data, filetype="pdf")
+    if doc.is_repaired:
+        # MuPDF judges the pages, which qpdf then removes by object number: a
+        # repair that took an attached PDF's objects for this file's would
+        # have this file's pages judged by the attachment's.
+        try:
+            refuse_if_misread(data, lambda declared: mupdf_reading(doc, declared), lost=False)
+        except PdfCorruptError:
+            doc.close()
+            raise
     threshold = (100 - sensitivity) / 100.0
     # Pages are recorded by object number, not position: see below.
     blank_objects: set[int] = set()

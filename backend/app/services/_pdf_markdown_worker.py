@@ -2425,9 +2425,9 @@ def main() -> None:
         doc = fitz.open(source, filetype="pdf")
     except Exception as exc:  # noqa: BLE001 - MuPDF raises several kinds for a file it cannot read
         _emit({"ok": False, "error": "too_large" if _is_memory(exc) else "corrupt"})
-    lost = _pages_lost(doc, source)
-    if lost is not None:
-        _emit({"ok": False, "error": "pages_lost", "pages": lost[0], "declared": lost[1]})
+    misread = _misread(doc, source)
+    if misread is not None:
+        _emit(misread)
     try:
         result = convert(doc, options, cap_cpu=_cap_cpu)
         report = write_output(result, options, target)
@@ -2454,24 +2454,26 @@ def _damage(doc: fitz.Document, exc: Exception) -> bool:
         return False
 
 
-def _pages_lost(doc: fitz.Document, source: str) -> tuple[int, int] | None:
-    """(pages read, pages declared) of a file MuPDF had to repair and read
-    fewer pages of than it declares, as utils.cleanup.open_pdf_document
-    refuses it in the web process; None otherwise. _hidden_text_worker.py
-    has a twin."""
+def _misread(doc: fitz.Document, source: str) -> dict | None:
+    """The answer for a file MuPDF had to repair and did not read as the page
+    tree it declares (utils/declared_pages.py misread), as
+    utils.cleanup.open_pdf_document refuses it in the web process: fewer
+    pages read than it declares ("pages_lost", with both counts), or the
+    objects of a PDF attached inside it taken for its own ("mixed_up"). None
+    otherwise. _hidden_text_worker.py has a twin."""
     try:
         if doc.needs_pass or not doc.is_repaired:
             return None
         pages = _declared_pages()
-        declared = pages.declared_page_count(source)
-        if declared is None:
-            return None
-        read = pages.readable_page_count(doc, declared)
+        found = pages.misread(source, lambda declared: pages.mupdf_reading(doc, declared))
     except Exception:  # noqa: BLE001 - a check that cannot run refuses nothing
         return None
-    if read is None:  # too many listed pages to look up in time: unknown
+    if found is None:
         return None
-    return (read, declared) if read < declared else None
+    kind, read, declared = found
+    if kind == pages.MIXED:
+        return {"ok": False, "error": "mixed_up"}
+    return {"ok": False, "error": "pages_lost", "pages": read, "declared": declared}
 
 
 def _declared_pages():

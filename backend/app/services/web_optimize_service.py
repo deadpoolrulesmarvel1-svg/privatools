@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 
-from ..utils.cleanup import NO_PAGES_MESSAGE, open_pikepdf
+from ..utils.cleanup import NO_PAGES_MESSAGE, mixed_up_error, open_pikepdf, pages_lost_message, remove_files
 from ..utils.exceptions import (
     ExternalToolError,
     PdfCorruptError,
@@ -57,6 +57,35 @@ def _refuse_if_damaged(input_path: str) -> None:
         doc.close()
 
 
+def _check_output(input_path: str, output_path: str) -> None:
+    """Refuse the command's output unless it has the pages the input declares.
+
+    The command rebuilds a damaged file on its own, with its own qpdf, which
+    is not the library that read the upload (_check_readable): qpdf 11.9 read
+    a valid one-page file that carries a six-page PDF without compression, and
+    has bytes after its end, as that PDF, and wrote its six pages. More pages
+    than the input declares are another document's (PdfCorruptError,
+    MIXED_UP_MESSAGE), fewer are pages lost. An input whose page tree cannot
+    be found (utils.declared_pages), or an output whose pages cannot be
+    counted, refuses nothing."""
+    import pikepdf
+
+    from ..utils.declared_pages import declared_page_count
+
+    declared = declared_page_count(input_path)
+    if declared is None:
+        return
+    try:
+        with pikepdf.open(output_path) as pdf:
+            written = len(pdf.pages)
+    except pikepdf.PdfError:
+        return
+    if written > declared:
+        raise mixed_up_error()
+    if written < declared:
+        raise PdfCorruptError(pages_lost_message(written, declared))
+
+
 async def web_optimize(input_path: str) -> str:
     output_path = temp_output("weboptim", "pdf")
 
@@ -98,5 +127,10 @@ async def web_optimize(input_path: str) -> str:
 
     if not output_path.exists():
         raise ProcessingError("qpdf produced no output")
+    try:
+        await asyncio.to_thread(_check_output, input_path, str(output_path))
+    except PdfCorruptError:
+        remove_files(output_path)
+        raise
 
     return str(output_path)

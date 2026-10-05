@@ -21,6 +21,7 @@ import base64
 import io
 import json
 import re
+import zlib
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -31,8 +32,9 @@ from PIL import Image
 
 from backend.app import main
 from backend.app.routes.remove_blank_pages import CUT_SHORT_MESSAGE
+from backend.app.services.repair_service import CANNOT_TELL_MESSAGE
 from backend.app.utils import declared_pages
-from backend.app.utils.cleanup import pages_lost_message
+from backend.app.utils.cleanup import MIXED_UP_MESSAGE, pages_lost_message
 from backend.app.utils.declared_pages import readable_page_count
 
 
@@ -171,14 +173,14 @@ def test_a_count_out_of_time_refuses_nothing(quiet_client, monkeypatch, route):
 
 def test_a_readable_count_out_of_time_refuses_nothing(quiet_client, monkeypatch):
     # The declared count is read, but MuPDF's pages cannot be looked up in
-    # time (readable_page_count answers None): the tool goes on, and Repair
-    # says nothing of pages, rather than count them as none.
+    # time (its reading, and readable_page_count, answer None): the tool goes
+    # on, and Repair says nothing of pages, rather than count them as none.
     from backend.app.services import repair_service
 
     def out_of_time(doc, enough=None):
         return None
 
-    monkeypatch.setattr(declared_pages, "readable_page_count", out_of_time)
+    monkeypatch.setattr(declared_pages, "mupdf_reading", out_of_time)
     monkeypatch.setattr(repair_service, "readable_page_count", out_of_time)
     response = _post(quiet_client, "/api/extract-images", CUT)
     assert response.status_code == 200, response.text[:300]
@@ -257,14 +259,16 @@ def test_a_valid_pdf_carrying_a_pdf_goes_on_as_before(quiet_client, route):
     assert fitz.open(stream=data, filetype="pdf").is_repaired
     intact = _post(quiet_client, route, whole)
     response = _post(quiet_client, route, data)
-    assert response.status_code == intact.status_code == 200, response.text[:300]
-    if route == "/api/web-optimize" and _pages_out(response) != _pages_out(intact):
-        # Not refused, which is what this test is for. The output is the qpdf
-        # command's, which rebuilds the file again on its own: qpdf 11.9 (in
-        # CI) reads the stored PDF's objects as this file's and writes its six
-        # pages, as it did before the page count was read; qpdf 12's library,
-        # which reads the upload, keeps the file's one page. A follow-up.
-        pytest.xfail("Web Optimize's qpdf command rebuilt the file as the PDF it carries: a follow-up")
+    assert intact.status_code == 200, intact.text[:300]
+    if route == "/api/web-optimize" and response.status_code == 400:
+        # The output is the qpdf command's, which rebuilds the file again on
+        # its own: qpdf 11.9 (in CI) read the stored PDF's objects as this
+        # file's and wrote its six pages, a success until v2.7.32. That output
+        # is refused now (web_optimize_service._check_output). qpdf 12's
+        # library, which reads the upload, keeps the file's one page.
+        assert response.json()["detail"] == MIXED_UP_MESSAGE
+        return
+    assert response.status_code == 200, response.text[:300]
     assert _pages_out(response) == _pages_out(intact)
 
 
@@ -348,6 +352,311 @@ def test_an_update_that_rewrites_the_root_without_its_type_goes_on_as_before(qui
         response = _post(quiet_client, route, upload)
         assert response.status_code == 200, response.text[:300]
         assert _pages_out(response) == (6 if route == "/api/split-in-half" else 3)
+
+
+# ── A valid PDF carrying a PDF, read as that PDF ────────────────────────────
+#
+# A valid PDF that carries a PDF attached without compression, with a common
+# cross-reference defect (offsets shifted, bytes after its end), opens
+# repaired, and the libraries' repairs took the attachment's objects for the
+# file's own: on v2.7.32 most tools answered with the attachment's pages, or
+# a mix, as a success (qpdf's rebuild reads every "N G obj" in the bytes,
+# stream data and all; MuPDF's ends a stream whose /Length it cannot use at
+# the stored PDF's own first "endstream"). The library's reading is now
+# compared with the page tree the file declares (declared_pages.misread),
+# and refused when it is another document's, in the words of
+# MIXED_UP_MESSAGE; a library that reads the file's own goes on.
+
+def _stored_catalog_last(pages: int = 6) -> bytes:
+    """A whole PDF whose pages say "Stored page <n>", its page tree and
+    catalog written last, as Chrome, LibreOffice and Ghostscript write them."""
+    out, offsets = b"%PDF-1.7\n", {}
+
+    def put(number: int, body: bytes) -> None:
+        nonlocal out
+        offsets[number] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (number, body)
+
+    for i in range(pages):
+        text = b"BT /F1 24 Tf 72 700 Td (Stored page %d) Tj ET" % (i + 1)
+        put(4 + 2 * i, b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> "
+                       b"/Contents %d 0 R >>" % (5 + 2 * i))
+        put(5 + 2 * i, b"<< /Length %d >>\nstream\n%s\nendstream" % (len(text), text))
+    put(3, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    put(2, b"<< /Type /Pages /Kids [%s] /Count %d >>" % (b" ".join(b"%d 0 R" % (4 + 2 * i) for i in range(pages)), pages))
+    put(1, b"<< /Type /Catalog /Pages 2 0 R >>")
+    size = 4 + 2 * pages
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % size
+    out += b"".join(b"%010d 00000 n \n" % offsets[n] for n in range(1, size))
+    return out + b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (size, xref)
+
+
+def _one_page(text: str) -> bytes:
+    doc = fitz.open()
+    doc.new_page().insert_text((72, 100), text, fontsize=12)
+    data = doc.tobytes(garbage=0)
+    doc.close()
+    return data
+
+
+STORED_SIX = _stored_catalog_last()
+# The intact files, and which library reads each, once damaged, as the PDF it
+# carries.
+INTACT = {
+    "qpdf": _carrying(_one_page("The stored PDF's page.")),
+    "mupdf": _carrying_with_a_wrong_length(STORED_SIX),
+}
+MISREAD_BY = {
+    # One page carrying one page, its offsets shifted: qpdf's rebuild reads
+    # the stored page as the file's (one page for one); MuPDF reads the file's.
+    "qpdf": _offsets_shifted(INTACT["qpdf"]),
+    # A stored PDF whose catalog comes last, its stream's /Length wrong, and
+    # bytes after the file's end: MuPDF reads the stored page tree, six pages
+    # for one; qpdf finds the file's table and reads its one page.
+    "mupdf": _junk_after_the_end(INTACT["mupdf"]),
+}
+# Both libraries read it as the stored PDF.
+READ_AS_ATTACHMENT_BY_BOTH = _offsets_shifted(_carrying_with_a_wrong_length(STORED_SIX))
+# Routes that read the upload with both libraries: Accessibility checks the
+# structure with qpdf and the pages' content with MuPDF, and a report on the
+# stored PDF's pages is as wrong as their output.
+READ_BY_BOTH = {"/api/accessibility-check"}
+
+
+def _text_of(response) -> str:
+    """What an answer shows: its PDF's pages' text, its archive's entries, or
+    its own text."""
+    body = response.content
+    if body[:5] == b"%PDF-":
+        with fitz.open(stream=body, filetype="pdf") as doc:
+            return " ".join(page.get_text() for page in doc)
+    if body[:2] == b"PK":
+        import zipfile
+
+        with zipfile.ZipFile(io.BytesIO(body)) as archive:
+            return " ".join(archive.read(name).decode("latin-1") for name in archive.namelist())
+    return response.text
+
+
+def test_the_files_are_read_as_the_pdf_they_carry():
+    def mupdf_texts(data):
+        with fitz.open(stream=data, filetype="pdf") as doc:
+            return doc.is_repaired, [page.get_text().strip() for page in doc]
+
+    def qpdf_texts(data):
+        with pikepdf.open(io.BytesIO(data)) as pdf:
+            out = io.BytesIO()
+            pdf.save(out)
+        return mupdf_texts(out.getvalue())[1]
+
+    assert mupdf_texts(MISREAD_BY["qpdf"]) == (True, ["The covering page."])
+    assert qpdf_texts(MISREAD_BY["qpdf"]) == ["The stored PDF's page."]
+    repaired, texts = mupdf_texts(MISREAD_BY["mupdf"])
+    assert repaired and len(texts) == 6 and "Stored page 6" in texts
+    assert qpdf_texts(MISREAD_BY["mupdf"]) == ["The covering page."]
+    assert "The covering page." not in mupdf_texts(READ_AS_ATTACHMENT_BY_BOTH)[1]
+    assert "Stored page 6" in qpdf_texts(READ_AS_ATTACHMENT_BY_BOTH)  # a mix: the stored pages, and the file's
+
+
+@pytest.mark.parametrize("misreader", sorted(MISREAD_BY))
+@pytest.mark.parametrize("route", sorted(ROUTES))
+def test_a_pdf_read_as_the_pdf_it_carries_is_refused_never_answered_with_its_pages(quiet_client, route, misreader):
+    response = _post(quiet_client, route, MISREAD_BY[misreader])
+    if route == "/api/web-optimize" and misreader == "mupdf" and response.status_code == 400:
+        # qpdf 11.9's command (in CI) misses this file's table behind the
+        # bytes after its end and rebuilds it as the stored PDF; its output is
+        # refused (web_optimize_service._check_output).
+        assert response.json()["detail"] == MIXED_UP_MESSAGE
+        return
+    if ROUTES[route][0] == misreader or route in READ_BY_BOTH:
+        assert response.status_code == 400, response.text[:300]
+        assert response.json()["detail"] == MIXED_UP_MESSAGE
+    else:
+        assert response.status_code == 200, response.text[:300]
+        shown = _text_of(response)
+        assert "Stored page" not in shown and "stored PDF" not in shown
+        assert _pages_out(response) == _pages_out(_post(quiet_client, route, INTACT[misreader]))
+
+
+def test_repair_saves_the_files_own_pages_when_qpdf_reads_the_pdf_it_carries(quiet_client):
+    # qpdf's rebuild, which Repair saves first, read the stored page: MuPDF's
+    # reading, the file's own, is saved instead.
+    response = _repair(quiet_client, MISREAD_BY["qpdf"])
+    assert response.status_code == 200, response.text[:300]
+    with fitz.open(stream=response.content, filetype="pdf") as doc:
+        assert [page.get_text().strip() for page in doc] == ["The covering page."]
+    assert response.headers["X-Repair-Pages"] == "1/1"
+    assert _post(quiet_client, "/api/rotate", response.content).status_code == 200
+
+
+def test_repair_refuses_a_pdf_both_libraries_read_as_the_pdf_it_carries(quiet_client):
+    # Neither reading is the file's: saving either would hand the visitor the
+    # attachment's pages as theirs, and Repair cannot tell them apart.
+    response = _repair(quiet_client, READ_AS_ATTACHMENT_BY_BOTH)
+    assert response.status_code == 400, response.text[:300]
+    assert response.json()["detail"] == CANNOT_TELL_MESSAGE
+    assert CANNOT_TELL_MESSAGE.endswith("Download it again.")
+
+
+def test_pdf_to_text_refuses_a_pdf_pypdf_reads_as_the_pdf_it_carries(quiet_client):
+    # pypdf rebuilds the table as qpdf does, and gave the stored page's text.
+    def text(data):
+        return quiet_client.post("/api/pdf-to-text", files=[("file", ("doc.pdf", data, "application/pdf"))])
+
+    response = text(MISREAD_BY["qpdf"])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == MIXED_UP_MESSAGE
+    response = text(MISREAD_BY["mupdf"])
+    assert response.status_code == 200, response.text
+    assert response.json()["text"].strip() == "The covering page."
+
+
+def _printing_a_pdf_listing() -> bytes:
+    """One page whose content prints a PDF listing as text, its offsets
+    shifted: pypdf's rebuild takes the "1 0 obj" in the page's text for an
+    object, and cannot list the pages."""
+    lines = [b"1 0 obj", b"<< /Type /Catalog /Pages 2 0 R >>", b"endobj", b"2 0 obj",
+             b"<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R] /Count 4 >>", b"endobj"]
+    shown = b"BT /F1 10 Tf 72 600 Td 12 TL " + b" ".join(b"(" + line + b") '" for line in lines) + b" ET"
+    out, offsets = b"%PDF-1.7\n", {}
+    for number, body in (
+        (1, b"<< /Type /Catalog /Pages 2 0 R >>"),
+        (2, b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>"),
+        (3, b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> "
+            b"/Contents 5 0 R >>"),
+        (4, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"),
+        (5, b"<< /Length %d >>\nstream\n%s\nendstream" % (len(shown), shown)),
+    ):
+        offsets[number] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (number, body)
+    xref = len(out)
+    out += b"xref\n0 6\n0000000000 65535 f \n" + b"".join(b"%010d 00000 n \n" % offsets[n] for n in range(1, 6))
+    return _offsets_shifted(out + b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % xref)
+
+
+def test_pdf_to_text_answers_a_pdf_pypdf_cannot_list_the_pages_of_as_before(quiet_client):
+    # pypdf's error for pages it cannot list reaches the route as it always
+    # did (400). Caught while its reading was compared, it left the object it
+    # failed on marked as being read, and the route then met "Detected loop
+    # with self reference" instead, which it answered with a 500.
+    import pypdf
+
+    data = _printing_a_pdf_listing()
+    with pytest.raises(pypdf.errors.PdfReadError):
+        len(pypdf.PdfReader(io.BytesIO(data)).pages)
+    response = quiet_client.post("/api/pdf-to-text", files=[("file", ("doc.pdf", data, "application/pdf"))])
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "This PDF appears to be corrupt or invalid."
+
+
+def test_the_page_counter_does_not_count_the_pages_of_the_pdf_a_file_carries(quiet_client):
+    files = [("files", ("mupdf.pdf", MISREAD_BY["mupdf"], "application/pdf")),
+             ("files", ("qpdf.pdf", MISREAD_BY["qpdf"], "application/pdf"))]
+    response = quiet_client.post("/api/pdf-page-counter", files=files)
+    assert response.status_code == 200, response.text
+    assert [f["pages"] for f in response.json()["files"]] == [-1, 1]  # MuPDF counts the pages
+
+
+@pytest.mark.parametrize("misreader", sorted(MISREAD_BY))
+def test_organize_pages_draws_no_page_of_the_pdf_a_file_carries(quiet_client, misreader):
+    # Poppler draws the thumbnails, and rebuilds a damaged file as qpdf does:
+    # it drew the stored page where MuPDF, which checks the file first, read
+    # the file's own. qpdf, which then reorders the pages, stands in for it.
+    # MuPDF's misreading is neither's: those thumbnails are the file's.
+    def thumbnails(data):
+        return quiet_client.post("/api/organize-pages/thumbnails", files=[("file", ("doc.pdf", data, "application/pdf"))])
+
+    response = thumbnails(MISREAD_BY[misreader])
+    whole = thumbnails(INTACT[misreader])
+    assert whole.status_code == 200 and len(whole.json()["thumbnails"]) == 1
+    if misreader == "qpdf":
+        assert response.status_code == 400, response.text[:300]
+        assert response.json()["detail"] == MIXED_UP_MESSAGE
+    else:
+        assert response.status_code == 200, response.text[:300]
+        assert response.json() == whole.json()
+
+
+def _five_then_two() -> bytes:
+    """Five pages ("Page <n>"), then an incremental update that keeps the
+    first two under a new page tree root: the update's catalog, root and two
+    pages sit in an object stream, and its cross-reference table is a stream
+    that names the base's (/Prev), as PDF 1.5 savers write an update."""
+    out, offsets = b"%PDF-1.7\n", {}
+
+    def put(number: int, body: bytes) -> None:
+        nonlocal out
+        offsets[number] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (number, body)
+
+    def page(number: int, parent: int) -> bytes:
+        return (b"<< /Type /Page /Parent %d 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> "
+                b"/Contents %d 0 R >>" % (parent, number + 1))
+
+    for i in range(5):
+        text = b"BT /F1 24 Tf 72 700 Td (Page %d) Tj ET" % (i + 1)
+        put(4 + 2 * i, page(4 + 2 * i, 2))
+        put(5 + 2 * i, b"<< /Length %d >>\nstream\n%s\nendstream" % (len(text), text))
+    put(3, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    put(2, b"<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R] /Count 5 >>")
+    put(1, b"<< /Type /Catalog /Pages 2 0 R >>")
+    base_xref = len(out)
+    out += b"xref\n0 14\n0000000000 65535 f \n" + b"".join(b"%010d 00000 n \n" % offsets[n] for n in range(1, 14))
+    out += b"trailer\n<< /Size 14 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % base_xref
+    members = [(1, b"<< /Type /Catalog /Pages 60 0 R >>"), (60, b"<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>"),
+               (4, page(4, 60)), (6, page(6, 60))]
+    body, places = b"", []
+    for number, text in members:
+        places.append(b"%d %d" % (number, len(body)))
+        body += text + b"\n"
+    head = b" ".join(places) + b"\n"
+    packed = zlib.compress(head + body)
+    stream_at = len(out)
+    out += (b"61 0 obj\n<< /Type /ObjStm /N 4 /First %d /Filter /FlateDecode /Length %d >>\nstream\n"
+            % (len(head), len(packed)) + packed + b"\nendstream\nendobj\n")
+    xref_at = len(out)
+    entries = {61: (1, stream_at, 0), 62: (1, xref_at, 0), **{n: (2, 61, i) for i, (n, _) in enumerate(members)}}
+    rows = b"".join(bytes([kind]) + a.to_bytes(4, "big") + b.to_bytes(2, "big")
+                    for _, (kind, a, b) in sorted(entries.items()))
+    index = b" ".join(b"%d 1" % n for n in sorted(entries))
+    table = zlib.compress(rows)
+    out += (b"62 0 obj\n<< /Type /XRef /Size 63 /W [1 4 2] /Index [%s] /Root 1 0 R /Prev %d /Filter /FlateDecode "
+            b"/Length %d >>\nstream\n" % (index, base_xref, len(table)) + table + b"\nendstream\nendobj\n")
+    return out + b"startxref\n%d\n%%%%EOF\n" % xref_at
+
+
+def test_an_update_read_as_the_revision_before_it_is_refused_and_repaired(quiet_client):
+    # qpdf's rebuild of an updated file whose offsets are off read the
+    # revision before the update: five pages where the file has two, and on
+    # v2.7.32 qpdf's tools answered with all five. MuPDF reads the update.
+    whole = _five_then_two()
+    data = _offsets_shifted(whole)
+    assert _qpdf_reads(whole) == 2 and _qpdf_reads(data) == 5
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert doc.is_repaired and [page.get_text().strip() for page in doc] == ["Page 1", "Page 2"]
+    response = _post(quiet_client, "/api/rotate", data)
+    assert response.status_code == 400, response.text[:300]
+    assert response.json()["detail"] == MIXED_UP_MESSAGE
+    response = _post(quiet_client, "/api/page-numbers", data)
+    assert response.status_code == 200 and _pages_out(response) == 2
+    repaired = _repair(quiet_client, data)
+    assert repaired.status_code == 200 and _pages_out(repaired) == 2
+    assert repaired.headers["X-Repair-Pages"] == "2/2"
+
+
+def test_a_rebuild_that_takes_the_pdf_a_file_carries_for_the_file_is_refused():
+    # process_pdf rebuilds a file with qpdf when a tool fails on MuPDF's
+    # repair of it; a rebuild made of the stored PDF's objects is never used.
+    from backend.app.utils.cleanup import _rebuilt_by_qpdf
+    from backend.app.utils.exceptions import PdfCorruptError
+
+    with pytest.raises(PdfCorruptError) as refused:
+        _rebuilt_by_qpdf(MISREAD_BY["qpdf"])
+    assert refused.value.detail == MIXED_UP_MESSAGE
+    rebuilt = _rebuilt_by_qpdf(MISREAD_BY["mupdf"])  # qpdf reads the file's own
+    with fitz.open(stream=rebuilt, filetype="pdf") as doc:
+        assert [page.get_text().strip() for page in doc] == ["The covering page."]
 
 
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────
@@ -582,6 +891,10 @@ def test_the_site_shows_these_words_as_they_are():
         assert re.search(lost, pages_lost_message(survived, declared).lower())
     cut_short = re.search(r'startsWith\("(download this pdf again[^"]*)"\)', source).group(1)
     assert CUT_SHORT_MESSAGE.lower().startswith(cut_short)
+    # A file read as the PDF it carries: Repair's own refusal sends the
+    # visitor to download it again, and must not become "Try Repair PDF".
+    mixed = re.search(r'm\.includes\("(up with a file attached inside it)"\)', source).group(1)
+    assert mixed in MIXED_UP_MESSAGE.lower() and mixed in CANNOT_TELL_MESSAGE.lower()
 
 
 def test_a_json_answer_carries_the_words(quiet_client):

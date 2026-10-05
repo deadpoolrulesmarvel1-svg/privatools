@@ -112,6 +112,14 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     if (m.trimStart().startsWith("download this pdf again: it was cut short")) {
         return (raw || "").trim();
     }
+    // A damaged PDF that a library read as the file attached inside it, or as
+    // an earlier version of itself: the server says so, and Repair PDF's own
+    // refusal of it sends the visitor to download it again, not back to
+    // Repair (utils/cleanup.py MIXED_UP_MESSAGE, services/repair_service.py
+    // CANNOT_TELL_MESSAGE).
+    if (m.includes("up with a file attached inside it")) {
+        return (raw || "").trim();
+    }
     if (m.includes("corrupt") || m.includes("damaged") || m.includes("malformed")) {
         return "This PDF is damaged. Try the Repair PDF tool first, then come back.";
     }

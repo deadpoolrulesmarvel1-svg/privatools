@@ -5,7 +5,15 @@ import pikepdf
 from pdf2image import convert_from_path
 from pdf2image.exceptions import PDFPageCountError
 
-from ..utils.cleanup import _DAMAGED_PDF, open_pdf_document, safe_open_pdf
+from ..utils.cleanup import (
+    _DAMAGED_PDF,
+    mixed_up_error,
+    open_pdf_document,
+    pages_lost_message,
+    refuse_if_qpdf_misread,
+    safe_open_pdf,
+)
+from ..utils.declared_pages import declared_page_count
 from ..utils.exceptions import PageRangeError, PdfCorruptError
 from ..utils.filenames import temp_output
 from ..utils.page_removal import WorkBudget, copy_pages, prune_to_page_tree
@@ -20,16 +28,37 @@ def generate_thumbnails(input_path: str) -> list[str]:
     pageless PDF gets open_pdf_document's 400 before Poppler runs, and Poppler
     failing to count the pages of a file MuPDF had to repair is that file's
     damage. Poppler failing on a file MuPDF reads intact stays the server's.
+
+    Poppler rebuilds a damaged file's cross-reference table as qpdf does,
+    taking the objects of a PDF attached without compression for the file's
+    own: it drew the attachment's pages where qpdf read them, also when MuPDF
+    read the file's. So qpdf's reading of a damaged file is checked too
+    (refuse_if_qpdf_misread, refused as Organize Pages itself refuses it), and
+    Poppler's pages must be as many as the file declares. MuPDF's misreading
+    is not Poppler's, nor qpdf's, which reorders the pages: it refuses
+    nothing here (open_pdf_document's `mixed`).
     """
-    doc = open_pdf_document(input_path)
+    doc = open_pdf_document(input_path, mixed=False)
     repaired = doc.is_repaired
     doc.close()
+    warned = False
+    try:
+        with pikepdf.open(input_path) as pdf:
+            warned = refuse_if_qpdf_misread(pdf, input_path)
+    except pikepdf.PdfError:
+        pass  # qpdf cannot read it: Poppler may, as before
     try:
         images = convert_from_path(input_path, dpi=72, size=(150, None))
     except PDFPageCountError as exc:
         if repaired:
             raise PdfCorruptError(_DAMAGED_PDF) from exc
         raise
+    if repaired or warned:
+        declared = declared_page_count(input_path)
+        if declared is not None and len(images) > declared:
+            raise mixed_up_error()
+        if declared is not None and 0 < len(images) < declared:
+            raise PdfCorruptError(pages_lost_message(len(images), declared))
     thumbnails: list[str] = []
     for img in images:
         buf = io.BytesIO()

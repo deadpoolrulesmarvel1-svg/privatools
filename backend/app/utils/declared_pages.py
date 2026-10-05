@@ -6,7 +6,7 @@ report the pages they found, not the pages the file had, so a tool given the
 first 60 % of a six-page PDF could answer with four pages and say nothing.
 declared_page_count() reads the count the file itself gives, without any
 library's repair, so that a tool can tell a repaired file that lost pages
-(utils.cleanup.refuse_if_pages_lost) from one that only needed its
+(utils.cleanup.refuse_if_misread) from one that only needed its
 cross-reference table rebuilt, which is common in valid files.
 
 The count is the page tree's own. Every page tree node ("/Type /Pages") says
@@ -35,8 +35,24 @@ A stream's data is skipped, by its /Length or up to its "endstream", as the
 libraries' repairs skip it: a PDF attached to this one without compression
 carries objects with this file's numbers, and its page tree is not this
 file's. When such a stream does not end where a /Length says (none, a wrong
-one, or one held in an object stream), its own first "endstream" may come
-first, and the count is unknown.
+one, or one held in an object stream), it ends where the PDF it holds ends:
+at the "endstream" after that PDF's last "%%EOF". A stream holding objects
+but no whole PDF may end at its own first "endstream" or later, and then the
+count is unknown.
+
+The libraries' repairs can read the wrong document. qpdf's rebuilds the
+cross-reference table from every "N G obj" in the bytes, stream data
+included, and MuPDF's ends a stream whose /Length it cannot use at its first
+"endstream": both then take the objects of a PDF attached without
+compression for this file's own, its catalog, its pages or their content,
+and the tools answered with the attachment's pages, as a success. qpdf's
+rebuild of an updated file can also take the revision before the update for
+the file. misread() compares a library's reading (mupdf_reading,
+qpdf_reading, pypdf_reading) with the page tree the file declares: fewer
+pages than it declares are a loss (LOST); more pages, another page tree
+root, or any of the objects the pages are read from lying inside a stream's
+data are the wrong document (MIXED). An unknown count or reading refuses
+nothing.
 
 The scan is bounded. It looks for "/Type" in one pass over the bytes, reads
 only the objects that are page tree nodes, pages, catalogs, trailers and
@@ -44,12 +60,13 @@ object streams, inflates at most _MAX_INFLATED bytes in all, and gives up
 (None) past _MAX_MATCHES such objects or _MAX_NODES page tree nodes: a file
 of 100,000 pages takes about a second. Those caps are per kind, and the
 windows a dictionary or a trailer is read in can overlap, so the scan also
-gives up after _MAX_SECONDS of its thread's CPU time in all, and so does
-readable_page_count(): a count that takes longer is unknown, and nothing is
-refused on it. CPU time, so that a request waiting for a busy server's
-interpreter or processors does not lose its count to them. It uses the
-standard library only, so that the workers that read PDFs in a process of
-their own can load it.
+gives up after _MAX_SECONDS of its thread's CPU time in all, and so do
+readable_page_count() and a library's reading: a count that takes longer is
+unknown, and nothing is refused on it. CPU time, so that a request waiting
+for a busy server's interpreter or processors does not lose its count to
+them. It uses the standard library only, so that the workers that read PDFs
+in a process of their own can load it; a library's reading uses the library
+it is handed.
 """
 
 from __future__ import annotations
@@ -60,6 +77,8 @@ import os
 import re
 import time
 import zlib
+from collections.abc import Callable, Iterable, Iterator
+from typing import NamedTuple
 
 # One object stream inflates to at most this much, and all of them together
 # to at most _MAX_INFLATED; a stream past the first limit is read up to it.
@@ -102,6 +121,15 @@ _INTEGER_OBJECT = re.compile(rb"obj[ \t\r\n\f\x00]*([0-9]{1,15})[ \t\r\n\f\x00]*
 # line, which qpdf and MuPDF accept, are not data. The word comes first, so
 # the search runs at the speed of a plain find.
 _STREAM_KEYWORD = re.compile(rb"stream(?<![A-Za-z]stream)[ \t]*(?:\r\n|\r|\n)")
+# Where a PDF stored in a stream ends ("%%EOF", then its stream's
+# "endstream"), and where another one starts inside it (its own attachment).
+_STORED_END = re.compile(rb"%%EOF[ \t\r\n\f\x00]*+endstream")
+_STORED_START = re.compile(rb"stream(?<![A-Za-z]stream)[ \t]*(?:\r\n|\r|\n)%PDF-")
+# An object's header, "N G obj", where a library says the object starts.
+_HEADER_AT = re.compile(rb"([0-9]{1,10})[ \t\r\n\f\x00]+[0-9]{1,5}[ \t\r\n\f\x00]+obj(?![^ \t\r\n\f\x00()<>\[\]{}/%])")
+# The object numbers a reference or an array of them names, as PyMuPDF
+# writes them ("12 0 R", "[12 0 R 13 0 R]").
+_REF_TEXT = re.compile(r"([0-9]{1,10})\s+[0-9]{1,5}\s+R")
 _NESTED_STOP = re.compile(rb"[\[\]()<>%]")
 _STRING_STOP = re.compile(rb"[()\\]")
 # Whitespace and comments; the rest of a name or a number. Possessive, so a
@@ -137,17 +165,306 @@ class _Budget:
 def declared_page_count(source) -> int | None:
     """The number of pages the PDF at `source` (a path, or the bytes) declares,
     or None when its page tree cannot be found in its bytes."""
+    return _scanned(source, lambda scan, declared: declared)
+
+
+LOST = "lost"
+MIXED = "mixed"
+
+
+def _nowhere() -> tuple:
+    return ()
+
+
+class Reading(NamedTuple):
+    """What a library read of a PDF: how many pages (None when unknown), the
+    object number of the page tree root its catalog names (None when
+    unknown), and `places`, a function giving where in the file the library
+    read the objects it shows the pages with, as (object number, offset)
+    pairs: the catalog, that root, and each page and its content. Finding
+    them takes a lookup or two a page, so the function is called only for a
+    file one of whose streams holds an object ("N G obj"), the only kind from
+    which a library can take one that is not the file's. An offset may point
+    at the whitespace or comments before the object's header, as MuPDF's do;
+    an object in an object stream is placed where that object stream is."""
+
+    pages: int | None
+    root: int | None
+    places: Callable[[], Iterable[tuple[int, int]]] = _nowhere
+
+
+def misread(source, reading) -> tuple[str, int | None, int] | None:
+    """How a library's reading of the PDF at `source` (a path, or the bytes)
+    differs from the page tree the file declares: (LOST, pages read, pages
+    declared) when it read fewer pages; (MIXED, pages read, pages declared)
+    when it read more, took another page tree root, or read an object it
+    shows the pages with from inside a stream's data, as a repair does that
+    takes the objects of a PDF attached without compression for the file's
+    own. None when it read the file's own page tree, or when the declared
+    count or the reading is unknown: nothing is refused on a guess.
+    `reading` is called with the declared count, and gives a Reading or
+    None (mupdf_reading, qpdf_reading and pypdf_reading)."""
+    return _scanned(source, lambda scan, declared: _compare(scan, declared, reading(declared)))
+
+
+def _scanned(source, then):
+    """then(scan, declared count) for the PDF at `source`, while its bytes
+    are mapped; None when the declared count is unknown."""
     if isinstance(source, (bytes, bytearray, memoryview)):
-        return _Scan(bytes(source) if isinstance(source, memoryview) else source).declared()
+        scan = _Scan(bytes(source) if isinstance(source, memoryview) else source)
+        declared = scan.declared()
+        return None if declared is None else then(scan, declared)
     with open(os.fspath(source), "rb") as fh:
         try:
             data = mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ)
         except ValueError:  # an empty file cannot be mapped
             return None
         try:
-            return _Scan(data).declared()
+            scan = _Scan(data)
+            declared = scan.declared()
+            return None if declared is None else then(scan, declared)
         finally:
             data.close()
+
+
+def _compare(scan: _Scan, declared: int, reading: Reading | None) -> tuple[str, int | None, int] | None:
+    if reading is None:
+        return None
+    pages = reading.pages
+    if reading.root is not None and scan.root is not None and reading.root != scan.root:
+        return MIXED, pages, declared
+    if scan.holds_objects and any(scan.in_stream_data(number, offset) for number, offset in reading.places()):
+        return MIXED, pages, declared
+    if pages is not None and pages > declared:
+        return MIXED, pages, declared
+    if pages is not None and pages < declared:
+        return LOST, pages, declared
+    return None
+
+
+def mupdf_reading(doc, declared: int) -> Reading | None:
+    """What MuPDF read of `doc`, a PyMuPDF document: the pages it can read
+    (readable_pages), counted no further than one past `declared`, the page
+    tree root its catalog names, and where it read them (_mupdf_places).
+    None when counting takes more than _MAX_SECONDS of CPU time."""
+    pages = _readable_pages(doc, time.thread_time() + _MAX_SECONDS, declared + 1)
+    if pages is None:
+        return None
+    root = None
+    try:
+        named = _mupdf_refs(doc, doc.pdf_catalog(), "Pages")
+        root = named[0] if len(named) == 1 else None
+    except Exception:  # noqa: BLE001 - a catalog MuPDF cannot read names no root
+        pass
+    return Reading(len(pages), root, lambda: _mupdf_places(doc, pages, root))
+
+
+def _mupdf_places(doc, pages: list[int], root: int | None) -> Iterator[tuple[int, int]]:
+    """Where MuPDF read its catalog, the page tree root and each of `pages`
+    (page numbers) and its content, one by one: its own cross-reference
+    entries, for as many pages as _MAX_SECONDS of CPU time allows."""
+    entry = _mupdf_entries(doc)
+    if entry is None:
+        return
+    size = doc.xref_length()
+    deadline = time.thread_time() + _MAX_SECONDS
+
+    def place(number: int, depth: int = 0) -> tuple[int, int] | None:
+        if not 0 < number < size:
+            return None
+        try:
+            kind, offset = entry(number)
+        except Exception:  # noqa: BLE001 - an entry MuPDF cannot give is not placed
+            return None
+        if kind == "n":
+            return number, offset
+        if kind == "o" and depth == 0:
+            return place(offset, 1)  # in an object stream: where that stream is
+        return None
+
+    def numbers() -> Iterator[int]:
+        try:
+            yield doc.pdf_catalog()
+        except Exception:  # noqa: BLE001 - a catalog MuPDF cannot name is not placed
+            pass
+        if root is not None:
+            yield root
+        for index, number in enumerate(pages):
+            if index % 16 == 0 and time.thread_time() > deadline:
+                return  # the pages placed so far are compared
+            try:
+                xref = doc.page_xref(number)
+                found = [xref, *_mupdf_refs(doc, xref, "Contents")]
+            except Exception:  # noqa: BLE001 - a page MuPDF cannot read is not placed
+                continue
+            yield from found
+
+    for number in numbers():
+        found = place(number)
+        if found is not None:
+            yield found
+
+
+def _mupdf_entries(doc):
+    """A function giving MuPDF's cross-reference entry for an object number of
+    `doc`, as (kind, offset): "n" and where the object starts, or "o" and the
+    number of the object stream holding it. None if PyMuPDF's low-level
+    interface to MuPDF cannot give them."""
+    try:
+        import pymupdf
+
+        document = pymupdf.mupdf.pdf_document_from_fz_document(doc.this)
+        get = pymupdf.mupdf.ll_pdf_get_xref_entry_no_null
+    except Exception:  # noqa: BLE001 - no entries, no places: the rest is still compared
+        return None
+
+    def entry(number: int) -> tuple[str, int]:
+        found = get(document.m_internal, number)
+        return found.type, found.ofs
+
+    return entry
+
+
+def _mupdf_refs(doc, xref: int, key: str) -> list[int]:
+    """The object numbers that `key` of object `xref` refers to, directly or
+    in an array."""
+    kind, value = doc.xref_get_key(xref, key)
+    if kind not in ("xref", "array"):
+        return []
+    return [int(m.group(1)) for m in _REF_TEXT.finditer(value)]
+
+
+def qpdf_reading(pdf, declared: int) -> Reading:
+    """What qpdf read of `pdf`, a pikepdf.Pdf: its pages, the page tree root
+    its catalog names, and where it read the catalog, that root, and the
+    first `declared` + 1 pages and their content (qpdf's own cross-reference
+    table, rebuilt by its repair). qpdf's error for pages it cannot list is
+    raised, as the tool's own reading of them would raise it."""
+    count = len(pdf.pages)
+    root = None
+    try:
+        named = pdf.Root.get("/Pages")
+        if named is not None and named.is_indirect:
+            root = named.objgen[0]
+    except Exception:  # noqa: BLE001 - a catalog qpdf cannot read names no root
+        pass
+    return Reading(count, root, lambda: _qpdf_places(pdf, min(count, declared + 1)))
+
+
+def _qpdf_places(pdf, pages: int) -> Iterator[tuple[int, int]]:
+    """Where qpdf read its catalog, the page tree root, and its first `pages`
+    pages and their content, one by one, for as many as _MAX_SECONDS of CPU
+    time allows."""
+    import pikepdf
+
+    deadline = time.thread_time() + _MAX_SECONDS
+    try:
+        table = pdf.get_xref_table()
+    except Exception:  # noqa: BLE001 - no table, no places
+        return
+    places: list[tuple[int, int]] = []
+
+    def place(obj) -> None:
+        try:
+            if obj is None or not obj.is_indirect:
+                return
+            number, generation = obj.objgen
+        except Exception:  # noqa: BLE001 - an object qpdf cannot name is not placed
+            return
+        found = table.get((number, generation))
+        if found is None:
+            return
+        if found.type == 1:
+            places.append((number, found.offset))
+        elif found.type == 2:
+            holder = table.get((found.obj_stream_number, 0))
+            if holder is not None and holder.type == 1:
+                places.append((found.obj_stream_number, holder.offset))
+
+    try:
+        place(pdf.Root)
+        place(pdf.Root.get("/Pages"))
+    except Exception:  # noqa: BLE001 - a catalog qpdf cannot read is not placed
+        pass
+    # Walked, not indexed: pdf.pages[n] takes time in proportion to n (20,000
+    # pages took 23 s indexed, 0.01 s walked).
+    for index, page in enumerate(pdf.pages):
+        yield from places
+        places.clear()
+        if index >= pages or (index % 16 == 0 and time.thread_time() > deadline):
+            return  # the pages placed so far are compared
+        try:
+            page = page.obj
+            place(page)
+            contents = page.get("/Contents")
+            for part in (contents if isinstance(contents, pikepdf.Array) else [contents]):
+                place(part)
+        except Exception:  # noqa: BLE001 - a page qpdf cannot read is not placed
+            pass
+    yield from places
+
+
+def pypdf_reading(reader, declared: int) -> Reading:
+    """What pypdf read of `reader`, a pypdf.PdfReader: its pages, the page
+    tree root its catalog names, and where it read the catalog, that root,
+    and the first `declared` + 1 pages and their content (pypdf's own
+    cross-reference table, which it rebuilds from the bytes when it has to).
+    The pages are listed first, and pypdf's error for pages it cannot list
+    is raised, as the tool's own reading of them would raise it: caught, it
+    leaves the object it failed on marked as being read, and the tool then
+    meets another error ("Detected loop with self reference")."""
+    count = len(reader.pages)
+    root = None
+    try:
+        catalog = reader.root_object  # the one pypdf took, which it may have looked for
+        named = catalog.raw_get("/Pages") if "/Pages" in catalog else None
+        if isinstance(getattr(named, "idnum", None), int):
+            root = named.idnum
+    except Exception:  # noqa: BLE001 - a catalog pypdf cannot read names no root
+        pass
+    return Reading(count, root, lambda: _pypdf_places(reader, min(count, declared + 1)))
+
+
+def _pypdf_places(reader, pages: int) -> Iterator[tuple[int, int]]:
+    """Where pypdf read its catalog, the page tree root, and its first
+    `pages` pages and their content, one by one, for as many as _MAX_SECONDS
+    of CPU time allows."""
+    deadline = time.thread_time() + _MAX_SECONDS
+    plain = getattr(reader, "xref", None) or {}
+    streamed = getattr(reader, "xref_objStm", None) or {}
+    places: list[tuple[int, int]] = []
+
+    def place(ref) -> None:
+        number = getattr(ref, "idnum", None)
+        if not isinstance(number, int):
+            return
+        offset = plain.get(getattr(ref, "generation", 0), {}).get(number)
+        if offset is None and number in streamed:
+            number = streamed[number][0]
+            offset = plain.get(0, {}).get(number)
+        if isinstance(offset, int):
+            places.append((number, offset))
+
+    try:
+        catalog = reader.root_object
+        place(getattr(catalog, "indirect_reference", None))
+        place(catalog.raw_get("/Pages") if "/Pages" in catalog else None)
+    except Exception:  # noqa: BLE001 - a catalog pypdf cannot read is not placed
+        pass
+    for index in range(pages):
+        yield from places
+        places.clear()
+        if index % 16 == 0 and time.thread_time() > deadline:
+            return  # the pages placed so far are compared
+        try:
+            page = reader.pages[index]
+            place(page.indirect_reference)
+            contents = page.raw_get("/Contents") if "/Contents" in page else None
+            for part in (contents if isinstance(contents, list) else [contents]):
+                place(part)
+        except Exception:  # noqa: BLE001 - a page pypdf cannot read is not placed
+            pass
+    yield from places
 
 
 def readable_pages(doc) -> list[int]:
@@ -206,6 +523,13 @@ class _Scan:
         # A stream that holds objects and does not end where its /Length says
         # (_stream_end): which objects are this file's is not known.
         self.unsure = False
+        # The page tree root the count was read under, when a catalog names
+        # it (not when the largest node or a linearized file's /N was taken).
+        self.root: int | None = None
+        # Whether a stream's data holds an object's header ("N G obj"), as a
+        # PDF attached without compression does: the only place a library's
+        # repair can take an object from that is not this file's.
+        self.holds_objects = False
         self._cursor: tuple[int, tuple[int, int, int] | None] = (0, None)
         self._last_start = -1
         # The data of the last stream found, where the search for the next
@@ -419,15 +743,53 @@ class _Scan:
             if begin + length <= len(data):
                 after = _skip_space(data, begin + length, min(len(data), begin + length + 64))
                 if data[after:after + 9] == b"endstream":
+                    if not self.holds_objects and self._holds_an_object(begin, begin + length):
+                        self.holds_objects = True
                     return begin + length
-        if found >= 0 and self._holds_an_object(begin, end):
+        if self._holds_an_object(begin, end):
+            self.holds_objects = True
+            if found < 0:
+                return end  # cut short: its data runs to the end of the bytes
             # Its /Length is missing, wrong, or an object the scan does not
             # read (one in an object stream), and its data holds objects, as a
             # PDF stored in it does: the next "endstream" may be one of that
-            # PDF's own, and what follows it may be that PDF's too, so which
-            # page tree is this file's is not known.
+            # PDF's own, and what follows it may be that PDF's too. A whole
+            # PDF ends where its own end says; otherwise which page tree is
+            # this file's is not known.
+            stored = self._stored_pdf_end(begin)
+            if stored is not None:
+                return stored
             self.unsure = True
         return end
+
+    def _stored_pdf_end(self, begin: int) -> int | None:
+        """Where the data of a stream that holds a whole PDF ends, its data
+        starting at `begin`: at the "endstream" that follows the stored PDF's
+        last "%%EOF", as an attachment written without compression ends. An
+        update inside it ends with "%%EOF" too, but objects follow it, not
+        "endstream". A PDF that the stored one carries in turn starts and
+        ends inside it, and is passed over ("stream", then "%PDF-"). None when
+        the data does not start as a PDF does, or no such end closes it, as
+        when the stored PDF was cut short."""
+        data = self.data
+        if data[begin:begin + 5] != b"%PDF-":
+            return None
+        depth, at = 1, begin + 5
+        while True:
+            self.budget.spend()
+            close = _STORED_END.search(data, at)
+            if close is None:
+                return None
+            inner = _STORED_START.search(data, at, close.start())
+            if inner is not None:
+                depth += 1
+                at = inner.end()
+                continue
+            depth -= 1
+            at = close.end()
+            if depth == 0:
+                end = at - len(b"endstream")
+                return end if self._ends_an_object(end) else None
 
     def _ends_an_object(self, endstream: int) -> bool:
         """Whether "endobj" follows the "endstream" at `endstream`."""
@@ -473,6 +835,21 @@ class _Scan:
     def _outside_streams(self, pos: int) -> bool:
         place = bisect.bisect_right(self._starts, pos) - 1
         return place < 0 or pos >= self._ends[place]
+
+    def in_stream_data(self, number: int, offset: int) -> bool:
+        """Whether object `number`, which a library read at `offset`, is one
+        whose "N G obj" lies inside a stream's data: an object of a PDF
+        stored in this one, not this file's. The offset may point at
+        whitespace or comments before the header. An offset that leads to no
+        header of that number says nothing, and is not counted."""
+        data = self.data
+        if not 0 <= offset < len(data):
+            return False
+        at = _skip_space(data, offset, min(len(data), offset + 4096))
+        header = _HEADER_AT.match(data, at, min(len(data), at + 64))
+        if header is None or int(header.group(1)) != number:
+            return False
+        return not self._outside_streams(at)
 
     def _trailer(self) -> None:
         data = self.data
@@ -587,6 +964,7 @@ class _Scan:
             declared = self._declared_under(root, nodes, walked)
             if self.overflow or self._redefined_later(walked | {self._catalog}):
                 return None
+            self.root = root
             return declared
         if self.roots:
             # A trailer survived and names a catalog whose page tree the scan
@@ -860,4 +1238,7 @@ def _flate_only(buf, entries: dict) -> bool:
     return value in (b"/FlateDecode", b"[/FlateDecode]")
 
 
-__all__ = ["declared_page_count", "readable_page_count", "readable_pages"]
+__all__ = [
+    "LOST", "MIXED", "Reading", "declared_page_count", "misread", "mupdf_reading", "pypdf_reading",
+    "qpdf_reading", "readable_page_count", "readable_pages",
+]
