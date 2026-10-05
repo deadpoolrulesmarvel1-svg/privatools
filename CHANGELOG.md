@@ -10,6 +10,12 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.33] — 2026-10-05 — Old release images removed after each deploy
+
+### Deploy
+
+- After a deploy ends with the new release serving, `--rollback` included, the rollout removes old PrivaTools release images from the server. Until now they piled up at about 3.4 GB each and filled its disk. It keeps the newest three (`KEEP_IMAGES`), every container's image and the release recorded for `--rollback`. It removes images by name only, never forced or pruned, and never touches another project's image. A failure there never changes the deploy's result. It takes effect once `install-auto-deploy.sh` reinstalls the scripts on the server (`deploy/README.md`, "Image retention"); its first run there removes v2.7.30. (#356)
+
 ## [2.7.32] — 2026-10-05 — No more silently shortened PDFs
 
 ### Tools
