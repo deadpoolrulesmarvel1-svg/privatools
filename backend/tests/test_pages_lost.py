@@ -393,7 +393,9 @@ def test_repair_says_nothing_of_pages_when_the_file_does_not_say_how_many(quiet_
 
 def test_repair_says_nothing_of_pages_when_mupdf_cannot_count_its_output(quiet_client, monkeypatch):
     # MuPDF's own errors are not RuntimeError, ValueError or OSError: one
-    # from counting the repaired file reached the route's catch-all, a 500.
+    # from counting the repaired file reached the route's catch-all, which
+    # answered "This PDF appears to be corrupt or invalid." (400) for a file
+    # it had repaired.
     from backend.app.services import repair_service
 
     def fails(doc, enough=None):

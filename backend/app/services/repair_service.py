@@ -88,7 +88,8 @@ def pages_saved(input_path: str, output_path: str) -> tuple[int, int] | None:
             saved = readable_page_count(doc)
     except (RuntimeError, ValueError, OSError, fitz.mupdf.FzErrorBase):
         # MuPDF's own errors are none of the others: an output it cannot
-        # count would have reached the route's catch-all, a 500.
+        # count reached the route's catch-all, which called the upload
+        # corrupt (a 400) though its repair had been saved.
         return None
     if saved is None:
         return None
