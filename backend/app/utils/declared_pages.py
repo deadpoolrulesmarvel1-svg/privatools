@@ -30,7 +30,9 @@ there: qpdf rebuilds the page tree of a damaged file as it opens it, and its
 A stream's data is skipped, by its /Length or up to its "endstream", as the
 libraries' repairs skip it: a PDF attached to this one without compression
 carries objects with this file's numbers, and its page tree is not this
-file's.
+file's. When such a stream does not end where a /Length says (none, a wrong
+one, or one held in an object stream), its own first "endstream" may come
+first, and the count is unknown.
 
 The scan is bounded. It looks for "/Type" in one pass over the bytes, reads
 only the objects that are page tree nodes, pages, catalogs, trailers and
@@ -90,9 +92,10 @@ _MAX_STREAM_DICT_BYTES = 64 * 1024
 # An object that is an integer, the rest of "N G obj 1234 endobj".
 _INTEGER_OBJECT = re.compile(rb"obj[ \t\r\n\f\x00]*([0-9]{1,15})[ \t\r\n\f\x00]*endobj")
 # The keyword "stream", not the end of a longer word ("endstream"), and the
-# end of line after it, where the data starts. The word comes first, so the
-# search runs at the speed of a plain find.
-_STREAM_KEYWORD = re.compile(rb"stream(?<![A-Za-z]stream)(?:\r\n|\r|\n)")
+# end of line after it, where the data starts; spaces before that end of
+# line, which qpdf and MuPDF accept, are not data. The word comes first, so
+# the search runs at the speed of a plain find.
+_STREAM_KEYWORD = re.compile(rb"stream(?<![A-Za-z]stream)[ \t]*(?:\r\n|\r|\n)")
 _NESTED_STOP = re.compile(rb"[\[\]()<>%]")
 _STRING_STOP = re.compile(rb"[()\\]")
 # Whitespace and comments; the rest of a name or a number. Possessive, so a
@@ -187,6 +190,9 @@ class _Scan:
         self.parsed = 0  # page tree nodes and catalogs read
         self.steps = 0  # kids visited while counting
         self.overflow = False
+        # A stream that holds objects and does not end where its /Length says
+        # (_stream_end): which objects are this file's is not known.
+        self.unsure = False
         self._cursor: tuple[int, tuple[int, int, int] | None] = (0, None)
         self._last_start = -1
         # The data of the last stream found, where the search for the next
@@ -216,7 +222,7 @@ class _Scan:
             self._plain(match)
         self._in_stream_data(len(self.data))  # every stream, for _trailer
         self._trailer()
-        if self.overflow:
+        if self.overflow or self.unsure:
             return None
         count = self._count()
         return count if count is not None else self._linearized()
@@ -248,6 +254,8 @@ class _Scan:
             if root is not None:
                 self.roots.append(((start, -1), root))
             return
+        if kind != "Page" and self._nested(start):
+            return  # quoted inside an earlier object, as in a string: no object
         self._define(number, (start, -1), kind, self.data, body)
 
     def _define(self, number: int, where: tuple[int, int], kind: str, buf, body: int) -> None:
@@ -306,6 +314,27 @@ class _Scan:
         self._cursor = (pos, result)
         return result
 
+    def _nested(self, header: int) -> bool:
+        """Whether the object header at `header` lies inside an earlier object,
+        as one a string quotes does ("(... 2 0 obj << /Type /Pages ...>>)"):
+        the nearest "obj" before it opens an object rather than closing one
+        ("endobj"), with no "endstream" in between. Asked of page tree nodes
+        and catalogs only, which could raise the count; a page taken for one
+        could only lower it."""
+        data = self.data
+        low = max(0, header - _MAX_STREAM_DICT_BYTES)
+        end = header
+        while True:
+            self.budget.spend()
+            at = data.rfind(b"obj", low, end)
+            if at < 0 or (at >= 3 and data[at - 3:at] == b"end"):
+                return False  # the file's start, or the end of the object before
+            after = data[at + 3:at + 4]
+            if (not after or after in _WHITESPACE or after in _DELIMITERS) and \
+                    _HEADER_TAIL.search(data, max(0, at - 64), at + 3) is not None:
+                return data.find(b"endstream", at, header) < 0
+            end = at
+
     def _dict_end(self, body: int) -> int:
         return min(len(self.data), body + _MAX_DICT_BYTES)
 
@@ -342,12 +371,17 @@ class _Scan:
         """Where the data of the stream whose keyword is at `keyword` ends: at
         its /Length, given directly or as an integer object, when "endstream"
         follows there, else at the next "endstream", else at the end of the
-        bytes (a stream cut short)."""
+        bytes (a stream cut short). A stream that holds objects and ends at
+        the next "endstream", not where a /Length says, leaves the count
+        unknown (unsure)."""
         data = self.data
         found = data.find(b"endstream", begin)
         end = found if found >= 0 else len(data)
-        if data.find(b"obj", begin, end) < 0:
-            return end  # nothing in it that could be taken for an object
+        if data.find(b"obj", begin, end) < 0 and (found < 0 or self._ends_an_object(found)):
+            # Nothing in it that could be taken for an object, and the
+            # "endstream" is the one that closes its object, not a word in
+            # its data (an attached note on PDF's syntax).
+            return end
         at = data.rfind(b"obj", max(0, keyword - _MAX_STREAM_DICT_BYTES), keyword)
         entries = _dict_entries(data, at + 3, keyword, self.budget) if at >= 0 else None
         span = entries.get(b"Length") if entries else None
@@ -364,7 +398,33 @@ class _Scan:
                 after = _skip_space(data, begin + length, min(len(data), begin + length + 64))
                 if data[after:after + 9] == b"endstream":
                     return begin + length
+        if found >= 0 and self._holds_an_object(begin, end):
+            # Its /Length is missing, wrong, or an object the scan does not
+            # read (one in an object stream), and its data holds objects, as a
+            # PDF stored in it does: the next "endstream" may be one of that
+            # PDF's own, and what follows it may be that PDF's too, so which
+            # page tree is this file's is not known.
+            self.unsure = True
         return end
+
+    def _ends_an_object(self, endstream: int) -> bool:
+        """Whether "endobj" follows the "endstream" at `endstream`."""
+        data = self.data
+        after = _skip_space(data, endstream + 9, min(len(data), endstream + 9 + 64))
+        return data[after:after + 6] == b"endobj"
+
+    def _holds_an_object(self, begin: int, end: int) -> bool:
+        """Whether data[begin:end] holds an object's header, "N G obj"."""
+        data = self.data
+        at = data.find(b"obj", begin, end)
+        while at >= 0:
+            self.budget.spend()
+            after = data[at + 3:at + 4]
+            if (not after or after in _WHITESPACE or after in _DELIMITERS) and \
+                    _HEADER_TAIL.search(data, max(begin, at - 64), at + 3) is not None:
+                return True
+            at = data.find(b"obj", at + 3, end)
+        return False
 
     def _integer_objects(self) -> dict[int, list[int]]:
         """Object number -> the integers it is defined as ("N G obj 1234

@@ -260,6 +260,141 @@ def test_a_pdf_stored_in_a_stream_whose_length_is_an_object_is_not_read_either()
     assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) == 1
 
 
+def _catalog_last(pages: int = 6) -> bytes:
+    """`pages` pages with their content first, then the page tree, then the
+    catalog, as Chrome, LibreOffice and Ghostscript write them."""
+    inner = {}
+    for page in range(3, 3 + 2 * pages, 2):
+        inner[page] = b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents %d 0 R >>" % (page + 1)
+        inner[page + 1] = b"<< /Length 10 >>\nstream\nBT 0 Tj ET\nendstream"
+    inner[2] = b"<< /Type /Pages /Kids [%s] /Count %d >>" % (
+        b" ".join(b"%d 0 R" % n for n in range(3, 3 + 2 * pages, 2)), pages)
+    inner[1] = b"<< /Type /Catalog /Pages 2 0 R >>"
+    return _hand_built(inner)
+
+
+def _carrying_objects(attachment: bytes) -> dict[int, bytes]:
+    """A one-page PDF whose object 4 is `attachment`, a stream as given."""
+    return {
+        1: b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 5 0 R >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: _page(2),
+        4: attachment,
+        5: b"<< /Names [(inner.pdf) 6 0 R] >>",
+        6: b"<< /Type /Filespec /F (inner.pdf) /EF << /F 4 0 R >> >>",
+    }
+
+
+def _carrying_stream(attachment: bytes) -> bytes:
+    return _hand_built(_carrying_objects(attachment))
+
+
+STORED = _catalog_last()
+
+
+@pytest.mark.parametrize("attachment", [
+    b"<< /Type /EmbeddedFile /Length %d >>\nstream\n%s\nendstream" % (len(STORED) - 10, STORED),
+    b"<< /Type /EmbeddedFile /Length %d >>\nstream\n%s\nendstream" % (len(STORED) + 10, STORED),
+    b"<< /Type /EmbeddedFile >>\nstream\n%s\nendstream" % STORED,
+], ids=["length-short", "length-long", "no-length"])
+def test_a_stored_pdf_whose_stream_does_not_end_at_its_length_leaves_the_count_unknown(attachment):
+    # A wrong /Length is common in valid files, and readers cope; here the
+    # stream holds a PDF whose catalog comes last. Its first "endstream" is
+    # not this stream's end, and what follows it was read as this file's: a
+    # one-page file declared 6 pages, and qpdf's routes refused it with junk
+    # after its end. Where such a stream ends is not known: nor is the count.
+    assert declared_page_count(STORED) == 6
+    outer = _carrying_stream(attachment)
+    with fitz.open(stream=outer, filetype="pdf") as doc:
+        assert not doc.is_repaired and len(doc) == 1
+    assert declared_page_count(outer) is None
+    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) is None
+
+
+def _with_an_object_stream(objects: dict[int, bytes], number: int, body: bytes) -> bytes:
+    """A PDF 1.5 of `objects` in order, then an object stream holding object
+    `number` (`body`), then a cross-reference stream naming 1 as the catalog."""
+    out = b"%PDF-1.7\n"
+    offsets = {}
+    for n, text in objects.items():
+        offsets[n] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (n, text)
+    member = b"%d 0 " % number
+    packed = zlib.compress(member + body)
+    stm = max(*objects, number) + 1
+    offsets[stm] = len(out)
+    out += b"%d 0 obj\n<< /Type /ObjStm /N 1 /First %d /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream\nendobj\n" % (
+        stm, len(member), len(packed), packed)
+    xref = stm + 1
+    offsets[xref] = len(out)
+    rows = b""
+    for n in range(xref + 1):
+        if n in offsets:
+            rows += b"\x01" + offsets[n].to_bytes(4, "big") + b"\x00\x00"
+        elif n == number:
+            rows += b"\x02" + stm.to_bytes(4, "big") + b"\x00\x00"
+        else:
+            rows += b"\x00\x00\x00\x00\x00\xff\xff"
+    table = zlib.compress(rows)
+    out += b"%d 0 obj\n<< /Type /XRef /Size %d /W [1 4 2] /Root 1 0 R /Filter /FlateDecode /Length %d >>\nstream\n" % (
+        xref, xref + 1, len(table))
+    return out + table + b"\nendstream\nendobj\nstartxref\n%d\n%%%%EOF\n" % offsets[xref]
+
+
+def test_a_stored_pdf_whose_length_is_in_an_object_stream_leaves_the_count_unknown():
+    # A valid PDF 1.5: the attachment's /Length is object 7, which sits in an
+    # object stream, where the raw bytes do not show it.
+    attachment = b"<< /Type /EmbeddedFile /Length 7 0 R >>\nstream\n%s\nendstream" % STORED
+    packed = _with_an_object_stream(_carrying_objects(attachment), 7, b"%d" % len(STORED))
+    with fitz.open(stream=packed, filetype="pdf") as doc:
+        assert not doc.is_repaired and len(doc) == 1
+    with pikepdf.open(io.BytesIO(packed)) as pdf:
+        assert len(pdf.pages) == 1
+        assert len(pdf.attachments["inner.pdf"].get_file().read_bytes()) == len(STORED)
+    assert declared_page_count(packed) is None
+    assert declared_page_count(packed + b"\n" + bytes(range(256)) * 16) is None
+
+
+def test_spaces_after_the_stream_keyword_are_not_the_streams_data():
+    # "stream \r\n": qpdf warns of the space and reads the stream; so does
+    # MuPDF. Its data starts after the end of line, and is skipped.
+    outer = _carrying_stream(b"<< /Type /EmbeddedFile /Length %d >>\nstream \r\n%s\nendstream" % (len(STORED), STORED))
+    assert declared_page_count(outer) == 1
+    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) == 1
+
+
+def test_an_endstream_in_a_streams_words_does_not_end_it():
+    # An attached note on PDF's syntax: "endstream" comes in its words before
+    # any "obj", then a page tree. The stream ends at its /Length.
+    note = (b"A stream ends with the keyword\nendstream\nand a page tree looks like this:\n"
+            b"2 0 obj\n<< /Type /Pages /Kids [10 0 R 11 0 R 12 0 R] /Count 3 >>\nendobj\n")
+    outer = _carrying_stream(b"<< /Type /EmbeddedFile /Length %d >>\nstream\n%s\nendstream" % (len(note), note))
+    assert declared_page_count(outer) == 1
+    assert declared_page_count(outer + b"\n" + bytes(range(256)) * 16) == 1
+
+
+def test_an_object_a_string_quotes_is_not_the_files_own():
+    # A note on a page quotes PDF's syntax, under the page tree's number and
+    # after it: read as an object, the one-page file declared 3 pages, and a
+    # copy with bytes after its end was refused by every route.
+    data = _hand_built({1: b"<< /Type /Catalog /Pages 2 0 R >>", 2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+                        3: _page(2),
+                        4: b"<< /Type /Annot /Subtype /Text /Rect [72 600 92 620] /Contents (A page tree:\n"
+                           b"2 0 obj\n<< /Type /Pages /Kids [3 0 R 10 0 R 11 0 R] /Count 3 >>\nendobj) >>"})
+    assert declared_page_count(data) == 1
+    assert declared_page_count(data + b"\n" + bytes(range(256)) * 16) == 1
+
+
+def test_a_page_tree_after_a_stream_left_without_endobj_is_still_the_files():
+    # A writer that leaves out "endobj" after "endstream": the next object's
+    # header follows the stream's own, and is not quoted inside it.
+    data = (b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+            b"5 0 obj\n<< /Length 10 >>\nstream\nBT 0 Tj ET\nendstream\n"
+            b"2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n"
+            b"3 0 obj\n" + _page(2) + b"\nendobj\n4 0 obj\n" + _page(2) + b"\nendobj\n")
+    assert declared_page_count(data) == 2
+
+
 def test_a_catalog_the_count_cannot_read_leaves_the_count_unknown():
     # A catalog without /Type /Catalog, which MuPDF does without, and a page
     # tree a merge left behind, larger than the file's own: no count is
@@ -357,6 +492,27 @@ def test_windows_that_add_up_end_at_the_time_budget(monkeypatch):
     started = time.monotonic()
     assert declared_page_count(data) is None
     assert time.monotonic() - started < 5
+
+
+def test_a_scan_cut_off_by_its_budget_counts_nothing_it_read(monkeypatch):
+    # An update took a five-page file to three. A scan that ran out of time
+    # after the first page tree, and counted what it had read, would declare
+    # five pages that the file no longer has: the count is None instead.
+    base = _hand_built({1: b"<< /Type /Catalog /Pages 2 0 R >>",
+                        2: b"<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R] /Count 5 >>",
+                        **{n: _page(2) for n in range(3, 8)}})
+    update = b"2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>\nendobj\n"
+    data = base + update
+    assert declared_page_count(data) == 3
+    plain = declared_pages._Scan._plain
+
+    def out_of_time_at_the_update(self, match):
+        if match.start() >= len(base):
+            raise declared_pages._OutOfTime
+        return plain(self, match)
+
+    monkeypatch.setattr(declared_pages._Scan, "_plain", out_of_time_at_the_update)
+    assert declared_page_count(data) is None
 
 
 def _listing(count: int, *, lost_kid: bool) -> bytes:

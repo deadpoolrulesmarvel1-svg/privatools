@@ -169,6 +169,24 @@ def test_a_count_out_of_time_refuses_nothing(quiet_client, monkeypatch, route):
     assert response.status_code == 200, response.text[:300]
 
 
+def test_a_readable_count_out_of_time_refuses_nothing(quiet_client, monkeypatch):
+    # The declared count is read, but MuPDF's pages cannot be looked up in
+    # time (readable_page_count answers None): the tool goes on, and Repair
+    # says nothing of pages, rather than count them as none.
+    from backend.app.services import repair_service
+
+    def out_of_time(doc, enough=None):
+        return None
+
+    monkeypatch.setattr(declared_pages, "readable_page_count", out_of_time)
+    monkeypatch.setattr(repair_service, "readable_page_count", out_of_time)
+    response = _post(quiet_client, "/api/extract-images", CUT)
+    assert response.status_code == 200, response.text[:300]
+    repaired = quiet_client.post("/api/repair", files=[("file", ("doc.pdf", CUT, "application/pdf"))])
+    assert repaired.status_code == 200, repaired.text[:300]
+    assert "X-Repair-Pages" not in repaired.headers
+
+
 def _junk_after_the_end(data: bytes) -> bytes:
     return data + b"\n" + bytes(range(256)) * 16
 
@@ -228,7 +246,7 @@ def _carrying(inner: bytes) -> bytes:
         pdf.save(out, compress_streams=False, stream_decode_level=pikepdf.StreamDecodeLevel.none,
                  object_stream_mode=pikepdf.ObjectStreamMode.disable)
     data = out.getvalue()
-    assert WHOLE in data  # stored as it is
+    assert inner in data  # stored as it is
     return data
 
 
@@ -247,6 +265,54 @@ def test_a_valid_pdf_carrying_a_pdf_goes_on_as_before(quiet_client, route):
         # pages, as it did before the page count was read; qpdf 12's library,
         # which reads the upload here, keeps the file's one page.
         return
+    assert _pages_out(response) == _pages_out(intact)
+
+
+def _catalog_last(pages: int = 6) -> bytes:
+    """A PDF whose pages and content come first and whose page tree and
+    catalog come last, as Chrome, LibreOffice and Ghostscript write them."""
+    out, offsets = b"%PDF-1.7\n", {}
+
+    def put(number: int, body: bytes) -> None:
+        nonlocal out
+        offsets[number] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (number, body)
+
+    for i in range(pages):
+        text = b"BT /F1 24 Tf 72 700 Td (Stored page %d) Tj ET" % (i + 1)
+        put(3 + 2 * i, b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents %d 0 R >>" % (4 + 2 * i))
+        put(4 + 2 * i, b"<< /Length %d >>\nstream\n%s\nendstream" % (len(text), text))
+    kids = b" ".join(b"%d 0 R" % (3 + 2 * i) for i in range(pages))
+    put(2, b"<< /Type /Pages /Kids [%s] /Count %d >>" % (kids, pages))
+    put(1, b"<< /Type /Catalog /Pages 2 0 R >>")
+    size = 3 + 2 * pages
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % size
+    out += b"".join(b"%010d 00000 n \n" % offsets[n] for n in range(1, size))
+    return out + b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (size, xref)
+
+
+def _carrying_with_a_wrong_length(inner: bytes) -> bytes:
+    """_carrying(inner), its stream's /Length 10 bytes short: a defect valid
+    files carry, which the readers recover from."""
+    data = _carrying(inner)
+    right, wrong = b"/Length %d" % len(inner), b"/Length %d" % (len(inner) - 10)
+    assert data.count(right) == 1 and len(right) == len(wrong)
+    return data.replace(right, wrong)
+
+
+@pytest.mark.parametrize("route", ["/api/grayscale", "/api/rotate", "/api/sanitize"])
+def test_a_valid_pdf_carrying_a_pdf_its_stream_does_not_end_at_goes_on_as_before(quiet_client, route):
+    # The stored PDF writes its catalog last, and the stream's /Length is
+    # off: its own first "endstream" is not the stream's end. Read as this
+    # file's, its page tree made a one-page file declare 6, and qpdf's
+    # routes refused it once it had bytes after its end.
+    whole = _carrying_with_a_wrong_length(_catalog_last())
+    data = _junk_after_the_end(whole)
+    assert _qpdf_warns(data)
+    intact = _post(quiet_client, route, whole)
+    response = _post(quiet_client, route, data)
+    assert response.status_code == intact.status_code == 200, response.text[:300]
     assert _pages_out(response) == _pages_out(intact)
 
 
