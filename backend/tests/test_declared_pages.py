@@ -19,6 +19,7 @@ import fitz  # PyMuPDF
 import pikepdf
 import pytest
 
+from backend.app.utils import declared_pages
 from backend.app.utils.declared_pages import declared_page_count, readable_page_count, readable_pages
 
 
@@ -317,6 +318,68 @@ def test_a_page_tree_deeper_than_any_real_one_is_not_followed():
     deep = b"%PDF-1.7\n1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n" + b"".join(
         b"%d 0 obj <</Type /Pages /Count 1 /Kids [%d 0 R]>> endobj\n" % (n, n + 1) for n in range(2, 200))
     assert declared_page_count(deep) == 1  # the root's own count; the walk stops
+
+
+# ── the time it may take ────────────────────────────────────────────────────
+
+def test_a_count_out_of_time_is_unknown(monkeypatch):
+    monkeypatch.setattr(declared_pages, "_MAX_SECONDS", -1.0)
+    assert declared_page_count(SIX) is None
+    assert declared_page_count(_object_streams(SIX)) is None
+    with fitz.open(stream=SIX, filetype="pdf") as doc:
+        assert readable_page_count(doc) is None
+        assert readable_pages(doc) == list(range(6))  # Repair's own list has no deadline
+
+
+def test_windows_that_add_up_end_at_the_time_budget(monkeypatch):
+    # Each page tree node's /Kids opens a string that runs over every later
+    # node, then over a long run of escapes, a step each: every node's
+    # dictionary is read to the end of the file. The caps are per kind and
+    # each read is within its window, so this took 30 seconds; the scan now
+    # stops when its time is spent, and the count is unknown.
+    monkeypatch.setattr(declared_pages, "_MAX_SECONDS", 0.25)
+    nodes = b"".join(b"%d 0 obj\n<< /Type /Pages /Kids [ (" % n for n in range(1, 301))
+    data = b"%PDF-1.7\n" + nodes + b"\\\\" * 200_000 + b")" * 300 + b"]" * 300
+    started = time.monotonic()
+    assert declared_page_count(data) is None
+    assert time.monotonic() - started < 5
+
+
+def _listing(count: int, *, lost_kid: bool) -> bytes:
+    """A page tree whose /Count says `count` over one page (and one kid whose
+    object is gone), among enough objects for MuPDF to list them all, without
+    a cross-reference table: MuPDF repairs it and lists `count` pages."""
+    kids = b"3 0 R 4 0 R" if lost_kid else b"3 0 R"
+    return (b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+            + b"2 0 obj\n<< /Type /Pages /Kids [%s] /Count %d >>\nendobj\n" % (kids, count)
+            + b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n"
+            + b"".join(b"%d 0 obj null endobj\n" % n for n in range(5, count + 10))
+            + b"trailer\n<< /Root 1 0 R >>\n%%EOF\n")
+
+
+def test_pages_listed_beyond_the_time_budget_are_not_counted(monkeypatch):
+    # MuPDF lists as many pages as the /Count says, one per object at most,
+    # and looks up the absent ones one by one: two million held a request
+    # for 20 seconds. Out of time, the count of readable pages is unknown.
+    monkeypatch.setattr(declared_pages, "_MAX_SECONDS", 0.05)
+    with fitz.open(stream=_listing(100_000, lost_kid=True), filetype="pdf") as doc:
+        assert doc.is_repaired and len(doc) == 100_000
+        assert readable_page_count(doc) is None
+
+
+def test_readable_pages_are_counted_no_further_than_the_declared_count():
+    # Every kid is there, so the file declares the one page it has, and the
+    # count stops there rather than look up 100,000 listed pages.
+    data = _listing(100_000, lost_kid=False)
+    assert declared_page_count(data) == 1
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert len(doc) == 100_000
+        started = time.monotonic()
+        assert readable_page_count(doc, 1) == 1
+        assert time.monotonic() - started < 0.5
+    with fitz.open(stream=SIX, filetype="pdf") as doc:
+        assert readable_page_count(doc, 4) == 4
+        assert readable_page_count(doc, 10) == readable_page_count(doc) == 6
 
 
 # ── what MuPDF can read of what it lists ────────────────────────────────────

@@ -36,8 +36,12 @@ The scan is bounded. It looks for "/Type" in one pass over the bytes, reads
 only the objects that are page tree nodes, pages, catalogs, trailers and
 object streams, inflates at most _MAX_INFLATED bytes in all, and gives up
 (None) past _MAX_MATCHES such objects or _MAX_NODES page tree nodes: a file
-of 100,000 pages takes about a second. It uses the standard library only, so
-that the workers that read PDFs in a process of their own can load it.
+of 100,000 pages takes about a second. Those caps are per kind, and the
+windows a dictionary or a trailer is read in can overlap, so the scan also
+gives up after _MAX_SECONDS in all, and so does readable_page_count(): a
+count that takes longer is unknown, and nothing is refused on it. It uses the
+standard library only, so that the workers that read PDFs in a process of
+their own can load it.
 """
 
 from __future__ import annotations
@@ -46,6 +50,7 @@ import bisect
 import mmap
 import os
 import re
+import time
 import zlib
 
 # One object stream inflates to at most this much, and all of them together
@@ -68,6 +73,11 @@ _MAX_DICT_BYTES = 32 * 1024 * 1024
 _MAX_KIDS_BYTES = 16 * _MAX_MATCHES
 # Page tree depth followed; real trees are a few levels deep.
 _MAX_DEPTH = 64
+# The time a scan, or a count of readable pages, may take before its answer
+# is None. It runs in the request, on every upload a library had to repair:
+# a file of 100,000 pages takes about a second, and a hostile one whose
+# dictionaries each run over the rest of the file would take minutes.
+_MAX_SECONDS = 2.0
 
 _WHITESPACE = b" \t\r\n\f\x00"
 _DELIMITERS = b"()<>[]{}/%"
@@ -79,9 +89,34 @@ _INT = re.compile(rb"[+-]?[0-9]+")
 _MAX_STREAM_DICT_BYTES = 64 * 1024
 # An object that is an integer, the rest of "N G obj 1234 endobj".
 _INTEGER_OBJECT = re.compile(rb"obj[ \t\r\n\f\x00]*([0-9]{1,15})[ \t\r\n\f\x00]*endobj")
+# The keyword "stream", not the end of a longer word ("endstream"), and the
+# end of line after it, where the data starts. The word comes first, so the
+# search runs at the speed of a plain find.
+_STREAM_KEYWORD = re.compile(rb"stream(?<![A-Za-z]stream)(?:\r\n|\r|\n)")
 _NESTED_STOP = re.compile(rb"[\[\]()<>%]")
 _STRING_STOP = re.compile(rb"[()\\]")
-_LINE_END = re.compile(rb"[\r\n]")
+# Whitespace and comments; the rest of a name or a number. Possessive, so a
+# long run is skipped in one step and never backtracked.
+_SPACE = re.compile(rb"(?:[ \t\r\n\f\x00]++|%[^\r\n]*+)*+")
+_TOKEN_REST = re.compile(rb"[^ \t\r\n\f\x00()<>\[\]{}/%]*+")
+
+
+class _OutOfTime(Exception):
+    """A scan's _MAX_SECONDS ran out."""
+
+
+class _Budget:
+    """The time one scan may take: spend() raises _OutOfTime once it is past.
+    Every loop of the scan that can run long calls it, each round."""
+
+    __slots__ = ("deadline",)
+
+    def __init__(self, seconds: float) -> None:
+        self.deadline = time.monotonic() + seconds
+
+    def spend(self) -> None:
+        if time.monotonic() > self.deadline:
+            raise _OutOfTime
 
 
 def declared_page_count(source) -> int | None:
@@ -106,9 +141,28 @@ def readable_pages(doc) -> list[int]:
     tree names, also one whose own object was lost, which it shows blank:
     listed, but not read. Each page's object is looked up, never the page
     itself."""
+    return _readable_pages(doc, None)
+
+
+def readable_page_count(doc, enough: int | None = None) -> int | None:
+    """How many of the pages MuPDF lists in `doc` it can read (readable_pages),
+    counting no further than `enough` when it is given (a count that reaches
+    the declared one says no page was lost), or None when looking them up
+    takes longer than _MAX_SECONDS: MuPDF lists as many pages as the root's
+    /Count says, up to one for each object in the file, and a file that lists
+    two million it does not have held the request for 20 seconds."""
+    pages = _readable_pages(doc, time.monotonic() + _MAX_SECONDS, enough)
+    return None if pages is None else len(pages)
+
+
+def _readable_pages(doc, deadline: float | None, enough: int | None = None) -> list[int] | None:
     size = doc.xref_length()
-    readable = []
+    readable: list[int] = []
     for number in range(len(doc)):
+        if enough is not None and len(readable) >= enough:
+            break
+        if deadline is not None and time.monotonic() > deadline:
+            return None
         try:
             xref = doc.page_xref(number)
             if 0 < xref < size and doc.xref_object(xref, compressed=True).lstrip().startswith("<<"):
@@ -118,16 +172,12 @@ def readable_pages(doc) -> list[int]:
     return readable
 
 
-def readable_page_count(doc) -> int:
-    """How many of the pages MuPDF lists in `doc` it can read (readable_pages)."""
-    return len(readable_pages(doc))
-
-
 class _Scan:
     """One pass over a PDF's bytes for its page tree."""
 
     def __init__(self, data) -> None:
         self.data = data
+        self.budget = _Budget(_MAX_SECONDS)
         # Object number -> (where it is defined, kind, what it says). The
         # last definition in the file is the one a repair keeps.
         self.objects: dict[int, tuple[tuple[int, int], str, object]] = {}
@@ -150,7 +200,14 @@ class _Scan:
     # ── collecting ──────────────────────────────────────────────────────────
 
     def declared(self) -> int | None:
+        try:
+            return self._declared()
+        except _OutOfTime:
+            return None  # unknown: nothing is refused on it
+
+    def _declared(self) -> int | None:
         for match in _TYPE.finditer(self.data):
+            self.budget.spend()
             self.matches += 1
             if self.matches > _MAX_MATCHES or self.overflow:
                 return None
@@ -172,7 +229,7 @@ class _Scan:
         start = data.rfind(b"<<", 0, at) if at > 0 else -1
         if start < 0:
             return None
-        entries = _dict_entries(data, start, min(len(data), start + 4096))
+        entries = _dict_entries(data, start, min(len(data), start + 4096), self.budget)
         return _count(data, entries.get(b"N")) if entries else None
 
     def _plain(self, match: re.Match) -> None:
@@ -186,7 +243,7 @@ class _Scan:
             self._object_stream(start, body)
             return
         if kind == "XRef":
-            entries = _dict_entries(self.data, body, self._dict_end(body))
+            entries = _dict_entries(self.data, body, self._dict_end(body), self.budget)
             root = _ref(self.data, entries.get(b"Root")) if entries else None
             if root is not None:
                 self.roots.append(((start, -1), root))
@@ -204,7 +261,7 @@ class _Scan:
         if self.parsed > _MAX_NODES:
             self.overflow = True
             return
-        entries = _dict_entries(buf, body, min(len(buf), body + _MAX_DICT_BYTES))
+        entries = _dict_entries(buf, body, min(len(buf), body + _MAX_DICT_BYTES), self.budget)
         if entries is None:
             return
         if kind == "Pages":
@@ -230,6 +287,7 @@ class _Scan:
         end = pos
         result = None
         while True:
+            self.budget.spend()
             at = data.rfind(b"obj", low, end)
             if at < 0:
                 if low == previous_pos and previous is not None and data.find(b"stream", previous_pos, pos) < 0:
@@ -260,14 +318,15 @@ class _Scan:
         positions asked about only grow."""
         data = self.data
         while True:
+            self.budget.spend()
             start, end = self._body
             if pos < end:
                 return pos >= start
-            keyword = _stream_keyword(data, max(end, self._streams_from), pos)
+            keyword = _STREAM_KEYWORD.search(data, max(end, self._streams_from), pos)
             if keyword is None:
                 self._streams_from = max(self._streams_from, pos)
                 return False
-            at, begin = keyword
+            at, begin = keyword.start(), keyword.end()
             self._streams_from = begin
             before = data.rfind(b">>", max(0, at - 64), at)
             if before < 0 or data[before + 2:at].strip(_WHITESPACE):
@@ -290,7 +349,7 @@ class _Scan:
         if data.find(b"obj", begin, end) < 0:
             return end  # nothing in it that could be taken for an object
         at = data.rfind(b"obj", max(0, keyword - _MAX_STREAM_DICT_BYTES), keyword)
-        entries = _dict_entries(data, at + 3, keyword) if at >= 0 else None
+        entries = _dict_entries(data, at + 3, keyword, self.budget) if at >= 0 else None
         span = entries.get(b"Length") if entries else None
         length = _number(data, span)
         if length is not None:
@@ -317,6 +376,7 @@ class _Scan:
             integers: dict[int, list[int]] = {}
             found = 0
             for match in _INTEGER_OBJECT.finditer(data):
+                self.budget.spend()
                 at = match.start()
                 tail = _HEADER_TAIL.search(data, max(0, at - 64), at + 3)
                 if tail is None:
@@ -336,10 +396,11 @@ class _Scan:
         data = self.data
         at = data.rfind(b"trailer")
         while at >= 0:
+            self.budget.spend()
             if not self._outside_streams(at):
                 at = data.rfind(b"trailer", 0, at)
                 continue
-            entries = _dict_entries(data, at + len(b"trailer"), min(len(data), at + 1024 * 1024))
+            entries = _dict_entries(data, at + len(b"trailer"), min(len(data), at + 1024 * 1024), self.budget)
             root = _ref(data, entries.get(b"Root")) if entries else None
             if root is not None:
                 self.roots.append(((at, -1), root))
@@ -348,7 +409,7 @@ class _Scan:
 
     def _object_stream(self, start: int, body: int) -> None:
         data = self.data
-        entries = _dict_entries(data, body, self._dict_end(body))
+        entries = _dict_entries(data, body, self._dict_end(body), self.budget)
         if not entries or not _flate_only(data, entries):
             return
         count = _count(data, entries.get(b"N"))
@@ -373,12 +434,19 @@ class _Scan:
         inflated = self._inflate(data, begin, stop, filtered=b"Filter" in entries)
         if inflated is None:
             return
-        pairs = _INT.findall(inflated, 0, first)
-        members = sorted((first + int(pairs[i + 1]), int(pairs[i]), i // 2)
-                         for i in range(0, min(len(pairs), 2 * count) - 1, 2))
+        # The header: a number and an offset for each of the /N objects. Only
+        # those are read, however many numbers the header holds.
+        pairs: list[int] = []
+        for number in _INT.finditer(inflated, 0, first):
+            self.budget.spend()
+            pairs.append(int(number.group()))
+            if len(pairs) >= 2 * count:
+                break
+        members = sorted((first + pairs[i + 1], pairs[i], i // 2) for i in range(0, len(pairs) - 1, 2))
         starts = [at for at, _, _ in members]
         done = -1
         for found in _TYPE.finditer(inflated, first):
+            self.budget.spend()
             self.matches += 1
             if self.matches > _MAX_MATCHES:
                 self.overflow = True
@@ -405,6 +473,7 @@ class _Scan:
             parts: list[bytes] = []
             size = 0
             for chunk_at in range(begin, stop, 64 * 1024):
+                self.budget.spend()
                 try:
                     part = inflater.decompress(data[chunk_at:min(stop, chunk_at + 64 * 1024)], room - size)
                 except zlib.error:
@@ -469,6 +538,7 @@ class _Scan:
 
     def _walk(self, number: int, nodes: dict, seen: set, depth: int) -> tuple[int, int]:
         """(pages found under node `number`, kids missing under it)."""
+        self.budget.spend()
         _, kids = nodes[number]
         if kids is None or depth > _MAX_DEPTH or number in seen:
             return 0, 1
@@ -495,58 +565,27 @@ class _Scan:
 
 # ── a little of PDF's syntax ────────────────────────────────────────────────
 
-def _stream_keyword(buf, start: int, end: int) -> tuple[int, int] | None:
-    """(where the next "stream" keyword in buf[start:end] is, where its data
-    starts, past the end of line that follows it), or None."""
-    while True:
-        at = buf.find(b"stream", start, end)
-        if at < 0:
-            return None
-        start = at + 6
-        if at > 0 and buf[at - 1:at].isalpha():
-            continue  # "endstream", or a longer word
-        eol = buf[at + 6:at + 8]
-        if eol == b"\r\n":
-            return at, at + 8
-        if eol[:1] in (b"\n", b"\r"):
-            return at, at + 7
-
-
 def _skip_space(buf, i: int, end: int) -> int:
     """The index of the next token at or after `i`, past whitespace and comments."""
-    while i < end:
-        c = buf[i:i + 1]
-        if c in _WHITESPACE:
-            i += 1
-        elif c == b"%":
-            line_end = _LINE_END.search(buf, i, end)
-            i = end if line_end is None else line_end.end()
-        else:
-            break
-    return i
+    return _SPACE.match(buf, i, end).end() if i < end else i
 
 
 def _token_end(buf, i: int, end: int) -> int:
-    while i < end:
-        c = buf[i:i + 1]
-        if c in _WHITESPACE or c in _DELIMITERS:
-            break
-        i += 1
-    return i
+    return _TOKEN_REST.match(buf, i, end).end() if i < end else i
 
 
-def _skip_value(buf, i: int, end: int) -> int:
+def _skip_value(buf, i: int, end: int, budget: _Budget) -> int:
     """The index after the value that starts at `i` (a reference counts as one)."""
     c = buf[i:i + 1]
     if c == b"<":
         if buf[i + 1:i + 2] == b"<":
-            return _skip_nested(buf, i, end)
+            return _skip_nested(buf, i, end, budget)
         close = buf.find(b">", i, end)
         return end if close < 0 else close + 1
     if c == b"[":
-        return _skip_nested(buf, i, end)
+        return _skip_nested(buf, i, end, budget)
     if c == b"(":
-        return _skip_string(buf, i, end)
+        return _skip_string(buf, i, end, budget)
     if c == b"/":
         return _token_end(buf, i + 1, end)
     ref = _REF.match(buf, i, min(end, i + 64))
@@ -556,17 +595,18 @@ def _skip_value(buf, i: int, end: int) -> int:
     return token_end if token_end > i else i + 1  # a stray delimiter
 
 
-def _skip_nested(buf, i: int, end: int) -> int:
+def _skip_nested(buf, i: int, end: int, budget: _Budget) -> int:
     """The index after the array or dictionary that starts at `i`."""
     depth = 0
     while True:
+        budget.spend()
         found = _NESTED_STOP.search(buf, i, end)
         if found is None:
             return end
         i = found.start()
         c = buf[i:i + 1]
         if c == b"(":
-            i = _skip_string(buf, i, end)
+            i = _skip_string(buf, i, end, budget)
         elif c == b"%":
             i = _skip_space(buf, i, end)
         elif c == b"[" or (c == b"<" and buf[i + 1:i + 2] == b"<"):
@@ -586,10 +626,11 @@ def _skip_nested(buf, i: int, end: int) -> int:
             i += 1
 
 
-def _skip_string(buf, i: int, end: int) -> int:
+def _skip_string(buf, i: int, end: int, budget: _Budget) -> int:
     """The index after the literal string that starts at `i`."""
     depth = 0
     while True:
+        budget.spend()
         found = _STRING_STOP.search(buf, i, end)
         if found is None:
             return end
@@ -604,7 +645,7 @@ def _skip_string(buf, i: int, end: int) -> int:
             return i
 
 
-def _dict_entries(buf, i: int, end: int) -> dict[bytes, tuple[int, int]] | None:
+def _dict_entries(buf, i: int, end: int, budget: _Budget) -> dict[bytes, tuple[int, int]] | None:
     """The top-level entries of the dictionary at `i`: {key: (start, end) of
     its value}, and b"" for the dictionary's own end. A dictionary cut short
     gives the entries before the cut. None when no dictionary starts there."""
@@ -614,6 +655,7 @@ def _dict_entries(buf, i: int, end: int) -> dict[bytes, tuple[int, int]] | None:
     i += 2
     entries: dict[bytes, tuple[int, int]] = {}
     while True:
+        budget.spend()
         i = _skip_space(buf, i, end)
         if i >= end:
             entries[b""] = (end, end)
@@ -627,7 +669,7 @@ def _dict_entries(buf, i: int, end: int) -> dict[bytes, tuple[int, int]] | None:
         key_end = _token_end(buf, i + 1, end)
         key = bytes(buf[i + 1:key_end])
         i = _skip_space(buf, key_end, end)
-        value_end = _skip_value(buf, i, end) if i < end else end
+        value_end = _skip_value(buf, i, end, budget) if i < end else end
         if value_end >= end and b"" not in entries and i < end and buf[i:i + 1] in (b"[", b"<", b"("):
             # A value cut short is no value.
             entries[b""] = (end, end)

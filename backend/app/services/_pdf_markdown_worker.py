@@ -2466,8 +2466,10 @@ def _pages_lost(doc: fitz.Document, source: str) -> tuple[int, int] | None:
         declared = pages.declared_page_count(source)
         if declared is None:
             return None
-        read = pages.readable_page_count(doc)
+        read = pages.readable_page_count(doc, declared)
     except Exception:  # noqa: BLE001 - a check that cannot run refuses nothing
+        return None
+    if read is None:  # too many listed pages to look up in time: unknown
         return None
     return (read, declared) if read < declared else None
 

@@ -370,9 +370,12 @@ def refuse_if_pages_lost(source, survived) -> None:
     is read from its bytes (utils.declared_pages), not from the repair; a file
     whose page tree cannot be found is not refused here. `source` is a path,
     the bytes or a file object holding them; `survived` is the number of
-    pages read, or a function that counts them, called only when the file
-    declares a count. Repaired files that kept every page, which valid files
-    with a damaged cross-reference table are, go on as before.
+    pages read, or a function that counts them, called with the declared
+    count (it may stop counting there) and only when the file declares one.
+    Either count can be None, unknown (as when it would take too long to
+    read), and then nothing is refused. Repaired files that kept every page,
+    which valid files with a damaged cross-reference table are, go on as
+    before.
     """
     from .declared_pages import declared_page_count
     from .exceptions import PdfCorruptError
@@ -383,7 +386,9 @@ def refuse_if_pages_lost(source, survived) -> None:
     declared = declared_page_count(readable)
     if declared is None:
         return
-    count = survived() if callable(survived) else survived
+    count = survived(declared) if callable(survived) else survived
+    if count is None:
+        return
     if count < declared:
         raise PdfCorruptError(pages_lost_message(count, declared) if count else _DAMAGED_PDF)
 
@@ -402,7 +407,7 @@ def refuse_if_qpdf_lost_pages(pdf, source) -> None:
     damaged"); only then can it have lost a page, and only then are the file's
     bytes read."""
     if pdf.get_warnings():
-        refuse_if_pages_lost(source, lambda: len(pdf.pages))
+        refuse_if_pages_lost(source, lambda declared: len(pdf.pages))
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -503,7 +508,7 @@ def open_pdf_document(source: str | bytes):
         raise ValidationError(NO_PAGES_MESSAGE)
     if doc.is_repaired:
         try:
-            refuse_if_pages_lost(source, lambda: readable_page_count(doc))
+            refuse_if_pages_lost(source, lambda declared: readable_page_count(doc, declared))
         except PdfCorruptError:
             doc.close()
             raise

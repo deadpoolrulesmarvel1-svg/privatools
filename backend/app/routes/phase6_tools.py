@@ -273,7 +273,7 @@ def _count_pdf_pages(data: bytes) -> int:
             if doc.is_repaired:
                 if count == 0:
                     return -1
-                refuse_if_pages_lost(data, lambda: readable_page_count(doc))
+                refuse_if_pages_lost(data, lambda declared: readable_page_count(doc, declared))
             return count
         finally:
             doc.close()

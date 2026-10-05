@@ -29,6 +29,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from backend.app import main
+from backend.app.utils import declared_pages
 from backend.app.utils.cleanup import _DAMAGED_PDF, pages_lost_message
 from backend.app.utils.declared_pages import readable_page_count
 
@@ -151,6 +152,19 @@ def test_a_pdf_that_lost_pages_is_refused_with_its_counts(quiet_client, route):
     assert response.status_code == 400, response.text[:300]
     read = QPDF_READ if ROUTES[route][0] == "qpdf" else MUPDF_READ
     assert response.json()["detail"] == pages_lost_message(read, 6)
+
+
+@pytest.mark.parametrize("route", ["/api/rotate", "/api/grayscale", "/api/extract-images"])
+def test_a_count_out_of_time_refuses_nothing(quiet_client, monkeypatch, route):
+    # The count of declared or readable pages gives up after its time
+    # (utils.declared_pages._MAX_SECONDS) and is then unknown: the tool goes
+    # on as it did before the count was read, never refusing on a guess.
+    # Here, in qpdf's helpers and MuPDF's open_pdf_document; the workers run
+    # in processes of their own, and process_pdf's rebuild compares what
+    # qpdf kept with what MuPDF listed, which needs no count.
+    monkeypatch.setattr(declared_pages, "_MAX_SECONDS", -1.0)
+    response = _post(quiet_client, route, CUT)
+    assert response.status_code == 200, response.text[:300]
 
 
 def _junk_after_the_end(data: bytes) -> bytes:

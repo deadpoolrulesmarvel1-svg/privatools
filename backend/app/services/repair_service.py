@@ -75,10 +75,11 @@ def repair_pdf(input_path: str) -> tuple[str, str]:
 
 def pages_saved(input_path: str, output_path: str) -> tuple[int, int] | None:
     """(pages in the repaired file, pages the damaged one declares), or None
-    when the damaged file's page tree cannot be found (utils.declared_pages).
-    The pages counted are those MuPDF can read in the repaired file; the
-    total is never less than them, since a lost page tree root leaves only a
-    lower node's count to go by."""
+    when the damaged file's page tree cannot be found (utils.declared_pages),
+    or either count cannot be read: Repair then says nothing of pages. The
+    pages counted are those MuPDF can read in the repaired file; the total is
+    never less than them, since a lost page tree root leaves only a lower
+    node's count to go by."""
     declared = declared_page_count(input_path)
     if declared is None:
         return None
@@ -86,5 +87,7 @@ def pages_saved(input_path: str, output_path: str) -> tuple[int, int] | None:
         with fitz.open(output_path) as doc:
             saved = readable_page_count(doc)
     except (RuntimeError, ValueError, OSError):
+        return None
+    if saved is None:
         return None
     return saved, max(saved, declared)
