@@ -122,6 +122,41 @@ export function chunkByTokens(text: string, countTokens: (text: string) => numbe
     return chunks;
 }
 
+/** Some of a passage's texts, translated as one, by their places in the passage, and the pieces they are sent to the model in. */
+export interface TokenRun {
+    items: number[];
+    /** The texts joined, as they are; or, when that is longer than the model reads, its pieces (chunkByTokens). */
+    pieces: string[];
+}
+
+/**
+ * A passage's texts in runs that fit the model's input together, in order.
+ * A text over the limit alone is a run of its own, sent in pieces. Subtitle
+ * Translator sends each run as one text, so a sentence across cues is
+ * translated whole.
+ */
+export function tokenRuns(texts: readonly string[], countTokens: (text: string) => number, maxTokens: number): TokenRun[] {
+    const runs: number[][] = [];
+    let current: number[] = [];
+    let text = "";
+    texts.forEach((item, index) => {
+        const candidate = joinWords(text, item);
+        if (current.length && countTokens(candidate) > maxTokens) {
+            runs.push(current);
+            current = [index];
+            text = item;
+        } else {
+            current.push(index);
+            text = candidate;
+        }
+    });
+    if (current.length) runs.push(current);
+    return runs.map(items => {
+        const source = items.map(index => texts[index]).reduce(joinWords, "");
+        return { items, pieces: countTokens(source) > maxTokens ? chunkByTokens(source, countTokens, maxTokens) : [source] };
+    });
+}
+
 /* ── By characters ───────────────────────────────────────────────────── */
 
 export function chunkForTranslation(

@@ -229,6 +229,25 @@ if (eagerLazyFiles.length > 0) {
   console.error("Import src/lib/noise/engine.ts only through the dynamic import() in NoiseRemoverUI, which runs when a recording is cleaned.");
 }
 
-if (offenders.length > 0 || wasmOffenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0 || eagerLazyFiles.length > 0) {
+// OPUS-MT's worker carries transformers.js and is started by its URL when a
+// visitor runs a translation on Translate PDF or Subtitle Translator
+// (src/lib/translate/opusMt.ts). Its name in a chunk every page loads would
+// mean a page could start it before anyone asked, and the build must hold
+// exactly one.
+const translateWorkers = chunks.map((chunk) => chunk.name).filter((name) => /^opusMt\.worker-[\w-]+\.js$/.test(name));
+const translateWorkerProblems = [
+  ...(translateWorkers.length === 1 ? [] : [`expected one opusMt.worker-*.js, found ${translateWorkers.length}`]),
+  ...[...eagerChunks].flatMap((name) => {
+    const source = readFileSync(join(assetsDir.pathname, name), "utf8");
+    return translateWorkers.filter((worker) => source.includes(worker)).map((worker) => `${name} names ${worker}`);
+  }),
+];
+if (translateWorkerProblems.length > 0) {
+  console.error("\nThe OPUS-MT translation worker is missing, or named by the chunks every page loads:");
+  for (const line of translateWorkerProblems) console.error(`- ${line}`);
+  console.error("Import src/lib/translate/opusMt.ts only from the translation tools' own UIs, which the tool pages load lazily, and start the worker only from loadDeviceTranslator.");
+}
+
+if (offenders.length > 0 || wasmOffenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0 || eagerDataChunks.length > 0 || eagerWorkerStarts.length > 0 || eagerLazyFiles.length > 0 || translateWorkerProblems.length > 0) {
   process.exit(1);
 }

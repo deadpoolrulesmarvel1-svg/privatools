@@ -15,7 +15,7 @@
  * halves; lines that fail again are marked as not translated and keep their
  * own text. Text is never moved from one cue to another to make a reply fit.
  */
-import { chunkByTokens, joinWords } from "@/lib/translate/chunk";
+import { joinWords, type TokenRun } from "@/lib/translate/chunk";
 import type { CaptionLayout } from "./captions";
 import { cueParts, renderCue, type CuePart } from "./cueText";
 import { distribute, groupPassages, type PassagePart } from "./passages";
@@ -103,8 +103,13 @@ const isAbort = (error: unknown) => (error as { name?: string })?.name === "Abor
 
 /* ── On this device ──────────────────────────────────────────────────── */
 
+/**
+ * OPUS-MT, as lib/translate/opusMt.ts gives it: the model and its tokenizer
+ * run in a worker, so a passage's runs (chunk.ts's tokenRuns, counted in the
+ * model's own tokens) are asked for, like each translation.
+ */
 export interface DeviceEngine {
-    countTokens(text: string): number;
+    runs(texts: readonly string[], maxTokens: number): Promise<TokenRun[]>;
     translate(text: string, maxNewTokens?: number): Promise<string>;
 }
 
@@ -119,47 +124,25 @@ export function looksInvented(source: string, translation: string): boolean {
     return weighed(translation) > weighed(source) * 3 + 24;
 }
 
-/** A passage's items in runs that fit the model's input; an item over the limit alone goes on its own. */
-function tokenRuns(plan: TranslationPlan, passage: number[], engine: DeviceEngine, maxTokens: number): number[][] {
-    const runs: number[][] = [];
-    let current: number[] = [];
-    let text = "";
-    for (const index of passage) {
-        const candidate = joinWords(text, plan.items[index].text);
-        if (current.length && engine.countTokens(candidate) > maxTokens) {
-            runs.push(current);
-            current = [index];
-            text = plan.items[index].text;
-        } else {
-            current.push(index);
-            text = candidate;
-        }
-    }
-    if (current.length) runs.push(current);
-    return runs;
-}
-
 export async function translateOnDevice(plan: TranslationPlan, engine: DeviceEngine, { signal, onProgress, maxTokens }: RunOptions & { maxTokens: number }): Promise<RunResult> {
     const outcomes: (ItemOutcome | undefined)[] = new Array(plan.items.length).fill(undefined);
     let done = 0;
     const dropped = (index: number) => plan.cues[plan.items[index].cue][plan.items[index].part].plainDrops;
     try {
         for (const passage of plan.passages) {
-            for (const run of tokenRuns(plan, passage, engine, maxTokens)) {
+            stopIfAborted(signal);
+            // The passage's items in runs that fit the model's input; an item over the limit alone goes on its own.
+            const runs = await engine.runs(passage.map(index => plan.items[index].text), maxTokens);
+            for (const { items, pieces } of runs) {
                 stopIfAborted(signal);
+                const run = items.map(k => passage[k]);
                 const texts = run.map(index => plan.items[index].text);
                 const source = texts.reduce(joinWords, "");
-                let translation: string;
-                if (engine.countTokens(source) > maxTokens) {
-                    // One part longer than the model reads: its pieces are translated in turn and joined.
-                    let joined = "";
-                    for (const piece of chunkByTokens(source, text => engine.countTokens(text), maxTokens)) {
-                        stopIfAborted(signal);
-                        joined = joinWords(joined, await engine.translate(piece));
-                    }
-                    translation = joined;
-                } else {
-                    translation = await engine.translate(source);
+                // One piece, unless one part is longer than the model reads: then its pieces are translated in turn and joined.
+                let translation = "";
+                for (const piece of pieces) {
+                    stopIfAborted(signal);
+                    translation = joinWords(translation, await engine.translate(piece));
                 }
                 stopIfAborted(signal);
                 if (!translation.trim()) {
