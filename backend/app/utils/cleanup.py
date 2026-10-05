@@ -311,12 +311,14 @@ def safe_open_pdf(path: str, **kwargs):
 
 def open_pikepdf(source, **kwargs):
     """pikepdf.open(source, **kwargs) for an upload, refusing one that lost
-    pages to damage.
+    pages to damage, or that qpdf read as another document.
 
     qpdf rebuilds a damaged file's cross-reference table, as from a PDF cut
     short, and leaves out each page whose object did not survive: a tool that
-    wrote what it read would answer with fewer pages than it was sent. Such a
-    file is refused with PdfCorruptError (refuse_if_pages_lost); pikepdf's own
+    wrote what it read would answer with fewer pages than it was sent. Its
+    rebuild also takes the objects of a PDF attached without compression for
+    the file's own, and a tool answered with the attachment's pages. Such a
+    file is refused with PdfCorruptError (refuse_if_misread); pikepdf's own
     errors are raised as they are. Use it, or safe_open_pdf, wherever pikepdf
     opens what a visitor sent; a file the tool made itself needs neither.
     """
@@ -326,7 +328,7 @@ def open_pikepdf(source, **kwargs):
 
     pdf = pikepdf.open(source, **kwargs)
     try:
-        refuse_if_qpdf_lost_pages(pdf, source)
+        refuse_if_qpdf_misread(pdf, source)
     except PdfCorruptError:
         pdf.close()
         raise
@@ -360,37 +362,60 @@ def pages_lost_error(survived, declared):
     return PdfCorruptError(_DAMAGED_PDF)
 
 
-def refuse_if_pages_lost(source, survived) -> None:
-    """Raise PdfCorruptError if the PDF at `source` declares more pages than a
-    library read of it.
+# What a tool says, with a 400, to a PDF a library read as another document:
+# damage made its repair take the objects of a PDF attached inside it for the
+# file's own, or an older revision of an updated file for the current one
+# (utils.declared_pages.misread). friendlyError (frontend/src/lib/utils.ts)
+# keeps these words, and Repair PDF's own.
+MIXED_UP_MESSAGE = (
+    "This PDF is damaged: its structure is broken in a way that can mix it up with a file attached inside it "
+    "or an earlier version of itself. Download it again, or fix it with Repair PDF, then try again."
+)
 
-    For a file the library had to repair: a PDF cut short opens repaired with
+
+def mixed_up_error():
+    """The PdfCorruptError for a file a library read as another document."""
+    from .exceptions import PdfCorruptError
+
+    return PdfCorruptError(MIXED_UP_MESSAGE)
+
+
+def refuse_if_misread(source, reading, *, lost: bool = True) -> None:
+    """Raise PdfCorruptError if a library's reading of the PDF at `source` is
+    not the page tree the file declares (utils.declared_pages.misread).
+
+    For a file the library had to repair. A PDF cut short opens repaired with
     the pages that survived, and a tool that went on would answer with fewer
-    pages than the visitor sent, and say nothing. The count the file declares
-    is read from its bytes (utils.declared_pages), not from the repair; a file
-    whose page tree cannot be found is not refused here. `source` is a path,
-    the bytes or a file object holding them; `survived` is the number of
-    pages read, or a function that counts them, called with the declared
-    count (it may stop counting there) and only when the file declares one.
-    Either count can be None, unknown (as when it would take too long to
-    read), and then nothing is refused. Repaired files that kept every page,
-    which valid files with a damaged cross-reference table are, go on as
-    before.
+    pages than the visitor sent, and say nothing: refused with both counts
+    (pages_lost_message). A valid PDF that carries a PDF attached without
+    compression, and has a common cross-reference defect, opens repaired with
+    the attachment's objects taken for its own, and a tool answered with the
+    attachment's pages: refused as mixed up (MIXED_UP_MESSAGE), as is an
+    updated file that qpdf's rebuild read as the revision before the update.
+    The page tree the file declares is read from its bytes, not from the
+    repair. `source` is a path, the bytes or a file object holding them;
+    `reading` gives the library's Reading when called with the declared
+    count (mupdf_reading, qpdf_reading, pypdf_reading). A file whose page
+    tree cannot be found, or a reading that is unknown (as when it would take
+    too long), refuses nothing, and repaired files read as they are, which
+    valid files with a damaged cross-reference table are, go on as before.
+    With `lost` false, only a mixed-up reading is refused.
     """
-    from .declared_pages import declared_page_count
+    from .declared_pages import LOST, misread
     from .exceptions import PdfCorruptError
 
     readable = _scannable(source)
     if readable is None:
         return
-    declared = declared_page_count(readable)
-    if declared is None:
+    found = misread(readable, reading)
+    if found is None:
         return
-    count = survived(declared) if callable(survived) else survived
-    if count is None:
+    kind, count, declared = found
+    if kind == LOST:
+        if lost:
+            raise PdfCorruptError(pages_lost_message(count, declared) if count else _DAMAGED_PDF)
         return
-    if count < declared:
-        raise PdfCorruptError(pages_lost_message(count, declared) if count else _DAMAGED_PDF)
+    raise mixed_up_error()
 
 
 def _scannable(source):
@@ -403,15 +428,22 @@ def _scannable(source):
     return getvalue() if callable(getvalue) else None
 
 
-def refuse_if_qpdf_lost_pages(pdf, source) -> None:
-    """refuse_if_pages_lost for a file pikepdf opened from `source`, when qpdf
+def refuse_if_qpdf_misread(pdf, source) -> bool:
+    """refuse_if_misread for a file pikepdf opened from `source`, when qpdf
     gave any warning while opening it. It warns when it has to rebuild a
     file's cross-reference table ("file is damaged"), as for a PDF cut short,
-    which is when it leaves out pages whose object was lost; any other warning
-    has the file's bytes read too, which refuses nothing that kept its pages.
-    A file qpdf opened without a warning is not read again."""
-    if pdf.get_warnings():
-        refuse_if_pages_lost(source, lambda declared: len(pdf.pages))
+    which is when it leaves out pages whose object was lost, or takes an
+    attachment's objects for the file's; any other warning has the file's
+    bytes read too, which refuses nothing that qpdf read as it is. A file
+    qpdf opened without a warning is not read again. Returns whether qpdf
+    warned: asking pikepdf again gives none, as it hands each warning out
+    once."""
+    from .declared_pages import qpdf_reading
+
+    if not pdf.get_warnings():
+        return False
+    refuse_if_misread(source, lambda declared: qpdf_reading(pdf, declared))
+    return True
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -433,11 +465,17 @@ def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
     500 MB. qpdf maps it (pikepdf falls back to reading it as a stream if it
     cannot): reading a 50 MB file as a stream takes 2.4 s, mapped 0.2 s. The
     copy is this call's own and never truncated while mapped.
+
+    A rebuild that took the objects of a PDF attached without compression for
+    the file's own is refused as mixed up (refuse_if_misread), never handed
+    on: qpdf's offsets in the copy are the source's, which it starts with.
     """
     import io
     import uuid
 
     import pikepdf
+
+    from .declared_pages import qpdf_reading
 
     ensure_temp_dir()
     ended = get_temp_path(f"rebuild_{uuid.uuid4().hex}.pdf")
@@ -451,6 +489,10 @@ def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
             f.write(b"\n%%EOF\n")
         out = io.BytesIO()
         with pikepdf.open(ended, access_mode=pikepdf.AccessMode.mmap) as pdf:
+            try:
+                refuse_if_misread(source, lambda declared: qpdf_reading(pdf, declared), lost=False)
+            except pikepdf.PdfError:
+                pass  # qpdf cannot list its pages: saved as before, and judged by what MuPDF reads of it
             pdf.save(out, fix_metadata_version=False, stream_decode_level=pikepdf.StreamDecodeLevel.none)
         return out.getvalue()
     except (pikepdf.PdfError, OSError, ValueError, RuntimeError):
@@ -470,13 +512,14 @@ def open_pdf_document(source: str | bytes):
     for one PyMuPDF cannot read or that has no page it can read; the global
     handler answers both with a 400 that says what to do. A PDF with only an
     owner password (restrictions, nothing needed to open it) opens as before.
-    A file MuPDF had to repair that lost pages, fewer read than it declares
-    (refuse_if_pages_lost), is refused as damaged, with both counts. Takes a
-    path or the bytes.
+    A file MuPDF had to repair that lost pages, fewer read than it declares,
+    is refused as damaged, with both counts, and so is one whose repair took
+    the objects of a PDF attached inside it for its own (refuse_if_misread).
+    Takes a path or the bytes.
     """
     import fitz  # PyMuPDF
 
-    from .declared_pages import readable_page_count
+    from .declared_pages import mupdf_reading
     from .exceptions import PdfCorruptError, PdfEncryptedError, ValidationError
 
     from .pdf_errors import pdf_read_error
@@ -512,7 +555,7 @@ def open_pdf_document(source: str | bytes):
         raise ValidationError(NO_PAGES_MESSAGE)
     if doc.is_repaired:
         try:
-            refuse_if_pages_lost(source, lambda declared: readable_page_count(doc, declared))
+            refuse_if_misread(source, lambda declared: mupdf_reading(doc, declared))
         except PdfCorruptError:
             doc.close()
             raise

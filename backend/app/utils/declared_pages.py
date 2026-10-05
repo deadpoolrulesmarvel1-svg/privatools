@@ -45,12 +45,14 @@ cross-reference table from every "N G obj" in the bytes, stream data
 included, and MuPDF's ends a stream whose /Length it cannot use at its first
 "endstream": both then take the objects of a PDF attached without
 compression for this file's own, its catalog, its pages or their content,
-and the tools answered with the attachment's pages, as a success. misread()
-compares a library's reading (mupdf_reading, qpdf_reading, pypdf_reading)
-with the page tree the file declares: fewer pages than it declares are a loss
-(LOST); more pages, another page tree root, or any of the objects the pages
-are read from lying inside a stream's data are the wrong document (MIXED).
-An unknown count or reading refuses nothing.
+and the tools answered with the attachment's pages, as a success. qpdf's
+rebuild of an updated file can also take the revision before the update for
+the file. misread() compares a library's reading (mupdf_reading,
+qpdf_reading, pypdf_reading) with the page tree the file declares: fewer
+pages than it declares are a loss (LOST); more pages, another page tree
+root, or any of the objects the pages are read from lying inside a stream's
+data are the wrong document (MIXED). An unknown count or reading refuses
+nothing.
 
 The scan is bounded. It looks for "/Type" in one pass over the bytes, reads
 only the objects that are page tree nodes, pages, catalogs, trailers and
@@ -332,15 +334,13 @@ def _mupdf_refs(doc, xref: int, key: str) -> list[int]:
     return [int(m.group(1)) for m in _REF_TEXT.finditer(value)]
 
 
-def qpdf_reading(pdf, declared: int) -> Reading | None:
+def qpdf_reading(pdf, declared: int) -> Reading:
     """What qpdf read of `pdf`, a pikepdf.Pdf: its pages, the page tree root
     its catalog names, and where it read the catalog, that root, and the
     first `declared` + 1 pages and their content (qpdf's own cross-reference
-    table, rebuilt by its repair). None when qpdf cannot list its pages."""
-    try:
-        count = len(pdf.pages)
-    except Exception:  # noqa: BLE001 - qpdf cannot list its pages: unknown
-        return None
+    table, rebuilt by its repair). qpdf's error for pages it cannot list is
+    raised, as the tool's own reading of them would raise it."""
+    count = len(pdf.pages)
     root = None
     try:
         named = pdf.Root.get("/Pages")
@@ -402,16 +402,16 @@ def _qpdf_places(pdf, pages: int) -> Iterator[tuple[int, int]]:
     yield from places
 
 
-def pypdf_reading(reader, declared: int) -> Reading | None:
+def pypdf_reading(reader, declared: int) -> Reading:
     """What pypdf read of `reader`, a pypdf.PdfReader: its pages, the page
     tree root its catalog names, and where it read the catalog, that root,
     and the first `declared` + 1 pages and their content (pypdf's own
     cross-reference table, which it rebuilds from the bytes when it has to).
-    None when pypdf cannot list its pages."""
-    try:
-        count = len(reader.pages)
-    except Exception:  # noqa: BLE001 - pypdf's errors for a page tree it cannot list are many
-        return None
+    The pages are listed first, and pypdf's error for pages it cannot list
+    is raised, as the tool's own reading of them would raise it: caught, it
+    leaves the object it failed on marked as being read, and the tool then
+    meets another error ("Detected loop with self reference")."""
+    count = len(reader.pages)
     root = None
     try:
         catalog = reader.root_object  # the one pypdf took, which it may have looked for

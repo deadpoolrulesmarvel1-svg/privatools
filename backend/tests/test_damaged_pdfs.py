@@ -16,7 +16,7 @@ short is kept with what could be read, which can be nothing: a blank page.
 qpdf leaves out the pages whose page object was lost, and the tools then
 answered with fewer pages than they were sent, and said nothing. A file that
 lost pages is refused before the tool runs, with how many of its pages could
-be read (utils.cleanup.refuse_if_pages_lost; every route, test_pages_lost.py),
+be read (utils.cleanup.refuse_if_misread; every route, test_pages_lost.py),
 so the rebuild runs only for a file whose pages all survived.
 
 Nothing is checked before the tool runs. A first version scanned every

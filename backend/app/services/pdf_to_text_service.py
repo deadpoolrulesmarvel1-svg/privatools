@@ -1,14 +1,19 @@
 from pypdf import PdfReader
 
-from ..utils.cleanup import end_is_missing, refuse_if_pages_lost
+from ..utils.cleanup import end_is_missing, refuse_if_misread
+from ..utils.declared_pages import pypdf_reading
 
 
 def extract_text(input_path: str) -> dict:
     reader = PdfReader(input_path)
-    if end_is_missing(input_path):
-        # Cut short: pypdf rebuilds what it can, and may find fewer pages
-        # than the file had (utils.cleanup.refuse_if_pages_lost).
-        refuse_if_pages_lost(input_path, lambda declared: len(reader.pages))
+    # pypdf rebuilds a damaged cross-reference table from the bytes. Cut short,
+    # it may find fewer pages than the file had; with a common defect in a
+    # valid file, it may take the objects of a PDF attached inside it for the
+    # file's own, and give that PDF's text (utils.cleanup.refuse_if_misread).
+    # It says neither, so its reading is always compared, and lost pages count
+    # only when the file's end is missing.
+    refuse_if_misread(input_path, lambda declared: pypdf_reading(reader, declared),
+                      lost=end_is_missing(input_path))
     pages = []
     full_text_parts = []
 

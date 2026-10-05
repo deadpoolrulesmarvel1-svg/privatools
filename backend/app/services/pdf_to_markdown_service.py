@@ -24,7 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ..utils.cleanup import pages_lost_error, remove_files
+from ..utils.cleanup import mixed_up_error, pages_lost_error, remove_files
 from ..utils.exceptions import FileTooLargeError, ProcessingError, ToolError, ToolTimeoutError
 from ..utils.filenames import temp_output
 
@@ -165,6 +165,8 @@ def convert(path: str, opts: dict) -> tuple[str, dict]:
         raise ValueError(CORRUPT_MESSAGE)
     if error == "pages_lost":
         raise pages_lost_error(outcome.get("pages"), outcome.get("declared"))
+    if error == "mixed_up":
+        raise mixed_up_error()
     if error == "unreadable":
         raise ValueError(UNREADABLE_MESSAGE)
     if error == "no_pages":

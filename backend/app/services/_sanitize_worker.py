@@ -628,23 +628,29 @@ def _isolate(file_size: int) -> None:
     _limit(resource.RLIMIT_CORE, 0, 0)
 
 
-def _pages_lost(pdf: pikepdf.Pdf, source: str) -> tuple[int, int] | None:
-    """(pages read, pages declared) of a file qpdf warned about while opening
-    it and read fewer pages of than it declares, as utils.cleanup.open_pikepdf
-    refuses it in the web process; None otherwise. qpdf warns when it
-    rebuilds a file's cross-reference table, as for a PDF cut short, which is
-    when it leaves out pages whose object was lost; any warning has the count
-    read."""
+def _misread(pdf: pikepdf.Pdf, source: str) -> dict | None:
+    """The answer for a file qpdf warned about while opening it and did not
+    read as the page tree it declares (utils/declared_pages.py misread), as
+    utils.cleanup.open_pikepdf refuses it in the web process: fewer pages
+    read than it declares ("pages_lost", with both counts), or the objects of
+    a PDF attached inside it taken for its own ("mixed_up"). None otherwise.
+    qpdf warns when it rebuilds a file's cross-reference table, as for a PDF
+    cut short, which is when it leaves out pages whose object was lost, or
+    takes an attachment's objects for the file's; any warning has the
+    reading compared."""
     try:
         if not pdf.get_warnings():
             return None
-        declared = _declared_pages().declared_page_count(source)
-        if declared is None:
-            return None
-        read = len(pdf.pages)
+        pages = _declared_pages()
+        found = pages.misread(source, lambda declared: pages.qpdf_reading(pdf, declared))
     except Exception:  # noqa: BLE001 - a check that cannot run refuses nothing
         return None
-    return (read, declared) if read < declared else None
+    if found is None:
+        return None
+    kind, read, declared = found
+    if kind == pages.MIXED:
+        return {"ok": False, "error": "mixed_up"}
+    return {"ok": False, "error": "pages_lost", "pages": read, "declared": declared}
 
 
 def _declared_pages():
@@ -678,9 +684,9 @@ def main() -> None:
     _isolate(size)
     try:
         with pikepdf.open(source) as pdf:
-            lost = _pages_lost(pdf, source)
-            if lost is not None:
-                _emit({"ok": False, "error": "pages_lost", "pages": lost[0], "declared": lost[1]})
+            misread = _misread(pdf, source)
+            if misread is not None:
+                _emit(misread)
             sanitize(pdf)
             pdf.save(target, encryption=pdf.is_encrypted)
     except Refusal as refusal:
