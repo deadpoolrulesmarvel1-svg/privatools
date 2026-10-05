@@ -480,6 +480,34 @@ def test_a_count_out_of_time_is_unknown(monkeypatch):
         assert readable_pages(doc) == list(range(6))  # Repair's own list has no deadline
 
 
+class _Waiting:
+    """The clocks a count reads, as a request thread sees them while other
+    requests hold the interpreter: the wall clock runs on, ten seconds a
+    reading, and the thread's own CPU time only while it computes."""
+
+    def __init__(self) -> None:
+        self.wall = time.monotonic()
+
+    def monotonic(self) -> float:
+        self.wall += 10
+        return self.wall
+
+    thread_time = staticmethod(time.thread_time)
+    perf_counter = staticmethod(time.perf_counter)
+
+
+def test_time_spent_waiting_for_other_requests_is_not_the_counts(monkeypatch):
+    # A count runs in a request thread beside up to eight others, and waits
+    # while they hold the interpreter. On the wall clock that waiting spent
+    # its budget: beside three such threads, a cut file of 2,000 pages and
+    # 0.6 MB went unchecked (the #349 re-review's RS2). The budget is the
+    # thread's own CPU time.
+    monkeypatch.setattr(declared_pages, "time", _Waiting())
+    assert declared_page_count(SIX) == 6
+    with fitz.open(stream=SIX, filetype="pdf") as doc:
+        assert readable_page_count(doc) == 6
+
+
 def test_windows_that_add_up_end_at_the_time_budget(monkeypatch):
     # Each page tree node's /Kids opens a string that runs over every later
     # node, then over a long run of escapes, a step each: every node's

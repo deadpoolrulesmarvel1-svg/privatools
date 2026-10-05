@@ -40,8 +40,10 @@ object streams, inflates at most _MAX_INFLATED bytes in all, and gives up
 (None) past _MAX_MATCHES such objects or _MAX_NODES page tree nodes: a file
 of 100,000 pages takes about a second. Those caps are per kind, and the
 windows a dictionary or a trailer is read in can overlap, so the scan also
-gives up after _MAX_SECONDS in all, and so does readable_page_count(): a
-count that takes longer is unknown, and nothing is refused on it. It uses the
+gives up after _MAX_SECONDS of its thread's CPU time in all, and so does
+readable_page_count(): a count that takes longer is unknown, and nothing is
+refused on it. CPU time, so that a request waiting for a busy server's
+interpreter or processors does not lose its count to them. It uses the
 standard library only, so that the workers that read PDFs in a process of
 their own can load it.
 """
@@ -75,10 +77,10 @@ _MAX_DICT_BYTES = 32 * 1024 * 1024
 _MAX_KIDS_BYTES = 16 * _MAX_MATCHES
 # Page tree depth followed; real trees are a few levels deep.
 _MAX_DEPTH = 64
-# The time a scan, or a count of readable pages, may take before its answer
-# is None. It runs in the request, on every upload a library had to repair:
-# a file of 100,000 pages takes about a second, and a hostile one whose
-# dictionaries each run over the rest of the file would take minutes.
+# The CPU time a scan, or a count of readable pages, may take before its
+# answer is None. It runs in the request, on every upload a library had to
+# repair: a file of 100,000 pages takes about a second, and a hostile one
+# whose dictionaries each run over the rest of the file would take minutes.
 _MAX_SECONDS = 2.0
 
 _WHITESPACE = b" \t\r\n\f\x00"
@@ -109,16 +111,22 @@ class _OutOfTime(Exception):
 
 
 class _Budget:
-    """The time one scan may take: spend() raises _OutOfTime once it is past.
-    Every loop of the scan that can run long calls it, each round."""
+    """The time one scan may take, in CPU time of the thread it runs in:
+    spend() raises _OutOfTime once it is past. Every loop of the scan that can
+    run long calls it, each round; the clock is read on the first call and on
+    every 64th after it. A thread that waits for the interpreter or a CPU,
+    beside other requests, spends none of it, so the answer for a file does
+    not depend on how busy the server is."""
 
-    __slots__ = ("deadline",)
+    __slots__ = ("deadline", "calls")
 
     def __init__(self, seconds: float) -> None:
-        self.deadline = time.monotonic() + seconds
+        self.deadline = time.thread_time() + seconds
+        self.calls = 0
 
     def spend(self) -> None:
-        if time.monotonic() > self.deadline:
+        self.calls += 1
+        if self.calls & 63 == 1 and time.thread_time() > self.deadline:
             raise _OutOfTime
 
 
@@ -151,10 +159,11 @@ def readable_page_count(doc, enough: int | None = None) -> int | None:
     """How many of the pages MuPDF lists in `doc` it can read (readable_pages),
     counting no further than `enough` when it is given (a count that reaches
     the declared one says no page was lost), or None when looking them up
-    takes longer than _MAX_SECONDS: MuPDF lists as many pages as the root's
-    /Count says, up to one for each object in the file, and a file that lists
-    two million it does not have held the request for 20 seconds."""
-    pages = _readable_pages(doc, time.monotonic() + _MAX_SECONDS, enough)
+    takes more than _MAX_SECONDS of CPU time: MuPDF lists as many pages as
+    the root's /Count says, up to one for each object in the file, and a
+    file that lists two million it does not have held the request for 20
+    seconds."""
+    pages = _readable_pages(doc, time.thread_time() + _MAX_SECONDS, enough)
     return None if pages is None else len(pages)
 
 
@@ -164,7 +173,7 @@ def _readable_pages(doc, deadline: float | None, enough: int | None = None) -> l
     for number in range(len(doc)):
         if enough is not None and len(readable) >= enough:
             break
-        if deadline is not None and time.monotonic() > deadline:
+        if deadline is not None and number % 16 == 0 and time.thread_time() > deadline:
             return None
         try:
             xref = doc.page_xref(number)
