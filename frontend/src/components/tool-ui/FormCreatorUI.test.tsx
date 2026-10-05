@@ -144,6 +144,36 @@ describe("Form Creator: detect, review, create", () => {
         expect(placed().map(b => b.textContent)).toEqual(["full_name", "full_name_2"]);
     });
 
+    it("keeps focus in the review when a proposal's row goes, and says what was done", async () => {
+        await detect();
+        // As a browser does, the pressed button has focus when its row goes.
+        const press = (name: string | RegExp) => { const b = screen.getByRole("button", { name }); b.focus(); fireEvent.click(b); };
+        const said = (text: string) => expect(screen.getByText(text)).toHaveAttribute("role", "status");
+        press("Accept full_name");
+        expect(document.activeElement).toBe(screen.getByLabelText("Name of proposed field 1"));
+        expect(document.activeElement).toHaveValue("date_of_birth");
+        said("Accepted full_name. 3 proposed fields left to review.");
+        press("Reject signature");
+        expect(document.activeElement).toHaveValue("smoker_yes");
+        said("Rejected signature. 2 proposed fields left to review.");
+        press(/Accept all/);
+        expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Find fields automatically" }));
+        // The summary says it now, once: the line for each action is empty.
+        expect(screen.getByText(/You reviewed all 4 proposed fields: 3 accepted/)).toBeInTheDocument();
+        expect(screen.queryByText(/left to review/)).toBeNull();
+    });
+
+    it("leaves focus where the visitor moved it while a row went", async () => {
+        await detect();
+        const accept = screen.getByRole("button", { name: "Accept full_name" });
+        accept.focus();
+        // The visitor's focus is already in the next field when the row goes.
+        const typeBox = screen.getByLabelText("Type of proposed field 2");
+        accept.addEventListener("click", () => typeBox.focus());
+        fireEvent.click(accept);
+        expect(document.activeElement).toBe(typeBox);
+    });
+
     it("selects a proposal from the page", async () => {
         await detect();
         fireEvent.click(proposed()[2]);

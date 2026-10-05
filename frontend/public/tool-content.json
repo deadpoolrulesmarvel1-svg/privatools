@@ -1459,7 +1459,7 @@
     "slug": "form-creator",
     "name": "Form Creator",
     "description": "Make a PDF fillable by detecting its fields or drawing them",
-    "longDescription": "Convert a PDF to a fillable form online for free. Detect fields finds the blanks a form draws (lines after labels, empty boxes, table cells and checkboxes) and proposes text, date, checkbox and signature fields named after their labels, for you to accept, edit or reject. You can also draw text fields, checkboxes, radio buttons, dropdowns, list boxes and signature fields yourself. Detection follows fixed rules, not AI, and needs a PDF made on a computer: a scanned form has no drawn lines to find.",
+    "longDescription": "Convert a PDF to a fillable form online for free. Detect fields looks for the blanks a form draws (lines after labels, empty boxes, table cells and checkboxes) and proposes text, date, checkbox and signature fields named after their labels, for you to accept, edit or reject: it can miss fields or propose wrong ones. You can also draw text fields, checkboxes, radio buttons, dropdowns, list boxes and signature fields yourself. Detection follows fixed rules, not AI, and needs a PDF made on a computer: a scanned form has no drawn lines to find.",
     "seoTitle": "Convert PDF to Fillable Form – Detect Fields Free",
     "metaDescription": "A free fillable PDF creator: detect the blanks a form draws, review each proposed text, date, checkbox or signature field, or draw your own. No sign-up.",
     "synonyms": "fillable form fields acroform text checkbox make pdf fillable convert pdf to fillable form fillable pdf creator detect form fields automatically form builder",

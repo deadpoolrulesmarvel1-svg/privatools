@@ -469,6 +469,86 @@ def test_running_out_of_memory_is_recognised_in_every_shape_it_takes():
     assert not worker._is_memory(ValueError("bad xref"))
 
 
+def test_running_out_of_memory_while_answering_is_still_a_413(client, monkeypatch, tmp_path):
+    """Out of memory, the worker can fail again while it answers: json.dumps
+    needs memory, and the traceback keeps the page's text alive. A 3 KB page
+    of a million one-point underscores did that in about half its runs, and
+    the worker died with status 1 (a 500). Here the answer itself cannot be
+    built, every time; the prepared one must still be written."""
+    _stub_worker(tmp_path, monkeypatch, (
+        "import json, runpy, sys\n"
+        "import pymupdf\n"
+        "def no_memory(*args, **kwargs):\n"
+        "    raise MemoryError()\n"
+        "pymupdf.open = no_memory\n"
+        "json.dumps = no_memory\n"
+        f"runpy.run_path({str(worker.__file__)!r}, run_name='__main__')\n"
+    ))
+    resp = post(client, corpus.contact_details().data)
+    assert resp.status_code == 413, resp.text
+    assert "too big" in resp.json()["detail"]
+
+
+def test_zapfdingbats_boxes_written_the_standard_way_are_checkboxes():
+    """ZapfDingbats is a symbolic font: written by the book it has no
+    /Encoding, and MuPDF names its box glyphs a74, a75, a203 and a204 by
+    number, giving them back as "J", "K", "Ë" and "Ì" (PyMuPDF's own
+    insert_text adds /WinAnsiEncoding, and they come back as "o" to "r")."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 60), "Do you agree?", fontname="helv", fontsize=11)
+    for y, (box, option) in zip((90, 114, 138), (("q", "Yes"), ("o", "No"), ("r", "Maybe"))):
+        page.insert_text((72, y), box, fontname="zadb", fontsize=12)
+        page.insert_text((90, y), option, fontname="helv", fontsize=11)
+    zadb = next(f[0] for f in page.get_fonts() if f[3] == "ZapfDingbats")
+    doc.xref_set_key(zadb, "Encoding", "null")  # the font's own encoding, as the standard says
+    data = doc.tobytes()
+    boxes = [c["c"] for b in fitz.open("pdf", data)[0].get_text("rawdict")["blocks"] for l in b.get("lines", [])
+             for s in l["spans"] if "Dingbats" in s["font"] for c in s["chars"]]
+    assert boxes == ["K", "J", "Ì"]
+    names = [(c["type"], c["name"]) for c in detect(data)["candidates"]]
+    assert names == [("checkbox", "yes"), ("checkbox", "no"), ("checkbox", "maybe")]
+
+
+def test_graph_paper_and_a_calendar_are_not_forms():
+    """Rows of identical squares with no label (graph paper) are not character
+    boxes, and a day number in a cell's corner names no field."""
+    doc = fitz.open()
+    page = doc.new_page()
+    shape = page.new_shape()
+    for k in range(38):
+        shape.draw_line((40, 60 + k * 14.17), (40 + 37 * 14.17, 60 + k * 14.17))
+        shape.draw_line((40 + k * 14.17, 60), (40 + k * 14.17, 60 + 37 * 14.17))
+    shape.finish(color=(0.6, 0.75, 0.6), width=0.25)
+    shape.commit()
+    assert detect(doc.tobytes())["candidates"] == []
+    doc = fitz.open()
+    page = doc.new_page(width=842, height=595)
+    page.insert_text((50, 50), "October 2026", fontname="hebo", fontsize=20)
+    shape = page.new_shape()
+    for r in range(6):
+        shape.draw_line((50, 88 + r * 90), (50 + 7 * 106, 88 + r * 90))
+    for c in range(8):
+        shape.draw_line((50 + c * 106, 88), (50 + c * 106, 88 + 5 * 90))
+    shape.finish(color=(0, 0, 0), width=0.6)
+    shape.commit()
+    for day in range(1, 32):
+        cell = day + 2
+        page.insert_text((54 + cell % 7 * 106, 100 + cell // 7 * 90), str(day), fontname="helv", fontsize=9)
+    assert detect(doc.tobytes())["candidates"] == []
+
+
+def test_the_nearest_value_is_found_by_halving():
+    values = [0.0, 1.5, 3.0, 10.0]
+    assert [worker._nearest(values, v) for v in (-5, 0.7, 0.8, 2.25, 2.3, 9, 50)] == [0, 0, 1, 1, 2, 3, 3]
+    # A lattice at the rule cap looks thousands of positions up among
+    # thousands: scanning every value made one such page cost 1.4 s of CPU.
+    many = [i * 1.5 for i in range(4000)]
+    start = time.process_time()
+    assert [worker._nearest(many, i * 1.5 + 0.2) for i in range(4000)] == list(range(4000))
+    assert time.process_time() - start < 0.5
+
+
 def _stub_worker(tmp_path, monkeypatch, body: str) -> None:
     stub = tmp_path / "stub_form_detect_worker.py"
     stub.write_text(body)

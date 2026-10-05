@@ -28,7 +28,7 @@
     },
     {
       "q": "What can Detect fields miss or get wrong?",
-      "a": "A scanned form: its pages are pictures, with no drawn lines or boxes to find, and OCR PDF adds text, not lines, so place the fields by hand. It can also miss blanks with no label near them, labels far from their line, fields drawn as pictures, and radio buttons and dropdowns (it proposes text, date, checkbox and signature fields only), and it reads at most 50 pages. It can propose a field where there is none, such as a rule under a heading or an empty cell in a table. That is why you review each proposal before anything is created."
+      "a": "A scanned form: its pages are pictures, with no drawn lines or boxes to find, and OCR PDF adds text, not lines, so place the fields by hand. It can also miss blanks with no label near them, labels far from their line or written after it (as right-to-left forms, in Arabic or Hebrew, place them), the blank column of a table that is mostly filled in, fields drawn as pictures, and radio buttons and dropdowns (it proposes text, date, checkbox and signature fields only), and it reads at most 50 pages. It can propose a field where there is none, such as a rule under a heading or an empty cell in a table. That is why you review each proposal before anything is created."
     },
     {
       "q": "Is anything added to my form without my review?",

@@ -113,8 +113,8 @@ BOX_CHARACTERS = frozenset("☐☑☒□▢◻◽⬜❏❐❑❒⌧⊠")
 SYMBOL_FONT_BOXES = (
     ("wingdings2", frozenset("£RSTQ")),
     ("wingdings", frozenset("opqrx¨ýþ")),
-    ("zapfdingbats", frozenset("opqr")),
-    ("dingbats", frozenset("opqr")),
+    ("zapfdingbats", frozenset("opqrJKËÌ")),
+    ("dingbats", frozenset("opqrJKËÌ")),
 )
 DATE_SEPARATORS = frozenset("/-.")
 
@@ -735,7 +735,13 @@ def _cells(horizontal: list[Segment], vertical: list[Segment]) -> list[Cell] | N
 
 
 def _nearest(values: list[float], v: float) -> int:
-    return min(range(len(values)), key=lambda i: abs(values[i] - v))
+    """The index of the value nearest v in sorted `values`."""
+    i = bisect.bisect_left(values, v)
+    if i == 0:
+        return 0
+    if i == len(values):
+        return len(values) - 1
+    return i if values[i] - v < v - values[i - 1] else i - 1
 
 
 def _lattice_cells(xs, ys, rows, cols, table: int, stroke: float) -> list[Cell]:
@@ -1197,7 +1203,8 @@ class PageReader:
             return None
         bottom = max(t.box.y1 for t in phrases)
         if (bottom <= b.y0 + 0.55 * b.height and b.y1 - bottom >= 12
-                and sum(_words(t.text) for t in phrases) <= 8):
+                and sum(_words(t.text) for t in phrases) <= 8
+                and any(re.search(r"[^\W\d_]", t.text) for t in phrases)):
             return "caption"
         right = max(t.box.x1 for t in phrases)
         if (len(phrases) == 1 and _ends_like_label(phrases[0].text) and right <= b.x0 + 0.5 * b.width
@@ -1213,7 +1220,7 @@ class PageReader:
         for comb in combs:
             box = Box(comb[0].box.x0, min(c.box.y0 for c in comb), comb[-1].box.x1, max(c.box.y1 for c in comb))
             label = self._box_label(box, cells, columns)
-            confidence = 0.8 if label else 0.55
+            confidence = 0.8 if label else 0.45
             inner = box.inset(comb[0].stroke / 2 + 0.5)
             self.found.append(Candidate(inner, _kind(label or ""), label or "", confidence))
         for cell in cells:
@@ -1622,6 +1629,14 @@ def _cap_cpu(pages: int) -> None:
 # The answer goes to the real standard output; anything else a library prints
 # goes to standard error, which the caller discards.
 _ANSWER = sys.stdout
+# Out of memory, even json.dumps can fail (the traceback keeps the page's text
+# alive), so that answer is prepared now and written without allocating.
+_TOO_LARGE = b'{"ok":false,"error":"too_large"}'
+
+
+def _answer_too_large() -> None:
+    os.write(_ANSWER.fileno(), _TOO_LARGE)
+    os._exit(0)
 
 
 def _emit(payload: dict, status: int = 0) -> None:
@@ -1684,6 +1699,8 @@ def main() -> None:
         report = detect(doc, cap_cpu=_cap_cpu)
     except Refusal as refusal:
         _emit({"ok": False, "error": refusal.kind, **refusal.facts})
+    except MemoryError:
+        _answer_too_large()
     except Exception as exc:  # noqa: BLE001 - the caller logs a failure
         if _is_memory(exc):
             _emit({"ok": False, "error": "too_large"})
@@ -1705,4 +1722,8 @@ def _damage(doc: fitz.Document, exc: Exception) -> bool:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except MemoryError:
+        # Raised again while answering another failure: still a file too big to read.
+        _answer_too_large()

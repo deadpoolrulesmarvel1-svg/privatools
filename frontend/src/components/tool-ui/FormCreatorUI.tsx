@@ -14,6 +14,7 @@ import { Loader2, AlertCircle, Plus, Trash2, CheckCircle2, RotateCcw, FormInput,
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename, uploadFileGetJson } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
+import { focusIfIdle } from "@/skins/experience/focus-result";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import {
@@ -90,6 +91,8 @@ export function FormCreatorUI() {
     const [selected, setSelected] = useState<string>(fields[0].id);
     const [detection, setDetection] = useState<Detection>({ phase: "idle" });
     const [proposals, setProposals] = useState<Proposal[]>([]);
+    // What the last Accept or Reject did, for a screen reader.
+    const [reviewNote, setReviewNote] = useState("");
     const detectRun = useRef(0);
     const proposalRows = useRef<Map<string, HTMLLIElement>>(new Map());
 
@@ -118,13 +121,13 @@ export function FormCreatorUI() {
         setFile(f); setStatus("idle"); setError(null);
         // Proposals belong to the file they were found in.
         detectRun.current += 1;
-        setDetection({ phase: "idle" }); setProposals([]);
+        setDetection({ phase: "idle" }); setProposals([]); setReviewNote("");
     };
 
     const runDetection = async () => {
         if (!file || detecting) return;
         const run = ++detectRun.current;
-        setDetection({ phase: "running" });
+        setDetection({ phase: "running" }); setReviewNote("");
         try {
             const report = await uploadFileGetJson<DetectReport>("/form-creator/detect", file);
             if (run !== detectRun.current) return;
@@ -142,6 +145,23 @@ export function FormCreatorUI() {
     };
 
     const updateProposal = (key: string, patch: Partial<Proposal>) => setProposals(prev => prev.map(p => p.key === key ? { ...p, ...patch } : p));
+    // A reviewed proposal's row goes, and focus with it: move it to the next
+    // proposal's name, or to this section's heading once none is left. A
+    // screen reader is told what was done; once none is left, the summary
+    // says so ("You reviewed all…").
+    const refocus = useRef<string | null>(null);
+    const reviewed = (keys: string[], done: string) => {
+        const index = proposals.findIndex(p => keys.includes(p.key));
+        const rest = proposals.filter(p => !keys.includes(p.key));
+        refocus.current = rest.length ? rest[Math.min(Math.max(index, 0), rest.length - 1)].key : "";
+        setReviewNote(rest.length ? `${done} ${rest.length} proposed field${rest.length === 1 ? "" : "s"} left to review.` : "");
+    };
+    useEffect(() => {
+        const key = refocus.current;
+        refocus.current = null;
+        if (key === null) return;
+        focusIfIdle(key ? proposalRows.current.get(key)?.querySelector<HTMLElement>("input") : document.getElementById("fc-detect-title"));
+    }, [proposals]);
     const accept = (keys: string[]) => {
         const chosen = proposals.filter(p => keys.includes(p.key));
         if (!chosen.length) return;
@@ -149,12 +169,17 @@ export function FormCreatorUI() {
         const base = fields.length === 1 && isUntouchedStarter(fields[0]) ? [] : fields;
         const taken = new Set(base.map(f => f.name.trim()));
         const made = chosen.map(p => ({ ...newField(base.length + 1), ...fieldFromProposal(p, uniqueName(p.name, taken)) }));
+        reviewed(keys, made.length === 1 ? `Accepted ${made[0].name}.` : `Accepted ${made.length} fields.`);
         setFields([...base, ...made]);
         setProposals(prev => prev.filter(p => !keys.includes(p.key)));
         setDetection(prev => prev.phase === "done" ? { ...prev, accepted: prev.accepted + made.length } : prev);
         setSelected(made[made.length - 1].id);
     };
-    const reject = (keys: string[]) => setProposals(prev => prev.filter(p => !keys.includes(p.key)));
+    const reject = (keys: string[]) => {
+        const one = keys.length === 1 ? proposals.find(p => p.key === keys[0]) : undefined;
+        reviewed(keys, one ? `Rejected ${one.name || "the proposed field"}.` : `Rejected ${keys.length} fields.`);
+        setProposals(prev => prev.filter(p => !keys.includes(p.key)));
+    };
     const selectRegion = (id: string) => {
         setSelected(id);
         const row = proposalRows.current.get(id);
@@ -267,7 +292,7 @@ export function FormCreatorUI() {
                 <section className="fc-detect" aria-labelledby="fc-detect-title">
                     <div className="fc-detect-intro">
                         <div>
-                            <h2 id="fc-detect-title">Find fields automatically</h2>
+                            <h2 id="fc-detect-title" tabIndex={-1}>Find fields automatically</h2>
                             <p>Detect fields looks for what this PDF draws as blanks: lines after labels, empty boxes and table cells, and checkboxes. It follows fixed rules, it is not AI, so it can miss fields or propose wrong ones; you check each one before anything is added. A scanned form has no drawn lines to find.</p>
                         </div>
                         <button type="button" className="ts-secondary-button" onClick={runDetection} disabled={detecting || status === "processing"}>
@@ -283,6 +308,7 @@ export function FormCreatorUI() {
                             {done.report.existingFields > 0 && <p>This PDF already has {done.report.existingFields} fillable field{done.report.existingFields === 1 ? "" : "s"}; nothing is proposed over {done.report.existingFields === 1 ? "it" : "them"}. To fill {done.report.existingFields === 1 ? "it" : "them"} in, use <a href="/tool/fill-form">Fill Form</a>.</p>}
                         </>}
                     </div>
+                    <p className="sr-only" role="status">{reviewNote}</p>
                     {notes.length > 0 && <ul className="fc-detect-notes">{notes.map(note => <li key={note}>{note}</li>)}</ul>}
                     {detection.phase === "failed" && <div className="ts-intake-notice fc-detect-failed" role="alert"><AlertCircle size={18} aria-hidden="true" /><p>{detection.message}</p></div>}
                 </section>
