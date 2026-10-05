@@ -479,13 +479,20 @@ def _light(colour) -> bool:
     return bool(values) and 0.75 <= min(values) < 0.99
 
 
-def _page_drawings(page: fitz.Page, frame: Frame) -> tuple[list[Segment], list[Segment], list[Shade]]:
-    """Horizontal and vertical strokes (lines, thin bars, the sides of boxes)
-    and pale shaded areas, in the reading frame."""
+def _page_drawings(page: fitz.Page, frame: Frame) -> tuple[list[Segment], list[Segment], list[Shade], list[Box]]:
+    """Horizontal and vertical strokes (lines, thin bars, the sides of boxes),
+    pale shaded areas, and the rest of what the page draws (curves, slanted
+    lines, dark or coloured shapes, pictures) as boxes of ink, in the reading
+    frame. A box with ink in it holds a picture or a chart, not a blank."""
     horizontal: list[Segment] = []
     vertical: list[Segment] = []
     shades: list[Shade] = []
+    ink: list[Box] = []
     m = frame.to_read
+
+    def add_ink(r) -> None:
+        x0, y0, x1, y1 = r
+        ink.append(m.box(min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)))
 
     def add_line(p, q, width: float) -> None:
         (px, py), (qx, qy) = m.point(p[0], p[1]), m.point(q[0], q[1])
@@ -510,6 +517,8 @@ def _page_drawings(page: fitz.Page, frame: Frame) -> tuple[list[Segment], list[S
             vertical.append(Segment(t.cx, t.y0, t.y1, t.width))
         elif _light(fill):
             shades.append(Shade(t, tuple(fill)))
+        else:
+            ink.append(t)
 
     for path in page.get_cdrawings():
         kind = path.get("type") or ""
@@ -517,26 +526,44 @@ def _page_drawings(page: fitz.Page, frame: Frame) -> tuple[list[Segment], list[S
         filled = "f" in kind and _visible(path.get("fill"))
         width = float(path.get("width") or 1.0) if stroked else 0.0
         items = path.get("items") or []
-        if stroked and any(item[0] == "c" for item in items):
+        if not (stroked or filled):
+            continue
+        if any(item[0] == "c" for item in items):
             rounded = _rounded_box(items, path.get("rect"))
             if rounded is not None:
-                add_rect(rounded, width)
+                if stroked:
+                    add_rect(rounded, width)
+                else:
+                    add_filled(rounded, path.get("fill"))
                 continue
+            # Curves are ink (a circle, a logo, a chart's line); the straight
+            # pieces of the same path are still read below as rules.
+            for item in items:
+                if item[0] == "c":
+                    xs, ys = [pt[0] for pt in item[1:5]], [pt[1] for pt in item[1:5]]
+                    add_ink((min(xs), min(ys), max(xs), max(ys)))
         if filled and not stroked and items and all(item[0] == "l" for item in items):
             # A filled polygon of lines, as a rectangle drawn through a turned
             # matrix can come back: a rectangle if its corners lie on its box.
             polygon = _axis_rectangle(items, path.get("rect"))
             if polygon is not None:
                 add_filled(polygon, path.get("fill"))
+            elif path.get("rect") is not None:
+                add_ink(path["rect"])
             continue
         for item in items:
             op = item[0]
             if op == "l" and stroked:
-                add_line(item[1], item[2], width)
+                p, q = item[1], item[2]
+                if abs(p[0] - q[0]) > 0.6 and abs(p[1] - q[1]) > 0.6:
+                    add_ink((p[0], p[1], q[0], q[1]))  # a slanted line
+                else:
+                    add_line(p, q, width)
             elif op in ("re", "qu"):
                 if op == "qu":
                     quad = fitz.Quad(item[1])
                     if not (quad.is_rectangular and _square_to_axes(quad.ul, quad.ur)):
+                        add_ink(tuple(quad.rect))
                         continue
                     r = _box(quad.rect)
                 else:
@@ -545,7 +572,12 @@ def _page_drawings(page: fitz.Page, frame: Frame) -> tuple[list[Segment], list[S
                     add_rect(r, width)
                 elif filled:
                     add_filled(r, path.get("fill"))
-    return _merge(horizontal), _merge(vertical), shades
+    try:
+        for info in page.get_image_info():
+            add_ink(info["bbox"])
+    except Exception:  # noqa: BLE001 - pictures that cannot be listed are not looked for
+        pass
+    return _merge(horizontal), _merge(vertical), shades, ink
 
 
 def _axis_rectangle(items, rect) -> Box | None:
@@ -824,9 +856,10 @@ class PageReader:
     """Finds the blanks on one page."""
 
     def __init__(self, frame: Frame, tokens: list[Token], horizontal: list[Segment],
-                 vertical: list[Segment], shades: list[Shade], cells: list[Cell]):
+                 vertical: list[Segment], shades: list[Shade], cells: list[Cell], ink: list[Box] | None = None):
         self.frame = frame
         height = frame.height
+        self.ink = Rows(ink or [], lambda b: (b.y0, b.y1), height)
         self.tokens = Rows(tokens, lambda t: (min(t.box.y0, t.baseline), max(t.box.y1, t.baseline)), height)
         self.all_tokens = tokens
         self.horizontal = horizontal
@@ -919,6 +952,16 @@ class PageReader:
     def text_in(self, box: Box) -> list[Token]:
         return [t for t in self.near(box.y0, box.y1) if box.contains_point(t.box.cx, t.box.cy)]
 
+    def inked(self, box: Box) -> bool:
+        """Whether a picture or a shape that is not a rule lies in the box:
+        a framed picture or chart is not a blank to write in."""
+        area = max(box.area, 0.01)
+        for b in self.ink.near(box.y0, box.y1):
+            shared = b.overlap(box)
+            if shared > 0 and (shared >= 0.5 * max(b.area, 0.01) or shared >= 0.2 * area):
+                return True
+        return False
+
     def blocked(self, box: Box, *, ignore: tuple = ()) -> bool:
         """Whether text lies in the box (where a person would write)."""
         for t in self.near(box.y0, box.y1):
@@ -1007,8 +1050,12 @@ class PageReader:
             stacked = self._stacked_below(index, lines, claimed)
         if label is None:
             above = self.label_over_line(x0, x1, y)
-            if above is not None and (_ends_like_label(above.text) or FIELD_WORDS.search(above.text)) \
-                    and _words(above.text) <= 10:
+            # A question over an answer line ends with ":" or "?", or names a
+            # field in plain text; a heading over a rule names one in bold or
+            # large type ("Patient Information").
+            if above is not None and _words(above.text) <= 10 and (
+                    _ends_like_label(above.text)
+                    or (FIELD_WORDS.search(above.text) and not above.bold and above.size <= 12.5)):
                 label, where, size = above, "above", above.size
                 confidence = 0.8 if stacked else 0.7
         if label is None:
@@ -1129,7 +1176,7 @@ class PageReader:
     def _blank_kind(self, cell: Cell) -> str | None:
         """What kind of blank a cell is, if it is one."""
         b = cell.box
-        if b.width < 5 or b.height < 5:
+        if b.width < 5 or b.height < 5 or self.inked(b.inset(cell.stroke + 1)):
             return None
         if not [t for t in cell.tokens if re.search(r"\w", t.text) or t.kind == "box"]:
             return "empty"
@@ -1252,9 +1299,18 @@ class PageReader:
             b = shade.box
             if b.height < 12 or b.height > 220 or b.width < 40 or b.area > 0.35 * page_area:
                 continue
-            if self.text_in(b) or any(c.box.overlap(b) > 0.2 * b.area for c in self.cell_rows.near(b.y0, b.y1)):
+            if self.text_in(b) or self.inked(b) \
+                    or any(c.box.overlap(b) > 0.2 * b.area for c in self.cell_rows.near(b.y0, b.y1)):
                 continue
-            label = self._box_label(b, [])
+            # A label beside it, or one above it that reads as a label: the
+            # row above an empty stripe of a striped table is not its label.
+            token = self.label_left_of(b.x0, b.y0, b.y1, gap=220)
+            label = token.text if token is not None and _words(token.text) <= 10 else ""
+            if not label:
+                above = self.label_above(b)
+                if above is not None and _words(above.text) <= 10 and (
+                        _ends_like_label(above.text) or FIELD_WORDS.search(above.text)):
+                    label = above.text
             if not label:
                 continue
             self.found.append(Candidate(b.inset(1), _kind(label), label, 0.75, multiline=b.height >= 34))
@@ -1496,17 +1552,18 @@ def _read_page(page: fitz.Page, widgets: list[Box]) -> tuple[list[Candidate], Fr
     horizontal: list[Segment] = []
     vertical: list[Segment] = []
     shades: list[Shade] = []
+    ink: list[Box] = []
     cells: list[Cell] = []
     crowded = drawn_operators(page, MAX_PAGE_PATH_OPERATORS) > MAX_PAGE_PATH_OPERATORS
     if not crowded:
-        horizontal, vertical, shades = _page_drawings(page, frame)
+        horizontal, vertical, shades, ink = _page_drawings(page, frame)
         found_cells = _cells(horizontal, vertical)
         if found_cells is None:
             crowded = True
-            horizontal, vertical, shades = [], [], []
+            horizontal, vertical, shades, ink = [], [], [], []
         else:
             cells = found_cells
-    reader = PageReader(frame, tokens, horizontal, vertical, shades, cells)
+    reader = PageReader(frame, tokens, horizontal, vertical, shades, cells, ink)
     found = reader.read()
     in_frame = [frame.to_read.box(w.x0, w.y0, w.x1, w.y1) for w in widgets]
     return _keep(found, in_frame), frame, crowded

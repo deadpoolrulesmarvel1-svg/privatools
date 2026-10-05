@@ -96,7 +96,7 @@ def test_the_corpus_has_every_layout_and_twenty_forms():
     assert {"label-and-underline", "boxed-inputs", "grid", "checkbox-list", "signature-block", "two-column",
             "rotated"} <= layouts
     assert {t.type for sample in FORMS for t in sample.fields} == set(TYPES)
-    assert [s.name for s in NON_FORMS] == ["report", "invoice", "letter", "statement"]
+    assert [s.name for s in NON_FORMS] == ["report", "invoice", "letter", "statement", "clinic-report"]
 
 
 def test_precision_and_recall_on_the_drawn_forms():
@@ -118,6 +118,33 @@ def test_a_document_that_is_not_a_form_gives_nothing(sample):
     chart, a footnote rule, an address box, a signature line over a person's
     name, and leaders to amounts and page numbers."""
     assert detect(sample.data)["candidates"] == []
+
+
+def test_a_framed_picture_or_chart_is_not_a_blank(monkeypatch):
+    """The clinic report's framed picture under a caption and framed line
+    chart beside a label look like labelled empty boxes; what is drawn in
+    them says they are not."""
+    sample = corpus.clinic_report()
+    assert detect(sample.data)["candidates"] == []
+    monkeypatch.setattr(worker.PageReader, "inked", lambda self, box: False)
+    assert {c["name"] for c in detect(sample.data)["candidates"]} == {"figure_3_clinic_waiting_times", "trend"}
+
+
+def test_a_bold_heading_over_a_rule_is_not_a_question():
+    """"Patient Information" names a field, but in bold over a rule it is a
+    heading: only a heading ending with a colon or a question mark asks."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((54, 110), "Patient Information", fontname="hebo", fontsize=13)
+    page.insert_text((54, 210), "Patient information", fontname="helv", fontsize=10.5)
+    page.insert_text((54, 310), "Patient Information:", fontname="hebo", fontsize=13)
+    shape = page.new_shape()
+    for y in (124, 224, 324):
+        shape.draw_line((54, y), (558, y))
+    shape.finish(color=(0, 0, 0), width=0.8, closePath=False)
+    shape.commit()
+    found = detect(doc.tobytes())["candidates"]
+    assert [round(c["y"] + c["height"]) for c in found] == [224, 324]
 
 
 def test_precision_and_recall_on_random_forms():

@@ -421,6 +421,21 @@ WORDS = ("the of and to in a is that for it as was with be by on not he this are
          "old year off come since against go came right used take three").split()
 
 
+def _chart_reader():
+    """A small bar chart as a picture, for reportlab to draw."""
+    from PIL import Image, ImageDraw
+    from reportlab.lib.utils import ImageReader
+
+    image = Image.new("RGB", (272, 102), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    for i, height in enumerate([40, 80, 60, 95, 70]):
+        draw.rectangle((14 + i * 52, 100 - height, 50 + i * 52, 100), fill=(60, 110, 170))
+    buf = io.BytesIO()
+    image.save(buf, "PNG")
+    buf.seek(0)
+    return ImageReader(buf)
+
+
 def _sentence(rng: random.Random, words: int) -> str:
     text = " ".join(rng.choice(WORDS) for _ in range(words))
     return text[0].upper() + text[1:] + "."
@@ -456,12 +471,49 @@ def varied_document(seed: int) -> Sample:
         p.y += 8
 
     def heading() -> None:
-        p.room(40)
+        p.room(46)
         p.y += 6
-        p.text(p.margin, p.y + 13, _sentence(rng, rng.randint(2, 4)).rstrip("."), size=13, bold=True)
-        if rng.random() < 0.6:
-            p.line(p.margin, p.y + 17, right, p.y + 17, rng.choice([0.5, 1.0]))
-        p.y += 30
+        title = rng.choice([_sentence(rng, rng.randint(2, 4)).rstrip("."), "Patient Information", "Applicant Details",
+                            "Contact Information", "Your Signature"])
+        p.text(p.margin, p.y + 13, title, size=13, bold=True)
+        if rng.random() < 0.7:
+            gap = rng.choice([4, 8, 12, 15])  # the rule, this far under the heading's baseline
+            p.line(p.margin, p.y + 13 + gap, right, p.y + 13 + gap, rng.choice([0.5, 1.0]))
+        p.y += 34
+
+    def figure() -> None:
+        """A framed picture under a caption, or a framed line chart beside a label."""
+        p.room(150)
+        if rng.random() < 0.5:
+            p.text(p.margin, p.y + 9, f"Figure {rng.randint(1, 9)}: " + _sentence(rng, 3).rstrip("."), size=9, bold=True)
+            top = p.y + 15
+            p.rect(p.margin, top, p.margin + 280, top + 110, 0.75)
+            p.canvas.drawImage(_chart_reader(), p.margin + 4, p.height - (top + 106), 272, 102)
+            p.y = top + 126
+        else:
+            p.text(p.margin, p.y + 45, rng.choice(["Trend", "Visits", "Growth"]), size=10)
+            x0, top = p.margin + 80, p.y
+            p.rect(x0, top, x0 + 300, top + 80, 0.75)
+            points = [(x0 + 10 + 48 * i, top + 70 - rng.randint(5, 60)) for i in range(7)]
+            for a, b in zip(points, points[1:]):
+                p.line(a[0], a[1], b[0], b[1], 1.2)
+            p.y = top + 96
+
+    def striped_table() -> None:
+        """Rows on pale stripes, the last stripes empty."""
+        rows = rng.randint(3, 6)
+        p.room(22 * (rows + 3) + 20)
+        p.text(p.margin + 6, p.y + 12, "Item", bold=True)
+        p.text(right - 80, p.y + 12, "Count", bold=True)
+        p.y += 18
+        for i in range(rows + rng.randint(1, 2)):
+            if i % 2 == 0:
+                p.rect(p.margin, p.y, right, p.y + 20, stroke=False, fill=(0.93, 0.95, 0.97))
+            if i < rows:
+                p.text(p.margin + 6, p.y + 14, rng.choice(WORDS).title() + " " + rng.choice(WORDS))
+                p.text(right - 80, p.y + 14, f"{rng.randint(1, 999):,}")
+            p.y += 20
+        p.y += 16
 
     def data_table() -> None:
         cols = rng.randint(3, 5)
@@ -537,11 +589,12 @@ def varied_document(seed: int) -> Sample:
         p.y += 80
 
     plans = {
-        "report": [paragraph, heading, paragraph, data_table, chart, heading, paragraph, footnote],
+        "report": [paragraph, heading, paragraph, data_table, chart, heading, figure, paragraph, striped_table,
+                   footnote],
         "letter": [paragraph, paragraph, paragraph, signoff],
         "invoice": [address_box, data_table, paragraph],
         "contents": [contents, paragraph],
-        "statement": [address_box, data_table, lambda: contents(amounts=True), data_table, paragraph],
+        "statement": [address_box, data_table, lambda: contents(amounts=True), striped_table, data_table, paragraph],
     }
     for step in plans[kind]:
         step()

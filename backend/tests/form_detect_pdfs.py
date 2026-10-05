@@ -964,7 +964,56 @@ def statement() -> Sample:
     return Sample("statement", data, truth, form=False)
 
 
-NON_FORMS = [report, invoice, letter, statement]
+def _picture_png() -> bytes:
+    """A small chart as a picture, drawn with Pillow."""
+    from PIL import ImageDraw
+
+    image = Image.new("RGB", (400, 180), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    for i, height in enumerate([60, 120, 90, 150, 110]):
+        draw.rectangle((30 + i * 72, 170 - height, 80 + i * 72, 170), fill=(60, 110, 170))
+    buf = io.BytesIO()
+    image.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def clinic_report() -> Sample:
+    """A report with what looks like a blank and is not: a bold heading over
+    a rule well below it, a framed picture under a caption, a framed line
+    chart beside a label, and a striped table whose last stripes are empty."""
+    doc = fitz.open()
+    s = Sheet(doc)
+    s.text(54, 70, "Clinic Quarterly Review", 18, "sans-bold")
+    s.text(54, 110, "Patient Information", 13, "sans-bold")
+    s.line(54, 124, 558, 124, 0.8)
+    y = _paragraph(s, 54, 150, LOREM)
+    s.text(54, y + 12, "Figure 3: Clinic waiting times", 9, "sans-bold")
+    frame = fitz.Rect(54, y + 18, 334, y + 144)
+    s.rect(frame, width=0.75)
+    s.page.insert_image(frame + (4, 4, -4, -4), stream=_picture_png())
+    y = frame.y1 + 30
+    s.text(54, y + 40, "Trend", 10)
+    chart = fitz.Rect(130, y, 430, y + 80)
+    s.rect(chart, width=0.75)
+    points = [(140, y + 70), (190, y + 52), (240, y + 58), (290, y + 30), (340, y + 36), (390, y + 14), (420, y + 20)]
+    for a, b in zip(points, points[1:]):
+        s.line(a[0], a[1], b[0], b[1], 1.2)
+    y = chart.y1 + 34
+    s.text(60, y, "Service", 9.5, "sans-bold")
+    s.text(400, y, "Visits", 9.5, "sans-bold")
+    for i, (service, visits) in enumerate([("General practice", "1,204"), ("Physiotherapy", "388"),
+                                           ("Waiting list", "312"), ("", ""), ("", "")]):
+        top = y + 6 + 20 * i
+        if i % 2 == 0:
+            s.bar((54, top, 558, top + 20), fill=(0.93, 0.95, 0.97))
+        if service:
+            s.text(60, top + 14, service, 9.5)
+            s.text(400, top + 14, visits, 9.5)
+    data, truth = _save(doc, [s])
+    return Sample("clinic-report", data, truth, form=False)
+
+
+NON_FORMS = [report, invoice, letter, statement, clinic_report]
 
 
 # ═══ Pictures of pages ═══════════════════════════════════════════════════════
