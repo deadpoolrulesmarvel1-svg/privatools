@@ -386,13 +386,15 @@ def _qpdf_places(pdf, pages: int) -> Iterator[tuple[int, int]]:
         place(pdf.Root.get("/Pages"))
     except Exception:  # noqa: BLE001 - a catalog qpdf cannot read is not placed
         pass
-    for index in range(pages):
+    # Walked, not indexed: pdf.pages[n] takes time in proportion to n (20,000
+    # pages took 23 s indexed, 0.01 s walked).
+    for index, page in enumerate(pdf.pages):
         yield from places
         places.clear()
-        if index % 16 == 0 and time.thread_time() > deadline:
+        if index >= pages or (index % 16 == 0 and time.thread_time() > deadline):
             return  # the pages placed so far are compared
         try:
-            page = pdf.pages[index].obj
+            page = page.obj
             place(page)
             contents = page.get("/Contents")
             for part in (contents if isinstance(contents, pikepdf.Array) else [contents]):
