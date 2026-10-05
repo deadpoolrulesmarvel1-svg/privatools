@@ -17,7 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ..utils.cleanup import remove_files
+from ..utils.cleanup import pages_lost_error, remove_files
 from ..utils.exceptions import FileTooLargeError, ProcessingError, ToolTimeoutError
 from ..utils.filenames import temp_output
 
@@ -90,6 +90,8 @@ def sanitize_pdf(data: bytes) -> str:
         raise ValueError(PASSWORD_MESSAGE)
     if error == "corrupt":
         raise ValueError(CORRUPT_MESSAGE)
+    if error == "pages_lost":
+        raise pages_lost_error(outcome.get("pages"), outcome.get("declared"))
     if error == "unreadable_content":
         raise ValueError(UNREADABLE_CONTENT_MESSAGE)
     if error == "too_large":

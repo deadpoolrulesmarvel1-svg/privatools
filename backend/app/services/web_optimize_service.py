@@ -10,9 +10,7 @@ from __future__ import annotations
 
 import asyncio
 
-import pikepdf
-
-from ..utils.cleanup import NO_PAGES_MESSAGE
+from ..utils.cleanup import NO_PAGES_MESSAGE, open_pikepdf
 from ..utils.exceptions import (
     ExternalToolError,
     PdfCorruptError,
@@ -27,7 +25,9 @@ QPDF_TIMEOUT = 60  # seconds
 
 def _check_readable(input_path: str) -> None:
     """Raise pikepdf's PasswordError or PdfError for a PDF qpdf cannot read,
-    and ValidationError for one with no page.
+    PdfCorruptError for one it had to repair that lost pages (qpdf's command
+    would leave them out of the linearized file), and ValidationError for one
+    with no page.
 
     qpdf answers such a file with exit status 2, which it also gives a disk or
     permission fault, so its status cannot say whose the failure was. Its
@@ -36,7 +36,7 @@ def _check_readable(input_path: str) -> None:
     gets the 400 the other PDF tools give it, whatever qpdf would make of it.
     An intact file only has its cross-reference table read twice.
     """
-    with pikepdf.open(input_path) as pdf:
+    with open_pikepdf(input_path) as pdf:
         if not len(pdf.pages):
             raise ValidationError(NO_PAGES_MESSAGE)
 

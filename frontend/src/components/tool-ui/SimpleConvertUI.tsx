@@ -51,7 +51,11 @@ interface QueueItem {
     errorKind?: ToolErrorKind;
     /** How many Word equations the conversion left out (Word to PDF), said on its row. */
     equationsLeftOut?: number;
+    /** Of a damaged PDF, how many of its pages Repair PDF saved (when some could not be read), said on its row. */
+    pagesSaved?: PagesSaved;
 }
+
+interface PagesSaved { saved: number; total: number }
 
 /** Word to PDF sets each paragraph's text and draws no Word equation; the
  *  server says how many the document had (X-Equations-Left-Out). */
@@ -62,6 +66,23 @@ function equationsLeftOut(header: string | null): number | undefined {
 
 function EquationsNote({ count }: { count: number }) {
     return <p>{count === 1 ? "1 equation was left out." : `${count} equations were left out.`} <a href="/tool/office-to-pdf">Office to PDF</a> keeps {count === 1 ? "it" : "them"}.</p>;
+}
+
+/** Repair PDF saves the pages of a damaged PDF that survive and says how many
+ *  of how many in X-Repair-Pages ("4/6"); only a shortfall is worth a line. */
+function pagesSaved(header: string | null): PagesSaved | undefined {
+    const match = /^(\d+)\/(\d+)$/.exec(header ?? "");
+    if (!match) return undefined;
+    const saved = Number(match[1]), total = Number(match[2]);
+    return Number.isSafeInteger(total) && saved < total ? { saved, total } : undefined;
+}
+
+/** "1,200", as the server writes a page count in its refusals. */
+const pageCount = (value: number) => value.toLocaleString("en-US");
+
+function PagesSavedNote({ saved, total }: PagesSaved) {
+    const lost = total - saved;
+    return <p>{pageCount(saved)} of its {pageCount(total)} pages {saved === 1 ? "was" : "were"} saved. The other {lost === 1 ? "page" : pageCount(lost)} could not be read.</p>;
 }
 
 export function SimpleConvertUI({ slug, label, outputExt, outputFilename, acceptFileTypes, description }: SimpleConvertUIProps) {
@@ -153,7 +174,11 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                     plannedName(item.file.name),
                     getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
                 );
-                setItem(item.id, { status: "done", blob, outName, equationsLeftOut: equationsLeftOut(res.headers.get("X-Equations-Left-Out")) });
+                setItem(item.id, {
+                    status: "done", blob, outName,
+                    equationsLeftOut: equationsLeftOut(res.headers.get("X-Equations-Left-Out")),
+                    pagesSaved: pagesSaved(res.headers.get("X-Repair-Pages")),
+                });
                 done++;
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
@@ -230,6 +255,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             {items.map(item => <StudioFile key={item.id} name={item.outName || item.file.name} detail={item.errMsg || formatFileSize(item.blob ? item.blob.size : item.file.size)}
                 status={item.status} onDownload={item.status === "done" ? () => downloadOne(item) : undefined}>
                 {item.blob && item.equationsLeftOut ? <EquationsNote count={item.equationsLeftOut} /> : null}
+                {item.blob && item.pagesSaved ? <PagesSavedNote {...item.pagesSaved} /> : null}
             </StudioFile>)}
             <StudioActions tone={tone} retryCount={retryCount} onRetry={() => void process(true)}
                 choose={{ accepts: acceptFileTypes, multiple: true, label: single ? "Choose a different file" : "Choose different files", onFiles: startOver }}

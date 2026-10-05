@@ -283,8 +283,11 @@ CSP-walker and guide-export tests catch most misses.
   which posts cut-short and locked PDFs to every route in `ROUTES` and fails on
   any 5xx. Open the upload with `open_pdf_document` or `process_pdf`
   (`utils/cleanup.py`), not a bare `fitz.open`, which opens a locked PDF and
-  fails later; let `ToolError` through; and have the catch-all ask
-  `pdf_read_error` (`utils/pdf_errors.py`) before it answers 500.
+  fails later, and with pikepdf through `open_pikepdf` or `safe_open_pdf`:
+  these refuse a repaired PDF that lost pages, which the libraries otherwise
+  read as a shorter file (`utils/declared_pages.py`, `test_pages_lost.py`).
+  Let `ToolError` through, and have the catch-all ask `pdf_read_error`
+  (`utils/pdf_errors.py`) before it answers 500.
 - **PyMuPDF's switches can be process-wide.** `small_glyph_heights`, which
   `find_tables` turns on, is a C global that every request thread's text
   extraction reads: it changes only through `find_tables` and

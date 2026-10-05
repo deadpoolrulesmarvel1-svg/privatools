@@ -27,6 +27,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import re
 import shutil
 
 import fitz  # PyMuPDF
@@ -38,7 +39,8 @@ from PIL import Image
 from starlette.datastructures import UploadFile
 
 from backend.app import main
-from backend.app.utils.cleanup import _DAMAGED_PDF
+from backend.app.utils.cleanup import _DAMAGED_PDF, end_is_missing, pages_lost_message
+from backend.app.utils.declared_pages import readable_page_count
 
 
 def _classic() -> bytes:
@@ -329,7 +331,15 @@ STANDARD = {
     _DAMAGED_PDF,
     "This PDF has no pages.",
 }
+# A file that lost pages to damage is refused with how many survived
+# (utils.cleanup.pages_lost_message; test_pages_lost.py).
+PAGES_LOST = re.compile(r"This PDF is damaged: only [\d,]+ of its [\d,]+ pages could be read\. "
+                        r"Download it again, or use Repair PDF to save the pages that survive\.")
 PASSWORD = "This PDF is password-protected. Unlock it first, then try again."
+
+
+def _standard(detail: str) -> bool:
+    return detail in STANDARD or PAGES_LOST.fullmatch(detail) is not None
 
 
 @pytest.mark.parametrize("sample", sorted(DAMAGED))
@@ -338,7 +348,7 @@ def test_a_tool_that_changes_pages_does_its_work_or_says_the_pdf_is_damaged(quie
     response = _post(quiet_client, route, DAMAGED[sample])
     assert response.status_code in (200, 400), response.text
     if response.status_code == 400:
-        assert response.json()["detail"] in STANDARD, response.text
+        assert _standard(response.json()["detail"]), response.text
 
 
 @pytest.mark.parametrize("route", CHANGES_PAGES)
@@ -383,7 +393,7 @@ def test_a_tool_that_reads_pages_does_its_work_or_says_the_pdf_is_damaged(quiet_
     assert response.status_code in (200, 400), response.text
     if response.status_code == 400:
         detail = response.json()["detail"]
-        assert detail in STANDARD or FOUND_NOTHING.get(route, "\0") in detail, response.text
+        assert _standard(detail) or FOUND_NOTHING.get(route, "\0") in detail, response.text
 
 
 @pytest.mark.parametrize("route", READS_PAGES)
@@ -428,14 +438,17 @@ SCAN = _scan()
 @pytest.mark.parametrize("route", WORD_AND_EXCEL)
 def test_word_and_excel_call_a_file_whose_pages_were_lost_damaged(quiet_client, route, sample):
     data = DAMAGED["objstm-20"] if sample == "objstm-20" else SCAN[: len(SCAN) * 30 // 100]
+    expected = _DAMAGED_PDF  # objstm-20: no page object survived
     if sample == "scan-30":
         # A scan cut short: its first page still lists its picture, but the
-        # content that drew it was lost, so no page draws anything.
+        # content that drew it was lost, so no page draws anything; and the
+        # other three pages' objects were lost, which is said first.
         doc = fitz.open(stream=data, filetype="pdf")
         assert doc.is_repaired and doc[0].get_images() and not any(page.get_image_info() for page in doc)
+        expected = pages_lost_message(readable_page_count(doc), 4)
     response = _post(quiet_client, route, data)
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == _DAMAGED_PDF
+    assert response.json()["detail"] == expected
 
 
 def _drawing() -> bytes:
@@ -458,9 +471,16 @@ def _blank() -> bytes:
 AFTER_END = b"\n" + bytes(range(256)) * 40  # valid, with bytes after its end: MuPDF opens it repaired
 
 
-@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact"])
+def _no_startxref(data: bytes) -> bytes:
+    """Valid but for its last lines: MuPDF repairs it, and it still ends with %%EOF."""
+    return re.sub(rb"startxref\s+\d+\s+%%EOF\s*$", b"%%EOF\n", data)
+
+
+@pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact",
+                                    "blank-no-eof", "blank-repaired", "blank-no-startxref"])
 @pytest.mark.parametrize("route", WORD_AND_EXCEL)
 def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
+    blank = _blank()
     data = {
         "intact": SCAN,
         "repaired": SCAN + AFTER_END,
@@ -468,13 +488,36 @@ def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
         "cut-90": SCAN[: len(SCAN) * 90 // 100],
         # Opened repaired, but its page draws: never called damaged.
         "drawing-repaired": _drawing() + AFTER_END,
-        # A file MuPDF did not repair is never called damaged, blank or not.
-        "blank-intact": _blank(),
+        # A file MuPDF did not repair is never called damaged, blank or not:
+        # also one whose end looks missing, as its "%%EOF" is (the #349
+        # review's mutant that dropped the repair check).
+        "blank-intact": blank,
+        "blank-no-eof": blank[: blank.rindex(b"%%EOF")],
+        # Valid blank files MuPDF repairs, which draw nothing either: they
+        # end as a PDF ends, so they are not cut short (the #345 review's 12).
+        "blank-repaired": blank + AFTER_END,
+        "blank-no-startxref": _no_startxref(blank),
     }[sample]
-    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in ("intact", "blank-intact"))
+    unrepaired = ("intact", "blank-intact", "blank-no-eof")
+    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in unrepaired)
+    if sample == "blank-no-eof":
+        assert end_is_missing(data)
     response = _post(quiet_client, route, data)
     assert response.status_code == 400, response.text
     assert "OCR" in response.json()["detail"], response.text
+
+
+@pytest.mark.parametrize("route", WORD_AND_EXCEL)
+def test_word_and_excel_call_a_blank_pdf_cut_short_damaged(quiet_client, route):
+    # Its page survived, and drew nothing; its end, with the cross-reference
+    # table, did not.
+    whole = _blank()
+    data = whole[: whole.rindex(b"endobj") + len(b"endobj\n")]
+    doc = fitz.open(stream=data, filetype="pdf")
+    assert doc.is_repaired and readable_page_count(doc) == len(doc) == 1
+    response = _post(quiet_client, route, data)
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == _DAMAGED_PDF
 
 
 # ── Organize Pages draws its thumbnails with Poppler ────────────────────────
@@ -488,7 +531,7 @@ THUMBNAILS = "/api/organize-pages/thumbnails"
 def test_organize_pages_says_a_pdf_it_cannot_draw_is_damaged(quiet_client, sample):
     response = _post(quiet_client, THUMBNAILS, DAMAGED[sample])
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] in STANDARD
+    assert _standard(response.json()["detail"])
 
 
 def test_organize_pages_asks_for_the_password(quiet_client, locked_pdf):
@@ -527,7 +570,7 @@ WEB_OPTIMIZE = "/api/web-optimize"
 def test_web_optimize_says_a_pdf_qpdf_cannot_read_is_damaged(quiet_client, sample):
     response = _post(quiet_client, WEB_OPTIMIZE, DAMAGED[sample])
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] in STANDARD
+    assert _standard(response.json()["detail"])
 
 
 def test_web_optimize_asks_for_the_password(quiet_client, locked_pdf):
@@ -629,10 +672,13 @@ SPLIT_BY_TEXT = "/api/split-by-text"
 @pytest.mark.parametrize("percent", [40, 60])
 def test_split_by_text_says_a_pdf_its_readers_disagree_about_is_damaged(quiet_client, percent):
     cut = CLASSIC[: len(CLASSIC) * percent // 100]
-    assert len(fitz.open(stream=cut, filetype="pdf")) != len(pikepdf.open(io.BytesIO(cut)).pages)
+    doc = fitz.open(stream=cut, filetype="pdf")
+    assert len(doc) != len(pikepdf.open(io.BytesIO(cut)).pages)
+    # MuPDF lists 4 pages but could read only those before the cut: the file
+    # is refused when it is opened, with the counts.
     response = _post(quiet_client, SPLIT_BY_TEXT, cut)
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == _DAMAGED_PDF
+    assert response.json()["detail"] == pages_lost_message(readable_page_count(doc), 4)
 
 
 def test_split_by_text_asks_for_the_password(quiet_client, locked_pdf):

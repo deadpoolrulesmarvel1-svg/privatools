@@ -16,7 +16,7 @@ from pikepdf.exceptions import (
     UnsupportedImageTypeError,
 )
 
-from ..utils.cleanup import open_pdf_document
+from ..utils.cleanup import open_pdf_document, open_pikepdf
 from ..utils.filenames import temp_output
 from ..utils.render import safe_get_pixmap
 
@@ -133,7 +133,7 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
     2. Re-render colored text/vectors using fitz grayscale colorspace
     """
     # Pass 1: Convert embedded images in-place
-    with pikepdf.open(input_path) as pdf:
+    with open_pikepdf(input_path) as pdf:
         for page in pdf.pages:
             resources = page.get("/Resources")
             if resources is None:

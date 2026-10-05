@@ -2,12 +2,11 @@ import asyncio
 import logging
 import uuid
 
-import pikepdf
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, open_pikepdf, validate_pdf_content, remove_files
 from ..services import delete_annotations_service
 from ..utils.pdf_errors import pdf_read_error
 
@@ -26,7 +25,7 @@ def _delete_annotations_preserving_widgets(input_path: str) -> str:
     ensure_temp_dir()
     output_path = get_temp_path(f"no_annots_{uuid.uuid4().hex}.pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with open_pikepdf(input_path) as pdf:
         for page in pdf.pages:
             if "/Annots" not in page:
                 continue

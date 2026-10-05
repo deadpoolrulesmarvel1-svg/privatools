@@ -299,7 +299,7 @@ def safe_open_pdf(path: str, **kwargs):
     """
     import pikepdf
     try:
-        return pikepdf.open(path, **kwargs)
+        return open_pikepdf(path, **kwargs)
     except pikepdf.PasswordError as exc:
         raise ValueError(
             "This PDF is password-protected. Please unlock it first using the Unlock PDF tool."
@@ -309,12 +309,109 @@ def safe_open_pdf(path: str, **kwargs):
         raise ValueError("This PDF appears to be corrupt or invalid.") from exc
 
 
+def open_pikepdf(source, **kwargs):
+    """pikepdf.open(source, **kwargs) for an upload, refusing one that lost
+    pages to damage.
+
+    qpdf rebuilds a damaged file's cross-reference table, as from a PDF cut
+    short, and leaves out each page whose object did not survive: a tool that
+    wrote what it read would answer with fewer pages than it was sent. Such a
+    file is refused with PdfCorruptError (refuse_if_pages_lost); pikepdf's own
+    errors are raised as they are. Use it, or safe_open_pdf, wherever pikepdf
+    opens what a visitor sent; a file the tool made itself needs neither.
+    """
+    import pikepdf
+
+    from .exceptions import PdfCorruptError
+
+    pdf = pikepdf.open(source, **kwargs)
+    try:
+        refuse_if_qpdf_lost_pages(pdf, source)
+    except PdfCorruptError:
+        pdf.close()
+        raise
+    return pdf
+
+
 _DAMAGED_PDF = (
     "This PDF is damaged, most likely cut short by an interrupted download. "
     "Download it again, or fix it with Repair PDF, then try again."
 )
 # What the PDF tools say, with a 400 (ValidationError), to a PDF without a page.
 NO_PAGES_MESSAGE = "This PDF has no pages."
+
+
+def pages_lost_message(survived: int, declared: int) -> str:
+    """What a tool says, with a 400, to a PDF that lost pages to damage."""
+    return (
+        f"This PDF is damaged: only {survived:,} of its {declared:,} pages could be read. "
+        "Download it again, or use Repair PDF to save the pages that survive."
+    )
+
+
+def pages_lost_error(survived, declared):
+    """The PdfCorruptError for a worker's answer that a file lost pages, with
+    the counts it gave (checked, since a worker's answer is only data)."""
+    from .exceptions import PdfCorruptError
+
+    counted = all(isinstance(n, int) and not isinstance(n, bool) for n in (survived, declared))
+    if counted and 0 < survived < declared:
+        return PdfCorruptError(pages_lost_message(survived, declared))
+    return PdfCorruptError(_DAMAGED_PDF)
+
+
+def refuse_if_pages_lost(source, survived) -> None:
+    """Raise PdfCorruptError if the PDF at `source` declares more pages than a
+    library read of it.
+
+    For a file the library had to repair: a PDF cut short opens repaired with
+    the pages that survived, and a tool that went on would answer with fewer
+    pages than the visitor sent, and say nothing. The count the file declares
+    is read from its bytes (utils.declared_pages), not from the repair; a file
+    whose page tree cannot be found is not refused here. `source` is a path,
+    the bytes or a file object holding them; `survived` is the number of
+    pages read, or a function that counts them, called with the declared
+    count (it may stop counting there) and only when the file declares one.
+    Either count can be None, unknown (as when it would take too long to
+    read), and then nothing is refused. Repaired files that kept every page,
+    which valid files with a damaged cross-reference table are, go on as
+    before.
+    """
+    from .declared_pages import declared_page_count
+    from .exceptions import PdfCorruptError
+
+    readable = _scannable(source)
+    if readable is None:
+        return
+    declared = declared_page_count(readable)
+    if declared is None:
+        return
+    count = survived(declared) if callable(survived) else survived
+    if count is None:
+        return
+    if count < declared:
+        raise PdfCorruptError(pages_lost_message(count, declared) if count else _DAMAGED_PDF)
+
+
+def _scannable(source):
+    """`source` as declared_page_count reads it: a path or the bytes. Of an
+    io.BytesIO made from the bytes and never written to, as the routes make
+    them, getvalue() gives back those very bytes, not a copy."""
+    if isinstance(source, (str, os.PathLike, bytes, bytearray, memoryview)):
+        return source
+    getvalue = getattr(source, "getvalue", None)  # io.BytesIO
+    return getvalue() if callable(getvalue) else None
+
+
+def refuse_if_qpdf_lost_pages(pdf, source) -> None:
+    """refuse_if_pages_lost for a file pikepdf opened from `source`, when qpdf
+    gave any warning while opening it. It warns when it has to rebuild a
+    file's cross-reference table ("file is damaged"), as for a PDF cut short,
+    which is when it leaves out pages whose object was lost; any other warning
+    has the file's bytes read too, which refuses nothing that kept its pages.
+    A file qpdf opened without a warning is not read again."""
+    if pdf.get_warnings():
+        refuse_if_pages_lost(source, lambda declared: len(pdf.pages))
 
 
 def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
@@ -373,10 +470,13 @@ def open_pdf_document(source: str | bytes):
     for one PyMuPDF cannot read or that has no page it can read; the global
     handler answers both with a 400 that says what to do. A PDF with only an
     owner password (restrictions, nothing needed to open it) opens as before.
-    Takes a path or the bytes.
+    A file MuPDF had to repair that lost pages, fewer read than it declares
+    (refuse_if_pages_lost), is refused as damaged, with both counts. Takes a
+    path or the bytes.
     """
     import fitz  # PyMuPDF
 
+    from .declared_pages import readable_page_count
     from .exceptions import PdfCorruptError, PdfEncryptedError, ValidationError
 
     from .pdf_errors import pdf_read_error
@@ -410,12 +510,19 @@ def open_pdf_document(source: str | bytes):
         if repaired:
             raise PdfCorruptError(_DAMAGED_PDF)
         raise ValidationError(NO_PAGES_MESSAGE)
+    if doc.is_repaired:
+        try:
+            refuse_if_pages_lost(source, lambda declared: readable_page_count(doc, declared))
+        except PdfCorruptError:
+            doc.close()
+            raise
     return doc
 
 
-def refuse_if_content_lost(doc) -> None:
-    """Raise PdfCorruptError if MuPDF had to repair `doc` and none of its pages
-    draws anything: no text, no picture, no vector drawing.
+def refuse_if_content_lost(doc, source) -> None:
+    """Raise PdfCorruptError if MuPDF had to repair `doc`, none of its pages
+    draws anything (no text, no picture, no vector drawing), and the end of
+    the file at `source` (a path or the bytes) is missing.
 
     For a tool that found no text in a PDF and would send it to OCR. A PDF cut
     short can open repaired with every page there but blank, its pages' content
@@ -423,7 +530,10 @@ def refuse_if_content_lost(doc) -> None:
     downloading again or repairing. A scan draws its page pictures, also when
     MuPDF opens it repaired, as it does a valid file with bytes after its end.
     A picture counts when a page draws it: a scan cut short can keep a picture
-    that a page lists while the content that drew it was lost.
+    that a page lists while the content that drew it was lost. A valid blank
+    PDF draws nothing either, and opens repaired with a cross-reference table
+    off by a few bytes; it still ends as a PDF ends (end_is_missing), so it is
+    not called damaged.
     """
     from .exceptions import PdfCorruptError
 
@@ -432,7 +542,34 @@ def refuse_if_content_lost(doc) -> None:
     for page in doc:
         if page.get_text("text").strip() or page.get_image_info() or page.get_drawings():
             return
-    raise PdfCorruptError(_DAMAGED_PDF)
+    if end_is_missing(source):
+        raise PdfCorruptError(_DAMAGED_PDF)
+
+
+def end_is_missing(source) -> bool:
+    """Whether a PDF's end is missing, as when it was cut short: no "%%EOF"
+    follows its last object, or there is none at all. A complete PDF ends
+    with "startxref", the table's offset and "%%EOF", after an incremental
+    update too; a cut takes the "%%EOF" first, also one that falls between
+    "startxref" and it."""
+    import mmap
+
+    def missing(data) -> bool:
+        last_object = max(data.rfind(b"endobj"), data.rfind(b"endstream"))
+        end = data.rfind(b"%%EOF")
+        return end < 0 or end < last_object
+
+    if isinstance(source, (bytes, bytearray)):
+        return missing(source)
+    with open(source, "rb") as fh:
+        try:
+            data = mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ)
+        except ValueError:  # empty
+            return True
+        try:
+            return missing(data)
+        finally:
+            data.close()
 
 
 def _library_errors() -> tuple[type[BaseException], ...]:
@@ -488,11 +625,13 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
     copy a page that has one ("source object number out of range"), and a page
     whose own object was lost, but which the page tree still lists, is shown
     blank and fails with "bad xref" when anything of it, such as its /Rotate,
-    is read. So when work fails on a repaired file with an error from the
-    library (_library_errors), qpdf rebuilds the file, dropping those
-    references and such pages, and work runs once more on the rebuilt copy. A
-    file qpdf cannot rebuild, that has no page left, or that fails again is
-    refused as damaged (400). A ToolError, such as a render budget refusal, is
+    is read. A file that lost pages is refused when it is opened
+    (open_pdf_document), with how many of its pages survived. When work fails
+    on a repaired file with an error from the library (_library_errors), qpdf
+    rebuilds the file, dropping the references to lost objects, and work runs
+    once more on the rebuilt copy. A file qpdf cannot rebuild, that has no
+    page left, whose rebuild left out a page MuPDF listed, or that fails again
+    is refused as damaged (400). A ToolError, such as a render budget refusal, is
     an answer, not damage: it is never retried. A file MuPDF did not repair is
     refused as damaged, without a rebuild, when work fails with an error of
     PyMuPDF's that the catch-alls would answer 500 and one of its page objects
@@ -517,6 +656,7 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
 
     library_errors = _library_errors()
     doc = open_pdf_document(source)
+    listed = len(doc)
     try:
         return work(doc)
     except library_errors as exc:
@@ -541,6 +681,11 @@ def process_pdf(source: str | bytes, work, *, rebuild: bool = True):
         doc = open_pdf_document(rebuilt)
     except ValidationError as exc:  # no page survived
         raise PdfCorruptError(_DAMAGED_PDF) from exc
+    if len(doc) < listed:
+        # qpdf left out pages MuPDF listed: the work would lose them.
+        rebuilt_pages = len(doc)
+        doc.close()
+        raise PdfCorruptError(pages_lost_message(rebuilt_pages, listed)) from failure
     try:
         return work(doc)
     except library_errors as exc:  # the rebuild did not help

@@ -101,6 +101,17 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     if (m.includes("not a pdf") || m.includes("invalid pdf") || m.includes("could not open") || m.includes("not a valid pdf")) {
         return "That file doesn't look like a valid PDF. Try a different file.";
     }
+    // A PDF cut short that lost pages: the server says how many of how many
+    // could be read, and both ways out (utils/cleanup.py pages_lost_message).
+    if (/only [\d,]+ of its [\d,]+ pages could be read/.test(m)) {
+        return (raw || "").trim();
+    }
+    // Remove Blank Pages and a PDF cut short: its pages may look blank because
+    // their content was lost, and Repair PDF keeps them blank, so the way out
+    // is downloading it again (routes/remove_blank_pages.py CUT_SHORT_MESSAGE).
+    if (m.trimStart().startsWith("download this pdf again: it was cut short")) {
+        return (raw || "").trim();
+    }
     if (m.includes("corrupt") || m.includes("damaged") || m.includes("malformed")) {
         return "This PDF is damaged. Try the Repair PDF tool first, then come back.";
     }

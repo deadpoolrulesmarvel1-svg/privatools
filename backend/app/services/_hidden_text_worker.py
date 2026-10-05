@@ -2067,6 +2067,9 @@ def main() -> None:
         _emit({"ok": False, "error": "too_large"})
     except Exception:  # noqa: BLE001 - MuPDF raises several kinds for a file it cannot read
         _emit({"ok": False, "error": "corrupt"})
+    lost = _pages_lost(doc, source)
+    if lost is not None:
+        _emit({"ok": False, "error": "pages_lost", "pages": lost[0], "declared": lost[1]})
     try:
         report = analyse(doc)
     except Refusal as refusal:
@@ -2090,6 +2093,39 @@ def _damage(doc: fitz.Document, exc: Exception) -> bool:
         return bool(doc.is_repaired)
     except Exception:  # noqa: BLE001 - a document that cannot even say is not called damaged
         return False
+
+
+def _pages_lost(doc: fitz.Document, source: str) -> tuple[int, int] | None:
+    """(pages read, pages declared) of a file MuPDF had to repair and read
+    fewer pages of than it declares, as utils.cleanup.open_pdf_document
+    refuses it in the web process; None otherwise. _pdf_markdown_worker.py
+    has a twin."""
+    try:
+        if doc.needs_pass or not doc.is_repaired:
+            return None
+        pages = _declared_pages()
+        declared = pages.declared_page_count(source)
+        if declared is None:
+            return None
+        read = pages.readable_page_count(doc, declared)
+    except Exception:  # noqa: BLE001 - a check that cannot run refuses nothing
+        return None
+    if read is None:  # too many listed pages to look up in time: unknown
+        return None
+    return (read, declared) if read < declared else None
+
+
+def _declared_pages():
+    """utils/declared_pages.py, loaded from its path: this process runs with
+    -I, so the app's package cannot be imported, and that module needs only
+    the standard library."""
+    import importlib.util
+
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils", "declared_pages.py")
+    spec = importlib.util.spec_from_file_location("declared_pages", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 if __name__ == "__main__":

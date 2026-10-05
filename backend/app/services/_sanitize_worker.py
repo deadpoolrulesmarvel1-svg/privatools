@@ -628,6 +628,38 @@ def _isolate(file_size: int) -> None:
     _limit(resource.RLIMIT_CORE, 0, 0)
 
 
+def _pages_lost(pdf: pikepdf.Pdf, source: str) -> tuple[int, int] | None:
+    """(pages read, pages declared) of a file qpdf warned about while opening
+    it and read fewer pages of than it declares, as utils.cleanup.open_pikepdf
+    refuses it in the web process; None otherwise. qpdf warns when it
+    rebuilds a file's cross-reference table, as for a PDF cut short, which is
+    when it leaves out pages whose object was lost; any warning has the count
+    read."""
+    try:
+        if not pdf.get_warnings():
+            return None
+        declared = _declared_pages().declared_page_count(source)
+        if declared is None:
+            return None
+        read = len(pdf.pages)
+    except Exception:  # noqa: BLE001 - a check that cannot run refuses nothing
+        return None
+    return (read, declared) if read < declared else None
+
+
+def _declared_pages():
+    """utils/declared_pages.py, loaded from its path: this process runs with
+    -I, so the app's package cannot be imported, and that module needs only
+    the standard library."""
+    import importlib.util
+
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils", "declared_pages.py")
+    spec = importlib.util.spec_from_file_location("declared_pages", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _emit(payload: dict, status: int = 0) -> None:
     output = json.dumps(payload)
     if len(output) > MAX_OUTPUT_BYTES:
@@ -646,6 +678,9 @@ def main() -> None:
     _isolate(size)
     try:
         with pikepdf.open(source) as pdf:
+            lost = _pages_lost(pdf, source)
+            if lost is not None:
+                _emit({"ok": False, "error": "pages_lost", "pages": lost[0], "declared": lost[1]})
             sanitize(pdf)
             pdf.save(target, encryption=pdf.is_encrypted)
     except Refusal as refusal:

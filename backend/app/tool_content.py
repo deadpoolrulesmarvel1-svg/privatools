@@ -791,7 +791,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "repair-pdf": [
         {"name": "Upload the corrupt PDF", "text": "Drop a PDF up to 500 MB that won't open or shows errors in your viewer."},
         {"name": "PrivaTools rebuilds the file structure", "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure; if that fails, it retries with MuPDF."},
-        {"name": "Download the repaired PDF", "text": "Structural damage such as a broken cross-reference table or a missing trailer is usually fixable. Damaged data inside a page's content is copied as it is, and a file cut off too early may not be recoverable at all."},
+        {"name": "Download the repaired PDF", "text": "Structural damage such as a broken cross-reference table or a missing trailer is usually fixable. Damaged data inside a page's content is copied as it is. A file cut short keeps only the pages stored before the cut: the repaired PDF holds those, and the result says how many of the file's pages were saved. A file cut off too early may not be recoverable at all."},
     ],
     "resize-pdf": [
         {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each."},
@@ -2235,6 +2235,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "repair-pdf": [
         {"q": "What kinds of damage can it fix?", "a": "Missing or corrupt cross-reference tables, broken trailers, dangling object references, slightly-truncated streams. Cannot recover from missing object data."},
         {"q": "Will the repaired PDF look identical?", "a": "Yes if the damage was in metadata/structure. Visible content damage (cropped images, missing fonts) requires the original to fix."},
+        {"q": "Why does the repaired PDF have fewer pages?", "a": "A PDF cut short, as by an interrupted download, has lost the pages stored after the cut, and no tool can bring them back. Repair PDF saves the pages that survive, and the result says how many of the file's pages it saved, such as 4 of 6. Download the original again to get every page. The other PDF tools refuse such a file and say how many of its pages could be read, rather than return part of it as if it were whole."},
         {"q": "Can it merge two damaged PDFs?", "a": "Repair each separately first, then use Merge."},
     ],
     "resize-pdf": [
