@@ -316,6 +316,40 @@ def test_a_valid_pdf_carrying_a_pdf_its_stream_does_not_end_at_goes_on_as_before
     assert _pages_out(response) == _pages_out(intact)
 
 
+def _root_rewritten_without_its_type(data: bytes, keep: int = 3) -> bytes:
+    """`data` with an incremental update that rewrites its page tree's root
+    with only its first `keep` pages, and without /Type /Pages: a required
+    key both libraries do without."""
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        root = pdf.Root.Pages.objgen[0]
+        kids = [kid.objgen[0] for kid in pdf.Root.Pages.Kids][:keep]
+        size = int(pdf.trailer.Size)
+    prev = int(data.rsplit(b"startxref", 1)[1].split()[0])
+    at = len(data)
+    body = b"<< /Kids [%s] /Count %d >>" % (b" ".join(b"%d 0 R" % kid for kid in kids), keep)
+    update = b"%d 0 obj\n%s\nendobj\n" % (root, body)
+    xref = at + len(update)
+    catalog = data.split(b"/Root", 1)[1].split()[0]
+    return (data + update + b"xref\n%d 1\n%010d 00000 n \n" % (root, at)
+            + b"trailer\n<< /Size %d /Root %s 0 R /Prev %d >>\nstartxref\n%d\n%%%%EOF\n" % (size, catalog, prev, xref))
+
+
+@pytest.mark.parametrize("route", ["/api/grayscale", "/api/rotate", "/api/split-in-half"])
+def test_an_update_that_rewrites_the_root_without_its_type_goes_on_as_before(quiet_client, route):
+    # The update leaves three of the six pages; both libraries read it. The
+    # count read the base's typed root, six pages, and qpdf's routes refused
+    # even the intact file, "only 3 of its 6 pages" (the #349 re-review's
+    # RS1); MuPDF's refused it once it had bytes after its end.
+    whole = _root_rewritten_without_its_type(WHOLE)
+    data = _junk_after_the_end(whole)
+    assert _qpdf_reads(whole) == 3 and _qpdf_warns(whole)
+    assert fitz.open(stream=data, filetype="pdf").is_repaired
+    for upload in (whole, data):
+        response = _post(quiet_client, route, upload)
+        assert response.status_code == 200, response.text[:300]
+        assert _pages_out(response) == (6 if route == "/api/split-in-half" else 3)
+
+
 # ── PDF to Text reads with pypdf ────────────────────────────────────────────
 
 def test_pdf_to_text_refuses_a_pdf_pypdf_read_only_some_pages_of(quiet_client):

@@ -242,7 +242,7 @@ def test_a_pdf_stored_in_a_stream_whose_length_is_an_object_is_not_read_either()
     inner = {}
     for page in range(3, 15, 2):
         inner[page] = b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents %d 0 R >>" % (page + 1)
-        inner[page + 1] = b"<< /Length 9 >>\nstream\nBT 0 Tj ET\nendstream"
+        inner[page + 1] = b"<< /Length 10 >>\nstream\nBT 0 Tj ET\nendstream"
     inner[2] = b"<< /Type /Pages /Kids [%s] /Count 6 >>" % b" ".join(b"%d 0 R" % n for n in range(3, 15, 2))
     inner[1] = b"<< /Type /Catalog /Pages 2 0 R >>"
     stored = _hand_built(inner)
@@ -403,6 +403,97 @@ def test_a_catalog_the_count_cannot_read_leaves_the_count_unknown():
                2: b"<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>", 3: _page(2), 4: _page(2),
                7: b"<< /Type /Pages /Kids [8 0 R 9 0 R 10 0 R] /Count 3 >>", 8: _page(7), 9: _page(7), 10: _page(7)}
     assert declared_page_count(_hand_built(objects)) is None
+
+
+def _updated(base: bytes, objects: dict[int, bytes], root: int = 1) -> bytes:
+    """`base` with an incremental update that writes `objects` (again), with a
+    cross-reference section of its own and a trailer naming the one before."""
+    prev = int(base.rsplit(b"startxref", 1)[1].split()[0])
+    size = int(base.split(b"/Size", 1)[1].split()[0])
+    out, offsets = base, {}
+    for number, body in objects.items():
+        offsets[number] = len(out)
+        out += b"%d 0 obj\n%s\nendobj\n" % (number, body)
+    xref = len(out)
+    out += b"xref\n" + b"".join(b"%d 1\n%010d 00000 n \n" % (n, offsets[n]) for n in sorted(offsets))
+    size = max(size, max(offsets) + 1)
+    return out + b"trailer\n<< /Size %d /Root %d 0 R /Prev %d >>\nstartxref\n%d\n%%%%EOF\n" % (size, root, prev, xref)
+
+
+FIVE = _hand_built({1: b"<< /Type /Catalog /Pages 2 0 R >>",
+                    2: b"<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R] /Count 5 >>",
+                    **{n: _page(2) for n in range(3, 8)}})
+
+
+@pytest.mark.parametrize("update", [
+    {2: b"<< /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>"},
+    {9: b"<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>", 1: b"<< /Pages 9 0 R >>"},
+], ids=["root-node", "catalog"])
+def test_an_update_that_rewrites_the_tree_without_its_type_leaves_the_count_unknown(update):
+    # The update rewrites the root node, or the catalog, without /Type. Both
+    # keys are required, but MuPDF and qpdf read the update without them
+    # (qpdf: "setting missing or invalid /Type entry"): three pages. Only
+    # typed definitions are read here, so the base's five-page tree outlived
+    # its rewrite, and qpdf's routes refused even the intact file, "only 3 of
+    # its 5 pages" (the #349 re-review's RS1). The later header says that the
+    # definition read is not the file's own: the count is unknown.
+    data = _updated(FIVE, update)
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert not doc.is_repaired and len(doc) == 3
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        assert len(pdf.pages) == 3
+    assert declared_page_count(data) is None
+    assert declared_page_count(data + b"\n" + bytes(range(256)) * 16) is None
+
+
+def _updated_in_an_object_stream(base: bytes, number: int, body: bytes) -> bytes:
+    """`base` with an incremental update that writes object `number` again,
+    inside an object stream, under a cross-reference stream naming the
+    section before it."""
+    prev = int(base.rsplit(b"startxref", 1)[1].split()[0])
+    size = int(base.split(b"/Size", 1)[1].split()[0])
+    stm, xref = size, size + 1
+    member = b"%d 0 " % number
+    packed = zlib.compress(member + body)
+    at_stm = len(base)
+    out = base + b"%d 0 obj\n<< /Type /ObjStm /N 1 /First %d /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream\nendobj\n" % (
+        stm, len(member), len(packed), packed)
+    at_xref = len(out)
+    rows = (b"\x02" + stm.to_bytes(4, "big") + b"\x00\x00" + b"\x01" + at_stm.to_bytes(4, "big") + b"\x00\x00"
+            + b"\x01" + at_xref.to_bytes(4, "big") + b"\x00\x00")
+    table = zlib.compress(rows)
+    out += (b"%d 0 obj\n<< /Type /XRef /Size %d /Index [%d 1 %d 2] /W [1 4 2] /Root 1 0 R /Prev %d "
+            b"/Filter /FlateDecode /Length %d >>\nstream\n" % (xref, xref + 1, number, stm, prev, len(table)))
+    return out + table + b"\nendstream\nendobj\nstartxref\n%d\n%%%%EOF\n" % at_xref
+
+
+def test_an_update_in_an_object_stream_that_rewrites_the_root_without_its_type_leaves_the_count_unknown():
+    data = _updated_in_an_object_stream(FIVE, 2, b"<< /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>")
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert not doc.is_repaired and len(doc) == 3
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        assert len(pdf.pages) == 3
+    assert declared_page_count(data) is None
+
+
+def test_a_header_an_update_quotes_in_a_string_is_no_definition():
+    # The update adds a note that quotes the root node's header; the tree is
+    # the base's, five pages.
+    note = (b"<< /Type /Annot /Subtype /Text /Rect [72 600 92 620] /Contents (The root:\n"
+            b"2 0 obj\n<< /Kids [3 0 R] /Count 1 >>\nendobj) >>")
+    data = _updated(FIVE, {8: note})
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert len(doc) == 5
+    assert declared_page_count(data) == 5
+
+
+def test_an_update_that_rewrites_the_tree_with_its_type_is_counted():
+    # The same update, typed: the rewrite is the definition read.
+    data = _updated(FIVE, {2: b"<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>"})
+    assert declared_page_count(data) == 3
+    data = _updated(FIVE, {9: b"<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>",
+                           1: b"<< /Type /Catalog /Pages 9 0 R >>"})
+    assert declared_page_count(data) == 3
 
 
 def test_no_page_tree_in_the_bytes_is_unknown():

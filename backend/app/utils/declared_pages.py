@@ -15,6 +15,10 @@ root is the one the trailer's catalog names; when the catalog or the trailer
 was lost, it is the node with the largest /Count. When every page and node the
 root lists is still in the file, the pages counted under it are the answer
 instead, so that a valid file whose /Count is wrong is not called damaged.
+Only typed objects are read, the last definition of each number winning, as
+a repair keeps it. When an update defines the catalog or a node of the tree
+counted again, without its /Type (which both libraries do without), the
+definition read is no longer the file's, and the count is unknown.
 
 Nodes written inside a compressed object stream are read too: each stream
 with /Type /ObjStm is inflated (Flate only, as writers use) and its objects
@@ -211,6 +215,13 @@ class _Scan:
         self._starts: list[int] = []
         self._ends: list[int] = []
         self._integers: dict[int, list[int]] | None = None  # _integer_objects
+        # For _redefined_later: each object stream's start and the objects it
+        # holds, of any kind, as (where, number, index); the catalog the count
+        # read; and the cross-reference sections found, as (where, whether it
+        # names one before it, /Prev).
+        self._streamed: list[tuple[int, list[tuple[int, int, int]]]] = []
+        self._catalog: int | None = None
+        self._sections: list[tuple[int, bool]] = []
 
     # ── collecting ──────────────────────────────────────────────────────────
 
@@ -262,6 +273,8 @@ class _Scan:
             root = _ref(self.data, entries.get(b"Root")) if entries else None
             if root is not None:
                 self.roots.append(((start, -1), root))
+            if entries:
+                self._sections.append((start, b"Prev" in entries))
             return
         if kind != "Page" and self._nested(start):
             return  # quoted inside an earlier object, as in a string: no object
@@ -464,12 +477,18 @@ class _Scan:
     def _trailer(self) -> None:
         data = self.data
         at = data.rfind(b"trailer")
+        last = True
         while at >= 0:
             self.budget.spend()
             if not self._outside_streams(at):
                 at = data.rfind(b"trailer", 0, at)
                 continue
             entries = _dict_entries(data, at + len(b"trailer"), min(len(data), at + 1024 * 1024), self.budget)
+            if entries and last:
+                # The last trailer, /Root or not: a linearized file's names
+                # no /Root, and its first one names the last (/Prev).
+                self._sections.append((at, b"Prev" in entries))
+                last = False
             root = _ref(data, entries.get(b"Root")) if entries else None
             if root is not None:
                 self.roots.append(((at, -1), root))
@@ -512,6 +531,7 @@ class _Scan:
             if len(pairs) >= 2 * count:
                 break
         members = sorted((first + pairs[i + 1], pairs[i], i // 2) for i in range(0, len(pairs) - 1, 2))
+        self._streamed.append((start, members))
         starts = [at for at, _, _ in members]
         done = -1
         for found in _TYPE.finditer(inflated, first):
@@ -563,8 +583,11 @@ class _Scan:
             return None
         root = self._root(nodes)
         if root is not None:
-            declared = self._declared_under(root, nodes)
-            return None if self.overflow else declared
+            walked: set[int] = set()
+            declared = self._declared_under(root, nodes, walked)
+            if self.overflow or self._redefined_later(walked | {self._catalog}):
+                return None
+            return declared
         if self.roots:
             # A trailer survived and names a catalog whose page tree the scan
             # cannot find (no /Type /Catalog, say): the count is unknown. The
@@ -589,12 +612,58 @@ class _Scan:
         for number in candidates:
             catalog = catalogs.get(number)
             if catalog is not None and catalog[2] in nodes:
+                self._catalog = number
                 return catalog[2]
         return None
 
-    def _declared_under(self, number: int, nodes: dict) -> int | None:
+    def _redefined_later(self, numbers: set) -> bool:
+        """Whether one of `numbers`, the catalog and the page tree nodes the
+        count read, is defined again after the definition it read. That later
+        definition is of no kind the scan reads, or it would be the one read:
+        an update that rewrites the root node or the catalog without its
+        /Type, as MuPDF and qpdf read it. Which page tree is the file's is
+        then not known. The headers are looked for between the streams, and
+        one quoted inside an earlier object, as in a string (_nested), is no
+        definition."""
+        if not self._sections or not max(self._sections)[1]:
+            # The last cross-reference section names none before it (/Prev):
+            # one revision, in which nothing is defined twice (a linearized
+            # file's first section names its last, which names none).
+            return False
+        read = {n: self.objects[n][0] for n in numbers if n in self.objects}
+        for start, members in self._streamed:
+            for _, number, index in members:
+                self.budget.spend()
+                where = read.get(number)
+                if where is not None and (start, index) > where:
+                    return True  # defined again in a later object stream
+        data = self.data
+        names = {b"%d" % n: where for n, where in read.items()}
+        # A definition again comes in an update, after the first revision's end.
+        first = min((where[0] for where in read.values()), default=len(data))
+        first = max(first, data.find(b"%%EOF") + 5)
+        for low, high in zip((0, *self._ends), (*self._starts, len(data))):
+            if high <= first:
+                continue
+            at = data.find(b"obj", max(low, first), high)
+            while at >= 0:
+                self.budget.spend()
+                if at > 0 and data[at - 1:at] in _WHITESPACE:  # "N G obj", not "endobj"
+                    words = data[max(0, at - 40):at].split()
+                    where = names.get(words[-2]) if len(words) > 1 and words[-1].isdigit() else None
+                    if where is not None:
+                        header = _HEADER_TAIL.search(data, max(0, at - 64), at + 3)
+                        if header is not None and header.group(1) == words[-2] and header.start() > where[0] \
+                                and not self._nested(header.start()):
+                            return True
+                at = data.find(b"obj", at + 3, high)
+        return False
+
+    def _declared_under(self, number: int, nodes: dict, walked: set | None = None) -> int | None:
+        """The pages declared under node `number`; `walked` collects the nodes
+        visited."""
         stated, kids = nodes[number]
-        found, missing = self._walk(number, nodes, set(), 0)
+        found, missing = self._walk(number, nodes, set() if walked is None else walked, 0)
         if missing == 0 and found:
             return found  # every page is there: the tree's own count
         if stated is not None:
