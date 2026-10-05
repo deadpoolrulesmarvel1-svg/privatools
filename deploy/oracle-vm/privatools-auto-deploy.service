@@ -33,5 +33,6 @@ Environment=HEALTH_URL=http://127.0.0.1:8000/readyz
 Environment=COMPOSE_PROJECT=privatools
 ExecStart=/usr/local/bin/privatools-auto-deploy
 # Worst case: pull and verify, a 3 min readiness wait, up to 7 min of
-# draining and 6 min of job handover per container, twice.
+# draining and 6 min of job handover per container, twice, then image
+# retention (seconds per image).
 TimeoutStartSec=45min
