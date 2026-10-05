@@ -261,6 +261,21 @@ def test_a_scan_has_nothing_to_find_and_says_which_pages_are_pictures():
     assert mixed["candidates"] and {c["page"] for c in mixed["candidates"]} == {2}
 
 
+def test_a_scan_with_an_ocr_layer_is_still_a_scan_and_a_page_over_a_picture_is_not():
+    scan = fitz.open("pdf", corpus.scanned())
+    scan[0].insert_text((72, 100), "Full name: ____________ Date of birth: ________", fontsize=11, render_mode=3)
+    report = detect(scan.tobytes())
+    assert report["candidates"] == [] and report["scanPages"] == [1]
+    # A page printed over a picture that fills it, with nothing to fill in, is not a scan.
+    picture = fitz.open("pdf", corpus.scanned())[0].get_pixmap(dpi=30).tobytes("png")
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_image(page.rect, stream=picture, overlay=False)
+    page.insert_text((72, 140), "Thank you for your request. Cards are posted within ten days.", fontsize=11)
+    report = detect(doc.tobytes())
+    assert report["candidates"] == [] and report["scanPages"] == []
+
+
 def test_invisible_text_such_as_an_ocr_layer_is_not_read():
     doc = fitz.open()
     page = doc.new_page()
@@ -388,9 +403,10 @@ def test_a_password_protected_pdf_gets_the_shared_answer(client, locked_pdf):
 
 
 def test_a_page_built_to_be_slow_is_stopped_by_the_workers_limits(client):
-    """A 2 KB page that draws one shape 5,000 times in an object drawn 200
-    times: its drawings expand to a million lines in the worker, which stops
-    at its memory or CPU limit, and the visitor is told to place fields by hand."""
+    """A page of a few kilobytes that draws an object of 5,000 lines 2,000
+    times: its drawings expand to ten million lines in the worker, more than
+    any machine finishes under the worker's memory and CPU limits, so it
+    stops at one of them, and the visitor is told to place fields by hand."""
     doc = fitz.open()
     page = doc.new_page()
     lines = "".join(f"1 {i % 100 + 0.5:.1f} m 99 {i % 100 + 0.5:.1f} l S\n" for i in range(5000))
@@ -401,7 +417,7 @@ def test_a_page_built_to_be_slow_is_stopped_by_the_workers_limits(client):
     doc.update_object(outer, f"<</Type/XObject/Subtype/Form/BBox[0 0 612 792]/Resources<</XObject<</A {inner} 0 R>>>>"
                              "/Length 0>>")
     doc.update_stream(outer, "".join(f"q 1 0 0 1 {i % 6 * 100} {i // 6 % 7 * 110} cm /A Do Q\n"
-                                     for i in range(200)).encode())
+                                     for i in range(2000)).encode())
     contents = doc.get_new_xref()
     doc.update_object(contents, "<</Length 0>>")
     doc.update_stream(contents, b"/B Do\n")
@@ -412,6 +428,20 @@ def test_a_page_built_to_be_slow_is_stopped_by_the_workers_limits(client):
     assert resp.status_code in (413, 422), resp.text
     assert "by hand" in resp.json()["detail"]
     assert time.monotonic() - started < 45
+
+
+def test_running_out_of_memory_is_recognised_in_every_shape_it_takes():
+    """Under its memory limit the worker has also seen PyMuPDF's C code fail
+    with a SystemError whose cause is the MemoryError."""
+    try:
+        try:
+            raise MemoryError()
+        except MemoryError as cause:
+            raise SystemError("<built-in function get_cdrawings> returned a result with an exception set") from cause
+    except SystemError as exc:
+        assert worker._is_memory(exc)
+    assert worker._is_memory(RuntimeError("code=2: malloc (64 bytes) failed"))
+    assert not worker._is_memory(ValueError("bad xref"))
 
 
 def _stub_worker(tmp_path, monkeypatch, body: str) -> None:

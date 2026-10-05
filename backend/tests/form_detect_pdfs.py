@@ -790,12 +790,42 @@ def date_hints() -> Sample:
     return Sample("date-hints", data, truth, layouts=("boxed-inputs",))
 
 
+def background_picture() -> Sample:
+    """A form printed over a picture that fills the page (a faint emblem
+    behind the whole form): the picture is behind every box, in none of them."""
+    from PIL import ImageDraw
+
+    emblem = Image.new("RGB", (306, 396), (255, 255, 255))
+    draw = ImageDraw.Draw(emblem)
+    draw.ellipse((53, 98, 253, 298), outline=(232, 236, 242), width=18)
+    buf = io.BytesIO()
+    emblem.save(buf, "PNG")
+    doc = fitz.open()
+    s = Sheet(doc)
+    s.page.insert_image(s.page.rect, stream=buf.getvalue(), overlay=False)
+    y = _heading(s, "Club Membership Card Request")
+    for label in ["Member name", "Membership number"]:
+        s.text(54, y + 14, label, 10.5)
+        s.box((190, y, 520, y + 22))
+        y += 34
+    xs, ys = _grid(s, 54, y + 10, [140, 326], [24, 24])
+    for i, label in enumerate(["Card colour", "Collection point"]):
+        s.text(xs[0] + 5, ys[i] + 16, label, 9.5, "sans-bold")
+        s.field((xs[1] + 1, ys[i] + 1, xs[2] - 1, ys[i + 1] - 1), "text")
+    y = ys[-1] + 30
+    s.square(60, y, 10, label="Replacement for a lost card")
+    y += 40
+    s.labelled_blank(54, y, "Signature:", 330, kind="signature")
+    data, truth = _save(doc, [s])
+    return Sample("background-picture", data, truth, layouts=("boxed-inputs", "grid"))
+
+
 FORMS = [
     contact_details, typed_underscores, word_bars, boxes_label_left, boxes_label_above, rounded_boxes,
     grid_label_value, grid_caption_cells, checkbox_squares, checkbox_glyphs, signature_captions, two_columns,
     turned_90, turned_270, turned_180, answer_lines, character_boxes, dotted_leaders, shaded_inputs,
     cropped_page, application_two_pages, existing_fields, ruled_sections, timesheet, dingbat_boxes,
-    labels_on_lines, date_hints,
+    labels_on_lines, date_hints, background_picture,
 ]
 
 

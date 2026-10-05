@@ -2,7 +2,7 @@
 
 form_detect_service runs ``python -I this_file <input pdf>``. Only JSON is
 written to stdout: the report, with ``"ok": true``, or ``{"ok": false,
-"error": ...}`` naming "corrupt", "unreadable", "no_pages",
+"error": ...}`` naming "password", "corrupt", "unreadable", "no_pages",
 "too_many_pages" (with "pages" and "limit"), "too_large" or "failed".
 
 A PDF drawn as a form but without fillable fields still shows where the
@@ -120,7 +120,7 @@ FIELD_WORDS = re.compile(
     r"\b(signature|sign(?:ed)?|date|dated|name|print|title|position|witness|initials?|address|phone|"
     r"telephone|mobile|email|e-mail|applicant|employee|employer|parent|guardian|student|patient|"
     r"manager|supervisor|officer|authori[sz]ed|representative|company|organi[sz]ation|place|city|"
-    r"relationship|occupation|birth|dob|number|no\.|id|firma|fecha|nombre|unterschrift|datum|"
+    r"relationship|occupation|birth|dob|number|id|firma|fecha|nombre|unterschrift|datum|"
     r"nom|lieu|ort|assinatura|nome|data|handtekening|naam|podpis)\b",
     re.I,
 )
@@ -167,9 +167,6 @@ class Box:
 
     def inset(self, d: float) -> "Box":
         return Box(self.x0 + d, self.y0 + d, self.x1 - d, self.y1 - d)
-
-    def intersects(self, other: "Box") -> bool:
-        return self.x0 < other.x1 and other.x0 < self.x1 and self.y0 < other.y1 and other.y0 < self.y1
 
     def overlap(self, other: "Box") -> float:
         w = min(self.x1, other.x1) - max(self.x0, other.x0)
@@ -953,12 +950,17 @@ class PageReader:
         return [t for t in self.near(box.y0, box.y1) if box.contains_point(t.box.cx, t.box.cy)]
 
     def inked(self, box: Box) -> bool:
-        """Whether a picture or a shape that is not a rule lies in the box:
-        a framed picture or chart is not a blank to write in."""
+        """Whether a picture or a shape that is not a rule lies in the box: a
+        framed picture or chart is not a blank to write in. Ink counts when
+        most of it lies in the box, or when it covers part of the box and is
+        not much larger: a picture behind the whole page (a letterhead, a
+        faint emblem) is not in any one box."""
         area = max(box.area, 0.01)
         for b in self.ink.near(box.y0, box.y1):
             shared = b.overlap(box)
-            if shared > 0 and (shared >= 0.5 * max(b.area, 0.01) or shared >= 0.2 * area):
+            if shared <= 0:
+                continue
+            if shared >= 0.5 * max(b.area, 0.01) or (shared >= 0.2 * area and b.area <= 4 * area):
                 return True
         return False
 
@@ -1492,7 +1494,7 @@ def detect(doc: fitz.Document, *, cap_cpu=None) -> dict:
     for number in range(pages):
         try:
             page = doc[number]
-            found, frame, crowded = _read_page(page, widgets_by_page.get(number, []))
+            found, frame, crowded, words = _read_page(page, widgets_by_page.get(number, []))
         except (RuntimeError, ValueError, fitz.mupdf.FzErrorBase) as exc:
             if isinstance(exc, MemoryError) or _is_memory(exc):
                 raise MemoryError() from exc
@@ -1500,7 +1502,10 @@ def detect(doc: fitz.Document, *, cap_cpu=None) -> dict:
             continue
         if crowded:
             complex_pages.append(number + 1)
-        if not found and _is_picture(page):
+        # A scan: a picture over the page and no visible text but a stamp or a
+        # page number (an OCR layer is invisible); a form printed over a
+        # picture still has its labels.
+        if not found and words <= 4 and _is_picture(page):
             scan_pages.append(number + 1)
         for c in sorted(found, key=lambda c: (round(c.box.y0 / 4), c.box.x0)):
             b = frame.to_page.box(c.box.x0, c.box.y0, c.box.x1, c.box.y1)
@@ -1542,10 +1547,11 @@ def detect(doc: fitz.Document, *, cap_cpu=None) -> dict:
     }
 
 
-def _read_page(page: fitz.Page, widgets: list[Box]) -> tuple[list[Candidate], Frame, bool]:
-    """The candidates on one page, its reading frame, and whether its
-    drawings were too many to read (then only typed blanks and box
-    characters are looked for)."""
+def _read_page(page: fitz.Page, widgets: list[Box]) -> tuple[list[Candidate], Frame, bool, int]:
+    """The candidates on one page, its reading frame, whether its drawings
+    were too many to read (then only typed blanks and box characters are
+    looked for), and how many words of visible text it has (a scan has none
+    but perhaps a stamp or a page number)."""
     raw = page.get_text("rawdict", flags=TEXT_FLAGS)
     frame = _reading_frame(page, raw)
     tokens = _page_tokens(raw, frame)
@@ -1566,7 +1572,8 @@ def _read_page(page: fitz.Page, widgets: list[Box]) -> tuple[list[Candidate], Fr
     reader = PageReader(frame, tokens, horizontal, vertical, shades, cells, ink)
     found = reader.read()
     in_frame = [frame.to_read.box(w.x0, w.y0, w.x1, w.y1) for w in widgets]
-    return _keep(found, in_frame), frame, crowded
+    words = sum(_words(t.text) for t in tokens if t.kind == "phrase")
+    return _keep(found, in_frame), frame, crowded, words
 
 
 # ── Process protocol ─────────────────────────────────────────────────────────
@@ -1620,8 +1627,35 @@ def _emit(payload: dict, status: int = 0) -> None:
 
 
 def _is_memory(exc: BaseException) -> bool:
-    text = str(exc).lower()
-    return isinstance(exc, MemoryError) or "malloc" in text or "out of memory" in text
+    """Whether `exc` is the process running out of memory. Under its address
+    space limit an allocation can fail inside PyMuPDF's C code and come back
+    as a SystemError ("returned a result with an exception set") whose cause
+    is the MemoryError; or as an error that names neither, when the process
+    has used nearly all the memory it may."""
+    seen = 0
+    while exc is not None and seen < 10:
+        text = str(exc).lower()
+        if isinstance(exc, MemoryError) or "malloc" in text or "out of memory" in text:
+            return True
+        exc = exc.__cause__ or exc.__context__
+        seen += 1
+    return _near_memory_limit()
+
+
+def _near_memory_limit() -> bool:
+    """Whether this process's peak address space has reached nine tenths of
+    its limit (Linux, where the limit is set)."""
+    soft, _ = resource.getrlimit(resource.RLIMIT_AS)
+    if soft == resource.RLIM_INFINITY:
+        return False
+    try:
+        with open("/proc/self/status", encoding="ascii", errors="replace") as status:
+            for line in status:
+                if line.startswith("VmPeak:"):
+                    return int(line.split()[1]) * 1024 >= 0.9 * soft
+    except (OSError, ValueError, IndexError):
+        return False
+    return False
 
 
 def main() -> None:
