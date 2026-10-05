@@ -299,6 +299,22 @@ def test_a_page_that_draws_too_much_is_named_and_its_typed_blanks_still_found():
     assert [c["name"] for c in report["candidates"]] == ["name"]
 
 
+def test_a_date_hint_is_read_in_one_pass():
+    for hint in ("DD/MM/YYYY", "dd.mm.yy", "JJ/MM/AAAA", "TT.MM.JJJJ", "MM-DD-YYYY", "/ /", "ddmmyyyy"):
+        assert worker.DATE_HINT.match(hint), hint
+    for text in ("yyy", "Name", "DD/MM/YYYY!"):
+        assert not worker.DATE_HINT.match(text), text
+    # A box holding a long run of y's that is not a hint: when "yy|yyyy" sat
+    # under the repeat, 80 of them cost about 40 s of CPU before failing.
+    doc = fitz.open()
+    page = doc.new_page()
+    page.draw_rect(fitz.Rect(60, 90, 560, 120), color=(0, 0, 0), width=1)
+    page.insert_text((66, 110), "y" * 80 + "!", fontsize=6)
+    start = time.process_time()
+    detect(doc.tobytes())
+    assert time.process_time() - start < 5
+
+
 def test_candidates_stop_at_the_number_form_creator_takes():
     report = detect(corpus.many_pages(40))  # 9 fields a page
     assert report["truncated"] is True

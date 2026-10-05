@@ -131,7 +131,10 @@ PAGE_NUMBER = re.compile(r"^(\d{1,4}|[ivxlcdm]{1,6})$", re.I)
 # What a leader of dots can lead to in a statement: an amount, not a blank.
 AMOUNT = re.compile(r"^[-+(]?[$€£¥]?\s?\d[\d,.\s]*%?\)?$")
 # A date to be written in a box, printed there as a hint: "DD/MM/YYYY", "/ /".
-DATE_HINT = re.compile(r"^(?:dd|mm|yy|yyyy|jj|aaaa|tt|[-/.\s])+$", re.I)
+# Each part starts with its own character, so a text splits into parts one
+# way only ("yyyy" is "yy" twice): with "yy|yyyy" a long run of y's had
+# exponentially many splits to try before failing.
+DATE_HINT = re.compile(r"^(?:dd|mm|yy|jj|aaaa|tt|[-/.\s])+$", re.I)
 # The cross printed at the start of a signature line.
 SIGN_MARK = frozenset({"x", "X", "\u2717", "\u2718"})
 
