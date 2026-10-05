@@ -315,6 +315,15 @@ def test_a_date_hint_is_read_in_one_pass():
     assert time.process_time() - start < 5
 
 
+def test_a_name_is_made_from_the_start_of_a_long_label_only():
+    # Brackets that never close cost time quadratic in the text they are in:
+    # 120,000 of them took about 15 s when the whole label was read.
+    start = time.process_time()
+    assert worker.field_name("(" * 120_000 + "Name", "text") == "text"
+    assert worker.field_name("Name (as on your passport)" + " " * 1000 + "x" * 100_000, "text") == "name"
+    assert time.process_time() - start < 2
+
+
 def test_candidates_stop_at_the_number_form_creator_takes():
     report = detect(corpus.many_pages(40))  # 9 fields a page
     assert report["truncated"] is True

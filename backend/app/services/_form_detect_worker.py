@@ -86,6 +86,10 @@ MIN_CONFIDENCE = 0.5
 MAX_REPORT_BYTES = 2 * 1024 * 1024
 MAX_NAME = 40
 MAX_LABEL = 80
+# A name is made from the start of its label. A label is a line of text, and
+# a crafted line can hold a hundred thousand characters, where removing
+# brackets that never close would take time quadratic in its length.
+NAME_SOURCE_CHARACTERS = 400
 
 TEXT_FLAGS = (fitz.TEXT_PRESERVE_WHITESPACE | fitz.TEXT_PRESERVE_LIGATURES | fitz.TEXT_MEDIABOX_CLIP
               | fitz.TEXT_ACCURATE_BBOXES)
@@ -1405,7 +1409,7 @@ def field_name(label: str, fallback: str, *, limit: int = MAX_NAME) -> str:
     anything else becomes an underscore, so a name never holds the dot that
     would make it part of another field's name. At most `limit` characters,
     cut at a word where one ends in its second half."""
-    text = _NUMBERING.sub("", label or "")
+    text = _NUMBERING.sub("", (label or "")[:NAME_SOURCE_CHARACTERS])
     stripped = _PARENTHESES.sub(" ", text)
     if re.search(r"\w", stripped):
         text = stripped
