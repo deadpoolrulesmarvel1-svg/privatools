@@ -760,8 +760,8 @@ async def form_creator(
                     # corner of its visible area, before /Rotate. Unturned, the
                     # page's rect is that area; turned, it is the page as shown,
                     # which refused good fields and passed ones off the page.
-                    with drawing_unturned(page):
-                        _add_field(doc, page, field, name, field_type, rect)
+                    with drawing_unturned(page) as rotation:
+                        _add_field(doc, page, field, name, field_type, rect, rotation)
 
                 try:
                     doc.need_appearances(True)
@@ -833,8 +833,10 @@ async def form_creator_detect(request: Request, file: UploadFile = File(...)):
     return JSONResponse(report, headers=no_store_headers())
 
 
-def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect) -> None:
-    """Add one field to `page`, which the caller has unturned (drawing_unturned)."""
+def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect,
+               rotation: int = 0) -> None:
+    """Add one field to `page`, which the caller has unturned (drawing_unturned)
+    from `rotation`, the /Rotate the page is shown with."""
     if not page.rect.contains(rect):
         raise HTTPException(status_code=400, detail=f"Field '{name}' rectangle is out of page bounds")
 
@@ -873,7 +875,14 @@ def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, fiel
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported field type: {field_type}")
 
-    page.add_widget(widget)
+    added = page.add_widget(widget)
+    if rotation:
+        # Made on the page as stored, the field would show its text along the
+        # page as stored: sideways on a page turned a quarter. /MK/R turns it
+        # with the page, for viewers that draw it themselves (pdf.js, Chrome),
+        # and MuPDF draws its appearance again, turned, for the others.
+        doc.xref_set_key(added.xref, "MK/R", str(rotation))
+        added.update()
 
 
 # A page is held as RGB, as RGBA and as channels while its transparency is
