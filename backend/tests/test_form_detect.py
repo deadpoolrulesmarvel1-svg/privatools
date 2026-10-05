@@ -243,6 +243,42 @@ def test_two_touching_boxes_without_a_separator_are_still_two_checkboxes():
     assert [c["type"] for c in detect(doc.tobytes())["candidates"]] == ["checkbox", "checkbox"]
 
 
+def _option_row(page, y: float, parts: list[str]) -> None:
+    """One row of text and boxes from the left: "[]" is a box, anything else
+    a phrase, each part 8 points after the last."""
+    x = 60.0
+    shape = page.new_shape()
+    for part in parts:
+        if part == "[]":
+            shape.draw_rect(fitz.Rect(x, y - 9, x + 10, y + 1))
+            x += 18
+        else:
+            page.insert_text((x, y), part, fontname="helv", fontsize=10)
+            x += fitz.get_text_length(part, fontname="helv", fontsize=10) + 8
+    shape.finish(color=(0, 0, 0), width=0.7)
+    shape.commit()
+
+
+@pytest.mark.parametrize("parts, names", [
+    (["Yes", "[]", "No", "[]"], ["yes", "no"]),
+    (["Do you smoke?", "Yes", "[]", "No", "[]"], ["do_you_smoke_yes", "do_you_smoke_no"]),
+    (["Yes", "[]", "No", "[]", "Maybe", "[]"], ["yes", "no", "maybe"]),
+    (["[]", "Yes", "[]", "No"], ["yes", "no"]),
+    (["Do you smoke?", "[]", "Yes", "[]", "No"], ["do_you_smoke_yes", "do_you_smoke_no"]),
+    (["I agree to the terms", "[]"], ["i_agree_to_the_terms"]),
+])
+def test_an_option_is_the_text_on_the_side_its_row_writes_it(parts, names):
+    """"Yes ☐ No ☐" writes each option before its box: the text right of the
+    first box is the second box's, so the first was named "no". A row that
+    ends with a box writes its options before their boxes."""
+    doc = fitz.open()
+    page = doc.new_page()
+    _option_row(page, 100, parts)
+    found = detect(doc.tobytes())["candidates"]
+    assert [c["type"] for c in found] == ["checkbox"] * len(names)
+    assert [c["name"] for c in found] == names
+
+
 def test_precision_and_recall_on_random_forms():
     forms = [varied.varied_form(seed) for seed in varied.VARIED_SEEDS]
     documents = [varied.varied_document(seed) for seed in varied.VARIED_DOCUMENT_SEEDS]
@@ -649,6 +685,25 @@ def test_zapfdingbats_boxes_written_the_standard_way_are_checkboxes():
     assert boxes == ["K", "J", "Ì"]
     names = [(c["type"], c["name"]) for c in detect(data)["candidates"]]
     assert names == [("checkbox", "yes"), ("checkbox", "no"), ("checkbox", "maybe")]
+
+
+def test_a_box_ticked_in_zapfdingbats_is_filled_in_not_a_blank():
+    """MuPDF gives ZapfDingbats' ✔ (glyph a20) back as the control character
+    "\\x14", which no word character matches, so a ticked box looked empty
+    and was proposed on a filled-in form. A mark of any kind fills a box."""
+    doc = fitz.open()
+    page = doc.new_page()
+    for y, label in ((100, "Tick if you agree:"), (130, "Tick to subscribe:")):
+        page.insert_text((60, y), label, fontname="helv", fontsize=10)
+        page.draw_rect(fitz.Rect(160, y - 9, 172, y + 3), color=(0, 0, 0), width=0.7)
+    page.insert_text((161.5, 100), "4", fontname="zadb", fontsize=10)
+    zadb = next(f[0] for f in page.get_fonts() if f[3] == "ZapfDingbats")
+    doc.xref_set_key(zadb, "Encoding", "null")  # the font's own encoding, as the standard says
+    data = doc.tobytes()
+    ticks = [c["c"] for b in fitz.open("pdf", data)[0].get_text("rawdict")["blocks"] for l in b.get("lines", [])
+             for s in l["spans"] if "Dingbats" in s["font"] for c in s["chars"]]
+    assert ticks == ["\x14"]
+    assert [(c["type"], c["name"]) for c in detect(data)["candidates"]] == [("checkbox", "tick_to_subscribe")]
 
 
 def test_graph_paper_and_a_calendar_are_not_forms():

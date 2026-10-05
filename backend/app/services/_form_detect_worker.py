@@ -829,6 +829,17 @@ def _words(text: str) -> int:
     return len(re.findall(r"\w+", text))
 
 
+def _marked(text: str) -> bool:
+    """Whether text holds a mark made in a box: a tick, a cross or a dot as a
+    symbol ("✓", "×", "●", "•"), or a symbol font's glyph that MuPDF gives
+    back as a control character (ZapfDingbats' ✔ comes back as "\\x14")."""
+    for c in text:
+        kind = unicodedata.category(c)
+        if c == "•" or kind in ("So", "Sm") or (kind == "Cc" and not c.isspace()):
+            return True
+    return False
+
+
 def _run_box(run: list) -> Box:
     """The box around a run of touching cells."""
     return Box(run[0].box.x0, min(c.box.y0 for c in run), run[-1].box.x1, max(c.box.y1 for c in run))
@@ -1244,7 +1255,7 @@ class PageReader:
         b = cell.box
         if b.width < 5 or b.height < 5 or self.inked(b.inset(cell.stroke + 1)):
             return None
-        if not [t for t in cell.tokens if re.search(r"\w", t.text) or t.kind == "box"]:
+        if not [t for t in cell.tokens if re.search(r"\w", t.text) or t.kind == "box" or _marked(t.text)]:
             return "empty"
         if all(t.kind == "phrase" and DATE_HINT.match(t.text) for t in cell.tokens):
             cell.date_hint = True
@@ -1441,16 +1452,60 @@ class PageReader:
         if option is not None and any(square.x1 - 0.5 <= t.cx <= option.box.x0 and top <= t.cy <= bottom
                                       for t in self.tick_rows.near(top, bottom) if t is not square):
             option = None  # the text right of the next box is that box's
+        if option is not None and self._options_before_boxes(square, top, bottom):
+            option = None  # "Yes ☐ No ☐": the text right of this box is the next box's
         question = None
         if option is not None:
             question = self._question(square, top, bottom)
         else:
             option = self.label_left_of(square.x0, top, bottom, gap=30)
+            if option is not None:
+                question = self._question_before(option, top, bottom)
         label = option.text if option is not None else ""
         prefix = question if question and label and _words(label) <= 3 else ""
         confidence = 0.9 if option is not None else 0.6
         self.found.append(Candidate(square, "checkbox", label or (question or ""), confidence,
                                     name_prefix=prefix))
+
+    def _options_before_boxes(self, square: Box, top: float, bottom: float) -> bool:
+        """Whether the row writes each option before its box ("Yes ☐ No ☐"):
+        right of this box, text and boxes alternate and the row ends with a
+        box. A row that ends with text writes them after ("☐ Yes ☐ No")."""
+        ticks = self.tick_rows.near(top, bottom)
+        x = square.x1
+        for _ in range(100):
+            phrase = self.label_right_of(x, top, bottom)
+            if phrase is None:
+                return x != square.x1
+            after = min((t for t in ticks if t.x0 >= phrase.box.x1 - 0.5 and t.x0 - phrase.box.x1 <= 30
+                         and top <= t.cy <= bottom), key=lambda t: t.x0, default=None)
+            if after is None:
+                return False
+            x = after.x1
+        return False
+
+    def _question_before(self, option: Token, top: float, bottom: float) -> str | None:
+        """The question of a row that writes each option before its box ("Do
+        you smoke? Yes ☐ No ☐"): the phrase before the first option, when it
+        ends with "?" or ":"."""
+        ticks = self.tick_rows.near(top, bottom)
+        phrases = self.near(top, bottom, "phrase")
+        x = option.box.x0
+        for _ in range(100):
+            tick = max((t for t in ticks if t.x1 <= x + 0.5 and x - t.x1 <= 40 and top <= t.cy <= bottom),
+                       key=lambda t: t.x1, default=None)
+            phrase = max((t for t in phrases
+                          if t.box.x1 <= x + 1 and x - t.box.x1 <= 0.5 * self.frame.width and top <= t.box.cy <= bottom),
+                         key=lambda t: t.box.x1, default=None)
+            if tick is not None and (phrase is None or tick.x1 >= phrase.box.x1):
+                own = max((t for t in phrases if t.box.x1 <= tick.x0 + 1 and tick.x0 - t.box.x1 <= 30
+                           and top <= t.box.cy <= bottom), key=lambda t: t.box.x1, default=None)
+                x = own.box.x0 if own is not None else tick.x0  # an earlier box and its option
+                continue
+            if phrase is None:
+                return None
+            return phrase.text if _ends_like_label(phrase.text) else None
+        return None
 
     def _question(self, square: Box, top: float, bottom: float) -> str | None:
         """The question a row of checkboxes answers: the phrase before the

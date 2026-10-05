@@ -40,7 +40,7 @@
     },
     {
       "q": "What field types can I add?",
-      "a": "Single-line and multi-line text fields, checkboxes, radio buttons, dropdowns, list boxes, and empty signature fields. There are no date pickers: a date is a text field."
+      "a": "Single-line and multi-line text fields, checkboxes, radio buttons, dropdowns, list boxes, and empty signature fields. There are no date pickers: a date is a text field. There are no comb fields either: a row of boxes for one character each becomes one text field, so what is typed in it is not spaced one character to a box."
     },
     {
       "q": "Will the form work in Adobe Reader?",

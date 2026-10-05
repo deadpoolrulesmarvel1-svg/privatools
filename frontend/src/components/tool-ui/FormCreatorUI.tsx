@@ -293,7 +293,7 @@ export function FormCreatorUI() {
                     <div className="fc-detect-intro">
                         <div>
                             <h2 id="fc-detect-title" tabIndex={-1}>Find fields automatically</h2>
-                            <p>Detect fields looks for what this PDF draws as blanks: lines after labels, empty boxes and table cells, and checkboxes. It follows fixed rules, it is not AI, so it can miss fields or propose wrong ones; you check each one before anything is added. A scanned form has no drawn lines to find.</p>
+                            <p>Detect fields uploads this PDF to PrivaTools, which looks for what it draws as blanks (lines after labels, empty boxes and table cells, and checkboxes) and removes the file after answering. It follows fixed rules, it is not AI, so it can miss fields or propose wrong ones; you check each one before anything is added. A scanned form has no drawn lines to find.</p>
                         </div>
                         <button type="button" className="ts-secondary-button" onClick={runDetection} disabled={detecting || status === "processing"}>
                             {detecting ? <><Loader2 size={15} className="animate-spin" aria-hidden="true" /> Detecting fields…</> : <><ScanSearch size={15} aria-hidden="true" /> {done ? "Detect again" : "Detect fields"}</>}
