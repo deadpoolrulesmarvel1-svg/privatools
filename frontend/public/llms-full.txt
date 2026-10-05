@@ -753,9 +753,9 @@ Add clickable links to PDF pages online — PrivaTools finds every web address i
 
 URL: https://privatools.me/tool/form-creator
 
-Add text fields, checkboxes, radios, and dropdowns to PDFs
+Make a PDF fillable by detecting its fields or drawing them
 
-Create fillable PDF forms online for free — add text fields, checkboxes, radio buttons, dropdowns, list boxes, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
+Convert a PDF to a fillable form online for free. Detect fields finds the blanks a form draws (lines after labels, empty boxes, table cells and checkboxes) and proposes text, date, checkbox and signature fields named after their labels, for you to accept, edit or reject. You can also draw text fields, checkboxes, radio buttons, dropdowns, list boxes and signature fields yourself. Detection follows fixed rules, not AI, and needs a PDF made on a computer: a scanned form has no drawn lines to find.
 
 ### Transparent Background
 

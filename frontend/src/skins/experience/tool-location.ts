@@ -68,6 +68,12 @@ const OWN_LOCATION: Record<string, ToolLocation> = {
         label: "Temporary server processing",
         detail: "Your PDF is uploaded when you select “Detect form fields”, so PrivaTools can read its fields, and again when you fill it. Both requests use temporary storage, and the job’s files are removed after each response.",
     },
+    // The same for "Detect fields", which looks for the blanks a PDF draws; the page preview stays on the device.
+    "form-creator": {
+        kind: "server",
+        label: "Temporary server processing",
+        detail: "Your PDF is uploaded when you select “Detect fields”, so PrivaTools can look for likely fields, and again when you create the form. Both requests use temporary storage, and the job’s files are removed after each response.",
+    },
     // Tools whose input is not a file: the sentence names what is sent, and
     // what the server fetches with it. URL to PDF renders the page with the
     // files it loads: stylesheets (and their @import), web fonts, images and

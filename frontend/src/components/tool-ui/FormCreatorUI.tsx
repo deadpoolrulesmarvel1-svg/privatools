@@ -1,14 +1,26 @@
 /**
  * FormCreatorUI — build interactive form fields and inject them into a PDF.
  * Workshop: field cards with type-aware controls, position grid, comma-sep options.
+ *
+ * Fields are placed by hand (drawn on the page or typed in), or proposed by
+ * "Detect fields" for a PDF drawn as a form: the server reads the lines,
+ * boxes, table cells and checkboxes the PDF draws beside its labels
+ * (form-detect.ts). Proposals are dashed on the page and listed for review;
+ * nothing becomes a field until the visitor accepts it, and only accepted
+ * fields are sent when the form is created.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, AlertCircle, Plus, Trash2, CheckCircle2, RotateCcw, FormInput } from "lucide-react";
+import { Loader2, AlertCircle, Plus, Trash2, CheckCircle2, RotateCcw, FormInput, ScanSearch, Check, X } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { processAndDownload, buildOutputFilename, uploadFileGetJson } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import {
+    LIKELY, PROPOSAL_TYPES, detectFailure, detectNotes, detectSummary, fieldFromProposal, newCandidates,
+    proposalKey, uniqueName, type DetectReport, type Proposal, type ProposalType,
+} from "./form-detect";
+import "./form-creator.css";
 
 type FieldType = "text" | "checkbox" | "radio" | "combobox" | "listbox" | "signature";
 
@@ -35,6 +47,9 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
     { value: "signature", label: "Signature" },
 ];
 
+// Proposed fields are drawn dashed in this colour (5:1 on the white page), apart from placed ones.
+const PROPOSED_COLOUR = "#b45309";
+
 function newField(index: number): DraftField {
     return {
         id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -53,6 +68,19 @@ function newField(index: number): DraftField {
     };
 }
 
+/** The field the editor starts with, as it was made: accepting proposals replaces it. */
+function isUntouchedStarter(field: DraftField): boolean {
+    const { id: _id, ...rest } = field;
+    const { id: _starter, ...starter } = newField(1);
+    return JSON.stringify(rest) === JSON.stringify(starter);
+}
+
+type Detection =
+    | { phase: "idle" }
+    | { phase: "running" }
+    | { phase: "done"; report: DetectReport; proposed: number; accepted: number }
+    | { phase: "failed"; message: string };
+
 export function FormCreatorUI() {
     const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
@@ -60,8 +88,13 @@ export function FormCreatorUI() {
     const [error, setError] = useState<string | null>(null);
     const [fields, setFields] = useState<DraftField[]>([newField(1)]);
     const [selected, setSelected] = useState<string>(fields[0].id);
+    const [detection, setDetection] = useState<Detection>({ phase: "idle" });
+    const [proposals, setProposals] = useState<Proposal[]>([]);
+    const detectRun = useRef(0);
+    const proposalRows = useRef<Map<string, HTMLLIElement>>(new Map());
 
     const canSubmit = useMemo(() => !!file && fields.length > 0 && status !== "processing", [file, fields.length, status]);
+    const detecting = detection.phase === "running";
 
     const focusOnNextAddRef = useRef<string | null>(null);
     const nameRefs = useRef<Map<string, HTMLInputElement>>(new Map());
@@ -80,6 +113,53 @@ export function FormCreatorUI() {
         const el = nameRefs.current.get(focusOnNextAddRef.current);
         if (el) { el.focus(); el.select(); focusOnNextAddRef.current = null; }
     }, [fields.length]);
+
+    const chooseFile = (f: File) => {
+        setFile(f); setStatus("idle"); setError(null);
+        // Proposals belong to the file they were found in.
+        detectRun.current += 1;
+        setDetection({ phase: "idle" }); setProposals([]);
+    };
+
+    const runDetection = async () => {
+        if (!file || detecting) return;
+        const run = ++detectRun.current;
+        setDetection({ phase: "running" });
+        try {
+            const report = await uploadFileGetJson<DetectReport>("/form-creator/detect", file);
+            if (run !== detectRun.current) return;
+            // Fields the visitor placed are not proposed again; the untouched starter is no one's choice.
+            const placed = fields.filter(f => !isUntouchedStarter(f))
+                .map(f => ({ page: Number(f.page), x: Number(f.x), y: Number(f.y), width: Number(f.width), height: Number(f.height) }));
+            const found = newCandidates(report, placed).map(c => ({ ...c, key: proposalKey(c, run) }));
+            setProposals(found);
+            setDetection({ phase: "done", report, proposed: found.length, accepted: 0 });
+            if (found.length) { setSelected(found[0].key); setPreviewPage(found[0].page); }
+        } catch (e: unknown) {
+            if (run !== detectRun.current) return;
+            setDetection({ phase: "failed", message: detectFailure(e) });
+        }
+    };
+
+    const updateProposal = (key: string, patch: Partial<Proposal>) => setProposals(prev => prev.map(p => p.key === key ? { ...p, ...patch } : p));
+    const accept = (keys: string[]) => {
+        const chosen = proposals.filter(p => keys.includes(p.key));
+        if (!chosen.length) return;
+        // The untouched starter field is only a starting point: accepted proposals replace it.
+        const base = fields.length === 1 && isUntouchedStarter(fields[0]) ? [] : fields;
+        const taken = new Set(base.map(f => f.name.trim()));
+        const made = chosen.map(p => ({ ...newField(base.length + 1), ...fieldFromProposal(p, uniqueName(p.name, taken)) }));
+        setFields([...base, ...made]);
+        setProposals(prev => prev.filter(p => !keys.includes(p.key)));
+        setDetection(prev => prev.phase === "done" ? { ...prev, accepted: prev.accepted + made.length } : prev);
+        setSelected(made[made.length - 1].id);
+    };
+    const reject = (keys: string[]) => setProposals(prev => prev.filter(p => !keys.includes(p.key)));
+    const selectRegion = (id: string) => {
+        setSelected(id);
+        const row = proposalRows.current.get(id);
+        row?.scrollIntoView?.({ block: "nearest" });
+    };
 
     const parseNumber = (v: string, label: string) => {
         const n = Number(v);
@@ -157,7 +237,7 @@ export function FormCreatorUI() {
                             <span className="italic text-accent">{fields.length}</span> field{fields.length !== 1 && "s"} injected
                         </h2>
                         <button
-                            onClick={() => { setFile(null); setStatus("idle"); setFields([newField(1)]); }}
+                            onClick={() => { setFile(null); setStatus("idle"); setFields([newField(1)]); setDetection({ phase: "idle" }); setProposals([]); }}
                             className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                         >
                             <RotateCcw size={12} /> Create another
@@ -168,16 +248,45 @@ export function FormCreatorUI() {
         </div>
     );
 
+    const done = detection.phase === "done" ? detection : null;
+    const notes = done ? detectNotes(done.report) : [];
+    const typeLabel = (type: ProposalType) => PROPOSAL_TYPES.find(t => t.value === type)?.label.toLowerCase() || type;
+
     return (
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={f => { setFile(f); setStatus("idle"); setError(null); }}
-                onClear={() => setFile(null)}
+                onFileSelect={chooseFile}
+                onClear={() => { setFile(null); detectRun.current += 1; setDetection({ phase: "idle" }); setProposals([]); }}
                 accept=".pdf"
                 label="Drop PDF to make fillable"
                 hint="Add text, checkbox, radio, dropdown, list, signature fields"
             />
+
+            {file && (
+                <section className="fc-detect" aria-labelledby="fc-detect-title">
+                    <div className="fc-detect-intro">
+                        <div>
+                            <h2 id="fc-detect-title">Find fields automatically</h2>
+                            <p>Detect fields looks for what this PDF draws as blanks: lines after labels, empty boxes and table cells, and checkboxes. It follows fixed rules, it is not AI, so it can miss fields or propose wrong ones; you check each one before anything is added. A scanned form has no drawn lines to find.</p>
+                        </div>
+                        <button type="button" className="ts-secondary-button" onClick={runDetection} disabled={detecting || status === "processing"}>
+                            {detecting ? <><Loader2 size={15} className="animate-spin" aria-hidden="true" /> Detecting fields…</> : <><ScanSearch size={15} aria-hidden="true" /> {done ? "Detect again" : "Detect fields"}</>}
+                        </button>
+                    </div>
+                    <div role="status" aria-live="polite" className="fc-detect-status">
+                        {detecting && <p>Uploading your PDF and reading its pages…</p>}
+                        {done && <>
+                            <p>{done.proposed > 0 && !proposals.length
+                                ? `You reviewed all ${done.proposed} proposed field${done.proposed === 1 ? "" : "s"}: ${done.accepted || "none"} accepted. Edit the fields below, then generate the fillable PDF.`
+                                : detectSummary(done.report, done.proposed)}</p>
+                            {done.report.existingFields > 0 && <p>This PDF already has {done.report.existingFields} fillable field{done.report.existingFields === 1 ? "" : "s"}; nothing is proposed over {done.report.existingFields === 1 ? "it" : "them"}. To fill {done.report.existingFields === 1 ? "it" : "them"} in, use <a href="/tool/fill-form">Fill Form</a>.</p>}
+                        </>}
+                    </div>
+                    {notes.length > 0 && <ul className="fc-detect-notes">{notes.map(note => <li key={note}>{note}</li>)}</ul>}
+                    {detection.phase === "failed" && <div className="ts-intake-notice fc-detect-failed" role="alert"><AlertCircle size={18} aria-hidden="true" /><p>{detection.message}</p></div>}
+                </section>
+            )}
 
             {file && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -188,6 +297,41 @@ export function FormCreatorUI() {
                         </button>
                     </div>
                     <div className="pdf-coordinate-workspace"><fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
+                        {proposals.length > 0 && (
+                            <section className="fc-proposals" aria-labelledby="fc-proposals-title">
+                                <div className="fc-proposals-head">
+                                    <h3 id="fc-proposals-title">Proposed fields ({proposals.length})</h3>
+                                    <div className="fc-proposals-all">
+                                        <button type="button" onClick={() => accept(proposals.map(p => p.key))}><Check size={14} aria-hidden="true" /> Accept all</button>
+                                        <button type="button" onClick={() => reject(proposals.map(p => p.key))}><X size={14} aria-hidden="true" /> Reject all</button>
+                                    </div>
+                                </div>
+                                <p className="fc-proposals-legend"><span aria-hidden="true" /> Dashed on the page until accepted.</p>
+                                <ul>
+                                    {proposals.map((p, index) => (
+                                        <li key={p.key} ref={el => { if (el) proposalRows.current.set(p.key, el); else proposalRows.current.delete(p.key); }}
+                                            data-selected={selected === p.key} onClick={() => { setSelected(p.key); setPreviewPage(p.page); }}>
+                                            <div className="fc-proposal-edit">
+                                                <label>Name<input value={p.name} aria-label={`Name of proposed field ${index + 1}`} onClick={e => e.stopPropagation()}
+                                                    onChange={e => updateProposal(p.key, { name: e.target.value })} /></label>
+                                                <label>Type<select value={p.type} aria-label={`Type of proposed field ${index + 1}`} onClick={e => e.stopPropagation()}
+                                                    onChange={e => updateProposal(p.key, { type: e.target.value as ProposalType })}>
+                                                    {PROPOSAL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                                </select></label>
+                                            </div>
+                                            <p className="fc-proposal-meta">
+                                                <span data-likely={p.confidence >= LIKELY}>{p.confidence >= LIKELY ? "Likely" : "Possible"}</span>
+                                                {` ${typeLabel(p.type)} field · page ${p.page}`}{p.label ? ` · from “${p.label}”` : ""}
+                                            </p>
+                                            <div className="fc-proposal-actions">
+                                                <button type="button" onClick={e => { e.stopPropagation(); accept([p.key]); }} aria-label={`Accept ${p.name || `proposed field ${index + 1}`}`}><Check size={14} aria-hidden="true" /> Accept</button>
+                                                <button type="button" onClick={e => { e.stopPropagation(); reject([p.key]); }} aria-label={`Reject ${p.name || `proposed field ${index + 1}`}`}><X size={14} aria-hidden="true" /> Reject</button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
                         {fields.map((f, idx) => {
                             const isSel = selected === f.id;
                             const hasOptions = f.type === "radio" || f.type === "combobox" || f.type === "listbox";
@@ -305,7 +449,12 @@ export function FormCreatorUI() {
                                 </div>
                             );
                         })}
-                    </fieldset><PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} drawLabel="Draw a field" regions={fields.map(field => ({ id: field.id, page: Number(field.page), x: Number(field.x), y: Number(field.y), width: Number(field.width), height: Number(field.height), label: field.name }))} onDraw={region => { const field = { ...newField(fields.length + 1), page: String(region.page), x: String(Math.round(region.x)), y: String(Math.round(region.y)), width: String(Math.round(region.width)), height: String(Math.round(region.height)) }; setFields(items => [...items, field]); setSelected(field.id); }} /></div>
+                    </fieldset><PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} selectedId={selected} onSelect={selectRegion} disabled={status === "processing"} drawLabel="Draw a field"
+                        regions={[
+                            ...fields.map(field => ({ id: field.id, page: Number(field.page), x: Number(field.x), y: Number(field.y), width: Number(field.width), height: Number(field.height), label: field.name })),
+                            ...proposals.map(p => ({ id: p.key, page: p.page, x: p.x, y: p.y, width: p.width, height: p.height, kind: "proposed", color: PROPOSED_COLOUR, label: `Proposed ${typeLabel(p.type)} field ${p.name}` })),
+                        ]}
+                        onDraw={region => { const field = { ...newField(fields.length + 1), page: String(region.page), x: String(Math.round(region.x)), y: String(Math.round(region.y)), width: String(Math.round(region.width)), height: String(Math.round(region.height)) }; setFields(items => [...items, field]); setSelected(field.id); }} /></div>
                 </div>
             )}
 
@@ -313,6 +462,10 @@ export function FormCreatorUI() {
                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
+            )}
+
+            {file && proposals.length > 0 && (
+                <p className="fc-pending">{proposals.length === 1 ? "1 proposed field is" : `${proposals.length} proposed fields are`} still to review: only accepted fields go into the form.</p>
             )}
 
             {file && (
