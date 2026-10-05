@@ -394,7 +394,9 @@ def refuse_if_pages_lost(source, survived) -> None:
 
 
 def _scannable(source):
-    """`source` as declared_page_count reads it: a path or the bytes."""
+    """`source` as declared_page_count reads it: a path or the bytes. Of an
+    io.BytesIO made from the bytes and never written to, as the routes make
+    them, getvalue() gives back those very bytes, not a copy."""
     if isinstance(source, (str, os.PathLike, bytes, bytearray, memoryview)):
         return source
     getvalue = getattr(source, "getvalue", None)  # io.BytesIO
@@ -402,10 +404,12 @@ def _scannable(source):
 
 
 def refuse_if_qpdf_lost_pages(pdf, source) -> None:
-    """refuse_if_pages_lost for a file pikepdf opened from `source`. qpdf
-    warns when it has to rebuild a file's cross-reference table ("file is
-    damaged"); only then can it have lost a page, and only then are the file's
-    bytes read."""
+    """refuse_if_pages_lost for a file pikepdf opened from `source`, when qpdf
+    gave any warning while opening it. It warns when it has to rebuild a
+    file's cross-reference table ("file is damaged"), as for a PDF cut short,
+    which is when it leaves out pages whose object was lost; any other warning
+    has the file's bytes read too, which refuses nothing that kept its pages.
+    A file qpdf opened without a warning is not read again."""
     if pdf.get_warnings():
         refuse_if_pages_lost(source, lambda declared: len(pdf.pages))
 

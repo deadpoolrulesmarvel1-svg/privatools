@@ -77,9 +77,12 @@ function pagesSaved(header: string | null): PagesSaved | undefined {
     return Number.isSafeInteger(total) && saved < total ? { saved, total } : undefined;
 }
 
+/** "1,200", as the server writes a page count in its refusals. */
+const pageCount = (value: number) => value.toLocaleString("en-US");
+
 function PagesSavedNote({ saved, total }: PagesSaved) {
     const lost = total - saved;
-    return <p>{saved} of its {total} pages {saved === 1 ? "was" : "were"} saved. The other {lost === 1 ? "page" : lost} could not be read.</p>;
+    return <p>{pageCount(saved)} of its {pageCount(total)} pages {saved === 1 ? "was" : "were"} saved. The other {lost === 1 ? "page" : pageCount(lost)} could not be read.</p>;
 }
 
 export function SimpleConvertUI({ slug, label, outputExt, outputFilename, acceptFileTypes, description }: SimpleConvertUIProps) {

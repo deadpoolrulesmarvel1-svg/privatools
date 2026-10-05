@@ -39,7 +39,7 @@ from PIL import Image
 from starlette.datastructures import UploadFile
 
 from backend.app import main
-from backend.app.utils.cleanup import _DAMAGED_PDF, pages_lost_message
+from backend.app.utils.cleanup import _DAMAGED_PDF, end_is_missing, pages_lost_message
 from backend.app.utils.declared_pages import readable_page_count
 
 
@@ -475,9 +475,10 @@ def _no_startxref(data: bytes) -> bytes:
 
 
 @pytest.mark.parametrize("sample", ["intact", "repaired", "cut-90", "drawing-repaired", "blank-intact",
-                                    "blank-repaired", "blank-no-startxref"])
+                                    "blank-no-eof", "blank-repaired", "blank-no-startxref"])
 @pytest.mark.parametrize("route", WORD_AND_EXCEL)
 def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
+    blank = _blank()
     data = {
         "intact": SCAN,
         "repaired": SCAN + AFTER_END,
@@ -485,14 +486,20 @@ def test_word_and_excel_still_send_a_scan_to_ocr(quiet_client, route, sample):
         "cut-90": SCAN[: len(SCAN) * 90 // 100],
         # Opened repaired, but its page draws: never called damaged.
         "drawing-repaired": _drawing() + AFTER_END,
-        # A file MuPDF did not repair is never called damaged, blank or not.
-        "blank-intact": _blank(),
+        # A file MuPDF did not repair is never called damaged, blank or not:
+        # also one whose end looks missing, as its "%%EOF" is (the #349
+        # review's mutant that dropped the repair check).
+        "blank-intact": blank,
+        "blank-no-eof": blank[: blank.rindex(b"%%EOF")],
         # Valid blank files MuPDF repairs, which draw nothing either: they
         # end as a PDF ends, so they are not cut short (the #345 review's 12).
-        "blank-repaired": _blank() + AFTER_END,
-        "blank-no-startxref": _no_startxref(_blank()),
+        "blank-repaired": blank + AFTER_END,
+        "blank-no-startxref": _no_startxref(blank),
     }[sample]
-    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in ("intact", "blank-intact"))
+    unrepaired = ("intact", "blank-intact", "blank-no-eof")
+    assert fitz.open(stream=data, filetype="pdf").is_repaired == (sample not in unrepaired)
+    if sample == "blank-no-eof":
+        assert end_is_missing(data)
     response = _post(quiet_client, route, data)
     assert response.status_code == 400, response.text
     assert "OCR" in response.json()["detail"], response.text

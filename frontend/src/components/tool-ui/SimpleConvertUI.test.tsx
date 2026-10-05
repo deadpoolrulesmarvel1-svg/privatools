@@ -71,6 +71,9 @@ describe("Repair PDF's pages saved", () => {
         ["4/6", "4 of its 6 pages were saved. The other 2 could not be read."],
         ["5/6", "5 of its 6 pages were saved. The other page could not be read."],
         ["1/3", "1 of its 3 pages was saved. The other 2 could not be read."],
+        // Thousands as the refusals write them ("only 1 of its 1,200 pages").
+        ["1199/1200", "1,199 of its 1,200 pages were saved. The other page could not be read."],
+        ["1/1200", "1 of its 1,200 pages was saved. The other 1,199 could not be read."],
     ])("says on the file's row how many pages were saved when the answer is %s", async (pages, note) => {
         vi.mocked(uploadFileWithProgress).mockResolvedValue(repaired(pages));
         repair("download.pdf");

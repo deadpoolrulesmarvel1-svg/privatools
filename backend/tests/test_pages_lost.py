@@ -391,6 +391,20 @@ def test_repair_says_nothing_of_pages_when_the_file_does_not_say_how_many(quiet_
         assert response.status_code == 400
 
 
+def test_repair_says_nothing_of_pages_when_mupdf_cannot_count_its_output(quiet_client, monkeypatch):
+    # MuPDF's own errors are not RuntimeError, ValueError or OSError: one
+    # from counting the repaired file reached the route's catch-all, a 500.
+    from backend.app.services import repair_service
+
+    def fails(doc, enough=None):
+        raise fitz.mupdf.FzErrorFormat("cannot count")
+
+    monkeypatch.setattr(repair_service, "readable_page_count", fails)
+    response = _repair(quiet_client, CUT)
+    assert response.status_code == 200, response.text[:300]
+    assert "X-Repair-Pages" not in response.headers
+
+
 # ── The end of a PDF cut short ──────────────────────────────────────────────
 
 def test_the_end_of_a_pdf_cut_short_is_missing(tmp_path):
@@ -422,6 +436,15 @@ def test_the_message_names_both_counts_and_both_ways_out():
     assert pages_lost_message(1, 1200) == (
         "This PDF is damaged: only 1 of its 1,200 pages could be read. "
         "Download it again, or use Repair PDF to save the pages that survive.")
+
+
+def test_the_count_reads_an_uploads_bytes_where_they_are():
+    # A BytesIO made from the upload and never written to gives back the
+    # upload itself, so reading the count from one copies nothing.
+    from backend.app.utils.cleanup import _scannable
+
+    data = bytes(WHOLE)
+    assert _scannable(io.BytesIO(data)) is data
 
 
 def test_a_workers_page_counts_are_checked_before_they_are_said():

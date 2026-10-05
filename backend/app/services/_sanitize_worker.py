@@ -629,10 +629,12 @@ def _isolate(file_size: int) -> None:
 
 
 def _pages_lost(pdf: pikepdf.Pdf, source: str) -> tuple[int, int] | None:
-    """(pages read, pages declared) of a file qpdf had to repair and read
-    fewer pages of than it declares, as utils.cleanup.open_pikepdf refuses it
-    in the web process; None otherwise. qpdf warns when it rebuilds a file's
-    cross-reference table, and only then can it have lost a page."""
+    """(pages read, pages declared) of a file qpdf warned about while opening
+    it and read fewer pages of than it declares, as utils.cleanup.open_pikepdf
+    refuses it in the web process; None otherwise. qpdf warns when it
+    rebuilds a file's cross-reference table, as for a PDF cut short, which is
+    when it leaves out pages whose object was lost; any warning has the count
+    read."""
     try:
         if not pdf.get_warnings():
             return None

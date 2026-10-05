@@ -195,6 +195,20 @@ def test_a_dictionary_inside_a_string_or_a_stream_is_not_read():
     assert declared_page_count(_hand_built(objects)) == 1
 
 
+def test_a_type_in_a_streams_data_belongs_to_no_objects_dictionary():
+    # A stream's data is skipped before its /Type's object is looked for, but
+    # not that of a stream whose keyword is not recognised as one, here after
+    # a comment. Its /Type is then in no object's dictionary, not its own
+    # object's: that object's dictionary is the stream's (the #349 review's
+    # surviving mutant "stream-check-off").
+    data = _hand_built({1: b"<< /Type /Catalog /Pages 2 0 R >>", 2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+                        3: _page(2), 4: b"<< /Length 30 >> % a note\nstream\n<< /Type /Pages /Count 50 >>\nendstream"})
+    scan = declared_pages._Scan(data)
+    assert not scan._in_stream_data(data.index(b"/Type /Pages /Count 50"))
+    assert scan._header_before(data.index(b"/Type /Pages /Count 50")) is None
+    assert declared_page_count(data) == 1
+
+
 def _carrying(inner: bytes) -> bytes:
     """A one-page PDF carrying `inner`, a whole PDF, as an attachment written
     without compression (as `mutool clean -d` or `qpdf --qdf` leave one)."""
