@@ -23,7 +23,7 @@
 - The release's reusable test workflow now checks the actual app TypeScript project, zero-warning lint, generated-content tests and component tests. The duplicate unlocked Python 3.11 and nonblocking/uninstalled Playwright jobs were removed from `ci.yml`; they were not reliable evidence. Existing isolated browser audit reports remain separate from CI.
 - Docker excludes local environments, databases, backups and audit evidence from its build context. The image build asserts FFmpeg subtitle-filter, H.264 and AAC support, alongside existing native dependencies. The frontend build verifies U²-Net-P by SHA-256 and stages it with the CPU ONNX Runtime WASM/bootstrap on the same origin; the backend cache links to the same weights instead of downloading a second copy. Base digests and Python hashes stay pinned; package repositories/model-download availability still affect whether a new build succeeds.
 - The deploy timer defaults to release tags only. A missing cosign binary, bad signature or absent digest prevents deployment. Verification and execution use the same immutable digest, and the image revision must match the selected tag's commit. An explicit legacy `DEPLOY_MODE=auto` or `branch` remains an operator override, not the default.
-- Rollback retains the previous immutable image ID and its build SHA (`.privatools-deploy.previous` in the checkout). Nothing prunes images. Since 18 September a release that fails never replaces the running one, so no automatic rollback is needed; `privatools-rollout --rollback` restores the recorded release with the **current** Compose configuration and existing database. It does not undo configuration/schema changes. Those require the manual procedure below.
+- Rollback retains the previous immutable image ID and its build SHA (`.privatools-deploy.previous` in the checkout). Nothing prunes images; since 5 October the rollout's [image retention](#image-retention) removes old PrivaTools release images by name and always keeps that one. Since 18 September a release that fails never replaces the running one, so no automatic rollback is needed; `privatools-rollout --rollback` restores the recorded release with the **current** Compose configuration and existing database. It does not undo configuration/schema changes. Those require the manual procedure below.
 - Manual and automated release health gates use `/readyz`, not the liveness-only `/api/health`, plus a real-page probe before any traffic moves.
 - Oracle nginx restores visitor addresses only from the 22 verified Cloudflare networks. Country decisions still use the original socket peer and only the sanitized policy endpoint header; the direct API host remains unknown. See [country trust boundary](analytics-country-proxy.md).
 - nginx's own error answers on the API host (413, 502, 503, 504) carry CORS headers for the allowed origins and a JSON detail. The page now reads nginx's 413 and 504 instead of reporting a network failure. While the app is down, nginx refuses an upload's CORS preflight with the 502, so an upload still fails as a network error unless the browser holds a cached preflight; a 503 that refuses the preflight does the same. The deploy never changes nginx: apply it by hand with [its runbook](api-subdomain-split.md#nginxs-own-error-answers-on-the-api-host-added-24-september-2026).
@@ -52,6 +52,43 @@ The exit status tells the timer what to do:
 | 4 | nginx could not be brought to a verified state, or a container that still receives requests was kept | Pings failure; act now; the next attempt waits 10 minutes |
 
 A run interrupted at any point is reconciled by the next one. An interim that the upstream file names is moved back to 8000; one it does not name is drained and removed, never given traffic. The rollout never falls back to a stop-and-start deploy.
+
+### Image retention
+
+Added 5 October 2026. Each deploy pulls a release image of about 3.4 GB, and until then nothing removed one: the production VM's disk reached 99 % with 50 of them. Now, once a run ends with the release serving from the canonical container (exit 0, also after `--rollback` and in a run that finds its release already serving), the rollout removes old PrivaTools release images. It never runs after exits 1 to 4.
+
+- **Kept:**
+  - the newest `KEEP_IMAGES` images by creation time (`Created` from `docker image inspect`), 3 by default;
+  - the image of every container on the host, running or stopped, in any project;
+  - the release recorded for `--rollback` (`.privatools-deploy.previous`), by image ID, so a moved tag cannot cost it and it stays when it is older than the newest.
+- **Candidates:** only images named in PrivaTools' own repositories (`IMAGE_REPOS` in `rollout.sh`). These are `DEPLOY_IMAGE_REPO` (`ghcr.io/ethereaglehq/privatools`), `DEPLOY_IMAGE_REPO_FALLBACK` when set (auto-deploy passes both), the repository of the image the run deploys, so a run by hand needs neither, and `privatools-privatools`, a local build's name. An image also named in any other repository is kept. Other projects' images, local test builds such as `privatools-py312:test`, the build cache and volumes are never touched.
+- **How:** by name and never forced: each `repo:tag`, or `repo@digest` for a repository where the image has no tag. Docker itself then refuses the last name of an image a container uses, running or stopped. Nothing is pruned: a prune would delete the rollback image once its tag had moved, and other projects' images.
+- **Best effort:** it reads everything before it removes anything. If Docker cannot list the images or the containers, or resolve the rollback record, it logs why and keeps every image. A removal Docker refuses is logged and the others go ahead. Nothing in it changes the exit status.
+- **Log:** a line per image with its size and why it stays, then a summary such as `image retention: kept 3, removed 1 (3.4 GB as listed; layers a kept image shares stay on disk)`.
+- **`KEEP_IMAGES`:** 3 by default. A value below 2, or one that is not a number, skips retention with a log line, so `KEEP_IMAGES=0` turns it off. For the timer, set it in a drop-in, which a reinstall keeps: `sudo systemctl edit privatools-auto-deploy.service`, then `[Service]` and `Environment=KEEP_IMAGES=4`. auto-deploy passes its environment on to the rollout. By hand: `sudo runuser -u ubuntu -g ubuntu -G docker -- env KEEP_IMAGES=4 privatools-rollout ...`.
+- **Disk:** auto-deploy pulls the next release before the rollout runs, so the disk needs room for `KEEP_IMAGES` + 1 release images, about 13.6 GB by default. Add the rollback image when it is older than those, and any image a stopped container keeps.
+- **Limit:** a local build (`deploy.sh`) that lost its name to a newer build has no name left to remove it by, so it stays. Remove it by hand once no container uses it and it is not the rollback record.
+
+**It takes effect only after a reinstall.** The timer runs the installed copies in `/usr/local/bin`, and a deploy never reinstalls them. Once a release that contains image retention has deployed, the checkout is at its tag; reinstall from there:
+
+```bash
+sudo systemctl stop privatools-auto-deploy.timer
+systemctl is-active privatools-auto-deploy.service     # inactive: no deploy is running
+cd /home/ubuntu/privatools
+grep -c retain_images deploy/oracle-vm/rollout.sh      # not 0: this checkout has image retention
+sudo bash deploy/oracle-vm/install-auto-deploy.sh      # no --start: installs and validates only
+cmp deploy/oracle-vm/rollout.sh /usr/local/bin/privatools-rollout && echo "rollout installed"
+cmp deploy/oracle-vm/auto-deploy.sh /usr/local/bin/privatools-auto-deploy && echo "auto-deploy installed"
+```
+
+The reinstall also rewrites the unit files from the checkout: settings in a drop-in survive it, edits to the installed unit do not. Then start the timer again. To see retention before the next release, first run the rollout on the release that already serves (the three optional lines below). In the steady state it touches neither nginx nor the containers: it logs `already serves`, then the retention lines.
+
+```bash
+image=$(sudo docker inspect -f '{{.Image}}' privatools-privatools-1)                                         # optional
+sha=$(curl -fsS http://127.0.0.1:8000/readyz | python3 -c 'import json, sys; print(json.load(sys.stdin)["build_sha"])')  # optional
+sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout "$image" "$sha"   # optional; with three releases: "kept 3, removed 0"
+sudo systemctl start privatools-auto-deploy.timer
+```
 
 ### Why it is built this way
 
@@ -478,7 +515,7 @@ python3 deploy/release-preflight.py --zero-downtime
 
 The report never prints environment values and never fetches, builds, pulls, deploys or reloads. Its exit status flags executed-check failures; `releaseReady: false` is deliberate because the script cannot approve publication or attest to external account configuration. `nginx -t` may need operator privileges to read private TLS files. Check the installed nginx includes `--with-http_realip_module`; do not replace `$realip_remote_addr` with a visitor-controlled header if it does not. The backend and proxy must both use the new country contract before the trust switch is enabled.
 
-Before release, privately record the actual installed Compose project name, current container/image SHA, latest good DB backup, nginx configuration and timer state. Check at least 4 GB container memory plus host headroom, enough disk for **both** old/new images and uploads, and valid apex/API certificates. The two-worker native stack and native codec capabilities need an actual Linux-image smoke check; `/readyz` alone does not test every converter or browser model.
+Before release, privately record the actual installed Compose project name, current container/image SHA, latest good DB backup, nginx configuration and timer state. Check at least 4 GB container memory plus host headroom, enough disk for `KEEP_IMAGES` + 1 release images ([image retention](#image-retention)) and uploads, and valid apex/API certificates. The two-worker native stack and native codec capabilities need an actual Linux-image smoke check; `/readyz` alone does not test every converter or browser model.
 
 ## Future approved release sequence
 
@@ -490,7 +527,7 @@ Before release, privately record the actual installed Compose project name, curr
 6. Use the approved digest and SHA with `privatools-rollout DIGEST SHA`, run as the deploy user. The auto-deploy script does exactly that for tagged releases after signature verification. The rollout starts the release beside the running one and gates it on `/readyz`, the real-page probe and its job supervisor holding the queue. Only then does it move traffic ([zero-downtime deploys](#zero-downtime-deploys)). Inspect normal error rates afterwards. Compose recreation preserves named volumes; do not use `down -v`. [Docker documentation](https://docs.docker.com/reference/cli/docker/compose/up/)
 7. Verify public home plus Air/Play/theme transitions, one real PDF/image/media output, pipeline/batch output, new blog and comparison deep links, canonical/404/noindex behavior, search/Markdown handoff, service-worker update and offline browser tool. Check anonymous tools and signed-in API-key controls separately. The hosted production Google flow has been verified. The new release must still verify its production key/account/API wiring, passkey enrollment/sign-in, recovery email and deletion webhook with explicit real account/device actions.
 8. Enable only independently verified integrations. Retain disabled analytics until approved; release defaults now expose the verified Google and GitHub providers. Explicit provider overrides remain respected. Once regional analytics is deliberately configured, test direct spoofed country headers, unknown country, GPC/DNT, saved opt-out, and shared-cache isolation before exposing default-on behavior. No raw country should be returned to the browser.
-9. Re-enable the tag-only timer only after the deployment is accepted and its installed script/settings match the reviewed files. Preserve the prior image until the release is accepted; schedule bounded image cleanup separately. Submit discovery changes only after the actual public URLs return their intended status/content. Existing auto-deploy includes a best-effort IndexNow request after success, not a ranking or indexing guarantee.
+9. Re-enable the tag-only timer only after the deployment is accepted and its installed script/settings match the reviewed files. The rollout's [image retention](#image-retention) keeps the prior image while it is the rollback record and bounds the rest; nothing else should remove PrivaTools images. Submit discovery changes only after the actual public URLs return their intended status/content. Existing auto-deploy includes a best-effort IndexNow request after success, not a ranking or indexing guarantee.
 
 ## Rollback and state preservation
 
@@ -541,13 +578,14 @@ For nginx failure, restore the recorded old config, validate with `nginx -t`, th
   - a reload that nginx never applied, undone;
   - degraded mode, its backoff, its memory check and `--rollback` from it, and the rollback record written before the old release is destroyed;
   - resuming after a killed run, root refusal and preconditions;
-  - the root helper: readiness of the target, restore on failure, serialization and a SIGTERM inside its rename-to-reload window.
+  - the root helper: readiness of the target, restore on failure, serialization and a SIGTERM inside its rename-to-reload window;
+  - image retention, only after exit 0 and also after `--rollback`: the newest `KEEP_IMAGES`, every container's image (stopped, another project's, an interim Docker could not remove) and the rollback record kept; the rest of PrivaTools' images removed by name, never forced; other repositories' images, and ours also named there, never touched; the fallback and a run by hand's own repository counted; `KEEP_IMAGES` below 2 skipped; and a failed or refused Docker call that leaves exit 0 and the release serving.
 - `backend/tests/test_api_v1_jobs.py` and `test_launcher.py`:
   - Two real supervisors on one lock. A standby takes over only after a drain, the drained job finishes where it started, and a drained supervisor heals itself.
   - Readiness accepts only this container's live standby of the same build: while another supervisor serves the queue, or otherwise only within `queue_seconds`.
   - The status command imports no web stack.
   - The launcher relays the drain signals to the worker only, and an early signal is harmless.
-- `backend/tests/test_release_deploy_contract.py`: the timer's handling of each rollout exit (marked failed only for exit 1; exits 2, 3 and 4 back off). It and the manual deploy both refuse root.
+- `backend/tests/test_release_deploy_contract.py`: the timer's handling of each rollout exit (marked failed only for exit 1; exits 2, 3 and 4 back off), and the image repositories it passes to the rollout. It and the manual deploy both refuse root.
 - `backend/tests/test_backup_script.py`: the backup falls back to the interim container and waits for a deploy's lock.
 - `backend/tests/test_probe_image.py`: the CI image probe boots with async jobs and requires the supervisor to hold the queue; the deploy's probe sends the public Host header; only the CI probe converts a Word equation.
 - `backend/tests/test_release_preflight.py`: `--zero-downtime` runs from an export without a checkout, nginx or Docker.

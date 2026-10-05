@@ -303,11 +303,15 @@ else
     image_ref="$(docker image inspect --format '{{.Id}}' "${PRIVATOOLS_IMAGE:-privatools-privatools:latest}")"
 fi
 
-# Zero-downtime replacement. It never prunes: the replaced image stays for
-# rollback (`privatools-rollout --rollback`), because pruning could delete the
-# only usable rollback image when its tag has moved.
+# Zero-downtime replacement. Once the release serves (exit 0), the rollout
+# also removes old PrivaTools images, by name and only in the repositories
+# passed here (deploy/README.md, Image retention). It keeps the newest
+# KEEP_IMAGES (default 3), every container's image and the replaced release
+# recorded for `privatools-rollout --rollback`, by image ID. Nothing prunes: a
+# prune could delete the only usable rollback image once its tag has moved.
 rollout_status=0
 PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" LOCK_FILE="$LOCK_FILE" \
+    DEPLOY_IMAGE_REPO="$DEPLOY_IMAGE_REPO" DEPLOY_IMAGE_REPO_FALLBACK="$DEPLOY_IMAGE_REPO_FALLBACK" \
     "$ROLLOUT" "$image_ref" "$target_sha" || rollout_status=$?
 case "$rollout_status" in
     0)

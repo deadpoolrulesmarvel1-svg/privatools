@@ -89,6 +89,27 @@ def settle():
 def roles():
     return {c["project"]: [c["role"], c["passive"]] for c in containers.values() if running(c)}
 
+def fail(message, code=1):
+    print(message, file=sys.stderr)
+    sys.exit(code)
+
+def repository(ref):
+    name = ref.split("@")[0]
+    return name.rsplit(":", 1)[0] if ":" in name.rsplit("/", 1)[-1] else name
+
+def names_of(iid):
+    """An image's names, as Docker reports them: RepoTags, then RepoDigests."""
+    img = world["images"].get(iid, {})
+    return img.get("tags", []) + img.get("digests", [])
+
+def resolve(ref):
+    """The image ID a name or an ID stands for, or None."""
+    if ref in world["images"]:
+        return ref
+    if ref in world["refs"]:
+        return world["refs"][ref]
+    return next((iid for iid in world["images"] if ref in names_of(iid)), None)
+
 if name == "id":
     print(world.get("uid", 1000))
 
@@ -170,6 +191,8 @@ elif name == "probe":
     sys.exit(0 if image(c).get("pages", True) and not (rejected and rejected == host_header) else 1)
 
 elif name == "docker":
+    with (root / "docker.jsonl").open("a") as f:
+        f.write(json.dumps(args) + "\n")
     if args[0] == "compose":
         project = args[args.index("-p") + 1]
         rest = args[args.index("-p") + 2:]
@@ -192,6 +215,8 @@ elif name == "docker":
                 "port": int(os.environ["PRIVATOOLS_HOST_PORT"]), "status": "running", "role": "standby",
                 "passive": False, "restarts": 0, "booted": polls == 0, "boot_polls": polls}
         elif command == "down":
+            if project in world.get("down_fails", []):
+                sys.exit(1)
             for cid in mine:
                 del containers[cid]
         elif command == "stop":
@@ -201,9 +226,16 @@ elif name == "docker":
         settle()
         save()
     elif args[0] == "ps":
-        project = next(a.split("=", 2)[2] for a in args if a.startswith("label=com.docker.compose.project="))
+        projects = [a.split("=", 2)[2] for a in args if a.startswith("label=com.docker.compose.project=")]
+        every_state = any(a == "--all" or (a[:1] == "-" and a[1:2] != "-" and "a" in a) for a in args)
+        if not projects and world.get("ps_fails"):
+            fail("Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?")
         for cid, c in sorted(containers.items()):
-            if c["project"] == project:
+            if projects and c["project"] != projects[0]:
+                continue
+            if not projects and c.get("hidden"):
+                continue                    # created after the listing, as another project might
+            if every_state or running(c):
                 print(cid)
     elif args[0] == "inspect":
         form, cid = args[2], args[3]
@@ -232,8 +264,77 @@ elif name == "docker":
             print(c["restarts"])
         else:
             print(c["status"], c["restarts"])
+    elif args[:2] == ["image", "ls"]:
+        # A recent Docker prints a table for people by default: only templates are supported.
+        if "--format" not in args or "--no-trunc" not in args:
+            fail(f"the simulated host lists images only with --format and --no-trunc: {args}", 2)
+        if world.get("image_ls_fails"):
+            fail("Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?")
+        wanted = {a.split("=", 1)[1] for a in args if a.startswith("reference=")}
+        for iid in world["images"]:
+            for ref in names_of(iid):
+                if repository(ref) in wanted:
+                    print(iid)              # once per name, as Docker may list an image
+    elif args[:2] == ["image", "inspect"]:
+        if args[2] not in ("-f", "--format"):
+            fail(f"the simulated host inspects images only with a template: {args}", 2)
+        form, status = args[3], 0
+        if "{{.Id}}" in form and "join" in form:
+            # The CLI runs a template on Go field names (.ID) and retries one that
+            # fails on the raw JSON (.Id), where a name list is no []string.
+            fail('template parsing error: template: :1: executing "" at <join .RepoTags " ">: '
+                 "wrong type for value; expected []string; got []interface {}")
+        for target in args[4:]:
+            iid = resolve(target)
+            if iid is None:
+                print(f"Error: No such image: {target}", file=sys.stderr)
+                status = 1
+                continue
+            if form == "{{.Id}}" and target in world.get("image_id_fails", []):
+                print("Error response from daemon: simulated failure", file=sys.stderr)
+                status = 1
+                continue
+            img = world["images"][iid]
+            out = (form.replace("{{.Id}}", iid).replace("{{.ID}}", iid).replace("{{.Created}}", img.get("created", ""))
+                   .replace("{{.Size}}", str(img.get("size", 0)))
+                   .replace('{{join .RepoTags " "}}', " ".join(img.get("tags", [])))
+                   .replace('{{join .RepoDigests " "}}', " ".join(img.get("digests", []))))
+            if "{{" in out:
+                fail(f"the simulated host does not know this template: {form}", 2)
+            print(out)
+        sys.exit(status)
+    elif args[:2] == ["image", "rm"]:
+        refs = [a for a in args[2:] if not a.startswith("-")]
+        event("rmi", refs, [a for a in args[2:] if a.startswith("-")])
+        if world.get("image_rm_fails"):
+            fail("Error response from daemon: simulated failure")
+        status = 0
+        for ref in refs:
+            iid = resolve(ref)
+            if iid is None or ref not in names_of(iid):
+                fail(f"the simulated host removes images only by name, never by ID: {ref}", 2)
+            img = world["images"][iid]
+            tags = [t for t in img.get("tags", []) if t != ref]
+            digests = [d for d in img.get("digests", []) if d != ref]
+            if ref in img.get("tags", []) and not any(repository(t) == repository(ref) for t in tags):
+                digests = [d for d in digests if repository(d) != repository(ref)]   # gone with its last tag
+            users = sorted(cid for cid, c in containers.items() if c["image"] == iid)
+            if users and not tags and not digests:
+                # Running or stopped, a container keeps its image unless forced.
+                print(f'Error response from daemon: conflict: unable to remove repository reference "{ref}" '
+                      f"(must force) - container {users[0]} is using its referenced image {iid}", file=sys.stderr)
+                status = 1
+                continue
+            img["tags"], img["digests"] = tags, digests
+            print(f"Untagged: {ref}")
+            if not tags and not digests:
+                del world["images"][iid]
+                world["refs"] = {k: v for k, v in world["refs"].items() if v != iid}
+                print(f"Deleted: {iid}")
+        save()
+        sys.exit(status)
     elif args[0] == "image":
-        print(world["refs"].get(args[-1], args[-1]))
+        fail(f"the simulated host does not know: docker {' '.join(args)}", 2)
     elif args[0] == "exec":
         c = containers.get(args[1])
         if c is None or not running(c):
@@ -286,6 +387,8 @@ elif name == "docker":
         settle()
         save()
     elif args[0] in ("stop", "start", "rm"):
+        if args[0] == "rm" and world.get("rm_fails"):
+            fail("Error response from daemon: simulated failure")
         cid = args[-1]
         c = containers.get(cid)
         if c is not None:
@@ -425,12 +528,23 @@ class Host:
             "HANDOVER_CONFIRM": "10", "HANDOVER_SOAK": "0", "RECONCILE_WAIT": "1", "POLL": "0.05",
             **env,
         }
-        environment.pop("COMPOSE_PROJECT", None)
+        # As by hand: none of the unit's or auto-deploy.sh's settings unless a test passes them.
+        for name in ("COMPOSE_PROJECT", "KEEP_IMAGES", "DEPLOY_IMAGE_REPO", "DEPLOY_IMAGE_REPO_FALLBACK"):
+            if name not in env:
+                environment.pop(name, None)
         return subprocess.run([bash(), str(ROLLOUT), *args], env=environment, capture_output=True, text=True,
                               timeout=180)
 
     def containers(self, project: str) -> list[dict]:
         return [c for c in self.load()["containers"].values() if c["project"] == project]
+
+    def docker_calls(self) -> list[list[str]]:
+        path = self.root / "docker.jsonl"
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def removals(self) -> list[list[str]]:
+        """The names given to each `docker image rm`."""
+        return [item[1] for item in self.events() if item[0] == "rmi"]
 
 
 @pytest.fixture
@@ -1098,6 +1212,274 @@ def test_the_page_probe_asks_for_the_public_host_name(host):
     assert ("switch", host.interim_port) not in steps(host.events())
 
 
+# ── image retention: old releases go, the way back stays ─────────────────────
+
+REPO = "ghcr.io/ethereaglehq/privatools"
+OLD_OWNER = "ghcr.io/deadpoolrulesmarvel1-svg/privatools"   # the repository's former path
+
+
+def named(host, iid, created, tags=(), digests=(), size=3_400_000_000):
+    """Image IID, with the names, creation time and size Docker reports for it."""
+    host.world["images"].setdefault(iid, {}).update(created=created, tags=list(tags), digests=list(digests),
+                                                     size=size)
+
+
+def bystander(host, cid, project, image, status="exited", **extra):
+    """A container the rollout does not manage: another project's, or one somebody ran."""
+    host.world["containers"][cid] = {
+        "project": project, "image": image, "sha": "", "port": None, "status": status, "role": "none",
+        "passive": True, "restarts": 0, "booted": True, "boot_polls": 0, **extra}
+
+
+def releases_piled_up(host):
+    """Every release a deploy pulled is still on disk, as production's 50 were.
+
+    The canonical container runs v2.7.30 (sha256:old) and the deploy brings
+    v2.7.33 (sha256:new); v2.7.31 and v2.7.32 were pulled and rejected.
+    """
+    named(host, "sha256:new", "2026-10-04T09:30:00.123456789Z", [f"{REPO}:v2.7.33"], [f"{REPO}@sha256:new"])
+    named(host, "sha256:r32", "2026-10-02T09:30:00Z", [f"{REPO}:v2.7.32"], [f"{REPO}@sha256:r32"])
+    named(host, "sha256:r31", "2026-09-30T09:30:00Z", [f"{REPO}:v2.7.31"], [f"{REPO}@sha256:r31"])
+    named(host, "sha256:old", "2026-09-28T09:30:00Z", [f"{REPO}:v2.7.30"], [f"{REPO}@sha256:old"])
+    named(host, "sha256:r29", "2026-09-26T09:30:00Z", [f"{REPO}:v2.7.29"], [f"{REPO}@sha256:r29"])
+    named(host, "sha256:r28", "2026-09-24T09:30:00Z", [f"{REPO}:v2.7.28"], [f"{REPO}@sha256:r28"])
+    named(host, "sha256:moved", "2026-09-22T09:30:00Z", [], [f"{REPO}@sha256:moved"])   # its tag moved on
+    named(host, "sha256:r27", "2026-09-20T09:30:00Z", [f"{REPO}:v2.7.27", f"{REPO}:latest"], [f"{REPO}@sha256:r27"])
+    named(host, "sha256:build", "2026-09-18T09:30:00Z", ["privatools-privatools:latest"])   # a local build
+    named(host, "sha256:mirrored", "2026-09-10T09:30:00Z",
+          [f"{REPO}:v2.7.20", "mirror.example.com/privatools:v2.7.20"], [f"{REPO}@sha256:mirrored"])
+    named(host, "sha256:py312", "2026-09-05T09:30:00Z", ["privatools-py312:test"])       # local test builds
+    named(host, "sha256:p312", "2026-09-04T09:30:00Z", ["privatools-312:final"])
+    named(host, "sha256:nginx", "2026-08-01T09:30:00Z", ["nginx:alpine"], ["nginx@sha256:nginx"])
+    named(host, "sha256:v181", "2026-06-01T09:30:00Z", [f"{OLD_OWNER}:v1.8.1"], [f"{OLD_OWNER}@sha256:v181"])
+    named(host, "sha256:v180", "2026-05-01T09:30:00Z", [f"{OLD_OWNER}:v1.8.0"], [f"{OLD_OWNER}@sha256:v180"])
+    host.world["refs"][f"{REPO}@sha256:new"] = "sha256:new"
+    bystander(host, "c80scratch", "scratch", "sha256:r28")                # stopped, in another project
+    bystander(host, "c81othersite", "othersite", "sha256:nginx", "running")
+    bystander(host, "c82legacy", "legacy", "sha256:v181")                 # as on production
+    host.save()
+
+
+# What a deploy of v2.7.33 onto that pile removes, in order: tags, the digest
+# of an image whose tag moved on, and both tags of an image that had two.
+PILE_REMOVALS = [[f"{REPO}:v2.7.29"], [f"{REPO}@sha256:moved"], [f"{REPO}:v2.7.27"], [f"{REPO}:latest"],
+                 ["privatools-privatools:latest"]]
+
+
+def retention_line(result, name):
+    """What retention logged for the image named NAME."""
+    return next(line for line in result.stdout.splitlines()
+                if line.startswith(("    kept ", "    removed ")) and f" {name} " in f"{line} ".replace(":", " "))
+
+
+def test_retention_keeps_the_newest_three_every_containers_image_and_the_rollback_image(host):
+    releases_piled_up(host)
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    left = host.load()["images"]
+    assert {"sha256:new", "sha256:r32", "sha256:r31"} <= set(left)
+    assert retention_line(result, "v2.7.33").endswith("(newest 3; in use)")
+    # The release just replaced, older than those three, is the way back.
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:old", OLD]
+    assert "sha256:old" in left
+    assert retention_line(result, "v2.7.30").endswith("(recorded for --rollback)")
+    # A stopped container of another project still uses v2.7.28.
+    assert "sha256:r28" in left
+    assert retention_line(result, "v2.7.28").endswith("(in use)")
+    assert "image retention: kept 6, removed 4 (13.6 GB as listed" in result.stdout
+
+
+def test_retention_removes_the_rest_of_privatools_images_by_name_never_forced(host):
+    releases_piled_up(host)
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert host.removals() == PILE_REMOVALS
+    assert not [item for item in host.events() if item[0] == "rmi" and item[2]], "never forced"
+    assert not [call for call in host.docker_calls() if "prune" in call or "system" in call]
+    assert not {"sha256:r29", "sha256:moved", "sha256:r27", "sha256:build"} & set(host.load()["images"])
+    for name in ("v2.7.29", "v2.7.27", "privatools-privatools"):
+        assert retention_line(result, name).startswith("    removed ") and "3.4 GB" in retention_line(result, name)
+
+
+def test_retention_never_touches_another_repositorys_image_or_one_also_named_there(host):
+    releases_piled_up(host)
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    left = host.load()["images"]
+    for iid in ("sha256:py312", "sha256:p312", "sha256:nginx", "sha256:v181", "sha256:v180"):
+        assert iid in left and left[iid]["tags"], iid
+    # Old enough to go, but also named in another repository: not even untagged.
+    assert left["sha256:mirrored"]["tags"] == [f"{REPO}:v2.7.20", "mirror.example.com/privatools:v2.7.20"]
+    assert retention_line(result, "v2.7.20").endswith("(also named mirror.example.com/privatools:v2.7.20)")
+    removed = [name for names in host.removals() for name in names]
+    assert {name.split("@")[0].rsplit(":", 1)[0] for name in removed} == {REPO, "privatools-privatools"}
+    # Local test builds named like ours were never even listed.
+    assert "privatools-py312" not in result.stdout and "privatools-312" not in result.stdout
+
+
+def test_an_interim_docker_could_not_remove_keeps_its_image(host):
+    # A run that finds its release already serving ends in the steady state
+    # too, so retention runs. The leftover interim Docker failed to remove
+    # still uses its image, though it is older than the newest 3 and nobody
+    # recorded it.
+    releases_piled_up(host)
+    named(host, "sha256:r26", "2026-09-23T09:30:00Z", [f"{REPO}:v2.7.26"], [f"{REPO}@sha256:r26"])
+    host.world["containers"]["c01privatools"].update(image="sha256:new", sha=NEW)
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:r26", "sha": "c" * 40, "port": host.interim_port,
+        "status": "running", "role": "standby", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.world.update(down_fails=["privatools-interim"], rm_fails=True)
+    host.save()
+    (host.root / ".privatools-deploy.previous").write_text(f"sha256:old {OLD}\n")
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "already serves" in result.stdout
+    assert [c["image"] for c in host.containers("privatools-interim")] == ["sha256:r26"]
+    assert "sha256:r26" in host.load()["images"]
+    assert retention_line(result, "v2.7.26").endswith("(in use)")
+    assert host.removals() == PILE_REMOVALS
+
+
+def test_retention_after_a_rollback_keeps_the_release_it_returned_to_and_the_one_it_replaced(host):
+    releases_piled_up(host)
+    host.world["containers"]["c01privatools"].update(image="sha256:new", sha=NEW)
+    host.save()
+    (host.root / ".privatools-deploy.previous").write_text(f"sha256:old {OLD}\n")
+    result = host.run("--rollback")
+    assert result.returncode == 0, result.stdout + result.stderr
+    [canonical] = host.containers("privatools")
+    assert (canonical["image"], canonical["sha"]) == ("sha256:old", OLD)
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:new", NEW]
+    left = host.load()["images"]
+    # v2.7.30 serves again, though three images are newer; v2.7.33 is the way forward.
+    assert "sha256:old" in left and retention_line(result, "v2.7.30").endswith("(in use)")
+    assert "sha256:new" in left
+    assert retention_line(result, "v2.7.33").endswith("(newest 3; recorded for --rollback)")
+    assert host.removals() == PILE_REMOVALS
+
+
+@pytest.mark.parametrize("keep,removals", [
+    ("2", [[f"{REPO}:v2.7.31"], *PILE_REMOVALS]),
+    ("5", PILE_REMOVALS[1:]),
+])
+def test_keep_images_sets_how_many_of_the_newest_are_kept(host, keep, removals):
+    releases_piled_up(host)
+    result = host.run(f"{REPO}@sha256:new", NEW, KEEP_IMAGES=keep)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert host.removals() == removals
+    assert "sha256:old" in host.load()["images"], "the rollback image stays whatever the count"
+
+
+@pytest.mark.parametrize("keep", ["1", "0", "three"])
+def test_keep_images_below_two_skips_retention(host, keep):
+    releases_piled_up(host)
+    result = host.run(f"{REPO}@sha256:new", NEW, KEEP_IMAGES=keep)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"image retention skipped: KEEP_IMAGES={keep} " in result.stdout
+    assert not host.removals()
+    assert not [call for call in host.docker_calls() if call[:2] == ["image", "ls"]]
+    assert [c["sha"] for c in host.containers("privatools")] == [NEW]
+
+
+@pytest.mark.parametrize("fault", ["image ls", "container list", "rollback record", "image rm", "in use unseen"])
+def test_a_retention_failure_leaves_exit_0_and_the_release_serving(host, fault):
+    releases_piled_up(host)
+    if fault == "image ls":
+        host.world["image_ls_fails"] = True
+    elif fault == "container list":
+        host.world["ps_fails"] = True
+    elif fault == "rollback record":
+        host.world["image_id_fails"] = ["sha256:old"]          # Docker cannot say which image it is
+    elif fault == "image rm":
+        host.world["image_rm_fails"] = True
+    else:
+        # A container created after retention listed them: Docker refuses its image.
+        bystander(host, "c83late", "scratch", "sha256:r29", hidden=True)
+    host.save()
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert host.live_port() == host.canonical_port and host.load()["nginx"]["port"] == host.canonical_port
+    [canonical] = host.containers("privatools")
+    assert (canonical["image"], canonical["sha"], canonical["status"]) == ("sha256:new", NEW, "running")
+    assert not host.containers("privatools-interim")
+    left = host.load()["images"]
+    if fault in ("image ls", "container list", "rollback record"):
+        assert "image retention skipped" in result.stdout and "every image is kept" in result.stdout
+        assert not host.removals()
+    elif fault == "image rm":
+        assert "could not remove" in result.stdout
+        assert "image retention: kept 10 (4 that Docker did not remove), removed 0" in result.stdout
+        assert {"sha256:r29", "sha256:moved", "sha256:r27", "sha256:build"} <= set(left)
+    else:
+        assert "sha256:r29" in left and "is using its referenced image" in result.stdout
+        assert retention_line(result, "v2.7.29").endswith("(Docker did not remove it)")
+        assert "image retention: kept 7 (1 that Docker did not remove), removed 3 (" in result.stdout
+
+
+@pytest.mark.parametrize("fault,code", [("rejected", 1), ("host", 2), ("degraded", 3), ("still routed", 4)])
+def test_no_retention_unless_the_run_ends_serving_from_the_canonical_container(host, fault, code):
+    releases_piled_up(host)
+    if fault == "rejected":
+        host.world["images"]["sha256:new"]["pages"] = False
+    elif fault == "host":
+        host.world["switch_fails_to"] = host.interim_port
+    elif fault == "degraded":
+        host.world["up_fails"] = ["privatools"]
+    else:
+        host.world["pin_traffic_to"] = "privatools"
+    host.save()
+    before = host.load()["images"]
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == code, result.stdout + result.stderr
+    assert "image retention" not in result.stdout
+    assert not [call for call in host.docker_calls() if call[:2] in (["image", "ls"], ["image", "rm"])]
+    assert host.load()["images"] == before
+
+    # The same host, once a run ends with the release serving from the
+    # canonical container, does remove them.
+    world = host.load()
+    world["images"]["sha256:new"].pop("pages", None)
+    for key in ("switch_fails_to", "up_fails", "pin_traffic_to"):
+        world.pop(key, None)
+    host.world = world
+    host.save()
+    resume = host.root / ".privatools-deploy.resume"
+    if resume.exists():
+        past = time.time() - 3600
+        os.utime(resume, (past, past))
+    again = host.run(f"{REPO}@sha256:new", NEW)
+    assert again.returncode == 0, again.stdout + again.stderr
+    assert host.removals() == PILE_REMOVALS
+
+
+@pytest.mark.parametrize("how", ["neither", "fallback", "by hand"])
+def test_the_former_path_counts_when_auto_deploy_names_it_or_a_run_by_hand_deploys_from_it(host, how):
+    # Production keeps v1.8.1 under the repository's former path, used by a
+    # stopped container. auto-deploy.sh may name that path as its fallback,
+    # and a run by hand, without auto-deploy.sh's variables, may deploy an
+    # image named there: either makes the path PrivaTools' own.
+    releases_piled_up(host)
+    image, env = f"{REPO}@sha256:new", {}
+    if how == "fallback":
+        env = {"DEPLOY_IMAGE_REPO_FALLBACK": OLD_OWNER}
+    elif how == "by hand":
+        image = f"{OLD_OWNER}@sha256:new"
+        host.world["images"]["sha256:new"]["digests"].append(image)
+        host.world["refs"][image] = "sha256:new"
+        host.save()
+    result = host.run(image, NEW, **env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    left = host.load()["images"]
+    assert "sha256:v181" in left, "a stopped container still uses it"
+    if how == "neither":
+        assert "sha256:v180" in left and OLD_OWNER not in result.stdout
+        assert host.removals() == PILE_REMOVALS
+    else:
+        assert retention_line(result, "v1.8.1").endswith("(in use)")
+        assert "sha256:v180" not in left
+        assert host.removals() == [*PILE_REMOVALS, [f"{OLD_OWNER}:v1.8.0"]]
+
+
 # ── the files the rollout relies on (review item 14: stable interfaces) ──────
 
 def test_ports_and_privilege_are_consistent_across_the_deploy_files():
@@ -1113,7 +1495,8 @@ def test_ports_and_privilege_are_consistent_across_the_deploy_files():
     assert 'NGINX_SWITCH="${NGINX_SWITCH:-sudo -n /usr/local/sbin/privatools-nginx-upstream set}"' in rollout
     unit = (ROOT / "deploy/oracle-vm/privatools-auto-deploy.service").read_text()
     assert "NoNewPrivileges" not in unit.replace("NoNewPrivileges=:", "")
-    # Never an image prune: the replaced image is the rollback image.
+    # Never an image prune: it would take the rollback image once its tag had
+    # moved, and other projects' images. Retention removes images by name only.
     for path in ("rollout.sh", "auto-deploy.sh", "deploy.sh"):
         code = [line for line in (ROOT / "deploy/oracle-vm" / path).read_text().splitlines()
                 if not line.lstrip().startswith("#")]

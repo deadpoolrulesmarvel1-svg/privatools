@@ -177,6 +177,10 @@ also from the degraded state. Details, evidence and the cut-over runbook are in
   `/usr/local/bin`. Reinstall with `install-auto-deploy.sh`, which never starts a
   deploy unless given `--start`; the backup script is installed separately and
   its timer is never touched.
+- **Image retention (2026-10-05).** After exit 0 only, `--rollback` included,
+  the rollout removes PrivaTools' own release images by name, never forced or
+  pruned. It keeps the newest `KEEP_IMAGES` (3), every container's image and
+  the rollback record, and a failure there never changes the exit status.
 
 The API remains free with bounded fair usage on this server. Async job results
 expire within one hour and can be explicitly deleted immediately.
