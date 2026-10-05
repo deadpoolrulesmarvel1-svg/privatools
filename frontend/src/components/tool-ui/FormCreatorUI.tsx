@@ -296,7 +296,7 @@ export function FormCreatorUI() {
                             <Plus size={11} /> Add
                         </button>
                     </div>
-                    <div className="pdf-coordinate-workspace"><fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
+                    <div className="pdf-coordinate-workspace"><fieldset className="pdf-coordinate-controls fc-controls" disabled={status === "processing"}>
                         {proposals.length > 0 && (
                             <section className="fc-proposals" aria-labelledby="fc-proposals-title">
                                 <div className="fc-proposals-head">
@@ -355,7 +355,7 @@ export function FormCreatorUI() {
                                             onChange={e => updateField(f.id, { name: e.target.value })}
                                             placeholder="field_name"
                                             aria-label="Field name"
-                                            className="flex-1 rounded border border-border bg-paper-2/40 px-2 py-1 font-mono text-[12.5px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+                                            className="min-w-0 flex-1 rounded border border-border bg-paper-2/40 px-2 py-1 font-mono text-[12.5px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
                                         />
                                         <select
                                             value={f.type}

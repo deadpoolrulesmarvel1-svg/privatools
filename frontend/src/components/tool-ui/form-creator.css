@@ -11,6 +11,8 @@
 .fc-detect-notes{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6;color:hsl(var(--muted-foreground))}
 .fc-detect-notes li+li{margin-top:4px}
 
+/* One column as wide as its track: a field card's name box no longer widens it past the 320px column. */
+.fc-controls{grid-template-columns:minmax(0,1fr)}
 .fc-proposals{display:grid;gap:10px;padding:14px;border:1px solid hsl(var(--warning) / .45);border-radius:10px;background:hsl(var(--warning-soft))}
 .fc-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .fc-proposals-head h3{font-size:14px;font-weight:600;line-height:1.3;margin:0}
@@ -22,6 +24,7 @@
 .fc-proposals li{display:grid;gap:8px;padding:12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));cursor:pointer}
 .fc-proposals li[data-selected=true]{border-color:hsl(var(--accent));box-shadow:0 0 0 1px hsl(var(--accent))}
 .fc-proposal-edit{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px}
+.fc-proposals,.fc-proposals li,.fc-proposal-edit label{min-width:0}
 .fc-proposal-edit label{display:grid;gap:4px;font-size:11.5px;font-weight:550;color:hsl(var(--muted-foreground))}
 .fc-proposal-edit input,.fc-proposal-edit select{width:100%;min-width:0;min-height:36px;padding:6px 9px;border:1px solid hsl(var(--input));border-radius:6px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:13px}
 .fc-proposal-edit input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-ligatures:none}
