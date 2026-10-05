@@ -163,6 +163,37 @@ describe("Form Creator: detect, review, create", () => {
         expect(screen.queryByText(/left to review/)).toBeNull();
     });
 
+    it("brings focus back to the review when detection answers", async () => {
+        const run = async (report: DetectReport) => {
+            vi.mocked(uploadFileGetJson).mockResolvedValueOnce(report);
+            const { container } = render(<FormCreatorUI />);
+            fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [pdf] } });
+            // The button is disabled while detection works, so a browser has
+            // dropped its focus by the time the answer comes: none is held here.
+            fireEvent.click(screen.getByRole("button", { name: "Detect fields" }));
+            await waitFor(() => expect(uploadFileGetJson).toHaveBeenCalled());
+        };
+        await run(REPORT);
+        await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Proposed fields (4)" })));
+        cleanup();
+        vi.mocked(uploadFileGetJson).mockReset();
+        await run({ ...REPORT, candidates: [] });
+        await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Find fields automatically" })));
+    });
+
+    it("leaves focus where the visitor moved it while detection worked", async () => {
+        let answer: (report: DetectReport) => void = () => undefined;
+        vi.mocked(uploadFileGetJson).mockReturnValueOnce(new Promise<DetectReport>(resolve => { answer = resolve; }));
+        const { container } = render(<FormCreatorUI />);
+        fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [pdf] } });
+        fireEvent.click(screen.getByRole("button", { name: "Detect fields" }));
+        const name = container.querySelector<HTMLInputElement>(".fc-controls input")!;
+        name.focus();
+        answer(REPORT);
+        await screen.findByRole("heading", { name: "Proposed fields (4)" });
+        expect(document.activeElement).toBe(name);
+    });
+
     it("leaves focus where the visitor moved it while a row went", async () => {
         await detect();
         const accept = screen.getByRole("button", { name: "Accept full_name" });

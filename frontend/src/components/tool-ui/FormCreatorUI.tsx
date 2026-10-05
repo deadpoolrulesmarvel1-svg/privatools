@@ -94,6 +94,9 @@ export function FormCreatorUI() {
     // What the last Accept or Reject did, for a screen reader.
     const [reviewNote, setReviewNote] = useState("");
     const detectRun = useRef(0);
+    // Detect fields is disabled while it works, so a browser drops its focus:
+    // when the answer comes, focus goes to the proposals, or to this panel.
+    const focusAfterDetect = useRef(false);
     const proposalRows = useRef<Map<string, HTMLLIElement>>(new Map());
 
     const canSubmit = useMemo(() => !!file && fields.length > 0 && status !== "processing", [file, fields.length, status]);
@@ -137,10 +140,12 @@ export function FormCreatorUI() {
             const found = newCandidates(report, placed).map(c => ({ ...c, key: proposalKey(c, run) }));
             setProposals(found);
             setDetection({ phase: "done", report, proposed: found.length, accepted: 0 });
+            focusAfterDetect.current = true;
             if (found.length) { setSelected(found[0].key); setPreviewPage(found[0].page); }
         } catch (e: unknown) {
             if (run !== detectRun.current) return;
             setDetection({ phase: "failed", message: detectFailure(e) });
+            focusAfterDetect.current = true;
         }
     };
 
@@ -162,6 +167,11 @@ export function FormCreatorUI() {
         if (key === null) return;
         focusIfIdle(key ? proposalRows.current.get(key)?.querySelector<HTMLElement>("input") : document.getElementById("fc-detect-title"));
     }, [proposals]);
+    useEffect(() => {
+        if (!focusAfterDetect.current || (detection.phase !== "done" && detection.phase !== "failed")) return;
+        focusAfterDetect.current = false;
+        focusIfIdle(document.getElementById(proposals.length ? "fc-proposals-title" : "fc-detect-title"));
+    }, [detection, proposals.length]);
     const accept = (keys: string[]) => {
         const chosen = proposals.filter(p => keys.includes(p.key));
         if (!chosen.length) return;
@@ -326,7 +336,7 @@ export function FormCreatorUI() {
                         {proposals.length > 0 && (
                             <section className="fc-proposals" aria-labelledby="fc-proposals-title">
                                 <div className="fc-proposals-head">
-                                    <h3 id="fc-proposals-title">Proposed fields ({proposals.length})</h3>
+                                    <h3 id="fc-proposals-title" tabIndex={-1}>Proposed fields ({proposals.length})</h3>
                                     <div className="fc-proposals-all">
                                         <button type="button" onClick={() => accept(proposals.map(p => p.key))}><Check size={14} aria-hidden="true" /> Accept all</button>
                                         <button type="button" onClick={() => reject(proposals.map(p => p.key))}><X size={14} aria-hidden="true" /> Reject all</button>
