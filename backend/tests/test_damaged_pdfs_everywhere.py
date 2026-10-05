@@ -142,6 +142,7 @@ ROUTES: dict[str, tuple[str, list, dict]] = {
     "/api/pdf-to-epub": ("file", [], {}),
     "/api/add-hyperlinks": ("file", [], {}),
     "/api/form-creator": ("file", [], {"form_fields": json.dumps([{"name": "f", "type": "text", "page": 1, **BOX}])}),
+    "/api/form-creator/detect": ("file", [], {}),
     "/api/transparent-background": ("file", [], {"dpi": "72"}),
     "/api/stamp-pdf": ("file", [], {}),
     "/api/esign-pdf": ("file", [], {"signature": SIG}),
@@ -359,7 +360,8 @@ def test_a_tool_that_changes_pages_still_does_an_intact_pdf(quiet_client, route)
 # repaired to no page (a 500), and OCR PDF failed to copy a page out of a
 # repaired file ("source object number out of range", a 500).
 READS_PAGES = [
-    "/api/compare", "/api/extract-images", "/api/extract-tables", "/api/grayscale", "/api/ocr",
+    "/api/compare", "/api/extract-images", "/api/extract-tables", "/api/form-creator/detect", "/api/grayscale",
+    "/api/ocr",
     "/api/pdf-to-excel", "/api/pdf-to-html", "/api/pdf-to-rtf", "/api/pdf-to-word",
     "/api/remove-watermark/apply", "/api/remove-watermark/detect",
 ]

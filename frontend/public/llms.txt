@@ -119,7 +119,7 @@ PrivaTools offers 227 tools for PDFs, images, video, audio, documents, archives,
 - [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
 - [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
 - [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Make the web addresses in a PDF clickable
-- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
+- [Form Creator](https://privatools.me/tool/form-creator): Make a PDF fillable by detecting its fields or drawing them
 - [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
 - [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
 - [Translate PDF](https://privatools.me/tool/translate-pdf): Translate a PDF without uploading it

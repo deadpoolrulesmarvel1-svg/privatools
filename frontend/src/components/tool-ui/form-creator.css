@@ -1,0 +1,51 @@
+/* Form Creator: "Detect fields", and the review of what it proposes (FormCreatorUI). */
+.fc-detect{display:grid;gap:12px;padding:20px 22px;border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));color:hsl(var(--foreground))}
+.fc-detect-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.fc-detect-intro h2{font-size:17px;font-weight:600;line-height:1.25;letter-spacing:-.01em;margin:0 0 6px}
+.fc-detect-intro p{font-size:13px;line-height:1.6;color:hsl(var(--muted-foreground));margin:0;max-width:64ch}
+.fc-detect-intro .ts-secondary-button{flex-shrink:0;white-space:nowrap;padding:11px 16px}
+.fc-detect-status:empty{display:none}
+.fc-detect-status p{font-size:13px;line-height:1.6;margin:0}
+.fc-detect-status p+p{margin-top:6px;color:hsl(var(--muted-foreground))}
+.fc-detect-status a,.fc-detect-notes a{color:hsl(var(--accent));text-decoration:underline;text-underline-offset:2px}
+.fc-detect-notes{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6;color:hsl(var(--muted-foreground))}
+.fc-detect-notes li+li{margin-top:4px}
+
+/* One column as wide as its track: a field card's name box no longer widens it past the 320px column. */
+.fc-controls{grid-template-columns:minmax(0,1fr)}
+.fc-proposals{display:grid;gap:10px;padding:14px;border:1px solid hsl(var(--warning) / .45);border-radius:10px;background:hsl(var(--warning-soft))}
+.fc-proposals-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fc-proposals-head h3{font-size:14px;font-weight:600;line-height:1.3;margin:0}
+.fc-proposals-all,.fc-proposal-actions{display:flex;flex-wrap:wrap;gap:6px}
+.fc-proposals-legend{display:flex;align-items:center;gap:8px;margin:0;font-size:12px;color:hsl(var(--muted-foreground))}
+/* The swatch is drawn as the page draws a proposal: dashed, on white paper. */
+.fc-proposals-legend span{width:24px;height:12px;flex-shrink:0;border:1.5px dashed #b45309;border-radius:2px;background:#fff}
+.fc-proposals ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fc-proposals li{display:grid;gap:8px;padding:12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));cursor:pointer}
+.fc-proposals li[data-selected=true]{border-color:hsl(var(--accent));box-shadow:0 0 0 1px hsl(var(--accent))}
+.fc-proposal-edit{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px}
+.fc-proposals,.fc-proposals li,.fc-proposal-edit label{min-width:0}
+.fc-proposal-edit label{display:grid;gap:4px;font-size:11.5px;font-weight:550;color:hsl(var(--muted-foreground))}
+.fc-proposal-edit input,.fc-proposal-edit select{width:100%;min-width:0;min-height:36px;padding:6px 9px;border:1px solid hsl(var(--input));border-radius:6px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:13px}
+.fc-proposal-edit input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-ligatures:none}
+.fc-proposal-meta{margin:0;font-size:12px;line-height:1.5;color:hsl(var(--muted-foreground));overflow-wrap:anywhere}
+.fc-proposal-meta span{font-weight:650;color:hsl(var(--foreground))}
+.fc-proposal-meta span[data-likely=true]{color:hsl(var(--accent))}
+.fc-proposals button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 12px;border:1px solid hsl(var(--border));border-radius:7px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:12.5px;font-weight:600;cursor:pointer}
+.fc-proposals :is(.fc-proposals-all,.fc-proposal-actions) button:first-child{background:hsl(var(--accent));border-color:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.fc-proposals button:hover{filter:brightness(.97)}
+.fc-proposals button:focus-visible,.fc-proposal-edit :is(input,select):focus-visible{outline:2px solid hsl(var(--accent));outline-offset:2px}
+.fc-pending{margin:0;font-size:12.5px;line-height:1.6;color:hsl(var(--muted-foreground))}
+
+html[data-experience=play] .fc-detect{border-radius:17px 17px 30px 17px;box-shadow:4px 5px 0 hsl(var(--border)/.6)}
+html[data-experience=play] .fc-proposals{border-radius:14px}
+html[data-experience=play] .fc-proposals button{border-radius:30px}
+
+@media(max-width:560px){
+  .fc-detect{padding:16px}
+  .fc-detect-intro{flex-direction:column;gap:12px}
+  .fc-detect-intro .ts-secondary-button{width:100%}
+  .fc-proposal-edit{grid-template-columns:1fr}
+  .fc-proposal-actions button{flex:1 1 0}
+}
+@media(prefers-reduced-motion:reduce){.fc-proposals button{transition:none}}

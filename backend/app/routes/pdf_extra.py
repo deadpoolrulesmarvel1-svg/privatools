@@ -13,16 +13,20 @@ import zipfile
 from xml.etree import ElementTree
 
 import fitz
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image, ImageChops
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import open_pdf_document, remove_files, validate_pdf_content
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
+from ..services import form_detect_service
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document, remove_files, validate_pdf_content
+from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
-from ..utils.page_space import drawing_unturned
+from ..utils.page_space import drawing_unturned, settle_rotation
 from ..utils.render import plan_renders, safe_get_pixmap
 from ..utils.pdf_errors import pdf_read_error
+from ..utils.route_helpers import no_store_headers, stream_upload_to_disk
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -707,12 +711,18 @@ FORM_FIELDS_DESCRIPTION = (
     "`value` and `multiline` (text), `checked` (checkbox), `options` and `value` (radio, "
     "combobox, listbox)."
 )
+READING_ORDER_DESCRIPTION = (
+    "true to add the fields in reading order, which viewers follow from field to field: page by "
+    "page, in rows from the top of the page as it is shown, left to right. By default they are "
+    "added in the order sent, which is then the form's tab order."
+)
 
 
 @router.post("/form-creator")
 async def form_creator(
     file: UploadFile = File(...),
     form_fields: str = Form(..., description=FORM_FIELDS_DESCRIPTION),
+    reading_order: bool = Form(False, description=READING_ORDER_DESCRIPTION),
 ):
     """Create fillable form fields in an existing PDF."""
     if not (file.filename or "").lower().endswith(".pdf"):
@@ -738,14 +748,18 @@ async def form_creator(
                     page_index = int(field["page"]) - 1
                     if page_index < 0 or page_index >= len(doc):
                         raise HTTPException(status_code=400, detail=f"Field #{idx} references page {field['page']} but PDF has {len(doc)} pages")
-
                     name = str(field["name"]).strip()
-                    field_type = str(field["type"])
                     if name in seen_names:
                         raise HTTPException(status_code=400, detail=f"Duplicate field name '{name}' is not allowed")
                     seen_names.add(name)
 
-                    page = doc[page_index]
+                # Viewers move between fields in the order they were added. The
+                # page sends them in the order they were placed or accepted, so
+                # it asks for reading order; an API caller's order is kept.
+                for field in (_reading_order(doc, fields) if reading_order else fields):
+                    name = str(field["name"]).strip()
+                    field_type = str(field["type"])
+                    page = doc[int(field["page"]) - 1]
                     rect = fitz.Rect(
                         float(field["x"]),
                         float(field["y"]),
@@ -756,8 +770,8 @@ async def form_creator(
                     # corner of its visible area, before /Rotate. Unturned, the
                     # page's rect is that area; turned, it is the page as shown,
                     # which refused good fields and passed ones off the page.
-                    with drawing_unturned(page):
-                        _add_field(doc, page, field, name, field_type, rect)
+                    with drawing_unturned(page) as rotation:
+                        _add_field(doc, page, field, name, field_type, rect, rotation)
 
                 try:
                     doc.need_appearances(True)
@@ -784,8 +798,80 @@ async def form_creator(
         raise HTTPException(status_code=500, detail="Form creation failed") from exc
 
 
-def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect) -> None:
-    """Add one field to `page`, which the caller has unturned (drawing_unturned)."""
+@router.post("/form-creator/detect")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def form_creator_detect(request: Request, file: UploadFile = File(...)):
+    """Find likely form fields in a PDF drawn as a form but not fillable.
+
+    Read-only: nothing is created. Returns JSON: `candidates`, each with its
+    `page` (counted from 1), `x`, `y`, `width` and `height` in the numbers
+    /form-creator takes, a `type` (text, checkbox, signature, or date where
+    its label names a date: send that to /form-creator as text), a suggested `name`
+    unique in the file, the `label` it was named after, `multiline`, and a
+    `confidence`, a heuristic score from 0 to 1 that is not a probability.
+    Also `pages`, `truncated` (more than 300 found), `existingFields` (the
+    fields the PDF already has, where nothing is proposed), and the pages
+    that are pictures (`scanPages`), that draw too much to read
+    (`complexPages`) or that could not be read (`pagesNotChecked`). It looks
+    for drawn lines, boxes, table cells and box characters beside labels: a
+    scan has none, and it can miss fields or propose wrong ones. The limits
+    are in form_detect_service (pages, time).
+    """
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Please upload a PDF file")
+
+    ensure_temp_dir()
+    path = get_temp_path(f"form_detect_{uuid.uuid4().hex}.pdf")
+    try:
+        await stream_upload_to_disk(file, path, label="PDF", validate=validate_pdf_content)
+        # A wait for the bounded worker process, which is stopped after
+        # TIME_LIMIT_SECONDS; the heavy pool keeps the waits bounded too.
+        report = await run_bounded(form_detect_service.detect_fields, str(path))
+    except (HTTPException, ToolError):
+        # A password, damage or no pages (400), too many pages or too much
+        # memory (413), a scan or too much work (422), too slow (504), or
+        # failed (500): the global handler gives each its status and words.
+        raise
+    except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
+        logger.exception("form-creator detect error")
+        raise HTTPException(status_code=500, detail="Could not look for fields in this PDF.") from exc
+    finally:
+        remove_files(str(path))
+    # The labels quote the document: never store the answer anywhere.
+    return JSONResponse(report, headers=no_store_headers())
+
+
+def _reading_order(doc: fitz.Document, fields: list[dict]) -> list[dict]:
+    """The fields page by page, in rows from the top of the page as it is
+    shown, and left to right within a row. A field joins a row when its middle
+    lies within the height of the row's first field. The pages exist."""
+    placed = []
+    for index, field in enumerate(fields):
+        page = doc[int(field["page"]) - 1]
+        settle_rotation(page)  # as drawing_unturned will, so "as shown" is what the preview showed
+        x, y = float(field["x"]), float(field["y"])
+        shown = fitz.Rect(x, y, x + float(field["width"]), y + float(field["height"])) * page.rotation_matrix
+        placed.append((int(field["page"]), shown, index))
+    ordered: list[dict] = []
+    for number in sorted({item[0] for item in placed}):
+        rows: list[list[tuple]] = []
+        for item in sorted((p for p in placed if p[0] == number), key=lambda p: ((p[1].y0 + p[1].y1) / 2, p[1].x0)):
+            middle = (item[1].y0 + item[1].y1) / 2
+            if rows and rows[-1][0][1].y0 <= middle <= rows[-1][0][1].y1:
+                rows[-1].append(item)
+            else:
+                rows.append([item])
+        for row in rows:
+            ordered.extend(fields[index] for _, _, index in sorted(row, key=lambda p: (p[1].x0, p[2])))
+    return ordered
+
+
+def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect,
+               rotation: int = 0) -> None:
+    """Add one field to `page`, which the caller has unturned (drawing_unturned)
+    from `rotation`, the /Rotate the page is shown with."""
     if not page.rect.contains(rect):
         raise HTTPException(status_code=400, detail=f"Field '{name}' rectangle is out of page bounds")
 
@@ -824,7 +910,14 @@ def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, fiel
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported field type: {field_type}")
 
-    page.add_widget(widget)
+    added = page.add_widget(widget)
+    if rotation:
+        # Made on the page as stored, the field would show its text along the
+        # page as stored: sideways on a page turned a quarter. /MK/R turns it
+        # with the page, for viewers that draw it themselves (pdf.js, Chrome),
+        # and MuPDF draws its appearance again, turned, for the others.
+        doc.xref_set_key(added.xref, "MK/R", str(rotation))
+        added.update()
 
 
 # A page is held as RGB, as RGBA and as channels while its transparency is

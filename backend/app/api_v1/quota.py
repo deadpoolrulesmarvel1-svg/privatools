@@ -23,7 +23,7 @@ HEAVY_OPERATIONS = frozenset({
     "video-to-pdf", "video-converter", "video-resizer", "video-thumbnail", "gif-to-mp4",
     "add-subtitles", "video-merge", "audio-merge", "mute-video", "reverse-video",
     "video-speed", "audio-trim", "audio-converter", "image-upscaler",
-    "hidden-text-checker",
+    "hidden-text-checker", "form-creator/detect",
 })
 INFORMATION_OPERATIONS = frozenset({
     "usage", "whoami", "openapi.json", "operations", "developer/status",

@@ -565,6 +565,33 @@ def test_an_exemption_code_reads_upright_in_its_box_on_a_turned_page(client, nam
     assert DRAWN_RECT.contains(where), f"{name}: the code shows at {where}, outside the box"
 
 
+@pytest.mark.parametrize("kind", ["form-text", "form-checkbox"])
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_a_form_fields_value_reads_upright_on_a_turned_page(client, name, kind):
+    """Fields are made on the page as stored, so what a field showed ran along
+    the page as stored: a typed name sideways on a page turned a quarter,
+    upside down on one turned half, and a tick on its side. The field's /MK/R
+    now turns it with the page, and its appearance is drawn turned."""
+    slug, form = TURNED_KINDS[kind]
+    res = client.post("/api" + CONTRACT[slug]["endpoint"], files={"file": ("turned.pdf", TURNED_PDFS[name], "application/pdf")},
+                      data=form(_box_for_route(slug, name)))
+    assert res.status_code == 200, f"{kind} on {name}: {res.status_code} {res.text[:300]}"
+    rotation = _shown_rotate(TURNED["pages"][name]) % 360
+    with fitz.open(stream=_as_pdfjs_shows(res.content), filetype="pdf") as doc:
+        (widget,) = doc[0].widgets()
+        written = doc.xref_get_key(widget.xref, "MK/R")
+        assert (int(written[1]) if written[0] == "int" else 0) == rotation, f"{kind} on {name}: /MK/R is {written}"
+        doc.bake()
+        page = doc[0]
+        turn = fitz.Matrix(page.rotation_matrix)
+        turn.e = turn.f = 0
+        shown = [fitz.Point(line["dir"]) * turn for block in page.get_text("dict")["blocks"]
+                 for line in block.get("lines", [])
+                 if "".join(span["text"] for span in line["spans"]).strip() not in ("", SECRET_LINE, PUBLIC_LINE)]
+    assert shown, f"{kind} on {name}: the field shows nothing"
+    assert {(round(d.x, 3), round(d.y, 3)) for d in shown} == {(1, 0)}, f"{kind} on {name}: the field's text runs {shown} as shown"
+
+
 # Every way a file can write /Rotate, and how pdf.js (the preview) reads it:
 # a multiple of 90 turned into 0, 90, 180 or 270, anything else 0. PyMuPDF
 # reports a direct integer as "int", a direct real as "float" ("90" for 90.0)
