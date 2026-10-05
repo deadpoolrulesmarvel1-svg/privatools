@@ -233,7 +233,7 @@ export function FormCreatorUI() {
         try {
             const payload = buildPayload();
             await processAndDownload("/form-creator", file, buildOutputFilename(file.name, "form", "pdf"),
-                { form_fields: JSON.stringify(payload) });
+                { form_fields: JSON.stringify(payload), reading_order: "true" });
             setStatus("done");
             emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {

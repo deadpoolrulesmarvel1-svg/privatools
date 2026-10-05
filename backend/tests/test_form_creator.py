@@ -105,12 +105,28 @@ def test_fields_are_added_in_reading_order_whatever_order_they_come_in(client):
         {"name": "agree", "type": "checkbox", "page": 1, "x": 300, "y": 103, "width": 12, "height": 12, "required": False},
         {"name": "upper_as_shown", "page": 2, "x": 100, "y": 200, **text},
     ]
-    resp = _post(client, "form-creator", doc.tobytes(), {"form_fields": json.dumps(fields)})
+    resp = _post(client, "form-creator", doc.tobytes(), {"form_fields": json.dumps(fields), "reading_order": "true"})
     assert resp.status_code == 200, resp.text
     with fitz.open(stream=resp.content, filetype="pdf") as out:
         assert [[w.field_name for w in page.widgets()] for page in out] == [
             ["full_name", "agree", "phone"], ["upper_as_shown", "lower_as_shown"],
         ]
+
+
+def test_an_api_caller_keeps_the_order_it_sent_unless_it_asks_for_reading_order(client):
+    """The page asks for reading order; an API caller who sends a deliberate
+    tab order keeps it, as before reading order existed."""
+    doc = fitz.open()
+    doc.new_page()
+    text = {"type": "text", "width": 120, "height": 18, "required": False, "value": "", "multiline": False}
+    fields = [
+        {"name": "second_line", "page": 1, "x": 72, "y": 300, **text},
+        {"name": "first_line", "page": 1, "x": 72, "y": 100, **text},
+    ]
+    resp = _post(client, "form-creator", doc.tobytes(), {"form_fields": json.dumps(fields)})
+    assert resp.status_code == 200, resp.text
+    with fitz.open(stream=resp.content, filetype="pdf") as out:
+        assert [w.field_name for w in out[0].widgets()] == ["second_line", "first_line"]
 
 
 def test_a_bad_field_is_still_named_by_its_place_in_the_request(client):

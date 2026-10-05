@@ -709,8 +709,12 @@ FORM_FIELDS_DESCRIPTION = (
     "(1/72 inch) from the top-left corner of the page's visible area (its CropBox), before any "
     "/Rotate setting it has is applied; the box must lie on the page. Optional `required`; "
     "`value` and `multiline` (text), `checked` (checkbox), `options` and `value` (radio, "
-    "combobox, listbox). Fields are added in reading order, which viewers follow from field to "
-    "field: page by page, in rows from the top of the page as it is shown, left to right."
+    "combobox, listbox)."
+)
+READING_ORDER_DESCRIPTION = (
+    "true to add the fields in reading order, which viewers follow from field to field: page by "
+    "page, in rows from the top of the page as it is shown, left to right. By default they are "
+    "added in the order sent, which is then the form's tab order."
 )
 
 
@@ -718,6 +722,7 @@ FORM_FIELDS_DESCRIPTION = (
 async def form_creator(
     file: UploadFile = File(...),
     form_fields: str = Form(..., description=FORM_FIELDS_DESCRIPTION),
+    reading_order: bool = Form(False, description=READING_ORDER_DESCRIPTION),
 ):
     """Create fillable form fields in an existing PDF."""
     if not (file.filename or "").lower().endswith(".pdf"):
@@ -748,9 +753,10 @@ async def form_creator(
                         raise HTTPException(status_code=400, detail=f"Duplicate field name '{name}' is not allowed")
                     seen_names.add(name)
 
-                # Viewers move between fields in the order they were added; the
-                # page sends them in the order they were placed or accepted.
-                for field in _reading_order(doc, fields):
+                # Viewers move between fields in the order they were added. The
+                # page sends them in the order they were placed or accepted, so
+                # it asks for reading order; an API caller's order is kept.
+                for field in (_reading_order(doc, fields) if reading_order else fields):
                     name = str(field["name"]).strip()
                     field_type = str(field["type"])
                     page = doc[int(field["page"]) - 1]

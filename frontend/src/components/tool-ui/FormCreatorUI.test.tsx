@@ -63,6 +63,8 @@ async function created(): Promise<Record<string, unknown>[]> {
     const [endpoint, file, , params] = vi.mocked(processAndDownload).mock.calls[0];
     expect(endpoint).toBe("/form-creator");
     expect(file).toBe(pdf);
+    // The page asks for reading order, so the tab order follows the page, not the order fields were accepted.
+    expect((params as Record<string, string>).reading_order).toBe("true");
     return JSON.parse(String((params as Record<string, string>).form_fields));
 }
 
