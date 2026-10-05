@@ -9,7 +9,6 @@ from starlette.background import BackgroundTask
 
 from ..utils.exceptions import PdfCorruptError, ToolError
 from ..utils.cleanup import (
-    _DAMAGED_PDF,
     end_is_missing,
     ensure_temp_dir,
     get_temp_path,
@@ -25,6 +24,17 @@ from ..utils.pdf_errors import pdf_read_error
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# What the tool says, with a 400, to a PDF cut short in which it found blank
+# pages: a page can look blank because its content was lost with the rest of
+# the file. The way out is the whole file again. Repair PDF keeps such a page
+# as it is, blank, so sending the visitor there (as the words for a damaged
+# PDF do) ended with the page removed after all. friendlyError
+# (frontend/src/lib/utils.ts) keeps these words.
+CUT_SHORT_MESSAGE = (
+    "Download this PDF again: it was cut short, most likely by an interrupted download. "
+    "Pages that lost their content look blank, so no page was removed; "
+    "Repair PDF can't bring that content back."
+)
 
 
 def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
@@ -109,7 +119,7 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
             # with fewer pages than the visitor sent, and say nothing. Blank
             # pages of a file that only needed its cross-reference table
             # rebuilt go as before.
-            raise PdfCorruptError(_DAMAGED_PDF)
+            raise PdfCorruptError(CUT_SHORT_MESSAGE)
         if blank:
             budget = WorkBudget("remove-blank-pages", len(data))
             remove_pages(pdf, blank, budget=budget).save(out_path)

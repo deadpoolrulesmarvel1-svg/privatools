@@ -21,6 +21,7 @@ import base64
 import io
 import json
 import re
+from pathlib import Path
 
 import fitz  # PyMuPDF
 import pikepdf
@@ -29,8 +30,9 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from backend.app import main
+from backend.app.routes.remove_blank_pages import CUT_SHORT_MESSAGE
 from backend.app.utils import declared_pages
-from backend.app.utils.cleanup import _DAMAGED_PDF, pages_lost_message
+from backend.app.utils.cleanup import pages_lost_message
 from backend.app.utils.declared_pages import readable_page_count
 
 
@@ -279,14 +281,18 @@ def _pages_first(data: bytes) -> bytes:
 
 def test_remove_blank_pages_does_not_drop_pages_a_cut_left_blank(quiet_client):
     # Every page object survived, the content of the later pages did not:
-    # they come out blank, and were removed as blank pages, 200.
+    # they come out blank, and were removed as blank pages, 200. The answer
+    # sends the visitor to the whole file, not to Repair PDF, which keeps
+    # such pages blank (6 of 6 saved) for this tool to remove after all.
     whole = _pages_first(WHOLE)
     cut = next(data for data in (whole[: len(whole) * p // 100] for p in range(30, 90))
                if _qpdf_reads(data) == 6 and _mupdf_reads(data) == 6
                and not fitz.open(stream=data, filetype="pdf")[5].get_text().strip())
     response = quiet_client.post("/api/remove-blank-pages", files=[("file", ("doc.pdf", cut, "application/pdf"))])
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == _DAMAGED_PDF
+    assert response.json()["detail"] == CUT_SHORT_MESSAGE
+    assert CUT_SHORT_MESSAGE.startswith("Download this PDF again")
+    assert "Repair PDF can't bring that content back" in CUT_SHORT_MESSAGE
 
 
 def test_remove_blank_pages_still_removes_the_blank_pages_of_a_valid_pdf_that_needed_repair(quiet_client):
@@ -432,6 +438,18 @@ def test_the_jobs_call_it_damage():
 
     message = pages_lost_message(4, 6)
     assert pdf_read_error(PdfCorruptError(message)) == (400, message)
+
+
+def test_the_site_shows_these_words_as_they_are():
+    # friendlyError (frontend/src/lib/utils.ts) turns a damaged PDF's answer
+    # into "Try the Repair PDF tool first, then come back." These two it
+    # keeps, by rules that must go on matching what the server says.
+    source = (Path(__file__).resolve().parents[2] / "frontend" / "src" / "lib" / "utils.ts").read_text()
+    lost = re.search(r"if \(/(only .+? pages could be read)/\.test\(m\)\)", source).group(1)
+    for survived, declared in ((4, 6), (1, 1200)):
+        assert re.search(lost, pages_lost_message(survived, declared).lower())
+    cut_short = re.search(r'startsWith\("(download this pdf again[^"]*)"\)', source).group(1)
+    assert CUT_SHORT_MESSAGE.lower().startswith(cut_short)
 
 
 def test_a_json_answer_carries_the_words(quiet_client):

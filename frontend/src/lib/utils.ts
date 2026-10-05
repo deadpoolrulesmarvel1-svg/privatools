@@ -106,6 +106,12 @@ export function friendlyError(raw: string | undefined | null, fallback = "Someth
     if (/only [\d,]+ of its [\d,]+ pages could be read/.test(m)) {
         return (raw || "").trim();
     }
+    // Remove Blank Pages and a PDF cut short: its pages may look blank because
+    // their content was lost, and Repair PDF keeps them blank, so the way out
+    // is downloading it again (routes/remove_blank_pages.py CUT_SHORT_MESSAGE).
+    if (m.trimStart().startsWith("download this pdf again: it was cut short")) {
+        return (raw || "").trim();
+    }
     if (m.includes("corrupt") || m.includes("damaged") || m.includes("malformed")) {
         return "This PDF is damaged. Try the Repair PDF tool first, then come back.";
     }
