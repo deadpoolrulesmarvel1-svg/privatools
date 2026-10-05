@@ -10,6 +10,17 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.31] — 2026-10-05 — Form Creator finds a form's fields
+
+### Tools
+
+- Form Creator can find the fields of a PDF drawn as a form, such as a printed form or a Word form exported to PDF. "Detect fields" proposes text, date, checkbox and signature fields, named after their labels, from the lines, boxes, table cells and checkboxes the page draws. You accept, edit or reject each one before the form is made: detection can miss fields or propose wrong ones. It doesn't work on scans, and it reads up to 50 pages. The PDF is uploaded when you press "Detect fields", and deleted afterwards. (#352)
+- Form Creator: text typed into a field on a turned page now reads upright, and the form's fields follow the page's reading order from one to the next. (#352)
+
+### For API users
+
+- `/api/form-creator/detect` is new: it returns proposed fields for a PDF drawn as a form. `/api/form-creator` takes `reading_order=true` to add fields in reading order; by default they are added in the order sent, as before. (#352)
+
 ## [2.7.30] — 2026-10-04 — No more freezes while translating, and Pipeline steps fixed
 
 ### Tools
