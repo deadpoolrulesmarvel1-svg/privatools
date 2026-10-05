@@ -10,6 +10,18 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.32] — 2026-10-05 — No more silently shortened PDFs
+
+### Tools
+
+- A PDF cut short, by an interrupted download for example, is no longer turned into a shorter PDF without a word. Every PDF tool now refuses it and says how many of its pages could be read, for example "only 4 of its 6 pages", and advises downloading the file again, or Repair PDF to save the pages that survive. (#349)
+- Repair PDF saves the pages that can be read and says how many of the file's pages it saved, for example "4 of its 6 pages were saved." (#349)
+- PDF to Word and PDF to Excel no longer call a valid blank PDF damaged. (#349)
+
+### For API users
+
+- PDF routes answer a damaged PDF that lost pages with 400 `invalid_request` and the words above, where they answered 200 with the surviving pages. The v1 async jobs report it as `job_input_damaged`. (#349)
+
 ## [2.7.31] — 2026-10-05 — Form Creator finds a form's fields
 
 ### Tools
