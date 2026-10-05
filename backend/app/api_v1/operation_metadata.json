@@ -390,6 +390,12 @@
         "form-creator"
       ]
     },
+    "/form-creator/detect": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ]
+    },
     "/generate-barcode": {
       "category": "QR and barcode",
       "response_media": [

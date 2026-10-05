@@ -26,7 +26,7 @@ def limited_client(monkeypatch):
     limiter.reset()
 
 
-@pytest.mark.parametrize("route", ["/api/pdf-to-markdown", "/api/hidden-text-checker"])
+@pytest.mark.parametrize("route", ["/api/pdf-to-markdown", "/api/hidden-text-checker", "/api/form-creator/detect"])
 def test_a_capped_worker_route_answers_429_past_the_expensive_limit(limited_client, route):
     allowed = int(EXPENSIVE_RATE_LIMIT.split("/")[0])
     # A refusal before any work still counts, as it does on every limited route.

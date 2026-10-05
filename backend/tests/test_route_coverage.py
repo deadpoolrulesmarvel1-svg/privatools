@@ -18,6 +18,8 @@ BACKEND_HELPER_POST_ENDPOINTS = {
     # and that has to be decided in a single server-side pass.
     "/bates-numbering-batch",
     "/fill-form/fields",
+    # Form Creator's "Detect fields": proposes fields for the visitor to review.
+    "/form-creator/detect",
     "/metadata/update",
     "/organize-pages/thumbnails",
     "/pipeline",

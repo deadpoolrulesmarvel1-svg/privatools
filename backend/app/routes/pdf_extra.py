@@ -13,16 +13,20 @@ import zipfile
 from xml.etree import ElementTree
 
 import fitz
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image, ImageChops
 from starlette.background import BackgroundTask
 
-from ..utils.cleanup import open_pdf_document, remove_files, validate_pdf_content
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
+from ..services import form_detect_service
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document, remove_files, validate_pdf_content
+from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
 from ..utils.page_space import drawing_unturned
 from ..utils.render import plan_renders, safe_get_pixmap
 from ..utils.pdf_errors import pdf_read_error
+from ..utils.route_helpers import no_store_headers, stream_upload_to_disk
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -782,6 +786,51 @@ async def form_creator(
             raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
         logger.exception("form-creator error")
         raise HTTPException(status_code=500, detail="Form creation failed") from exc
+
+
+@router.post("/form-creator/detect")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def form_creator_detect(request: Request, file: UploadFile = File(...)):
+    """Find likely form fields in a PDF drawn as a form but not fillable.
+
+    Read-only: nothing is created. Returns JSON: `candidates`, each with its
+    `page` (counted from 1), `x`, `y`, `width` and `height` in the numbers
+    /form-creator takes, a `type` (text, checkbox, signature, or date where
+    its label names a date: send that to /form-creator as text), a suggested `name`
+    unique in the file, the `label` it was named after, `multiline`, and a
+    `confidence`, a heuristic score from 0 to 1 that is not a probability.
+    Also `pages`, `truncated` (more than 300 found), `existingFields` (the
+    fields the PDF already has, where nothing is proposed), and the pages
+    that are pictures (`scanPages`), that draw too much to read
+    (`complexPages`) or that could not be read (`pagesNotChecked`). It looks
+    for drawn lines, boxes, table cells and box characters beside labels: a
+    scan has none, and it can miss fields or propose wrong ones. The limits
+    are in form_detect_service (pages, time).
+    """
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Please upload a PDF file")
+
+    ensure_temp_dir()
+    path = get_temp_path(f"form_detect_{uuid.uuid4().hex}.pdf")
+    try:
+        await stream_upload_to_disk(file, path, label="PDF", validate=validate_pdf_content)
+        # A wait for the bounded worker process, which is stopped after
+        # TIME_LIMIT_SECONDS; the heavy pool keeps the waits bounded too.
+        report = await run_bounded(form_detect_service.detect_fields, str(path))
+    except (HTTPException, ToolError):
+        # A password, damage or no pages (400), too many pages or too much
+        # memory (413), a scan or too much work (422), too slow (504), or
+        # failed (500): the global handler gives each its status and words.
+        raise
+    except Exception as exc:
+        if (pdf_error := pdf_read_error(exc)) is not None:
+            raise HTTPException(status_code=pdf_error[0], detail=pdf_error[1]) from exc
+        logger.exception("form-creator detect error")
+        raise HTTPException(status_code=500, detail="Could not look for fields in this PDF.") from exc
+    finally:
+        remove_files(str(path))
+    # The labels quote the document: never store the answer anywhere.
+    return JSONResponse(report, headers=no_store_headers())
 
 
 def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect) -> None:

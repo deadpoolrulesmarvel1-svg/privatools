@@ -131,6 +131,7 @@ ROUTES: dict[str, tuple[str, list, dict]] = {
     "/api/pipeline": ("file", [], {"steps": json.dumps(["compress-pdf"])}),
     "/api/accessibility-check": ("file", [], {}),
     "/api/hidden-text-checker": ("file", [], {}),
+    "/api/form-creator/detect": ("file", [], {}),
     "/api/ocr": ("file", [], {}),
 }
 
