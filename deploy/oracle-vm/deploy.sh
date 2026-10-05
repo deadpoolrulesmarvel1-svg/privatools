@@ -65,8 +65,10 @@ sudo env GIT_SHA="$target_sha" docker compose build privatools
 image_id="$(sudo docker image inspect --format '{{.Id}}' privatools-privatools:latest)"
 
 # 3. Replace the running release without downtime, as the deploy user with the
-#    docker group (this shell holds the lock). No image prune: the replaced
-#    image stays available for `privatools-rollout --rollback`.
+#    docker group (this shell holds the lock). No image prune: once the build
+#    serves, the rollout removes old PrivaTools images by name and keeps the
+#    replaced one for `privatools-rollout --rollback`. A local build that lost
+#    its name to a newer one has no name to remove it by, so it stays.
 status=0
 sudo runuser -u "$DEPLOY_USER" -g "$DEPLOY_USER" -G docker -- \
     env PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" LOCK_FILE="$LOCK_FILE" \

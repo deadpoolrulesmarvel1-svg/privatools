@@ -26,7 +26,8 @@ args = sys.argv[1:]
 mode = os.getenv('FAKE_MODE', '')
 root = pathlib.Path(os.environ['FAKE_ROOT'])
 with (root / 'commands.jsonl').open('a') as f:
-    f.write(json.dumps({'name': name, 'args': args, 'image': os.getenv('PRIVATOOLS_IMAGE'), 'sha': os.getenv('GIT_SHA')}) + '\n')
+    f.write(json.dumps({'name': name, 'args': args, 'image': os.getenv('PRIVATOOLS_IMAGE'), 'sha': os.getenv('GIT_SHA'),
+                        'repos': [os.getenv('DEPLOY_IMAGE_REPO'), os.getenv('DEPLOY_IMAGE_REPO_FALLBACK')]}) + '\n')
 new, old = 'a' * 40, 'b' * 40
 digest = 'ghcr.io/ethereaglehq/privatools@sha256:' + 'c' * 64
 old_image = 'sha256:' + 'd' * 64
@@ -59,7 +60,7 @@ elif name == 'rollout':
 '''
 
 
-def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None):
+def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None, **extra_env):
     fake_bin = tmp_path / 'bin'
     (tmp_path / 'commands.jsonl').unlink(missing_ok=True)
     if not fake_bin.exists():
@@ -74,8 +75,10 @@ def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None):
            'REPO_DIR': str(tmp_path), 'LOCK_FILE': str(tmp_path / 'lock'), 'ROLLOUT': str(fake_bin / 'rollout'),
            'DEPLOY_PING_URL': '', 'DEPLOY_IMAGE_REPO_FALLBACK': ''}
     env.pop('DEPLOY_MODE', None)
+    env.pop('DEPLOY_IMAGE_REPO', None)
     if deploy_mode is not None:
         env['DEPLOY_MODE'] = deploy_mode
+    env.update(extra_env)
     result = subprocess.run(['/bin/bash', str(DEPLOY)], env=env, capture_output=True, text=True)
     calls = [json.loads(line) for line in (tmp_path / 'commands.jsonl').read_text().splitlines()]
     return result, calls
@@ -130,6 +133,15 @@ def test_verified_digest_is_exactly_the_image_rolled_out(tmp_path):
     assert not replacements(calls)
     assert (tmp_path / '.privatools-auto-deploy.sha').read_text().strip() == NEW
     assert not any('prune' in c['args'] for c in calls if c['name'] == 'docker')
+
+
+def test_the_rollout_is_told_which_image_repositories_are_privatools_own(tmp_path):
+    # Its image retention looks only at these. auto-deploy.sh's defaults are
+    # not exported, so it passes both on, the fallback namespace included.
+    old_owner = 'ghcr.io/deadpoolrulesmarvel1-svg/privatools'
+    result, calls = run_deploy(tmp_path, DEPLOY_IMAGE_REPO_FALLBACK=old_owner)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert [c['repos'] for c in rollouts(calls)] == [['ghcr.io/ethereaglehq/privatools', old_owner]]
 
 
 def test_rejected_release_is_marked_failed_without_touching_the_running_one(tmp_path):

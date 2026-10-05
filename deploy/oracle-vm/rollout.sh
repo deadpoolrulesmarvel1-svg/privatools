@@ -40,6 +40,11 @@
 #   3. Recreate the canonical container on the new image, gate it the same
 #      way, hand the queue to it, switch nginx back to 8000, drain the interim
 #      and remove it.
+#   4. Only once BUILD_SHA serves from the canonical container (exit 0, also
+#      after --rollback), remove old PrivaTools release images by name, never
+#      forced or pruned. The newest KEEP_IMAGES, the image of every container
+#      and the release recorded for --rollback stay. A failure here is logged
+#      and never changes the exit status.
 #
 # The replaced release is recorded before anything destroys it; --rollback
 # runs it again the same way, also from the degraded state below.
@@ -126,6 +131,18 @@ RESUME_BACKOFF="${RESUME_BACKOFF:-600}"
 SWITCH_FILE="${SWITCH_FILE:-${STATE_DIR}/.privatools-deploy.switching}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 POLL="${POLL:-1}"
+# Image retention after exit 0 (retain_images): how many of the newest
+# PrivaTools release images to keep. The release that serves and the one
+# recorded for --rollback normally rank first and second among them, so the
+# default keeps one spare; either is kept when older too, as is any image a
+# container uses. Below 2, or not a number, retention is skipped.
+KEEP_IMAGES="${KEEP_IMAGES:-3}"
+# PrivaTools' own image repositories, as Docker names them: the only ones
+# retention looks at. The release repository and its fallback namespace
+# (auto-deploy.sh passes both; these are its defaults), and the name a local
+# build gets (docker-compose.yml). main adds the repository of the image it
+# deploys, so a run by hand needs neither variable.
+IMAGE_REPOS="${DEPLOY_IMAGE_REPO:-ghcr.io/ethereaglehq/privatools} ${DEPLOY_IMAGE_REPO_FALLBACK:-} privatools-privatools"
 
 COMPOSE_FILE_PATH="${REPO_DIR}/docker-compose.yml"
 INTERIM_FILE_PATH="${REPO_DIR}/deploy/oracle-vm/compose.interim.yml"
@@ -1013,8 +1030,226 @@ deploy_release() {  # deploy_release IMAGE SHA: phase 1, then phase 2
     log "done: ${sha:0:12} serves from the canonical container"
 }
 
+# ── image retention ──────────────────────────────────────────────────────────
+#
+# Each deploy pulls a release image of about 3.4 GB and nothing else removes
+# one: production's disk once filled with fifty. Only an image named in
+# IMAGE_REPOS is a candidate, and one also named in any other repository
+# stays. It is removed by name (repo:tag, or repo@digest where that repository
+# has no tag left), never forced, so Docker itself refuses the last name of an
+# image a container uses, running or stopped. Nothing is pruned: a prune would
+# also take the rollback image once its tag had moved, and other projects'
+# images. Everything is read before anything is removed, and a question
+# Docker does not answer keeps every image.
+
+repo_of() {  # repo_of REFERENCE -> its repository; nothing for an image ID
+    local name="${1%%@*}"
+    if [[ -z "$name" || "$name" == sha256:* || "$name" =~ ^[0-9a-f]{12,64}$ ]]; then
+        return 0
+    fi
+    if [[ "${name##*/}" == *:* ]]; then
+        name="${name%:*}"          # the tag; a registry's port comes before a slash
+    fi
+    printf '%s\n' "$name"
+}
+
+human_size() {  # human_size BYTES -> e.g. "3.4 GB"
+    if [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+        awk -v b="$1" 'BEGIN { if (b >= 1e9) printf "%.1f GB\n", b / 1e9; else printf "%.0f MB\n", b / 1e6 }'
+    else
+        echo "size unknown"
+    fi
+}
+
+image_gone() {  # image_gone IMAGE: Docker answered that it has no such image
+    [[ "$(docker image inspect -f '{{.Id}}' "$1" 2>&1 >/dev/null)" == *"No such image"* ]]
+}
+
+remove_image() {  # remove_image ID NAME...: each name, never forced; 0 once Docker confirms ID is gone
+    local id="$1" name out
+    shift
+    for name in "$@"; do
+        if ! out="$(docker image rm "$name" 2>&1)"; then
+            printf '    could not remove %s: %s\n' "$name" "${out//$'\n'/ }"
+            return 1
+        fi
+    done
+    image_gone "$id" && return 0
+    printf '    %s: Docker did not confirm it is gone after its names were removed\n' "$id"
+    return 1
+}
+
+retain_images() {  # after exit 0 only; whatever fails keeps images and leaves the exit status alone
+    local -a repos=() listed=() filters=() ids=() order=() tags=() digests=() names=() reasons=()
+    local -A own=() known=() created=() bytes=() shown=() removable=() foreign=() unknown_age=() newest=() in_use=()
+    local keep repo id when size tag_list digest_list tag_repos ref epoch stamps="" container used out
+    local recorded="" rollback="" described=0 rank=0 kept=0 removed=0 failed=0 freed=0 line why reason
+
+    if [[ ! "$KEEP_IMAGES" =~ ^[0-9]{1,6}$ ]] || (( 10#$KEEP_IMAGES < 2 )); then
+        log "image retention skipped: KEEP_IMAGES=${KEEP_IMAGES} is not a number of 2 or more; every image is kept"
+        return 0
+    fi
+    keep=$(( 10#$KEEP_IMAGES ))
+    read -ra repos <<<"$IMAGE_REPOS"
+    for repo in "${repos[@]}"; do
+        if [[ -z "${own[$repo]:-}" ]]; then
+            own[$repo]=1
+            listed+=("$repo")
+            filters+=(--filter "reference=${repo}")
+        fi
+    done
+
+    # Every image named in those repositories. Docker may list an image once
+    # per name; only templates are read, never the table meant for people.
+    if ! out="$(docker image ls --no-trunc --format '{{.ID}}' "${filters[@]}")"; then
+        log "image retention skipped: Docker could not list the images of ${listed[*]}; every image is kept"
+        return 0
+    fi
+    while read -r id; do
+        [[ -n "$id" && -z "${known[$id]:-}" ]] || continue
+        if [[ ! "$id" =~ ^sha256:[[:alnum:]]+$ ]]; then
+            log "image retention skipped: Docker listed '${id}', which is no image ID; every image is kept"
+            return 0
+        fi
+        known[$id]=1
+        ids+=("$id")
+    done <<<"$out"
+    if (( ${#ids[@]} == 0 )); then
+        log "image retention: no images of ${listed[*]} on this host; kept 0, removed 0"
+        return 0
+    fi
+
+    # Each one's names in every repository, its age and its size. .ID, not
+    # .Id: only Go field names keep the template on the CLI's typed struct. A
+    # JSON name falls back to raw JSON, where join may reject the name lists
+    # (Docker 29.8's accepts them).
+    if ! out="$(docker image inspect -f '{{.ID}}|{{.Created}}|{{.Size}}|{{join .RepoTags " "}}|{{join .RepoDigests " "}}' "${ids[@]}")"; then
+        log "image retention skipped: Docker could not describe those images; every image is kept"
+        return 0
+    fi
+    while IFS='|' read -r id when size tag_list digest_list; do
+        [[ -n "$id" ]] || continue
+        if [[ -z "${known[$id]:-}" ]]; then
+            log "image retention skipped: Docker described ${id}, which it had not listed; every image is kept"
+            return 0
+        fi
+        described=$(( described + 1 ))
+        read -ra tags <<<"$tag_list"
+        read -ra digests <<<"$digest_list"
+        created[$id]="$when"
+        bytes[$id]="$size"
+        shown[$id]="${tags[*]:-${digests[*]:-}}"
+        names=()
+        tag_repos=" "
+        for ref in "${tags[@]}"; do
+            repo="$(repo_of "$ref")"
+            [[ -n "$repo" && -n "${own[$repo]:-}" ]] || foreign[$id]="${foreign[$id]:-$ref}"
+            tag_repos+="${repo} "
+            names+=("$ref")
+        done
+        for ref in "${digests[@]}"; do
+            repo="$(repo_of "$ref")"
+            [[ -n "$repo" && -n "${own[$repo]:-}" ]] || foreign[$id]="${foreign[$id]:-$ref}"
+            # Docker drops a repository's digests with the last tag there.
+            [[ "$tag_repos" == *" ${repo} "* ]] || names+=("$ref")
+        done
+        removable[$id]="${names[*]}"
+        if [[ "$when" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T && "$when" != 0001-* ]] \
+            && epoch="$(date -u -d "$when" +%s 2>/dev/null)"; then
+            stamps+="${epoch} ${id}"$'\n'
+        else
+            unknown_age[$id]=1
+        fi
+    done <<<"$out"
+    if (( described != ${#ids[@]} )); then
+        log "image retention skipped: Docker described ${described} of the ${#ids[@]} images it listed; every image is kept"
+        return 0
+    fi
+
+    # In use: the image of every container, running or not, in any project.
+    if ! out="$(docker ps -aq --no-trunc)"; then
+        log "image retention skipped: Docker could not list the containers; every image is kept"
+        return 0
+    fi
+    while read -r container; do
+        [[ -n "$container" ]] || continue
+        if used="$(docker inspect -f '{{.Image}}' "$container" 2>/dev/null)" && [[ -n "$used" ]]; then
+            in_use[$used]=1
+        elif [[ "$(docker inspect -f '{{.Image}}' "$container" 2>&1 >/dev/null)" != *[Nn]"o such"* ]]; then
+            # Removed since it was listed ("No such object", or "no such object"
+            # from Docker 29), it holds nothing; any other failure proves nothing.
+            log "image retention skipped: Docker could not say which image container ${container:0:12} uses; every image is kept"
+            return 0
+        fi
+    done <<<"$out"
+
+    # The release recorded for --rollback, by image ID.
+    if [[ -e "$PREVIOUS_FILE" ]] && ! recorded="$(awk 'NR == 1 { print $1; exit }' "$PREVIOUS_FILE")"; then
+        log "image retention skipped: cannot read ${PREVIOUS_FILE}; every image is kept"
+        return 0
+    fi
+    if [[ -n "$recorded" ]]; then
+        if rollback="$(docker image inspect -f '{{.Id}}' "$recorded" 2>/dev/null)" && [[ -n "$rollback" ]]; then
+            :
+        elif image_gone "$recorded"; then
+            log "note: ${recorded}, recorded for --rollback, is no longer on this host"
+            rollback=""
+        else
+            log "image retention skipped: Docker could not resolve ${recorded}, recorded for --rollback; every image is kept"
+            return 0
+        fi
+    fi
+
+    # Newest first; an image whose age Docker does not give is kept, last.
+    while read -r _ id; do
+        [[ -n "$id" ]] || continue
+        order+=("$id")
+        rank=$(( rank + 1 ))
+        (( rank > keep )) || newest[$id]=1
+    done < <(printf '%s' "$stamps" | sort -k1,1nr -k2,2)
+    for id in "${ids[@]}"; do
+        [[ -z "${unknown_age[$id]:-}" ]] || order+=("$id")
+    done
+
+    log "image retention: ${#order[@]} images of ${listed[*]}; keeping the newest ${keep}, every container's image and the release recorded for --rollback"
+    for id in "${order[@]}"; do
+        reasons=()
+        [[ -z "${newest[$id]:-}" ]] || reasons+=("newest ${keep}")
+        [[ -z "${in_use[$id]:-}" ]] || reasons+=("in use")
+        [[ "$id" != "$rollback" ]] || reasons+=("recorded for --rollback")
+        [[ -z "${foreign[$id]:-}" ]] || reasons+=("also named ${foreign[$id]}")
+        [[ -z "${unknown_age[$id]:-}" ]] || reasons+=("creation time unknown")
+        [[ -n "${removable[$id]:-}" ]] || reasons+=("no name to remove it by")
+        line="$(printf '%-12.12s  %s  %s  %s' "${id#sha256:}" "${shown[$id]:-?}" "${created[$id]:0:10}" "$(human_size "${bytes[$id]:-}")")"
+        if (( ${#reasons[@]} > 0 )); then
+            why=""
+            for reason in "${reasons[@]}"; do
+                why+="${why:+; }${reason}"
+            done
+            printf '    kept     %s  (%s)\n' "$line" "$why"
+            kept=$(( kept + 1 ))
+            continue
+        fi
+        read -ra names <<<"${removable[$id]}"
+        if remove_image "$id" "${names[@]}"; then
+            printf '    removed  %s\n' "$line"
+            removed=$(( removed + 1 ))
+            size="${bytes[$id]:-}"
+            [[ ! "$size" =~ ^[0-9]+$ ]] || freed=$(( freed + size ))
+        else
+            printf '    kept     %s  (Docker did not remove it)\n' "$line"
+            failed=$(( failed + 1 ))
+        fi
+    done
+    out="image retention: kept $(( kept + failed ))"
+    (( failed == 0 )) || out+=" (${failed} that Docker did not remove)"
+    out+=", removed ${removed}"
+    (( removed == 0 )) || out+=" ($(human_size "$freed") as listed; layers a kept image shares stay on disk)"
+    log "$out"
+}
+
 main() {
-    local image sha live rollback=false status=0
+    local image sha live deployed_repo rollback=false status=0
     if [[ "$(id -u)" == 0 ]]; then
         log "refusing to run as root: run as the deploy user, e.g. sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout ..."
         exit 2
@@ -1038,6 +1273,14 @@ main() {
             sha="${2:-}"
             [[ -n "$sha" ]] || { log "usage: $0 IMAGE BUILD_SHA | --rollback"; exit 2; }
             ;;
+    esac
+    # The repository of the image deployed is PrivaTools' own too when it is
+    # named for PrivaTools: a run by hand has none of auto-deploy.sh's
+    # variables. Never another, which other projects' images may share
+    # (nothing for an image ID).
+    deployed_repo="$(repo_of "$image")"
+    case "$deployed_repo" in
+        privatools | */privatools | privatools-privatools) IMAGE_REPOS+=" ${deployed_repo}" ;;
     esac
 
     if [[ "${PRIVATOOLS_DEPLOY_LOCK_HELD:-}" != 1 ]]; then
@@ -1088,6 +1331,11 @@ main() {
         retire_interim "$(container_of "$COMPOSE_PROJECT")" "${retired_workers[@]}" || exit $?
     fi
     deploy_release "$image" "$sha" || status=$?
+    if (( status == 0 )); then
+        # Only in the steady state, and best effort: in a subshell, so nothing
+        # it does can change the exit status the timer acts on.
+        ( retain_images ) || log "WARNING: image retention stopped (exit $?); the images it had not removed are kept"
+    fi
     exit "$status"
 }
 
