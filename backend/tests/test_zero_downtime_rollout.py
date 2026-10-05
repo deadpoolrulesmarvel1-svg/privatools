@@ -240,8 +240,17 @@ elif name == "docker":
     elif args[0] == "inspect":
         form, cid = args[2], args[3]
         c = containers.get(cid)
+        if c is not None and c.get("vanished"):
+            # Listed a moment ago and removed since. Docker 29.8's CLI words a
+            # missing object in lower case, after an empty line on stdout.
+            print("")
+            print(f"error: no such object: {cid}", file=sys.stderr)
+            sys.exit(1)
         if c is None:
             print(f"Error: No such object: {cid}", file=sys.stderr)
+            sys.exit(1)
+        if c.get("inspect_fails") and form == "{{.Image}}":
+            print("Error response from daemon: simulated failure", file=sys.stderr)
             sys.exit(1)
         flaky = world.get("flaky") or {}
         if (flaky.get("armed") and flaky.get("inspect", 0) > 0 and flaky.get("project") == c["project"]
@@ -281,12 +290,13 @@ elif name == "docker":
         form, status = args[3], 0
         if "{{.Id}}" in form and "join" in form:
             # The CLI runs a template on Go field names (.ID) and retries one that
-            # fails on the raw JSON (.Id), where a name list is no []string.
+            # fails on the raw JSON (.Id), where a name list is no []string. Docker
+            # 29.8's join accepts that list; refusing it keeps the rollout on .ID.
             fail('template parsing error: template: :1: executing "" at <join .RepoTags " ">: '
                  "wrong type for value; expected []string; got []interface {}")
         for target in args[4:]:
             iid = resolve(target)
-            if iid is None:
+            if iid is None or (iid == world.get("gone_before_describe") and "join" in form):
                 print(f"Error: No such image: {target}", file=sys.stderr)
                 status = 1
                 continue
@@ -1478,6 +1488,87 @@ def test_the_former_path_counts_when_auto_deploy_names_it_or_a_run_by_hand_deplo
         assert retention_line(result, "v1.8.1").endswith("(in use)")
         assert "sha256:v180" not in left
         assert host.removals() == [*PILE_REMOVALS, [f"{OLD_OWNER}:v1.8.0"]]
+
+
+def test_a_run_by_hand_from_a_shared_repository_leaves_its_other_images_alone(host):
+    # A repository not named for PrivaTools may hold other projects' images:
+    # deploying a PrivaTools image from it by hand does not make it ours.
+    releases_piled_up(host)
+    shared = "registry.example.com:5000/apps"
+    image = f"{shared}@sha256:new"
+    host.world["images"]["sha256:new"]["tags"].append(f"{shared}:privatools-v2.7.33")
+    host.world["images"]["sha256:new"]["digests"].append(image)
+    host.world["refs"][image] = "sha256:new"
+    named(host, "sha256:folio", "2026-09-01T09:30:00Z", [f"{shared}:folio-1.2"], [f"{shared}@sha256:folio"])
+    host.save()
+    result = host.run(image, NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "sha256:folio" in host.load()["images"]
+    assert host.removals() == PILE_REMOVALS
+
+
+def test_a_container_removed_after_the_listing_holds_nothing(host):
+    # Another project recreated its container between `docker ps -a` and
+    # `docker inspect`. Docker 29.8 answers "error: no such object" in lower
+    # case: an answer, unlike a failure, so retention goes on.
+    releases_piled_up(host)
+    bystander(host, "c84recreated", "othersite", "sha256:nginx", vanished=True)
+    host.save()
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "image retention skipped" not in result.stdout
+    assert host.removals() == PILE_REMOVALS
+
+
+def test_an_image_removed_before_it_is_described_keeps_every_image(host):
+    # Somebody removed v2.7.29 between the listing and the description.
+    releases_piled_up(host)
+    host.world["gone_before_describe"] = "sha256:r29"
+    host.save()
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "image retention skipped: Docker could not describe those images; every image is kept" in result.stdout
+    assert not host.removals()
+
+
+@pytest.mark.skipif(hasattr(os, "geteuid") and os.geteuid() == 0, reason="root reads any file")
+def test_a_rollback_record_that_cannot_be_read_keeps_every_image(host):
+    releases_piled_up(host)
+    host.world["containers"]["c01privatools"].update(image="sha256:new", sha=NEW)
+    host.save()
+    record = host.root / ".privatools-deploy.previous"
+    record.write_text(f"sha256:old {OLD}\n")
+    record.chmod(0)
+    try:
+        result = host.run(f"{REPO}@sha256:new", NEW)
+    finally:
+        record.chmod(0o644)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "already serves" in result.stdout
+    assert "image retention skipped: cannot read" in result.stdout
+    assert "sha256:old" in host.load()["images"] and not host.removals()
+
+
+def test_a_container_whose_image_docker_cannot_name_keeps_every_image(host):
+    releases_piled_up(host)
+    host.world["containers"]["c80scratch"]["inspect_fails"] = True      # it keeps v2.7.28
+    host.save()
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "image retention skipped: Docker could not say which image container c80scratch" in result.stdout
+    assert not host.removals()
+
+
+@pytest.mark.parametrize("created", ["", "0001-01-01T00:00:00Z", "unknown"])
+def test_an_image_whose_age_docker_does_not_give_is_kept_and_not_counted(host, created):
+    releases_piled_up(host)
+    host.world["images"]["sha256:r29"]["created"] = created
+    host.save()
+    result = host.run(f"{REPO}@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "sha256:r29" in host.load()["images"]
+    assert retention_line(result, "v2.7.29").endswith("(creation time unknown)")
+    assert host.removals() == PILE_REMOVALS[1:]
 
 
 # ── the files the rollout relies on (review item 14: stable interfaces) ──────

@@ -132,8 +132,10 @@ SWITCH_FILE="${SWITCH_FILE:-${STATE_DIR}/.privatools-deploy.switching}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 POLL="${POLL:-1}"
 # Image retention after exit 0 (retain_images): how many of the newest
-# PrivaTools release images to keep, besides those a container uses and the
-# one recorded for --rollback. Below 2, or not a number, it is skipped.
+# PrivaTools release images to keep. The release that serves and the one
+# recorded for --rollback normally rank first and second among them, so the
+# default keeps one spare; either is kept when older too, as is any image a
+# container uses. Below 2, or not a number, retention is skipped.
 KEEP_IMAGES="${KEEP_IMAGES:-3}"
 # PrivaTools' own image repositories, as Docker names them: the only ones
 # retention looks at. The release repository and its fallback namespace
@@ -1118,8 +1120,9 @@ retain_images() {  # after exit 0 only; whatever fails keeps images and leaves t
     fi
 
     # Each one's names in every repository, its age and its size. .ID, not
-    # .Id: only Go field names keep the template typed. The JSON name falls
-    # back to raw JSON, where join cannot take the name lists.
+    # .Id: only Go field names keep the template on the CLI's typed struct. A
+    # JSON name falls back to raw JSON, where join may reject the name lists
+    # (Docker 29.8's accepts them).
     if ! out="$(docker image inspect -f '{{.ID}}|{{.Created}}|{{.Size}}|{{join .RepoTags " "}}|{{join .RepoDigests " "}}' "${ids[@]}")"; then
         log "image retention skipped: Docker could not describe those images; every image is kept"
         return 0
@@ -1172,8 +1175,9 @@ retain_images() {  # after exit 0 only; whatever fails keeps images and leaves t
         [[ -n "$container" ]] || continue
         if used="$(docker inspect -f '{{.Image}}' "$container" 2>/dev/null)" && [[ -n "$used" ]]; then
             in_use[$used]=1
-        elif [[ "$(docker inspect -f '{{.Image}}' "$container" 2>&1 >/dev/null)" != *"No such"* ]]; then
-            # Removed since it was listed, it holds nothing; any other failure proves nothing.
+        elif [[ "$(docker inspect -f '{{.Image}}' "$container" 2>&1 >/dev/null)" != *[Nn]"o such"* ]]; then
+            # Removed since it was listed ("No such object", or "no such object"
+            # from Docker 29), it holds nothing; any other failure proves nothing.
             log "image retention skipped: Docker could not say which image container ${container:0:12} uses; every image is kept"
             return 0
         fi
@@ -1245,7 +1249,7 @@ retain_images() {  # after exit 0 only; whatever fails keeps images and leaves t
 }
 
 main() {
-    local image sha live rollback=false status=0
+    local image sha live deployed_repo rollback=false status=0
     if [[ "$(id -u)" == 0 ]]; then
         log "refusing to run as root: run as the deploy user, e.g. sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout ..."
         exit 2
@@ -1270,9 +1274,14 @@ main() {
             [[ -n "$sha" ]] || { log "usage: $0 IMAGE BUILD_SHA | --rollback"; exit 2; }
             ;;
     esac
-    # The repository of the image deployed is PrivaTools' own too: a run by
-    # hand has none of auto-deploy.sh's variables (nothing for an image ID).
-    IMAGE_REPOS+=" $(repo_of "$image")"
+    # The repository of the image deployed is PrivaTools' own too when it is
+    # named for PrivaTools: a run by hand has none of auto-deploy.sh's
+    # variables. Never another, which other projects' images may share
+    # (nothing for an image ID).
+    deployed_repo="$(repo_of "$image")"
+    case "$deployed_repo" in
+        privatools | */privatools | privatools-privatools) IMAGE_REPOS+=" ${deployed_repo}" ;;
+    esac
 
     if [[ "${PRIVATOOLS_DEPLOY_LOCK_HELD:-}" != 1 ]]; then
         exec 9>>"$LOCK_FILE"

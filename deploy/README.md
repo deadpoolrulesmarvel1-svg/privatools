@@ -40,6 +40,7 @@ Now `privatools-rollout` ([`oracle-vm/rollout.sh`](oracle-vm/rollout.sh)) replac
 3. **Switch.** Point host nginx at 8001 through the root helper. The helper checks that 8001 is ready, runs `nginx -t` and reloads gracefully. The rollout then checks two things: that nginx's previous worker generation is retiring, which proves the reload happened, and that `https://privatools.me/readyz` through nginx reports the new build. If either fails, it switches back, returns the queue and removes the candidate (exit 2).
 4. **Drain.** Keep the old container until no request has been open on it for 3 s. Also wait until the nginx worker generation that this deploy's reload retired has exited, capped at 300 s. That includes the generation a killed run's switch retired, which its record lists. Other sites' reloads are not waited for: their workers never reach PrivaTools. The wait matters because nginx buffers a request body before it connects upstream, so an upload that began before the switch still reaches the old container afterwards. A container that still receives requests after that generation has exited means nginx still routes to it. It is kept, and the rollout stops with exit 4. Rarely the requests instead come from a generation retired just before the switch that is still finishing a long upload. That false alarm loses nothing, and the next run drains the container cleanly (runbook step 7).
 5. **Steady state.** Check again that the new supervisor holds the queue and its container never restarted. If that fails, return traffic to the old container, which is still running. Record the replaced release for `--rollback`, then recreate `privatools-privatools-1` on 8000 with the new image; Compose stops the drained old container. Gate it on readiness and the page probe, hand the queue from the interim to it, switch nginx back to 8000, drain the interim like step 4 and remove it.
+6. **Image retention.** Only after a run that ends in exit 0: remove old PrivaTools release images, keeping the newest three, every container's image and the release recorded for `--rollback` ([Image retention](#image-retention)). Nothing there changes the exit status.
 
 The exit status tells the timer what to do:
 
@@ -61,19 +62,20 @@ Added 5 October 2026. Each deploy pulls a release image of about 3.4 GB, and unt
   - the newest `KEEP_IMAGES` images by creation time (`Created` from `docker image inspect`), 3 by default;
   - the image of every container on the host, running or stopped, in any project;
   - the release recorded for `--rollback` (`.privatools-deploy.previous`), by image ID, so a moved tag cannot cost it and it stays when it is older than the newest.
-- **Candidates:** only images named in PrivaTools' own repositories (`IMAGE_REPOS` in `rollout.sh`). These are `DEPLOY_IMAGE_REPO` (`ghcr.io/ethereaglehq/privatools`), `DEPLOY_IMAGE_REPO_FALLBACK` when set (auto-deploy passes both), the repository of the image the run deploys, so a run by hand needs neither, and `privatools-privatools`, a local build's name. An image also named in any other repository is kept. Other projects' images, local test builds such as `privatools-py312:test`, the build cache and volumes are never touched.
+- **Candidates:** only images named in PrivaTools' own repositories (`IMAGE_REPOS` in `rollout.sh`). These are `DEPLOY_IMAGE_REPO` (`ghcr.io/ethereaglehq/privatools`), `DEPLOY_IMAGE_REPO_FALLBACK` when set (auto-deploy passes both), the repository of the image the run deploys when it is named for PrivaTools (`…/privatools` or `privatools-privatools`), so a run by hand from the former path needs neither, and `privatools-privatools`, a local build's name. An image also named in any other repository is kept. Other projects' images, local test builds such as `privatools-py312:test`, the build cache and volumes are never touched.
 - **How:** by name and never forced: each `repo:tag`, or `repo@digest` for a repository where the image has no tag. Docker itself then refuses the last name of an image a container uses, running or stopped. Nothing is pruned: a prune would delete the rollback image once its tag had moved, and other projects' images.
 - **Best effort:** it reads everything before it removes anything. If Docker cannot list the images or the containers, or resolve the rollback record, it logs why and keeps every image. A removal Docker refuses is logged and the others go ahead. Nothing in it changes the exit status.
 - **Log:** a line per image with its size and why it stays, then a summary such as `image retention: kept 3, removed 1 (3.4 GB as listed; layers a kept image shares stay on disk)`.
 - **`KEEP_IMAGES`:** 3 by default. A value below 2, or one that is not a number, skips retention with a log line, so `KEEP_IMAGES=0` turns it off. For the timer, set it in a drop-in, which a reinstall keeps: `sudo systemctl edit privatools-auto-deploy.service`, then `[Service]` and `Environment=KEEP_IMAGES=4`. auto-deploy passes its environment on to the rollout. By hand: `sudo runuser -u ubuntu -g ubuntu -G docker -- env KEEP_IMAGES=4 privatools-rollout ...`.
 - **Disk:** auto-deploy pulls the next release before the rollout runs, so the disk needs room for `KEEP_IMAGES` + 1 release images, about 13.6 GB by default. Add the rollback image when it is older than those, and any image a stopped container keeps.
-- **Limit:** a local build (`deploy.sh`) that lost its name to a newer build has no name left to remove it by, so it stays. Remove it by hand once no container uses it and it is not the rollback record.
+- **Limit:** an image left with no name has none in a PrivaTools repository, so retention never lists it and it stays. That happens to a local build (`deploy.sh`) whose name a newer build took, and on the containerd image store to any image whose tag moved to another. Remove such an image by hand once no container uses it and it is not the rollback record.
 
-**It takes effect only after a reinstall.** The timer runs the installed copies in `/usr/local/bin`, and a deploy never reinstalls them. Once a release that contains image retention has deployed, the checkout is at its tag; reinstall from there:
+**It takes effect only after a reinstall.** The timer runs the installed copies in `/usr/local/bin`, and a deploy never reinstalls them, so the old copies deploy the release that brings image retention, without removing anything. Once it has deployed, the checkout is at its tag; reinstall from there. The reinstall rewrites the unit files from the checkout: settings in a drop-in survive it, edits to the installed unit do not, so move any such edit (a `DEPLOY_IMAGE_REPO_FALLBACK`, say) into a drop-in first.
 
 ```bash
 sudo systemctl stop privatools-auto-deploy.timer
-systemctl is-active privatools-auto-deploy.service     # inactive: no deploy is running
+systemctl is-active privatools-auto-deploy.service     # inactive or failed: no deploy is running (activating: wait)
+systemctl cat privatools-auto-deploy.service           # your own Environment= lines: in a drop-in, not in the unit
 cd /home/ubuntu/privatools
 grep -c retain_images deploy/oracle-vm/rollout.sh      # not 0: this checkout has image retention
 sudo bash deploy/oracle-vm/install-auto-deploy.sh      # no --start: installs and validates only
@@ -81,12 +83,12 @@ cmp deploy/oracle-vm/rollout.sh /usr/local/bin/privatools-rollout && echo "rollo
 cmp deploy/oracle-vm/auto-deploy.sh /usr/local/bin/privatools-auto-deploy && echo "auto-deploy installed"
 ```
 
-The reinstall also rewrites the unit files from the checkout: settings in a drop-in survive it, edits to the installed unit do not. Then start the timer again. To see retention before the next release, first run the rollout on the release that already serves (the three optional lines below). In the steady state it touches neither nginx nor the containers: it logs `already serves`, then the retention lines.
+Then start the timer again. To see retention before the next release, first run the rollout on the release that already serves (the three optional lines below). In the steady state it touches neither nginx nor the containers: it logs `already serves`, then the retention lines. Its first run removes something, because production then holds one release more than the newest three. With v2.7.30 to v2.7.32 there before, it keeps the new release (in use), v2.7.32 (recorded for `--rollback`) and v2.7.31, removes v2.7.30 and logs `kept 3, removed 1`; skip the check and the next deploy removes two. Run by hand, it uses `KEEP_IMAGES=3` and no `DEPLOY_IMAGE_REPO_FALLBACK`, whatever the timer's drop-in says: pass them with `env` to match the timer.
 
 ```bash
 image=$(sudo docker inspect -f '{{.Image}}' privatools-privatools-1)                                         # optional
 sha=$(curl -fsS http://127.0.0.1:8000/readyz | python3 -c 'import json, sys; print(json.load(sys.stdin)["build_sha"])')  # optional
-sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout "$image" "$sha"   # optional; with three releases: "kept 3, removed 0"
+sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout "$image" "$sha"   # optional; first run: "kept 3, removed 1"
 sudo systemctl start privatools-auto-deploy.timer
 ```
 
@@ -531,7 +533,7 @@ Before release, privately record the actual installed Compose project name, curr
 
 ## Rollback and state preservation
 
-For a code-only failure, stop the timer first, then restore the **recorded** previous release without downtime. The rollout records the release it replaces (image ID and full source SHA) in `/home/ubuntu/privatools/.privatools-deploy.previous` before destroying it, so the record is right even after a degraded run. `--rollback` also works from the degraded state, without waiting for its backoff. Run it as the deploy user, never with plain `sudo`: root cannot open the deploy lock in `/tmp` and would leave state the timer cannot use, so the rollout refuses root. Do not run the manual `deploy.sh` as a rollback tool: it pulls main and rebuilds.
+For a code-only failure, stop the timer first, then restore the **recorded** previous release without downtime. The rollout records the release it replaces (image ID and full source SHA) in `/home/ubuntu/privatools/.privatools-deploy.previous` before destroying it, so the record is right even after a degraded run. `--rollback` also works from the degraded state, without waiting for its backoff. Run it as the deploy user, never with plain `sudo`: root cannot open the deploy lock in `/tmp` and would leave state the timer cannot use, so the rollout refuses root. Do not run the manual `deploy.sh` as a rollback tool: it pulls main and rebuilds. Image retention always keeps the recorded release, so `--rollback` never has to download anything. A release older than that may have been removed: restoring it means pulling its image from GHCR again and verifying its signature as auto-deploy does (`cosign verify` with release.yml's identity) before running the rollout on it.
 
 ```bash
 # Authorized rollback between releases that both contain the drainable job

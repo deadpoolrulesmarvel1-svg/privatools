@@ -143,7 +143,8 @@ also from the degraded state. Details, evidence and the cut-over runbook are in
   inspect` are asked again until their deadline; a supervisor or container is
   judged failed only from an answer. In the cut-over deploy, a container nginx
   routes to is stopped only if it actually restarted; otherwise the run ends
-  degraded.
+  degraded. Docker 29's CLI words a missing object in lower case (`error: no
+  such object`), so match `[Nn]o such`, never `No such` alone.
 - **Old and new code share the SQLite database for the overlap** (about a
   minute), and the new container applies its migrations on start. Migrations must
   be additive and quick (one `BEGIN IMMEDIATE` against a database the live
