@@ -23,7 +23,7 @@ from ..services import form_detect_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, open_pdf_document, remove_files, validate_pdf_content
 from ..utils.concurrency import run_bounded
 from ..utils.exceptions import ToolError
-from ..utils.page_space import drawing_unturned
+from ..utils.page_space import drawing_unturned, settle_rotation
 from ..utils.render import plan_renders, safe_get_pixmap
 from ..utils.pdf_errors import pdf_read_error
 from ..utils.route_helpers import no_store_headers, stream_upload_to_disk
@@ -709,7 +709,8 @@ FORM_FIELDS_DESCRIPTION = (
     "(1/72 inch) from the top-left corner of the page's visible area (its CropBox), before any "
     "/Rotate setting it has is applied; the box must lie on the page. Optional `required`; "
     "`value` and `multiline` (text), `checked` (checkbox), `options` and `value` (radio, "
-    "combobox, listbox)."
+    "combobox, listbox). Fields are added in reading order, which viewers follow from field to "
+    "field: page by page, in rows from the top of the page as it is shown, left to right."
 )
 
 
@@ -742,14 +743,17 @@ async def form_creator(
                     page_index = int(field["page"]) - 1
                     if page_index < 0 or page_index >= len(doc):
                         raise HTTPException(status_code=400, detail=f"Field #{idx} references page {field['page']} but PDF has {len(doc)} pages")
-
                     name = str(field["name"]).strip()
-                    field_type = str(field["type"])
                     if name in seen_names:
                         raise HTTPException(status_code=400, detail=f"Duplicate field name '{name}' is not allowed")
                     seen_names.add(name)
 
-                    page = doc[page_index]
+                # Viewers move between fields in the order they were added; the
+                # page sends them in the order they were placed or accepted.
+                for field in _reading_order(doc, fields):
+                    name = str(field["name"]).strip()
+                    field_type = str(field["type"])
+                    page = doc[int(field["page"]) - 1]
                     rect = fitz.Rect(
                         float(field["x"]),
                         float(field["y"]),
@@ -831,6 +835,31 @@ async def form_creator_detect(request: Request, file: UploadFile = File(...)):
         remove_files(str(path))
     # The labels quote the document: never store the answer anywhere.
     return JSONResponse(report, headers=no_store_headers())
+
+
+def _reading_order(doc: fitz.Document, fields: list[dict]) -> list[dict]:
+    """The fields page by page, in rows from the top of the page as it is
+    shown, and left to right within a row. A field joins a row when its middle
+    lies within the height of the row's first field. The pages exist."""
+    placed = []
+    for index, field in enumerate(fields):
+        page = doc[int(field["page"]) - 1]
+        settle_rotation(page)  # as drawing_unturned will, so "as shown" is what the preview showed
+        x, y = float(field["x"]), float(field["y"])
+        shown = fitz.Rect(x, y, x + float(field["width"]), y + float(field["height"])) * page.rotation_matrix
+        placed.append((int(field["page"]), shown, index))
+    ordered: list[dict] = []
+    for number in sorted({item[0] for item in placed}):
+        rows: list[list[tuple]] = []
+        for item in sorted((p for p in placed if p[0] == number), key=lambda p: ((p[1].y0 + p[1].y1) / 2, p[1].x0)):
+            middle = (item[1].y0 + item[1].y1) / 2
+            if rows and rows[-1][0][1].y0 <= middle <= rows[-1][0][1].y1:
+                rows[-1].append(item)
+            else:
+                rows.append([item])
+        for row in rows:
+            ordered.extend(fields[index] for _, _, index in sorted(row, key=lambda p: (p[1].x0, p[2])))
+    return ordered
 
 
 def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect,
