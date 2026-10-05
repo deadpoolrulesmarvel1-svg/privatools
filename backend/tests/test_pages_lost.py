@@ -258,13 +258,13 @@ def test_a_valid_pdf_carrying_a_pdf_goes_on_as_before(quiet_client, route):
     intact = _post(quiet_client, route, whole)
     response = _post(quiet_client, route, data)
     assert response.status_code == intact.status_code == 200, response.text[:300]
-    if route == "/api/web-optimize":
-        # Not refused is what this route can show. Its output is the qpdf
+    if route == "/api/web-optimize" and _pages_out(response) != _pages_out(intact):
+        # Not refused, which is what this test is for. The output is the qpdf
         # command's, which rebuilds the file again on its own: qpdf 11.9 (in
         # CI) reads the stored PDF's objects as this file's and writes its six
         # pages, as it did before the page count was read; qpdf 12's library,
-        # which reads the upload here, keeps the file's one page.
-        return
+        # which reads the upload, keeps the file's one page. A follow-up.
+        pytest.xfail("Web Optimize's qpdf command rebuilt the file as the PDF it carries: a follow-up")
     assert _pages_out(response) == _pages_out(intact)
 
 
