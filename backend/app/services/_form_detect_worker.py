@@ -378,6 +378,13 @@ def _line_tokens(chars: list[_Char]) -> list[Token]:
             tokens.append(Token("box", ch.c, ch.box, ch.origin[1], ch.size))
             i, last_visible = i + 1, ch
             continue
+        elif _is_tick(ch.c):
+            # A tick written in a box is its own mark, not the start of the
+            # option written after the box ("✔ PO box").
+            close_phrase()
+            tokens.append(Token("phrase", ch.c, ch.box, ch.origin[1], ch.size))
+            i, last_visible = i + 1, ch
+            continue
         if not ch.c.isspace():
             if phrase and last_visible is not None and ch.box.x0 - last_visible.box.x1 > 1.5 * max(ch.size, 1):
                 close_phrase()
@@ -389,6 +396,16 @@ def _line_tokens(chars: list[_Char]) -> list[Token]:
         i += 1
     close_phrase()
     return tokens
+
+
+# Marks a person makes in a box, as text: ticks and crosses, and the control
+# characters MuPDF gives back for a symbol font's glyphs (ZapfDingbats' ✓ ✔ ✕
+# ✖ ✗ ✘ come back as "\x13" to "\x18").
+TICKS = frozenset("✓✔✗✘☓×")
+
+
+def _is_tick(c: str) -> bool:
+    return c in TICKS or (unicodedata.category(c) == "Cc" and not c.isspace())
 
 
 def _union(chars: list[_Char]) -> Box:
@@ -909,6 +926,7 @@ class PageReader:
         self.tick_rows = Rows([], lambda t: (t.y0, t.y1), height)
         self.line_list: list = []
         self.line_ys: list[float] = []
+        self.line_captions: set[int] | None = None
         # Runs of character boxes: the table each is in, the groups joined
         # by separators, and each group's label once read.
         self.run_cells: dict[int, list] = {}
@@ -1185,9 +1203,10 @@ class PageReader:
 
     def _captions_line_above(self, phrase: Token) -> bool:
         """Whether the phrase is the caption under a line just above it."""
-        lo = bisect.bisect_left(self.line_ys, phrase.box.y0 - 16)
-        hi = bisect.bisect_right(self.line_ys, phrase.box.y0 - 1)
-        return any(self._caption_under(a, b, ly, named=False) is phrase for a, b, ly, _ in self.line_list[lo:hi])
+        if self.line_captions is None:  # each line's own caption, read once a page
+            self.line_captions = {id(caption) for a, b, ly, _ in self.line_list
+                                  if (caption := self._caption_under(a, b, ly, named=False)) is not None}
+        return id(phrase) in self.line_captions
 
     def _stacked_below(self, index: int, lines: list, claimed: set[int]) -> list[int]:
         """Lines under this one, at the same width and an even spacing, with

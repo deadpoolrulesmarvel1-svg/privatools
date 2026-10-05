@@ -706,6 +706,60 @@ def test_a_box_ticked_in_zapfdingbats_is_filled_in_not_a_blank():
     assert [(c["type"], c["name"]) for c in detect(data)["candidates"]] == [("checkbox", "tick_to_subscribe")]
 
 
+def test_a_tick_in_a_box_is_not_the_start_of_the_option_after_it():
+    """On a filled-in form whose options follow their boxes, the tick in a box
+    and the option written after the box ran together into one phrase
+    ("\\x14 PO box") whose middle lay outside the box: the ticked box looked
+    empty and was proposed, and the row seemed to end with a box, so the
+    empty box before it was named after the option on its left ("home")."""
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((50, 80), "Send post to:", fontname="helv", fontsize=10)
+    x = 60
+    for option in ("Home", "Work", "PO box"):
+        page.draw_rect(fitz.Rect(x, 91, x + 10, 101), color=(0, 0, 0), width=0.6)
+        if option == "PO box":  # ticked: the tick is written before the option, as a filled-in form writes it
+            page.insert_text((x + 1, 100), "4", fontname="zadb", fontsize=9)
+        page.insert_text((x + 15, 100), option, fontname="helv", fontsize=10)
+        x += 15 + fitz.get_text_length(option, fontname="helv", fontsize=10) + 20
+    shape = page.new_shape()  # Home is crossed out by hand: two strokes
+    shape.draw_line((61.5, 92.5), (68.5, 99.5))
+    shape.draw_line((68.5, 92.5), (61.5, 99.5))
+    shape.finish(color=(0, 0, 0), width=0.8)
+    shape.commit()
+    zadb = next(f[0] for f in page.get_fonts() if f[3] == "ZapfDingbats")
+    doc.xref_set_key(zadb, "Encoding", "null")
+    assert [(c["type"], c["name"]) for c in detect(doc.tobytes())["candidates"]] == [("checkbox", "work")]
+
+
+def test_a_captioned_line_is_read_for_its_caption_once():
+    """A line asks whether the phrase over it is the caption of a line above;
+    each line's own caption is read once a page, not once for every line
+    under it (1,140 captioned lines took 20 s of CPU)."""
+    doc = fitz.open()
+    page = doc.new_page(width=40 + 100 * 36, height=250)
+    shape = page.new_shape()
+    for row in range(3):
+        for k in range(100):
+            shape.draw_line((20 + k * 36, 80 + row * 50), (50 + k * 36, 80 + row * 50))
+            page.insert_text((20 + k * 36, 91 + row * 50), "Code", fontsize=8)
+    shape.finish(color=(0, 0, 0), width=0.6)
+    shape.commit()
+    calls = 0
+    caption_under = worker.PageReader._caption_under
+
+    def counted(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return caption_under(self, *args, **kwargs)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(worker.PageReader, "_caption_under", counted)
+        found = detect(doc.tobytes())["candidates"]
+    assert len(found) == 200 and {c["name"] for c in found} >= {"code", "code_2"}
+    assert calls <= 3 * 300, calls
+
+
 def test_graph_paper_and_a_calendar_are_not_forms():
     """Rows of identical squares with no label (graph paper) are not character
     boxes, and a day number in a cell's corner names no field."""

@@ -146,6 +146,16 @@ describe("Form Creator: detect, review, create", () => {
         expect(placed().map(b => b.textContent)).toEqual(["full_name", "full_name_2"]);
     });
 
+    it("counts the pages the new proposals are on, not those of fields already placed", async () => {
+        const twoPages = { ...REPORT, pages: 2, candidates: [...REPORT.candidates.slice(0, 3), { ...REPORT.candidates[3], page: 2 }] };
+        await detect(twoPages);
+        expect(await screen.findByText(/Found 4 possible fields on 2 pages/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Accept signature" }));
+        vi.mocked(uploadFileGetJson).mockResolvedValueOnce(twoPages);
+        fireEvent.click(screen.getByRole("button", { name: "Detect again" }));
+        expect(await screen.findByText(/Found 3 possible fields on 1 page\./)).toBeInTheDocument();
+    });
+
     it("keeps focus in the review when a proposal's row goes, and says what was done", async () => {
         await detect();
         // As a browser does, the pressed button has focus when its row goes.

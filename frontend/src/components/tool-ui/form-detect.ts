@@ -102,11 +102,11 @@ const pages = (list: number[]) => list.length === 1 ? `Page ${list[0]}` : `Pages
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** The line that says what detection found. */
-export function detectSummary(report: DetectReport, proposed: number): string {
+export function detectSummary(report: DetectReport, proposed: number,
+    onPages = new Set(report.candidates.map(c => c.page)).size): string {
     if (!report.candidates.length) {
         return "No likely fields were found. Detection looks for lines after labels, boxes, table cells and checkboxes that the PDF draws; this one may lay its blanks out another way. Place the fields by hand: choose Draw a field and drag a box on the page.";
     }
-    const onPages = new Set(report.candidates.map(c => c.page)).size;
     if (!proposed) return `Found ${plural(report.candidates.length, "possible field")}, all of them already placed.`;
     return `Found ${plural(proposed, "possible field")} on ${plural(onPages, "page")}. They are dashed on the page and listed with the fields. Accept, edit or reject each one: only accepted fields go into the form.`;
 }

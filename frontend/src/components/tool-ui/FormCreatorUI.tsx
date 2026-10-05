@@ -79,7 +79,7 @@ function isUntouchedStarter(field: DraftField): boolean {
 type Detection =
     | { phase: "idle" }
     | { phase: "running" }
-    | { phase: "done"; report: DetectReport; proposed: number; accepted: number }
+    | { phase: "done"; report: DetectReport; proposed: number; pages: number; accepted: number }
     | { phase: "failed"; message: string };
 
 export function FormCreatorUI() {
@@ -139,7 +139,8 @@ export function FormCreatorUI() {
                 .map(f => ({ page: Number(f.page), x: Number(f.x), y: Number(f.y), width: Number(f.width), height: Number(f.height) }));
             const found = newCandidates(report, placed).map(c => ({ ...c, key: proposalKey(c, run) }));
             setProposals(found);
-            setDetection({ phase: "done", report, proposed: found.length, accepted: 0 });
+            // The pages the proposals are on: not those of fields already placed.
+            setDetection({ phase: "done", report, proposed: found.length, pages: new Set(found.map(c => c.page)).size, accepted: 0 });
             focusAfterDetect.current = true;
             if (found.length) { setSelected(found[0].key); setPreviewPage(found[0].page); }
         } catch (e: unknown) {
@@ -314,7 +315,7 @@ export function FormCreatorUI() {
                         {done && <>
                             <p>{done.proposed > 0 && !proposals.length
                                 ? `You reviewed all ${done.proposed} proposed field${done.proposed === 1 ? "" : "s"}: ${done.accepted || "none"} accepted. Edit the fields below, then generate the fillable PDF.`
-                                : detectSummary(done.report, done.proposed)}</p>
+                                : detectSummary(done.report, done.proposed, done.pages)}</p>
                             {done.report.existingFields > 0 && <p>This PDF already has {done.report.existingFields} fillable field{done.report.existingFields === 1 ? "" : "s"}; nothing is proposed over {done.report.existingFields === 1 ? "it" : "them"}. To fill {done.report.existingFields === 1 ? "it" : "them"} in, use <a href="/tool/fill-form">Fill Form</a>.</p>}
                         </>}
                     </div>
