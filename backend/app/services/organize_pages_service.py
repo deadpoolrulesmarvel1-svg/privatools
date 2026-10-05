@@ -34,9 +34,11 @@ def generate_thumbnails(input_path: str) -> list[str]:
     own: it drew the attachment's pages where qpdf read them, also when MuPDF
     read the file's. So qpdf's reading of a damaged file is checked too
     (refuse_if_qpdf_misread, refused as Organize Pages itself refuses it), and
-    Poppler's pages must be as many as the file declares.
+    Poppler's pages must be as many as the file declares. MuPDF's misreading
+    is not Poppler's, nor qpdf's, which reorders the pages: it refuses
+    nothing here (open_pdf_document's `mixed`).
     """
-    doc = open_pdf_document(input_path)
+    doc = open_pdf_document(input_path, mixed=False)
     repaired = doc.is_repaired
     doc.close()
     warned = False

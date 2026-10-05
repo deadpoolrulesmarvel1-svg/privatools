@@ -562,14 +562,20 @@ def test_the_page_counter_does_not_count_the_pages_of_the_pdf_a_file_carries(qui
 def test_organize_pages_draws_no_page_of_the_pdf_a_file_carries(quiet_client, misreader):
     # Poppler draws the thumbnails, and rebuilds a damaged file as qpdf does:
     # it drew the stored page where MuPDF, which checks the file first, read
-    # the file's own.
-    response = quiet_client.post("/api/organize-pages/thumbnails",
-                                 files=[("file", ("doc.pdf", MISREAD_BY[misreader], "application/pdf"))])
-    assert response.status_code == 400, response.text[:300]
-    assert response.json()["detail"] == MIXED_UP_MESSAGE
-    whole = quiet_client.post("/api/organize-pages/thumbnails",
-                              files=[("file", ("doc.pdf", INTACT[misreader], "application/pdf"))])
+    # the file's own. qpdf, which then reorders the pages, stands in for it.
+    # MuPDF's misreading is neither's: those thumbnails are the file's.
+    def thumbnails(data):
+        return quiet_client.post("/api/organize-pages/thumbnails", files=[("file", ("doc.pdf", data, "application/pdf"))])
+
+    response = thumbnails(MISREAD_BY[misreader])
+    whole = thumbnails(INTACT[misreader])
     assert whole.status_code == 200 and len(whole.json()["thumbnails"]) == 1
+    if misreader == "qpdf":
+        assert response.status_code == 400, response.text[:300]
+        assert response.json()["detail"] == MIXED_UP_MESSAGE
+    else:
+        assert response.status_code == 200, response.text[:300]
+        assert response.json() == whole.json()
 
 
 def _five_then_two() -> bytes:

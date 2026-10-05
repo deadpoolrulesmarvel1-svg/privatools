@@ -380,7 +380,7 @@ def mixed_up_error():
     return PdfCorruptError(MIXED_UP_MESSAGE)
 
 
-def refuse_if_misread(source, reading, *, lost: bool = True) -> None:
+def refuse_if_misread(source, reading, *, lost: bool = True, mixed: bool = True) -> None:
     """Raise PdfCorruptError if a library's reading of the PDF at `source` is
     not the page tree the file declares (utils.declared_pages.misread).
 
@@ -399,7 +399,8 @@ def refuse_if_misread(source, reading, *, lost: bool = True) -> None:
     tree cannot be found, or a reading that is unknown (as when it would take
     too long), refuses nothing, and repaired files read as they are, which
     valid files with a damaged cross-reference table are, go on as before.
-    With `lost` false, only a mixed-up reading is refused.
+    With `lost` false, only a mixed-up reading is refused; with `mixed`
+    false, only a loss.
     """
     from .declared_pages import LOST, misread
     from .exceptions import PdfCorruptError
@@ -414,8 +415,8 @@ def refuse_if_misread(source, reading, *, lost: bool = True) -> None:
     if kind == LOST:
         if lost:
             raise PdfCorruptError(pages_lost_message(count, declared) if count else _DAMAGED_PDF)
-        return
-    raise mixed_up_error()
+    elif mixed:
+        raise mixed_up_error()
 
 
 def _scannable(source):
@@ -501,7 +502,7 @@ def _rebuilt_by_qpdf(source: str | bytes) -> bytes | None:
         remove_files(ended)
 
 
-def open_pdf_document(source: str | bytes):
+def open_pdf_document(source: str | bytes, *, mixed: bool = True):
     """Open a PDF with PyMuPDF, or raise the error its visitor should see.
 
     PyMuPDF opens a PDF that needs a password without complaint and fails only
@@ -514,8 +515,10 @@ def open_pdf_document(source: str | bytes):
     owner password (restrictions, nothing needed to open it) opens as before.
     A file MuPDF had to repair that lost pages, fewer read than it declares,
     is refused as damaged, with both counts, and so is one whose repair took
-    the objects of a PDF attached inside it for its own (refuse_if_misread).
-    Takes a path or the bytes.
+    the objects of a PDF attached inside it for its own (refuse_if_misread),
+    unless `mixed` is false: for a caller whose answer another library makes,
+    that only asks MuPDF whether the file can be read at all. Takes a path or
+    the bytes.
     """
     import fitz  # PyMuPDF
 
@@ -555,7 +558,7 @@ def open_pdf_document(source: str | bytes):
         raise ValidationError(NO_PAGES_MESSAGE)
     if doc.is_repaired:
         try:
-            refuse_if_misread(source, lambda declared: mupdf_reading(doc, declared))
+            refuse_if_misread(source, lambda declared: mupdf_reading(doc, declared), mixed=mixed)
         except PdfCorruptError:
             doc.close()
             raise
