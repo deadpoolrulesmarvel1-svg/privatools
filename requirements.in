@@ -34,12 +34,12 @@
 #   pip install --dry-run --require-hashes -r requirements.txt
 #   pip download --only-binary=:all: --platform manylinux_2_28_aarch64 \
 #       --python-version 3.12 --no-deps <package>==<version> -d <scratch-dir>
-fastapi==0.141.1
+fastapi==0.142.2
 # Used directly for cancellation-safe database work and reservation cleanup.
 anyio==4.15.1
 uvicorn[standard]==0.54.0
 python-multipart==0.0.32
-pikepdf==10.13.0.post1
+pikepdf==10.16.0
 pypdf==6.19.0
 pdf2image==1.17.0
 Pillow==12.3.0
@@ -93,8 +93,8 @@ pyhanko-certvalidator==0.32.1
 # The alternative was asking Clerk's API to verify each token, which would put
 # a network round-trip on every key request and make API key management stop
 # working whenever Clerk had an incident.
-pyjwt==2.15.0
+pyjwt==2.15.1
 # Current, not merely patched. 46.x carries 19 known advisories
 # (GHSA-537c-gmf6-5ccf among them) and 48.0.1 is only the minimum fix; both
 # the audit and the dependency-review job refuse the 46 series outright.
-cryptography==50.0.1
+cryptography==50.0.2
